@@ -3,6 +3,8 @@
 /**
  * Компонент для настройки интеграции Clerk с SDK
  * Вызывает setupClerkAuth() для передачи функции получения токена в SDK mutator
+ * 
+ * ВАЖНО: Этот компонент должен использоваться ТОЛЬКО внутри ClerkProvider
  */
 
 import { useEffect } from 'react';
@@ -15,7 +17,14 @@ export function ClerkAuthSetup() {
   useEffect(() => {
     // Настраиваем SDK для использования Clerk токена только после загрузки Clerk
     if (isLoaded && getToken) {
-      setupClerkAuth(getToken);
+      try {
+        setupClerkAuth(getToken);
+      } catch (error) {
+        // Игнорируем ошибки настройки SDK в production
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to setup Clerk auth:', error);
+        }
+      }
     }
   }, [getToken, isLoaded]);
 

@@ -1,14 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ClerkProvider } from '@clerk/nextjs';
-import { AuthModeProvider } from '../contexts/AuthModeContext';
-import { TopAppBar } from '../components/app-shell/TopAppBar';
-import { BottomNav } from '../components/app-shell/BottomNav';
-import { SideDrawer } from '../components/app-shell/SideDrawer';
-import { AuthModeToggle } from '../components/dev/AuthModeToggle';
-import { AppShellProvider } from '../components/app-shell/AppShellProvider';
-import { ClerkAuthSetup } from '../components/auth/ClerkAuthSetup';
-import { Providers } from './providers';
+import { AppContent } from './AppContent';
 
 export const metadata: Metadata = {
   title: {
@@ -43,29 +36,6 @@ export const metadata: Metadata = {
 // В Next.js NEXT_PUBLIC_* переменные доступны и на сервере, и на клиенте
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-function AppContent({ children }: { children: React.ReactNode }) {
-  return (
-    <Providers>
-      <AuthModeProvider>
-        <AppShellProvider>
-          {isClerkConfigured && <ClerkAuthSetup />}
-          <html lang="ru">
-            <body>
-              <TopAppBar />
-              <SideDrawer />
-              <main className="min-h-screen pb-20 pt-16">
-                {children}
-              </main>
-              <BottomNav />
-              <AuthModeToggle />
-            </body>
-          </html>
-        </AppShellProvider>
-      </AuthModeProvider>
-    </Providers>
-  );
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -74,12 +44,22 @@ export default function RootLayout({
   // Если Clerk настроен, используем его, иначе только AuthModeProvider
   if (isClerkConfigured) {
     return (
-      <ClerkProvider>
-        <AppContent>{children}</AppContent>
-      </ClerkProvider>
+      <html lang="ru">
+        <body>
+          <ClerkProvider>
+            <AppContent>{children}</AppContent>
+          </ClerkProvider>
+        </body>
+      </html>
     );
   }
 
   // В development режиме без Clerk используем только AuthModeProvider
-  return <AppContent>{children}</AppContent>;
+  return (
+    <html lang="ru">
+      <body>
+        <AppContent>{children}</AppContent>
+      </body>
+    </html>
+  );
 }
