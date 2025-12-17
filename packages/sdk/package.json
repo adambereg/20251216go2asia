@@ -5,6 +5,40 @@
   "description": "Auto-generated API client SDK from OpenAPI specifications",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./atlas": {
+      "types": "./src/atlas.ts",
+      "default": "./src/atlas.ts"
+    },
+    "./blog": {
+      "types": "./src/blog.ts",
+      "default": "./src/blog.ts"
+    },
+    "./pulse": {
+      "types": "./src/pulse.ts",
+      "default": "./src/pulse.ts"
+    },
+    "./balance": {
+      "types": "./src/balance.ts",
+      "default": "./src/balance.ts"
+    },
+    "./transactions": {
+      "types": "./src/transactions.ts",
+      "default": "./src/transactions.ts"
+    },
+    "./referrals": {
+      "types": "./src/referrals.ts",
+      "default": "./src/referrals.ts"
+    },
+    "./clerk-integration": {
+      "types": "./src/clerk-integration.ts",
+      "default": "./src/clerk-integration.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "gen": "orval --config ../../orval.config.ts",
