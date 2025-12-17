@@ -34,7 +34,9 @@ export const metadata: Metadata = {
 
 // Проверяем, настроен ли Clerk (есть ли publishableKey)
 // В Next.js NEXT_PUBLIC_* переменные доступны и на сервере, и на клиенте
-const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+// Они инлайнятся во время сборки, поэтому должны быть установлены в Netlify
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const isClerkConfigured = !!clerkPublishableKey;
 
 export default function RootLayout({
   children,
@@ -42,11 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   // Если Clerk настроен, используем его, иначе только AuthModeProvider
-  if (isClerkConfigured) {
+  if (isClerkConfigured && clerkPublishableKey) {
     return (
       <html lang="ru">
         <body>
-          <ClerkProvider>
+          <ClerkProvider publishableKey={clerkPublishableKey}>
             <AppContent>{children}</AppContent>
           </ClerkProvider>
         </body>
