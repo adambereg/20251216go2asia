@@ -5,7 +5,7 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-empty-object-type': 'warn',
+    // '@typescript-eslint/no-empty-object-type': 'warn', // Removed: not available in @typescript-eslint/eslint-plugin < 7.0.0
     '@typescript-eslint/triple-slash-reference': 'off',
     '@typescript-eslint/no-require-imports': 'off',
     'react/no-unescaped-entities': 'warn',
