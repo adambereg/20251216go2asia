@@ -14,10 +14,8 @@ export type { ButtonProps } from './components/Button';
 export { Card } from './components/Card';
 export type { CardProps } from './components/Card';
 
-// CardContent экспортируется из Card/index.ts, но файл CardContent.tsx не закоммичен
-// Временно закомментировано до добавления файла в git
-// export { CardContent } from './components/Card';
-// export type { CardContentProps } from './components/Card';
+export { CardContent } from './components/Card';
+export type { CardContentProps } from './components/Card';
 
 export { Badge } from './components/Badge';
 export type { BadgeProps } from './components/Badge';
@@ -25,24 +23,23 @@ export type { BadgeProps } from './components/Badge';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 
-// Компоненты не закоммичены в git - временно закомментировано
-// export { GradientCard } from './components/GradientCard';
-// export type { GradientCardProps } from './components/GradientCard';
+export { GradientCard } from './components/GradientCard';
+export type { GradientCardProps } from './components/GradientCard';
 
-// export { ModuleTile } from './components/ModuleTile';
-// export type { ModuleTileProps } from './components/ModuleTile';
+export { ModuleTile } from './components/ModuleTile';
+export type { ModuleTileProps } from './components/ModuleTile';
 
-// export { FeatureCard } from './components/FeatureCard';
-// export type { FeatureCardProps } from './components/FeatureCard';
+export { FeatureCard } from './components/FeatureCard';
+export type { FeatureCardProps } from './components/FeatureCard';
 
-// export { UserSummary } from './components/UserSummary';
-// export type { UserSummaryProps } from './components/UserSummary';
+export { UserSummary } from './components/UserSummary';
+export type { UserSummaryProps } from './components/UserSummary';
 
-// export { TopAppBar } from './components/TopAppBar';
-// export type { TopAppBarProps } from './components/TopAppBar';
+export { TopAppBar } from './components/TopAppBar';
+export type { TopAppBarProps } from './components/TopAppBar';
 
-// export { Avatar } from './components/Avatar';
-// export type { AvatarProps } from './components/Avatar';
+export { Avatar } from './components/Avatar';
+export type { AvatarProps } from './components/Avatar';
 
 // export { Skeleton, SkeletonCard } from './components/Skeleton';
 // export type { SkeletonProps } from './components/Skeleton';
