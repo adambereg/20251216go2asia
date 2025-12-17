@@ -1,0 +1,31 @@
+{
+  "name": "go2asia-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Go2Asia MVP - Digital ecosystem for travel, life, and business in Southeast Asia",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf .turbo",
+    "gen:types": "orval --config orval.config.ts --output types",
+    "gen:sdk": "orval --config orval.config.ts --output sdk",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "orval": "^7.3.0",
+    "@stoplight/spectral-cli": "^6.12.0",
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
+

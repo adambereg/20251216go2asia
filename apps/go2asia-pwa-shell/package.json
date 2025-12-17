@@ -9,8 +9,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:api": "node ../../scripts/test-api-integration.js"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.0.0",

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate-openapi:
+    name: Validate OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Validate OpenAPI specs
+        run: |
+          pnpm exec spectral lint docs/openapi/*.yaml
+
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+
+  validate-generated-types:
+    name: Validate Generated Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Generate types
+        run: pnpm gen:types
+      - name: Generate SDK
+        run: pnpm gen:sdk
+      - name: Check for changes
+        run: |
+          git diff --exit-code packages/types/src/generated.ts packages/sdk/src/generated.ts || \
+          (echo "Generated types/SDK differ from committed versions. Run 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes." && exit 1)
+

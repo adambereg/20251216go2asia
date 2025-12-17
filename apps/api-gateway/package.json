@@ -1,0 +1,25 @@
+{
+  "name": "@go2asia/api-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API Gateway for Go2Asia MVP (Cloudflare Worker)",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@go2asia/logger": "workspace:*",
+    "@go2asia/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "@go2asia/config": "workspace:*",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.19.0"
+  }
+}
+
