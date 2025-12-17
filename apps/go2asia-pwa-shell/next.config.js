@@ -52,9 +52,9 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    optimizePackageImports: ['@go2asia/ui', '@go2asia/sdk'],
-  },
+  // ВАЖНО: optimizePackageImports переписывает импорты в __barrel_optimize__,
+  // что в нашем случае приводило к "Attempted import error" и runtime React #130
+  // (undefined component) на Netlify. Оставляем обычные импорты.
   transpilePackages: ['@go2asia/sdk', '@go2asia/ui'],
 };
 
