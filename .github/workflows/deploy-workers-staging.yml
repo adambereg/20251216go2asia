@@ -56,11 +56,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ ! -d "${{ matrix.path }}" ]; then
-            echo "Service directory '${{ matrix.path }}' not found; skipping deploy."
-            exit 0
+            echo "Service directory '${{ matrix.path }}' not found."
+            exit 1
           fi
 
-          pnpm --dir "${{ matrix.path }}" exec wrangler deploy --env staging
+          pnpm --dir "${{ matrix.path }}" exec wrangler deploy --env staging \
+            --var ENVIRONMENT:staging \
+            --var VERSION:${{ github.sha }}
 
       - name: Smoke check (HTTP 200)
         run: |

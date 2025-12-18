@@ -46,6 +46,44 @@ importers:
         specifier: ^3.19.0
         version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
 
+  apps/auth-service:
+    dependencies:
+      '@go2asia/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20231218.0
+        version: 4.20251216.0
+      '@go2asia/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.19.0
+        version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
+
+  apps/content-service:
+    dependencies:
+      '@go2asia/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20231218.0
+        version: 4.20251216.0
+      '@go2asia/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.19.0
+        version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
+
   apps/go2asia-pwa-shell:
     dependencies:
       '@clerk/nextjs':
@@ -118,6 +156,44 @@ importers:
       vitest:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.27)
+
+  apps/referral-service:
+    dependencies:
+      '@go2asia/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20231218.0
+        version: 4.20251216.0
+      '@go2asia/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.19.0
+        version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
+
+  apps/token-service:
+    dependencies:
+      '@go2asia/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20231218.0
+        version: 4.20251216.0
+      '@go2asia/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.19.0
+        version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
 
   packages/config:
     devDependencies:

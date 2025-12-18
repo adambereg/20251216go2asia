@@ -7,10 +7,10 @@
 | Service | Worker name | URL (staging) | Required env vars | Notes |
 |---|---|---|---|---|
 | api-gateway | `go2asia-api-gateway-staging` | `https://go2asia-api-gateway-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL` (если используется), `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL` | В репо: `apps/api-gateway`. Проксирует downstream по `/v1/*`. Health: `GET /health` (без auth/БД). |
-| auth-service | `go2asia-auth-service-staging` | `https://go2asia-auth-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` | В Cloudflare существует, но **кода в репо сейчас нет** (`apps/auth-service` отсутствует) → workflow деплоя пропускает deploy и делает только smoke-check по URL. |
-| content-service | `go2asia-content-service-staging` | `https://go2asia-content-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL` | В Cloudflare существует, но **кода в репо сейчас нет** (`apps/content-service` отсутствует) → workflow деплоя пропускает deploy и делает только smoke-check по URL. |
-| referral-service | `go2asia-referral-service-staging` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, `CLERK_SECRET_KEY` | В Cloudflare существует, но **кода в репо сейчас нет** (`apps/referral-service` отсутствует) → workflow деплоя пропускает deploy и делает только smoke-check по URL. |
-| token-service | `go2asia-token-service-staging` | `https://go2asia-token-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL`, `CLERK_SECRET_KEY` | В Cloudflare существует, но **кода в репо сейчас нет** (`apps/token-service` отсутствует) → workflow деплоя пропускает deploy и делает только smoke-check по URL. |
+| auth-service | `go2asia-auth-service-staging` | `https://go2asia-auth-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/auth-service` (пока skeleton). Health: `GET /health`. |
+| content-service | `go2asia-content-service-staging` | `https://go2asia-content-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/content-service` (пока skeleton). Health: `GET /health`. |
+| referral-service | `go2asia-referral-service-staging` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/referral-service` (пока skeleton). Health: `GET /health`. |
+| token-service | `go2asia-token-service-staging` | `https://go2asia-token-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/token-service` (пока skeleton). Health: `GET /health`. |
 
 ### API Gateway → downstream proxy (staging)
 
