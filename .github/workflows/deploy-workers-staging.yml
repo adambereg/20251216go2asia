@@ -21,14 +21,19 @@ jobs:
         include:
           - service: api-gateway
             path: apps/api-gateway
+            url: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
           - service: auth-service
             path: apps/auth-service
+            url: https://go2asia-auth-service-staging.fred89059599296.workers.dev
           - service: content-service
             path: apps/content-service
+            url: https://go2asia-content-service-staging.fred89059599296.workers.dev
           - service: referral-service
             path: apps/referral-service
+            url: https://go2asia-referral-service-staging.fred89059599296.workers.dev
           - service: token-service
             path: apps/token-service
+            url: https://go2asia-token-service-staging.fred89059599296.workers.dev
 
     steps:
       - uses: actions/checkout@v4
@@ -56,4 +61,23 @@ jobs:
           fi
 
           pnpm --dir "${{ matrix.path }}" exec wrangler deploy --env staging
+
+      - name: Smoke check (HTTP 200)
+        run: |
+          set -euo pipefail
+
+          URL="${{ matrix.url }}"
+          echo "Smoke checking: $URL"
+
+          # Try /health then /version then / (some legacy workers may not have health endpoints yet)
+          for path in "/health" "/version" "/"; do
+            code="$(curl -sS -o /dev/null -w "%{http_code}" "${URL}${path}" || true)"
+            echo "GET ${URL}${path} -> ${code}"
+            if [ "${code}" = "200" ]; then
+              exit 0
+            fi
+          done
+
+          echo "Smoke check failed: expected HTTP 200 on ${URL} (/health|/version|/)"
+          exit 1
 

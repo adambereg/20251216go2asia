@@ -17,17 +17,22 @@ export interface Env {
   // Secrets (Cloudflare Secrets)
   CLERK_JWT_SECRET?: string;
   SERVICE_JWT_SECRET?: string;
+
+  // Runtime vars (Cloudflare Vars)
+  ENVIRONMENT?: string;
+  VERSION?: string;
 }
 
 /**
  * Health check endpoint
  */
-async function handleHealth(): Promise<Response> {
+async function handleHealth(env: Env): Promise<Response> {
   return new Response(
     JSON.stringify({
-      status: 'ok',
       service: 'api-gateway',
-      timestamp: new Date().toISOString(),
+      env: env.ENVIRONMENT ?? 'staging',
+      status: 'ok',
+      version: env.VERSION ?? 'unknown',
     }),
     {
       status: 200,
@@ -69,7 +74,7 @@ async function routeRequest(
 
   // Health checks
   if (path === '/health') {
-    return handleHealth();
+    return handleHealth(env);
   }
   if (path === '/ready') {
     return handleReady();
