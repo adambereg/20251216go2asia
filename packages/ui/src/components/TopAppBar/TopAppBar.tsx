@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Globe, Search, Grid3x3 } from 'lucide-react';
-import { Avatar } from '../Avatar/Avatar';
+import { Avatar } from '../Avatar';
 import { cn } from '../../utils/cn';
 
 export interface TopAppBarProps {

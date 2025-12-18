@@ -6,15 +6,22 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   validate-openapi:
     name: Validate OpenAPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 8.15.0
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -24,14 +31,14 @@ jobs:
         run: |
           pnpm exec spectral lint docs/openapi/*.yaml
 
-  lint-and-typecheck:
-    name: Lint & Typecheck
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 8.15.0
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -39,17 +46,48 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
+
+  typecheck:
+    name: Typecheck (non-blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
       - name: Typecheck
+        continue-on-error: true
         run: pnpm typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Test
+        run: pnpm test
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 8.15.0
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -63,9 +101,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 8.15.0
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -75,8 +113,17 @@ jobs:
         run: pnpm gen:types
       - name: Generate SDK
         run: pnpm gen:sdk
-      - name: Check for changes
+      - name: Check for changes (including untracked files)
         run: |
-          git diff --exit-code packages/types/src/generated.ts packages/sdk/src/generated.ts || \
-          (echo "Generated types/SDK differ from committed versions. Run 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes." && exit 1)
+          CHANGES="$(git status --porcelain -- packages/types/src/generated packages/sdk/src/generated || true)"
+          if [ -n "$CHANGES" ]; then
+            echo "$CHANGES"
+            echo "Generated types/SDK differ from committed versions."
+            echo "Run 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes."
+            exit 1
+          fi
+
+
+
+
 

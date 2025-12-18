@@ -32,3 +32,7 @@ export const userBadges = pgTable('user_badges', {
   earnedAt: timestamp('earned_at').notNull().defaultNow(),
 });
 
+
+
+
+

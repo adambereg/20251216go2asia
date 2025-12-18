@@ -1,12 +1,12 @@
 /**
  * ESLint configuration for Cloudflare Workers
  */
+const base = require('./base');
+
 module.exports = {
-  extends: ['./base.js'],
-  env: {
-    'cloudflare-workers': true,
-  },
+  ...base,
   rules: {
+    ...(base.rules ?? {}),
     'no-restricted-globals': [
       'error',
       {
@@ -20,4 +20,8 @@ module.exports = {
     ],
   },
 };
+
+
+
+
 

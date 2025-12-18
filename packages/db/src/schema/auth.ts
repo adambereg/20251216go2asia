@@ -26,3 +26,7 @@ export const userProfiles = pgTable('user_profiles', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+
+
+
+

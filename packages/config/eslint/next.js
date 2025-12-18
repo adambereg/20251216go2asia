@@ -1,10 +1,18 @@
 /**
  * ESLint configuration for Next.js apps
  */
+const base = require('./base');
+
 module.exports = {
-  extends: ['./base.js', 'next/core-web-vitals'],
+  ...base,
+  extends: [...(base.extends ?? []), 'next/core-web-vitals'],
   rules: {
+    ...(base.rules ?? {}),
     '@next/next/no-html-link-for-pages': 'off',
   },
 };
+
+
+
+
 

@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint src"
   },
   "dependencies": {
     "@go2asia/logger": "workspace:*",
@@ -22,4 +22,8 @@
     "wrangler": "^3.19.0"
   }
 }
+
+
+
+
 

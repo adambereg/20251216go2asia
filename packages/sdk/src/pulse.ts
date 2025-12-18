@@ -13,3 +13,6 @@ export const useGetEvents = (_params?: any) => ({
   isLoading: false,
   error: null,
 });
+
+
+

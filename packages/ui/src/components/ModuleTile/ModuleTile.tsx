@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { GradientCard } from '../GradientCard/GradientCard';
-import { Badge } from '../Badge/Badge';
+import { GradientCard } from '../GradientCard';
+import { Badge } from '../Badge';
 
 type ModuleType = 'atlas' | 'pulse' | 'blog' | 'guru' | 'space' | 'rielt' | 'quest' | 'rf' | 'connect' | 'partner';
 

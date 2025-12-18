@@ -4,8 +4,8 @@ import { defineConfig } from 'orval';
  * Orval configuration for generating types and SDK from OpenAPI specs
  * 
  * This config generates:
- * - Types: packages/types/src/generated.ts
- * - SDK: packages/sdk/src/generated.ts
+ * - Types: packages/types/src/generated/*
+ * - SDK: packages/sdk/src/generated/*
  */
 export default defineConfig({
   types: {
@@ -14,7 +14,9 @@ export default defineConfig({
     },
     output: {
       mode: 'split',
-      target: './packages/types/src/generated.ts',
+      // Keep generated entrypoint inside the generated folder.
+      // This matches the repo layout (packages/types/src/generated/index.ts).
+      target: './packages/types/src/generated/index.ts',
       schemas: './packages/types/src/generated',
       client: 'axios', // Orval requires a client, but we'll only use types
       mock: false,
@@ -36,7 +38,9 @@ export default defineConfig({
     },
     output: {
       mode: 'split',
-      target: './packages/sdk/src/generated.ts',
+      // Keep generated entrypoint inside the generated folder.
+      // This matches the repo layout (packages/sdk/src/generated/index.ts).
+      target: './packages/sdk/src/generated/index.ts',
       schemas: './packages/sdk/src/generated',
       client: 'fetch',
       mock: false,

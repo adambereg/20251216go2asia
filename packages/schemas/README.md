@@ -19,3 +19,7 @@ const pagination = PaginationSchema.parse(queryParams);
 These schemas provide runtime validation at API Gateway and service boundaries.
 They should match the types generated from OpenAPI specs in `@go2asia/types`.
 
+
+
+
+
