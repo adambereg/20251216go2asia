@@ -28,6 +28,9 @@ jobs:
           - service: content-service
             path: apps/content-service
             url: https://go2asia-content-service-staging.fred89059599296.workers.dev
+          - service: points-service
+            path: apps/points-service
+            url: https://go2asia-points-service-staging.fred89059599296.workers.dev
           - service: referral-service
             path: apps/referral-service
             url: https://go2asia-referral-service-staging.fred89059599296.workers.dev
