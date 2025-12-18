@@ -1,0 +1,338 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Points Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Points Service (Milestone 3).
+
+    Notes:
+    - User-facing endpoints are called via API Gateway.
+    - Downstream does NOT validate user JWT in M3; it accepts user-context only when the request is authenticated as gateway-origin.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway (user-facing paths proxied to downstream)
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: points-service.example
+
+tags:
+  - name: health
+    description: Service health checks
+  - name: points
+    description: Points balance and ledger operations
+  - name: internal
+    description: Service-to-service APIs (authenticated)
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Health check
+      description: Returns service health status. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getVersion
+      summary: Version (alias of /health)
+      description: Returns service version metadata. Alias of /health. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/points/balance:
+    get:
+      tags: [points]
+      operationId: getPointsBalance
+      summary: Get current user points balance
+      description: User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBalance"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/points/transactions:
+    get:
+      tags: [points]
+      operationId: listPointsTransactions
+      summary: List current user points transactions
+      description: User-facing read endpoint (called via gateway). Returns a paginated list of ledger transactions for the current user.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionsPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /internal/points/add:
+    post:
+      tags: [internal]
+      operationId: addPoints
+      summary: Add points to a user (idempotent)
+      description: >
+        Idempotency policy (M3):
+        - `externalId` is required and MUST be globally unique for Points Service.
+        - If `externalId` already exists and payload differs (`amount` and/or `action`) => 409 Conflict and the event MUST be logged as an integration error.
+
+        Limits policy (M3):
+        - Per-action limits and a simple configurable per-user velocity cap are applied inside Points Service.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPointsRequest"
+      responses:
+        "200":
+          description: OK (applied or duplicate)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddPointsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+      description: >
+        Service JWT issued/forwarded by API Gateway to authenticate gateway-origin requests (M3).
+    ServiceAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service-to-service JWT (M3)
+
+  parameters:
+    XGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserId:
+      name: X-User-ID
+      in: header
+      required: true
+      schema:
+        type: string
+      description: User identifier asserted by API Gateway
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Correlation id
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+          example: points-service
+        env:
+          type: string
+          example: staging
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "<sha>"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "Unauthorized"
+        message:
+          type: string
+          example: "Invalid or missing token"
+        requestId:
+          type: string
+
+    PointsAction:
+      type: string
+      description: >
+        Minimal action set for Milestone 3. This enum may be extended post-M3.
+        Note: `event_registration` is optional in M3 and may be enabled only when Content → Points integration is delivered.
+      enum:
+        - registration
+        - first_login
+        - referral_bonus_referee
+        - referral_bonus_referrer
+        - event_registration
+
+    PointsTransaction:
+      type: object
+      required: [id, userId, amount, action, externalId, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        amount:
+          type: integer
+          description: Signed points delta
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        externalId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UserBalance:
+      type: object
+      required: [userId, balance, updatedAt]
+      properties:
+        userId:
+          type: string
+        balance:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    TransactionsPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PointsTransaction"
+        nextCursor:
+          type: string
+          nullable: true
+
+    AddPointsRequest:
+      type: object
+      required: [userId, amount, action, externalId]
+      properties:
+        userId:
+          type: string
+        amount:
+          type: integer
+          description: Positive points to add
+          minimum: 1
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        externalId:
+          type: string
+          description: Idempotency key (SSOT)
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AddPointsResponse:
+      type: object
+      required: [transactionId, applied, balance]
+      properties:
+        transactionId:
+          type: string
+        applied:
+          type: boolean
+          description: True if a new transaction was created, false if duplicate
+        balance:
+          type: integer

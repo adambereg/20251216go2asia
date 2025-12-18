@@ -17,6 +17,7 @@
 | content-service | `apps/content-service` | `src/index.ts` | `wrangler.toml` |
 | referral-service | `apps/referral-service` | `src/index.ts` | `wrangler.toml` |
 | token-service | `apps/token-service` | `src/index.ts` | `wrangler.toml` |
+| points-service | `apps/points-service` | `src/index.ts` | `wrangler.toml` |
 
 ### 2) Health endpoint contract (uniform)
 
@@ -48,12 +49,26 @@
   - `ENVIRONMENT`, `VERSION`
   - `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL`
 - Secrets:
-  - `SERVICE_JWT_SECRET` (и при необходимости `CLERK_JWT_SECRET`)
+  - `SERVICE_JWT_SECRET` (gateway-origin auth + service-to-service auth)
+  - `CLERK_JWT_SECRET` (для проверки user JWT, если используется HS256)
 
-**auth-service / content-service / referral-service / token-service**
+**auth-service / content-service / token-service**
 - Сейчас в репо представлены skeleton-версии, которые требуют только:
   - `ENVIRONMENT`, `VERSION`
-- По мере реализации Milestone 2 сюда будут добавляться обязательные secrets/bindings (например `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` и т.д.) — фиксировать изменения в этом документе.
+- По мере реализации сюда будут добавляться обязательные secrets/bindings (например `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` и т.д.) — фиксировать изменения в этом документе.
+
+**points-service**
+- Required:
+  - Vars: `ENVIRONMENT`, `VERSION`
+  - Var/Secret: `DATABASE_URL`
+  - Secret: `SERVICE_JWT_SECRET`
+  - (опционально, vars): `POINTS_VELOCITY_CAP`, `POINTS_VELOCITY_WINDOW_SECONDS`
+
+**referral-service**
+- Required:
+  - Vars: `ENVIRONMENT`, `VERSION`
+  - Var/Secret: `DATABASE_URL`
+  - Secret: `SERVICE_JWT_SECRET`
 
 ### 4) Локальный запуск (wrangler dev, staging-like)
 
@@ -63,6 +78,7 @@
 pnpm --dir apps/api-gateway exec wrangler dev --env staging
 pnpm --dir apps/auth-service exec wrangler dev --env staging
 pnpm --dir apps/content-service exec wrangler dev --env staging
+pnpm --dir apps/points-service exec wrangler dev --env staging
 pnpm --dir apps/referral-service exec wrangler dev --env staging
 pnpm --dir apps/token-service exec wrangler dev --env staging
 ```
@@ -82,4 +98,6 @@ Workflow: `.github/workflows/deploy-workers-staging.yml`
 - `docs/ops/environments.md`
 - `docs/ops/cloudflare_setup.md`
 - `docs/ops/staging_services_overview.md`
+
+
 

@@ -2,7 +2,7 @@
   "name": "@go2asia/referral-service",
   "version": "0.1.0",
   "private": true,
-  "description": "Referral Service for Go2Asia MVP (Cloudflare Worker) - skeleton",
+  "description": "Referral Service for Go2Asia MVP (Cloudflare Worker)",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev --env staging",
@@ -13,6 +13,7 @@
     "test": "echo \"no tests\""
   },
   "dependencies": {
+    "@go2asia/db": "workspace:*",
     "@go2asia/logger": "workspace:*"
   },
   "devDependencies": {
@@ -22,4 +23,3 @@
     "wrangler": "^3.19.0"
   }
 }
-

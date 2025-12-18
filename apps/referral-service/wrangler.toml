@@ -12,5 +12,6 @@ name = "go2asia-referral-service-staging"
 # ENVIRONMENT (e.g. "staging")
 # VERSION (git sha)
 #
-# Secrets/bindings are configured in Cloudflare Dashboard for staging.
-
+# Required vars/secrets/bindings for Milestone 3:
+# - DATABASE_URL (var/secret)
+# - SERVICE_JWT_SECRET (secret, shared with api-gateway for gateway-origin auth and service-to-service auth)

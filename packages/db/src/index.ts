@@ -8,6 +8,13 @@
 export * from './schema';
 export * from './client';
 
+// Re-export minimal Drizzle helpers for worker services.
+// This avoids each Worker app depending directly on drizzle-orm (and pulling duplicate copies/types).
+export { sql } from 'drizzle-orm';
+export type { SQL } from 'drizzle-orm';
+
+
+
 
 
 

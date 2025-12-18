@@ -23,3 +23,5 @@ They should match the types generated from OpenAPI specs in `@go2asia/types`.
 
 
 
+
+

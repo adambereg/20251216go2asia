@@ -6,10 +6,11 @@
 
 | Service | Worker name | URL (staging) | Required env vars | Notes |
 |---|---|---|---|---|
-| api-gateway | `go2asia-api-gateway-staging` | `https://go2asia-api-gateway-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `DATABASE_URL` (если используется), `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL` | В репо: `apps/api-gateway`. Проксирует downstream по `/v1/*`. Health: `GET /health` (без auth/БД). |
+| api-gateway | `go2asia-api-gateway-staging` | `https://go2asia-api-gateway-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `CLERK_JWT_SECRET` (для проверки user JWT), `DATABASE_URL` (если используется), `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL` | В репо: `apps/api-gateway`. Проксирует downstream по `/v1/*`. Для `/v1/points/*` и `/v1/referral/*` добавляет `X-Gateway-Auth` и `X-User-ID`. Health: `GET /health` (без auth/БД). |
 | auth-service | `go2asia-auth-service-staging` | `https://go2asia-auth-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/auth-service` (пока skeleton). Health: `GET /health`. |
 | content-service | `go2asia-content-service-staging` | `https://go2asia-content-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/content-service` (пока skeleton). Health: `GET /health`. |
-| referral-service | `go2asia-referral-service-staging` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/referral-service` (пока skeleton). Health: `GET /health`. |
+| points-service | `go2asia-points-service-staging` | `https://go2asia-points-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` (+ опционально `POINTS_VELOCITY_CAP`, `POINTS_VELOCITY_WINDOW_SECONDS`) | В репо: `apps/points-service`. Требует gateway-origin auth (`X-Gateway-Auth`) для user endpoints. Health: `GET /health`. |
+| referral-service | `go2asia-referral-service-staging` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` | В репо: `apps/referral-service`. Требует gateway-origin auth (`X-Gateway-Auth`) для user endpoints. Health: `GET /health`. |
 | token-service | `go2asia-token-service-staging` | `https://go2asia-token-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/token-service` (пока skeleton). Health: `GET /health`. |
 
 ### API Gateway → downstream proxy (staging)
@@ -44,4 +45,6 @@ Workflow `Deploy Workers (staging)` проверяет, что каждый Work
 - `docs/ops/environments.md`
 - `docs/ops/cloudflare_setup.md`
 - `docs/ops/logging.md`
+
+
 

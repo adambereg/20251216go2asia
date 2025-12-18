@@ -13,7 +13,7 @@ export const pointsTransactions = pgTable('points_transactions', {
   reason: varchar('reason', { length: 100 }).notNull(), // registration, first_login, event_registration, referral_bonus, etc.
   sourceService: varchar('source_service', { length: 100 }), // auth-service, content-service, referral-service
   sourceEventId: text('source_event_id'), // ID of the event that triggered this transaction
-  externalId: text('external_id').unique(), // For idempotency
+  externalId: text('external_id').notNull().unique(), // For idempotency (SSOT key)
   metadata: jsonb('metadata'), // Additional data (user_role, etc.)
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -31,6 +31,8 @@ export const userBadges = pgTable('user_badges', {
   badgeName: varchar('badge_name', { length: 255 }).notNull(),
   earnedAt: timestamp('earned_at').notNull().defaultNow(),
 });
+
+
 
 
 

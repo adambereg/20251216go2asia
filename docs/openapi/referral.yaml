@@ -1,0 +1,317 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Referral Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Referral Service (Milestone 3).
+
+    Notes:
+    - User-facing endpoints are called via API Gateway.
+    - Downstream does NOT validate user JWT in M3; it accepts user-context only when the request is authenticated as gateway-origin.
+    - Failure mode (M3): if referral-service is unavailable during registration, referral code is created lazily on first `GET /v1/referral/code`.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway (user-facing paths proxied to downstream)
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: referral-service.example
+
+tags:
+  - name: health
+    description: Service health checks
+  - name: referral
+    description: Referral code and user referral data
+  - name: internal
+    description: Service-to-service APIs (authenticated)
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Health check
+      description: Returns service health status. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getVersion
+      summary: Version (alias of /health)
+      description: Returns service version metadata. Alias of /health. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/referral/code:
+    get:
+      tags: [referral]
+      operationId: getReferralCode
+      summary: Get current user's referral code
+      description: >
+        M3 behavior: may lazily create referral code if missing (idempotent upsert).
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralCodeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/referral/stats:
+    get:
+      tags: [referral]
+      operationId: getReferralStats
+      summary: Get current user's referral stats
+      description: User-facing read endpoint (called via gateway). Returns minimal referral statistics for the current user (M3 scope).
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStatsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /internal/referral/generate-code:
+    post:
+      tags: [internal]
+      operationId: generateReferralCode
+      summary: Ensure referral code exists for user (idempotent)
+      description: Idempotent upsert of referral code for the given userId.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCodeRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateCodeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /internal/referral/link:
+    post:
+      tags: [internal]
+      operationId: linkReferral
+      summary: Link referee to referrer by referral code
+      description: >
+        Invariant (M3): referee can have at most one referrer (L1 link).
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkReferralRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkReferralResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+      description: Service JWT issued/forwarded by API Gateway to authenticate gateway-origin requests (M3)
+    ServiceAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service-to-service JWT (M3)
+
+  parameters:
+    XGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserId:
+      name: X-User-ID
+      in: header
+      required: true
+      schema:
+        type: string
+      description: User identifier asserted by API Gateway
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+          example: referral-service
+        env:
+          type: string
+          example: staging
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "<sha>"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "Unauthorized"
+        message:
+          type: string
+        requestId:
+          type: string
+
+    ReferralCodeResponse:
+      type: object
+      required: [userId, code]
+      properties:
+        userId:
+          type: string
+        code:
+          type: string
+
+    ReferralStatsResponse:
+      type: object
+      required: [userId, code, directReferralsCount]
+      properties:
+        userId:
+          type: string
+        code:
+          type: string
+        directReferralsCount:
+          type: integer
+          minimum: 0
+
+    GenerateCodeRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+
+    GenerateCodeResponse:
+      type: object
+      required: [userId, code, created]
+      properties:
+        userId:
+          type: string
+        code:
+          type: string
+        created:
+          type: boolean
+
+    LinkReferralRequest:
+      type: object
+      required: [refereeUserId, referralCode]
+      properties:
+        refereeUserId:
+          type: string
+        referralCode:
+          type: string
+
+    LinkReferralResponse:
+      type: object
+      required: [refereeUserId, referrerUserId, linked]
+      properties:
+        refereeUserId:
+          type: string
+        referrerUserId:
+          type: string
+        linked:
+          type: boolean
