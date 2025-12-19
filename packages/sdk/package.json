@@ -22,6 +22,10 @@
       "types": "./src/pulse.ts",
       "default": "./src/pulse.ts"
     },
+    "./content": {
+      "types": "./src/content.ts",
+      "default": "./src/content.ts"
+    },
     "./balance": {
       "types": "./src/balance.ts",
       "default": "./src/balance.ts"

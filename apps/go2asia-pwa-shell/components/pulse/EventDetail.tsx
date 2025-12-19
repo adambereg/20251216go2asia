@@ -24,6 +24,10 @@ import { EventRegisterButton } from './EventRegisterButton';
 
 interface EventDetailProps {
   event: Event;
+  demoMode?: {
+    title?: string;
+    reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR';
+  };
 }
 
 // Генерация ICS файла для добавления в календарь
@@ -69,7 +73,7 @@ function downloadICS(event: Event) {
   URL.revokeObjectURL(url);
 }
 
-export const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
+export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
   const [isSaved, setIsSaved] = useState(false);
 
   const formatDate = (date: Date) => {
@@ -113,6 +117,27 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {demoMode && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="info">DEMO MODE</Badge>
+              <span className="text-sm text-amber-900">
+                Показаны локальные демо-данные (fallback), потому что API недоступен (
+                {demoMode.reason === 'NOT_FOUND'
+                  ? '404'
+                  : demoMode.reason === 'SERVER_ERROR'
+                  ? '5xx'
+                  : 'network'}
+                ).
+              </span>
+              {demoMode.title && (
+                <span className="text-xs text-amber-700">Источник: {demoMode.title}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Hero Section с обложкой */}
       <div className="relative bg-white border-b border-slate-200">
         {event.cover ? (

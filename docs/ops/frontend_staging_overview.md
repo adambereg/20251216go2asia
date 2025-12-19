@@ -93,6 +93,7 @@ pnpm dev
 
 ### Content Service
 - `POST /v1/content/events/{id}/register` — зарегистрироваться на событие
+- `GET /v1/content/events/{id}` — получить событие по id (для `/pulse/[id]`)
 
 **Примечание:** Не используйте эти endpoints напрямую. Используйте автогенерируемый SDK из `@go2asia/sdk`.
 
@@ -134,6 +135,17 @@ function EventRegisterButton({ eventId }: { eventId: string }) {
   );
 }
 ```
+
+---
+
+## Pulse demo events (staging)
+
+Для ручной проверки `/pulse/[id]` в staging используются демо-события, которые сидируются в Neon staging DB.
+
+См. `docs/ops/pulse_demo_events.md`:
+- команда seed,
+- 3 стабильных UUID,
+- примеры URL `/pulse/<id>`.
 
 ---
 

@@ -174,6 +174,24 @@ async function routeRequest(
   const url = new URL(request.url);
   const path = url.pathname;
   const requestId = getRequestId(request) || generateRequestId();
+  const origin = request.headers.get('Origin');
+
+  // Minimal CORS support for browser clients (PWA / localhost).
+  // - Echo Origin (no wildcard) to support Authorization headers.
+  // - Do not set Access-Control-Allow-Credentials.
+  if (origin && request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        Vary: 'Origin',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Authorization,Content-Type,X-Request-Id,X-Request-ID,X-Gateway-Auth,X-User-ID',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
 
   // Health checks
   if (path === '/health') {
@@ -236,8 +254,13 @@ async function routeRequest(
     logger.warn('SERVICE_JWT_SECRET not set; downstream gateway-origin auth will fail');
   }
 
-  // For Points/Referral user-facing routes, assert user context.
-  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/')) {
+  // For user-facing routes that require user context, assert X-User-ID (set by gateway).
+  // - Points/Referral: all user-facing routes require auth
+  // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
+  const isContentRegister =
+    request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(path);
+
+  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || isContentRegister) {
     const token = getBearerToken(request);
     let userId: string | null = null;
 
@@ -288,13 +311,18 @@ async function routeRequest(
 
   try {
     const response = await fetch(serviceRequest);
+    if (origin) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Vary', 'Origin');
+      response.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+    }
     return response;
   } catch (error) {
     logger.error('Error forwarding request to service', error, {
       serviceUrl,
       path,
     });
-    return new Response(
+    const res = new Response(
       JSON.stringify({
         error: {
           code: 'SERVICE_UNAVAILABLE',
@@ -308,6 +336,12 @@ async function routeRequest(
         },
       }
     );
+    if (origin) {
+      res.headers.set('Access-Control-Allow-Origin', origin);
+      res.headers.set('Vary', 'Origin');
+      res.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+    }
+    return res;
   }
 }
 

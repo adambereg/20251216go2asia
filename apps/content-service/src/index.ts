@@ -51,6 +51,56 @@ function handleNotFound(path: string): Response {
   );
 }
 
+async function handleGetEventById(
+  env: Env,
+  eventId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  if (!env.DATABASE_URL) {
+    logger.warn('Database not configured, cannot fetch event', { eventId });
+    return json(
+      { error: { code: 'ServiceUnavailable', message: 'Database not configured' } },
+      503
+    );
+  }
+
+  try {
+    const db = createDb(env.DATABASE_URL);
+    const result = await db.execute(
+      sql`
+        SELECT
+          id,
+          title,
+          slug,
+          description,
+          category,
+          start_date as "startDate",
+          end_date as "endDate",
+          location,
+          latitude,
+          longitude,
+          image_url as "imageUrl",
+          is_active as "isActive"
+        FROM events
+        WHERE id = ${eventId}
+        LIMIT 1
+      `
+    );
+
+    const row = (result as any)?.rows?.[0];
+    if (!row) {
+      return json({ error: { code: 'NotFound', message: 'Event not found' } }, 404);
+    }
+
+    // Public endpoint: do not require auth headers.
+    // Response shape is intentionally minimal and stable for the PWA shell.
+    return json(row, 200);
+  } catch (error) {
+    logger.error('Get event by id error', error, { eventId });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch event' } }, 500);
+  }
+}
+
 // JWT utilities (for service-to-service auth)
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -263,6 +313,15 @@ export default {
       return res;
     }
 
+    // Public: fetch event details
+    const eventGetMatch = path.match(/^\/v1\/content\/events\/([^/]+)$/);
+    if (eventGetMatch && request.method === 'GET') {
+      const eventId = eventGetMatch[1];
+      const res = await handleGetEventById(env, eventId, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
     // Event registration endpoint
     const eventRegMatch = path.match(/^\/v1\/content\/events\/([^/]+)\/register$/);
     if (eventRegMatch && request.method === 'POST') {
@@ -278,6 +337,7 @@ export default {
     return res;
   },
 };
+
 
 
 

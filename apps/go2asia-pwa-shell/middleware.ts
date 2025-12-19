@@ -1,10 +1,21 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+/**
+ * ВАЖНО (DX):
+ * - В локальной разработке разрешаем запуск без Clerk ключей, чтобы можно было смотреть публичные страницы.
+ * - В staging/production Clerk должен быть настроен (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY), и middleware включается.
+ */
+const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { clerkMiddleware, createRouteMatcher } = isClerkConfigured
+  ? require('@clerk/nextjs/server')
+  : { clerkMiddleware: null as any, createRouteMatcher: null as any };
 
 /**
  * Определение публичных маршрутов (не требуют аутентификации)
  */
-const isPublicRoute = createRouteMatcher([
+const isPublicRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_req: any) => true)([
   '/',
   '/atlas(.*)',
   '/pulse(.*)',
@@ -23,13 +34,16 @@ const isPublicRoute = createRouteMatcher([
 /**
  * Определение маршрутов аутентификации (доступны всем, включая авторизованных)
  */
-const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
+const isAuthRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_req: any) => true)([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+]);
 
 /**
  * Определение защищённых маршрутов (требуют аутентификации)
  * Все маршруты в (authenticated) группе автоматически защищены
  */
-const isProtectedRoute = createRouteMatcher([
+const isProtectedRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_req: any) => false)([
   '/connect(.*)',
   '/profile(.*)',
   '/settings(.*)',
@@ -48,14 +62,25 @@ const isProtectedRoute = createRouteMatcher([
 /**
  * Определение админских маршрутов (требуют роль admin)
  */
-const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+const isAdminRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_req: any) => false)([
+  '/admin(.*)',
+]);
 
 /**
  * Определение PRO маршрутов (требуют роль pro или admin)
  */
-const isPRORoute = createRouteMatcher(['/rf/pro(.*)', '/quest/pro(.*)']);
+const isPRORoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_req: any) => false)([
+  '/rf/pro(.*)',
+  '/quest/pro(.*)',
+]);
 
-export default clerkMiddleware(async (auth, req) => {
+/**
+ * Middleware:
+ * - Если Clerk НЕ настроен, пропускаем все запросы (только для local dev / DX).
+ * - Если Clerk настроен, используем clerkMiddleware для защиты private routes.
+ */
+export default isClerkConfigured
+  ? clerkMiddleware(async (auth: any, req: any) => {
   const { userId, sessionClaims } = await auth();
   const pathname = req.nextUrl.pathname;
 
@@ -89,7 +114,10 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Публичные маршруты доступны всем
   return NextResponse.next();
-});
+})
+  : function middleware(_req: Request) {
+      return NextResponse.next();
+    };
 
 export const config = {
   matcher: [

@@ -5,6 +5,74 @@ import { Event } from './types';
  * Используются в календаре и на страницах деталей событий
  */
 export const mockEvents: Event[] = [
+  /**
+   * Milestone 4 demo events (stable UUIDs).
+   * Эти события соответствуют seed данным в staging Neon и используются как fallback,
+   * когда API временно недоступен (404/5xx/network).
+   */
+  {
+    id: 'e7f8b7d4-6f6a-4f1e-9aa0-2d4dbaac7b10',
+    title: 'Pulse Demo: Bangkok Sunset Run',
+    description:
+      'Демо-событие для проверки регистрации (staging). Беговой клуб на закате, дружелюбно к новичкам.',
+    startDate: new Date('2026-01-10T11:00:00.000Z'),
+    endDate: new Date('2026-01-10T13:00:00.000Z'),
+    timezone: 'UTC',
+    location: {
+      name: 'Bangkok, Thailand',
+      city: 'Bangkok',
+      country: 'Thailand',
+    },
+    category: 'demo',
+    badges: ['verified', 'free'],
+    price: { type: 'free' },
+    language: 'en',
+    scale: 'city',
+    status: 'published',
+    verified: true,
+  },
+  {
+    id: '5b531b8d-8c7a-4fe8-b389-62e2f8d1d8a3',
+    title: 'Pulse Demo: Phuket Beach Meetup',
+    description:
+      'Демо-событие для проверки регистрации (staging). Неформальная встреча на пляже.',
+    startDate: new Date('2026-01-17T09:00:00.000Z'),
+    endDate: new Date('2026-01-17T11:00:00.000Z'),
+    timezone: 'UTC',
+    location: {
+      name: 'Phuket, Thailand',
+      city: 'Phuket',
+      country: 'Thailand',
+    },
+    category: 'demo',
+    badges: ['verified', 'free'],
+    price: { type: 'free' },
+    language: 'en',
+    scale: 'city',
+    status: 'published',
+    verified: true,
+  },
+  {
+    id: '0a4b18e5-3c2d-4a06-8c42-93a8a2c84b67',
+    title: 'Pulse Demo: Chiang Mai Coffee Walk',
+    description:
+      'Демо-событие для проверки регистрации (staging). Прогулка по кофейням и знакомство.',
+    startDate: new Date('2026-01-24T08:00:00.000Z'),
+    endDate: new Date('2026-01-24T10:00:00.000Z'),
+    timezone: 'UTC',
+    location: {
+      name: 'Chiang Mai, Thailand',
+      city: 'Chiang Mai',
+      country: 'Thailand',
+    },
+    category: 'demo',
+    badges: ['verified', 'free'],
+    price: { type: 'free' },
+    language: 'en',
+    scale: 'city',
+    status: 'published',
+    verified: true,
+  },
   // Начало ноября (1-10)
   {
     id: '101',
