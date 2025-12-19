@@ -12,7 +12,10 @@ name = "go2asia-content-service-staging"
 # ENVIRONMENT (e.g. "staging")
 # VERSION (git sha)
 #
-# Secrets/bindings are configured in Cloudflare Dashboard for staging.
+# Required vars/secrets (configured in Cloudflare Dashboard for staging):
+# - POINTS_SERVICE_URL (e.g. "https://go2asia-points-service-staging.fred89059599296.workers.dev")
+# - SERVICE_JWT_SECRET (secret, shared across services)
+# - DATABASE_URL (for event_registrations persistence)
 
 
 

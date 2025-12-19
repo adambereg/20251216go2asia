@@ -52,10 +52,24 @@
   - `SERVICE_JWT_SECRET` (gateway-origin auth + service-to-service auth)
   - `CLERK_JWT_SECRET` (для проверки user JWT, если используется HS256)
 
-**auth-service / content-service / token-service**
-- Сейчас в репо представлены skeleton-версии, которые требуют только:
+**auth-service**
+- Required (M3):
+  - Vars: `ENVIRONMENT`, `VERSION`
+  - Vars: `POINTS_SERVICE_URL`, `REFERRAL_SERVICE_URL`
+  - Secret: `SERVICE_JWT_SECRET`
+  - (опционально): `CLERK_WEBHOOK_SECRET`, `DATABASE_URL`
+
+**content-service**
+- Required (M3):
+  - Vars: `ENVIRONMENT`, `VERSION`
+  - Var: `POINTS_SERVICE_URL`
+  - Secret: `SERVICE_JWT_SECRET`
+  - Var/Secret: `DATABASE_URL` (для event_registrations)
+
+**token-service**
+- Сейчас в репо представлена skeleton-версия, которая требует только:
   - `ENVIRONMENT`, `VERSION`
-- По мере реализации сюда будут добавляться обязательные secrets/bindings (например `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` и т.д.) — фиксировать изменения в этом документе.
+- По мере реализации сюда будут добавляться обязательные secrets/bindings — фиксировать изменения в этом документе.
 
 **points-service**
 - Required:

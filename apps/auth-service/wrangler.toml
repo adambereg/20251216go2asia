@@ -12,7 +12,12 @@ name = "go2asia-auth-service-staging"
 # ENVIRONMENT (e.g. "staging")
 # VERSION (git sha)
 #
-# Secrets/bindings are configured in Cloudflare Dashboard for staging.
+# Required vars/secrets (configured in Cloudflare Dashboard for staging):
+# - POINTS_SERVICE_URL (e.g. "https://go2asia-points-service-staging.fred89059599296.workers.dev")
+# - REFERRAL_SERVICE_URL (e.g. "https://go2asia-referral-service-staging.fred89059599296.workers.dev")
+# - SERVICE_JWT_SECRET (secret, shared across services)
+# - CLERK_WEBHOOK_SECRET (optional for M3, for Clerk webhook signature verification)
+# - DATABASE_URL (optional for M3, if user tracking is needed)
 
 
 

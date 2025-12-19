@@ -4,7 +4,7 @@
  * Tables: countries, cities, places, events, articles, event_registrations
  */
 
-import { pgTable, text, timestamp, varchar, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar, boolean, jsonb, unique } from 'drizzle-orm/pg-core';
 
 export const countries = pgTable('countries', {
   id: text('id').primaryKey(),
@@ -80,5 +80,7 @@ export const eventRegistrations = pgTable('event_registrations', {
   eventId: text('event_id').notNull().references(() => events.id),
   userId: text('user_id').notNull(), // No FK - user_id from Clerk, deletion not supported in MVP
   registeredAt: timestamp('registered_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  uniqueUserEvent: unique().on(table.userId, table.eventId),
+}));
 

@@ -436,6 +436,13 @@
 - ✅ VIP коэффициенты применяются корректно
 - ✅ Реферальная программа работает (генерация кода, регистрация, начисление бонусов)
 - ✅ Интеграция между сервисами работает (Service JWT, таймауты, graceful degradation)
+- ✅ Auth Service → Points Service интеграция (registration, first_login)
+- ✅ Auth Service → Referral Service интеграция (generate code)
+- ✅ Content Service → Points Service интеграция (event_registration)
+- ✅ Gateway routing для Points и Referral сервисов
+- ✅ Smoke E2E тесты через Gateway созданы и проходят
+
+**Статус:** ✅ **ЗАВЕРШЁН** (2025-12-18)
 
 ---
 
