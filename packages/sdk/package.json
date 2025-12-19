@@ -45,7 +45,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@go2asia/types": "workspace:*"
+    "@go2asia/types": "workspace:*",
+    "@tanstack/react-query": "^5.90.12"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0"
   },
   "devDependencies": {
     "orval": "^7.3.0",

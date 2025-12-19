@@ -20,6 +20,7 @@ import {
 import { Event } from './types';
 import { Card, CardContent, Badge, Button } from '@go2asia/ui';
 import { EventUGCBlock } from './EventUGCBlock';
+import { EventRegisterButton } from './EventRegisterButton';
 
 interface EventDetailProps {
   event: Event;
@@ -69,7 +70,6 @@ function downloadICS(event: Event) {
 }
 
 export const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
-  const [isRSVPed, setIsRSVPed] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
   const formatDate = (date: Date) => {
@@ -86,11 +86,6 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const handleRSVP = () => {
-    setIsRSVPed(!isRSVPed);
-    // TODO: Отправка RSVP на сервер
   };
 
   const handleSave = () => {
@@ -188,14 +183,13 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
 
             {/* Действия */}
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant={isRSVPed ? 'primary' : 'secondary'}
+              <EventRegisterButton
+                eventId={event.id}
+                eventTitle={event.title}
+                isRegistered={false}
                 size="sm"
-                onClick={handleRSVP}
-              >
-                <Users className="w-4 h-4 mr-1" />
-                {isRSVPed ? 'Вы идёте' : 'RSVP'}
-              </Button>
+                className="flex items-center justify-center gap-2"
+              />
               <Button variant="secondary" size="sm" onClick={handleSave}>
                 <Heart className={`w-4 h-4 mr-1 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
                 {isSaved ? 'Сохранено' : 'Сохранить'}

@@ -5,93 +5,252 @@ import { BalanceCards } from './BalanceCards';
 import { ProgressPanel } from './ProgressPanel';
 import { NextActions } from './NextActions';
 import { ActivityFeed } from './ActivityFeed';
+import { ReferralCodeCard } from './ReferralCodeCard';
 import { useGetBalance } from '@go2asia/sdk/balance';
-import { useGetReferralStats } from '@go2asia/sdk/referrals';
+import { useGetReferralCode, useGetReferralStats } from '@go2asia/sdk/referrals';
 import { useGetTransactions } from '@go2asia/sdk/transactions';
-import { useMemo } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useEffect, useMemo } from 'react';
+import { SkeletonCard } from '@go2asia/ui';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@go2asia/ui';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import type { DashboardData } from '../types';
-import { mockDashboardData } from '../mockData';
 
 interface DashboardViewProps {
   initialData?: DashboardData;
 }
 
+/**
+ * Error object structure from API
+ */
+interface ApiError {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+  status?: number;
+  requestId?: string;
+}
+
+/**
+ * Handle API errors and show appropriate messages
+ */
+function handleApiError(error: unknown, router: ReturnType<typeof useRouter>) {
+  const apiError = error as ApiError;
+  const status = apiError.status || 0;
+  const message = apiError.error?.message || 'Произошла ошибка';
+
+  // Network error
+  if (status === 0 || !status) {
+    toast.error('Проверьте подключение к интернету');
+    return;
+  }
+
+  // 401 Unauthorized - redirect to sign-in
+  if (status === 401) {
+    const currentPath = window.location.pathname;
+    router.push(`/sign-in?redirect_url=${encodeURIComponent(currentPath)}`);
+    return;
+  }
+
+  // 403 Forbidden
+  if (status === 403) {
+    toast.error('У вас нет доступа к этому ресурсу');
+    return;
+  }
+
+  // 5xx Server Error
+  if (status >= 500) {
+    toast.error('Произошла ошибка сервера. Попробуйте позже');
+    return;
+  }
+
+  // Other errors
+  toast.error(message);
+}
+
 export function DashboardView({ initialData }: DashboardViewProps) {
-  // Загружаем баланс из Token Service
-  const { data: balanceData, isLoading: balanceLoading } = useGetBalance();
-  
+  const router = useRouter();
+  const { user, isLoaded: userLoaded } = useUser();
+
+  // Загружаем баланс Points
+  const {
+    data: balanceData,
+    isLoading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useGetBalance();
+
+  // Загружаем referral code
+  const {
+    data: referralCodeData,
+    isLoading: referralCodeLoading,
+    error: referralCodeError,
+    refetch: refetchReferralCode,
+  } = useGetReferralCode();
+
   // Загружаем статистику рефералов
-  const { data: referralStats } = useGetReferralStats();
-  
+  const {
+    data: referralStatsData,
+    isLoading: referralStatsLoading,
+    error: referralStatsError,
+    refetch: refetchReferralStats,
+  } = useGetReferralStats();
+
   // Загружаем последние транзакции
-  const { data: transactionsData } = useGetTransactions({ limit: 10 });
+  const {
+    data: transactionsData,
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useGetTransactions({ limit: 10 });
+
+  // Обработка ошибок (через useEffect, чтобы не спамить toast'ами на ререндере)
+  useEffect(() => {
+    if (balanceError) handleApiError(balanceError, router);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [balanceError]);
+
+  useEffect(() => {
+    if (referralCodeError) handleApiError(referralCodeError, router);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referralCodeError]);
+
+  useEffect(() => {
+    if (referralStatsError) handleApiError(referralStatsError, router);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referralStatsError]);
+
+  useEffect(() => {
+    if (transactionsError) handleApiError(transactionsError, router);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionsError]);
 
   // Преобразуем данные из API в формат компонента
   const data = useMemo(() => {
     if (initialData) return initialData;
-    
-    // Используем реальные данные из API, если они есть, иначе моки
-    const balances = balanceData !== undefined
-      ? {
-          points: balanceData.points || 0,
-          g2a: parseFloat(String(balanceData.g2a || '0')),
-          nft_count: 0, // TODO: получить из NFT badges API
-          nft_legendary_count: 0, // TODO: получить из NFT badges API
-        }
-      : mockDashboardData.balances;
 
-    const recentTransactions: typeof mockDashboardData.recent_transactions = transactionsData?.items && transactionsData.items.length > 0
-      ? transactionsData.items.map((tx) => {
-          const metadata = tx.metadata as Record<string, unknown> | null;
-          const txModule = (metadata?.module as string) || 'space';
-          
-          return {
-            id: tx.id,
-            type: (tx.type === 'points_add' || tx.type === 'g2a_add' ? 'credit' : 'debit') as 'credit' | 'debit',
-            amount: parseInt(String(tx.amount || '0')),
-            currency: (tx.type?.includes('g2a') ? 'g2a' : 'points') as 'points' | 'g2a',
-            module: (txModule as 'space' | 'atlas' | 'pulse' | 'rf' | 'quest' | 'guru'),
-            description: tx.reason || '',
-            created_at: tx.createdAt || new Date().toISOString(),
-            tags: [],
-            metadata: metadata || {},
-          };
-        })
-      : mockDashboardData.recent_transactions;
+    // Балансы
+    const balances = balanceData
+      ? {
+          points: balanceData.balance || 0,
+          g2a: 0, // G2A tokens пока не поддерживаются в M4
+          nft_count: 0, // NFT badges пока не поддерживаются в M4
+          nft_legendary_count: 0,
+        }
+      : {
+          points: 0,
+          g2a: 0,
+          nft_count: 0,
+          nft_legendary_count: 0,
+        };
+
+    // Транзакции
+    const recentTransactions =
+      transactionsData?.items && transactionsData.items.length > 0
+        ? transactionsData.items.map((tx) => {
+            const metadata = tx.metadata as Record<string, unknown> | null;
+            const txModule = (metadata?.module as string) || 'space';
+
+            return {
+              id: tx.id,
+              type: tx.amount >= 0 ? ('credit' as const) : ('debit' as const),
+              amount: Math.abs(tx.amount),
+              currency: 'points' as const,
+              module: txModule as 'space' | 'atlas' | 'pulse' | 'rf' | 'quest' | 'guru',
+              description: getActionDescription(tx.action),
+              created_at: tx.createdAt,
+              tags: [],
+              metadata: metadata || {},
+            };
+          })
+        : [];
 
     return {
-      ...mockDashboardData,
       balances,
       recent_transactions: recentTransactions,
-      referral_stats: referralStats || undefined,
+      level: {
+        current: 1,
+        xp: 0,
+        next_level_xp: 100,
+        multiplier: 1,
+        bonuses: [],
+      },
+      season: {
+        id: '2025-Q1',
+        name: 'Q1 2025',
+        days_left: 90,
+        ends_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      next_actions: [], // Placeholder
     };
-  }, [balanceData, transactionsData, referralStats, initialData]);
+  }, [balanceData, transactionsData, referralCodeData, initialData]);
+
+  // Функция для получения описания действия
+  function getActionDescription(action: string): string {
+    const descriptions: Record<string, string> = {
+      registration: 'Регистрация в системе',
+      first_login: 'Первый вход',
+      referral_bonus_referee: 'Бонус за регистрацию по реферальной ссылке',
+      referral_bonus_referrer: 'Бонус за приглашение друга',
+      event_registration: 'Регистрация на событие',
+    };
+    return descriptions[action] || `Действие: ${action}`;
+  }
+
+  // Состояние загрузки
+  const isLoading =
+    balanceLoading ||
+    referralCodeLoading ||
+    referralStatsLoading ||
+    transactionsLoading ||
+    !userLoaded;
 
   // Показываем состояние загрузки
-  if (balanceLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-600">Загрузка данных...</p>
+      <div className="min-h-screen bg-slate-50">
+        <ConnectHero subtitle="Центр экономики и геймификации Go2Asia" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Получаем информацию о пользователе из Clerk
+  const userName = user?.fullName || user?.firstName || user?.id || 'Пользователь';
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
+
   const handleViewHistory = () => {
-    window.location.href = '/connect/wallet';
+    router.push('/connect/wallet');
   };
 
   const handleTopUp = () => {
     // Mock действие - будет реализовано позже
-    console.log('Top up G2A');
+    toast.info('Функция пополнения будет доступна в следующей версии');
   };
 
   const handleWithdraw = () => {
     // Mock действие - будет реализовано позже
-    console.log('Withdraw G2A');
+    toast.info('Функция вывода будет доступна в следующей версии');
   };
 
   const handleViewNFT = () => {
-    window.location.href = '/connect/wallet?tab=nft';
+    router.push('/connect/wallet?tab=nft');
+  };
+
+  const handleRetry = () => {
+    refetchBalance();
+    refetchReferralCode();
+    refetchReferralStats();
+    refetchTransactions();
   };
 
   return (
@@ -105,6 +264,54 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
       {/* Основной контент */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Информация о пользователе */}
+        <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">
+            Профиль пользователя
+          </h2>
+          <div className="space-y-1 text-sm text-slate-600">
+            <p>
+              <span className="font-medium">Имя:</span> {userName}
+            </p>
+            {userEmail && (
+              <p>
+                <span className="font-medium">Email:</span> {userEmail}
+              </p>
+            )}
+            {user?.id && (
+              <p>
+                <span className="font-medium">ID:</span> {user.id}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Ошибки (если есть) */}
+        {(balanceError || referralCodeError || transactionsError) && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800 mb-1">
+                  Ошибка загрузки данных
+                </p>
+                <p className="text-xs text-red-700 mb-3">
+                  Некоторые данные не удалось загрузить. Попробуйте обновить страницу.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Попробовать снова
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Балансы */}
         <BalanceCards
           balances={data.balances}
@@ -114,11 +321,20 @@ export function DashboardView({ initialData }: DashboardViewProps) {
           onViewNFT={handleViewNFT}
         />
 
+        {/* Referral Code */}
+        <ReferralCodeCard
+          referralCode={data.referral_code}
+          isLoading={referralCodeLoading}
+          directReferralsCount={referralStatsData?.directReferralsCount}
+        />
+
         {/* Прогресс уровня */}
         <ProgressPanel level={data.level} season={data.season} />
 
         {/* Рекомендуемые действия */}
-        <NextActions actions={data.next_actions} />
+        {data.next_actions && data.next_actions.length > 0 && (
+          <NextActions actions={data.next_actions} />
+        )}
 
         {/* Последняя активность */}
         <ActivityFeed transactions={data.recent_transactions} />
@@ -126,4 +342,3 @@ export function DashboardView({ initialData }: DashboardViewProps) {
     </div>
   );
 }
-

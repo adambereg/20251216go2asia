@@ -2,17 +2,36 @@
  * @go2asia/sdk/balance
  * 
  * Balance API hooks and functions.
- * This file re-exports balance-related functionality from the generated SDK.
+ * This file provides React Query hooks for balance operations.
  */
 
-// Temporary exports until SDK is fully generated
-// These will be replaced with actual exports from './generated/balance' when SDK generation is complete
+import { useQuery } from '@tanstack/react-query';
+import { customInstance } from './mutator';
 
-export const useGetBalance = (_params?: any) => ({
-  data: undefined,
-  isLoading: false,
-  error: null,
-});
+/**
+ * UserBalance type from Points Service API
+ */
+export interface UserBalance {
+  userId: string;
+  balance: number;
+  updatedAt: string;
+}
 
-
-
+/**
+ * Get current user points balance
+ * 
+ * @returns React Query hook for balance data
+ */
+export const useGetBalance = () => {
+  return useQuery<UserBalance>({
+    queryKey: ['points', 'balance'],
+    queryFn: async () => {
+      return customInstance<UserBalance>(
+        { method: 'GET' },
+        '/v1/points/balance'
+      );
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    retry: 2,
+  });
+};
