@@ -4,6 +4,7 @@ import { EventDetail } from '@/components/pulse/EventDetail';
 import { mockEventsById } from '@/components/pulse/mockEvents';
 import type { Event } from '@/components/pulse/types';
 import { getEventById } from '@go2asia/sdk/content';
+import { getDataSource } from '@/mocks/dto';
 
 function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
   const locationStr = dto.location ?? '';
@@ -53,14 +54,17 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const dataSource = getDataSource();
   let event: Event | undefined;
-  try {
-    const dto = await getEventById(id);
-    event = toPulseEvent(dto);
-  } catch (err) {
-    const fallbackReason = classifyFallbackReason(err);
-    if (fallbackReason) {
-      event = mockEventsById[id];
+  if (dataSource === 'mock') {
+    event = mockEventsById[id];
+  } else {
+    try {
+      const dto = await getEventById(id);
+      event = toPulseEvent(dto);
+    } catch {
+      // в api-режиме метаданные не должны подменяться моками
+      event = undefined;
     }
   }
 
@@ -82,22 +86,26 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const dataSource = getDataSource();
   let event: Event | undefined;
-  let demoMode: { reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR' } | undefined;
+  let demoMode:
+    | { reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR' }
+    | { reason: 'NOT_FOUND'; title?: string }
+    | undefined;
 
-  try {
-    const dto = await getEventById(id);
-    event = toPulseEvent(dto);
-  } catch (err) {
-    const fallbackReason = classifyFallbackReason(err);
-    if (fallbackReason) {
-      const fallback = mockEventsById[id];
-      if (fallback) {
-        event = fallback;
-        demoMode = { reason: fallbackReason };
+  if (dataSource === 'mock') {
+    event = mockEventsById[id];
+    if (event) demoMode = { reason: 'NOT_FOUND', title: 'MOCK DATA' };
+  } else {
+    try {
+      const dto = await getEventById(id);
+      event = toPulseEvent(dto);
+    } catch (err) {
+      // API mode: no fallback to mock repository
+      const status = typeof err === 'object' && err !== null && 'status' in err ? (err as any).status : undefined;
+      if (typeof status === 'number' && status === 404) {
+        notFound();
       }
-    } else {
-      // Not eligible for fallback (e.g. 401/403/4xx): treat as not found to avoid showing mock data
       notFound();
     }
   }

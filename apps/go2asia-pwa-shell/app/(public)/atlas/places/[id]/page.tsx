@@ -3,15 +3,21 @@
 import { useParams } from 'next/navigation';
 import { useGetPlaceById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export default function PlaceOverviewPage() {
   const params = useParams();
   const placeId = params?.id as string;
 
-  const { 
-    data: placeData, 
-    isLoading 
-  } = useGetPlaceById(placeId || '');
+  const dataSource = getDataSource();
+
+  const { data: placeData, isLoading } =
+    dataSource === 'api'
+      ? useGetPlaceById(placeId || '')
+      : ({ data: null, isLoading: false } as any);
+
+  const mockPlace = dataSource === 'mock' ? mockRepo.atlas.getPlaceById(placeId || '') : null;
 
   if (isLoading) {
     return (
@@ -22,7 +28,9 @@ export default function PlaceOverviewPage() {
     );
   }
 
-  if (!placeData) {
+  const resolved = dataSource === 'mock' ? mockPlace : placeData;
+
+  if (!resolved) {
     return (
       <div className="text-center py-12 text-slate-600">
         Данные о месте не найдены.
@@ -38,7 +46,7 @@ export default function PlaceOverviewPage() {
         {/* Описание */}
         <div className="px-4 py-4 text-sm text-slate-700 space-y-2">
           <p>
-            {placeData.description || 'Нет описания.'}
+            {(resolved as any).description || 'Нет описания.'}
           </p>
         </div>
 
@@ -46,24 +54,24 @@ export default function PlaceOverviewPage() {
         <div className="border-t border-slate-100 px-4 py-4">
           <h3 className="font-semibold text-slate-900 mb-3">Ключевая информация</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            {placeData.type && (
+            {(resolved as any).type && (
               <div className="rounded-xl bg-slate-50 px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                   Тип
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
-                  {placeData.type}
+                  {(resolved as any).type}
                 </div>
               </div>
             )}
-            {placeData.latitude && placeData.longitude && (
+            {(resolved as any).latitude && (resolved as any).longitude && (
               <>
                 <div className="rounded-xl bg-slate-50 px-4 py-3">
                   <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                     Широта
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {placeData.latitude.toFixed(4)}
+                    {(resolved as any).latitude.toFixed(4)}
                   </div>
                 </div>
                 <div className="rounded-xl bg-slate-50 px-4 py-3">
@@ -71,7 +79,7 @@ export default function PlaceOverviewPage() {
                     Долгота
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {placeData.longitude.toFixed(4)}
+                    {(resolved as any).longitude.toFixed(4)}
                   </div>
                 </div>
               </>
@@ -80,11 +88,11 @@ export default function PlaceOverviewPage() {
         </div>
 
         {/* Категории */}
-        {placeData.categories && placeData.categories.length > 0 && (
+        {(resolved as any).categories && (resolved as any).categories.length > 0 && (
           <div className="border-t border-slate-100 px-4 py-4">
             <h3 className="font-semibold text-slate-900 mb-3">Категории</h3>
             <div className="flex flex-wrap gap-2">
-              {placeData.categories.map((category) => (
+              {(resolved as any).categories.map((category: string) => (
                 <span
                   key={category}
                   className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm"
@@ -98,7 +106,8 @@ export default function PlaceOverviewPage() {
 
         {/* Метаданные */}
         <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-          Последнее обновление: {placeData.updatedAt ? new Date(placeData.updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
+          Последнее обновление:{' '}
+          {(resolved as any).updatedAt ? new Date((resolved as any).updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
         </div>
       </section>
     </div>

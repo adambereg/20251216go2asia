@@ -121,18 +121,21 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
         <div className="bg-amber-50 border-b border-amber-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="info">DEMO MODE</Badge>
-              <span className="text-sm text-amber-900">
-                Показаны локальные демо-данные (fallback), потому что API недоступен (
-                {demoMode.reason === 'NOT_FOUND'
-                  ? '404'
-                  : demoMode.reason === 'SERVER_ERROR'
-                  ? '5xx'
-                  : 'network'}
-                ).
-              </span>
-              {demoMode.title && (
-                <span className="text-xs text-amber-700">Источник: {demoMode.title}</span>
+              <Badge variant="info">{demoMode.title ?? 'DEMO MODE'}</Badge>
+              {demoMode.title === 'MOCK DATA' ? (
+                <span className="text-sm text-amber-900">
+                  Показаны мок-данные (NEXT_PUBLIC_DATA_SOURCE=mock).
+                </span>
+              ) : (
+                <span className="text-sm text-amber-900">
+                  Показаны локальные демо-данные (fallback), потому что API недоступен (
+                  {demoMode.reason === 'NOT_FOUND'
+                    ? '404'
+                    : demoMode.reason === 'SERVER_ERROR'
+                    ? '5xx'
+                    : 'network'}
+                  ).
+                </span>
               )}
             </div>
           </div>

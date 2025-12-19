@@ -6,6 +6,8 @@ import { Card, CardContent, Chip, Badge } from '@go2asia/ui';
 import Link from 'next/link';
 import { useGetArticles } from '@go2asia/sdk/blog';
 import { useMemo } from 'react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -23,70 +25,129 @@ function formatDate(dateString: string) {
 }
 
 export function BlogClientWrapper() {
-  // Загружаем статьи из API
-  const { data: articlesData, isLoading } = useGetArticles({
-    limit: 20,
-    // featured: true, // TODO: Add featured filter when API supports it
-  });
+  const dataSource = getDataSource();
 
-  // Преобразуем данные из API
+  // API mode: use SDK hook (currently placeholder in SDK)
+  const { data: articlesData, isLoading } =
+    dataSource === 'api'
+      ? useGetArticles({
+          limit: 20,
+          // featured: true, // TODO: Add featured filter when API supports it
+        })
+      : ({ data: null, isLoading: false } as any);
+
+  // Преобразуем данные
   const featuredArticle = useMemo(() => {
+    if (dataSource === 'mock') {
+      const post = mockRepo.blog.listPosts()[0];
+      if (!post) return null;
+      return {
+        id: post.id,
+        slug: post.slug,
+        title: post.title,
+        subtitle: post.excerpt || '',
+        cover: post.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+        readingTime: post.readingTimeMin ?? 8,
+        insights: (post.tags ?? []).slice(0, 3),
+        badges: post.badges ?? [],
+        relatedThemes: (post.tags ?? []).slice(0, 3),
+      };
+    }
+
     if (!articlesData?.items || articlesData.items.length === 0) return null;
-    const article = articlesData.items[0]; // TODO: Use featured article when API supports it
+    const article = articlesData.items[0]; // TODO(api): featured
     return {
       id: article.id,
       slug: article.slug,
       title: article.title,
       subtitle: article.excerpt || '',
       cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      readingTime: 10, // TODO: Get readingTime when API supports it
+      readingTime: 10,
       insights: article.tags?.slice(0, 3) || [],
-      badges: ['EDITORIAL', 'Выбор редакции'], // TODO: Determine badge based on type when API supports it
+      badges: ['API'],
       relatedThemes: article.tags?.slice(0, 3) || [],
     };
-  }, [articlesData]);
+  }, [articlesData, dataSource]);
 
   const editorialArticles = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.blog
+        .listPosts()
+        .slice(0, 4)
+        .map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          excerpt: p.excerpt || '',
+          cover: p.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+          author: {
+            name: p.author?.name ?? 'Автор',
+            avatar: null,
+          },
+          publishedAt: p.publishedAt || '',
+          readingTime: p.readingTimeMin ?? 5,
+          type: p.category || 'Гайд',
+          badges: p.badges?.includes('EDITORIAL') ? ['EDITORIAL'] : [],
+        }));
+    }
+
     if (!articlesData?.items) return [];
-    return articlesData.items
-      .slice(0, 4) // TODO: Filter by type when API supports it
-      .map((article) => ({
-        id: article.id,
-        slug: article.slug,
-        title: article.title,
-        excerpt: article.excerpt || '',
-        cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-        author: {
-          name: 'Редакция Go2Asia', // TODO: Get author name when API supports it
-          avatar: null,
-        },
-        publishedAt: article.publishedAt || article.createdAt || '',
-        readingTime: 5, // TODO: Get readingTime when API supports it
-        type: article.category || 'Гайд',
-        badges: ['EDITORIAL'],
-      }));
-  }, [articlesData]);
+    return articlesData.items.slice(0, 4).map((article) => ({
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt || '',
+      cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      author: {
+        name: 'Редакция Go2Asia',
+        avatar: null,
+      },
+      publishedAt: article.publishedAt || article.createdAt || '',
+      readingTime: 5,
+      type: article.category || 'Гайд',
+      badges: ['API'],
+    }));
+  }, [articlesData, dataSource]);
 
   const ugcArticles = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.blog
+        .listPosts()
+        .slice(4, 6)
+        .map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          excerpt: p.excerpt || '',
+          cover: p.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
+          author: {
+            name: p.author?.name ?? 'Пользователь',
+            avatar: null,
+          },
+          publishedAt: p.publishedAt || '',
+          readingTime: p.readingTimeMin ?? 7,
+          type: p.category || 'Колонка',
+          badges: p.badges ?? ['UGC'],
+        }));
+    }
+
     if (!articlesData?.items) return [];
-    return articlesData.items
-      .slice(4, 6) // TODO: Filter by type when API supports it
-      .map((article) => ({
-        id: article.id,
-        slug: article.slug,
-        title: article.title,
-        excerpt: article.excerpt || '',
-        cover: article.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-        author: {
-          name: 'Пользователь', // TODO: Get author name when API supports it
-          avatar: null,
-        },
-        publishedAt: article.publishedAt || article.createdAt || '',
-        readingTime: 7, // TODO: Get readingTime when API supports it
-        type: 'Колонка',
-        badges: ['UGC', 'Проверено редакцией'],
-      }));
-  }, [articlesData]);
+    return articlesData.items.slice(4, 6).map((article) => ({
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt || '',
+      cover: article.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
+      author: {
+        name: 'Пользователь',
+        avatar: null,
+      },
+      publishedAt: article.publishedAt || article.createdAt || '',
+      readingTime: 7,
+      type: 'Колонка',
+      badges: ['API'],
+    }));
+  }, [articlesData, dataSource]);
 
   const rubricFilters = ['Путешествия', 'Городская жизнь', 'Культура', 'Работа', 'Финансы', 'Образование', 'Outdoor', 'Технологии/AI'];
   const formatFilters = ['Гайд', 'Лонгрид', 'Интервью', 'Репортаж', 'Подборка', 'Колонка'];
@@ -101,6 +162,7 @@ export function BlogClientWrapper() {
           description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
+          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
         />
         <div className="flex items-center justify-center py-12">
           <div className="text-slate-600">Загрузка статей...</div>
@@ -117,6 +179,7 @@ export function BlogClientWrapper() {
         description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
       />
 
       {/* Hero-блок "Тема номера" */}

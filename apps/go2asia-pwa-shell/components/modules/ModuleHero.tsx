@@ -1,5 +1,6 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
+import { Badge } from '@go2asia/ui';
 
 export interface ModuleHeroProps {
   icon: LucideIcon;
@@ -8,6 +9,7 @@ export interface ModuleHeroProps {
   gradientFrom?: string;
   gradientTo?: string;
   className?: string;
+  badgeText?: string;
 }
 
 export const ModuleHero: React.FC<ModuleHeroProps> = ({
@@ -17,6 +19,7 @@ export const ModuleHero: React.FC<ModuleHeroProps> = ({
   gradientFrom = 'from-sky-500',
   gradientTo = 'to-sky-600',
   className = '',
+  badgeText,
 }) => {
   return (
     <section className={`bg-gradient-to-br ${gradientFrom} ${gradientTo} text-white ${className}`}>
@@ -26,6 +29,11 @@ export const ModuleHero: React.FC<ModuleHeroProps> = ({
           <h1 className="text-h1 md:text-4xl lg:text-5xl font-bold text-white">
             {title}
           </h1>
+          {badgeText && (
+            <Badge variant="info" className="ml-2 bg-white/20 text-white border-white/30">
+              {badgeText}
+            </Badge>
+          )}
         </div>
         <p className="text-body text-white/90">
           {description}

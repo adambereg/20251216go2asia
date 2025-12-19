@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useGetPlaceById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 const sideNavItems = [
   { key: 'overview', label: 'Обзор', icon: Info, href: '' },
@@ -42,24 +44,27 @@ export default function PlaceLayout({
   const placeIdFromUrl = params?.id as string;
   const placeId = pathname.split('/').slice(0, 4).join('/'); // /atlas/places/[id]
 
-  // Загружаем данные места из API через SDK hook
-  const { 
-    data: placeData, 
-    isLoading 
-  } = useGetPlaceById(placeIdFromUrl || '');
+  const dataSource = getDataSource();
 
-  // Определяем данные места из API
-  const title = placeData?.name || 'Загрузка...';
-  const cityName = ''; // TODO: Get city name from cityId when API supports it
-  const countryName = ''; // TODO: Get country name when API supports it
-  const heroImageUrl = placeData?.photos && placeData.photos.length > 0 
-    ? placeData.photos[0] 
-    : 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg'; // TODO: Get heroImage when API supports it
-  const heroImageAlt = placeData?.name || 'Место';
-  const tags = placeData?.categories || [];
-  const rating = 0; // TODO: Get rating when API supports it
-  const lastUpdatedAt = placeData?.updatedAt
-    ? `Последнее обновление: ${new Date(placeData.updatedAt).toLocaleDateString('ru-RU')}`
+  // API mode: use SDK hook (currently placeholder in SDK)
+  const { data: placeData, isLoading } =
+    dataSource === 'api' ? useGetPlaceById(placeIdFromUrl || '') : ({ data: null, isLoading: false } as any);
+
+  const mockPlace = dataSource === 'mock' ? mockRepo.atlas.getPlaceById(placeIdFromUrl || '') : null;
+
+  const title = (dataSource === 'mock' ? mockPlace?.name : placeData?.name) || 'Загрузка...';
+  const cityName = (dataSource === 'mock' ? mockPlace?.city : '') || '';
+  const countryName = (dataSource === 'mock' ? mockPlace?.country : '') || '';
+  const heroImageUrl =
+    (dataSource === 'mock' ? mockPlace?.photos?.[0] : placeData?.photos?.[0]) ||
+    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+  const heroImageAlt = title || 'Место';
+  const tags = (dataSource === 'mock' ? mockPlace?.categories : placeData?.categories) || [];
+  const rating = (dataSource === 'mock' ? mockPlace?.rating : undefined) ?? 0;
+
+  const updatedAt = dataSource === 'mock' ? mockPlace?.updatedAt : placeData?.updatedAt;
+  const lastUpdatedAt = updatedAt
+    ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';
 
   if (isLoading) {
@@ -75,43 +80,37 @@ export default function PlaceLayout({
       title={title}
       cityName={cityName}
       countryName={countryName}
-      isRussianFriendly={false} // TODO: Get from API when supported
-      isPartner={false} // TODO: Get from API when supported
-      isPopular={true} // TODO: Get from API when supported
+      isRussianFriendly={false}
+      isPartner={false}
+      isPopular={true}
       rating={rating}
       tags={tags}
       lastUpdatedAt={lastUpdatedAt}
-      viewsCount={1234} // TODO: Get from API when supported
+      viewsCount={1234}
       heroImageUrl={heroImageUrl}
       heroImageAlt={heroImageAlt}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
     >
       <div className="space-y-6">
         {/* Горизонтальное меню для мобильных */}
         <div className="lg:hidden">
           <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="font-semibold text-slate-900 mb-3 text-sm">
-              Структура справочника
-            </div>
+            <div className="font-semibold text-slate-900 mb-3 text-sm">Структура справочника</div>
             <nav className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
               {sideNavItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.href === '' ? placeId : `${placeId}/${item.href}`;
-                const isActive =
-                  item.href === '' ? pathname === placeId : pathname === href;
+                const isActive = item.href === '' ? pathname === placeId : pathname === href;
                 return (
                   <Link
                     key={item.key}
                     href={href}
                     className={`flex flex-col items-center gap-1 rounded-lg px-3 py-2 min-w-[80px] transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-sky-50 text-sky-700'
-                        : 'text-slate-700 hover:bg-slate-50'
+                      isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    <span className="text-xs text-center leading-tight">
-                      {item.label}
-                    </span>
+                    <span className="text-xs text-center leading-tight">{item.label}</span>
                   </Link>
                 );
               })}
@@ -124,23 +123,18 @@ export default function PlaceLayout({
           {/* Вертикальное меню для десктопа */}
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-sm">
-              <div className="font-semibold text-slate-900 mb-3">
-                Структура справочника
-              </div>
+              <div className="font-semibold text-slate-900 mb-3">Структура справочника</div>
               <nav className="space-y-1">
                 {sideNavItems.map((item) => {
                   const Icon = item.icon;
                   const href = item.href === '' ? placeId : `${placeId}/${item.href}`;
-                  const isActive =
-                    item.href === '' ? pathname === placeId : pathname === href;
+                  const isActive = item.href === '' ? pathname === placeId : pathname === href;
                   return (
                     <Link
                       key={item.key}
                       href={href}
                       className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-50 text-sky-700'
-                          : 'text-slate-700 hover:bg-slate-50'
+                        isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -159,4 +153,3 @@ export default function PlaceLayout({
     </AtlasPlaceLayout>
   );
 }
-

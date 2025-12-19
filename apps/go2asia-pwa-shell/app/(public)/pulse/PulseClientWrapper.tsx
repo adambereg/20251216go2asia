@@ -6,23 +6,49 @@ import { Globe } from 'lucide-react';
 import { useGetEvents } from '@go2asia/sdk/pulse';
 import { useMemo } from 'react';
 import type { Event } from '@/components/pulse/types';
-import Link from 'next/link';
-import { Badge, Card, CardContent } from '@go2asia/ui';
-
-const DEMO_EVENT_IDS = [
-  'e7f8b7d4-6f6a-4f1e-9aa0-2d4dbaac7b10',
-  '5b531b8d-8c7a-4fe8-b389-62e2f8d1d8a3',
-  '0a4b18e5-3c2d-4a06-8c42-93a8a2c84b67',
-] as const;
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export function PulseClientWrapper() {
-  // Загружаем события из API
-  const { data: eventsData, isLoading } = useGetEvents({
-    limit: 100, // Загружаем больше событий для календаря
-  });
+  const dataSource = getDataSource();
+
+  // API: загружаем события из SDK (если реализовано)
+  const { data: eventsData, isLoading } =
+    dataSource === 'api'
+      ? useGetEvents({
+          limit: 100, // Загружаем больше событий для календаря
+        })
+      : ({ data: undefined, isLoading: false } as any);
 
   // Преобразуем данные из API в формат компонента
   const events = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.pulse.listEvents().map((dto): Event => ({
+        id: dto.id,
+        title: dto.title,
+        description: dto.description,
+        startDate: new Date(dto.startTime),
+        endDate: new Date(dto.endTime ?? dto.startTime),
+        timezone: dto.timezone,
+        location: dto.location
+          ? {
+              name: dto.location.name,
+              address: dto.location.address,
+              city: dto.location.city,
+              country: dto.location.country,
+              placeId: dto.location.placeId,
+            }
+          : undefined,
+        category: dto.category,
+        tags: dto.tags,
+        price: dto.price,
+        badges: (dto.badges ?? []) as any,
+        cover: dto.coverImage,
+        status: 'published',
+        verified: dto.badges?.includes('verified'),
+      }));
+    }
+
     if (!eventsData?.items) return [];
     return eventsData.items.map((event): Event => ({
       id: event.id,
@@ -44,7 +70,7 @@ export function PulseClientWrapper() {
       cover: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get coverImage when API supports it
       attendeesCount: 0, // TODO: Get attendeesCount when API supports it
     }));
-  }, [eventsData]);
+  }, [dataSource, eventsData]);
 
   if (isLoading) {
     return (
@@ -55,6 +81,7 @@ export function PulseClientWrapper() {
           description="События и мероприятия в Юго-Восточной Азии"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
+          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
         />
         <div className="flex items-center justify-center py-12">
           <div className="text-slate-600">Загрузка событий...</div>
@@ -71,33 +98,8 @@ export function PulseClientWrapper() {
         description="События и мероприятия в Юго-Восточной Азии"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
       />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10">
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <Badge variant="info">DEMO</Badge>
-              <span className="text-sm font-medium text-amber-900">
-                Для проверки регистрации откройте страницу события по id:
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {DEMO_EVENT_IDS.map((id) => (
-                <Link
-                  key={id}
-                  href={`/pulse/${id}`}
-                  className="text-sm text-sky-700 hover:text-sky-800 underline underline-offset-4"
-                >
-                  /pulse/{id}
-                </Link>
-              ))}
-            </div>
-            <p className="text-xs text-amber-800 mt-2">
-              Если на странице события появляется баннер <b>DEMO MODE</b>, значит API недоступен и включился fallback на мок.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
       <PulseClient events={events} />
     </div>
   );
