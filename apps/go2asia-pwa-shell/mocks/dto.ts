@@ -60,6 +60,62 @@ export interface PlaceDTO {
   updatedAt?: string; // ISO
 }
 
+export interface CountryDTO {
+  id: ID;
+  name: string;
+  code?: string;
+  flag?: string;
+  description?: string;
+  citiesCount?: number;
+  placesCount?: number;
+  heroImage?: string;
+  updatedAt?: string; // ISO
+}
+
+export interface CityDTO {
+  id: ID;
+  name: string;
+  countryId: ID;
+  description?: string;
+  placesCount?: number;
+  latitude?: number;
+  longitude?: number;
+  heroImage?: string;
+  updatedAt?: string; // ISO
+}
+
+export interface GuideDTO {
+  id: ID;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  contentMarkdown: string;
+  coverImage?: string;
+  category?: string;
+  tags?: string[];
+  countryId?: ID;
+  cityId?: ID;
+  publishedAt?: string; // ISO
+  updatedAt?: string; // ISO
+}
+
+export interface ThemeDTO {
+  id: ID;
+  title: string;
+  description?: string;
+  heroImage?: string;
+  tags?: string[];
+  updatedAt?: string; // ISO
+}
+
+export interface HubDTO {
+  slug: string;
+  title: string;
+  description?: string;
+  heroImage?: string;
+  tags?: string[];
+}
+
 /**
  * Blog
  */

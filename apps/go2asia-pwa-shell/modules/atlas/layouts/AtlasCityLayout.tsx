@@ -12,6 +12,7 @@ export interface AtlasCityLayoutProps {
   viewsCount?: number;
   heroImageUrl?: string;
   heroImageAlt?: string;
+  dataSourceBadgeText?: string;
   children: ReactNode;
 }
 
@@ -26,6 +27,7 @@ export const AtlasCityLayout: FC<AtlasCityLayoutProps> = ({
   viewsCount,
   heroImageUrl,
   heroImageAlt,
+  dataSourceBadgeText,
   children,
 }) => {
   return (
@@ -96,6 +98,11 @@ export const AtlasCityLayout: FC<AtlasCityLayoutProps> = ({
           {/* Meta Information */}
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Badge variant="verified">Проверено редакцией</Badge>
+            {dataSourceBadgeText && (
+              <Badge variant="info" className="bg-slate-100 text-slate-700">
+                {dataSourceBadgeText}
+              </Badge>
+            )}
             <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
               <span className="flex items-center gap-1">
                 <Clock size={14} />

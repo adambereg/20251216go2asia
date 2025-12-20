@@ -3,6 +3,8 @@
 import { useParams } from 'next/navigation';
 import { useGetArticleBySlug } from '@go2asia/sdk/blog';
 import { Chip, Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export default function GuideOverviewPage() {
   const params = useParams();
@@ -11,7 +13,13 @@ export default function GuideOverviewPage() {
   const { 
     data: articleData, 
     isLoading 
-  } = useGetArticleBySlug(guideId || '');
+  } = getDataSource() === 'api'
+    ? useGetArticleBySlug(guideId || '')
+    : ({ data: null, isLoading: false } as any);
+
+  const dataSource = getDataSource();
+  const mockGuide = dataSource === 'mock' ? mockRepo.atlas.getGuideByIdOrSlug(guideId || '') : null;
+  const resolved: any = dataSource === 'mock' ? mockGuide : articleData;
 
   if (isLoading) {
     return (
@@ -22,7 +30,7 @@ export default function GuideOverviewPage() {
     );
   }
 
-  if (!articleData) {
+  if (!resolved) {
     return (
       <div className="text-center py-12 text-slate-600">
         Данные о гайде не найдены.
@@ -38,26 +46,26 @@ export default function GuideOverviewPage() {
         {/* Описание */}
         <div className="px-4 py-4 text-sm text-slate-700 space-y-2">
           <p>
-            {articleData.excerpt || articleData.content || 'Нет описания.'}
+            {resolved.excerpt || resolved.contentMarkdown || resolved.content || 'Нет описания.'}
           </p>
         </div>
 
         {/* Категория */}
-        {articleData.category && (
+        {resolved.category && (
           <div className="border-t border-slate-100 px-4 py-4">
             <h3 className="font-semibold text-slate-900 mb-3">Категория</h3>
             <div className="flex flex-wrap gap-2">
-              <Chip>{articleData.category}</Chip>
+              <Chip>{resolved.category}</Chip>
             </div>
           </div>
         )}
 
         {/* Теги */}
-        {articleData.tags && articleData.tags.length > 0 && (
+        {resolved.tags && resolved.tags.length > 0 && (
           <div className="border-t border-slate-100 px-4 py-4">
             <h3 className="font-semibold text-slate-900 mb-3">Теги</h3>
             <div className="flex flex-wrap gap-2">
-              {articleData.tags.map((tag) => (
+              {resolved.tags.map((tag: string) => (
                 <Chip key={tag}>{tag}</Chip>
               ))}
             </div>
@@ -66,9 +74,10 @@ export default function GuideOverviewPage() {
 
         {/* Метаданные */}
         <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-          Опубликовано: {articleData.publishedAt ? new Date(articleData.publishedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
-          {articleData.updatedAt && articleData.updatedAt !== articleData.publishedAt && (
-            <> • Обновлено: {new Date(articleData.updatedAt).toLocaleDateString('ru-RU')}</>
+          Опубликовано:{' '}
+          {resolved.publishedAt ? new Date(resolved.publishedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
+          {resolved.updatedAt && resolved.updatedAt !== resolved.publishedAt && (
+            <> • Обновлено: {new Date(resolved.updatedAt).toLocaleDateString('ru-RU')}</>
           )}
         </div>
       </section>

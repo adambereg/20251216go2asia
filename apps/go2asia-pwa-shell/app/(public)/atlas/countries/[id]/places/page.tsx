@@ -6,13 +6,18 @@ import { useGetPlaces } from '@go2asia/sdk/atlas';
 import { useGetCountryById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { MapPin } from 'lucide-react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export default function CountryPlacesPage() {
   const params = useParams();
   const countryId = params?.id as string;
+  const dataSource = getDataSource();
 
   // Загружаем данные страны для получения названия
-  const { data: countryData } = useGetCountryById(countryId || '');
+  const { data: countryData } =
+    dataSource === 'api' ? useGetCountryById(countryId || '') : ({ data: null } as any);
+  const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
 
   // Загружаем места страны из API
   // Примечание: API может не поддерживать фильтрацию по countryId напрямую,
@@ -20,10 +25,12 @@ export default function CountryPlacesPage() {
   const { 
     data: placesData, 
     isLoading 
-  } = useGetPlaces({
-    limit: 50,
-    // countryId: countryId, // TODO: Add when API supports countryId filter
-  });
+  } = dataSource === 'api'
+    ? useGetPlaces({
+        limit: 50,
+        // countryId: countryId, // TODO: Add when API supports countryId filter
+      })
+    : ({ data: null, isLoading: false } as any);
 
   if (isLoading) {
     return (
@@ -37,7 +44,24 @@ export default function CountryPlacesPage() {
     );
   }
 
-  const places = placesData?.items || [];
+  const countryIdToCountryName: Record<string, string> = {
+    th: 'Thailand',
+    vn: 'Vietnam',
+    id: 'Indonesia',
+    my: 'Malaysia',
+    sg: 'Singapore',
+    ph: 'Philippines',
+  };
+
+  const places =
+    dataSource === 'mock'
+      ? mockRepo.atlas
+          .listPlaces()
+          .filter((p) => (p.country || '').toLowerCase() === (countryIdToCountryName[countryId] || '').toLowerCase())
+      : placesData?.items || [];
+
+  // В мок-режиме, если совпадений по стране нет (или страна не задана), показываем демо-выборку.
+  const effectivePlaces = dataSource === 'mock' ? (places.length > 0 ? places : mockRepo.atlas.listPlaces().slice(0, 12)) : places;
 
   // Фильтруем места по стране (если API не поддерживает фильтрацию)
   // TODO: Убрать фильтрацию на клиенте, когда API будет поддерживать countryId
@@ -52,13 +76,15 @@ export default function CountryPlacesPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="px-4 py-4 space-y-4">
-          {places.length > 0 ? (
+          {effectivePlaces.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-slate-900">
-                {countryData?.name ? `Места в ${countryData.name}` : 'Популярные места'}
+                {(dataSource === 'mock' ? mockCountry?.name : countryData?.name)
+                  ? `Места в ${(dataSource === 'mock' ? mockCountry?.name : countryData?.name)}`
+                  : 'Популярные места'}
               </h3>
               <div className="space-y-3">
-                {places.map((place) => (
+                {effectivePlaces.map((place: any) => (
                   <Link
                     key={place.id}
                     href={`/atlas/places/${place.id}`}

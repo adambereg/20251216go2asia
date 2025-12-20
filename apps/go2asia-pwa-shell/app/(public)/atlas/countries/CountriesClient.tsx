@@ -8,9 +8,12 @@ import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetCountries } from '@go2asia/sdk/atlas';
 import { useMemo, useState } from 'react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export function CountriesClient() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const dataSource = getDataSource();
   
   // Загружаем страны из API
   const { 
@@ -23,6 +26,17 @@ export function CountriesClient() {
 
   // Преобразуем данные из API
   const countries = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.atlas.listCountries().map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        citiesCount: country.citiesCount || 0,
+        description: country.description || '',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
     if (!countriesData?.items) return [];
     return countriesData.items.map((country) => ({
       id: country.id,
@@ -33,10 +47,10 @@ export function CountriesClient() {
       description: country.description || '',
       heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get heroImage when API supports it
     }));
-  }, [countriesData]);
+  }, [countriesData, dataSource]);
 
   // Показываем состояние загрузки
-  if (isLoading && !countriesData) {
+  if (dataSource === 'api' && isLoading && !countriesData) {
     return (
       <div className="min-h-screen bg-slate-50">
         <ModuleHero
@@ -45,6 +59,7 @@ export function CountriesClient() {
           description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
+          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
         />
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <AtlasMainNav />
@@ -71,6 +86,7 @@ export function CountriesClient() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
       />
 
       {/* Top controls: internal nav + search */}
@@ -136,7 +152,7 @@ export function CountriesClient() {
             </div>
             
             {/* Пагинация */}
-            {countriesData?.hasMore && (
+            {dataSource === 'api' && countriesData?.hasMore && (
               <div className="mt-8 text-center">
                 <button
                   onClick={() => setCursor(countriesData.nextCursor || undefined)}

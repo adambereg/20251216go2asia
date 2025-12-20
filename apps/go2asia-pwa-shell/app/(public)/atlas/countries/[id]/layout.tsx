@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useGetCountryById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 const sideNavItems = [
   { key: 'overview', label: 'Обзор', icon: Info, href: '' },
@@ -52,20 +54,29 @@ export default function CountryLayout({
   const countryIdFromUrl = params?.id as string;
   const countryId = pathname.split('/').slice(0, 4).join('/'); // /atlas/countries/[id]
 
+  const dataSource = getDataSource();
+
   // Загружаем данные страны из API через SDK hook
   // enabled обрабатывается автоматически внутри hook (проверка на пустой id)
   const { 
     data: countryData, 
     isLoading 
-  } = useGetCountryById(countryIdFromUrl || '');
+  } = dataSource === 'api'
+    ? useGetCountryById(countryIdFromUrl || '')
+    : ({ data: null, isLoading: false } as any);
+
+  const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryIdFromUrl || '') : null;
 
   // Определяем данные страны из API
-  const countryName = countryData?.name || 'Загрузка...';
-  const flagEmoji = countryData?.flag || '🌏';
-  const heroImageUrl = 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg'; // TODO: Get heroImage when API supports it
-  const heroImageAlt = countryData?.name || 'Страна';
-  const lastUpdatedAt = countryData?.updatedAt
-    ? `Последнее обновление: ${new Date(countryData.updatedAt).toLocaleDateString('ru-RU')}`
+  const countryName = (dataSource === 'mock' ? mockCountry?.name : countryData?.name) || 'Загрузка...';
+  const flagEmoji = (dataSource === 'mock' ? mockCountry?.flag : countryData?.flag) || '🌏';
+  const heroImageUrl =
+    (dataSource === 'mock' ? mockCountry?.heroImage : undefined) ||
+    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+  const heroImageAlt = countryName || 'Страна';
+  const updatedAt = dataSource === 'mock' ? mockCountry?.updatedAt : countryData?.updatedAt;
+  const lastUpdatedAt = updatedAt
+    ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: недавно';
 
   // Показываем Skeleton при загрузке
@@ -94,6 +105,7 @@ export default function CountryLayout({
       viewsCount={0} // TODO: Get viewsCount when API supports it
       heroImageUrl={heroImageUrl}
       heroImageAlt={heroImageAlt}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
     >
       <div className="space-y-6">
         {/* Горизонтальное меню для мобильных */}

@@ -28,6 +28,7 @@ export interface AtlasHomePopularPlace {
 export interface AtlasHomeViewProps {
   countries: AtlasHomeCountry[];
   popularPlaces: AtlasHomePopularPlace[];
+  dataSourceBadgeText?: string;
 }
 
 // Главная страница Atlas Asia: страны и популярные места.
@@ -35,6 +36,7 @@ export interface AtlasHomeViewProps {
 export const AtlasHomeView: FC<AtlasHomeViewProps> = ({
   countries,
   popularPlaces,
+  dataSourceBadgeText,
 }) => {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -44,6 +46,7 @@ export const AtlasHomeView: FC<AtlasHomeViewProps> = ({
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSourceBadgeText}
       />
 
       {/* Top controls: internal nav + search */}

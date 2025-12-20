@@ -1,0 +1,98 @@
+import type { CountryDTO } from '../dto';
+
+export const mockCountriesDTO: CountryDTO[] = [
+  {
+    id: 'th',
+    name: 'Таиланд',
+    code: 'TH',
+    flag: '🇹🇭',
+    description: 'Популярная страна для зимовки и переезда: еда, море, города и комьюнити.',
+    citiesCount: 3,
+    placesCount: 12,
+    heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+    updatedAt: '2025-12-10T10:00:00.000Z',
+  },
+  {
+    id: 'vn',
+    name: 'Вьетнам',
+    code: 'VN',
+    flag: '🇻🇳',
+    description: 'Доступная стоимость жизни, яркая кухня и быстрорастущие города.',
+    citiesCount: 2,
+    placesCount: 8,
+    heroImage: 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
+    updatedAt: '2025-11-21T10:00:00.000Z',
+  },
+  {
+    id: 'la',
+    name: 'Лаос',
+    code: 'LA',
+    flag: '🇱🇦',
+    description: 'Спокойные города, природа и отличные маршруты для медленного путешествия.',
+    citiesCount: 1,
+    placesCount: 3,
+    heroImage: 'https://images.pexels.com/photos/247431/pexels-photo-247431.jpeg',
+    updatedAt: '2025-10-28T10:00:00.000Z',
+  },
+  {
+    id: 'kh',
+    name: 'Камбоджа',
+    code: 'KH',
+    flag: '🇰🇭',
+    description: 'Храмы Ангкора, культурные маршруты и острова для отдыха.',
+    citiesCount: 1,
+    placesCount: 4,
+    heroImage: 'https://images.pexels.com/photos/1144687/pexels-photo-1144687.jpeg',
+    updatedAt: '2025-10-20T10:00:00.000Z',
+  },
+  {
+    id: 'my',
+    name: 'Малайзия',
+    code: 'MY',
+    flag: '🇲🇾',
+    description: 'Современная инфраструктура, разные культуры и удобные перелёты.',
+    citiesCount: 1,
+    placesCount: 6,
+    heroImage: 'https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg',
+    updatedAt: '2025-09-12T10:00:00.000Z',
+  },
+  {
+    id: 'sg',
+    name: 'Сингапур',
+    code: 'SG',
+    flag: '🇸🇬',
+    description: 'Город-государство: безопасность, сервис, бизнес и транспорт.',
+    citiesCount: 1,
+    placesCount: 4,
+    heroImage: 'https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg',
+    updatedAt: '2025-08-18T10:00:00.000Z',
+  },
+  {
+    id: 'ph',
+    name: 'Филиппины',
+    code: 'PH',
+    flag: '🇵🇭',
+    description: 'Пляжи и острова, дайвинг и расслабленный ритм.',
+    citiesCount: 1,
+    placesCount: 5,
+    heroImage: 'https://images.pexels.com/photos/2803158/pexels-photo-2803158.jpeg',
+    updatedAt: '2025-07-01T10:00:00.000Z',
+  },
+  {
+    id: 'id',
+    name: 'Индонезия',
+    code: 'ID',
+    flag: '🇮🇩',
+    description: 'Острова, серфинг, природа и рабочие хабы вроде Бали.',
+    citiesCount: 2,
+    placesCount: 10,
+    heroImage: 'https://images.pexels.com/photos/2087391/pexels-photo-2087391.jpeg',
+    updatedAt: '2025-10-05T10:00:00.000Z',
+  },
+];
+
+export const mockCountriesByIdDTO: Record<string, CountryDTO> = Object.fromEntries(
+  mockCountriesDTO.map((c) => [c.id, c])
+);
+
+

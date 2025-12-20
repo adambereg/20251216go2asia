@@ -6,22 +6,29 @@ import { useGetCities } from '@go2asia/sdk/atlas';
 import { useGetCountryById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { MapPin } from 'lucide-react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export default function CountryCitiesPage() {
   const params = useParams();
   const countryId = params?.id as string;
+  const dataSource = getDataSource();
 
   // Загружаем данные страны для получения названия
-  const { data: countryData } = useGetCountryById(countryId || '');
+  const { data: countryData } =
+    dataSource === 'api' ? useGetCountryById(countryId || '') : ({ data: null } as any);
+  const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
 
   // Загружаем города страны из API
   const { 
     data: citiesData, 
     isLoading 
-  } = useGetCities({
-    limit: 50,
-    countryId: countryId,
-  });
+  } = dataSource === 'api'
+    ? useGetCities({
+        limit: 50,
+        countryId: countryId,
+      })
+    : ({ data: null, isLoading: false } as any);
 
   if (isLoading) {
     return (
@@ -35,7 +42,10 @@ export default function CountryCitiesPage() {
     );
   }
 
-  const cities = citiesData?.items || [];
+  const cities =
+    dataSource === 'mock'
+      ? mockRepo.atlas.listCities().filter((c) => c.countryId === countryId)
+      : citiesData?.items || [];
 
   return (
     <div className="space-y-6">
@@ -46,7 +56,9 @@ export default function CountryCitiesPage() {
           {cities.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-slate-900">
-                {countryData?.name ? `Города ${countryData.name}` : 'Города'}
+                {(dataSource === 'mock' ? mockCountry?.name : countryData?.name)
+                  ? `Города ${(dataSource === 'mock' ? mockCountry?.name : countryData?.name)}`
+                  : 'Города'}
               </h3>
               <div className="space-y-3">
                 {cities.map((city) => (

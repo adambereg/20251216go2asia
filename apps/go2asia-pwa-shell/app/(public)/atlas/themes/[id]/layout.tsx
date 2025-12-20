@@ -15,52 +15,10 @@ import {
   MessageCircle,
   History,
 } from 'lucide-react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
-// Моковые данные для разных тем (fallback, если API не работает)
-const mockThemes: Record<string, { title: string; description: string; heroImageUrl: string; heroImageAlt: string; tags: string[] }> = {
-  visas: {
-    title: 'Визы и миграция',
-    description: 'Типы виз, правила въезда, риски и обновления регламентов.',
-    heroImageUrl: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-    heroImageAlt: 'Визы и миграция',
-    tags: ['регламенты', 'обновления', 'переезд', 'туристы'],
-  },
-  taxes: {
-    title: 'Налоги и работа',
-    description: 'Фриланс, удалёнка, бизнес-структуры и базовые налоговые режимы.',
-    heroImageUrl: 'https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg',
-    heroImageAlt: 'Налоги и работа',
-    tags: ['фриланс', 'бизнес', 'налоги'],
-  },
-  education: {
-    title: 'Образование и дети',
-    description: 'Школы, садики, курсы и семейные сценарии переезда.',
-    heroImageUrl: 'https://images.pexels.com/photos/2491286/pexels-photo-2491286.jpeg',
-    heroImageAlt: 'Образование и дети',
-    tags: ['школы', 'семья', 'переезд'],
-  },
-  medicine: {
-    title: 'Медицина',
-    description: 'Медицинское обслуживание, страховка, клиники и врачи в ЮВА.',
-    heroImageUrl: 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-    heroImageAlt: 'Медицина',
-    tags: ['клиники', 'страховка', 'врачи'],
-  },
-  communication: {
-    title: 'Связь и интернет',
-    description: 'Мобильная связь, интернет, VPN и цифровые сервисы.',
-    heroImageUrl: 'https://images.pexels.com/photos/774691/pexels-photo-774691.jpeg',
-    heroImageAlt: 'Связь и интернет',
-    tags: ['SIM', 'VPN', 'интернет'],
-  },
-  banking: {
-    title: 'Банки и финтех',
-    description: 'Банковские счета, карты, переводы и финансовые сервисы.',
-    heroImageUrl: 'https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg',
-    heroImageAlt: 'Банки и финтех',
-    tags: ['банки', 'карты', 'переводы'],
-  },
-};
+const mockThemes = mockRepo.atlas.listThemes();
 
 const sideNavItems = [
   { key: 'overview', label: 'Обзор', icon: Info, href: '' },
@@ -93,9 +51,15 @@ export default function ThemeLayout({
 
   const [themeData, setThemeData] = useState<ThemeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const dataSource = getDataSource();
 
   // Загружаем данные темы из API
   useEffect(() => {
+    if (dataSource === 'mock') {
+      setThemeData(null);
+      setIsLoading(false);
+      return;
+    }
     if (!themeIdFromUrl) {
       setIsLoading(false);
       return;
@@ -122,15 +86,16 @@ export default function ThemeLayout({
 
   // Определяем данные темы: сначала из API, потом из моков, потом дефолт
   const themeIdKey = themeIdFromUrl?.toLowerCase() || '';
-  const fallbackMockTheme = mockThemes[themeIdKey] || mockThemes.visas;
+  const fallbackMockTheme =
+    mockThemes.find((t) => t.id === themeIdKey) || mockThemes[0];
   
   const title = themeData?.title || fallbackMockTheme.title;
   const description = themeData?.description || fallbackMockTheme.description;
-  const heroImageUrl = themeData?.heroImage || fallbackMockTheme.heroImageUrl;
-  const heroImageAlt = themeData?.title || fallbackMockTheme.heroImageAlt;
+  const heroImageUrl = themeData?.heroImage || fallbackMockTheme.heroImage;
+  const heroImageAlt = themeData?.title || fallbackMockTheme.title;
   const tags = themeData?.tags || fallbackMockTheme.tags;
-  const lastUpdatedAt = themeData?.updatedAt
-    ? `Последнее обновление: ${new Date(themeData.updatedAt).toLocaleDateString('ru-RU')}`
+  const lastUpdatedAt = (themeData?.updatedAt || fallbackMockTheme.updatedAt)
+    ? `Последнее обновление: ${new Date((themeData?.updatedAt || fallbackMockTheme.updatedAt) as string).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';
 
   return (
@@ -142,6 +107,7 @@ export default function ThemeLayout({
       viewsCount={1234}
       heroImageUrl={heroImageUrl}
       heroImageAlt={heroImageAlt}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
     >
       <div className="space-y-6">
         {/* Горизонтальное меню для мобильных */}

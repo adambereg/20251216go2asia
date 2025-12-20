@@ -4,8 +4,12 @@ import { AtlasHomeView } from '@/modules/atlas';
 import { useGetCountries, useGetPlaces } from '@go2asia/sdk/atlas';
 import { useMemo } from 'react';
 import { Skeleton, SkeletonCard } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export function AtlasHomeClient() {
+  const dataSource = getDataSource();
+
   // Загружаем страны из API
   const { 
     data: countriesData, 
@@ -24,6 +28,16 @@ export function AtlasHomeClient() {
 
   // Преобразуем данные из API в формат компонента
   const countries = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.atlas.listCountries().map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        description: country.description || '',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
     if (!countriesData?.items) return [];
     return countriesData.items.map((country) => ({
       id: country.id,
@@ -33,9 +47,22 @@ export function AtlasHomeClient() {
       description: country.description || '',
       heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get heroImage when API supports it
     }));
-  }, [countriesData]);
+  }, [countriesData, dataSource]);
 
   const popularPlaces = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.atlas
+        .listPlaces()
+        .slice(0, 3)
+        .map((place) => ({
+          id: place.id,
+          title: place.name,
+          city: place.city,
+          country: place.country,
+          rating: place.rating || 0,
+          reviewsCount: 0,
+        }));
+    }
     if (!placesData?.items) return [];
     return placesData.items.map((place) => ({
       id: place.id,
@@ -45,9 +72,9 @@ export function AtlasHomeClient() {
       rating: 0, // TODO: Get rating when API supports it
       reviewsCount: 0, // TODO: Get reviews count when API supports it
     }));
-  }, [placesData]);
+  }, [placesData, dataSource]);
 
-  const isLoading = countriesLoading || placesLoading;
+  const isLoading = dataSource === 'api' ? countriesLoading || placesLoading : false;
 
   // Показываем состояние загрузки с Skeleton компонентами (только при первой загрузке)
   if (isLoading && !countriesData && !placesData) {
@@ -73,5 +100,11 @@ export function AtlasHomeClient() {
 
   // Показываем данные (как в Pulse и Blog - без проверки ошибок)
   // Если данных нет из-за ошибок, показываем пустые списки
-  return <AtlasHomeView countries={countries} popularPlaces={popularPlaces} />;
+  return (
+    <AtlasHomeView
+      countries={countries}
+      popularPlaces={popularPlaces}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+    />
+  );
 }

@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useGetCityById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 const sideNavItems = [
   { key: 'overview', label: 'Обзор', icon: Info, href: '' },
@@ -48,20 +50,31 @@ export default function CityLayout({
   const cityIdFromUrl = params?.id as string;
   const cityId = pathname.split('/').slice(0, 4).join('/'); // /atlas/cities/[id]
 
+  const dataSource = getDataSource();
+
   // Загружаем данные города из API через SDK hook
   const { 
     data: cityData, 
     isLoading 
-  } = useGetCityById(cityIdFromUrl || '');
+  } = dataSource === 'api'
+    ? useGetCityById(cityIdFromUrl || '')
+    : ({ data: null, isLoading: false } as any);
+
+  const mockCity = dataSource === 'mock' ? mockRepo.atlas.getCityById(cityIdFromUrl || '') : null;
+  const mockCountry = dataSource === 'mock' && mockCity ? mockRepo.atlas.getCountryById(mockCity.countryId) : null;
 
   // Определяем данные города из API
-  const cityName = cityData?.name || 'Загрузка...';
+  const cityName = (dataSource === 'mock' ? mockCity?.name : cityData?.name) || 'Загрузка...';
   const cityNameNative = ''; // TODO: Get nameNative when API supports it
-  const countryName = ''; // TODO: Get country name from countryId when API supports it
-  const heroImageUrl = 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg'; // TODO: Get heroImage when API supports it
-  const heroImageAlt = cityData?.name || 'Город';
-  const lastUpdatedAt = cityData?.updatedAt
-    ? `Последнее обновление: ${new Date(cityData.updatedAt).toLocaleDateString('ru-RU')}`
+  const countryName =
+    dataSource === 'mock' ? mockCountry?.name : ''; // TODO(api): derive from countryId
+  const heroImageUrl =
+    (dataSource === 'mock' ? mockCity?.heroImage : undefined) ||
+    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+  const heroImageAlt = cityName || 'Город';
+  const updatedAt = dataSource === 'mock' ? mockCity?.updatedAt : cityData?.updatedAt;
+  const lastUpdatedAt = updatedAt
+    ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';
 
   if (isLoading) {
@@ -81,6 +94,7 @@ export default function CityLayout({
       viewsCount={1234}
       heroImageUrl={heroImageUrl}
       heroImageAlt={heroImageAlt}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
     >
       <div className="space-y-6">
         {/* Горизонтальное меню для мобильных */}

@@ -5,6 +5,8 @@ import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { Card, CardContent } from '@go2asia/ui';
 import Link from 'next/link';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export const metadata: Metadata = {
   title: 'Темы Atlas Asia',
@@ -17,52 +19,16 @@ export const metadata: Metadata = {
   },
 };
 
-const themes = [
-  {
-    id: 'visas',
-    title: 'Визы и миграция',
-    description: 'Типы виз, правила въезда, риски и обновления регламентов.',
-    heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-    tags: ['регламенты', 'обновления', 'переезд', 'туристы'],
-  },
-  {
-    id: 'taxes',
-    title: 'Налоги и работа',
-    description: 'Фриланс, удалёнка, бизнес-структуры и базовые налоговые режимы.',
-    heroImage: 'https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg',
-    tags: ['фриланс', 'бизнес', 'налоги'],
-  },
-  {
-    id: 'education',
-    title: 'Образование и дети',
-    description: 'Школы, садики, курсы и семейные сценарии переезда.',
-    heroImage: 'https://images.pexels.com/photos/2491286/pexels-photo-2491286.jpeg',
-    tags: ['школы', 'семья', 'переезд'],
-  },
-  {
-    id: 'medicine',
-    title: 'Медицина',
-    description: 'Медицинское обслуживание, страховка, клиники и врачи в ЮВА.',
-    heroImage: 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-    tags: ['клиники', 'страховка', 'врачи'],
-  },
-  {
-    id: 'communication',
-    title: 'Связь и интернет',
-    description: 'Мобильная связь, интернет, VPN и цифровые сервисы.',
-    heroImage: 'https://images.pexels.com/photos/774691/pexels-photo-774691.jpeg',
-    tags: ['SIM', 'VPN', 'интернет'],
-  },
-  {
-    id: 'banking',
-    title: 'Банки и финтех',
-    description: 'Банковские счета, карты, переводы и финансовые сервисы.',
-    heroImage: 'https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg',
-    tags: ['банки', 'карты', 'переводы'],
-  },
-];
+const themes = mockRepo.atlas.listThemes().map((t) => ({
+  id: t.id,
+  title: t.title,
+  description: t.description,
+  heroImage: t.heroImage,
+  tags: t.tags ?? [],
+}));
 
 export default function ThemesIndexPage() {
+  const dataSource = getDataSource();
   return (
     <div className="min-h-screen bg-slate-50">
       <ModuleHero
@@ -71,6 +37,7 @@ export default function ThemesIndexPage() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
       />
 
       {/* Top controls: internal nav + search */}

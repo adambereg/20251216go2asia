@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DashboardView } from '@/components/connect/Dashboard';
+import { ConnectPageClientWrapper } from './ConnectPageClientWrapper';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function ConnectPage() {
-  return <DashboardView />;
+  return <ConnectPageClientWrapper />;
 }

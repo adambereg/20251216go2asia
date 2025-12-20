@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ReferralsView } from '@/components/connect/Referrals';
+import { ReferralsPageClientWrapper } from './ReferralsPageClientWrapper';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function ReferralsPage() {
-  return <ReferralsView />;
+  return <ReferralsPageClientWrapper />;
 }

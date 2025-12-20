@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { WalletView } from '@/components/connect/Wallet/WalletView';
+import { WalletPageClientWrapper } from './WalletPageClientWrapper';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function WalletPage() {
-  return <WalletView />;
+  return <WalletPageClientWrapper />;
 }
 

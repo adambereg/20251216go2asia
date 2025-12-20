@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useGetArticleBySlug } from '@go2asia/sdk/blog';
 import { Skeleton } from '@go2asia/ui';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 const sideNavItems = [
   { key: 'overview', label: 'Обзор', icon: Info, href: '' },
@@ -38,25 +40,39 @@ export default function GuideLayout({
   const guideIdFromUrl = params?.id as string;
   const guideId = pathname.split('/').slice(0, 4).join('/'); // /atlas/guides/[id]
 
-  // Загружаем данные гайда из API через SDK hook (используем slug из URL)
+  const dataSource = getDataSource();
+
+  // API: Загружаем данные гайда из API через SDK hook (используем slug из URL)
   const { 
     data: articleData, 
     isLoading 
-  } = useGetArticleBySlug(guideIdFromUrl || '');
+  } = dataSource === 'api'
+    ? useGetArticleBySlug(guideIdFromUrl || '')
+    : ({ data: null, isLoading: false } as any);
 
-  // Определяем данные гайда из API
-  const title = articleData?.title || 'Загрузка...';
-  const cityName = ''; // TODO: Get city name when API supports it
-  const countryName = ''; // TODO: Get country name when API supports it
-  const heroImageUrl = articleData?.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg';
-  const heroImageAlt = articleData?.title || 'Гайд';
-  const guideType = articleData?.category || '';
+  const mockGuide = dataSource === 'mock' ? mockRepo.atlas.getGuideByIdOrSlug(guideIdFromUrl || '') : null;
+  const mockCity = dataSource === 'mock' && mockGuide?.cityId ? mockRepo.atlas.getCityById(mockGuide.cityId) : null;
+  const mockCountry =
+    dataSource === 'mock'
+      ? mockRepo.atlas.getCountryById(mockGuide?.countryId || mockCity?.countryId || '')
+      : null;
+
+  // Определяем данные гайда
+  const title = (dataSource === 'mock' ? mockGuide?.title : articleData?.title) || 'Загрузка...';
+  const cityName = dataSource === 'mock' ? mockCity?.name : ''; // TODO(api): derive from atlas links
+  const countryName = dataSource === 'mock' ? mockCountry?.name : ''; // TODO(api): derive from atlas links
+  const heroImageUrl =
+    (dataSource === 'mock' ? mockGuide?.coverImage : articleData?.coverImage) ||
+    'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg';
+  const heroImageAlt = title || 'Гайд';
+  const guideType = (dataSource === 'mock' ? mockGuide?.category : articleData?.category) || '';
   const readingTime = 0; // TODO: Get readingTime when API supports it
   const duration = ''; // TODO: Get duration when API supports it
-  const tags = articleData?.tags || [];
+  const tags = (dataSource === 'mock' ? mockGuide?.tags : articleData?.tags) || [];
   const rating = 0; // TODO: Get rating when API supports it
-  const lastUpdatedAt = articleData?.updatedAt
-    ? `Последнее обновление: ${new Date(articleData.updatedAt).toLocaleDateString('ru-RU')}`
+  const updatedAt = dataSource === 'mock' ? mockGuide?.updatedAt : articleData?.updatedAt;
+  const lastUpdatedAt = updatedAt
+    ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';
 
   if (isLoading) {
@@ -82,6 +98,7 @@ export default function GuideLayout({
       viewsCount={1234}
       heroImageUrl={heroImageUrl}
       heroImageAlt={heroImageAlt}
+      dataSourceBadgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
     >
       <div className="space-y-6">
         {/* Горизонтальное меню для мобильных */}

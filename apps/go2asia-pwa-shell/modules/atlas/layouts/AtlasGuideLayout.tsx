@@ -21,6 +21,7 @@ export interface AtlasGuideLayoutProps {
   viewsCount?: number;
   heroImageUrl?: string;
   heroImageAlt?: string;
+  dataSourceBadgeText?: string;
   children: ReactNode;
 }
 
@@ -44,6 +45,7 @@ export const AtlasGuideLayout: FC<AtlasGuideLayoutProps> = ({
   viewsCount,
   heroImageUrl,
   heroImageAlt,
+  dataSourceBadgeText,
   children,
 }) => {
   const locationLabel = [cityName, countryName].filter(Boolean).join(', ');
@@ -123,6 +125,11 @@ export const AtlasGuideLayout: FC<AtlasGuideLayoutProps> = ({
 
           {/* Tags and Status Badges */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
+            {dataSourceBadgeText && (
+              <Badge variant="info" className="bg-slate-100 text-slate-700">
+                {dataSourceBadgeText}
+              </Badge>
+            )}
             {guideType && (
               <Chip>{guideType}</Chip>
             )}

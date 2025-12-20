@@ -8,9 +8,12 @@ import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
 import { useMemo, useState } from 'react';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export function PlacesClient() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const dataSource = getDataSource();
   
   // Загружаем места из API
   const { 
@@ -23,6 +26,16 @@ export function PlacesClient() {
 
   // Преобразуем данные из API
   const places = useMemo(() => {
+    if (dataSource === 'mock') {
+      return mockRepo.atlas.listPlaces().map((place) => ({
+        id: place.id,
+        title: place.name,
+        description: place.description || '',
+        cityId: undefined,
+        categories: place.categories || [],
+        photos: place.photos || [],
+      }));
+    }
     if (!placesData?.items) return [];
     return placesData.items.map((place) => ({
       id: place.id,
@@ -36,10 +49,10 @@ export function PlacesClient() {
       // TODO: Get rating when API supports it
       // TODO: Get reviews count when API supports it
     }));
-  }, [placesData]);
+  }, [placesData, dataSource]);
 
   // Показываем состояние загрузки
-  if (isLoading && !placesData) {
+  if (dataSource === 'api' && isLoading && !placesData) {
     return (
       <div className="min-h-screen bg-slate-50">
         <ModuleHero
@@ -48,6 +61,7 @@ export function PlacesClient() {
           description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
+          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
         />
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <AtlasMainNav />
@@ -74,6 +88,7 @@ export function PlacesClient() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
+        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
       />
 
       {/* Top controls: internal nav + search */}
@@ -153,7 +168,7 @@ export function PlacesClient() {
             </div>
             
             {/* Пагинация */}
-            {placesData?.hasMore && (
+            {dataSource === 'api' && placesData?.hasMore && (
               <div className="mt-8 text-center">
                 <button
                   onClick={() => setCursor(placesData.nextCursor || undefined)}

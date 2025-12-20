@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
-import { AtlasHomeClient } from './AtlasHomeClient';
-
-export const dynamic = 'force-dynamic';
+import { CountriesClient } from './countries/CountriesClient';
 
 export const metadata: Metadata = {
-  title: 'Atlas Asia - Путеводитель по Юго-Восточной Азии | Go2Asia',
-  description: 'Исследуйте страны, города и места Юго-Восточной Азии с Go2Asia Atlas',
+  title: 'Страны Юго-Восточной Азии | Go2Asia Atlas',
+  description: 'Список всех стран Юго-Восточной Азии в Go2Asia Atlas',
   openGraph: {
-    title: 'Atlas Asia - Путеводитель по Юго-Восточной Азии',
-    description: 'Исследуйте страны, города и места Юго-Восточной Азии',
+    title: 'Страны Юго-Восточной Азии',
+    description: 'Исследуйте страны Юго-Восточной Азии',
     type: 'website',
   },
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function AtlasPage() {
-  return <AtlasHomeClient />;
+  return <CountriesClient />;
 }

@@ -76,6 +76,15 @@ function downloadICS(event: Event) {
 export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
   const [isSaved, setIsSaved] = useState(false);
 
+  const previewImages = (() => {
+    const base = event.cover ?? 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+    // Простые плейсхолдеры, чтобы всегда было 3 превью даже без API.
+    // Подборка нейтральных travel-изображений.
+    const alt1 = 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg';
+    const alt2 = 'https://images.pexels.com/photos/2491286/pexels-photo-2491286.jpeg';
+    return [base, alt1, alt2];
+  })();
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ru-RU', {
       weekday: 'long',
@@ -151,9 +160,41 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            {/* Module header (как на /pulse) */}
+            <div className="absolute top-0 left-0 right-0">
+              <section className="text-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                    <h1 className="text-h1 md:text-4xl lg:text-5xl font-bold text-white">
+                      Pulse Asia
+                    </h1>
+                  </div>
+                  <p className="text-body text-white/90">
+                    События и мероприятия в Юго-Восточной Азии
+                  </p>
+                </div>
+              </section>
+            </div>
           </div>
         ) : (
-          <div className="h-32 md:h-48 bg-gradient-to-r from-sky-500 to-sky-600" />
+          <div className="h-32 md:h-48 bg-gradient-to-r from-sky-500 to-sky-600">
+            <section className="text-white h-full">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                    <h1 className="text-h1 md:text-4xl lg:text-5xl font-bold text-white">
+                      Pulse Asia
+                    </h1>
+                  </div>
+                  <p className="text-body text-white/90">
+                    События и мероприятия в Юго-Восточной Азии
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
         )}
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -240,6 +281,23 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Основная информация */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Превью-фото (3) */}
+            <div className="flex gap-3 overflow-x-auto">
+              {previewImages.map((src, idx) => (
+                <div
+                  key={`${src}-${idx}`}
+                  className="relative h-24 sm:h-28 md:h-32 w-44 sm:w-52 md:w-56 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                >
+                  <img
+                    src={src}
+                    alt={`${event.title} — фото ${idx + 1}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+
             {/* Описание */}
             {event.description && (
               <Card>

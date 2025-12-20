@@ -19,6 +19,7 @@ export interface AtlasCountryLayoutProps {
   headerSlot?: ReactNode;
   heroImageUrl?: string;
   heroImageAlt?: string;
+  dataSourceBadgeText?: string;
   children: ReactNode;
 }
 
@@ -45,6 +46,7 @@ export const AtlasCountryLayout: FC<AtlasCountryLayoutProps> = ({
   headerSlot,
   heroImageUrl,
   heroImageAlt,
+  dataSourceBadgeText,
   children,
 }) => {
   return (
@@ -109,6 +111,11 @@ export const AtlasCountryLayout: FC<AtlasCountryLayoutProps> = ({
           {/* Meta Information */}
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Badge variant="verified">Проверено редакцией</Badge>
+            {dataSourceBadgeText && (
+              <Badge variant="info" className="bg-slate-100 text-slate-700">
+                {dataSourceBadgeText}
+              </Badge>
+            )}
             {headerSlot}
             <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
               <span className="flex items-center gap-1">

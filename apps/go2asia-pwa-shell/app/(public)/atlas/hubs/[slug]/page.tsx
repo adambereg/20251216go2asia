@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { TopicHubView } from '@/modules/atlas';
+import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 
 export const metadata: Metadata = {
   title: 'Тематический хаб Atlas Asia | Go2Asia',
@@ -13,14 +15,15 @@ export default async function TopicHubPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const dataSource = getDataSource();
 
-  // Позже slug будет мапиться на конкретный хаб (Визы, Налоги и т.п.) через SDK.
-  const title = 'Тематический хаб в разработке';
+  const hub = dataSource === 'mock' ? mockRepo.atlas.getHubBySlug(slug) : null;
+  const title = hub?.title || 'Тематический хаб в разработке';
 
   return (
     <TopicHubView
       title={title}
-      description="Здесь будут собраны статьи, гайды, подборки и практикумы по выбранной теме."
+      description={hub?.description || "Здесь будут собраны статьи, гайды, подборки и практикумы по выбранной теме."}
       sections={[
         {
           id: 'editorial',
