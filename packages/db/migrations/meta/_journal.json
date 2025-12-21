@@ -8,6 +8,13 @@
       "when": 1766334242683,
       "tag": "0000_dapper_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1766337366552,
+      "tag": "0001_third_lionheart",
+      "breakpoints": true
     }
   ]
 }

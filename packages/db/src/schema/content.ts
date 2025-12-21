@@ -18,7 +18,12 @@ import {
   unique,
   integer,
   numeric,
+  char,
+  index,
+  check,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Media files (Cloudflare R2 metadata only).
@@ -43,6 +48,16 @@ export const mediaFiles = pgTable(
   })
 );
 
+/**
+ * Enum-like status constraints (Postgres enums) — MVP scope.
+ */
+export const eventStatusEnum = pgEnum('event_status', ['draft', 'active', 'cancelled', 'archived']);
+export const articleStatusEnum = pgEnum('article_status', ['draft', 'published', 'archived']);
+export const eventRegistrationStatusEnum = pgEnum('event_registration_status', [
+  'registered',
+  'cancelled',
+]);
+
 export const countries = pgTable('countries', {
   id: text('id').primaryKey(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
@@ -55,62 +70,107 @@ export const countries = pgTable('countries', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const cities = pgTable('cities', {
-  id: text('id').primaryKey(),
-  countryId: text('country_id').notNull().references(() => countries.id),
-  name: varchar('name', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull().unique(),
-  descriptionShort: text('description_short'),
-  latitude: numeric('latitude', { precision: 9, scale: 6 }),
-  longitude: numeric('longitude', { precision: 9, scale: 6 }),
-  heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+export const cities = pgTable(
+  'cities',
+  {
+    id: text('id').primaryKey(),
+    countryId: text('country_id').notNull().references(() => countries.id),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull().unique(),
+    descriptionShort: text('description_short'),
+    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    latitude: numeric('latitude', { precision: 9, scale: 6 }),
+    longitude: numeric('longitude', { precision: 9, scale: 6 }),
+    // MVP geo (preferred): no PostGIS, split coords
+    lat: numeric('lat', { precision: 9, scale: 6 }),
+    lng: numeric('lng', { precision: 9, scale: 6 }),
+    heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    idxCitiesCountryId: index('idx_cities_country_id').on(table.countryId),
+  })
+);
 
-export const places = pgTable('places', {
-  id: text('id').primaryKey(),
-  countryId: text('country_id').references(() => countries.id),
-  cityId: text('city_id').references(() => cities.id),
-  name: varchar('name', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull().unique(),
-  type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
-  descriptionShort: text('description_short'),
-  latitude: numeric('latitude', { precision: 9, scale: 6 }),
-  longitude: numeric('longitude', { precision: 9, scale: 6 }),
-  address: text('address'),
-  heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
-  // Temporary compatibility for UI-first stage: keep optional list of public URLs.
-  // In API integration (PR#3+), UI should read via media_files.
-  images: jsonb('images'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+export const places = pgTable(
+  'places',
+  {
+    id: text('id').primaryKey(),
+    countryId: text('country_id').references(() => countries.id),
+    cityId: text('city_id').references(() => cities.id),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull().unique(),
+    type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
+    descriptionShort: text('description_short'),
+    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    latitude: numeric('latitude', { precision: 9, scale: 6 }),
+    longitude: numeric('longitude', { precision: 9, scale: 6 }),
+    // MVP geo (preferred): no PostGIS, split coords
+    lat: numeric('lat', { precision: 9, scale: 6 }),
+    lng: numeric('lng', { precision: 9, scale: 6 }),
+    address: text('address'),
+    heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
+    // Temporary compatibility for UI-first stage: keep optional list of public URLs.
+    // In API integration (PR#3+), UI should read via media_files.
+    images: jsonb('images'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    idxPlacesCountryId: index('idx_places_country_id').on(table.countryId),
+    idxPlacesCityId: index('idx_places_city_id').on(table.cityId),
+  })
+);
 
-export const events = pgTable('events', {
-  id: text('id').primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull(),
-  description: text('description'),
-  category: varchar('category', { length: 100 }),
-  startDate: timestamp('start_date').notNull(), // start_at (MVP)
-  endDate: timestamp('end_date'), // end_at (MVP)
-  location: text('location'),
-  countryId: text('country_id').references(() => countries.id),
-  cityId: text('city_id').references(() => cities.id),
-  latitude: numeric('latitude', { precision: 9, scale: 6 }),
-  longitude: numeric('longitude', { precision: 9, scale: 6 }),
-  // Keep existing column for current content-service compatibility.
-  imageUrl: text('image_url'),
-  imageMediaId: text('image_media_id').references(() => mediaFiles.id),
-  isFree: boolean('is_free').notNull().default(true),
-  priceAmount: integer('price_amount'), // minor units or integer amount for MVP
-  priceCurrency: varchar('price_currency', { length: 10 }),
-  status: varchar('status', { length: 30 }).notNull().default('active'), // active/cancelled/draft
-  isActive: boolean('is_active').notNull().default(true), // legacy flag used by current code
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+export const events = pgTable(
+  'events',
+  {
+    id: text('id').primaryKey(),
+    title: varchar('title', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 100 }),
+    // Legacy columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    startDate: timestamp('start_date').notNull(),
+    endDate: timestamp('end_date'),
+    // MVP (preferred): timestamptz + start_at/end_at
+    startAt: timestamp('start_at', { withTimezone: true }),
+    endAt: timestamp('end_at', { withTimezone: true }),
+    location: text('location'),
+    countryId: text('country_id').references(() => countries.id),
+    cityId: text('city_id').references(() => cities.id),
+    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    latitude: numeric('latitude', { precision: 9, scale: 6 }),
+    longitude: numeric('longitude', { precision: 9, scale: 6 }),
+    // MVP geo (preferred): no PostGIS, split coords
+    lat: numeric('lat', { precision: 9, scale: 6 }),
+    lng: numeric('lng', { precision: 9, scale: 6 }),
+    // Keep existing column for current content-service compatibility.
+    imageUrl: text('image_url'),
+    imageMediaId: text('image_media_id').references(() => mediaFiles.id),
+    isFree: boolean('is_free').notNull().default(true),
+    // MVP money: numeric(12,2) + ISO currency (char(3))
+    priceAmount: numeric('price_amount', { precision: 12, scale: 2 }).notNull().default('0'),
+    priceCurrency: char('price_currency', { length: 3 }),
+    status: eventStatusEnum('status').notNull().default('active'),
+    isActive: boolean('is_active').notNull().default(true), // legacy flag used by current code
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    idxEventsCountryId: index('idx_events_country_id').on(table.countryId),
+    idxEventsCityId: index('idx_events_city_id').on(table.cityId),
+    idxEventsStartAt: index('idx_events_start_at').on(table.startAt),
+    // Price consistency (MVP):
+    // - free => price_amount = 0
+    // - paid => price_amount >= 0 and currency is set
+    chkEventsPriceConsistency: check(
+      'events_price_consistency',
+      sql`((is_free AND price_amount = 0) OR ((NOT is_free) AND price_amount >= 0 AND price_currency IS NOT NULL))`
+    ),
+  })
+);
 
 export const articles = pgTable('articles', {
   id: text('id').primaryKey(),
@@ -124,7 +184,7 @@ export const articles = pgTable('articles', {
   // Temporary compatibility: keep optional public URL
   imageUrl: text('image_url'),
   publishedAt: timestamp('published_at'),
-  status: varchar('status', { length: 30 }).notNull().default('draft'), // draft/published/archived
+  status: articleStatusEnum('status').notNull().default('draft'),
   isPublished: boolean('is_published').notNull().default(false), // legacy flag (MVP)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -134,7 +194,7 @@ export const eventRegistrations = pgTable('event_registrations', {
   id: text('id').primaryKey(),
   eventId: text('event_id').notNull().references(() => events.id),
   userId: text('user_id').notNull(), // No FK - user_id from Clerk, deletion not supported in MVP
-  status: varchar('status', { length: 30 }).notNull().default('registered'),
+  status: eventRegistrationStatusEnum('status').notNull().default('registered'),
   registeredAt: timestamp('registered_at').notNull().defaultNow(),
 }, (table) => ({
   uniqueUserEvent: unique().on(table.userId, table.eventId),
