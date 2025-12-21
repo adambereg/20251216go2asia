@@ -301,9 +301,12 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
             {scales.map((scale) => (
               <Chip
                 key={scale.value}
-                selected={filters.scale === scale.value}
                 onClick={() => handleScaleToggle(scale.value as 'country' | 'city' | 'place')}
-                className="cursor-pointer"
+                className={
+                  filters.scale === scale.value
+                    ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
+                    : 'cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }
               >
                 {scale.label}
               </Chip>
@@ -380,9 +383,12 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
               {categories.map((category) => (
                 <Chip
                   key={category.value}
-                  selected={filters.category === category.value}
                   onClick={() => handleCategoryToggle(category.value)}
-                  className="cursor-pointer"
+                  className={
+                    filters.category === category.value
+                      ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
+                      : 'cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }
                 >
                   {category.label}
                 </Chip>

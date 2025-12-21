@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Chip } from '@go2asia/ui';
 import { CalendarViewMode, Event, EventFilters } from './types';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
-import { DayView } from './DayView';
 import { AgendaView } from './AgendaView';
 import { EventFilters as EventFiltersComponent } from './EventFilters';
 import { filterEvents } from './filterEvents';
@@ -23,7 +22,7 @@ export interface CalendarViewProps {
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
   events,
-  initialView = 'month',
+  initialView = 'week',
   initialDate = new Date(),
   filters,
   onFiltersChange,
@@ -33,6 +32,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView);
   const [currentDate, setCurrentDate] = useState(initialDate);
 
+  // Синхронизируем viewMode с initialView при изменении пропа
+  useEffect(() => {
+    if (initialView) {
+      setViewMode(initialView);
+    }
+  }, [initialView]);
+
   // Дефолтные no-op обработчики для безопасной передачи в дочерние компоненты
   const handleEventClick = onEventClick ?? (() => {});
   const handleDateChange = onDateChange ?? (() => {});
@@ -41,9 +47,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const filteredEvents = filters ? filterEvents(events, filters) : events;
 
   const viewModes: { mode: CalendarViewMode; label: string }[] = [
-    { mode: 'month', label: 'Месяц' },
     { mode: 'week', label: 'Неделя' },
-    { mode: 'day', label: 'День' },
+    { mode: 'month', label: 'Месяц' },
     { mode: 'agenda', label: 'Список' },
   ];
 
@@ -56,9 +61,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         break;
       case 'week':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-        break;
-      case 'day':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
         break;
       case 'agenda':
         // Для agenda навигация не нужна
@@ -86,7 +88,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onEventClick={handleEventClick}
             onDateClick={(date) => {
               setCurrentDate(date);
-              setViewMode('day');
+              setViewMode('week');
               handleDateChange(date);
             }}
           />
@@ -99,20 +101,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             filters={filters}
             onEventClick={handleEventClick}
             onDateClick={(date) => {
-              setCurrentDate(date);
-              setViewMode('day');
-              handleDateChange(date);
-            }}
-          />
-        );
-      case 'day':
-        return (
-          <DayView
-            date={currentDate}
-            events={filteredEvents}
-            filters={filters}
-            onEventClick={handleEventClick}
-            onDateChange={(date) => {
               setCurrentDate(date);
               handleDateChange(date);
             }}
@@ -165,9 +153,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     return `${weekStart.getDate()} - ${weekEnd.getDate()} ${currentDate.toLocaleDateString('ru-RU', { month: 'long' })}`;
                   })()
                 }
-                {viewMode === 'day' && 
-                  currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
-                }
                 {viewMode === 'agenda' && 'Ближайшие события'}
               </div>
               
@@ -185,9 +170,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               {viewModes.map(({ mode, label }) => (
                 <Chip
                   key={mode}
-                  selected={viewMode === mode}
                   onClick={() => setViewMode(mode)}
-                  className="cursor-pointer"
+                  className={
+                    viewMode === mode
+                      ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
+                      : 'cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }
                 >
                   {label}
                 </Chip>

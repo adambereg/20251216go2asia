@@ -93,7 +93,7 @@ export function PulseClient({ events }: PulseClientProps) {
   return (
     <CalendarView
       events={events}
-      initialView="month"
+      initialView="week"
       filters={filters}
       onFiltersChange={handleFiltersChange}
       onEventClick={handleEventClick}
