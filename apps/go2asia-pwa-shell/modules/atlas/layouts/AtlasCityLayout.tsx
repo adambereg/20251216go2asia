@@ -1,7 +1,8 @@
 import type { FC, ReactNode } from 'react';
 import Link from 'next/link';
 import { Badge } from '@go2asia/ui';
-import { Clock, Eye } from 'lucide-react';
+import { Clock, Eye, Globe } from 'lucide-react';
+import { ModuleHero } from '@/components/modules';
 
 export interface AtlasCityLayoutProps {
   cityName: string;
@@ -32,6 +33,14 @@ export const AtlasCityLayout: FC<AtlasCityLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-slate-50">
+      <ModuleHero
+        icon={Globe}
+        title="Atlas Asia"
+        description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
+        gradientFrom="from-sky-500"
+        gradientTo="to-sky-600"
+      />
+
       {/* Hero Section with Image */}
       <section className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
