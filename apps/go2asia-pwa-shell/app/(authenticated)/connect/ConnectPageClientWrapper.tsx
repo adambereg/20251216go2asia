@@ -17,3 +17,4 @@ export function ConnectPageClientWrapper() {
   return <DashboardView />;
 }
 
+

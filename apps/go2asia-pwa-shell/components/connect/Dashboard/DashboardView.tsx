@@ -1,11 +1,7 @@
 'use client';
 
 import { ConnectHero, ConnectNav } from '../Shared';
-import { BalanceCards } from './BalanceCards';
-import { ProgressPanel } from './ProgressPanel';
-import { NextActions } from './NextActions';
-import { ActivityFeed } from './ActivityFeed';
-import { ReferralCodeCard } from './ReferralCodeCard';
+import { DashboardContent } from './DashboardContent';
 import { useGetBalance } from '@go2asia/sdk/balance';
 import { useGetReferralCode, useGetReferralStats } from '@go2asia/sdk/referrals';
 import { useGetTransactions } from '@go2asia/sdk/transactions';
@@ -17,6 +13,7 @@ import { Button } from '@go2asia/ui';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import type { DashboardData } from '../types';
+import { mockDashboardData, mockMissions, mockNextActions } from '../mockData';
 
 interface DashboardViewProps {
   initialData?: DashboardData;
@@ -171,22 +168,13 @@ export function DashboardView({ initialData }: DashboardViewProps) {
     return {
       balances,
       recent_transactions: recentTransactions,
-      level: {
-        current: 1,
-        xp: 0,
-        next_level_xp: 100,
-        multiplier: 1,
-        bonuses: [],
-      },
-      season: {
-        id: '2025-Q1',
-        name: 'Q1 2025',
-        days_left: 90,
-        ends_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      next_actions: [], // Placeholder
+      // Для M4 пока используем стабильные мок-данные для level/season/next_actions,
+      // чтобы UI соответствовал референсу без изменения API.
+      level: mockDashboardData.level,
+      season: mockDashboardData.season,
+      next_actions: mockDashboardData.next_actions,
     };
-  }, [balanceData, transactionsData, referralCodeData, initialData]);
+  }, [balanceData, transactionsData, initialData]);
 
   // Функция для получения описания действия
   function getActionDescription(action: string): string {
@@ -264,28 +252,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
       {/* Основной контент */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Информация о пользователе */}
-        <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            Профиль пользователя
-          </h2>
-          <div className="space-y-1 text-sm text-slate-600">
-            <p>
-              <span className="font-medium">Имя:</span> {userName}
-            </p>
-            {userEmail && (
-              <p>
-                <span className="font-medium">Email:</span> {userEmail}
-              </p>
-            )}
-            {user?.id && (
-              <p>
-                <span className="font-medium">ID:</span> {user.id}
-              </p>
-            )}
-          </div>
-        </div>
-
         {/* Ошибки (если есть) */}
         {(balanceError || referralCodeError || transactionsError) && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -311,34 +277,19 @@ export function DashboardView({ initialData }: DashboardViewProps) {
             </div>
           </div>
         )}
-
-        {/* Балансы */}
-        <BalanceCards
-          balances={data.balances}
-          onViewHistory={handleViewHistory}
-          onTopUp={handleTopUp}
-          onWithdraw={handleWithdraw}
-          onViewNFT={handleViewNFT}
-        />
-
-        {/* Referral Code */}
-        <ReferralCodeCard
-          referralCode={data.referral_code}
-          isLoading={referralCodeLoading}
-          directReferralsCount={referralStatsData?.directReferralsCount}
-        />
-
-        {/* Прогресс уровня */}
-        <ProgressPanel level={data.level} season={data.season} />
-
-        {/* Рекомендуемые действия */}
-        {data.next_actions && data.next_actions.length > 0 && (
-          <NextActions actions={data.next_actions} />
-        )}
-
-        {/* Последняя активность */}
-        <ActivityFeed transactions={data.recent_transactions} />
       </div>
+
+      <DashboardContent
+        greetingName={userName}
+        data={data}
+        todayActions={mockNextActions}
+        missionsOfDay={mockMissions}
+        transactions={data.recent_transactions}
+        onViewHistory={handleViewHistory}
+        onTopUp={handleTopUp}
+        onWithdraw={handleWithdraw}
+        onViewNFT={handleViewNFT}
+      />
     </div>
   );
 }

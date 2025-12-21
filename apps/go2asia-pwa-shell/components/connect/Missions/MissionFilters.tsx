@@ -6,10 +6,11 @@ import type { ModuleType, MissionType, MissionStatus } from '../types';
 interface MissionFiltersProps {
   selectedModule: ModuleType | 'all';
   selectedType: MissionType | 'all';
-  selectedStatus: MissionStatus | 'all';
   onModuleChange: (module: ModuleType | 'all') => void;
   onTypeChange: (type: MissionType | 'all') => void;
-  onStatusChange: (status: MissionStatus | 'all') => void;
+  selectedStatus?: MissionStatus | 'all';
+  onStatusChange?: (status: MissionStatus | 'all') => void;
+  showStatus?: boolean;
 }
 
 export function MissionFilters({
@@ -19,6 +20,7 @@ export function MissionFilters({
   onModuleChange,
   onTypeChange,
   onStatusChange,
+  showStatus = false,
 }: MissionFiltersProps) {
   const modules: (ModuleType | 'all')[] = [
     'all',
@@ -77,29 +79,31 @@ export function MissionFilters({
       </div>
 
       {/* По статусу */}
-      <div>
-        <h4 className="text-sm font-semibold text-slate-700 mb-2">Статус</h4>
-        <div className="flex flex-wrap gap-2">
-          {statuses.map((status) => (
-            <Chip
-              key={status}
-              size="sm"
-              selected={selectedStatus === status}
-              onClick={() => onStatusChange(status)}
-            >
-              {status === 'all'
-                ? 'Все'
-                : status === 'new'
-                  ? 'Новые'
-                  : status === 'in_progress'
-                    ? 'В процессе'
-                    : status === 'completed'
-                      ? 'Завершённые'
-                      : 'Просроченные'}
-            </Chip>
-          ))}
+      {showStatus && selectedStatus && onStatusChange ? (
+        <div>
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">Статус</h4>
+          <div className="flex flex-wrap gap-2">
+            {statuses.map((status) => (
+              <Chip
+                key={status}
+                size="sm"
+                selected={selectedStatus === status}
+                onClick={() => onStatusChange(status)}
+              >
+                {status === 'all'
+                  ? 'Все'
+                  : status === 'new'
+                    ? 'Новые'
+                    : status === 'in_progress'
+                      ? 'В процессе'
+                      : status === 'completed'
+                        ? 'Завершённые'
+                        : 'Просроченные'}
+              </Chip>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

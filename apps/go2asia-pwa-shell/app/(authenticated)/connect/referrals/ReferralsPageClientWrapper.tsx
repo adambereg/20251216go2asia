@@ -15,3 +15,4 @@ export function ReferralsPageClientWrapper() {
   return <ReferralsView />;
 }
 
+

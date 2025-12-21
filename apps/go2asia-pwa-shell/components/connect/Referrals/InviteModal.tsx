@@ -9,9 +9,10 @@ interface InviteModalProps {
   onClose: () => void;
   referralLink: string;
   referralQR?: string;
+  kind?: 'user' | 'business';
 }
 
-export function InviteModal({ isOpen, onClose, referralLink, referralQR }: InviteModalProps) {
+export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 'user' }: InviteModalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -43,12 +44,19 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR }: Invit
 
   if (!isOpen) return null;
 
+  const title = kind === 'business' ? 'Пригласить бизнес‑партнёра' : 'Пригласить друга';
+  const missionsTitle = kind === 'business' ? 'Что получит партнёр:' : 'Миссии реферала:';
+  const missions =
+    kind === 'business'
+      ? ['Заполнить профиль компании', 'Добавить 1 оффер/услугу', 'Пройти онбординг RF/PRO (если доступно)']
+      : ['Завершить 1 квест', 'Оставить отзыв в RF', 'Опубликовать пост в Space'];
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full">
         {/* Заголовок */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900">Пригласить друга</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900">{title}</h3>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -89,11 +97,11 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR }: Invit
 
           {/* Миссии реферала */}
           <div className="p-4 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium text-slate-700 mb-2">Миссии реферала:</p>
+            <p className="text-sm font-medium text-slate-700 mb-2">{missionsTitle}</p>
             <ul className="text-sm text-slate-600 space-y-1">
-              <li>• Завершить 1 квест</li>
-              <li>• Оставить отзыв в RF</li>
-              <li>• Опубликовать пост в Space</li>
+              {missions.map((m) => (
+                <li key={m}>• {m}</li>
+              ))}
             </ul>
           </div>
 

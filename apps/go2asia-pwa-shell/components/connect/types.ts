@@ -150,6 +150,12 @@ export interface Referral {
   name: string;
   avatar?: string;
   status: ReferralFunnelStage;
+  /**
+   * Двухуровневая система:
+   * - если поле пустое → это прямой реферал
+   * - если задано → это субреферал (реферал вашего реферала)
+   */
+  parent_referral_id?: string;
   earned_rewards: {
     points: number;
     g2a: number;

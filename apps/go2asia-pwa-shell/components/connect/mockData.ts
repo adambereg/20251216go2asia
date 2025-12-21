@@ -421,7 +421,7 @@ export const mockReferrals: Referral[] = [
     avatar: '/avatars/ivan.jpg',
     status: 'completed_mission',
     earned_rewards: {
-      points: 200,
+      points: 600,
       g2a: 0,
     },
     invited_at: '2025-11-10T12:00:00Z',
@@ -431,11 +431,11 @@ export const mockReferrals: Referral[] = [
   {
     id: 'ref-2',
     type: 'user',
-    name: 'Мария Сидорова',
+    name: 'Мария Иванова',
     avatar: '/avatars/maria.jpg',
     status: 'active',
     earned_rewards: {
-      points: 100,
+      points: 600,
       g2a: 0,
     },
     invited_at: '2025-11-15T14:30:00Z',
@@ -445,22 +445,67 @@ export const mockReferrals: Referral[] = [
   {
     id: 'ref-3',
     type: 'partner',
-    name: 'Кафе "Русский Дом"',
+    name: 'Travel Agency Pro',
     avatar: '/partners/cafe-russkiy-dom.jpg',
     status: 'active',
     earned_rewards: {
-      points: 0,
-      g2a: 25,
+      points: 1000,
+      g2a: 0,
     },
     invited_at: '2025-11-20T10:00:00Z',
+  },
+  {
+    id: 'ref-4',
+    type: 'user',
+    name: 'Дмитрий Смирнов',
+    avatar: undefined,
+    status: 'registered',
+    earned_rewards: {
+      points: 0,
+      g2a: 0,
+    },
+    invited_at: '2025-11-22T10:00:00Z',
+    missions_completed: 0,
+    missions_total: 5,
+  },
+  // --- субрефералы (уровень 2): рефералы ваших рефералов ---
+  {
+    id: 'sub-1',
+    parent_referral_id: 'ref-2',
+    type: 'user',
+    name: 'Анна Ким',
+    avatar: undefined,
+    status: 'active',
+    earned_rewards: {
+      points: 250,
+      g2a: 0,
+    },
+    invited_at: '2025-11-24T11:10:00Z',
+    missions_completed: 2,
+    missions_total: 5,
+  },
+  {
+    id: 'sub-2',
+    parent_referral_id: 'ref-1',
+    type: 'user',
+    name: 'Сергей Волков',
+    avatar: undefined,
+    status: 'registered',
+    earned_rewards: {
+      points: 0,
+      g2a: 0,
+    },
+    invited_at: '2025-11-26T09:40:00Z',
+    missions_completed: 0,
+    missions_total: 5,
   },
 ];
 
 export const mockReferralStats = {
-  total_users: 8,
-  total_partners: 2,
-  earned_points: 1200,
-  earned_g2a: 50,
+  total_users: 3,
+  total_partners: 1,
+  earned_points: 2200,
+  earned_g2a: 0,
 };
 
 // =============================================================================

@@ -2,15 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import { ConnectHero, ConnectNav } from '../Shared';
-import { Button, Card } from '@go2asia/ui';
-import { Plus } from 'lucide-react';
-import { ReferralStats } from './ReferralStats';
-import { ReferralCard } from './ReferralCard';
 import { InviteModal } from './InviteModal';
 import { useGetReferralStats } from '@go2asia/sdk/referrals';
 import { useGetReferralTree } from '@go2asia/sdk/referrals';
 import type { ReferralsData, ReferralStats as ReferralStatsType, Referral } from '../types';
 import { mockReferralsData } from '../mockData';
+import { ReferralsContent } from './ReferralsContent';
 
 interface ReferralsViewProps {
   initialData?: ReferralsData;
@@ -18,6 +15,7 @@ interface ReferralsViewProps {
 
 export function ReferralsView({ initialData }: ReferralsViewProps) {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteKind, setInviteKind] = useState<'user' | 'business'>('user');
 
   // Загружаем статистику рефералов из API
   const { data: referralStatsData, isLoading: statsLoading } = useGetReferralStats();
@@ -97,50 +95,13 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
           <ConnectNav />
         </div>
 
-        {/* Основной контент */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Заголовок и кнопка приглашения */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-                Реферальная программа
-              </h1>
-              <p className="text-slate-600 mt-1">
-                Приглашайте друзей и партнёров, получайте награды
-              </p>
-            </div>
-            <Button variant="primary" onClick={() => setInviteModalOpen(true)}>
-              <Plus size={16} className="mr-2" />
-              Пригласить
-            </Button>
-          </div>
-
-          {/* Статистика */}
-          <ReferralStats stats={data.stats} />
-
-          {/* Список рефералов */}
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Мои рефералы</h2>
-            {data.referrals.length > 0 ? (
-              <div className="space-y-3">
-                {data.referrals.map((referral) => (
-                  <ReferralCard key={referral.id} referral={referral} />
-                ))}
-              </div>
-            ) : (
-              <Card className="p-8 text-center">
-                <p className="text-slate-500 mb-2">У вас пока нет рефералов</p>
-                <p className="text-sm text-slate-400 mb-4">
-                  Пригласите друзей и получите бонусы!
-                </p>
-                <Button variant="primary" onClick={() => setInviteModalOpen(true)}>
-                  <Plus size={16} className="mr-2" />
-                  Пригласить друга
-                </Button>
-              </Card>
-            )}
-          </div>
-        </div>
+        <ReferralsContent
+          data={data}
+          onInvite={(kind) => {
+            setInviteKind(kind);
+            setInviteModalOpen(true);
+          }}
+        />
       </div>
 
       {/* Модал приглашения */}
@@ -149,6 +110,7 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
         onClose={() => setInviteModalOpen(false)}
         referralLink={data.referral_link}
         referralQR={data.referral_qr}
+        kind={inviteKind}
       />
     </>
   );
