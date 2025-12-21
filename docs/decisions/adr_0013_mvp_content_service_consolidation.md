@@ -17,6 +17,15 @@
 - **Atlas / Blog / Pulse** обслуживаются одним **content-service** (read-heavy, MVP scope).
 - База данных остаётся единственным источником истины (SSOT) через миграции в репозитории.
 
+### SSOT поля vs legacy (временная совместимость)
+
+В рамках MVP **источник истины** для новых интеграций:
+
+- **Pulse events**: `start_at` / `end_at` (timestamptz) и `lat` / `lng` (numeric(9,6))
+- **Atlas cities/places**: `lat` / `lng` (numeric(9,6))
+
+Поля-«legacy» (`start_date/end_date`, `latitude/longitude`) оставлены только для совместимости на переходном этапе и считаются **deprecated/read-only**. План: удалить legacy после миграции на API/seed (после PR#2/PR#3) / в Milestone 5.
+
 ### Последствия
 
 - Плюсы: быстрее интеграция фронта с API, меньше сервисных границ в MVP.
