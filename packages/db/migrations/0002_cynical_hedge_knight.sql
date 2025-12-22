@@ -46,8 +46,11 @@ SELECT
   slug,
   description,
   category,
-  coalesce(start_at, start_date) AS start_at,
-  coalesce(end_at, end_date) AS end_at,
+  -- Explicit casts to avoid relying on implicit coercions:
+  -- - start_at/end_at are timestamptz
+  -- - legacy start_date/end_date may be timestamp/date in older snapshots
+  coalesce(start_at, (start_date::timestamp at time zone 'UTC')) AS start_at,
+  coalesce(end_at, (end_date::timestamp at time zone 'UTC')) AS end_at,
   location,
   country_id,
   city_id,
