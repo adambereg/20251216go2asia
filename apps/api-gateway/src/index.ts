@@ -283,20 +283,17 @@ async function routeRequest(
     );
   }
 
-  // Prepare headers for downstream
-  const headers = new Headers(request.headers);
-  // Never forward hop-by-hop / authority headers from the incoming request.
-  // If we forward `host`, Cloudflare may route based on the wrong hostname and return its default 404 HTML.
-  headers.delete('host');
-  headers.delete('connection');
-  headers.delete('content-length');
-  headers.delete('transfer-encoding');
-  headers.delete('keep-alive');
-  headers.delete('proxy-authenticate');
-  headers.delete('proxy-authorization');
-  headers.delete('te');
-  headers.delete('trailer');
-  headers.delete('upgrade');
+  // Prepare headers for downstream.
+  // IMPORTANT: Do NOT forward the entire inbound header set.
+  // Some headers (Host/Forwarded/CF-*) can cause Cloudflare to return its default HTML 404
+  // even when the target Worker is healthy. Build a minimal, explicit header set instead.
+  const headers = new Headers();
+  const accept = request.headers.get('Accept');
+  const acceptLang = request.headers.get('Accept-Language');
+  const contentType = request.headers.get('Content-Type');
+  if (accept) headers.set('Accept', accept);
+  if (acceptLang) headers.set('Accept-Language', acceptLang);
+  if (contentType) headers.set('Content-Type', contentType);
   headers.set('X-Request-Id', requestId);
 
   // M3 trust model: downstream accepts user-context only if request is authenticated as gateway-origin.
@@ -374,10 +371,12 @@ async function routeRequest(
     targetHost: safeHostFromUrl(serviceUrl),
   });
 
+  // Only pass a body for methods that can have one.
+  const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
   const serviceRequest = new Request(targetUrl, {
     method: request.method,
     headers,
-    body: request.body,
+    body: hasBody ? request.body : undefined,
   });
 
   try {
