@@ -10,6 +10,7 @@
  * Safety:
  * - Refuses to run on production unless DDL_ALLOW_PROD=1.
  * - Never logs DATABASE_URL or secrets.
+ * - Each migration runs in its own transaction for granularity.
  */
 
 import fs from 'node:fs';
@@ -63,6 +64,11 @@ function splitStatements(sql: string): string[] {
   return parts.length > 0 ? parts : [sql.trim()].filter(Boolean);
 }
 
+function truncateForLog(text: string, maxLen = 300): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen) + '...';
+}
+
 async function ensureMigrationsTable(client: Client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -76,19 +82,62 @@ async function ensureMigrationsTable(client: Client) {
 
 async function getApplied(client: Client): Promise<Map<string, string>> {
   const map = new Map<string, string>();
-  const res = await client.query<{ filename: string; checksum: string }>(
-    `SELECT filename, checksum FROM schema_migrations ORDER BY filename`
-  );
-  for (const row of res.rows) map.set(row.filename, row.checksum);
+  // Table might not exist yet on first run - handle gracefully
+  try {
+    const res = await client.query<{ filename: string; checksum: string }>(
+      `SELECT filename, checksum FROM schema_migrations ORDER BY filename`
+    );
+    for (const row of res.rows) map.set(row.filename, row.checksum);
+  } catch {
+    // Table doesn't exist yet - return empty map
+  }
   return map;
 }
 
-async function applyOne(client: Client, contents: string) {
+/**
+ * Apply all statements from a single migration file within one transaction.
+ * Logs the failing statement on error for easier debugging.
+ */
+async function applyMigration(
+  client: Client,
+  filename: string,
+  contents: string,
+  checksum: string
+): Promise<void> {
   const statements = splitStatements(contents);
-  for (const stmt of statements) {
-    // Skip empty fragments defensively
-    if (!stmt.trim()) continue;
-    await client.query(stmt);
+
+  await client.query('BEGIN');
+  try {
+    // Ensure migrations table exists (idempotent)
+    await ensureMigrationsTable(client);
+
+    let stmtIndex = 0;
+    for (const stmt of statements) {
+      // Skip empty fragments defensively
+      if (!stmt.trim()) continue;
+      stmtIndex++;
+      try {
+        await client.query(stmt);
+      } catch (e) {
+        // Log the failing statement for debugging
+        // eslint-disable-next-line no-console
+        console.error(`\n💥 Statement ${stmtIndex}/${statements.length} in ${filename} failed:`);
+        // eslint-disable-next-line no-console
+        console.error(`   ${truncateForLog(stmt)}`);
+        throw e;
+      }
+    }
+
+    // Record successful migration
+    await client.query(`INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)`, [
+      filename,
+      checksum,
+    ]);
+
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
   }
 }
 
@@ -113,9 +162,9 @@ async function main() {
   });
 
   await client.connect();
+
   try {
-    await client.query('BEGIN');
-    await ensureMigrationsTable(client);
+    // Get already applied migrations (outside any tx to read latest state)
     const applied = await getApplied(client);
 
     for (const f of files) {
@@ -135,17 +184,10 @@ async function main() {
 
       // eslint-disable-next-line no-console
       console.log(`- apply ${f}`);
-      await applyOne(client, contents);
-      await client.query(`INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)`, [
-        f,
-        checksum,
-      ]);
+      await applyMigration(client, f, contents, checksum);
+      // Update local map so subsequent checks work correctly
+      applied.set(f, checksum);
     }
-
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
   } finally {
     await client.end();
   }
@@ -159,4 +201,3 @@ main().catch((err) => {
   console.error('❌ DDL apply failed:', err instanceof Error ? err.message : String(err));
   process.exit(1);
 });
-
