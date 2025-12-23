@@ -7,7 +7,7 @@
 1. В Neon создайте новую branch от `go2asia-staging`, например: `dev-m4-seed`.
 2. Возьмите connection string этой branch.
 
-## 2) Применить миграции
+## 2) Применить DDL (схему) из SSOT SQL миграций
 
 PowerShell:
 
@@ -15,7 +15,7 @@ PowerShell:
 $env:ENVIRONMENT="staging"
 $env:STAGING_DATABASE_URL="postgresql://..."
 
-pnpm -C packages/db db:migrate
+pnpm -C packages/db db:ddl:apply
 ```
 
 ## 3) Запустить seed (Atlas + Pulse + Blog + Media)
@@ -57,7 +57,7 @@ NEXT_PUBLIC_API_URL=<gateway url>
 После успешного выполнения:
 
 ```powershell
-pnpm -C packages/db db:migrate
+pnpm -C packages/db db:ddl:apply
 pnpm -C packages/db db:seed
 ```
 
@@ -80,4 +80,10 @@ pnpm -C packages/db db:seed
 - ручного UI-review,
 - smoke-проверки после деплоя,
 - воспроизводимых скриншотов.
+
+## Примечания (почему не db:migrate/drizzle-kit)
+
+DDL (таблицы/индексы/enum) применяем **чистым SQL** из `packages/db/migrations/*.sql` через Node-only скрипт `db:ddl:apply`.
+Это устраняет нестабильность и ограничения окружений (например, Cloudflare Workers + Neon HTTP driver).
+
 

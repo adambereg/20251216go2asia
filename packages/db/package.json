@@ -10,6 +10,9 @@
     "db:migrate": "drizzle-kit up:pg",
     "db:push": "drizzle-kit push:pg",
     "db:studio": "drizzle-kit studio",
+    "db:ddl:apply": "tsx src/ddlApply.ts",
+    "db:ddl:apply:staging": "cross-env ENVIRONMENT=staging tsx src/ddlApply.ts",
+    "db:ddl:apply:prod": "cross-env ENVIRONMENT=production tsx src/ddlApply.ts",
     "db:seed": "tsx src/seed.ts",
     "db:seed:content": "tsx src/seed.ts",
     "db:seed:pulse": "tsx src/seed.ts",
@@ -17,13 +20,15 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
-    "drizzle-orm": "^0.29.0"
+    "drizzle-orm": "^0.29.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@go2asia/config": "workspace:*",
+    "@types/pg": "^8.16.0",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.20.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
 }
-
