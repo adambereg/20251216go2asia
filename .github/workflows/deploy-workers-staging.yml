@@ -22,7 +22,8 @@ jobs:
           - service: api-gateway
             path: apps/api-gateway
             url: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
-            extra_vars: |
+            # Folded style (single-line) to avoid bash treating newlines as separate commands
+            extra_vars: >-
               --var AUTH_SERVICE_URL:https://go2asia-auth-service-staging.fred89059599296.workers.dev
               --var CONTENT_SERVICE_URL:https://go2asia-content-service-staging.fred89059599296.workers.dev
               --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
@@ -34,7 +35,7 @@ jobs:
           - service: content-service
             path: apps/content-service
             url: https://go2asia-content-service-staging.fred89059599296.workers.dev
-            extra_vars: |
+            extra_vars: >-
               --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
           - service: points-service
             path: apps/points-service
