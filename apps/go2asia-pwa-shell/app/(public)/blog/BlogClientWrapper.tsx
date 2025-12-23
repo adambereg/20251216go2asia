@@ -1,7 +1,7 @@
 'use client';
 
 import { ModuleHero } from '@/components/modules';
-import { Globe, Clock, User, Calendar, MapPin } from 'lucide-react';
+import { Globe, Clock, User } from 'lucide-react';
 import { Card, CardContent, Chip, Badge } from '@go2asia/ui';
 import Link from 'next/link';
 import { useGetArticles } from '@go2asia/sdk/blog';
@@ -27,14 +27,11 @@ function formatDate(dateString: string) {
 export function BlogClientWrapper() {
   const dataSource = getDataSource();
 
-  // API mode: use SDK hook (currently placeholder in SDK)
-  const { data: articlesData, isLoading, error } =
-    dataSource === 'api'
-      ? useGetArticles({
-          limit: 20,
-          // featured: true, // TODO: Add featured filter when API supports it
-        })
-      : ({ data: null, isLoading: false } as any);
+  // Всегда вызываем хук (правило React Hooks)
+  const { data: articlesData, isLoading, error } = useGetArticles({
+    limit: 20,
+    enabled: dataSource === 'api',
+  });
 
   // Преобразуем данные
   const featuredArticle = useMemo(() => {

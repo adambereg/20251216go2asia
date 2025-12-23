@@ -7,13 +7,13 @@ import { Globe, Clock } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetArticles } from '@go2asia/sdk/blog';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
 
 export function GuidesClient() {
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const dataSource = getDataSource();
+  const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
   
   // Загружаем гайды из API (статьи с типом guide)
   // Примечание: если API поддерживает фильтрацию по типу, добавить category: 'guide'
@@ -22,7 +22,7 @@ export function GuidesClient() {
     isLoading
   } = useGetArticles({
     limit: 20,
-    cursor,
+    enabled: dataSource === 'api',
     // category: 'guide', // TODO: Add when API supports guide category filter
   });
 
@@ -40,7 +40,23 @@ export function GuidesClient() {
         publishedAt: g.publishedAt || g.updatedAt || '',
       }));
     }
-    if (!guidesData?.items) return [];
+    if (!guidesData?.items || guidesData.items.length === 0) {
+      // Fallback на моки при пустом API ответе (не во время загрузки)
+      if (!isLoading) {
+        console.warn('[GuidesClient] API returned empty, falling back to mocks');
+        return mockRepo.atlas.listGuides().map((g) => ({
+          id: g.id,
+          slug: g.slug,
+          title: g.title,
+          excerpt: g.excerpt || '',
+          coverImage: g.coverImage,
+          category: g.category,
+          tags: g.tags || [],
+          publishedAt: g.publishedAt || g.updatedAt || '',
+        }));
+      }
+      return [];
+    }
     return guidesData.items.map((article) => ({
       id: article.id,
       slug: article.slug,
@@ -48,8 +64,8 @@ export function GuidesClient() {
       excerpt: article.excerpt || '',
       coverImage: article.coverImage,
       category: article.category,
-      tags: article.tags || [],
-      publishedAt: article.publishedAt || article.createdAt || '',
+      tags: article.tags ?? [],
+      publishedAt: article.publishedAt || '',
       // TODO: Get city name when API supports it
       // TODO: Get country name when API supports it
       // TODO: Get readingTime when API supports it
@@ -59,7 +75,7 @@ export function GuidesClient() {
       // TODO: Get rating when API supports it
       // TODO: Get reviews count when API supports it
     }));
-  }, [guidesData, dataSource]);
+  }, [guidesData, dataSource, isLoading]);
 
   // Показываем состояние загрузки
   if (dataSource === 'api' && isLoading && !guidesData) {
@@ -71,7 +87,7 @@ export function GuidesClient() {
           description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+          badgeText={badgeText}
         />
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <AtlasMainNav />
@@ -98,7 +114,7 @@ export function GuidesClient() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+        badgeText={badgeText}
       />
 
       {/* Top controls: internal nav + search */}
@@ -198,17 +214,7 @@ export function GuidesClient() {
             </div>
             
             {/* Пагинация */}
-            {dataSource === 'api' && guidesData?.hasMore && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => setCursor(guidesData.nextCursor || undefined)}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? 'Загрузка...' : 'Загрузить ещё'}
-                </button>
-              </div>
-            )}
+            {/* Cursor pagination not supported in current ListResponse контракте */}
           </>
         ) : (
           <div className="text-center py-12">

@@ -12,10 +12,8 @@ export default function PlaceOverviewPage() {
 
   const dataSource = getDataSource();
 
-  const { data: placeData, isLoading } =
-    dataSource === 'api'
-      ? useGetPlaceById(placeId || '')
-      : ({ data: null, isLoading: false } as any);
+  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
+  const { data: placeData, isLoading } = useGetPlaceById(dataSource === 'api' ? (placeId || '') : '');
 
   const mockPlace = mockRepo.atlas.getPlaceById(placeId || '');
 

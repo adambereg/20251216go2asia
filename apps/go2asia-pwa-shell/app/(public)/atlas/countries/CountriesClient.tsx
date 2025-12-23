@@ -21,10 +21,12 @@ export function CountriesClient() {
     isLoading
   } = useGetCountries({
     limit: 20,
+    enabled: dataSource === 'api',
   });
 
-  // Преобразуем данные из API
+  // Преобразуем данные из API с fallback на моки
   const countries = useMemo(() => {
+    // Mock mode — всегда используем моки
     if (dataSource === 'mock') {
       return mockRepo.atlas.listCountries().map((country) => ({
         id: country.id,
@@ -36,17 +38,36 @@ export function CountriesClient() {
         heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
       }));
     }
-    if (!countriesData?.items) return [];
-    return countriesData.items.map((country) => ({
-      id: country.id,
-      name: country.name,
-      flag: country.flag || '🌏',
-      placesCount: country.placesCount || 0,
-      citiesCount: country.citiesCount || 0,
-      description: country.description || '',
-      heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get heroImage when API supports it
-    }));
-  }, [countriesData, dataSource]);
+    
+    // API mode — используем данные из API, fallback на моки при пустом ответе
+    if (countriesData?.items?.length) {
+      return countriesData.items.map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        citiesCount: country.citiesCount || 0,
+        description: country.description || '',
+        heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
+    
+    // Fallback на моки при пустом API ответе (но не во время загрузки)
+    if (!isLoading) {
+      console.warn('[CountriesClient] API returned empty, falling back to mocks');
+      return mockRepo.atlas.listCountries().map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        citiesCount: country.citiesCount || 0,
+        description: country.description || '',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
+    
+    return [];
+  }, [countriesData, dataSource, isLoading]);
 
   // Показываем состояние загрузки
   if (dataSource === 'api' && isLoading && !countriesData) {

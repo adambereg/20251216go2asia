@@ -7,13 +7,13 @@ import { Globe } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
 
 export function PlacesClient() {
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const dataSource = getDataSource();
+  const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
   
   // Загружаем места из API
   const { 
@@ -21,7 +21,7 @@ export function PlacesClient() {
     isLoading
   } = useGetPlaces({
     limit: 20,
-    cursor,
+    enabled: dataSource === 'api',
   });
 
   // Преобразуем данные из API
@@ -36,20 +36,34 @@ export function PlacesClient() {
         photos: place.photos || [],
       }));
     }
-    if (!placesData?.items) return [];
+    if (!placesData?.items || placesData.items.length === 0) {
+      // Fallback на моки при пустом API ответе (не во время загрузки)
+      if (!isLoading) {
+        console.warn('[PlacesClient] API returned empty, falling back to mocks');
+        return mockRepo.atlas.listPlaces().map((place) => ({
+          id: place.id,
+          title: place.name,
+          description: place.description || '',
+          cityId: undefined,
+          categories: place.categories || [],
+          photos: place.photos || [],
+        }));
+      }
+      return [];
+    }
     return placesData.items.map((place) => ({
       id: place.id,
       title: place.name,
       description: place.description || '',
-      cityId: place.cityId,
-      categories: place.categories || [],
+      cityId: undefined,
+      categories: [],
       photos: place.photos || [],
       // TODO: Get city name from cityId when API supports it
       // TODO: Get country name when API supports it
       // TODO: Get rating when API supports it
       // TODO: Get reviews count when API supports it
     }));
-  }, [placesData, dataSource]);
+  }, [placesData, dataSource, isLoading]);
 
   // Показываем состояние загрузки
   if (dataSource === 'api' && isLoading && !placesData) {
@@ -61,7 +75,7 @@ export function PlacesClient() {
           description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+          badgeText={badgeText}
         />
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <AtlasMainNav />
@@ -88,7 +102,7 @@ export function PlacesClient() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+        badgeText={badgeText}
       />
 
       {/* Top controls: internal nav + search */}
@@ -167,18 +181,7 @@ export function PlacesClient() {
               ))}
             </div>
             
-            {/* Пагинация */}
-            {dataSource === 'api' && placesData?.hasMore && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => setCursor(placesData.nextCursor || undefined)}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? 'Загрузка...' : 'Загрузить ещё'}
-                </button>
-              </div>
-            )}
+            {/* Cursor pagination not supported in current ListResponse контракте */}
           </>
         ) : (
           <div className="text-center py-12">

@@ -2,13 +2,13 @@ export type ID = string;
 
 /**
  * Data source switch.
- * Default should be `mock`.
+ * Default is `api` (mocks are UI-only fallback).
  */
 export type DataSource = 'mock' | 'api';
 
 export function getDataSource(): DataSource {
   const v = process.env.NEXT_PUBLIC_DATA_SOURCE;
-  return v === 'api' ? 'api' : 'mock';
+  return v === 'mock' ? 'mock' : 'api';
 }
 
 /**

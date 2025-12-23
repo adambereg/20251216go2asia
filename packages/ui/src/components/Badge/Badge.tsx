@@ -4,12 +4,74 @@ import React from 'react';
 import { Lock, Crown, CheckCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export interface BadgeProps {
-  type: 'lock' | 'pro' | 'rf' | 'rf-full';
-  className?: string;
-}
+export type BadgeType = 'lock' | 'pro' | 'rf' | 'rf-full';
+export type BadgeVariant =
+  | 'default'
+  | 'info'
+  | 'new'
+  | 'verified'
+  | 'ugc'
+  | 'editor'
+  | 'popular'
+  | 'russian-friendly'
+  | 'warning'
+  | 'success';
 
-export const Badge: React.FC<BadgeProps> = ({ type, className }) => {
+type LegacyBadgeProps = {
+  type: BadgeType;
+  className?: string;
+};
+
+type PillBadgeProps = {
+  /** UI pill-style badge (used across app). */
+  variant?: BadgeVariant;
+  /** Optional sizing used in some screens */
+  size?: 'sm' | 'md';
+  className?: string;
+  children: React.ReactNode;
+};
+
+export type BadgeProps = LegacyBadgeProps | PillBadgeProps;
+
+export const Badge: React.FC<BadgeProps> = (props) => {
+  // Pill variant usage: <Badge variant="info">Text</Badge>
+  if ('children' in props) {
+    const variant: BadgeVariant = props.variant ?? 'default';
+    const size = props.size ?? 'md';
+    const styles: Record<BadgeVariant, string> = {
+      default: 'bg-slate-100 text-slate-700',
+      info: 'bg-sky-100 text-sky-800',
+      new: 'bg-sky-100 text-sky-800',
+      verified: 'bg-emerald-100 text-emerald-800',
+      ugc: 'bg-violet-100 text-violet-800',
+      editor: 'bg-amber-100 text-amber-900',
+      popular: 'bg-rose-100 text-rose-800',
+      'russian-friendly': 'bg-emerald-100 text-emerald-900',
+      warning: 'bg-amber-100 text-amber-900',
+      success: 'bg-emerald-100 text-emerald-900',
+    };
+    const sizeStyles: Record<'sm' | 'md', string> = {
+      sm: 'px-2 py-0.5 text-xs',
+      md: 'px-2.5 py-1 text-xs',
+    };
+
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center rounded-full font-semibold',
+          styles[variant],
+          sizeStyles[size],
+          props.className
+        )}
+      >
+        {props.children}
+      </span>
+    );
+  }
+
+  // Legacy usage: <Badge type="rf" />
+  const { type, className } = props;
+
   if (type === 'lock') {
     return (
       <div className={cn('absolute top-2 right-2 bg-white/20 backdrop-blur px-2 py-1 rounded-lg flex items-center gap-1 text-xs font-medium', className)}>

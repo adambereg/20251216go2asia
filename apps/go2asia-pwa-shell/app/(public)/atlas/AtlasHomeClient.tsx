@@ -16,6 +16,7 @@ export function AtlasHomeClient() {
     isLoading: countriesLoading
   } = useGetCountries({
     limit: 20,
+    enabled: dataSource === 'api',
   });
 
   // Загружаем популярные места из API
@@ -24,9 +25,10 @@ export function AtlasHomeClient() {
     isLoading: placesLoading
   } = useGetPlaces({
     limit: 3,
+    enabled: dataSource === 'api',
   });
 
-  // Преобразуем данные из API в формат компонента
+  // Преобразуем данные из API в формат компонента с fallback на моки
   const countries = useMemo(() => {
     if (dataSource === 'mock') {
       return mockRepo.atlas.listCountries().map((country) => ({
@@ -38,16 +40,34 @@ export function AtlasHomeClient() {
         heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
       }));
     }
-    if (!countriesData?.items) return [];
-    return countriesData.items.map((country) => ({
-      id: country.id,
-      name: country.name,
-      flag: country.flag || '🌏',
-      placesCount: country.placesCount || 0,
-      description: country.description || '',
-      heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get heroImage when API supports it
-    }));
-  }, [countriesData, dataSource]);
+    
+    // API mode — используем данные из API
+    if (countriesData?.items?.length) {
+      return countriesData.items.map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        description: country.description || '',
+        heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
+    
+    // Fallback на моки при пустом API ответе
+    if (!countriesLoading) {
+      console.warn('[AtlasHomeClient] Countries API returned empty, falling back to mocks');
+      return mockRepo.atlas.listCountries().map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        description: country.description || '',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
+    
+    return [];
+  }, [countriesData, dataSource, countriesLoading]);
 
   const popularPlaces = useMemo(() => {
     if (dataSource === 'mock') {
@@ -63,16 +83,37 @@ export function AtlasHomeClient() {
           reviewsCount: 0,
         }));
     }
-    if (!placesData?.items) return [];
-    return placesData.items.map((place) => ({
-      id: place.id,
-      title: place.name,
-      city: '', // TODO: Get city name from cityId when API supports it
-      country: '', // TODO: Get country name when API supports it
-      rating: 0, // TODO: Get rating when API supports it
-      reviewsCount: 0, // TODO: Get reviews count when API supports it
-    }));
-  }, [placesData, dataSource]);
+    
+    // API mode — используем данные из API
+    if (placesData?.items?.length) {
+      return placesData.items.map((place) => ({
+        id: place.id,
+        title: place.name,
+        city: '',
+        country: '',
+        rating: 0,
+        reviewsCount: 0,
+      }));
+    }
+    
+    // Fallback на моки при пустом API ответе
+    if (!placesLoading) {
+      console.warn('[AtlasHomeClient] Places API returned empty, falling back to mocks');
+      return mockRepo.atlas
+        .listPlaces()
+        .slice(0, 3)
+        .map((place) => ({
+          id: place.id,
+          title: place.name,
+          city: place.city,
+          country: place.country,
+          rating: place.rating || 0,
+          reviewsCount: 0,
+        }));
+    }
+    
+    return [];
+  }, [placesData, dataSource, placesLoading]);
 
   const isLoading = dataSource === 'api' ? countriesLoading || placesLoading : false;
 
