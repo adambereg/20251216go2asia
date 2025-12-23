@@ -285,6 +285,18 @@ async function routeRequest(
 
   // Prepare headers for downstream
   const headers = new Headers(request.headers);
+  // Never forward hop-by-hop / authority headers from the incoming request.
+  // If we forward `host`, Cloudflare may route based on the wrong hostname and return its default 404 HTML.
+  headers.delete('host');
+  headers.delete('connection');
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  headers.delete('keep-alive');
+  headers.delete('proxy-authenticate');
+  headers.delete('proxy-authorization');
+  headers.delete('te');
+  headers.delete('trailer');
+  headers.delete('upgrade');
   headers.set('X-Request-Id', requestId);
 
   // M3 trust model: downstream accepts user-context only if request is authenticated as gateway-origin.
