@@ -25,12 +25,40 @@ export interface ReferralStatsResponse {
   directReferralsCount: number;
 }
 
+export interface ReferralTreeNode {
+  userId: string;
+  registeredAt: string;
+  firstLoginAt?: string | null;
+  isActive: boolean;
+  subReferralsCount: number;
+  subReferrals?: ReferralTreeNode[];
+}
+
+export interface ReferralTreeResponse {
+  userId: string;
+  depth: number;
+  referrals: ReferralTreeNode[];
+}
+
+export interface UseGetReferralCodeOptions {
+  enabled?: boolean;
+}
+
+export interface UseGetReferralStatsOptions {
+  enabled?: boolean;
+}
+
+export interface GetReferralTreeParams {
+  depth?: 1 | 2;
+  enabled?: boolean;
+}
+
 /**
  * Get current user's referral code
  * 
  * @returns React Query hook for referral code data
  */
-export const useGetReferralCode = () => {
+export const useGetReferralCode = (options?: UseGetReferralCodeOptions) => {
   return useQuery<ReferralCodeResponse>({
     queryKey: ['referral', 'code'],
     queryFn: async () => {
@@ -39,6 +67,7 @@ export const useGetReferralCode = () => {
         '/v1/referral/code'
       );
     },
+    enabled: options?.enabled ?? true,
     staleTime: 5 * 60 * 1000, // 5 minutes (referral code doesn't change often)
     retry: 2,
   });
@@ -49,7 +78,7 @@ export const useGetReferralCode = () => {
  * 
  * @returns React Query hook for referral stats data
  */
-export const useGetReferralStats = () => {
+export const useGetReferralStats = (options?: UseGetReferralStatsOptions) => {
   return useQuery<ReferralStatsResponse>({
     queryKey: ['referral', 'stats'],
     queryFn: async () => {
@@ -58,22 +87,29 @@ export const useGetReferralStats = () => {
         '/v1/referral/stats'
       );
     },
+    enabled: options?.enabled ?? true,
     staleTime: 60 * 1000, // 1 minute
     retry: 2,
   });
 };
 
 /**
- * Get referral tree (placeholder for future use)
+ * Get referral tree (depth 1..2)
  * 
- * @param _params - Query parameters (placeholder)
- * @returns React Query hook (placeholder)
+ * @param params - Query parameters (depth)
+ * @returns React Query hook for referral tree
  */
-export const useGetReferralTree = (_params?: any) => {
-  // Placeholder - will be implemented when API is available
-  return {
-    data: undefined,
-    isLoading: false,
-    error: null,
-  };
+export const useGetReferralTree = (params?: GetReferralTreeParams) => {
+  const depth = params?.depth ?? 2;
+  const url = `/v1/referral/tree?depth=${depth}`;
+
+  return useQuery<ReferralTreeResponse>({
+    queryKey: ['referral', 'tree', depth],
+    queryFn: async () => {
+      return customInstance<ReferralTreeResponse>({ method: 'GET' }, url);
+    },
+    enabled: params?.enabled ?? true,
+    staleTime: 60 * 1000, // 1 minute
+    retry: 2,
+  });
 };

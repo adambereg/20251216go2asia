@@ -194,6 +194,17 @@ function getRows<T>(result: unknown): T[] {
   return Array.isArray(rows) ? rows : [];
 }
 
+function parseDepth(depthRaw: string | null): 1 | 2 {
+  const n = depthRaw ? Number.parseInt(depthRaw, 10) : 2;
+  return n === 1 ? 1 : 2;
+}
+
+function toIso(input: unknown): string {
+  if (input instanceof Date) return input.toISOString();
+  const d = new Date(String(input));
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function generateReferralCode(): string {
   // Random alphanumeric code (M3). Uniqueness is enforced by DB unique constraint.
   // Use crypto for better randomness than Math.random.
@@ -317,6 +328,99 @@ export default {
         const cnt = Number(getRows<{ cnt: number }>(countRes)[0]?.cnt ?? 0);
 
         const res = json({ userId, code: ensured.code, directReferralsCount: cnt }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/referral/tree') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const userId = request.headers.get('X-User-ID');
+        if (!userId) {
+          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const depth = parseDepth(url.searchParams.get('depth'));
+        const db = createDb(requireDatabase(env));
+
+        const directRes = await db.execute(sql`
+          SELECT referee_id, registered_at, first_login_at
+          FROM referral_relations
+          WHERE referrer_id = ${userId}
+          ORDER BY registered_at DESC
+        `);
+
+        const direct = getRows<{ referee_id: string; registered_at: Date; first_login_at: Date | null }>(directRes);
+
+        // Second-level relations for all direct referrals (used for both depth=1 (counts) and depth=2 (list))
+        const subRes = await db.execute(sql`
+          SELECT d.referee_id AS parent_id, r.referee_id, r.registered_at, r.first_login_at
+          FROM referral_relations d
+          JOIN referral_relations r
+            ON r.referrer_id = d.referee_id
+          WHERE d.referrer_id = ${userId}
+          ORDER BY r.registered_at DESC
+        `);
+
+        const subs = getRows<{
+          parent_id: string;
+          referee_id: string;
+          registered_at: Date;
+          first_login_at: Date | null;
+        }>(subRes);
+
+        const subsByParent = new Map<
+          string,
+          { userId: string; registeredAt: string; firstLoginAt: string | null; isActive: boolean }[]
+        >();
+
+        for (const row of subs) {
+          const list = subsByParent.get(row.parent_id) ?? [];
+          list.push({
+            userId: row.referee_id,
+            registeredAt: toIso(row.registered_at),
+            firstLoginAt: row.first_login_at ? toIso(row.first_login_at) : null,
+            isActive: Boolean(row.first_login_at),
+          });
+          subsByParent.set(row.parent_id, list);
+        }
+
+        const referrals = direct.map((r) => {
+          const children = subsByParent.get(r.referee_id) ?? [];
+
+          const node: Record<string, unknown> = {
+            userId: r.referee_id,
+            registeredAt: toIso(r.registered_at),
+            firstLoginAt: r.first_login_at ? toIso(r.first_login_at) : null,
+            isActive: Boolean(r.first_login_at),
+            subReferralsCount: children.length,
+          };
+
+          if (depth === 2) {
+            node.subReferrals = children.map((c) => ({
+              ...c,
+              subReferralsCount: 0,
+            }));
+          }
+
+          return node;
+        });
+
+        const res = json(
+          {
+            userId,
+            depth,
+            referrals,
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

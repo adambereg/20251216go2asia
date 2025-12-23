@@ -17,12 +17,16 @@ export interface UserBalance {
   updatedAt: string;
 }
 
+export interface UseGetBalanceOptions {
+  enabled?: boolean;
+}
+
 /**
  * Get current user points balance
  * 
  * @returns React Query hook for balance data
  */
-export const useGetBalance = () => {
+export const useGetBalance = (options?: UseGetBalanceOptions) => {
   return useQuery<UserBalance>({
     queryKey: ['points', 'balance'],
     queryFn: async () => {
@@ -31,6 +35,7 @@ export const useGetBalance = () => {
         '/v1/points/balance'
       );
     },
+    enabled: options?.enabled ?? true,
     staleTime: 30 * 1000, // 30 seconds
     retry: 2,
   });
