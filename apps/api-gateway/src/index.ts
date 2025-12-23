@@ -366,7 +366,8 @@ async function routeRequest(
   }
 
   // Forward request to service
-  const targetUrl = `${serviceUrl}${downstreamPath}${url.search}`;
+  const baseUrl = serviceUrl.endsWith('/') ? serviceUrl.slice(0, -1) : serviceUrl;
+  const targetUrl = `${baseUrl}${downstreamPath}${url.search}`;
   logger.info('Proxy request', {
     path,
     downstreamPath,
@@ -385,6 +386,11 @@ async function routeRequest(
     // Cloudflare may return a Response with immutable headers.
     // Always clone before adding/overriding headers.
     const out = new Response(response.body, response);
+    // Diagnostic headers (no secrets). Helps debug proxy-chain issues.
+    out.headers.set('X-Proxy-Target-Host', safeHostFromUrl(baseUrl) ?? '');
+    out.headers.set('X-Proxy-Target-Path', downstreamPath);
+    out.headers.set('X-Proxy-Downstream-Status', String(response.status));
+    out.headers.set('X-Proxy-Downstream-Content-Type', response.headers.get('Content-Type') ?? '');
     if (origin) {
       out.headers.set('Access-Control-Allow-Origin', origin);
       out.headers.set('Vary', 'Origin');
