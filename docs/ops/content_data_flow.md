@@ -1,5 +1,8 @@
 # Content Data Flow (Atlas / Pulse / Blog)
 
+> **Last verified**: 2025-12-23 (staging)  
+> **Status**: ✅ All endpoints working through API Gateway
+
 ## Overview
 
 ```
@@ -22,8 +25,8 @@ Environment variable: `NEXT_PUBLIC_DATA_SOURCE`
 
 | Value   | Behavior                                      |
 |---------|-----------------------------------------------|
-| `mock`  | Use local mocks directly (default)            |
-| `api`   | Fetch from /api/content/* → Neon              |
+| `api`   | Fetch from /api/content/* → Neon (default)    |
+| `mock`  | Use local mocks directly                      |
 
 On API failure, automatically falls back to mocks.
 
@@ -108,32 +111,32 @@ DATABASE_URL=postgresql://...@ep-xxx.neon.tech/neondb?sslmode=require
 Пример PowerShell (без токенов):
 
 ```powershell
-$gw = \"https://go2asia-api-gateway-staging.fred89059599296.workers.dev\"
-curl.exe -k -s \"$gw/v1/content/_debug/db\"
+$gw = "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+curl.exe -k -s "$gw/v1/content/_debug/db"
 ```
 
-Ожидаемый пример ответа (значения будут вашими, **без секретов**):
+Ожидаемый пример ответа (проверено 2025-12-23):
 
 ```json
 {
-  \"ok\": true,
-  \"db\": {
-    \"host\": \"ep-xxxx.us-east-1.aws.neon.tech\",
-    \"name\": \"neondb\",
-    \"protocol\": \"postgresql\",
-    \"current_user\": \"neondb_owner\"
+  "ok": true,
+  "db": {
+    "host": "ep-shiny-violet-a4ja8x5m.us-east-1.aws.neon.tech",
+    "name": "neondb",
+    "protocol": "postgresql",
+    "current_user": "neondb_owner"
   },
-  \"counts\": {
-    \"countries\": 8,
-    \"cities\": 103,
-    \"places\": 20,
-    \"events\": 10,
-    \"articles\": 16,
-    \"media_files\": 167
+  "counts": {
+    "countries": 8,
+    "cities": 103,
+    "places": 20,
+    "events": 10,
+    "articles": 16,
+    "media_files": 167
   },
-  \"examples\": {
-    \"top_event\": { \"id\": \"e7f8b7d4-6f6a-4f1e-9aa0-2d4dbaac7b10\", \"slug\": \"pulse-demo-...\" },
-    \"top_article\": { \"slug\": \"digital-nomads-2026\" }
+  "examples": {
+    "top_event": { "id": "evt-010", "slug": "повторяющееся-событие-беговой-клуб-еженедельно-evt-010" },
+    "top_article": { "slug": "digital-nomads-2026" }
   }
 }
 ```
@@ -150,3 +153,98 @@ curl.exe -k -s \"$gw/v1/content/_debug/db\"
 
 ### Atlas Places
 - `/atlas/places/place-1`
+
+---
+
+## Verified API Endpoints (2025-12-23)
+
+### Gateway → Content Service
+
+All requests successfully proxied through `api-gateway` to `content-service`:
+
+| Endpoint | Status | Response |
+|----------|--------|----------|
+| `GET /v1/content/_debug/db` | ✅ 200 | JSON with DB info and counts |
+| `GET /v1/content/events` | ✅ 200 | JSON array with 10 events |
+| `GET /v1/content/countries` | ✅ 200 | JSON array with 8 countries |
+| `GET /v1/content/articles` | ✅ 200 | JSON array with 16 articles |
+
+### Verification Commands
+
+```powershell
+$gw = "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+
+# Debug endpoint (shows DB connection + counts)
+curl.exe -k -i "$gw/v1/content/_debug/db"
+
+# Events list
+curl.exe -k -i "$gw/v1/content/events"
+
+# Countries list
+curl.exe -k -i "$gw/v1/content/countries"
+```
+
+### Expected Response Headers
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+X-Proxy-Downstream-Status: 200
+X-Proxy-Target-Host: go2asia-content-service-staging.fred89059599296.workers.dev
+X-Request-ID: <unique-id>
+```
+
+---
+
+## Cloudflare Workers Configuration
+
+### Required Compatibility Flag
+
+Both `api-gateway` and `content-service` require `global_fetch_strictly_public` flag to allow inter-worker communication via `workers.dev` URLs:
+
+```toml
+# wrangler.toml
+compatibility_flags = ["global_fetch_strictly_public"]
+```
+
+Without this flag, Workers return `error code: 1042` when fetching other Workers in the same zone.
+
+### Required Environment Variables (api-gateway)
+
+Set in Cloudflare Dashboard → Workers & Pages → go2asia-api-gateway-staging → Settings → Variables:
+
+| Variable | Value |
+|----------|-------|
+| `CONTENT_SERVICE_URL` | `https://go2asia-content-service-staging.fred89059599296.workers.dev` |
+| `AUTH_SERVICE_URL` | `https://go2asia-auth-service-staging.fred89059599296.workers.dev` |
+| `POINTS_SERVICE_URL` | `https://go2asia-points-service-staging.fred89059599296.workers.dev` |
+| `REFERRAL_SERVICE_URL` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` |
+
+### Required Environment Variables (content-service)
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | `postgresql://...@ep-shiny-violet-a4ja8x5m.us-east-1.aws.neon.tech/neondb?sslmode=require` |
+
+---
+
+## Troubleshooting
+
+### Error: `SERVICE_NOT_CONFIGURED`
+
+**Cause**: Missing `*_SERVICE_URL` environment variable in api-gateway.
+
+**Fix**: Add the missing variable in Cloudflare Dashboard or via CI/CD `--var`.
+
+### Error: `error code: 1042`
+
+**Cause**: Cloudflare Workers cannot fetch other Workers via `workers.dev` without compatibility flag.
+
+**Fix**: Add `compatibility_flags = ["global_fetch_strictly_public"]` to `wrangler.toml`.
+
+### Error: `404 Not Found` (HTML instead of JSON)
+
+**Cause**: Gateway forwarding problematic headers (Host) to downstream service.
+
+**Fix**: Gateway must construct minimal headers set, not forward all incoming headers.
+

@@ -56,9 +56,7 @@ export default function CityLayout({
   const { 
     data: cityData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetCityById(cityIdFromUrl || '')
-    : ({ data: null, isLoading: false } as any);
+  } = useGetCityById(dataSource === 'api' ? (cityIdFromUrl || '') : '');
 
   const mockCity = dataSource === 'mock' ? mockRepo.atlas.getCityById(cityIdFromUrl || '') : null;
   const mockCountry = dataSource === 'mock' && mockCity ? mockRepo.atlas.getCountryById(mockCity.countryId) : null;
@@ -72,7 +70,8 @@ export default function CityLayout({
     (dataSource === 'mock' ? mockCity?.heroImage : undefined) ||
     'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
   const heroImageAlt = cityName || 'Город';
-  const updatedAt = dataSource === 'mock' ? mockCity?.updatedAt : cityData?.updatedAt;
+  // ContentCityDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
+  const updatedAt = dataSource === 'mock' ? mockCity?.updatedAt : undefined;
   const lastUpdatedAt = updatedAt
     ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';

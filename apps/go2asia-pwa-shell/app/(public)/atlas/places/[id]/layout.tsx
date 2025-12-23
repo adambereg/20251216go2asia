@@ -46,9 +46,8 @@ export default function PlaceLayout({
 
   const dataSource = getDataSource();
 
-  // API mode: use SDK hook (currently placeholder in SDK)
-  const { data: placeData, isLoading } =
-    dataSource === 'api' ? useGetPlaceById(placeIdFromUrl || '') : ({ data: null, isLoading: false } as any);
+  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
+  const { data: placeData, isLoading } = useGetPlaceById(dataSource === 'api' ? (placeIdFromUrl || '') : '');
 
   const mockPlace = dataSource === 'mock' ? mockRepo.atlas.getPlaceById(placeIdFromUrl || '') : null;
 
@@ -59,10 +58,12 @@ export default function PlaceLayout({
     (dataSource === 'mock' ? mockPlace?.photos?.[0] : placeData?.photos?.[0]) ||
     'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
   const heroImageAlt = title || 'Место';
-  const tags = (dataSource === 'mock' ? mockPlace?.categories : placeData?.categories) || [];
+  // ContentPlaceDto не содержит categories → теги сейчас доступны только в mock-режиме
+  const tags = (dataSource === 'mock' ? mockPlace?.categories : []) || [];
   const rating = (dataSource === 'mock' ? mockPlace?.rating : undefined) ?? 0;
 
-  const updatedAt = dataSource === 'mock' ? mockPlace?.updatedAt : placeData?.updatedAt;
+  // ContentPlaceDto не содержит updatedAt → показываем дату только в mock-режиме
+  const updatedAt = dataSource === 'mock' ? mockPlace?.updatedAt : undefined;
   const lastUpdatedAt = updatedAt
     ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';

@@ -416,3 +416,4 @@ export async function getArticleBySlug(sql: SqlClient, slug: string): Promise<Ar
   `;
   return (rows[0] as ArticleRow) ?? null;
 }
+

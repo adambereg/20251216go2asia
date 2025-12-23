@@ -201,3 +201,4 @@ main().catch((err) => {
   console.error('❌ DDL apply failed:', err instanceof Error ? err.message : String(err));
   process.exit(1);
 });
+

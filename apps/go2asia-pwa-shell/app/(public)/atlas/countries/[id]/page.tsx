@@ -16,12 +16,13 @@ export default function CountryOverviewPage() {
   const { 
     data: countryData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetCountryById(countryId || '')
-    : ({ data: null, isLoading: false } as any);
+  } = useGetCountryById(dataSource === 'api' ? (countryId || '') : '');
 
   const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
-  const resolved: any = dataSource === 'mock' ? mockCountry : countryData;
+  const resolved: any =
+    dataSource === 'mock'
+      ? mockCountry
+      : countryData ?? mockRepo.atlas.getCountryById(countryId || '');
 
   if (isLoading) {
     return (

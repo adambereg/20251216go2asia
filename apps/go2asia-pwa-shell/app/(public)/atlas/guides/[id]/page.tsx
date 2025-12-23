@@ -10,14 +10,12 @@ export default function GuideOverviewPage() {
   const params = useParams();
   const guideId = params?.id as string;
 
+  const dataSource = getDataSource();
+  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
   const { 
     data: articleData, 
     isLoading 
-  } = getDataSource() === 'api'
-    ? useGetArticleBySlug(guideId || '')
-    : ({ data: null, isLoading: false } as any);
-
-  const dataSource = getDataSource();
+  } = useGetArticleBySlug(dataSource === 'api' ? (guideId || '') : '');
   const mockGuide = dataSource === 'mock' ? mockRepo.atlas.getGuideByIdOrSlug(guideId || '') : null;
   const resolved: any = dataSource === 'mock' ? mockGuide : articleData;
 
@@ -30,6 +28,8 @@ export default function GuideOverviewPage() {
     );
   }
 
+  const isFallback = dataSource === 'api' && !articleData && Boolean(mockGuide);
+
   if (!resolved) {
     return (
       <div className="text-center py-12 text-slate-600">
@@ -40,6 +40,11 @@ export default function GuideOverviewPage() {
 
   return (
     <div className="space-y-6">
+      {isFallback ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          DEMO MODE / fallback: показаны мок-данные (API недоступен).
+        </div>
+      ) : null}
       <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">

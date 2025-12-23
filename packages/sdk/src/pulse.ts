@@ -57,10 +57,12 @@ export const useRegisterEvent = () => {
  * @param _params - Query parameters (placeholder)
  * @returns React Query hook (placeholder)
  */
-export const useGetEvents = (_params?: any) => {
+export const useGetEvents = (_params?: { limit?: number; enabled?: boolean }) => {
   const limit = typeof _params?.limit === 'number' ? _params.limit : 50;
+  const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
   return useQuery<ListResponse<ContentEventDto>, Error>({
     queryKey: ['content', 'events', { limit }],
+    enabled,
     queryFn: async () => {
       const endpoint = `/v1/content/events`;
       const qs = `?limit=${encodeURIComponent(String(limit))}`;

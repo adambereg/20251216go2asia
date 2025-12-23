@@ -61,9 +61,7 @@ export default function CountryLayout({
   const { 
     data: countryData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetCountryById(countryIdFromUrl || '')
-    : ({ data: null, isLoading: false } as any);
+  } = useGetCountryById(dataSource === 'api' ? (countryIdFromUrl || '') : '');
 
   const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryIdFromUrl || '') : null;
 
@@ -74,7 +72,8 @@ export default function CountryLayout({
     (dataSource === 'mock' ? mockCountry?.heroImage : undefined) ||
     'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
   const heroImageAlt = countryName || 'Страна';
-  const updatedAt = dataSource === 'mock' ? mockCountry?.updatedAt : countryData?.updatedAt;
+  // ContentCountryDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
+  const updatedAt = dataSource === 'mock' ? mockCountry?.updatedAt : undefined;
   const lastUpdatedAt = updatedAt
     ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: недавно';

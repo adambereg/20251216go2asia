@@ -15,8 +15,8 @@ export default function CountryPlacesPage() {
   const dataSource = getDataSource();
 
   // Загружаем данные страны для получения названия
-  const { data: countryData } =
-    dataSource === 'api' ? useGetCountryById(countryId || '') : ({ data: null } as any);
+  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
+  const { data: countryData } = useGetCountryById(dataSource === 'api' ? (countryId || '') : '');
   const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
 
   // Загружаем места страны из API
@@ -25,12 +25,11 @@ export default function CountryPlacesPage() {
   const { 
     data: placesData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetPlaces({
-        limit: 50,
-        // countryId: countryId, // TODO: Add when API supports countryId filter
-      })
-    : ({ data: null, isLoading: false } as any);
+  } = useGetPlaces({
+    limit: 50,
+    enabled: dataSource === 'api',
+    // countryId: countryId, // TODO: Add when API supports countryId filter
+  } as any);
 
   if (isLoading) {
     return (
@@ -58,7 +57,7 @@ export default function CountryPlacesPage() {
       ? mockRepo.atlas
           .listPlaces()
           .filter((p) => (p.country || '').toLowerCase() === (countryIdToCountryName[countryId] || '').toLowerCase())
-      : placesData?.items || [];
+      : (placesData?.items && placesData.items.length > 0 ? placesData.items : mockRepo.atlas.listPlaces());
 
   // В мок-режиме, если совпадений по стране нет (или страна не задана), показываем демо-выборку.
   const effectivePlaces = dataSource === 'mock' ? (places.length > 0 ? places : mockRepo.atlas.listPlaces().slice(0, 12)) : places;

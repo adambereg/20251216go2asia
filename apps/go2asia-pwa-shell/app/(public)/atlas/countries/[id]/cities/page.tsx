@@ -15,20 +15,19 @@ export default function CountryCitiesPage() {
   const dataSource = getDataSource();
 
   // Загружаем данные страны для получения названия
-  const { data: countryData } =
-    dataSource === 'api' ? useGetCountryById(countryId || '') : ({ data: null } as any);
+  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
+  const { data: countryData } = useGetCountryById(dataSource === 'api' ? (countryId || '') : '');
   const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
 
   // Загружаем города страны из API
   const { 
     data: citiesData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetCities({
-        limit: 50,
-        countryId: countryId,
-      })
-    : ({ data: null, isLoading: false } as any);
+  } = useGetCities({
+    limit: 50,
+    countryId: countryId,
+    enabled: dataSource === 'api',
+  } as any);
 
   if (isLoading) {
     return (
@@ -45,7 +44,7 @@ export default function CountryCitiesPage() {
   const cities =
     dataSource === 'mock'
       ? mockRepo.atlas.listCities().filter((c) => c.countryId === countryId)
-      : citiesData?.items || [];
+      : (citiesData?.items && citiesData.items.length > 0 ? citiesData.items : mockRepo.atlas.listCities().filter((c) => c.countryId === countryId));
 
   return (
     <div className="space-y-6">

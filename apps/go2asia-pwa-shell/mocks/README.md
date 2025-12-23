@@ -4,7 +4,7 @@
 
 ## Переключатель источника данных
 
-- `NEXT_PUBLIC_DATA_SOURCE=mock|api`
+- `NEXT_PUBLIC_DATA_SOURCE=api|mock` (по умолчанию: `api`)
 - По умолчанию: `mock`
 
 > В режиме `api` страницы используют SDK hooks/clients (если реализованы). Если SDK пока плейсхолдер — UI может показывать пустые состояния.

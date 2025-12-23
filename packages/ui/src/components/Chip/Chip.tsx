@@ -7,12 +7,15 @@ export interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
   size?: 'sm' | 'md';
+  /** Optional helper used in app code for active state */
+  selected?: boolean;
 }
 
 export const Chip: React.FC<ChipProps> = ({
   children,
   variant = 'default',
   size = 'md',
+  selected = false,
   className,
   ...props
 }) => {
@@ -33,7 +36,7 @@ export const Chip: React.FC<ChipProps> = ({
     <span
       className={cn(
         'inline-flex items-center rounded-full font-medium',
-        variantStyles[variant],
+        selected ? 'bg-sky-100 text-slate-900 ring-1 ring-sky-200' : variantStyles[variant],
         sizeStyles[size],
         className
       )}

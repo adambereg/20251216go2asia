@@ -9,12 +9,17 @@ import { useQuery } from '@tanstack/react-query';
 import { customInstance } from './mutator';
 import type { ContentArticleDto, ListResponse } from './content';
 
-export const useGetArticles = (_params?: { limit?: number }) => {
+export const useGetArticles = (_params?: { limit?: number; cursor?: string; enabled?: boolean }) => {
   const limit = typeof _params?.limit === 'number' ? _params.limit : 20;
-  const qs = `?limit=${encodeURIComponent(String(limit))}`;
+  const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
+  const sp = new URLSearchParams();
+  sp.set('limit', String(limit));
+  if (_params?.cursor) sp.set('cursor', _params.cursor);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
 
   return useQuery<ListResponse<ContentArticleDto>, Error>({
-    queryKey: ['content', 'articles', { limit }],
+    queryKey: ['content', 'articles', { limit, cursor: _params?.cursor ?? null }],
+    enabled,
     queryFn: async () => {
       const endpoint = `/v1/content/articles`;
       try {

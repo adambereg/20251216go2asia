@@ -46,9 +46,7 @@ export default function GuideLayout({
   const { 
     data: articleData, 
     isLoading 
-  } = dataSource === 'api'
-    ? useGetArticleBySlug(guideIdFromUrl || '')
-    : ({ data: null, isLoading: false } as any);
+  } = useGetArticleBySlug(dataSource === 'api' ? (guideIdFromUrl || '') : '');
 
   const mockGuide = dataSource === 'mock' ? mockRepo.atlas.getGuideByIdOrSlug(guideIdFromUrl || '') : null;
   const mockCity = dataSource === 'mock' && mockGuide?.cityId ? mockRepo.atlas.getCityById(mockGuide.cityId) : null;
@@ -68,9 +66,10 @@ export default function GuideLayout({
   const guideType = (dataSource === 'mock' ? mockGuide?.category : articleData?.category) || '';
   const readingTime = 0; // TODO: Get readingTime when API supports it
   const duration = ''; // TODO: Get duration when API supports it
-  const tags = (dataSource === 'mock' ? mockGuide?.tags : articleData?.tags) || [];
+  const tags = (dataSource === 'mock' ? mockGuide?.tags : articleData?.tags ?? []) || [];
   const rating = 0; // TODO: Get rating when API supports it
-  const updatedAt = dataSource === 'mock' ? mockGuide?.updatedAt : articleData?.updatedAt;
+  // ContentArticleDto не содержит updatedAt → используем publishedAt (если есть)
+  const updatedAt = dataSource === 'mock' ? mockGuide?.updatedAt : articleData?.publishedAt ?? undefined;
   const lastUpdatedAt = updatedAt
     ? `Последнее обновление: ${new Date(updatedAt).toLocaleDateString('ru-RU')}`
     : 'Последнее обновление: 17.11.2025';

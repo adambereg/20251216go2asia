@@ -21,18 +21,35 @@ export function CitiesClient() {
     isLoading
   } = useGetCities({
     limit: 50,
+    enabled: dataSource === 'api',
   });
 
   const apiCities = useMemo(() => {
-    if (!citiesData?.items) return [];
-    return citiesData.items.map((city) => ({
-      id: city.id,
-      name: city.name,
-      countryId: city.countryId,
-      description: city.description || '',
-      placesCount: city.placesCount || 0,
-    }));
-  }, [citiesData]);
+    // API mode — используем данные из API
+    if (citiesData?.items?.length) {
+      return citiesData.items.map((city) => ({
+        id: city.id,
+        name: city.name,
+        countryId: city.countryId,
+        description: city.description || '',
+        placesCount: city.placesCount || 0,
+      }));
+    }
+    
+    // Fallback на моки при пустом API ответе (но не во время загрузки)
+    if (dataSource === 'api' && !isLoading) {
+      console.warn('[CitiesClient] API returned empty, falling back to mocks');
+      return mockRepo.atlas.listCities().map((city) => ({
+        id: city.id,
+        name: city.name,
+        countryId: city.countryId,
+        description: city.description || '',
+        placesCount: city.placesCount || 0,
+      }));
+    }
+    
+    return [];
+  }, [citiesData, dataSource, isLoading]);
 
   const mockCountriesById = useMemo(() => {
     if (dataSource !== 'mock') return {};
