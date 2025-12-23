@@ -22,21 +22,32 @@ jobs:
           - service: api-gateway
             path: apps/api-gateway
             url: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
+            extra_vars: |
+              --var AUTH_SERVICE_URL:https://go2asia-auth-service-staging.fred89059599296.workers.dev
+              --var CONTENT_SERVICE_URL:https://go2asia-content-service-staging.fred89059599296.workers.dev
+              --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
+              --var REFERRAL_SERVICE_URL:https://go2asia-referral-service-staging.fred89059599296.workers.dev
           - service: auth-service
             path: apps/auth-service
             url: https://go2asia-auth-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
           - service: content-service
             path: apps/content-service
             url: https://go2asia-content-service-staging.fred89059599296.workers.dev
+            extra_vars: |
+              --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
           - service: points-service
             path: apps/points-service
             url: https://go2asia-points-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
           - service: referral-service
             path: apps/referral-service
             url: https://go2asia-referral-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
           - service: token-service
             path: apps/token-service
             url: https://go2asia-token-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -65,7 +76,8 @@ jobs:
 
           pnpm --dir "${{ matrix.path }}" exec wrangler deploy --env staging \
             --var ENVIRONMENT:staging \
-            --var VERSION:${{ github.sha }}
+            --var VERSION:${{ github.sha }} \
+            ${{ matrix.extra_vars }}
 
       - name: Smoke check (HTTP 200)
         run: |
