@@ -78,7 +78,8 @@ export const cities = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
     descriptionShort: text('description_short'),
-    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    // Legacy geo columns (created in 0000 migration).
+    // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     latitude: numeric('latitude', { precision: 9, scale: 6 }),
     longitude: numeric('longitude', { precision: 9, scale: 6 }),
     // MVP geo (preferred): no PostGIS, split coords
@@ -103,7 +104,8 @@ export const places = pgTable(
     slug: varchar('slug', { length: 255 }).notNull().unique(),
     type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
     descriptionShort: text('description_short'),
-    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    // Legacy geo columns (created in 0000 migration).
+    // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     latitude: numeric('latitude', { precision: 9, scale: 6 }),
     longitude: numeric('longitude', { precision: 9, scale: 6 }),
     // MVP geo (preferred): no PostGIS, split coords
@@ -131,7 +133,8 @@ export const events = pgTable(
     slug: varchar('slug', { length: 255 }).notNull(),
     description: text('description'),
     category: varchar('category', { length: 100 }),
-    // Legacy columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    // Legacy columns (created in 0000 migration).
+    // Deprecated/read-only: SSOT is start_at/end_at (timestamptz). Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     startDate: timestamp('start_date').notNull(),
     endDate: timestamp('end_date'),
     // MVP (preferred): timestamptz + start_at/end_at
@@ -140,7 +143,8 @@ export const events = pgTable(
     location: text('location'),
     countryId: text('country_id').references(() => countries.id),
     cityId: text('city_id').references(() => cities.id),
-    // Legacy geo columns (created in 0000 migration). Kept for backward compatibility (no API/seed changes in PR#1).
+    // Legacy geo columns (created in 0000 migration).
+    // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     latitude: numeric('latitude', { precision: 9, scale: 6 }),
     longitude: numeric('longitude', { precision: 9, scale: 6 }),
     // MVP geo (preferred): no PostGIS, split coords

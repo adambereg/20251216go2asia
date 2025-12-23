@@ -17,7 +17,7 @@ export default function PlaceOverviewPage() {
       ? useGetPlaceById(placeId || '')
       : ({ data: null, isLoading: false } as any);
 
-  const mockPlace = dataSource === 'mock' ? mockRepo.atlas.getPlaceById(placeId || '') : null;
+  const mockPlace = mockRepo.atlas.getPlaceById(placeId || '');
 
   if (isLoading) {
     return (
@@ -28,7 +28,8 @@ export default function PlaceOverviewPage() {
     );
   }
 
-  const resolved = dataSource === 'mock' ? mockPlace : placeData;
+  const resolved = dataSource === 'mock' ? mockPlace : placeData ?? mockPlace;
+  const isFallback = dataSource === 'api' && !placeData && Boolean(mockPlace);
 
   if (!resolved) {
     return (
@@ -40,6 +41,11 @@ export default function PlaceOverviewPage() {
 
   return (
     <div className="space-y-6">
+      {isFallback ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          DEMO MODE / fallback: показаны мок-данные (API недоступен).
+        </div>
+      ) : null}
       <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -71,7 +77,7 @@ export default function PlaceOverviewPage() {
                     Широта
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {(resolved as any).latitude.toFixed(4)}
+                    {Number.parseFloat(String((resolved as any).latitude)).toFixed(4)}
                   </div>
                 </div>
                 <div className="rounded-xl bg-slate-50 px-4 py-3">
@@ -79,7 +85,7 @@ export default function PlaceOverviewPage() {
                     Долгота
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {(resolved as any).longitude.toFixed(4)}
+                    {Number.parseFloat(String((resolved as any).longitude)).toFixed(4)}
                   </div>
                 </div>
               </>

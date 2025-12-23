@@ -5,8 +5,9 @@
  * This file provides React Query hooks for events operations.
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customInstance } from './mutator';
+import type { ContentEventDto, ListResponse } from './content';
 
 /**
  * Register event request parameters
@@ -57,10 +58,28 @@ export const useRegisterEvent = () => {
  * @returns React Query hook (placeholder)
  */
 export const useGetEvents = (_params?: any) => {
-  // Placeholder - will be implemented when API is available
-  return {
-    data: undefined,
-    isLoading: false,
-    error: null,
-  };
+  const limit = typeof _params?.limit === 'number' ? _params.limit : 50;
+  return useQuery<ListResponse<ContentEventDto>, Error>({
+    queryKey: ['content', 'events', { limit }],
+    queryFn: async () => {
+      const endpoint = `/v1/content/events`;
+      const qs = `?limit=${encodeURIComponent(String(limit))}`;
+      try {
+        const data = await customInstance<ListResponse<ContentEventDto>>({ method: 'GET' }, `${endpoint}${qs}`);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
+    },
+    staleTime: 30_000,
+  });
 };

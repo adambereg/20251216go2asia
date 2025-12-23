@@ -101,12 +101,15 @@ export default async function EventDetailPage({
       const dto = await getEventById(id);
       event = toPulseEvent(dto);
     } catch (err) {
-      // API mode: no fallback to mock repository
-      const status = typeof err === 'object' && err !== null && 'status' in err ? (err as any).status : undefined;
-      if (typeof status === 'number' && status === 404) {
+      // API mode: fallback to mocks (feature-flagged by NEXT_PUBLIC_DATA_SOURCE=api)
+      const reason = classifyFallbackReason(err) ?? 'NETWORK_ERROR';
+      const fallback = mockEventsById[id];
+      if (fallback) {
+        event = fallback;
+        demoMode = { reason, title: 'DEMO MODE / fallback' };
+      } else {
         notFound();
       }
-      notFound();
     }
   }
 
