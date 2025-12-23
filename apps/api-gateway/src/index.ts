@@ -315,12 +315,16 @@ async function routeRequest(
 
   try {
     const response = await fetch(serviceRequest);
+
+    // Cloudflare may return a Response with immutable headers.
+    // Always clone before adding/overriding headers.
+    const out = new Response(response.body, response);
     if (origin) {
-      response.headers.set('Access-Control-Allow-Origin', origin);
-      response.headers.set('Vary', 'Origin');
-      response.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+      out.headers.set('Access-Control-Allow-Origin', origin);
+      out.headers.set('Vary', 'Origin');
+      out.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
     }
-    return response;
+    return out;
   } catch (error) {
     logger.error('Error forwarding request to service', error, {
       serviceUrl,
@@ -365,11 +369,11 @@ export default {
 
     try {
       const response = await routeRequest(request, env, logger);
-      
-      // Add requestId to response headers
-      response.headers.set('X-Request-ID', requestId);
-      
-      return response;
+
+      // Ensure headers are mutable before setting X-Request-ID
+      const out = new Response(response.body, response);
+      out.headers.set('X-Request-ID', requestId);
+      return out;
     } catch (error) {
       logger.error('Unhandled error in API Gateway', error);
       return new Response(
