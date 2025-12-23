@@ -4,6 +4,7 @@ import { Badge, Card, CardContent } from '@go2asia/ui';
 import { Clock, User, Heart, Bookmark, Share2, MapPin, Calendar, Globe2 } from 'lucide-react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
+import { getArticleBySlug as getArticleBySlugApi } from '@go2asia/sdk/content';
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -51,6 +52,31 @@ function getMockArticleBySlug(slug: string) {
   };
 }
 
+async function getApiArticleBySlug(slug: string) {
+  const a = await getArticleBySlugApi(slug);
+  return {
+    title: a.title,
+    lead: a.excerpt || '',
+    author: {
+      name: 'Редакция Go2Asia',
+      avatar: null,
+      role: 'Редакция',
+      city: '',
+      profileUrl: '/space',
+    },
+    publishedAt: a.publishedAt || new Date().toISOString(),
+    updatedAt: a.publishedAt || undefined,
+    readingTime: 6,
+    type: a.category || 'Статья',
+    badges: a.tags ?? [],
+    cover: a.coverImage || null,
+    contentHtml: mdToHtml(a.content),
+    context: {},
+    relatedPlaces: mockRepo.atlas.listPlaces().slice(0, 2).map((p) => ({ id: p.id, title: p.name, type: p.type })),
+    relatedEvents: mockRepo.pulse.listEvents().slice(0, 2).map((e) => ({ id: e.id, title: e.title, date: 'Скоро' })),
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -67,9 +93,17 @@ export async function generateMetadata({
     };
   }
 
-  return {
-    title: 'Blog Asia | Go2Asia',
-  };
+  try {
+    const article = await getApiArticleBySlug(slug);
+    return {
+      title: `${article?.title || 'Статья'} - Blog Asia | Go2Asia`,
+      description: article?.lead || 'Статья из Blog Asia',
+    };
+  } catch {
+    return {
+      title: 'Blog Asia | Go2Asia',
+    };
+  }
 }
 
 export default async function ArticlePage({
@@ -80,7 +114,10 @@ export default async function ArticlePage({
   const { slug } = await params;
   const dataSource = getDataSource();
 
-  const article = dataSource === 'mock' ? getMockArticleBySlug(slug) : null;
+  const article =
+    dataSource === 'mock'
+      ? getMockArticleBySlug(slug)
+      : await getApiArticleBySlug(slug).catch(() => getMockArticleBySlug(slug));
 
   const resolved =
     article ||
@@ -95,9 +132,7 @@ export default async function ArticlePage({
       badges: dataSource === 'mock' ? ['MOCK DATA'] : ['API'],
       cover: null,
       contentHtml:
-        dataSource === 'api'
-          ? 'API режим: получение статьи через SDK пока не реализовано.'
-          : 'Статья не найдена',
+        'Статья не найдена',
       context: {},
       relatedPlaces: [],
       relatedEvents: [],

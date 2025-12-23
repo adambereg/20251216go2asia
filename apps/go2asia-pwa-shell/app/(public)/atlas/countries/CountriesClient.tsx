@@ -7,13 +7,13 @@ import { Globe, MapPin } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetCountries } from '@go2asia/sdk/atlas';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
 
 export function CountriesClient() {
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const dataSource = getDataSource();
+  const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
   
   // Загружаем страны из API
   const { 
@@ -21,7 +21,6 @@ export function CountriesClient() {
     isLoading
   } = useGetCountries({
     limit: 20,
-    cursor,
   });
 
   // Преобразуем данные из API
@@ -59,7 +58,7 @@ export function CountriesClient() {
           description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+          badgeText={badgeText}
         />
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <AtlasMainNav />
@@ -86,7 +85,7 @@ export function CountriesClient() {
         description="«Живой» вики-справочник по странам Юго-Восточной Азии с UGC и редакционной поддержкой"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+        badgeText={badgeText}
       />
 
       {/* Top controls: internal nav + search */}
@@ -151,18 +150,6 @@ export function CountriesClient() {
               ))}
             </div>
             
-            {/* Пагинация */}
-            {dataSource === 'api' && countriesData?.hasMore && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => setCursor(countriesData.nextCursor || undefined)}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? 'Загрузка...' : 'Загрузить ещё'}
-                </button>
-              </div>
-            )}
           </>
         ) : (
           <div className="text-center py-12">

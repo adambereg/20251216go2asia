@@ -5,6 +5,10 @@
   "description": "Database schema and migrations for Go2Asia MVP (Drizzle ORM)",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./queries/content": "./src/queries/content.ts"
+  },
   "scripts": {
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit up:pg",

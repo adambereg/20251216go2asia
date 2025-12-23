@@ -12,15 +12,13 @@ import { mockRepo } from '@/mocks/repo';
 export function PulseClientWrapper() {
   const dataSource = getDataSource();
 
-  // API: загружаем события из SDK (если реализовано)
-  const { data: eventsData, isLoading } =
+  const { data: eventsData, isLoading, error } =
     dataSource === 'api'
       ? useGetEvents({
-          limit: 100, // Загружаем больше событий для календаря
+          limit: 100,
         })
       : ({ data: undefined, isLoading: false } as any);
 
-  // Преобразуем данные из API в формат компонента
   const events = useMemo(() => {
     if (dataSource === 'mock') {
       return mockRepo.pulse.listEvents().map((dto): Event => ({
@@ -49,28 +47,66 @@ export function PulseClientWrapper() {
       }));
     }
 
-    if (!eventsData?.items) return [];
-    return eventsData.items.map((event): Event => ({
-      id: event.id,
-      title: event.title,
-      description: event.description || undefined,
-      startDate: new Date(event.startTime),
-      endDate: event.endTime ? new Date(event.endTime) : new Date(event.startTime),
-      location: {
-        name: '', // TODO: Get location name when API supports it
-        city: '', // TODO: Get city name from cityId when API supports it
-        country: '', // TODO: Get country name when API supports it
-        address: '', // TODO: Get address when API supports it
-        placeId: event.placeId || undefined,
-      },
-      category: event.category || undefined,
-      organizer: undefined, // TODO: Get organizer when API supports it
-      price: undefined, // TODO: Get price when API supports it
-      language: 'ru', // TODO: Get language when API supports it
-      cover: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg', // TODO: Get coverImage when API supports it
-      attendeesCount: 0, // TODO: Get attendeesCount when API supports it
-    }));
-  }, [dataSource, eventsData]);
+    if (error || !eventsData?.items) {
+      // API mode fallback
+      return mockRepo.pulse.listEvents().map((dto): Event => ({
+        id: dto.id,
+        title: dto.title,
+        description: dto.description,
+        startDate: new Date(dto.startTime),
+        endDate: new Date(dto.endTime ?? dto.startTime),
+        timezone: dto.timezone,
+        location: dto.location
+          ? {
+              name: dto.location.name,
+              address: dto.location.address,
+              city: dto.location.city,
+              country: dto.location.country,
+              placeId: dto.location.placeId,
+            }
+          : undefined,
+        category: dto.category,
+        tags: dto.tags,
+        price: dto.price,
+        badges: (dto.badges ?? []) as any,
+        cover: dto.coverImage,
+        status: 'published',
+        verified: dto.badges?.includes('verified'),
+      }));
+    }
+    return eventsData.items.map((dto: any): Event => {
+      const locationStr: string = dto.location ?? '';
+      const parts = locationStr
+        .split(',')
+        .map((p: string) => p.trim())
+        .filter(Boolean);
+      const city = parts.length >= 2 ? parts[0] : undefined;
+      const country = parts.length >= 2 ? parts.slice(1).join(', ') : undefined;
+
+      const startDate = new Date(dto.startDate);
+      const endDate = dto.endDate ? new Date(dto.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+      return {
+        id: dto.id,
+        title: dto.title,
+        description: dto.description ?? undefined,
+        startDate,
+        endDate,
+        category: dto.category ?? undefined,
+        cover: dto.imageUrl ?? undefined,
+        location: locationStr
+          ? {
+              name: locationStr,
+              city,
+              country,
+            }
+          : undefined,
+        badges: ['verified'],
+        price: { type: 'free' },
+        verified: true,
+      };
+    });
+  }, [dataSource, eventsData, error]);
 
   if (isLoading) {
     return (
@@ -104,3 +140,4 @@ export function PulseClientWrapper() {
     </div>
   );
 }
+

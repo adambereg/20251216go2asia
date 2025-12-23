@@ -5,20 +5,33 @@
  * This file re-exports blog-related functionality from the generated SDK.
  */
 
-// Temporary exports until SDK is fully generated
-// These will be replaced with actual exports from './generated/blog' when SDK generation is complete
+import { useQuery } from '@tanstack/react-query';
+import { customInstance } from './mutator';
+import type { ContentArticleDto, ListResponse } from './content';
 
-export const useGetArticles = (_params?: any) => ({
-  data: undefined,
-  isLoading: false,
-  error: null,
-});
+export const useGetArticles = (_params?: { limit?: number }) => {
+  const limit = typeof _params?.limit === 'number' ? _params.limit : 20;
+  const qs = `?limit=${encodeURIComponent(String(limit))}`;
 
-export const useGetArticleBySlug = (_slug: string) => ({
-  data: undefined,
-  isLoading: false,
-  error: null,
-});
+  return useQuery<ListResponse<ContentArticleDto>, Error>({
+    queryKey: ['content', 'articles', { limit }],
+    queryFn: async () => {
+      return customInstance<ListResponse<ContentArticleDto>>({ method: 'GET' }, `/v1/content/articles${qs}`);
+    },
+    staleTime: 60_000,
+  });
+};
+
+export const useGetArticleBySlug = (slug: string) => {
+  return useQuery<ContentArticleDto, Error>({
+    queryKey: ['content', 'article', { slug }],
+    enabled: Boolean(slug),
+    queryFn: async () => {
+      return customInstance<ContentArticleDto>({ method: 'GET' }, `/v1/content/articles/${slug}`);
+    },
+    staleTime: 60_000,
+  });
+};
 
 
 
