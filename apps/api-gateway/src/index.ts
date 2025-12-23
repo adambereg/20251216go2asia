@@ -69,6 +69,15 @@ function getJwtSubWithoutVerification(token: string): string | null {
   return typeof sub === 'string' && sub.length > 0 ? sub : null;
 }
 
+function safeHostFromUrl(input?: string): string | null {
+  if (!input) return null;
+  try {
+    return new URL(input).host;
+  } catch {
+    return null;
+  }
+}
+
 async function verifyHs256Jwt(token: string, secret: string): Promise<
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string }
@@ -205,20 +214,58 @@ async function routeRequest(
     return handleReady();
   }
 
+  // Debug (safe): show which service URLs are configured (host only)
+  if (path === '/v1/_debug/routes' && request.method === 'GET') {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        env: env.ENVIRONMENT ?? 'staging',
+        version: env.VERSION ?? 'unknown',
+        routes: [
+          { prefix: '/v1/auth/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
+          { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
+          { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
+          { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
+        ],
+        rewrites: [{ from: '/v1/api/content/*', to: '/v1/content/*' }],
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   // Route to services based on path prefix
   let serviceUrl: string | undefined;
+  let missingVar: string | null = null;
   
   if (path.startsWith('/v1/auth/')) {
     serviceUrl = env.AUTH_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'AUTH_SERVICE_URL';
   } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
     serviceUrl = env.CONTENT_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'CONTENT_SERVICE_URL';
   } else if (path.startsWith('/v1/points/')) {
     serviceUrl = env.POINTS_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'POINTS_SERVICE_URL';
   } else if (path.startsWith('/v1/referral/')) {
     serviceUrl = env.REFERRAL_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'REFERRAL_SERVICE_URL';
   }
 
   if (!serviceUrl) {
+    if (missingVar) {
+      logger.error('Service not configured', { path, missingVar });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'SERVICE_NOT_CONFIGURED',
+            message: `${missingVar} is missing`,
+          },
+          requestId,
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
+      );
+    }
+
     logger.warn('No service found for path', { path });
     return new Response(
       JSON.stringify({
@@ -307,7 +354,14 @@ async function routeRequest(
   }
 
   // Forward request to service
-  const serviceRequest = new Request(`${serviceUrl}${downstreamPath}${url.search}`, {
+  const targetUrl = `${serviceUrl}${downstreamPath}${url.search}`;
+  logger.info('Proxy request', {
+    path,
+    downstreamPath,
+    targetHost: safeHostFromUrl(serviceUrl),
+  });
+
+  const serviceRequest = new Request(targetUrl, {
     method: request.method,
     headers,
     body: request.body,
