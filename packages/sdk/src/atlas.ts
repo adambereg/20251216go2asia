@@ -13,7 +13,22 @@ export const useGetCountries = (_params?: { limit?: number; cursor?: string }) =
   return useQuery<ListResponse<ContentCountryDto>, Error>({
     queryKey: ['content', 'countries'],
     queryFn: async () => {
-      return customInstance<ListResponse<ContentCountryDto>>({ method: 'GET' }, `/v1/content/countries`);
+      const endpoint = `/v1/content/countries`;
+      try {
+        const data = await customInstance<ListResponse<ContentCountryDto>>({ method: 'GET' }, endpoint);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });
@@ -37,7 +52,22 @@ export const useGetCities = (_params?: { countryId?: string; limit?: number; cur
   return useQuery<ListResponse<ContentCityDto>, Error>({
     queryKey: ['content', 'cities', { countryId: countryId ?? null }],
     queryFn: async () => {
-      return customInstance<ListResponse<ContentCityDto>>({ method: 'GET' }, `/v1/content/cities${qs}`);
+      const endpoint = `/v1/content/cities`;
+      try {
+        const data = await customInstance<ListResponse<ContentCityDto>>({ method: 'GET' }, `${endpoint}${qs}`);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });
@@ -63,7 +93,22 @@ export const useGetPlaces = (_params?: { cityId?: string; limit?: number; cursor
   return useQuery<ListResponse<ContentPlaceDto>, Error>({
     queryKey: ['content', 'places', { cityId: _params?.cityId ?? null, limit: _params?.limit ?? null }],
     queryFn: async () => {
-      return customInstance<ListResponse<ContentPlaceDto>>({ method: 'GET' }, `/v1/content/places${qs}`);
+      const endpoint = `/v1/content/places`;
+      try {
+        const data = await customInstance<ListResponse<ContentPlaceDto>>({ method: 'GET' }, `${endpoint}${qs}`);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });
@@ -74,7 +119,17 @@ export const useGetPlaceById = (idOrSlug: string) => {
     queryKey: ['content', 'place', { idOrSlug }],
     enabled: Boolean(idOrSlug),
     queryFn: async () => {
-      return customInstance<ContentPlaceDto>({ method: 'GET' }, `/v1/content/places/${idOrSlug}`);
+      const endpoint = `/v1/content/places/${idOrSlug}`;
+      try {
+        return await customInstance<ContentPlaceDto>({ method: 'GET' }, endpoint);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=/v1/content/places/{idOrSlug}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });

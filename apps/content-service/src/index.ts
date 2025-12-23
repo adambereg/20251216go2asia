@@ -133,6 +133,13 @@ function handleNotFound(path: string): Response {
   );
 }
 
+function safeDbInfoFromUrl(databaseUrl: string): { host: string; db: string; protocol: string } {
+  const u = new URL(databaseUrl);
+  // Never return username/password.
+  const db = u.pathname?.replace(/^\//, '') || '';
+  return { host: u.host, db, protocol: u.protocol.replace(':', '') };
+}
+
 function getSqlClient(env: Env, logger: ReturnType<typeof createLogger>): SqlClient | null {
   if (!env.DATABASE_URL) {
     logger.warn('Database not configured');
@@ -257,6 +264,65 @@ async function handleListEvents(
   } catch (error) {
     logger.error('List events error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch events' } }, 500);
+  }
+}
+
+async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  if (!env.DATABASE_URL) {
+    return json({ ok: false, error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  }
+
+  const sqlClient = createSqlClient(env.DATABASE_URL);
+  const info = safeDbInfoFromUrl(env.DATABASE_URL);
+
+  try {
+    const cu = await sqlClient`SELECT current_user`;
+    const currentUser = String((cu as any)?.[0]?.current_user ?? '');
+
+    const counts = await sqlClient`
+      SELECT
+        (SELECT COUNT(*)::int FROM countries) AS countries,
+        (SELECT COUNT(*)::int FROM cities) AS cities,
+        (SELECT COUNT(*)::int FROM places) AS places,
+        (SELECT COUNT(*)::int FROM events) AS events,
+        (SELECT COUNT(*)::int FROM articles) AS articles,
+        (SELECT COUNT(*)::int FROM media_files) AS media_files
+    `;
+
+    const topEvent = await sqlClient`
+      SELECT id, slug
+      FROM events
+      ORDER BY COALESCE(start_at, start_date) ASC
+      LIMIT 1
+    `;
+
+    const topArticle = await sqlClient`
+      SELECT slug
+      FROM articles
+      ORDER BY published_at DESC NULLS LAST
+      LIMIT 1
+    `;
+
+    return json(
+      {
+        ok: true,
+        db: {
+          host: info.host,
+          name: info.db,
+          protocol: info.protocol,
+          current_user: currentUser,
+        },
+        counts: (counts as any)?.[0] ?? {},
+        examples: {
+          top_event: (topEvent as any)?.[0] ?? null,
+          top_article: (topArticle as any)?.[0] ?? null,
+        },
+      },
+      200
+    );
+  } catch (error) {
+    logger.error('Debug DB error', error);
+    return json({ ok: false, error: { code: 'InternalError', message: 'Failed to query database' } }, 500);
   }
 }
 
@@ -551,6 +617,13 @@ export default {
 
     if (path === '/health' || path === '/version') {
       const res = handleHealth(env);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Debug: DB connectivity and counts (no secrets)
+    if (path === '/v1/content/_debug/db' && request.method === 'GET') {
+      const res = await handleDebugDb(env, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

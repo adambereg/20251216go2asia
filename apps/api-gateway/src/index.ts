@@ -173,6 +173,10 @@ async function routeRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
+  // Support legacy alias /v1/api/content/* by rewriting to /v1/content/*
+  const downstreamPath = path.startsWith('/v1/api/content/')
+    ? path.replace('/v1/api/content/', '/v1/content/')
+    : path;
   const requestId = getRequestId(request) || generateRequestId();
   const origin = request.headers.get('Origin');
 
@@ -206,7 +210,7 @@ async function routeRequest(
   
   if (path.startsWith('/v1/auth/')) {
     serviceUrl = env.AUTH_SERVICE_URL;
-  } else if (path.startsWith('/v1/content/')) {
+  } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
     serviceUrl = env.CONTENT_SERVICE_URL;
   } else if (path.startsWith('/v1/points/')) {
     serviceUrl = env.POINTS_SERVICE_URL;
@@ -258,7 +262,7 @@ async function routeRequest(
   // - Points/Referral: all user-facing routes require auth
   // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
   const isContentRegister =
-    request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(path);
+    request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
 
   if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || isContentRegister) {
     const token = getBearerToken(request);
@@ -303,7 +307,7 @@ async function routeRequest(
   }
 
   // Forward request to service
-  const serviceRequest = new Request(`${serviceUrl}${path}${url.search}`, {
+  const serviceRequest = new Request(`${serviceUrl}${downstreamPath}${url.search}`, {
     method: request.method,
     headers,
     body: request.body,

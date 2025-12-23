@@ -62,8 +62,23 @@ export const useGetEvents = (_params?: any) => {
   return useQuery<ListResponse<ContentEventDto>, Error>({
     queryKey: ['content', 'events', { limit }],
     queryFn: async () => {
+      const endpoint = `/v1/content/events`;
       const qs = `?limit=${encodeURIComponent(String(limit))}`;
-      return customInstance<ListResponse<ContentEventDto>>({ method: 'GET' }, `/v1/content/events${qs}`);
+      try {
+        const data = await customInstance<ListResponse<ContentEventDto>>({ method: 'GET' }, `${endpoint}${qs}`);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 30_000,
   });

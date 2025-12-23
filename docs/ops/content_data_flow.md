@@ -99,6 +99,45 @@ NEXT_PUBLIC_API_URL=https://go2asia-api-gateway-staging.fred89059599296.workers.
 DATABASE_URL=postgresql://...@ep-xxx.neon.tech/neondb?sslmode=require
 ```
 
+## Как убедиться, что content-service читает нужную Neon branch
+
+После деплоя `api-gateway` + `content-service` (и прокидывания `DATABASE_URL` на ветку `staging-m4-content-seed`) откройте диагностический endpoint **через Gateway**:
+
+`GET /v1/content/_debug/db` (или legacy alias: `GET /v1/api/content/_debug/db`)
+
+Пример PowerShell (без токенов):
+
+```powershell
+$gw = \"https://go2asia-api-gateway-staging.fred89059599296.workers.dev\"
+curl.exe -k -s \"$gw/v1/content/_debug/db\"
+```
+
+Ожидаемый пример ответа (значения будут вашими, **без секретов**):
+
+```json
+{
+  \"ok\": true,
+  \"db\": {
+    \"host\": \"ep-xxxx.us-east-1.aws.neon.tech\",
+    \"name\": \"neondb\",
+    \"protocol\": \"postgresql\",
+    \"current_user\": \"neondb_owner\"
+  },
+  \"counts\": {
+    \"countries\": 8,
+    \"cities\": 103,
+    \"places\": 20,
+    \"events\": 10,
+    \"articles\": 16,
+    \"media_files\": 167
+  },
+  \"examples\": {
+    \"top_event\": { \"id\": \"e7f8b7d4-6f6a-4f1e-9aa0-2d4dbaac7b10\", \"slug\": \"pulse-demo-...\" },
+    \"top_article\": { \"slug\": \"digital-nomads-2026\" }
+  }
+}
+```
+
 ## Demo URLs (after seed)
 
 ### Pulse Events

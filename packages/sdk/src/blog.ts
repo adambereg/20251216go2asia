@@ -16,7 +16,22 @@ export const useGetArticles = (_params?: { limit?: number }) => {
   return useQuery<ListResponse<ContentArticleDto>, Error>({
     queryKey: ['content', 'articles', { limit }],
     queryFn: async () => {
-      return customInstance<ListResponse<ContentArticleDto>>({ method: 'GET' }, `/v1/content/articles${qs}`);
+      const endpoint = `/v1/content/articles`;
+      try {
+        const data = await customInstance<ListResponse<ContentArticleDto>>({ method: 'GET' }, `${endpoint}${qs}`);
+        if (!data?.items || data.items.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
+        }
+        return data;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });
@@ -27,7 +42,17 @@ export const useGetArticleBySlug = (slug: string) => {
     queryKey: ['content', 'article', { slug }],
     enabled: Boolean(slug),
     queryFn: async () => {
-      return customInstance<ContentArticleDto>({ method: 'GET' }, `/v1/content/articles/${slug}`);
+      const endpoint = `/v1/content/articles/${slug}`;
+      try {
+        return await customInstance<ContentArticleDto>({ method: 'GET' }, endpoint);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=/v1/content/articles/{slug}`,
+          err instanceof Error ? err.message : err
+        );
+        throw err as Error;
+      }
     },
     staleTime: 60_000,
   });
