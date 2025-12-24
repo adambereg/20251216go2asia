@@ -47,7 +47,8 @@ jobs:
           - service: referral-service
             path: apps/referral-service
             url: https://go2asia-referral-service-staging.fred89059599296.workers.dev
-            extra_vars: ""
+            extra_vars: >-
+              --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
           - service: token-service
             path: apps/token-service
             url: https://go2asia-token-service-staging.fred89059599296.workers.dev

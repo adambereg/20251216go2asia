@@ -18,6 +18,13 @@ export interface Env {
 
   DATABASE_URL?: string;
   SERVICE_JWT_SECRET?: string;
+
+  // Integrations
+  POINTS_SERVICE_URL?: string;
+
+  // Economy config (MVP)
+  // e.g. "100"
+  REFERRAL_FIRST_LOGIN_BONUS?: string;
 }
 
 type JwtVerifyResult =
@@ -85,6 +92,13 @@ function base64UrlToBytes(input: string): Uint8Array {
   return bytes;
 }
 
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = btoa(bin);
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
 function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
@@ -133,6 +147,40 @@ async function verifyHs256Jwt(token: string, secret: string): Promise<JwtVerifyR
   }
 
   return { ok: true, payload: payloadJson };
+}
+
+async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
+  const payloadB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(payload)));
+  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    utf8ToBytes(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+  const sigB64 = bytesToBase64Url(sig);
+  return `${headerB64}.${payloadB64}.${sigB64}`;
+}
+
+async function createServiceJwt(env: Env, targetService: string, requestId: string): Promise<string | null> {
+  if (!env.SERVICE_JWT_SECRET) return null;
+  const now = Math.floor(Date.now() / 1000);
+  return signHs256Jwt(
+    {
+      iss: 'go2asia-service-auth',
+      aud: targetService,
+      sub: SERVICE_NAME,
+      iat: now,
+      exp: now + 300, // 5 minutes
+      rid: requestId,
+    },
+    env.SERVICE_JWT_SECRET
+  );
 }
 
 async function requireGatewayOrigin(
@@ -189,6 +237,12 @@ function requireDatabase(env: Env): string {
   return env.DATABASE_URL;
 }
 
+function parseNonNegativeIntOrDefault(value: string | undefined, defaultValue: number): number {
+  if (!value) return defaultValue;
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : defaultValue;
+}
+
 function getRows<T>(result: unknown): T[] {
   const rows = (result as Partial<DbExecResult<T>>).rows;
   return Array.isArray(rows) ? rows : [];
@@ -222,6 +276,69 @@ function isDevTestEnabled(env: Env): boolean {
 function parseDepth(depthRaw: string | null): 1 | 2 {
   const n = depthRaw ? Number.parseInt(depthRaw, 10) : 2;
   return n === 1 ? 1 : 2;
+}
+
+async function callPointsAdd(
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>,
+  input: { userId: string; amount: number; action: string; externalId: string; metadata?: Record<string, unknown> }
+): Promise<{ ok: true; applied: boolean | null } | { ok: false; error: string; status?: number }> {
+  if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
+    logger.warn('Points Service integration not configured', { userId: input.userId, action: input.action });
+    return { ok: false, error: 'Points Service not configured' };
+  }
+
+  const token = await createServiceJwt(env, 'points-service', requestId);
+  if (!token) {
+    logger.error('Failed to create service JWT for Points Service');
+    return { ok: false, error: 'Service auth failed' };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const response = await fetch(`${env.POINTS_SERVICE_URL}/internal/points/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-Request-Id': requestId,
+      },
+      body: JSON.stringify({
+        userId: input.userId,
+        amount: input.amount,
+        action: input.action,
+        externalId: input.externalId,
+        metadata: input.metadata ?? undefined,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      logger.warn('Points Service call failed', {
+        userId: input.userId,
+        action: input.action,
+        status: response.status,
+        body: text.slice(0, 200),
+      });
+      return { ok: false, error: `Points Service returned ${response.status}`, status: response.status };
+    }
+
+    const data = (await response.json().catch(() => null)) as { applied?: boolean } | null;
+    return { ok: true, applied: typeof data?.applied === 'boolean' ? data.applied : null };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Points Service call timed out', { userId: input.userId, action: input.action });
+      return { ok: false, error: 'Timeout' };
+    }
+    logger.error('Points Service call error', error, { userId: input.userId, action: input.action });
+    return { ok: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 function toIso(input: unknown): string {
@@ -692,14 +809,76 @@ export default {
         }
 
         const db = createDb(requireDatabase(env));
-        const upd = await db.execute(sql`
-          UPDATE referral_relations
-          SET first_login_at = COALESCE(first_login_at, now())
-          WHERE referee_id = ${userId}
-        `);
 
-        const rowCount = (upd as unknown as { rowCount?: number }).rowCount;
-        const res = json({ ok: true, userId, updatedRows: rowCount ?? null }, 200, { 'Cache-Control': 'no-store' });
+        // 1) Ensure first_login_at is set (idempotent). We still want to be able to retry the bonus call,
+        // so we will attempt to call Points even if first_login_at was already set; points-service dedupes by externalId.
+        const relRes = await db.execute(sql`
+          SELECT referrer_id, first_login_at
+          FROM referral_relations
+          WHERE referee_id = ${userId}
+          LIMIT 1
+        `);
+        const rel = getRows<{ referrer_id: string; first_login_at: Date | null }>(relRes)[0] ?? null;
+        if (!rel) {
+          const res = json(
+            { ok: true, userId, relationFound: false, activated: false, updatedRows: 0 },
+            200,
+            { 'Cache-Control': 'no-store' }
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const wasActive = Boolean(rel.first_login_at);
+        let activated = false;
+
+        if (!wasActive) {
+          const upd = await db.execute(sql`
+            UPDATE referral_relations
+            SET first_login_at = now()
+            WHERE referee_id = ${userId} AND first_login_at IS NULL
+          `);
+          const rowCount = (upd as unknown as { rowCount?: number }).rowCount ?? 0;
+          activated = rowCount > 0;
+        }
+
+        // 2) Award bonus to referrer (MVP): +N Points for referrer on referee first login.
+        const bonus = parseNonNegativeIntOrDefault(env.REFERRAL_FIRST_LOGIN_BONUS, 100);
+        const externalId = `referral:first_login:${rel.referrer_id}:${userId}`;
+
+        let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
+        if (bonus > 0) {
+          const result = await callPointsAdd(env, requestId, logger, {
+            userId: rel.referrer_id,
+            amount: bonus,
+            action: 'referral_bonus_referrer',
+            externalId,
+            metadata: { refereeUserId: userId },
+          });
+          points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
+          if (!result.ok) {
+            logger.warn('Referral bonus points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });
+          }
+        } else {
+          // Explicitly disabled by config
+          points = { ok: true, applied: null };
+        }
+
+        const res = json(
+          {
+            ok: true,
+            userId,
+            relationFound: true,
+            activated,
+            updatedRows: activated ? 1 : 0,
+            referrerId: rel.referrer_id,
+            bonus: { amount: bonus, currency: 'POINTS' },
+            externalId,
+            points,
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
