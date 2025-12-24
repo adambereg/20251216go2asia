@@ -140,6 +140,42 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/referral/claim:
+    post:
+      tags: [referral]
+      operationId: claimReferral
+      summary: Claim referral code for current user (idempotent)
+      description: >
+        User-facing write endpoint (called via gateway). Links current user as referee to referrer resolved by referral code.
+        Invariant: referee can have at most one referrer.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimReferralRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimReferralResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/referral/generate-code:
     post:
       tags: [internal]
@@ -163,6 +199,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenerateCodeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /internal/referral/mark-first-login:
+    post:
+      tags: [internal]
+      operationId: markReferralFirstLogin
+      summary: Mark referee first login (idempotent)
+      description: >
+        Service-to-service endpoint to mark referral relation as active by setting first_login_at for the given userId (referee).
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkFirstLoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkFirstLoginResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
@@ -349,6 +414,31 @@ components:
           items:
             $ref: "#/components/schemas/ReferralTreeNode"
 
+    ClaimReferralRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+
+    ClaimReferralResponse:
+      type: object
+      required: [ok, claimed, referrerId, refereeId, code]
+      properties:
+        ok:
+          type: boolean
+        claimed:
+          type: boolean
+        referrerId:
+          type: string
+        refereeId:
+          type: string
+        code:
+          type: string
+        reason:
+          type: string
+          nullable: true
+
     GenerateCodeRequest:
       type: object
       required: [userId]
@@ -386,3 +476,22 @@ components:
           type: string
         linked:
           type: boolean
+
+    MarkFirstLoginRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+
+    MarkFirstLoginResponse:
+      type: object
+      required: [ok, userId]
+      properties:
+        ok:
+          type: boolean
+        userId:
+          type: string
+        updatedRows:
+          type: integer
+          nullable: true

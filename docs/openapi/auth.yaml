@@ -1,0 +1,238 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Auth Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Auth Service (M2/M4+).
+
+    Notes:
+    - User-facing endpoints are called via API Gateway.
+    - Downstream does NOT validate user JWT; it accepts user-context only when the request is authenticated as gateway-origin.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway (user-facing paths proxied to downstream)
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: auth-service.example
+
+tags:
+  - name: health
+    description: Service health checks
+  - name: users
+    description: User persistence and account utilities
+  - name: auth
+    description: Webhooks and authentication integration
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Health check
+      description: Returns service health status. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getVersion
+      summary: Version (alias of /health)
+      description: Returns service version metadata. Alias of /health. No auth required.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/users/ensure:
+    post:
+      tags: [users]
+      operationId: ensureUser
+      summary: Ensure current user exists in Neon (idempotent upsert)
+      description: >
+        Called via API Gateway after successful sign-in/sign-up.
+        Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnsureUserRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnsureUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/auth/webhook/clerk:
+    post:
+      tags: [auth]
+      operationId: clerkWebhook
+      summary: Clerk webhook receiver (staging)
+      description: >
+        Receives Clerk events (e.g. user.created, user.updated). Used for integration (points/referral code).
+        Signature verification may be relaxed in early milestones.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+      description: Service JWT issued/forwarded by API Gateway to authenticate gateway-origin requests
+
+  parameters:
+    XGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    XUserId:
+      name: X-User-ID
+      in: header
+      required: true
+      schema:
+        type: string
+      description: User identifier asserted by API Gateway
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+          example: auth-service
+        env:
+          type: string
+          example: staging
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "<sha>"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "BadRequest"
+        message:
+          type: string
+        requestId:
+          type: string
+
+    EnsureUserRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    UserRow:
+      type: object
+      required: [id, clerk_id, email, role, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        clerk_id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EnsureUserResponse:
+      type: object
+      required: [ok, user, requestId]
+      properties:
+        ok:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserRow"
+        requestId:
+          type: string
+

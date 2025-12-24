@@ -48,6 +48,8 @@ components:
         message:
           type: string
           example: "Invalid or missing token"
+        requestId:
+          type: string
 
 tags:
   - name: auth

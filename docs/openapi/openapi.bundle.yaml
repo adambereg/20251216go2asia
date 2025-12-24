@@ -1,0 +1,1327 @@
+# GENERATED FILE — DO NOT EDIT
+# Source: docs\openapi\openapi.yaml, docs\openapi\auth.yaml, docs\openapi\content.yaml, docs\openapi\points.yaml, docs\openapi\referral.yaml
+
+components:
+  parameters:
+    ArticleSlug:
+      in: path
+      name: slug
+      required: true
+      schema:
+        type: string
+    CityId:
+      in: query
+      name: cityId
+      required: false
+      schema:
+        type: string
+    CountryId:
+      in: query
+      name: countryId
+      required: false
+      schema:
+        type: string
+    EventId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    Limit:
+      in: query
+      name: limit
+      required: false
+      schema:
+        maximum: 200
+        minimum: 1
+        type: integer
+    PlaceIdOrSlug:
+      in: path
+      name: idOrSlug
+      required: true
+      schema:
+        type: string
+    XGatewayAuth:
+      in: header
+      name: X-Gateway-Auth
+      required: true
+      schema:
+        type: string
+    XRequestId:
+      in: header
+      name: X-Request-Id
+      required: false
+      schema:
+        type: string
+    XUserId:
+      description: User identifier asserted by API Gateway
+      in: header
+      name: X-User-ID
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Bad request
+    Conflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Conflict
+    InternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Internal server error
+    NotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Not found
+    RateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Rate limited
+    Unauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Unauthorized
+  schemas:
+    AddPointsRequest:
+      properties:
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        amount:
+          description: Positive points to add
+          minimum: 1
+          type: integer
+        externalId:
+          description: Idempotency key (SSOT)
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        userId:
+          type: string
+      required:
+        - userId
+        - amount
+        - action
+        - externalId
+      type: object
+    AddPointsResponse:
+      properties:
+        applied:
+          description: True if a new transaction was created, false if duplicate
+          type: boolean
+        balance:
+          type: integer
+        transactionId:
+          type: string
+      required:
+        - transactionId
+        - applied
+        - balance
+      type: object
+    ClaimReferralRequest:
+      properties:
+        code:
+          type: string
+      required:
+        - code
+      type: object
+    ClaimReferralResponse:
+      properties:
+        claimed:
+          type: boolean
+        code:
+          type: string
+        ok:
+          type: boolean
+        reason:
+          nullable: true
+          type: string
+        refereeId:
+          type: string
+        referrerId:
+          type: string
+      required:
+        - ok
+        - claimed
+        - referrerId
+        - refereeId
+        - code
+      type: object
+    ContentArticleDto:
+      properties:
+        category:
+          nullable: true
+          type: string
+        content:
+          type: string
+        coverImage:
+          nullable: true
+          type: string
+        excerpt:
+          nullable: true
+          type: string
+        id:
+          type: string
+        publishedAt:
+          format: date-time
+          nullable: true
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+        tags:
+          items:
+            type: string
+          nullable: true
+          type: array
+        title:
+          type: string
+      required:
+        - id
+        - slug
+        - title
+        - content
+        - status
+      type: object
+    ContentCityDto:
+      properties:
+        countryId:
+          type: string
+        countryName:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        heroImage:
+          nullable: true
+          type: string
+        id:
+          type: string
+        latitude:
+          nullable: true
+          type: string
+        longitude:
+          nullable: true
+          type: string
+        name:
+          type: string
+        placesCount:
+          type: integer
+        slug:
+          type: string
+      required:
+        - id
+        - slug
+        - name
+        - countryId
+        - placesCount
+      type: object
+    ContentCountryDto:
+      properties:
+        citiesCount:
+          type: integer
+        code:
+          type: string
+        description:
+          nullable: true
+          type: string
+        flag:
+          nullable: true
+          type: string
+        heroImage:
+          nullable: true
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        placesCount:
+          type: integer
+        slug:
+          type: string
+      required:
+        - id
+        - slug
+        - name
+        - code
+        - citiesCount
+        - placesCount
+      type: object
+    ContentEventDto:
+      properties:
+        category:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        endDate:
+          format: date-time
+          nullable: true
+          type: string
+        id:
+          type: string
+        imageUrl:
+          nullable: true
+          type: string
+        isActive:
+          type: boolean
+        latitude:
+          nullable: true
+          type: string
+        location:
+          nullable: true
+          type: string
+        longitude:
+          nullable: true
+          type: string
+        slug:
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+        - slug
+        - startDate
+        - isActive
+      type: object
+    ContentPlaceDto:
+      properties:
+        address:
+          nullable: true
+          type: string
+        city:
+          nullable: true
+          type: string
+        country:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        heroImage:
+          nullable: true
+          type: string
+        id:
+          type: string
+        latitude:
+          nullable: true
+          type: string
+        longitude:
+          nullable: true
+          type: string
+        name:
+          type: string
+        photos:
+          items:
+            type: string
+          type: array
+        slug:
+          type: string
+        type:
+          type: string
+      required:
+        - id
+        - slug
+        - name
+        - type
+        - photos
+      type: object
+    DebugDbResponse:
+      properties:
+        counts:
+          additionalProperties:
+            type: integer
+          nullable: true
+          type: object
+        error:
+          additionalProperties: true
+          nullable: true
+          type: object
+        ok:
+          type: boolean
+      required:
+        - ok
+      type: object
+    EnsureUserRequest:
+      properties:
+        email:
+          format: email
+          type: string
+      required:
+        - email
+      type: object
+    EnsureUserResponse:
+      properties:
+        ok:
+          type: boolean
+        requestId:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserRow"
+      required:
+        - ok
+        - user
+        - requestId
+      type: object
+    ErrorResponse:
+      properties:
+        error:
+          example: Unauthorized
+          type: string
+        message:
+          example: Invalid or missing token
+          type: string
+        requestId:
+          type: string
+      required:
+        - error
+      type: object
+    EventRegistrationResponse:
+      properties:
+        eventId:
+          type: string
+        ok:
+          type: boolean
+        registrationId:
+          type: string
+        userId:
+          type: string
+      required:
+        - ok
+        - registrationId
+        - eventId
+        - userId
+      type: object
+    GenerateCodeRequest:
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+      type: object
+    GenerateCodeResponse:
+      properties:
+        code:
+          type: string
+        created:
+          type: boolean
+        userId:
+          type: string
+      required:
+        - userId
+        - code
+        - created
+      type: object
+    HealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: auth-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    LinkReferralRequest:
+      properties:
+        refereeUserId:
+          type: string
+        referralCode:
+          type: string
+      required:
+        - refereeUserId
+        - referralCode
+      type: object
+    LinkReferralResponse:
+      properties:
+        linked:
+          type: boolean
+        refereeUserId:
+          type: string
+        referrerUserId:
+          type: string
+      required:
+        - refereeUserId
+        - referrerUserId
+        - linked
+      type: object
+    ListArticlesResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentArticleDto"
+          type: array
+      required:
+        - items
+      type: object
+    ListCitiesResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentCityDto"
+          type: array
+      required:
+        - items
+      type: object
+    ListCountriesResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentCountryDto"
+          type: array
+      required:
+        - items
+      type: object
+    ListEventsResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentEventDto"
+          type: array
+      required:
+        - items
+      type: object
+    ListPlacesResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentPlaceDto"
+          type: array
+      required:
+        - items
+      type: object
+    MarkFirstLoginRequest:
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+      type: object
+    MarkFirstLoginResponse:
+      properties:
+        ok:
+          type: boolean
+        updatedRows:
+          nullable: true
+          type: integer
+        userId:
+          type: string
+      required:
+        - ok
+        - userId
+      type: object
+    PointsAction:
+      description: |
+        Minimal action set for Milestone 3. This enum may be extended post-M3. Note: `event_registration` is optional in M3 and may be enabled only when Content → Points integration is delivered.
+      enum:
+        - registration
+        - first_login
+        - referral_bonus_referee
+        - referral_bonus_referrer
+        - event_registration
+      type: string
+    PointsTransaction:
+      properties:
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        amount:
+          description: Signed points delta
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        externalId:
+          type: string
+        id:
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        userId:
+          type: string
+      required:
+        - id
+        - userId
+        - amount
+        - action
+        - externalId
+        - createdAt
+      type: object
+    ReferralCodeResponse:
+      properties:
+        code:
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - code
+      type: object
+    ReferralStatsResponse:
+      properties:
+        code:
+          type: string
+        directReferralsCount:
+          minimum: 0
+          type: integer
+        userId:
+          type: string
+      required:
+        - userId
+        - code
+        - directReferralsCount
+      type: object
+    ReferralTreeNode:
+      properties:
+        firstLoginAt:
+          format: date-time
+          nullable: true
+          type: string
+        isActive:
+          type: boolean
+        registeredAt:
+          format: date-time
+          type: string
+        subReferrals:
+          items:
+            $ref: "#/components/schemas/ReferralTreeNode"
+          type: array
+        subReferralsCount:
+          minimum: 0
+          type: integer
+        userId:
+          type: string
+      required:
+        - userId
+        - registeredAt
+        - isActive
+        - subReferralsCount
+      type: object
+    ReferralTreeResponse:
+      properties:
+        depth:
+          enum:
+            - 1
+            - 2
+          type: integer
+        referrals:
+          items:
+            $ref: "#/components/schemas/ReferralTreeNode"
+          type: array
+        userId:
+          type: string
+      required:
+        - userId
+        - depth
+        - referrals
+      type: object
+    TransactionsPage:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/PointsTransaction"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+      type: object
+    UserBalance:
+      properties:
+        balance:
+          type: integer
+        updatedAt:
+          format: date-time
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - balance
+        - updatedAt
+      type: object
+    UserRow:
+      properties:
+        clerk_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        email:
+          format: email
+          type: string
+        id:
+          type: string
+        role:
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      required:
+        - id
+        - clerk_id
+        - email
+        - role
+        - created_at
+        - updated_at
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+    GatewayAuth:
+      description: Service JWT issued/forwarded by API Gateway to authenticate gateway-origin requests
+      in: header
+      name: X-Gateway-Auth
+      type: apiKey
+    ServiceAuth:
+      bearerFormat: JWT
+      description: Service-to-service JWT (M3)
+      scheme: bearer
+      type: http
+info:
+  contact:
+    email: fred8909599296@gmail.com
+    name: Go2Asia Dev Team
+  description: |
+    Unified API specification for all Go2Asia backend microservices. This file defines the global schema and shared components. Each microservice extends this file via modular OpenAPI fragments.
+  title: Go2Asia Platform API
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /internal/points/add:
+    post:
+      description: |
+        Idempotency policy (M3): - `externalId` is required and MUST be globally unique for Points Service. - If `externalId` already exists and payload differs (`amount` and/or `action`) => 409 Conflict and the event MUST be logged as an integration error.
+        Limits policy (M3): - Per-action limits and a simple configurable per-user velocity cap are applied inside Points Service.
+      operationId: addPoints
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPointsRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddPointsResponse"
+          description: OK (applied or duplicate)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - ServiceAuth: []
+      summary: Add points to a user (idempotent)
+      tags:
+        - internal
+  /internal/referral/generate-code:
+    post:
+      description: Idempotent upsert of referral code for the given userId.
+      operationId: generateReferralCode
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCodeRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateCodeResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - ServiceAuth: []
+      summary: Ensure referral code exists for user (idempotent)
+      tags:
+        - internal
+  /internal/referral/link:
+    post:
+      description: |
+        Invariant (M3): referee can have at most one referrer (L1 link).
+      operationId: linkReferral
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkReferralRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkReferralResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - ServiceAuth: []
+      summary: Link referee to referrer by referral code
+      tags:
+        - internal
+  /internal/referral/mark-first-login:
+    post:
+      description: |
+        Service-to-service endpoint to mark referral relation as active by setting first_login_at for the given userId (referee).
+      operationId: markReferralFirstLogin
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkFirstLoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkFirstLoginResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - ServiceAuth: []
+      summary: Mark referee first login (idempotent)
+      tags:
+        - internal
+  /v1/auth/webhook/clerk:
+    post:
+      description: |
+        Receives Clerk events (e.g. user.created, user.updated). Used for integration (points/referral code). Signature verification may be relaxed in early milestones.
+      operationId: clerkWebhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: true
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Clerk webhook receiver (staging)
+      tags:
+        - auth
+  /v1/content/_debug/db:
+    get:
+      operationId: debugDb
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebugDbResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Debug DB connectivity and counts (no secrets)
+      tags:
+        - debug
+  /v1/content/articles:
+    get:
+      operationId: listArticles
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListArticlesResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List articles (public)
+      tags:
+        - content
+  /v1/content/articles/{slug}:
+    get:
+      operationId: getArticleBySlug
+      parameters:
+        - $ref: "#/components/parameters/ArticleSlug"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentArticleDto"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Get article by slug (public)
+      tags:
+        - content
+  /v1/content/cities:
+    get:
+      operationId: listCities
+      parameters:
+        - $ref: "#/components/parameters/CountryId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCitiesResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List cities (public)
+      tags:
+        - content
+  /v1/content/countries:
+    get:
+      operationId: listCountries
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCountriesResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List countries (public)
+      tags:
+        - content
+  /v1/content/events:
+    get:
+      operationId: listEvents
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEventsResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List events (public)
+      tags:
+        - content
+  /v1/content/events/{id}:
+    get:
+      operationId: getEventById
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentEventDto"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Get event by id (public)
+      tags:
+        - content
+  /v1/content/events/{id}/register:
+    post:
+      description: Requires gateway-origin auth and asserted user context.
+      operationId: registerForEvent
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRegistrationResponse"
+          description: Created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Register current user for event (authorized)
+      tags:
+        - content
+  /v1/content/places:
+    get:
+      operationId: listPlaces
+      parameters:
+        - $ref: "#/components/parameters/CityId"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPlacesResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List places (public)
+      tags:
+        - content
+  /v1/content/places/{idOrSlug}:
+    get:
+      operationId: getPlaceByIdOrSlug
+      parameters:
+        - $ref: "#/components/parameters/PlaceIdOrSlug"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentPlaceDto"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Get place by id or slug (public)
+      tags:
+        - content
+  /v1/points/balance:
+    get:
+      description: User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
+      operationId: getPointsBalance
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBalance"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Get current user points balance
+      tags:
+        - points
+  /v1/points/transactions:
+    get:
+      description: User-facing read endpoint (called via gateway). Returns a paginated list of ledger transactions for the current user.
+      operationId: listPointsTransactions
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+        - in: query
+          name: limit
+          required: false
+          schema:
+            default: 20
+            maximum: 100
+            minimum: 1
+            type: integer
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionsPage"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: List current user points transactions
+      tags:
+        - points
+  /v1/referral/claim:
+    post:
+      description: |
+        User-facing write endpoint (called via gateway). Links current user as referee to referrer resolved by referral code. Invariant: referee can have at most one referrer.
+      operationId: claimReferral
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimReferralRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimReferralResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Claim referral code for current user (idempotent)
+      tags:
+        - referral
+  /v1/referral/code:
+    get:
+      description: |
+        M3 behavior: may lazily create referral code if missing (idempotent upsert).
+      operationId: getReferralCode
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralCodeResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Get current user's referral code
+      tags:
+        - referral
+  /v1/referral/stats:
+    get:
+      description: User-facing read endpoint (called via gateway). Returns minimal referral statistics for the current user (M3 scope).
+      operationId: getReferralStats
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStatsResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Get current user's referral stats
+      tags:
+        - referral
+  /v1/referral/tree:
+    get:
+      description: |
+        User-facing read endpoint (called via gateway). Returns a two-level referral tree (M4 UI needs). Note: user profile details are not part of Referral Service in M3; only userIds and timestamps are returned.
+      operationId: getReferralTree
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+        - description: Tree depth to return (1 = direct only, 2 = include sub-referrals)
+          in: query
+          name: depth
+          required: false
+          schema:
+            default: 2
+            enum:
+              - 1
+              - 2
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralTreeResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Get current user's referral tree (depth 1..2)
+      tags:
+        - referral
+  /v1/users/ensure:
+    post:
+      description: |
+        Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+      operationId: ensureUser
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnsureUserRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnsureUserResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Ensure current user exists in Neon (idempotent upsert)
+      tags:
+        - users
+servers:
+  - description: Production API Gateway
+    url: https://api.go2asia.space
+  - description: Staging Environment
+    url: https://staging.api.go2asia.space
+tags:
+  - description: User authentication & session management
+    name: auth
+  - description: User profiles and account data
+    name: users
+  - description: Posts, reactions, media metadata
+    name: content
+  - description: Countries, cities, places, guides
+    name: atlas
+  - description: Events, schedules and calendars
+    name: pulse
+  - description: Referral system and invite tracking
+    name: referral
+  - description: Points, G2A token and NFT logic
+    name: tokenomics
+  - description: Service health checks
+    name: health
+  - description: Debug endpoints (no secrets)
+    name: debug
+  - description: Points balance and ledger operations
+    name: points
+  - description: Service-to-service APIs (authenticated)
+    name: internal
+x-microservices:
+  atlas:
+    repo: services/atlas
+    service: atlas-service
+  auth:
+    repo: services/auth
+    service: auth-service
+  content:
+    repo: services/content
+    service: content-service
+  pulse:
+    repo: services/pulse
+    service: pulse-service
+  referral:
+    repo: services/referral
+    service: referral-service
+  tokenomics:
+    repo: services/tokenomics
+    service: tokenomics-service
+  user:
+    repo: services/user
+    service: user-service
+x-notes:
+  - This file is the primary API contract for the entire Go2Asia platform.
+  - Microservices should extend this file via modular OpenAPI fragments.
+  - Typescript types and SDK are generated from this file (OpenAPI-first).
