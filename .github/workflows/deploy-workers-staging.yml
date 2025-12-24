@@ -2,7 +2,10 @@ name: Deploy Workers (staging)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - '**'          # любые ветки
+  workflow_dispatch:   # чтобы можно было запускать вручную
+
 
 concurrency:
   group: deploy-workers-staging-${{ github.ref }}
