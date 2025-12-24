@@ -15,7 +15,7 @@ PowerShell:
 $env:ENVIRONMENT="staging"
 $env:STAGING_DATABASE_URL="postgresql://..."
 
-pnpm -C packages/db db:ddl:apply
+pnpm -C packages/db db:ddl:apply:staging
 ```
 
 ## 3) Запустить seed (Atlas + Pulse + Blog + Media)
@@ -25,6 +25,43 @@ pnpm -C packages/db db:ddl:apply
 ```powershell
 pnpm -C packages/db db:seed
 ```
+
+### One-command скрипты (рекомендуется)
+
+PowerShell:
+
+```powershell
+$env:STAGING_DATABASE_URL="postgresql://..."
+powershell -ExecutionPolicy Bypass -File scripts/seed-staging.ps1
+```
+
+Reset (только контентные таблицы):
+
+```powershell
+$env:STAGING_DATABASE_URL="postgresql://..."
+powershell -ExecutionPolicy Bypass -File scripts/seed-staging.ps1 -Reset
+```
+
+Bash:
+
+```bash
+export STAGING_DATABASE_URL="postgresql://..."
+./scripts/seed-staging.sh
+```
+
+Reset:
+
+```bash
+export STAGING_DATABASE_URL="postgresql://..."
+./scripts/seed-staging.sh --reset
+```
+
+### GitHub Actions (manual trigger)
+
+Workflow: `.github/workflows/seed-staging.yml`
+
+Требуется секрет репозитория:
+- `STAGING_DATABASE_URL` — connection string для нужной Neon branch (staging).
 
 ### Reset-режим (опционально)
 
@@ -57,7 +94,7 @@ NEXT_PUBLIC_API_URL=<gateway url>
 После успешного выполнения:
 
 ```powershell
-pnpm -C packages/db db:ddl:apply
+pnpm -C packages/db db:ddl:apply:staging
 pnpm -C packages/db db:seed
 ```
 
