@@ -1,6 +1,6 @@
 'use client';
 
-import { ConnectHero, ConnectNav } from '../Shared';
+import { ConnectHero, ConnectNav, DemoModeBanner } from '../Shared';
 import { DashboardContent } from './DashboardContent';
 import { useGetBalance } from '@go2asia/sdk/balance';
 import { useGetReferralCode, useGetReferralStats } from '@go2asia/sdk/referrals';
@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import type { DashboardData } from '../types';
 import { mockDashboardData, mockMissions, mockNextActions } from '../mockData';
+import { ReferralCodeCard } from './ReferralCodeCard';
 
 interface DashboardViewProps {
   initialData?: DashboardData;
@@ -29,6 +30,23 @@ interface ApiError {
   };
   status?: number;
   requestId?: string;
+}
+
+function isFallbackError(error: unknown): boolean {
+  // No error => no fallback
+  if (!error) return false;
+
+  const apiError = error as ApiError;
+  const status = apiError.status || 0;
+
+  // Auth errors are handled separately (redirect/UX), not "demo mode"
+  if (status === 401 || status === 403) return false;
+
+  // Network / timeout / CORS (treated as status=0 by SDK)
+  if (status === 0) return true;
+
+  // Only fallback for "API unavailable / not found / server errors"
+  return status === 404 || status >= 500;
 }
 
 /**
@@ -214,7 +232,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
   // Получаем информацию о пользователе из Clerk
   const userName = user?.fullName || user?.firstName || user?.id || 'Пользователь';
-  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
 
   const handleViewHistory = () => {
     router.push('/connect/wallet');
@@ -222,12 +239,12 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
   const handleTopUp = () => {
     // Mock действие - будет реализовано позже
-    toast.info('Функция пополнения будет доступна в следующей версии');
+    toast('Функция пополнения будет доступна в следующей версии');
   };
 
   const handleWithdraw = () => {
     // Mock действие - будет реализовано позже
-    toast.info('Функция вывода будет доступна в следующей версии');
+    toast('Функция вывода будет доступна в следующей версии');
   };
 
   const handleViewNFT = () => {
@@ -241,9 +258,20 @@ export function DashboardView({ initialData }: DashboardViewProps) {
     refetchTransactions();
   };
 
+  const isFallback =
+    isFallbackError(balanceError) ||
+    isFallbackError(referralCodeError) ||
+    isFallbackError(referralStatsError) ||
+    isFallbackError(transactionsError);
+
+  const effectiveData = isFallback ? mockDashboardData : data;
+
+  const referralCode = referralCodeData?.code || referralStatsData?.code;
+  const directReferralsCount = referralStatsData?.directReferralsCount;
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Центр экономики и геймификации Go2Asia" />
+      <ConnectHero subtitle="Центр экономики и геймификации Go2Asia" badgeText={isFallback ? 'DEMO MODE' : undefined} />
 
       {/* Навигация */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
@@ -252,6 +280,14 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
       {/* Основной контент */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {isFallback && <DemoModeBanner onRetry={handleRetry} />}
+
+        <ReferralCodeCard
+          referralCode={referralCode}
+          directReferralsCount={directReferralsCount}
+          isLoading={referralCodeLoading || referralStatsLoading}
+        />
+
         {/* Ошибки (если есть) */}
         {(balanceError || referralCodeError || transactionsError) && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -281,10 +317,10 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
       <DashboardContent
         greetingName={userName}
-        data={data}
+        data={effectiveData}
         todayActions={mockNextActions}
         missionsOfDay={mockMissions}
-        transactions={data.recent_transactions}
+        transactions={effectiveData.recent_transactions}
         onViewHistory={handleViewHistory}
         onTopUp={handleTopUp}
         onWithdraw={handleWithdraw}

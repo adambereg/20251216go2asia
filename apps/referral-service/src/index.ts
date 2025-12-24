@@ -194,6 +194,42 @@ function getRows<T>(result: unknown): T[] {
   return Array.isArray(rows) ? rows : [];
 }
 
+function requireUserId(request: Request, requestId: string): { ok: true; userId: string } | { ok: false; res: Response } {
+  const userId = request.headers.get('X-User-ID');
+  if (!userId) {
+    return { ok: false, res: errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401) };
+  }
+  return { ok: true, userId };
+}
+
+function isDevTestEnabled(env: Env): boolean {
+  const environment = String(getEnvName(env) ?? '')
+    .trim()
+    .toLowerCase();
+  const nodeEnv = String((env as unknown as { NODE_ENV?: string }).NODE_ENV ?? '')
+    .trim()
+    .toLowerCase();
+  // DEV TEST ONLY: explicitly allow only in non-production envs.
+  // - Cloudflare Workers usually won't have NODE_ENV, but local Node dev will.
+  return (
+    nodeEnv === 'development' ||
+    environment === 'staging' ||
+    environment === 'development' ||
+    environment === 'dev'
+  );
+}
+
+function parseDepth(depthRaw: string | null): 1 | 2 {
+  const n = depthRaw ? Number.parseInt(depthRaw, 10) : 2;
+  return n === 1 ? 1 : 2;
+}
+
+function toIso(input: unknown): string {
+  if (input instanceof Date) return input.toISOString();
+  const d = new Date(String(input));
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function generateReferralCode(): string {
   // Random alphanumeric code (M3). Uniqueness is enforced by DB unique constraint.
   // Use crypto for better randomness than Math.random.
@@ -266,6 +302,115 @@ export default {
         return res;
       }
 
+      // DEV TEST ONLY:
+      // Temporary endpoint to seed L1 referrals for UI verification without Clerk/external auth.
+      // How to remove after testing:
+      // - delete this route block
+      // - (optional) delete any devtest_* referee rows from referral_relations
+      //   WHERE referee_id LIKE 'devtest_%' AND referrer_id = '<your referrerUserId>';
+      //
+      // Usage (staging):
+      //   curl -k --ssl-no-revoke -X POST ^
+      //     -H "Content-Type: application/json" ^
+      //     -d "{\"referrerUserId\":\"<clerkUserId>\"}" ^
+      //     https://go2asia-referral-service-staging.fred89059599296.workers.dev/_dev/seed-referrals
+      //
+      // This will create 3 test referees:
+      // - #1 pending (first_login_at = null)
+      // - #2 active  (first_login_at = now)
+      // - #3 active  (first_login_at = now)
+      if (request.method === 'POST' && path === '/_dev/seed-referrals') {
+        const host = url.hostname;
+        const isStagingHost = host.includes('-staging.');
+        if (!isDevTestEnabled(env) && !isStagingHost) {
+          const res = errorResponse('NotFound', 'No route for path: /_dev/seed-referrals', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const referrerUserId = body?.referrerUserId;
+        if (typeof referrerUserId !== 'string' || referrerUserId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing referrerUserId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+
+        // Create stable deterministic referee ids so repeated runs don't create duplicates.
+        const safeRef = referrerUserId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || 'ref';
+        const now = new Date();
+        const refereeIds = [1, 2, 3].map((i) => `devtest_${safeRef}_l1_${i}`);
+
+        // Ensure referral code exists for referrer (nice for UX; also validates DB access)
+        await ensureReferralCode(db, referrerUserId);
+
+        const rows = [
+          { refereeId: refereeIds[0], firstLoginAt: null as Date | null }, // pending
+          { refereeId: refereeIds[1], firstLoginAt: now }, // active
+          { refereeId: refereeIds[2], firstLoginAt: now }, // active
+        ];
+
+        // Insert relations idempotently:
+        // - if referee already linked to this referrer => update first_login_at to match desired (only set if null->now)
+        // - if referee linked to different referrer => leave as-is (avoid corrupting real data)
+        for (const row of rows) {
+          const existingRes = await db.execute(sql`
+            SELECT referrer_id, first_login_at
+            FROM referral_relations
+            WHERE referee_id = ${row.refereeId}
+            LIMIT 1
+          `);
+
+          const existing = getRows<{ referrer_id: string; first_login_at: Date | null }>(existingRes)[0] ?? null;
+          if (existing) {
+            if (existing.referrer_id === referrerUserId) {
+              // pending -> active: set first_login_at if we want active and it is not set yet
+              if (row.firstLoginAt && !existing.first_login_at) {
+                await db.execute(sql`
+                  UPDATE referral_relations
+                  SET first_login_at = now()
+                  WHERE referee_id = ${row.refereeId}
+                `);
+              }
+            }
+            continue;
+          }
+
+          const relId = crypto.randomUUID();
+          await db.execute(sql`
+            INSERT INTO referral_relations (id, referrer_id, referee_id, registered_at, first_login_at)
+            VALUES (${relId}, ${referrerUserId}, ${row.refereeId}, now(), ${
+            row.firstLoginAt ? sql`now()` : sql`NULL`
+          })
+          `);
+        }
+
+        const res = json(
+          {
+            ok: true,
+            env: getEnvName(env),
+            referrerUserId,
+            createdReferees: [
+              { userId: refereeIds[0], status: 'pending' },
+              { userId: refereeIds[1], status: 'active' },
+              { userId: refereeIds[2], status: 'active' },
+            ],
+            note: 'DEV TEST ONLY',
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
       // User-facing
       if (request.method === 'GET' && path === '/v1/referral/code') {
         const auth = await requireGatewayOrigin(request, env, requestId, logger);
@@ -274,12 +419,12 @@ export default {
           return auth.res;
         }
 
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
         }
+        const userId = uid.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -296,12 +441,12 @@ export default {
           return auth.res;
         }
 
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
         }
+        const userId = uid.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -317,6 +462,181 @@ export default {
         const cnt = Number(getRows<{ cnt: number }>(countRes)[0]?.cnt ?? 0);
 
         const res = json({ userId, code: ensured.code, directReferralsCount: cnt }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/referral/tree') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
+        }
+        const userId = uid.userId;
+
+        const depth = parseDepth(url.searchParams.get('depth'));
+        const db = createDb(requireDatabase(env));
+
+        const directRes = await db.execute(sql`
+          SELECT referee_id, registered_at, first_login_at
+          FROM referral_relations
+          WHERE referrer_id = ${userId}
+          ORDER BY registered_at DESC
+        `);
+
+        const direct = getRows<{ referee_id: string; registered_at: Date; first_login_at: Date | null }>(directRes);
+
+        // Second-level relations for all direct referrals (used for both depth=1 (counts) and depth=2 (list))
+        const subRes = await db.execute(sql`
+          SELECT d.referee_id AS parent_id, r.referee_id, r.registered_at, r.first_login_at
+          FROM referral_relations d
+          JOIN referral_relations r
+            ON r.referrer_id = d.referee_id
+          WHERE d.referrer_id = ${userId}
+          ORDER BY r.registered_at DESC
+        `);
+
+        const subs = getRows<{
+          parent_id: string;
+          referee_id: string;
+          registered_at: Date;
+          first_login_at: Date | null;
+        }>(subRes);
+
+        const subsByParent = new Map<
+          string,
+          { userId: string; registeredAt: string; firstLoginAt: string | null; isActive: boolean }[]
+        >();
+
+        for (const row of subs) {
+          const list = subsByParent.get(row.parent_id) ?? [];
+          list.push({
+            userId: row.referee_id,
+            registeredAt: toIso(row.registered_at),
+            firstLoginAt: row.first_login_at ? toIso(row.first_login_at) : null,
+            isActive: Boolean(row.first_login_at),
+          });
+          subsByParent.set(row.parent_id, list);
+        }
+
+        const referrals = direct.map((r) => {
+          const children = subsByParent.get(r.referee_id) ?? [];
+
+          const node: Record<string, unknown> = {
+            userId: r.referee_id,
+            registeredAt: toIso(r.registered_at),
+            firstLoginAt: r.first_login_at ? toIso(r.first_login_at) : null,
+            isActive: Boolean(r.first_login_at),
+            subReferralsCount: children.length,
+          };
+
+          if (depth === 2) {
+            node.subReferrals = children.map((c) => ({
+              ...c,
+              subReferralsCount: 0,
+            }));
+          }
+
+          return node;
+        });
+
+        const res = json(
+          {
+            userId,
+            depth,
+            referrals,
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      // User-facing: claim referral code for current user (idempotent).
+      if (request.method === 'POST' && path === '/v1/referral/claim') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
+        }
+        const refereeId = uid.userId;
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+        const codeRaw = body?.code;
+        const code = typeof codeRaw === 'string' ? codeRaw.trim() : '';
+        if (!code) {
+          const res = errorResponse('BadRequest', 'Missing code', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+
+        const refRes = await db.execute(sql`
+          SELECT user_id
+          FROM referral_links
+          WHERE referral_code = ${code}
+          LIMIT 1
+        `);
+        const referrerId = getRows<{ user_id: string }>(refRes)[0]?.user_id ?? null;
+        if (!referrerId) {
+          const res = errorResponse('NotFound', 'Referral code not found', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (referrerId === refereeId) {
+          const res = errorResponse('Conflict', 'Cannot claim own referral code', requestId, 409);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const existingRes = await db.execute(sql`
+          SELECT referrer_id
+          FROM referral_relations
+          WHERE referee_id = ${refereeId}
+          LIMIT 1
+        `);
+        const existing = getRows<{ referrer_id: string }>(existingRes)[0]?.referrer_id ?? null;
+        if (existing) {
+          if (existing !== referrerId) {
+            const res = errorResponse('Conflict', 'Referral already claimed with different referrer', requestId, 409);
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+          const res = json(
+            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed' },
+            200,
+            { 'Cache-Control': 'no-store' }
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const relId = crypto.randomUUID();
+        await db.execute(sql`
+          INSERT INTO referral_relations (id, referrer_id, referee_id, registered_at, first_login_at)
+          VALUES (${relId}, ${referrerId}, ${refereeId}, now(), NULL)
+          ON CONFLICT (referee_id) DO NOTHING
+        `);
+
+        const res = json({ ok: true, claimed: true, referrerId, refereeId, code }, 200, { 'Cache-Control': 'no-store' });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -346,6 +666,40 @@ export default {
         const ensured = await ensureReferralCode(db, userId);
 
         const res = json({ userId, code: ensured.code, created: ensured.created }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      // Internal: mark first login for referee (idempotent)
+      if (request.method === 'POST' && path === '/internal/referral/mark-first-login') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const userId = body?.userId;
+        if (typeof userId !== 'string' || userId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing userId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const upd = await db.execute(sql`
+          UPDATE referral_relations
+          SET first_login_at = COALESCE(first_login_at, now())
+          WHERE referee_id = ${userId}
+        `);
+
+        const rowCount = (upd as unknown as { rowCount?: number }).rowCount;
+        const res = json({ ok: true, userId, updatedRows: rowCount ?? null }, 200, { 'Cache-Control': 'no-store' });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

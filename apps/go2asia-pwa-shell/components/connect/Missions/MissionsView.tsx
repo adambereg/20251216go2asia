@@ -5,7 +5,7 @@ import { ConnectHero, ConnectNav } from '../Shared';
 import { Card } from '@go2asia/ui';
 import { MissionCard } from './MissionCard';
 import { MissionFilters } from './MissionFilters';
-import { Target, Sparkles, Lock } from 'lucide-react';
+import { Sparkles, Lock } from 'lucide-react';
 import type { MissionsData, ModuleType, MissionType, MissionStatus } from '../types';
 import { mockMissionsData } from '../mockData';
 import { getDataSource } from '@/mocks/dto';

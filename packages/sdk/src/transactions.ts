@@ -35,6 +35,7 @@ export interface TransactionsPage {
 export interface GetTransactionsParams {
   limit?: number;
   cursor?: string;
+  enabled?: boolean;
 }
 
 /**
@@ -44,7 +45,7 @@ export interface GetTransactionsParams {
  * @returns React Query hook for transactions data
  */
 export const useGetTransactions = (params?: GetTransactionsParams) => {
-  const { limit = 20, cursor } = params || {};
+  const { limit = 20, cursor, enabled } = params || {};
   
   const queryParams = new URLSearchParams();
   if (limit) queryParams.set('limit', limit.toString());
@@ -61,6 +62,7 @@ export const useGetTransactions = (params?: GetTransactionsParams) => {
         url
       );
     },
+    enabled: enabled ?? true,
     staleTime: 60 * 1000, // 1 minute
     retry: 2,
   });

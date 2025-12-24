@@ -19,13 +19,6 @@ export function AnalyticsView({ initialData = mockAnalyticsData }: AnalyticsView
   const dataSource = getDataSource();
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | 'season'>('30d');
 
-  const chartData =
-    selectedPeriod === '7d'
-      ? initialData.points_chart.data.slice(-7)
-      : selectedPeriod === '30d'
-        ? initialData.points_chart.data.slice(-30)
-        : initialData.points_chart.data;
-
   const totalEarned = Object.values(initialData.sources).reduce((sum, s) => sum + s.points, 0);
   // Пока нет отдельного API/контрактов для "потрачено" и "средняя транзакция" → держим компактный mock.
   const totalSpent = 200;

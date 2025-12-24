@@ -41,6 +41,10 @@
     "./clerk-integration": {
       "types": "./src/clerk-integration.ts",
       "default": "./src/clerk-integration.ts"
+    },
+    "./mutator": {
+      "types": "./src/mutator.ts",
+      "default": "./src/mutator.ts"
     }
   },
   "scripts": {

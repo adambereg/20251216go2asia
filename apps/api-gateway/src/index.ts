@@ -78,6 +78,16 @@ function safeHostFromUrl(input?: string): string | null {
   }
 }
 
+function applyCors(res: Response, origin: string | null): Response {
+  if (!origin) return res;
+  // Clone to ensure headers are mutable (Cloudflare may return immutable headers).
+  const out = new Response(res.body, res);
+  out.headers.set('Access-Control-Allow-Origin', origin);
+  out.headers.set('Vary', 'Origin');
+  out.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+  return out;
+}
+
 async function verifyHs256Jwt(token: string, secret: string): Promise<
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string }
@@ -223,6 +233,7 @@ async function routeRequest(
         version: env.VERSION ?? 'unknown',
         routes: [
           { prefix: '/v1/auth/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
+          { prefix: '/v1/users/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
@@ -240,6 +251,10 @@ async function routeRequest(
   if (path.startsWith('/v1/auth/')) {
     serviceUrl = env.AUTH_SERVICE_URL;
     if (!serviceUrl) missingVar = 'AUTH_SERVICE_URL';
+  } else if (path.startsWith('/v1/users/')) {
+    // Users endpoints are served by auth-service in MVP (no separate user-service yet).
+    serviceUrl = env.AUTH_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'AUTH_SERVICE_URL';
   } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
     serviceUrl = env.CONTENT_SERVICE_URL;
     if (!serviceUrl) missingVar = 'CONTENT_SERVICE_URL';
@@ -254,7 +269,7 @@ async function routeRequest(
   if (!serviceUrl) {
     if (missingVar) {
       logger.error('Service not configured', { path, missingVar });
-      return new Response(
+      const res = new Response(
         JSON.stringify({
           error: {
             code: 'SERVICE_NOT_CONFIGURED',
@@ -264,10 +279,11 @@ async function routeRequest(
         }),
         { status: 503, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
       );
+      return applyCors(res, origin);
     }
 
     logger.warn('No service found for path', { path });
-    return new Response(
+    const res = new Response(
       JSON.stringify({
         error: {
           code: 'NOT_FOUND',
@@ -281,6 +297,7 @@ async function routeRequest(
         },
       }
     );
+    return applyCors(res, origin);
   }
 
   // Prepare headers for downstream.
@@ -320,7 +337,7 @@ async function routeRequest(
   const isContentRegister =
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
 
-  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || isContentRegister) {
+  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || path.startsWith('/v1/users/') || isContentRegister) {
     const token = getBearerToken(request);
     let userId: string | null = null;
 
@@ -340,7 +357,7 @@ async function routeRequest(
     }
 
     if (!userId) {
-      return new Response(
+      const res = new Response(
         JSON.stringify({
           error: {
             code: 'UNAUTHORIZED',
@@ -356,6 +373,9 @@ async function routeRequest(
           },
         }
       );
+      // IMPORTANT: also add CORS headers on auth errors,
+      // otherwise browsers will surface this as a network/CORS failure (status=0).
+      return applyCors(res, origin);
     }
 
     // Prevent spoofing: overwrite any inbound X-User-ID
@@ -390,12 +410,7 @@ async function routeRequest(
     out.headers.set('X-Proxy-Target-Path', downstreamPath);
     out.headers.set('X-Proxy-Downstream-Status', String(response.status));
     out.headers.set('X-Proxy-Downstream-Content-Type', response.headers.get('Content-Type') ?? '');
-    if (origin) {
-      out.headers.set('Access-Control-Allow-Origin', origin);
-      out.headers.set('Vary', 'Origin');
-      out.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
-    }
-    return out;
+    return applyCors(out, origin);
   } catch (error) {
     logger.error('Error forwarding request to service', error, {
       serviceUrl,
@@ -415,12 +430,7 @@ async function routeRequest(
         },
       }
     );
-    if (origin) {
-      res.headers.set('Access-Control-Allow-Origin', origin);
-      res.headers.set('Vary', 'Origin');
-      res.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
-    }
-    return res;
+    return applyCors(res, origin);
   }
 }
 

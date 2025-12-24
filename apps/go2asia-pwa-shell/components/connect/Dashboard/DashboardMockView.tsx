@@ -19,10 +19,10 @@ export function DashboardMockView({ initialData }: DashboardMockViewProps) {
   // В mock-режиме не используем Clerk-хуки, чтобы экран открывался без ClerkProvider.
   const userName = 'Алекс';
 
-  const handleTopUp = () => toast.info('Функция пополнения будет доступна в следующей версии');
-  const handleWithdraw = () => toast.info('Функция вывода будет доступна в следующей версии');
-  const handleViewHistory = () => toast.info('Откройте вкладку Wallet → Points');
-  const handleViewNFT = () => toast.info('Откройте вкладку Wallet → NFT');
+  const handleTopUp = () => toast('Функция пополнения будет доступна в следующей версии');
+  const handleWithdraw = () => toast('Функция вывода будет доступна в следующей версии');
+  const handleViewHistory = () => toast('Откройте вкладку Wallet → Points');
+  const handleViewNFT = () => toast('Откройте вкладку Wallet → NFT');
 
   return (
     <div className="min-h-screen bg-slate-50">

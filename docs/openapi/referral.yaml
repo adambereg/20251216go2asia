@@ -106,6 +106,40 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/referral/tree:
+    get:
+      tags: [referral]
+      operationId: getReferralTree
+      summary: Get current user's referral tree (depth 1..2)
+      description: >
+        User-facing read endpoint (called via gateway). Returns a two-level referral tree (M4 UI needs).
+        Note: user profile details are not part of Referral Service in M3; only userIds and timestamps are returned.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: depth
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [1, 2]
+            default: 2
+          description: Tree depth to return (1 = direct only, 2 = include sub-referrals)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralTreeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/referral/generate-code:
     post:
       tags: [internal]
@@ -277,6 +311,43 @@ components:
         directReferralsCount:
           type: integer
           minimum: 0
+
+    ReferralTreeNode:
+      type: object
+      required: [userId, registeredAt, isActive, subReferralsCount]
+      properties:
+        userId:
+          type: string
+        registeredAt:
+          type: string
+          format: date-time
+        firstLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        isActive:
+          type: boolean
+        subReferralsCount:
+          type: integer
+          minimum: 0
+        subReferrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralTreeNode"
+
+    ReferralTreeResponse:
+      type: object
+      required: [userId, depth, referrals]
+      properties:
+        userId:
+          type: string
+        depth:
+          type: integer
+          enum: [1, 2]
+        referrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralTreeNode"
 
     GenerateCodeRequest:
       type: object

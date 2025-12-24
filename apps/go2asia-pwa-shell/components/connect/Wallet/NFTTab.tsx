@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card, Chip } from '@go2asia/ui';
 import { Award } from 'lucide-react';
 import type { NFTBadge, NFTRarity, ModuleType } from '../types';
-import { NFT_RARITY_COLORS, NFT_RARITY_LABELS } from '../types';
+import { NFT_RARITY_LABELS } from '../types';
 
 interface NFTTabProps {
   nfts: NFTBadge[];
