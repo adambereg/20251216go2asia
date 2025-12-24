@@ -160,7 +160,7 @@ export function CatalogView({ initialPartners = mockPartners }: CatalogViewProps
           </>
         ) : (
           <EmptyState
-            icon={<Handshake size={32} />}
+            icon={Handshake}
             title="Партнёры не найдены"
             description="Попробуйте изменить параметры поиска или фильтры"
           />

@@ -30,7 +30,9 @@ export function WelcomeBlock({ user, levelProgress }: WelcomeBlockProps) {
           <Avatar initials={getInitials(user.displayName)} size="lg" />
           {user.verified && (
             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-              <Badge variant="verified" size="sm" />
+              <Badge variant="verified" size="sm">
+                ✓
+              </Badge>
             </div>
           )}
         </div>

@@ -48,7 +48,7 @@ jobs:
         run: pnpm lint
 
   typecheck:
-    name: Typecheck (non-blocking)
+    name: Typecheck (blocking)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +61,6 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Typecheck
-        continue-on-error: true
         run: pnpm typecheck
 
   test:
