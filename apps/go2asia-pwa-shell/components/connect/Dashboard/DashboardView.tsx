@@ -169,13 +169,22 @@ export function DashboardView({ initialData }: DashboardViewProps) {
             const metadata = tx.metadata as Record<string, unknown> | null;
             const txModule = (metadata?.module as string) || 'space';
 
+            const action = (tx as unknown as { action?: unknown; reason?: unknown }).action;
+            const reason = (tx as unknown as { action?: unknown; reason?: unknown }).reason;
+            const actionKey =
+              typeof action === 'string' && action.length > 0
+                ? action
+                : typeof reason === 'string' && reason.length > 0
+                  ? reason
+                  : 'unknown';
+
             return {
               id: tx.id,
               type: tx.amount >= 0 ? ('credit' as const) : ('debit' as const),
               amount: Math.abs(tx.amount),
               currency: 'points' as const,
               module: txModule as 'space' | 'atlas' | 'pulse' | 'rf' | 'quest' | 'guru',
-              description: getActionDescription(tx.action),
+              description: getActionDescription(actionKey),
               created_at: tx.createdAt,
               tags: [],
               metadata: metadata || {},
