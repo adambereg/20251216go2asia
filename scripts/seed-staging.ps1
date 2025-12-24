@@ -25,7 +25,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$envName = ($env:ENVIRONMENT ?? "dev").ToLowerInvariant()
+# Windows PowerShell 5.1 compatibility: avoid null-coalescing operator (??)
+$envNameRaw = $env:ENVIRONMENT
+if ([string]::IsNullOrWhiteSpace($envNameRaw)) { $envNameRaw = "dev" }
+$envName = $envNameRaw.ToLowerInvariant()
 if ($envName -eq "production") {
   throw "Refusing to run seed with ENVIRONMENT=production"
 }
