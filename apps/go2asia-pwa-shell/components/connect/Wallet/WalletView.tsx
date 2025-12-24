@@ -32,10 +32,20 @@ interface ApiError {
 }
 
 function isFallbackError(error: unknown): boolean {
-  const apiError = error as ApiError | null;
-  const status = apiError?.status || 0;
+  // No error => no fallback
+  if (!error) return false;
+
+  const apiError = error as ApiError;
+  const status = apiError.status || 0;
+
+  // Auth errors are handled separately (redirect/UX), not "demo mode"
   if (status === 401 || status === 403) return false;
-  return status === 0 || status === 404 || status >= 500;
+
+  // Network / timeout / CORS (treated as status=0 by SDK)
+  if (status === 0) return true;
+
+  // Only fallback for "API unavailable / not found / server errors"
+  return status === 404 || status >= 500;
 }
 
 function handleApiError(error: unknown, router: ReturnType<typeof useRouter>) {
