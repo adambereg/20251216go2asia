@@ -195,9 +195,20 @@ function getRows<T>(result: unknown): T[] {
 }
 
 function isDevTestEnabled(env: Env): boolean {
-  const name = getEnvName(env);
+  const environment = String(getEnvName(env) ?? '')
+    .trim()
+    .toLowerCase();
+  const nodeEnv = String((env as unknown as { NODE_ENV?: string }).NODE_ENV ?? '')
+    .trim()
+    .toLowerCase();
   // DEV TEST ONLY: explicitly allow only in non-production envs.
-  return name === 'staging' || name === 'development' || name === 'dev';
+  // - Cloudflare Workers usually won't have NODE_ENV, but local Node dev will.
+  return (
+    nodeEnv === 'development' ||
+    environment === 'staging' ||
+    environment === 'development' ||
+    environment === 'dev'
+  );
 }
 
 function parseDepth(depthRaw: string | null): 1 | 2 {
@@ -301,7 +312,9 @@ export default {
       // - #2 active  (first_login_at = now)
       // - #3 active  (first_login_at = now)
       if (request.method === 'POST' && path === '/_dev/seed-referrals') {
-        if (!isDevTestEnabled(env)) {
+        const host = url.hostname;
+        const isStagingHost = host.includes('-staging.');
+        if (!isDevTestEnabled(env) && !isStagingHost) {
           const res = errorResponse('NotFound', 'No route for path: /_dev/seed-referrals', requestId, 404);
           res.headers.set('X-Request-Id', requestId);
           return res;
