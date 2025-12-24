@@ -194,6 +194,12 @@ function getRows<T>(result: unknown): T[] {
   return Array.isArray(rows) ? rows : [];
 }
 
+function isDevTestEnabled(env: Env): boolean {
+  const name = getEnvName(env);
+  // DEV TEST ONLY: explicitly allow only in non-production envs.
+  return name === 'staging' || name === 'development' || name === 'dev';
+}
+
 function parseDepth(depthRaw: string | null): 1 | 2 {
   const n = depthRaw ? Number.parseInt(depthRaw, 10) : 2;
   return n === 1 ? 1 : 2;
@@ -273,6 +279,113 @@ export default {
     try {
       if (path === '/health' || path === '/version') {
         const res = handleHealth(env);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      // DEV TEST ONLY:
+      // Temporary endpoint to seed L1 referrals for UI verification without Clerk/external auth.
+      // How to remove after testing:
+      // - delete this route block
+      // - (optional) delete any devtest_* referee rows from referral_relations
+      //   WHERE referee_id LIKE 'devtest_%' AND referrer_id = '<your referrerUserId>';
+      //
+      // Usage (staging):
+      //   curl -k --ssl-no-revoke -X POST ^
+      //     -H "Content-Type: application/json" ^
+      //     -d "{\"referrerUserId\":\"<clerkUserId>\"}" ^
+      //     https://go2asia-referral-service-staging.fred89059599296.workers.dev/_dev/seed-referrals
+      //
+      // This will create 3 test referees:
+      // - #1 pending (first_login_at = null)
+      // - #2 active  (first_login_at = now)
+      // - #3 active  (first_login_at = now)
+      if (request.method === 'POST' && path === '/_dev/seed-referrals') {
+        if (!isDevTestEnabled(env)) {
+          const res = errorResponse('NotFound', 'No route for path: /_dev/seed-referrals', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const referrerUserId = body?.referrerUserId;
+        if (typeof referrerUserId !== 'string' || referrerUserId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing referrerUserId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+
+        // Create stable deterministic referee ids so repeated runs don't create duplicates.
+        const safeRef = referrerUserId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || 'ref';
+        const now = new Date();
+        const refereeIds = [1, 2, 3].map((i) => `devtest_${safeRef}_l1_${i}`);
+
+        // Ensure referral code exists for referrer (nice for UX; also validates DB access)
+        await ensureReferralCode(db, referrerUserId);
+
+        const rows = [
+          { refereeId: refereeIds[0], firstLoginAt: null as Date | null }, // pending
+          { refereeId: refereeIds[1], firstLoginAt: now }, // active
+          { refereeId: refereeIds[2], firstLoginAt: now }, // active
+        ];
+
+        // Insert relations idempotently:
+        // - if referee already linked to this referrer => update first_login_at to match desired (only set if null->now)
+        // - if referee linked to different referrer => leave as-is (avoid corrupting real data)
+        for (const row of rows) {
+          const existingRes = await db.execute(sql`
+            SELECT referrer_id, first_login_at
+            FROM referral_relations
+            WHERE referee_id = ${row.refereeId}
+            LIMIT 1
+          `);
+
+          const existing = getRows<{ referrer_id: string; first_login_at: Date | null }>(existingRes)[0] ?? null;
+          if (existing) {
+            if (existing.referrer_id === referrerUserId) {
+              // pending -> active: set first_login_at if we want active and it is not set yet
+              if (row.firstLoginAt && !existing.first_login_at) {
+                await db.execute(sql`
+                  UPDATE referral_relations
+                  SET first_login_at = now()
+                  WHERE referee_id = ${row.refereeId}
+                `);
+              }
+            }
+            continue;
+          }
+
+          const relId = crypto.randomUUID();
+          await db.execute(sql`
+            INSERT INTO referral_relations (id, referrer_id, referee_id, registered_at, first_login_at)
+            VALUES (${relId}, ${referrerUserId}, ${row.refereeId}, now(), ${
+            row.firstLoginAt ? sql`now()` : sql`NULL`
+          })
+          `);
+        }
+
+        const res = json(
+          {
+            ok: true,
+            env: getEnvName(env),
+            referrerUserId,
+            createdReferees: [
+              { userId: refereeIds[0], status: 'pending' },
+              { userId: refereeIds[1], status: 'active' },
+              { userId: refereeIds[2], status: 'active' },
+            ],
+            note: 'DEV TEST ONLY',
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
