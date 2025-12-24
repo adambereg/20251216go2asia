@@ -194,6 +194,14 @@ function getRows<T>(result: unknown): T[] {
   return Array.isArray(rows) ? rows : [];
 }
 
+function requireUserId(request: Request, requestId: string): { ok: true; userId: string } | { ok: false; res: Response } {
+  const userId = request.headers.get('X-User-ID');
+  if (!userId) {
+    return { ok: false, res: errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401) };
+  }
+  return { ok: true, userId };
+}
+
 function isDevTestEnabled(env: Env): boolean {
   const environment = String(getEnvName(env) ?? '')
     .trim()
@@ -411,12 +419,12 @@ export default {
           return auth.res;
         }
 
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
         }
+        const userId = uid.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -433,12 +441,12 @@ export default {
           return auth.res;
         }
 
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
         }
+        const userId = uid.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -465,12 +473,12 @@ export default {
           return auth.res;
         }
 
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
         }
+        const userId = uid.userId;
 
         const depth = parseDepth(url.searchParams.get('depth'));
         const db = createDb(requireDatabase(env));
@@ -551,6 +559,88 @@ export default {
         return res;
       }
 
+      // User-facing: claim referral code for current user (idempotent).
+      if (request.method === 'POST' && path === '/v1/referral/claim') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const uid = requireUserId(request, requestId);
+        if (!uid.ok) {
+          uid.res.headers.set('X-Request-Id', requestId);
+          return uid.res;
+        }
+        const refereeId = uid.userId;
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+        const codeRaw = body?.code;
+        const code = typeof codeRaw === 'string' ? codeRaw.trim() : '';
+        if (!code) {
+          const res = errorResponse('BadRequest', 'Missing code', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+
+        const refRes = await db.execute(sql`
+          SELECT user_id
+          FROM referral_links
+          WHERE referral_code = ${code}
+          LIMIT 1
+        `);
+        const referrerId = getRows<{ user_id: string }>(refRes)[0]?.user_id ?? null;
+        if (!referrerId) {
+          const res = errorResponse('NotFound', 'Referral code not found', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (referrerId === refereeId) {
+          const res = errorResponse('Conflict', 'Cannot claim own referral code', requestId, 409);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const existingRes = await db.execute(sql`
+          SELECT referrer_id
+          FROM referral_relations
+          WHERE referee_id = ${refereeId}
+          LIMIT 1
+        `);
+        const existing = getRows<{ referrer_id: string }>(existingRes)[0]?.referrer_id ?? null;
+        if (existing) {
+          if (existing !== referrerId) {
+            const res = errorResponse('Conflict', 'Referral already claimed with different referrer', requestId, 409);
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+          const res = json(
+            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed' },
+            200,
+            { 'Cache-Control': 'no-store' }
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const relId = crypto.randomUUID();
+        await db.execute(sql`
+          INSERT INTO referral_relations (id, referrer_id, referee_id, registered_at, first_login_at)
+          VALUES (${relId}, ${referrerId}, ${refereeId}, now(), NULL)
+          ON CONFLICT (referee_id) DO NOTHING
+        `);
+
+        const res = json({ ok: true, claimed: true, referrerId, refereeId, code }, 200, { 'Cache-Control': 'no-store' });
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
       // Internal
       if (request.method === 'POST' && path === '/internal/referral/generate-code') {
         const auth = await requireServiceAuth(request, env, requestId, logger);
@@ -576,6 +666,40 @@ export default {
         const ensured = await ensureReferralCode(db, userId);
 
         const res = json({ userId, code: ensured.code, created: ensured.created }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      // Internal: mark first login for referee (idempotent)
+      if (request.method === 'POST' && path === '/internal/referral/mark-first-login') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const userId = body?.userId;
+        if (typeof userId !== 'string' || userId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing userId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const upd = await db.execute(sql`
+          UPDATE referral_relations
+          SET first_login_at = COALESCE(first_login_at, now())
+          WHERE referee_id = ${userId}
+        `);
+
+        const rowCount = (upd as unknown as { rowCount?: number }).rowCount;
+        const res = json({ ok: true, userId, updatedRows: rowCount ?? null }, 200, { 'Cache-Control': 'no-store' });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

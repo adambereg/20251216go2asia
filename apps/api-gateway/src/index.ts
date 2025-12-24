@@ -233,6 +233,7 @@ async function routeRequest(
         version: env.VERSION ?? 'unknown',
         routes: [
           { prefix: '/v1/auth/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
+          { prefix: '/v1/users/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
@@ -248,6 +249,10 @@ async function routeRequest(
   let missingVar: string | null = null;
   
   if (path.startsWith('/v1/auth/')) {
+    serviceUrl = env.AUTH_SERVICE_URL;
+    if (!serviceUrl) missingVar = 'AUTH_SERVICE_URL';
+  } else if (path.startsWith('/v1/users/')) {
+    // Users endpoints are served by auth-service in MVP (no separate user-service yet).
     serviceUrl = env.AUTH_SERVICE_URL;
     if (!serviceUrl) missingVar = 'AUTH_SERVICE_URL';
   } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
@@ -332,7 +337,7 @@ async function routeRequest(
   const isContentRegister =
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
 
-  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || isContentRegister) {
+  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || path.startsWith('/v1/users/') || isContentRegister) {
     const token = getBearerToken(request);
     let userId: string | null = null;
 
