@@ -27,6 +27,16 @@
 Проверка делалась с:
 `Origin: https://20251216go2asia02.netlify.app`
 
+- **CORS preflight (OPTIONS)**
+  - `OPTIONS /v1/points/balance` → `HTTP/1.1 204 No Content`
+    - `Access-Control-Allow-Origin: https://20251216go2asia02.netlify.app`
+    - `Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS`
+    - `Access-Control-Allow-Headers: Authorization,Content-Type,X-Request-Id,X-Request-ID,X-Gateway-Auth,X-User-ID`
+    - `X-Request-ID: 1766645242308-tssolf5`
+  - `OPTIONS /v1/referral/tree?depth=2` → `HTTP/1.1 204 No Content`
+    - `Access-Control-Allow-Origin: https://20251216go2asia02.netlify.app`
+    - `X-Request-ID: 1766645242613-b9u0lkd`
+
 - **/v1/points/balance → 401**
   - `HTTP/1.1 401 Unauthorized`
   - `Access-Control-Allow-Origin: https://20251216go2asia02.netlify.app`
@@ -39,6 +49,12 @@
   - `Access-Control-Expose-Headers: X-Request-ID`
   - `X-Request-ID: 1766645112801-gqlz890`
 
+- **/v1/users/ensure → 401 (protected)**
+  - `HTTP/1.1 401 Unauthorized`
+  - `Access-Control-Allow-Origin: https://20251216go2asia02.netlify.app`
+  - `Access-Control-Expose-Headers: X-Request-ID`
+  - `X-Request-ID: 1766645242882-cu4rea7`
+
 - **/v1/content/does-not-exist → 404 (proxy)**
   - `HTTP/1.1 404 Not Found`
   - `Access-Control-Allow-Origin: https://20251216go2asia02.netlify.app`
@@ -47,6 +63,11 @@
   - `X-Request-ID: 1766645115303-z387h6g`
 
 ### D: Public content list endpoints (через gateway)
+
+- **Atlas countries list (sample)**
+  - `GET /v1/content/countries?limit=3` → 200
+  - `X-Proxy-Downstream-Status: 200`
+  - `X-Request-ID: 1766645243203-nccf1ea`
 
 - **Pulse events list (sample)**
   - `GET /v1/content/events?limit=3` → 200
