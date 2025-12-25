@@ -1,0 +1,32 @@
+name: Contract Tests (Content public, staging)
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_gateway_url:
+        description: "Staging API Gateway base URL"
+        required: false
+        default: "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+
+permissions:
+  contents: read
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Run contract tests (public /v1/content/*)
+        env:
+          STAGING_GATEWAY_URL: ${{ inputs.staging_gateway_url }}
+          OPENAPI_BUNDLE_PATH: docs/openapi/openapi.bundle.yaml
+        run: node scripts/contract/content_public_contract.mjs
+
