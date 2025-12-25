@@ -38,7 +38,7 @@ jobs:
       - name: Optional auth call (users.ensure) if STAGING_TEST_JWT present
         env:
           GW: ${{ inputs.staging_gateway_url }}
-          STAGING_TEST_JWT: ${{ secrets.STAGING_TEST_JWT }}
+          STAGING_TEST_JWT: "${{ secrets.STAGING_TEST_JWT }}"
         run: |
           set -euo pipefail
           if [ -z "${STAGING_TEST_JWT:-}" ]; then
