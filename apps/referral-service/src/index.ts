@@ -11,6 +11,7 @@
 
 import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { buildReferrerFirstLoginBonusPointsInput, makeReferralFirstLoginExternalId } from './bonus';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -844,17 +845,16 @@ export default {
 
         // 2) Award bonus to referrer (MVP): +N Points for referrer on referee first login.
         const bonus = parseNonNegativeIntOrDefault(env.REFERRAL_FIRST_LOGIN_BONUS, 100);
-        const externalId = `referral:first_login:${rel.referrer_id}:${userId}`;
+        const externalId = makeReferralFirstLoginExternalId(rel.referrer_id, userId);
 
         let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
         if (bonus > 0) {
-          const result = await callPointsAdd(env, requestId, logger, {
-            userId: rel.referrer_id,
-            amount: bonus,
-            action: 'referral_bonus_referrer',
-            externalId,
-            metadata: { refereeUserId: userId },
+          const pointsInput = buildReferrerFirstLoginBonusPointsInput({
+            referrerId: rel.referrer_id,
+            refereeId: userId,
+            bonus,
           });
+          const result = await callPointsAdd(env, requestId, logger, pointsInput);
           points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
           if (!result.ok) {
             logger.warn('Referral bonus points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });

@@ -11,6 +11,7 @@
 
 import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { decideExternalIdIdempotency } from './idempotency';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -475,8 +476,11 @@ export default {
         // Idempotency lookup
         const existing = await getTransactionByExternalId(db, externalId);
         if (existing) {
-          const conflict = existing.amount !== amount || existing.reason !== action;
-          if (conflict) {
+          const decision = decideExternalIdIdempotency(
+            { transactionId: existing.id, amount: existing.amount, action: existing.reason },
+            { amount, action }
+          );
+          if (decision.kind === 'conflict') {
             logger.error('Idempotency conflict (integration error)', {
               externalId,
               existing: { amount: existing.amount, action: existing.reason },
@@ -574,8 +578,11 @@ export default {
             return res;
           }
 
-          const conflict = existing2.amount !== amount || existing2.reason !== action;
-          if (conflict) {
+          const decision2 = decideExternalIdIdempotency(
+            { transactionId: existing2.id, amount: existing2.amount, action: existing2.reason },
+            { amount, action }
+          );
+          if (decision2.kind === 'conflict') {
             logger.error('Idempotency conflict after concurrent insert (integration error)', {
               externalId,
               existing: { amount: existing2.amount, action: existing2.reason },
