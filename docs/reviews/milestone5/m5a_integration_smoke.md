@@ -6,7 +6,7 @@
 
 ## Итоговый статус (на текущий момент)
 
-- **DONE WITH ISSUES (частично выполнено)**: автоматом подтверждены публичные content endpoints + gateway proxy + CORS/RequestId на 401/404. Полные потоки A/B/C требуют ручного прогона с реальным Clerk-токеном (и фиксации DB evidence). F5 (500) — не удалось воспроизвести без изменения окружения (см. `m5a_issues.md`).
+- **DONE WITH ISSUES**: A/B/C и E2/E3 подтверждены вручную (оператор), D/F1–F2 подтверждены автоматически (HTTP evidence). F5 (500) — не удалось воспроизвести без изменения окружения (см. `m5a_issues.md`).
 
 ## Evidence: быстрые HTTP-проверки (без токена)
 
@@ -81,26 +81,18 @@
 
 ### A) Auth & User lifecycle
 
-- **Статус:** NEEDS MANUAL
-- **Что проверить вручную:**
-  - signup/login в UI (staging) → в Network увидеть `POST /v1/users/ensure` → 200
-  - в Neon: `users` содержит запись для нового `clerk_id`
+- **Статус:** OK (manual)
+- **Evidence (оператор):** A = OK
 
 ### B) Referral flow
 
-- **Статус:** NEEDS MANUAL
-- **Что проверить вручную:**
-  - открыть `.../sign-up?ref=<CODE>` → завершить регистрацию → убедиться, что после auth сработал `POST /v1/referral/claim`
-  - referrer видит pending в `/connect/referrals`
-  - у referee после sign-in/sign-out → sign-in: активируется `first_login_at`, начисляется бонус referrer
-  - DB evidence: `referral_relations`, `points_transactions` (`action = referral_bonus_referrer`)
+- **Статус:** OK (manual)
+- **Evidence (оператор):** B = OK
 
 ### C) Points
 
-- **Статус:** PARTIAL (auth-gating + CORS OK; требуется ручной прогон)
-- **Что проверить вручную:**
-  - `/connect` и `/connect/wallet` показывают баланс/транзакции без DEMO MODE
-  - подтверждение в Neon: баланс/транзакции консистентны
+- **Статус:** OK (manual)
+- **Evidence (оператор):** C = OK
 
 ### D) Content (Atlas/Pulse/Blog)
 
@@ -109,9 +101,9 @@
 
 ### E) Staging operations
 
-- **Статус:** PARTIAL
+- **Статус:** OK
 - **E0:** OK (gateway/content-service отвечают 200)
-- **E2/E3:** NEEDS MANUAL (GitHub Actions seed workflow + идемпотентность)
+- **E2/E3:** OK (manual)
 
 ### F) Error handling
 
