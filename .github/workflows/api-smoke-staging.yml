@@ -1,0 +1,56 @@
+name: API Smoke (staging)
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_gateway_url:
+        description: "Staging API Gateway base URL"
+        required: false
+        default: "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Public GET #1 (events)
+        env:
+          GW: ${{ inputs.staging_gateway_url }}
+        run: |
+          set -euo pipefail
+          url="$GW/v1/content/events?limit=1"
+          code="$(curl -sS -o /tmp/events.json -w '%{http_code}' "$url")"
+          echo "GET $url -> $code"
+          test "$code" = "200"
+
+      - name: Public GET #2 (articles)
+        env:
+          GW: ${{ inputs.staging_gateway_url }}
+        run: |
+          set -euo pipefail
+          url="$GW/v1/content/articles?limit=1"
+          code="$(curl -sS -o /tmp/articles.json -w '%{http_code}' "$url")"
+          echo "GET $url -> $code"
+          test "$code" = "200"
+
+      - name: Optional auth call (users.ensure) if STAGING_TEST_JWT present
+        env:
+          GW: ${{ inputs.staging_gateway_url }}
+          STAGING_TEST_JWT: ${{ secrets.STAGING_TEST_JWT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STAGING_TEST_JWT:-}" ]; then
+            echo "STAGING_TEST_JWT is not configured -> skipping auth smoke."
+            exit 0
+          fi
+          url="$GW/v1/users/ensure"
+          code="$(curl -sS -o /tmp/ensure.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${STAGING_TEST_JWT}" \
+            -H "Content-Type: application/json" \
+            --data '{"email":"ci-smoke@example.com"}' \
+            "$url")"
+          echo "POST $url -> $code"
+          test "$code" = "200"
+
