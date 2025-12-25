@@ -573,6 +573,24 @@
 - ✅ Реферальная программа работает в UI
 - ✅ Баланс Points отображается в UI
 
+**Статус:** ✅ **ЗАВЕРШЁН (with accepted deviations)** (2025-12-25)
+
+**Закрытые критерии (по факту реализации)**
+- ✅ Atlas / Pulse / Blog / Connect работают в `NEXT_PUBLIC_DATA_SOURCE=api` через Gateway + SDK
+- ✅ Connect UI отображает баланс/транзакции/реферальный код/дерево/статы (Points + Referral)
+- ✅ Регистрация на события (`/v1/content/events/{id}/register`) интегрирована с начислением points (event_registration)
+- ✅ Встроен воспроизводимый seed для staging (скрипты + manual workflow) и runbook
+- ✅ OpenAPI SSOT (per-service) + bundle artefact + Orval генерация типов/SDK
+- ✅ CI: typecheck стал blocking (качество валидации повышено до merge gate)
+
+**Принятые отклонения (Accepted / Implemented ADR)**
+- **OpenAPI bundling (SSOT per-service + bundle artefact):** `docs/decisions/adr_0014_openapi_ssot_and_bundling.md`
+- **JWT verification на уровне Gateway:** `docs/decisions/adr_0015_jwt_verification_at_gateway.md`
+- **Schema SSOT через SQL DDL + DDL applier (вместо drizzle migrations):** `docs/decisions/adr_0016_sql_ddl_and_ddl_applier.md`
+- **Staging deploy из feature-веток:** `docs/decisions/adr_0017_staging_deploys_from_feature_branches.md`
+- **Referral attribution через client-capture + server claim (post-auth):** `docs/decisions/adr_0018_referral_claim_post_auth.md`
+- **Offline (SW + IndexedDB) отложен для MVP:** `docs/decisions/adr_0019_offline_support_deferred_for_mvp.md`
+
 ---
 
 ## Milestone 5: Integration, Testing & Polish
