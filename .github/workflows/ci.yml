@@ -24,7 +24,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Validate OpenAPI specs
@@ -41,7 +41,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Lint
@@ -57,7 +57,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Typecheck
@@ -73,7 +73,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Test
@@ -89,7 +89,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Build
@@ -105,7 +105,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Generate types

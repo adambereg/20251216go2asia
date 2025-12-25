@@ -240,7 +240,15 @@ async function handleEnsureUser(
     RETURNING id, clerk_id, email, role, created_at, updated_at
   `);
 
-  const row = (result as unknown as { rows?: any[] }).rows?.[0] ?? null;
+  type UserRow = {
+    id: string;
+    clerk_id: string;
+    email: string;
+    role: string;
+    created_at: Date;
+    updated_at: Date;
+  };
+  const row = (result as unknown as { rows?: UserRow[] }).rows?.[0] ?? null;
 
   // Also mark "first login" for referral relation (so pending -> active after real sign-in).
   // Non-blocking: if referral-service isn't configured, users/ensure should still succeed.

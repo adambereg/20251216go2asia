@@ -6,7 +6,7 @@
  * - Integration with Points Service (event_registration)
  */
 
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import type { ArticleRow, CityRow, CountryRow, EventRow, PlaceRow, SqlClient } from '@go2asia/db/queries/content';
 import {
   createSqlClient,
   getArticleBySlug,
@@ -18,7 +18,7 @@ import {
   listEvents,
   listPlaces,
 } from '@go2asia/db/queries/content';
-import type { ArticleRow, CityRow, CountryRow, EventRow, PlaceRow, SqlClient } from '@go2asia/db/queries/content';
+import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -277,7 +277,8 @@ async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>):
 
   try {
     const cu = await sqlClient`SELECT current_user`;
-    const currentUser = String((cu as any)?.[0]?.current_user ?? '');
+    const currentUser =
+      String((cu as unknown as Array<{ current_user?: unknown }> | undefined)?.[0]?.current_user ?? '');
 
     const counts = await sqlClient`
       SELECT
@@ -303,6 +304,17 @@ async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>):
       LIMIT 1
     `;
 
+    type CountsRow = {
+      countries?: number;
+      cities?: number;
+      places?: number;
+      events?: number;
+      articles?: number;
+      media_files?: number;
+    };
+    type TopEventRow = { id: string; slug: string };
+    type TopArticleRow = { slug: string };
+
     return json(
       {
         ok: true,
@@ -312,10 +324,10 @@ async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>):
           protocol: info.protocol,
           current_user: currentUser,
         },
-        counts: (counts as any)?.[0] ?? {},
+        counts: (counts as unknown as CountsRow[] | undefined)?.[0] ?? {},
         examples: {
-          top_event: (topEvent as any)?.[0] ?? null,
-          top_article: (topArticle as any)?.[0] ?? null,
+          top_event: (topEvent as unknown as TopEventRow[] | undefined)?.[0] ?? null,
+          top_article: (topArticle as unknown as TopArticleRow[] | undefined)?.[0] ?? null,
         },
       },
       200
@@ -580,12 +592,13 @@ async function handleEventRegistration(
       RETURNING id
     `;
 
-    const insertedId = (inserted as any)?.[0]?.id as string | undefined;
-    if (!insertedId) {
+    const insertedId = (inserted as unknown as Array<{ id?: unknown }> | undefined)?.[0]?.id;
+    const insertedIdStr = typeof insertedId === 'string' ? insertedId : undefined;
+    if (!insertedIdStr) {
       return json({ error: { code: 'Conflict', message: 'Already registered' } }, 409);
     }
 
-    logger.info('Event registration created', { userId, eventId, registrationId });
+    logger.info('Event registration created', { userId, eventId, registrationId: insertedIdStr });
 
     const pointsResult = await callPointsService(
       env,
