@@ -1,0 +1,56 @@
+name: Seed Neon (staging)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: "Reset content tables before seeding (content only; NOT points/referral/auth)"
+        required: false
+        type: boolean
+        default: false
+      skip_ddl:
+        description: "Skip DDL apply (seed only)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: seed-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: Seed staging DB (DDL + content)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply DDL (staging)
+        if: ${{ inputs.skip_ddl != true }}
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+        run: pnpm -C packages/db db:ddl:apply:staging
+
+      - name: Seed content (staging)
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+          SEED_RESET: ${{ inputs.reset && '1' || '' }}
+        run: pnpm -C packages/db db:seed
+

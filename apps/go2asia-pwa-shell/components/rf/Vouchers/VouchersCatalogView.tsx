@@ -154,7 +154,7 @@ export function VouchersCatalogView({ initialVouchers = mockVouchers }: Vouchers
           <VoucherGrid vouchers={filteredVouchers} />
         ) : (
           <EmptyState
-            icon={<Ticket size={32} />}
+            icon={Ticket}
             title="Ваучеры не найдены"
             description="Попробуйте изменить параметры поиска или фильтры"
           />

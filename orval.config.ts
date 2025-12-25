@@ -10,7 +10,7 @@ import { defineConfig } from 'orval';
 export default defineConfig({
   types: {
     input: {
-      target: './docs/openapi/openapi.yaml',
+      target: './docs/openapi/openapi.bundle.yaml',
     },
     output: {
       mode: 'split',
@@ -34,7 +34,7 @@ export default defineConfig({
   },
   sdk: {
     input: {
-      target: './docs/openapi/openapi.yaml',
+      target: './docs/openapi/openapi.bundle.yaml',
     },
     output: {
       mode: 'split',

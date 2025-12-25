@@ -6,3 +6,1123 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type {
+  AddPointsRequest,
+  AddPointsResponse,
+  BadRequestResponse,
+  ClaimReferralRequest,
+  ClaimReferralResponse,
+  ClerkWebhook200,
+  ClerkWebhookBody,
+  ConflictResponse,
+  ContentArticleDto,
+  ContentEventDto,
+  ContentPlaceDto,
+  DebugDbResponse,
+  EnsureUserRequest,
+  EnsureUserResponse,
+  EventRegistrationResponse,
+  GenerateCodeRequest,
+  GenerateCodeResponse,
+  GetReferralTreeParams,
+  InternalErrorResponse,
+  LinkReferralRequest,
+  LinkReferralResponse,
+  ListArticlesParams,
+  ListArticlesResponse,
+  ListCitiesParams,
+  ListCitiesResponse,
+  ListCountriesResponse,
+  ListEventsParams,
+  ListEventsResponse,
+  ListPlacesParams,
+  ListPlacesResponse,
+  ListPointsTransactionsParams,
+  MarkFirstLoginRequest,
+  MarkFirstLoginResponse,
+  NotFoundResponse,
+  RateLimitedResponse,
+  ReferralCodeResponse,
+  ReferralStatsResponse,
+  ReferralTreeResponse,
+  TransactionsPage,
+  UnauthorizedResponse,
+  UserBalance,
+} from "../packages/sdk/src/generated";
+
+import { customInstance } from "../packages/sdk/src/mutator";
+
+/**
+ * Idempotency policy (M3): - `externalId` is required and MUST be globally unique for Points Service. - If `externalId` already exists and payload differs (`amount` and/or `action`) => 409 Conflict and the event MUST be logged as an integration error.
+Limits policy (M3): - Per-action limits and a simple configurable per-user velocity cap are applied inside Points Service.
+
+ * @summary Add points to a user (idempotent)
+ */
+export type addPointsResponse200 = {
+  data: AddPointsResponse;
+  status: 200;
+};
+
+export type addPointsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type addPointsResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type addPointsResponse429 = {
+  data: RateLimitedResponse;
+  status: 429;
+};
+
+export type addPointsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type addPointsResponseSuccess = addPointsResponse200 & {
+  headers: Headers;
+};
+export type addPointsResponseError = (
+  | addPointsResponse401
+  | addPointsResponse409
+  | addPointsResponse429
+  | addPointsResponse500
+) & {
+  headers: Headers;
+};
+
+export type addPointsResponse = addPointsResponseSuccess | addPointsResponseError;
+
+export const getAddPointsUrl = () => {
+  return `/internal/points/add`;
+};
+
+export const addPoints = async (
+  addPointsRequest: AddPointsRequest,
+  options?: RequestInit
+): Promise<addPointsResponse> => {
+  return customInstance<addPointsResponse>(getAddPointsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addPointsRequest),
+  });
+};
+
+/**
+ * Idempotent upsert of referral code for the given userId.
+ * @summary Ensure referral code exists for user (idempotent)
+ */
+export type generateReferralCodeResponse200 = {
+  data: GenerateCodeResponse;
+  status: 200;
+};
+
+export type generateReferralCodeResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type generateReferralCodeResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type generateReferralCodeResponseSuccess = generateReferralCodeResponse200 & {
+  headers: Headers;
+};
+export type generateReferralCodeResponseError = (
+  | generateReferralCodeResponse401
+  | generateReferralCodeResponse500
+) & {
+  headers: Headers;
+};
+
+export type generateReferralCodeResponse =
+  | generateReferralCodeResponseSuccess
+  | generateReferralCodeResponseError;
+
+export const getGenerateReferralCodeUrl = () => {
+  return `/internal/referral/generate-code`;
+};
+
+export const generateReferralCode = async (
+  generateCodeRequest: GenerateCodeRequest,
+  options?: RequestInit
+): Promise<generateReferralCodeResponse> => {
+  return customInstance<generateReferralCodeResponse>(getGenerateReferralCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateCodeRequest),
+  });
+};
+
+/**
+ * Invariant (M3): referee can have at most one referrer (L1 link).
+
+ * @summary Link referee to referrer by referral code
+ */
+export type linkReferralResponse200 = {
+  data: LinkReferralResponse;
+  status: 200;
+};
+
+export type linkReferralResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type linkReferralResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type linkReferralResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type linkReferralResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type linkReferralResponseSuccess = linkReferralResponse200 & {
+  headers: Headers;
+};
+export type linkReferralResponseError = (
+  | linkReferralResponse401
+  | linkReferralResponse404
+  | linkReferralResponse409
+  | linkReferralResponse500
+) & {
+  headers: Headers;
+};
+
+export type linkReferralResponse = linkReferralResponseSuccess | linkReferralResponseError;
+
+export const getLinkReferralUrl = () => {
+  return `/internal/referral/link`;
+};
+
+export const linkReferral = async (
+  linkReferralRequest: LinkReferralRequest,
+  options?: RequestInit
+): Promise<linkReferralResponse> => {
+  return customInstance<linkReferralResponse>(getLinkReferralUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(linkReferralRequest),
+  });
+};
+
+/**
+ * Service-to-service endpoint to mark referral relation as active by setting first_login_at for the given userId (referee).
+
+ * @summary Mark referee first login (idempotent)
+ */
+export type markReferralFirstLoginResponse200 = {
+  data: MarkFirstLoginResponse;
+  status: 200;
+};
+
+export type markReferralFirstLoginResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type markReferralFirstLoginResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type markReferralFirstLoginResponseSuccess = markReferralFirstLoginResponse200 & {
+  headers: Headers;
+};
+export type markReferralFirstLoginResponseError = (
+  | markReferralFirstLoginResponse401
+  | markReferralFirstLoginResponse500
+) & {
+  headers: Headers;
+};
+
+export type markReferralFirstLoginResponse =
+  | markReferralFirstLoginResponseSuccess
+  | markReferralFirstLoginResponseError;
+
+export const getMarkReferralFirstLoginUrl = () => {
+  return `/internal/referral/mark-first-login`;
+};
+
+export const markReferralFirstLogin = async (
+  markFirstLoginRequest: MarkFirstLoginRequest,
+  options?: RequestInit
+): Promise<markReferralFirstLoginResponse> => {
+  return customInstance<markReferralFirstLoginResponse>(getMarkReferralFirstLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(markFirstLoginRequest),
+  });
+};
+
+/**
+ * Receives Clerk events (e.g. user.created, user.updated). Used for integration (points/referral code). Signature verification may be relaxed in early milestones.
+
+ * @summary Clerk webhook receiver (staging)
+ */
+export type clerkWebhookResponse200 = {
+  data: ClerkWebhook200;
+  status: 200;
+};
+
+export type clerkWebhookResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type clerkWebhookResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type clerkWebhookResponseSuccess = clerkWebhookResponse200 & {
+  headers: Headers;
+};
+export type clerkWebhookResponseError = (clerkWebhookResponse400 | clerkWebhookResponse500) & {
+  headers: Headers;
+};
+
+export type clerkWebhookResponse = clerkWebhookResponseSuccess | clerkWebhookResponseError;
+
+export const getClerkWebhookUrl = () => {
+  return `/v1/auth/webhook/clerk`;
+};
+
+export const clerkWebhook = async (
+  clerkWebhookBody: ClerkWebhookBody,
+  options?: RequestInit
+): Promise<clerkWebhookResponse> => {
+  return customInstance<clerkWebhookResponse>(getClerkWebhookUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(clerkWebhookBody),
+  });
+};
+
+/**
+ * @summary Debug DB connectivity and counts (no secrets)
+ */
+export type debugDbResponse200 = {
+  data: DebugDbResponse;
+  status: 200;
+};
+
+export type debugDbResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type debugDbResponseSuccess = debugDbResponse200 & {
+  headers: Headers;
+};
+export type debugDbResponseError = debugDbResponse500 & {
+  headers: Headers;
+};
+
+export type debugDbResponse = debugDbResponseSuccess | debugDbResponseError;
+
+export const getDebugDbUrl = () => {
+  return `/v1/content/_debug/db`;
+};
+
+export const debugDb = async (options?: RequestInit): Promise<debugDbResponse> => {
+  return customInstance<debugDbResponse>(getDebugDbUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List articles (public)
+ */
+export type listArticlesResponse200 = {
+  data: ListArticlesResponse;
+  status: 200;
+};
+
+export type listArticlesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listArticlesResponseSuccess = listArticlesResponse200 & {
+  headers: Headers;
+};
+export type listArticlesResponseError = listArticlesResponse500 & {
+  headers: Headers;
+};
+
+export type listArticlesResponse = listArticlesResponseSuccess | listArticlesResponseError;
+
+export const getListArticlesUrl = (params?: ListArticlesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/articles?${stringifiedParams}`
+    : `/v1/content/articles`;
+};
+
+export const listArticles = async (
+  params?: ListArticlesParams,
+  options?: RequestInit
+): Promise<listArticlesResponse> => {
+  return customInstance<listArticlesResponse>(getListArticlesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get article by slug (public)
+ */
+export type getArticleBySlugResponse200 = {
+  data: ContentArticleDto;
+  status: 200;
+};
+
+export type getArticleBySlugResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getArticleBySlugResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getArticleBySlugResponseSuccess = getArticleBySlugResponse200 & {
+  headers: Headers;
+};
+export type getArticleBySlugResponseError = (
+  | getArticleBySlugResponse404
+  | getArticleBySlugResponse500
+) & {
+  headers: Headers;
+};
+
+export type getArticleBySlugResponse =
+  | getArticleBySlugResponseSuccess
+  | getArticleBySlugResponseError;
+
+export const getGetArticleBySlugUrl = (slug: string) => {
+  return `/v1/content/articles/${slug}`;
+};
+
+export const getArticleBySlug = async (
+  slug: string,
+  options?: RequestInit
+): Promise<getArticleBySlugResponse> => {
+  return customInstance<getArticleBySlugResponse>(getGetArticleBySlugUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List cities (public)
+ */
+export type listCitiesResponse200 = {
+  data: ListCitiesResponse;
+  status: 200;
+};
+
+export type listCitiesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCitiesResponseSuccess = listCitiesResponse200 & {
+  headers: Headers;
+};
+export type listCitiesResponseError = listCitiesResponse500 & {
+  headers: Headers;
+};
+
+export type listCitiesResponse = listCitiesResponseSuccess | listCitiesResponseError;
+
+export const getListCitiesUrl = (params?: ListCitiesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/cities?${stringifiedParams}`
+    : `/v1/content/cities`;
+};
+
+export const listCities = async (
+  params?: ListCitiesParams,
+  options?: RequestInit
+): Promise<listCitiesResponse> => {
+  return customInstance<listCitiesResponse>(getListCitiesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List countries (public)
+ */
+export type listCountriesResponse200 = {
+  data: ListCountriesResponse;
+  status: 200;
+};
+
+export type listCountriesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCountriesResponseSuccess = listCountriesResponse200 & {
+  headers: Headers;
+};
+export type listCountriesResponseError = listCountriesResponse500 & {
+  headers: Headers;
+};
+
+export type listCountriesResponse = listCountriesResponseSuccess | listCountriesResponseError;
+
+export const getListCountriesUrl = () => {
+  return `/v1/content/countries`;
+};
+
+export const listCountries = async (options?: RequestInit): Promise<listCountriesResponse> => {
+  return customInstance<listCountriesResponse>(getListCountriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List events (public)
+ */
+export type listEventsResponse200 = {
+  data: ListEventsResponse;
+  status: 200;
+};
+
+export type listEventsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listEventsResponseSuccess = listEventsResponse200 & {
+  headers: Headers;
+};
+export type listEventsResponseError = listEventsResponse500 & {
+  headers: Headers;
+};
+
+export type listEventsResponse = listEventsResponseSuccess | listEventsResponseError;
+
+export const getListEventsUrl = (params?: ListEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/events?${stringifiedParams}`
+    : `/v1/content/events`;
+};
+
+export const listEvents = async (
+  params?: ListEventsParams,
+  options?: RequestInit
+): Promise<listEventsResponse> => {
+  return customInstance<listEventsResponse>(getListEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get event by id (public)
+ */
+export type getEventByIdResponse200 = {
+  data: ContentEventDto;
+  status: 200;
+};
+
+export type getEventByIdResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getEventByIdResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getEventByIdResponseSuccess = getEventByIdResponse200 & {
+  headers: Headers;
+};
+export type getEventByIdResponseError = (getEventByIdResponse404 | getEventByIdResponse500) & {
+  headers: Headers;
+};
+
+export type getEventByIdResponse = getEventByIdResponseSuccess | getEventByIdResponseError;
+
+export const getGetEventByIdUrl = (id: string) => {
+  return `/v1/content/events/${id}`;
+};
+
+export const getEventById = async (
+  id: string,
+  options?: RequestInit
+): Promise<getEventByIdResponse> => {
+  return customInstance<getEventByIdResponse>(getGetEventByIdUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * Requires gateway-origin auth and asserted user context.
+ * @summary Register current user for event (authorized)
+ */
+export type registerForEventResponse201 = {
+  data: EventRegistrationResponse;
+  status: 201;
+};
+
+export type registerForEventResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type registerForEventResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type registerForEventResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type registerForEventResponseSuccess = registerForEventResponse201 & {
+  headers: Headers;
+};
+export type registerForEventResponseError = (
+  | registerForEventResponse401
+  | registerForEventResponse409
+  | registerForEventResponse500
+) & {
+  headers: Headers;
+};
+
+export type registerForEventResponse =
+  | registerForEventResponseSuccess
+  | registerForEventResponseError;
+
+export const getRegisterForEventUrl = (id: string) => {
+  return `/v1/content/events/${id}/register`;
+};
+
+export const registerForEvent = async (
+  id: string,
+  options?: RequestInit
+): Promise<registerForEventResponse> => {
+  return customInstance<registerForEventResponse>(getRegisterForEventUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary List places (public)
+ */
+export type listPlacesResponse200 = {
+  data: ListPlacesResponse;
+  status: 200;
+};
+
+export type listPlacesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listPlacesResponseSuccess = listPlacesResponse200 & {
+  headers: Headers;
+};
+export type listPlacesResponseError = listPlacesResponse500 & {
+  headers: Headers;
+};
+
+export type listPlacesResponse = listPlacesResponseSuccess | listPlacesResponseError;
+
+export const getListPlacesUrl = (params?: ListPlacesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/places?${stringifiedParams}`
+    : `/v1/content/places`;
+};
+
+export const listPlaces = async (
+  params?: ListPlacesParams,
+  options?: RequestInit
+): Promise<listPlacesResponse> => {
+  return customInstance<listPlacesResponse>(getListPlacesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get place by id or slug (public)
+ */
+export type getPlaceByIdOrSlugResponse200 = {
+  data: ContentPlaceDto;
+  status: 200;
+};
+
+export type getPlaceByIdOrSlugResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getPlaceByIdOrSlugResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getPlaceByIdOrSlugResponseSuccess = getPlaceByIdOrSlugResponse200 & {
+  headers: Headers;
+};
+export type getPlaceByIdOrSlugResponseError = (
+  | getPlaceByIdOrSlugResponse404
+  | getPlaceByIdOrSlugResponse500
+) & {
+  headers: Headers;
+};
+
+export type getPlaceByIdOrSlugResponse =
+  | getPlaceByIdOrSlugResponseSuccess
+  | getPlaceByIdOrSlugResponseError;
+
+export const getGetPlaceByIdOrSlugUrl = (idOrSlug: string) => {
+  return `/v1/content/places/${idOrSlug}`;
+};
+
+export const getPlaceByIdOrSlug = async (
+  idOrSlug: string,
+  options?: RequestInit
+): Promise<getPlaceByIdOrSlugResponse> => {
+  return customInstance<getPlaceByIdOrSlugResponse>(getGetPlaceByIdOrSlugUrl(idOrSlug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
+ * @summary Get current user points balance
+ */
+export type getPointsBalanceResponse200 = {
+  data: UserBalance;
+  status: 200;
+};
+
+export type getPointsBalanceResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getPointsBalanceResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getPointsBalanceResponseSuccess = getPointsBalanceResponse200 & {
+  headers: Headers;
+};
+export type getPointsBalanceResponseError = (
+  | getPointsBalanceResponse401
+  | getPointsBalanceResponse500
+) & {
+  headers: Headers;
+};
+
+export type getPointsBalanceResponse =
+  | getPointsBalanceResponseSuccess
+  | getPointsBalanceResponseError;
+
+export const getGetPointsBalanceUrl = () => {
+  return `/v1/points/balance`;
+};
+
+export const getPointsBalance = async (
+  options?: RequestInit
+): Promise<getPointsBalanceResponse> => {
+  return customInstance<getPointsBalanceResponse>(getGetPointsBalanceUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns a paginated list of ledger transactions for the current user.
+ * @summary List current user points transactions
+ */
+export type listPointsTransactionsResponse200 = {
+  data: TransactionsPage;
+  status: 200;
+};
+
+export type listPointsTransactionsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type listPointsTransactionsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listPointsTransactionsResponseSuccess = listPointsTransactionsResponse200 & {
+  headers: Headers;
+};
+export type listPointsTransactionsResponseError = (
+  | listPointsTransactionsResponse401
+  | listPointsTransactionsResponse500
+) & {
+  headers: Headers;
+};
+
+export type listPointsTransactionsResponse =
+  | listPointsTransactionsResponseSuccess
+  | listPointsTransactionsResponseError;
+
+export const getListPointsTransactionsUrl = (params?: ListPointsTransactionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/points/transactions?${stringifiedParams}`
+    : `/v1/points/transactions`;
+};
+
+export const listPointsTransactions = async (
+  params?: ListPointsTransactionsParams,
+  options?: RequestInit
+): Promise<listPointsTransactionsResponse> => {
+  return customInstance<listPointsTransactionsResponse>(getListPointsTransactionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing write endpoint (called via gateway). Links current user as referee to referrer resolved by referral code. Invariant: referee can have at most one referrer.
+
+ * @summary Claim referral code for current user (idempotent)
+ */
+export type claimReferralResponse200 = {
+  data: ClaimReferralResponse;
+  status: 200;
+};
+
+export type claimReferralResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type claimReferralResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type claimReferralResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type claimReferralResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type claimReferralResponseSuccess = claimReferralResponse200 & {
+  headers: Headers;
+};
+export type claimReferralResponseError = (
+  | claimReferralResponse401
+  | claimReferralResponse404
+  | claimReferralResponse409
+  | claimReferralResponse500
+) & {
+  headers: Headers;
+};
+
+export type claimReferralResponse = claimReferralResponseSuccess | claimReferralResponseError;
+
+export const getClaimReferralUrl = () => {
+  return `/v1/referral/claim`;
+};
+
+export const claimReferral = async (
+  claimReferralRequest: ClaimReferralRequest,
+  options?: RequestInit
+): Promise<claimReferralResponse> => {
+  return customInstance<claimReferralResponse>(getClaimReferralUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(claimReferralRequest),
+  });
+};
+
+/**
+ * M3 behavior: may lazily create referral code if missing (idempotent upsert).
+
+ * @summary Get current user's referral code
+ */
+export type getReferralCodeResponse200 = {
+  data: ReferralCodeResponse;
+  status: 200;
+};
+
+export type getReferralCodeResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReferralCodeResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReferralCodeResponseSuccess = getReferralCodeResponse200 & {
+  headers: Headers;
+};
+export type getReferralCodeResponseError = (
+  | getReferralCodeResponse401
+  | getReferralCodeResponse500
+) & {
+  headers: Headers;
+};
+
+export type getReferralCodeResponse = getReferralCodeResponseSuccess | getReferralCodeResponseError;
+
+export const getGetReferralCodeUrl = () => {
+  return `/v1/referral/code`;
+};
+
+export const getReferralCode = async (options?: RequestInit): Promise<getReferralCodeResponse> => {
+  return customInstance<getReferralCodeResponse>(getGetReferralCodeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns minimal referral statistics for the current user (M3 scope).
+ * @summary Get current user's referral stats
+ */
+export type getReferralStatsResponse200 = {
+  data: ReferralStatsResponse;
+  status: 200;
+};
+
+export type getReferralStatsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReferralStatsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReferralStatsResponseSuccess = getReferralStatsResponse200 & {
+  headers: Headers;
+};
+export type getReferralStatsResponseError = (
+  | getReferralStatsResponse401
+  | getReferralStatsResponse500
+) & {
+  headers: Headers;
+};
+
+export type getReferralStatsResponse =
+  | getReferralStatsResponseSuccess
+  | getReferralStatsResponseError;
+
+export const getGetReferralStatsUrl = () => {
+  return `/v1/referral/stats`;
+};
+
+export const getReferralStats = async (
+  options?: RequestInit
+): Promise<getReferralStatsResponse> => {
+  return customInstance<getReferralStatsResponse>(getGetReferralStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns a two-level referral tree (M4 UI needs). Note: user profile details are not part of Referral Service in M3; only userIds and timestamps are returned.
+
+ * @summary Get current user's referral tree (depth 1..2)
+ */
+export type getReferralTreeResponse200 = {
+  data: ReferralTreeResponse;
+  status: 200;
+};
+
+export type getReferralTreeResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReferralTreeResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReferralTreeResponseSuccess = getReferralTreeResponse200 & {
+  headers: Headers;
+};
+export type getReferralTreeResponseError = (
+  | getReferralTreeResponse401
+  | getReferralTreeResponse500
+) & {
+  headers: Headers;
+};
+
+export type getReferralTreeResponse = getReferralTreeResponseSuccess | getReferralTreeResponseError;
+
+export const getGetReferralTreeUrl = (params?: GetReferralTreeParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/referral/tree?${stringifiedParams}`
+    : `/v1/referral/tree`;
+};
+
+export const getReferralTree = async (
+  params?: GetReferralTreeParams,
+  options?: RequestInit
+): Promise<getReferralTreeResponse> => {
+  return customInstance<getReferralTreeResponse>(getGetReferralTreeUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+
+ * @summary Ensure current user exists in Neon (idempotent upsert)
+ */
+export type ensureUserResponse200 = {
+  data: EnsureUserResponse;
+  status: 200;
+};
+
+export type ensureUserResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type ensureUserResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type ensureUserResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type ensureUserResponseSuccess = ensureUserResponse200 & {
+  headers: Headers;
+};
+export type ensureUserResponseError = (
+  | ensureUserResponse400
+  | ensureUserResponse401
+  | ensureUserResponse500
+) & {
+  headers: Headers;
+};
+
+export type ensureUserResponse = ensureUserResponseSuccess | ensureUserResponseError;
+
+export const getEnsureUserUrl = () => {
+  return `/v1/users/ensure`;
+};
+
+export const ensureUser = async (
+  ensureUserRequest: EnsureUserRequest,
+  options?: RequestInit
+): Promise<ensureUserResponse> => {
+  return customInstance<ensureUserResponse>(getEnsureUserUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(ensureUserRequest),
+  });
+};

@@ -466,11 +466,6 @@ function AuthenticatedHomePage() {
       teamMembers: 7,
       vouchers: 2,
     },
-    recentActivity: {
-      quests: 9,
-      posts: 12,
-      reviews: 3,
-    },
     isPro: false,
   };
 
@@ -486,11 +481,7 @@ function AuthenticatedHomePage() {
           progress={userStats.progress}
           pointsToNextLevel={userStats.pointsToNextLevel}
           stats={userStats.stats}
-          recentActivity={userStats.recentActivity}
           isPro={userStats.isPro}
-          onContinueQuest={() => router.push('/quest')}
-          onNewVouchers={() => router.push('/connect/vouchers')}
-          onReferralLink={() => router.push('/connect/referral')}
         />
       </section>
 

@@ -24,7 +24,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Validate OpenAPI specs
@@ -41,14 +41,14 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
 
   typecheck:
-    name: Typecheck (non-blocking)
+    name: Typecheck (blocking)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,11 +57,10 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Typecheck
-        continue-on-error: true
         run: pnpm typecheck
 
   test:
@@ -74,7 +73,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Test
@@ -90,7 +89,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Build
@@ -106,7 +105,7 @@ jobs:
           version: 8.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Generate types

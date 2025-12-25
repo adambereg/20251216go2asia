@@ -10,17 +10,19 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf .turbo",
-    "gen:types": "orval --config orval.config.ts --output types",
-    "gen:sdk": "orval --config orval.config.ts --output sdk",
+    "openapi:bundle": "node scripts/openapi_bundle.mjs",
+    "gen:types": "pnpm openapi:bundle && orval --config orval.config.ts --output types",
+    "gen:sdk": "pnpm openapi:bundle && orval --config orval.config.ts --output sdk",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
-    "orval": "^7.3.0",
     "@stoplight/spectral-cli": "^6.12.0",
+    "orval": "^7.3.0",
     "prettier": "^3.2.5",
     "turbo": "^2.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "yaml": "^2.8.2"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -28,4 +30,3 @@
   },
   "packageManager": "pnpm@8.15.0"
 }
-

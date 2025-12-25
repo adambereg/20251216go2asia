@@ -176,13 +176,22 @@ export function WalletView({
             const metadata = (tx.metadata as Record<string, unknown> | null) ?? null;
             const txModule = normalizeModule(metadata?.module);
 
+            const action = (tx as unknown as { action?: unknown; reason?: unknown }).action;
+            const reason = (tx as unknown as { action?: unknown; reason?: unknown }).reason;
+            const actionKey =
+              typeof action === 'string' && action.length > 0
+                ? action
+                : typeof reason === 'string' && reason.length > 0
+                  ? reason
+                  : 'unknown';
+
             return {
               id: tx.id,
               type: tx.amount >= 0 ? ('credit' as const) : ('debit' as const),
               amount: Math.abs(tx.amount),
               currency: 'points' as const,
               module: txModule,
-              description: getActionDescription(tx.action),
+              description: getActionDescription(actionKey),
               created_at: tx.createdAt,
               tags: [],
               metadata: metadata || {},

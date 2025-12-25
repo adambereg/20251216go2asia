@@ -139,7 +139,7 @@ export function FeedView({ posts, currentUser, isLoading = false }: FeedViewProp
           </div>
         ) : (
           <EmptyState
-            icon={<EmptyIcon className="w-12 h-12" />}
+            icon={EmptyIcon}
             title={emptyState.title}
             description={emptyState.description}
           />
