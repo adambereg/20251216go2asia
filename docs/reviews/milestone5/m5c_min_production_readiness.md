@@ -233,3 +233,5 @@
   - production targets в `wrangler.toml` (секция `[env.production]`) для всех Workers
   - frontend deploy config: `apps/go2asia-pwa-shell/netlify.toml`
 
+
+

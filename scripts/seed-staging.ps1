@@ -66,3 +66,5 @@ pnpm -C packages/db db:seed
 
 Write-Host "Done."
 
+
+

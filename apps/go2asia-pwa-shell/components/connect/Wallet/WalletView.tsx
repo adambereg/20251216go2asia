@@ -85,7 +85,7 @@ export function WalletView({
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allTransactions, setAllTransactions] = useState<PointsTransaction[]>([]);
 
-  // Загружаем баланс из Token Service
+  // Загружаем баланс из Points Service (через API Gateway)
   const { data: balanceData, isLoading: balanceLoading, error: balanceError, refetch: refetchBalance } =
     useGetBalance();
   

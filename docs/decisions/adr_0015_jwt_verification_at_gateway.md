@@ -40,3 +40,5 @@
   - CORS на ранних error responses
 - Downstream trust model: `X-Gateway-Auth` + `X-User-ID`
 
+
+

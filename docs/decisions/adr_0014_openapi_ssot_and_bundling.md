@@ -44,3 +44,5 @@
 - Скрипт бандлинга: `scripts/openapi_bundle.*`
 - Orval input: `docs/openapi/openapi.bundle.yaml` (`orval.config.ts`)
 
+
+

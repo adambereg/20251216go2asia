@@ -25,10 +25,22 @@
 - poll_options[]
 - poll_results[]
 - referenced_entity_id? (place/event/quest/article)
+- target_type? (only for type=repost): blog_post | place | event | partner | quest | listing
+- target_id? (only for type=repost): string
 - created_at
 - updated_at
 - visibility: public | friends | private
 - tags[]
+
+### Repost (Post.type = `repost`)
+
+Репост — это отдельный пост Space, который ссылается на исходный объект экосистемы и является точкой обсуждения (social-first). Inline-комментарии “под объектами” модулей (Blog/Atlas/Pulse/RF/Rielt) не используются — обсуждение идёт через репост и комментарии к нему в Space.
+
+- author_id — автор репоста
+- target_type — тип исходного объекта (`blog_post` | `place` | `event` | `partner` | `quest` | `listing`)
+- target_id — идентификатор исходного объекта
+- text (optional) — контекст/мнение автора
+- created_at / updated_at
 
 ---
 
@@ -58,6 +70,8 @@
 - text
 - media?
 - created_at
+
+Примечание: комментарии существуют только на объектах Space (пост/репост), а не “под” исходными объектами контентных модулей.
 
 ---
 

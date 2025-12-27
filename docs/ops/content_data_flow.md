@@ -248,3 +248,5 @@ Set in Cloudflare Dashboard → Workers & Pages → go2asia-api-gateway-staging 
 
 **Fix**: Gateway must construct minimal headers set, not forward all incoming headers.
 
+
+

@@ -88,3 +88,5 @@ limit 1;
 - **Idempotency не зависит от суммы**: изменение `REFERRAL_FIRST_LOGIN_BONUS` не изменит `external_id` для уже начисленных пользователей.
 - Повторные триггеры (повторный login, повторный вызов internal endpoint) безопасны: `points-service` дедупит по `external_id`.
 
+
+

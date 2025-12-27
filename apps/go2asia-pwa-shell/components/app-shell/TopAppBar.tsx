@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, SignInButton } from '@clerk/nextjs';
+import { useClerk, useUser } from '@clerk/nextjs';
 import { useAuthMode } from '../../contexts/AuthModeContext';
 import { useAppShell } from './AppShellProvider';
 import { TopAppBar as UITopAppBar } from '@go2asia/ui';
@@ -23,9 +23,29 @@ function ClerkUserWrapperInner({ children }: { children: (user: ReturnType<typeo
   return <>{children(user)}</>;
 }
 
+function ClerkActionsWrapper({
+  children,
+}: {
+  children: (actions: { signOut: () => Promise<void> }) => React.ReactNode;
+}) {
+  if (!isClerkConfigured) {
+    return <>{children({ signOut: async () => {} })}</>;
+  }
+  return <ClerkActionsWrapperInner>{children}</ClerkActionsWrapperInner>;
+}
+
+function ClerkActionsWrapperInner({
+  children,
+}: {
+  children: (actions: { signOut: () => Promise<void> }) => React.ReactNode;
+}) {
+  const { signOut } = useClerk();
+  return <>{children({ signOut })}</>;
+}
+
 export function TopAppBar() {
   const router = useRouter();
-  const { isAuthenticated: devModeAuthenticated } = useAuthMode();
+  const { isAuthenticated: devModeAuthenticated, toggleAuthMode } = useAuthMode();
   const { openSideDrawer } = useAppShell();
 
   const getInitials = (name: string | null | undefined) => {
@@ -45,51 +65,69 @@ export function TopAppBar() {
   };
 
   return (
-    <ClerkUserWrapper>
-      {({ isLoaded, isSignedIn, user }) => {
-        // Если Clerk не настроен или в development - используем переключатель
-        const isAuthenticated = isClerkConfigured && process.env.NODE_ENV === 'production'
-          ? isSignedIn
-          : devModeAuthenticated;
+    <ClerkActionsWrapper>
+      {({ signOut }) => (
+        <ClerkUserWrapper>
+          {({ isLoaded, isSignedIn, user }) => {
+            // Если Clerk настроен — опираемся на него. Иначе используем dev-mode переключатель.
+            const isAuthenticated = isClerkConfigured ? isSignedIn : devModeAuthenticated;
 
-        if (isClerkConfigured && process.env.NODE_ENV === 'production' && !isLoaded) {
-          return null;
-        }
-
-        const userData = isClerkConfigured && process.env.NODE_ENV === 'production' && isSignedIn && user
-          ? {
-              initials: getInitials(user.fullName || user.firstName),
-              name: user.fullName || user.firstName || 'Пользователь',
-              email: user.primaryEmailAddress?.emailAddress || '',
+            if (isClerkConfigured && !isLoaded) {
+              return null;
             }
-          : isAuthenticated
-            ? mockUser
-            : undefined;
 
-        const topAppBar = (
-          <UITopAppBar
-            onMenuClick={openSideDrawer}
-            onHomeClick={() => router.push('/')}
-            onSearchClick={() => {
-              // TODO: открыть поиск
-            }}
-            onAuthClick={() => {
-              // Clerk обработает через SignInButton wrapper
-            }}
-            onProfileClick={() => {
-              router.push('/profile');
-            }}
-            user={userData}
-          />
-        );
+            const userData = isClerkConfigured && isSignedIn && user
+              ? {
+                  initials: getInitials(user.fullName || user.firstName),
+                  name: user.fullName || user.firstName || 'Пользователь',
+                  email: user.primaryEmailAddress?.emailAddress || '',
+                }
+              : isAuthenticated
+                ? mockUser
+                : undefined;
 
-        // В production с настроенным Clerk оборачиваем в SignInButton
-        if (isClerkConfigured && process.env.NODE_ENV === 'production') {
-          return <SignInButton mode="modal">{topAppBar}</SignInButton>;
-        }
+            return (
+              <UITopAppBar
+                onMenuClick={openSideDrawer}
+                onHomeClick={() => router.push('/')}
+                onSearchClick={() => {
+                  // TODO: открыть поиск
+                }}
+                onAuthClick={() => {
+                  // Если Clerk настроен — ведём на его форму входа/регистрации
+                  if (isClerkConfigured) {
+                    router.push('/sign-in');
+                    return;
+                  }
 
-        return topAppBar;
-      }}
-    </ClerkUserWrapper>
+                  // DX: локальный dev без Clerk — переключаем режим
+                  toggleAuthMode();
+                }}
+                onProfileClick={() => {
+                  // User Cabinet (в текущем PWA Shell это /profile)
+                  router.push('/profile');
+                }}
+                onSignOutClick={
+                  isAuthenticated
+                    ? async () => {
+                        if (isClerkConfigured) {
+                          await signOut();
+                          router.push('/');
+                          return;
+                        }
+
+                        // DX: локальный dev без Clerk
+                        toggleAuthMode();
+                        router.push('/');
+                      }
+                    : undefined
+                }
+                user={userData}
+              />
+            );
+          }}
+        </ClerkUserWrapper>
+      )}
+    </ClerkActionsWrapper>
   );
 }
