@@ -113,6 +113,21 @@ export const customInstance = async <T>(
         requestId,
       };
     }
+
+    // Normalize backend error shapes.
+    // Some downstream services respond as:
+    //   { error: "BadRequest", message: "...", requestId: "..." }
+    // while UI expects:
+    //   { error: { code, message }, requestId }
+    //
+    // Keep backward-compatible fields, but ensure error is an object.
+    if (errorData && typeof errorData === 'object') {
+      if (typeof (errorData as any).error === 'string') {
+        const code = (errorData as any).error;
+        const message = (errorData as any).message || response.statusText;
+        (errorData as any).error = { code, message };
+      }
+    }
     
     // Add status and requestId to error for better error handling in UI
     const error = {
