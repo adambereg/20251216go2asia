@@ -27,6 +27,13 @@ export interface Env {
   // Runtime vars (Cloudflare Vars)
   ENVIRONMENT?: string;
   VERSION?: string;
+
+  /**
+   * Security: debug routes must be explicitly enabled.
+   * - Default: disabled (including in production).
+   * - Enable by setting DEBUG_ROUTES_ENABLED="true".
+   */
+  DEBUG_ROUTES_ENABLED?: string;
 }
 
 function base64UrlToBytes(input: string): Uint8Array {
@@ -232,6 +239,21 @@ async function routeRequest(
 
   // Debug (safe): show which service URLs are configured (host only)
   if (path === '/v1/_debug/routes' && request.method === 'GET') {
+    // SECURITY: do not expose debug surfaces unless explicitly enabled.
+    // This endpoint reveals routing structure and configured upstream hosts.
+    const debugEnabled = (env.DEBUG_ROUTES_ENABLED ?? '').toLowerCase() === 'true';
+    if (!debugEnabled) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'No route for path: /v1/_debug/routes',
+          },
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
