@@ -38,3 +38,5 @@
 - Документация решения: этот ADR.
 - Валидация качества: CI typecheck теперь blocking (`.github/workflows/ci.yml`).
 
+
+

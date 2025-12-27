@@ -25,3 +25,5 @@
   - `external_id = referral:first_login:<referrerId>:<refereeId>`
   - `amount = REFERRAL_FIRST_LOGIN_BONUS` (или 100 по умолчанию)
 
+
+

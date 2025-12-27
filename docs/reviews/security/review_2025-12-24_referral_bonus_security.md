@@ -22,3 +22,5 @@
 - В staging/prod держать `SERVICE_JWT_SECRET` только в секретах Cloudflare (не vars).
 - Ограничить доступ к internal endpoints только через service JWT (как сейчас).
 
+
+

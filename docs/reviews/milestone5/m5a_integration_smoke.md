@@ -111,3 +111,5 @@
 - **F1/F2 (401 + CORS + requestId):** OK
 - **F5 (500):** BLOCKED (см. `m5a_issues.md`)
 
+
+
