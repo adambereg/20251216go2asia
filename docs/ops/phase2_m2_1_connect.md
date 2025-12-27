@@ -14,6 +14,8 @@ SSOT плана: `docs/plans/phase2_delivery_plan.md`
 
 В Phase 2 вводится и фиксируется **ограниченный** набор `PointsAction` (без Phase 3 токеномики).
 
+Security invariant (Phase 2): **начисление Points происходит только server-side** (доменные сервисы → `POST /internal/points/add`). **Фронтенд никогда не начисляет Points напрямую**, иначе появляются дыры.
+
 Источник:
 - runtime validation: `apps/points-service/src/index.ts`
 - OpenAPI: `docs/openapi/points.yaml` (`PointsAction`)
