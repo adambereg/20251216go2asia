@@ -3,24 +3,29 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["global_fetch_strictly_public"]
 
-# Milestone 2.2 (Media/Storage): bind existing R2 buckets (no need to recreate).
-#
-# NOTE:
-# - Bucket names here must exist in your Cloudflare account.
-# - If you prefer different buckets per env, override under [env.staging] / [env.production].
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "go2asia-media"
-
-[[r2_buckets]]
-binding = "SPACE_MEDIA_BUCKET"
-bucket_name = "go2asiaspace"
-
 [env.production]
 name = "go2asia-content-service"
 
+# Milestone 2.2 (Media/Storage): bind existing R2 buckets (no need to recreate).
+# NOTE: r2_buckets are NOT inherited by envs, so they must live under each env.* block.
+[[env.production.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "go2asia-media"
+
+[[env.production.r2_buckets]]
+binding = "SPACE_MEDIA_BUCKET"
+bucket_name = "go2asiaspace"
+
 [env.staging]
 name = "go2asia-content-service-staging"
+
+[[env.staging.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "go2asia-media"
+
+[[env.staging.r2_buckets]]
+binding = "SPACE_MEDIA_BUCKET"
+bucket_name = "go2asiaspace"
 
 # Vars injected by CI/CD:
 # ENVIRONMENT (e.g. "staging")

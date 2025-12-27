@@ -678,13 +678,6 @@ async function handleGetArticleBySlug(env: Env, slug: string, logger: ReturnType
 
 // JWT utilities (for service-to-service auth)
 
-function bytesToBase64Url(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  const b64 = btoa(bin);
-  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
 function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
