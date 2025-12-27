@@ -382,8 +382,17 @@ async function routeRequest(
   // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
   const isContentRegister =
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
+  // Media (Phase 2.2): token issuance requires auth, upload itself is authorized by a signed token.
+  const isMediaUploadToken =
+    request.method === 'POST' && downstreamPath === '/v1/content/media/upload-token';
 
-  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || path.startsWith('/v1/users/') || isContentRegister) {
+  if (
+    path.startsWith('/v1/points/') ||
+    path.startsWith('/v1/referral/') ||
+    path.startsWith('/v1/users/') ||
+    isContentRegister ||
+    isMediaUploadToken
+  ) {
     const token = getBearerToken(request);
     let userId: string | null = null;
 

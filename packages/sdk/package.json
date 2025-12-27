@@ -45,6 +45,10 @@
     "./mutator": {
       "types": "./src/mutator.ts",
       "default": "./src/mutator.ts"
+    },
+    "./media": {
+      "types": "./src/media.ts",
+      "default": "./src/media.ts"
     }
   },
   "scripts": {

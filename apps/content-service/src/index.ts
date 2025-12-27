@@ -29,6 +29,12 @@ export interface Env {
   SERVICE_JWT_SECRET?: string;
   // Database
   DATABASE_URL?: string;
+  // Media / Storage (Milestone 2.2)
+  MEDIA_UPLOAD_SIGNING_SECRET?: string;
+  MEDIA_PUBLIC_BASE_URL?: string; // e.g. https://pub-<id>.r2.dev/go2asia-media (optional)
+  MEDIA_MAX_BYTES?: string; // default: 10MB
+  MEDIA_BUCKET?: R2Bucket;
+  SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
 type ListResponse<T> = { items: T[] };
@@ -110,6 +116,240 @@ function json(data: unknown, status = 200): Response {
       'Content-Type': 'application/json',
     },
   });
+}
+
+function parseIntOrDefault(raw: unknown, fallback: number): number {
+  const n = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = btoa(bin);
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(input: string): Uint8Array {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  const b64 = normalized + pad;
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) out |= a[i] ^ b[i];
+  return out === 0;
+}
+
+async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return new Uint8Array(sig);
+}
+
+type MediaScope = 'content' | 'space' | 'rf' | 'rielt' | 'quest' | 'avatar';
+const MEDIA_SCOPES: ReadonlySet<MediaScope> = new Set(['content', 'space', 'rf', 'rielt', 'quest', 'avatar']);
+
+type UploadTokenPayload = {
+  v: 1;
+  key: string;
+  userId: string;
+  scope: MediaScope;
+  contentType: string;
+  maxBytes: number;
+  exp: number; // unix seconds
+};
+
+async function signUploadToken(secret: string, payload: UploadTokenPayload): Promise<string> {
+  const payloadB64 = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const sig = await hmacSha256(secret, payloadB64);
+  const sigB64 = bytesToBase64Url(sig);
+  return `${payloadB64}.${sigB64}`;
+}
+
+async function verifyUploadToken(secret: string, token: string): Promise<
+  | { ok: true; payload: UploadTokenPayload }
+  | { ok: false; error: string }
+> {
+  const parts = token.split('.');
+  if (parts.length !== 2) return { ok: false, error: 'TOKEN_FORMAT' };
+  const [payloadB64, sigB64] = parts;
+  let payloadJson: unknown;
+  try {
+    payloadJson = JSON.parse(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
+  } catch {
+    return { ok: false, error: 'TOKEN_PAYLOAD' };
+  }
+  if (!payloadJson || typeof payloadJson !== 'object' || Array.isArray(payloadJson)) {
+    return { ok: false, error: 'TOKEN_PAYLOAD' };
+  }
+
+  const p = payloadJson as Partial<UploadTokenPayload>;
+  if (p.v !== 1) return { ok: false, error: 'TOKEN_VERSION' };
+  if (typeof p.key !== 'string' || p.key.length < 3) return { ok: false, error: 'TOKEN_KEY' };
+  if (typeof p.userId !== 'string' || p.userId.length < 3) return { ok: false, error: 'TOKEN_USER' };
+  if (typeof p.scope !== 'string' || !MEDIA_SCOPES.has(p.scope as MediaScope)) return { ok: false, error: 'TOKEN_SCOPE' };
+  if (typeof p.contentType !== 'string' || p.contentType.length < 3) return { ok: false, error: 'TOKEN_CONTENT_TYPE' };
+  if (typeof p.maxBytes !== 'number' || !Number.isFinite(p.maxBytes) || p.maxBytes < 1) return { ok: false, error: 'TOKEN_MAX_BYTES' };
+  if (typeof p.exp !== 'number' || !Number.isFinite(p.exp)) return { ok: false, error: 'TOKEN_EXP' };
+
+  const expectedSig = await hmacSha256(secret, payloadB64);
+  const gotSig = base64UrlToBytes(sigB64);
+  if (!timingSafeEqual(expectedSig, gotSig)) return { ok: false, error: 'TOKEN_SIG' };
+
+  const now = Math.floor(Date.now() / 1000);
+  if (p.exp < now) return { ok: false, error: 'TOKEN_EXPIRED' };
+
+  return { ok: true, payload: p as UploadTokenPayload };
+}
+
+function pickMediaBucket(env: Env, scope: MediaScope): R2Bucket | null {
+  if (scope === 'space') return env.SPACE_MEDIA_BUCKET ?? env.MEDIA_BUCKET ?? null;
+  return env.MEDIA_BUCKET ?? null;
+}
+
+function getPublicUrl(env: Env, key: string): string | null {
+  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  if (!base) return null;
+  const trimmed = base.endsWith('/') ? base.slice(0, -1) : base;
+  return `${trimmed}/${key}`;
+}
+
+function sanitizeFilename(name: string): string {
+  const cleaned = name.trim().replace(/[^a-zA-Z0-9._-]+/g, '_');
+  return cleaned.length > 0 ? cleaned.slice(0, 120) : 'file';
+}
+
+async function handleCreateMediaUploadToken(
+  request: Request,
+  env: Env,
+  requestId: string
+): Promise<Response> {
+  const userId = request.headers.get('X-User-ID');
+  if (!userId) return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+  const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
+  if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
+
+  const maxBytesDefault = parseIntOrDefault(env.MEDIA_MAX_BYTES, 10 * 1024 * 1024);
+
+  const bodyUnknown: unknown = await request.json().catch(() => null);
+  const body =
+    bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+      ? (bodyUnknown as Record<string, unknown>)
+      : null;
+
+  const scopeRaw = body?.scope;
+  const filenameRaw = body?.filename;
+  const contentTypeRaw = body?.contentType;
+  const sizeBytesRaw = body?.sizeBytes;
+
+  const scope = (typeof scopeRaw === 'string' ? scopeRaw : 'content') as MediaScope;
+  if (!MEDIA_SCOPES.has(scope)) return json({ error: { code: 'BadRequest', message: 'Invalid scope' } }, 400);
+  const filename = sanitizeFilename(typeof filenameRaw === 'string' ? filenameRaw : 'file');
+  const contentType = typeof contentTypeRaw === 'string' ? contentTypeRaw : 'application/octet-stream';
+  const sizeBytes = typeof sizeBytesRaw === 'number' && Number.isFinite(sizeBytesRaw) ? sizeBytesRaw : null;
+  if (sizeBytes !== null && (sizeBytes < 1 || sizeBytes > maxBytesDefault)) {
+    return json({ error: { code: 'BadRequest', message: 'Invalid sizeBytes' } }, 400);
+  }
+
+  // Only allow images for Phase 2.2 (safe baseline).
+  if (!contentType.startsWith('image/')) {
+    return json({ error: { code: 'BadRequest', message: 'Only image/* uploads are allowed' } }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + 10 * 60; // 10 minutes
+
+  const ext = filename.includes('.') ? filename.split('.').pop() ?? 'bin' : 'bin';
+  const objectKey = `uploads/${scope}/${userId}/${now}/${crypto.randomUUID()}.${ext}`;
+
+  const payload: UploadTokenPayload = {
+    v: 1,
+    key: objectKey,
+    userId,
+    scope,
+    contentType,
+    maxBytes: maxBytesDefault,
+    exp,
+  };
+  const token = await signUploadToken(secret, payload);
+
+  return json(
+    {
+      uploadUrl: `/v1/content/media/upload/${token}`,
+      key: objectKey,
+      publicUrl: getPublicUrl(env, objectKey),
+      expiresAt: new Date(exp * 1000).toISOString(),
+      requestId,
+    },
+    200
+  );
+}
+
+async function handleMediaUpload(
+  request: Request,
+  env: Env,
+  token: string,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
+  if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
+
+  const verified = await verifyUploadToken(secret, token);
+  if (!verified.ok) return json({ error: { code: 'Unauthorized', message: 'Invalid or expired upload token' } }, 401);
+
+  const { payload } = verified;
+  const bucket = pickMediaBucket(env, payload.scope);
+  if (!bucket) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_BUCKET binding is missing' } }, 503);
+
+  const contentType = request.headers.get('Content-Type') ?? payload.contentType;
+  if (!contentType.startsWith('image/')) {
+    return json({ error: { code: 'BadRequest', message: 'Only image/* uploads are allowed' } }, 400);
+  }
+
+  // Read body and enforce size.
+  const buf = await request.arrayBuffer().catch(() => null);
+  if (!buf) return json({ error: { code: 'BadRequest', message: 'Missing body' } }, 400);
+  const bytes = new Uint8Array(buf);
+  if (bytes.byteLength < 1 || bytes.byteLength > payload.maxBytes) {
+    return json({ error: { code: 'BadRequest', message: 'File too large' } }, 400);
+  }
+
+  try {
+    await bucket.put(payload.key, bytes, {
+      httpMetadata: { contentType },
+      customMetadata: {
+        userId: payload.userId,
+        scope: payload.scope,
+      },
+    });
+    logger.info('Media uploaded', { key: payload.key, scope: payload.scope, userId: payload.userId });
+    return json(
+      {
+        ok: true,
+        key: payload.key,
+        publicUrl: getPublicUrl(env, payload.key),
+        requestId,
+      },
+      201
+    );
+  } catch (error) {
+    logger.error('R2 put failed', error, { key: payload.key });
+    return json({ error: { code: 'InternalError', message: 'Upload failed' }, requestId }, 500);
+  }
 }
 
 function handleHealth(env: Env): Response {
@@ -637,6 +877,20 @@ export default {
     // Debug: DB connectivity and counts (no secrets)
     if (path === '/v1/content/_debug/db' && request.method === 'GET') {
       const res = await handleDebugDb(env, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Media / Storage (Milestone 2.2)
+    if (path === '/v1/content/media/upload-token' && request.method === 'POST') {
+      const res = await handleCreateMediaUploadToken(request, env, requestId);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const mediaUploadMatch = path.match(/^\/v1\/content\/media\/upload\/(.+)$/);
+    if (mediaUploadMatch && request.method === 'PUT') {
+      const token = mediaUploadMatch[1];
+      const res = await handleMediaUpload(request, env, token, requestId, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

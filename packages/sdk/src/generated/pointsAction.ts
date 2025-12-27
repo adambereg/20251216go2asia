@@ -8,7 +8,7 @@
  */
 
 /**
- * Minimal action set for Milestone 3. This enum may be extended post-M3. Note: `event_registration` is optional in M3 and may be enabled only when Content → Points integration is delivered.
+ * Phase 2 action contract (Points-only). This enum may be extended in Phase 2 **only** by explicit decision. IMPORTANT: Phase 3 tokenomics (G2A/NFT/on-chain) actions are intentionally excluded.
 
  */
 export type PointsAction = (typeof PointsAction)[keyof typeof PointsAction];
@@ -20,4 +20,12 @@ export const PointsAction = {
   referral_bonus_referee: "referral_bonus_referee",
   referral_bonus_referrer: "referral_bonus_referrer",
   event_registration: "event_registration",
+  space_post_created: "space_post_created",
+  space_repost_created: "space_repost_created",
+  space_reaction_created: "space_reaction_created",
+  quest_completed: "quest_completed",
+  rielt_listing_created: "rielt_listing_created",
+  rf_partner_verified: "rf_partner_verified",
+  rf_voucher_claimed: "rf_voucher_claimed",
+  rf_voucher_redeemed: "rf_voucher_redeemed",
 } as const;

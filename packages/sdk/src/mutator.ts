@@ -23,7 +23,7 @@ interface FetchConfig {
  * Get base URL from environment variable
  * Defaults to staging gateway URL
  */
-function getBaseUrl(): string {
+export function getBaseUrl(): string {
   // Client-side: use window.__NEXT_PUBLIC_API_URL__ or process.env
   if (typeof window !== 'undefined') {
     const windowApiUrl = (window as any).__NEXT_PUBLIC_API_URL__;

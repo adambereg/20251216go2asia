@@ -24,6 +24,8 @@ tags:
     description: Service health checks
   - name: content
     description: Atlas/Pulse/Blog public read endpoints
+  - name: media
+    description: Media/Storage (R2) endpoints (Phase 2.2)
   - name: debug
     description: Debug endpoints (no secrets)
 
@@ -131,6 +133,75 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/content/media/upload-token:
+    post:
+      tags: [media]
+      operationId: createMediaUploadToken
+      summary: Create signed upload token (authorized)
+      description: >
+        Creates a short-lived signed token for uploading media to R2 via Content Service.
+        Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadTokenRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadTokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/content/media/upload/{token}:
+    put:
+      tags: [media]
+      operationId: uploadMediaByToken
+      summary: Upload media by signed token (no user auth)
+      description: >
+        Uploads binary content to R2. The request is authorized by the signed token in the URL.
+        Recommended Content-Type: image/*
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -313,6 +384,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: Not found
       content:
@@ -435,6 +512,63 @@ components:
           type: string
         userId:
           type: string
+
+    MediaScope:
+      type: string
+      description: Logical scope for object key prefixing (Phase 2).
+      enum: [content, space, rf, rielt, quest, avatar]
+
+    CreateUploadTokenRequest:
+      type: object
+      required: [scope, filename, contentType]
+      properties:
+        scope:
+          $ref: "#/components/schemas/MediaScope"
+        filename:
+          type: string
+        contentType:
+          type: string
+          description: Only image/* is allowed in Phase 2.2 baseline
+        sizeBytes:
+          type: integer
+          nullable: true
+          description: Optional client hint for size validation
+
+    CreateUploadTokenResponse:
+      type: object
+      required: [uploadUrl, key, expiresAt]
+      properties:
+        uploadUrl:
+          type: string
+          description: Relative URL to upload endpoint (via API Gateway)
+        key:
+          type: string
+          description: R2 object key
+        publicUrl:
+          type: string
+          nullable: true
+          description: Public URL if MEDIA_PUBLIC_BASE_URL is configured
+        expiresAt:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          nullable: true
+
+    UploadResult:
+      type: object
+      required: [ok, key]
+      properties:
+        ok:
+          type: boolean
+        key:
+          type: string
+        publicUrl:
+          type: string
+          nullable: true
+        requestId:
+          type: string
+          nullable: true
 
     ContentEventDto:
       type: object
