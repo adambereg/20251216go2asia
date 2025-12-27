@@ -13,6 +13,12 @@ export interface Env {
   CONTENT_SERVICE_URL?: string;
   POINTS_SERVICE_URL?: string;
   REFERRAL_SERVICE_URL?: string;
+  // Phase 2 services (not all exist yet; keep optional and only route when configured)
+  SPACE_SERVICE_URL?: string;
+  QUEST_SERVICE_URL?: string;
+  RIELT_SERVICE_URL?: string;
+  GURU_SERVICE_URL?: string;
+  RF_SERVICE_URL?: string;
   
   // Secrets (Cloudflare Secrets)
   CLERK_JWT_SECRET?: string;
@@ -237,6 +243,12 @@ async function routeRequest(
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
+          // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
+          { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
+          { prefix: '/v1/quest/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
+          { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
+          { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
+          { prefix: '/v1/rf/', var: 'RF_SERVICE_URL', host: safeHostFromUrl(env.RF_SERVICE_URL) },
         ],
         rewrites: [{ from: '/v1/api/content/*', to: '/v1/content/*' }],
       }),
@@ -264,6 +276,18 @@ async function routeRequest(
   } else if (path.startsWith('/v1/referral/')) {
     serviceUrl = env.REFERRAL_SERVICE_URL;
     if (!serviceUrl) missingVar = 'REFERRAL_SERVICE_URL';
+  } else if (path.startsWith('/v1/space/')) {
+    // Phase 2 (planned): do not fail with 502 if the service is not configured yet.
+    // Keep behavior consistent with "unknown route" until SPACE_SERVICE_URL is provided.
+    if (env.SPACE_SERVICE_URL) serviceUrl = env.SPACE_SERVICE_URL;
+  } else if (path.startsWith('/v1/quest/')) {
+    if (env.QUEST_SERVICE_URL) serviceUrl = env.QUEST_SERVICE_URL;
+  } else if (path.startsWith('/v1/rielt/')) {
+    if (env.RIELT_SERVICE_URL) serviceUrl = env.RIELT_SERVICE_URL;
+  } else if (path.startsWith('/v1/guru/')) {
+    if (env.GURU_SERVICE_URL) serviceUrl = env.GURU_SERVICE_URL;
+  } else if (path.startsWith('/v1/rf/')) {
+    if (env.RF_SERVICE_URL) serviceUrl = env.RF_SERVICE_URL;
   }
 
   if (!serviceUrl) {
