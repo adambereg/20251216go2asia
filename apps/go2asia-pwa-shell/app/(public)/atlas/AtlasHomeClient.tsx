@@ -49,7 +49,8 @@ export function AtlasHomeClient() {
         flag: country.flag || '🌏',
         placesCount: country.placesCount || 0,
         description: country.description || '',
-        heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+        // Берём реальное медиа из API (R2 public URL), без подмены моковыми URL
+        heroImage: country.heroImage || undefined,
       }));
     }
     

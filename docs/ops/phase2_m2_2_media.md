@@ -43,4 +43,20 @@ SDK helpers:
   - `MEDIA_UPLOAD_SIGNING_SECRET` (secret)
   - (optional) `MEDIA_PUBLIC_BASE_URL` (если bucket public / есть public domain)
 
+## 6) Media adoption для Atlas/Pulse/Blog (без миграции объектов)
+
+Архитектурный принцип: UI не знает про R2 и не хранит “моковые URL”, если API отдаёт реальное медиа.
+
+Текущее поведение `content-service`:
+- **Primary SSOT**: `media_files.public_url` (через `hero_media_id` / `image_media_id` / `cover_media_id`) — если ссылки заполнены в БД.
+- **Fallback (Phase 2.2, без миграций)**: для Atlas (countries/cities/places), если `hero_media_id` не заполнен, `content-service` пытается найти JPG в R2 bucket `go2asia-media` по префиксам:
+  - `country/country-<code>/` (наблюдаемая структура, например `country/country-vn/`)
+  - `city/<slug>/` или `city/city-<slug>/`
+  - `place/<slug>/` или `place/place-<slug>/`
+  и формирует URL как `${MEDIA_PUBLIC_BASE_URL}/${key}`.
+
+Ограничения fallback:
+- работает только если задан `MEDIA_PUBLIC_BASE_URL` и привязан `MEDIA_BUCKET`
+- предназначен как “мягкая” миграция без изменений структуры R2; полноценный SSOT остаётся за `media_files` и `*_media_id`.
+
 

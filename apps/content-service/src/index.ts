@@ -227,6 +227,64 @@ function getPublicUrl(env: Env, key: string): string | null {
   return `${trimmed}/${key}`;
 }
 
+type AtlasMediaKind = 'country' | 'city' | 'place';
+
+type CachedMedia = { urls: string[]; keys: string[]; expMs: number };
+const atlasMediaCache = new Map<string, CachedMedia>();
+
+async function listR2UrlsByPrefix(env: Env, prefix: string, limit: number): Promise<{ keys: string[]; urls: string[] }> {
+  const bucket = env.MEDIA_BUCKET;
+  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  if (!bucket || !base) return { keys: [], urls: [] };
+
+  const res = await bucket.list({ prefix, limit });
+  const keys = (res.objects ?? []).map((o) => o.key).filter((k) => typeof k === 'string' && k.length > 0);
+  const urls = keys.map((k) => getPublicUrl(env, k)).filter((u): u is string => typeof u === 'string' && u.length > 0);
+  return { keys, urls };
+}
+
+async function resolveAtlasMedia(env: Env, kind: AtlasMediaKind, opts: { code?: string; slug: string; max: number }): Promise<{
+  keys: string[];
+  urls: string[];
+}> {
+  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  if (!base) return { keys: [], urls: [] };
+
+  const cacheKey = `${kind}:${opts.code ?? ''}:${opts.slug}:${opts.max}`;
+  const now = Date.now();
+  const cached = atlasMediaCache.get(cacheKey);
+  if (cached && cached.expMs > now) return { keys: cached.keys, urls: cached.urls };
+
+  const slug = opts.slug.trim();
+  const code = (opts.code ?? '').trim().toLowerCase();
+
+  // Heuristics aligned with existing bucket structure:
+  // - country/: observed prefix looks like country/country-vn/
+  // - city/: unknown; try both city/<slug>/ and city/city-<slug>/
+  // - place/: unknown; try both place/<slug>/ and place/place-<slug>/
+  const prefixes: string[] =
+    kind === 'country'
+      ? [
+          code ? `country/country-${code}/` : '',
+          slug ? `country/${slug}/` : '',
+          slug ? `country/country-${slug}/` : '',
+        ].filter(Boolean)
+      : kind === 'city'
+        ? [slug ? `city/${slug}/` : '', slug ? `city/city-${slug}/` : ''].filter(Boolean)
+        : [slug ? `place/${slug}/` : '', slug ? `place/place-${slug}/` : ''].filter(Boolean);
+
+  for (const prefix of prefixes) {
+    const found = await listR2UrlsByPrefix(env, prefix, opts.max);
+    if (found.urls.length > 0) {
+      atlasMediaCache.set(cacheKey, { keys: found.keys, urls: found.urls, expMs: now + 10 * 60 * 1000 });
+      return found;
+    }
+  }
+
+  atlasMediaCache.set(cacheKey, { keys: [], urls: [], expMs: now + 5 * 60 * 1000 });
+  return { keys: [], urls: [] };
+}
+
 function sanitizeFilename(name: string): string {
   const cleaned = name.trim().replace(/[^a-zA-Z0-9._-]+/g, '_');
   return cleaned.length > 0 ? cleaned.slice(0, 120) : 'file';
@@ -465,6 +523,27 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
   };
 }
 
+async function toContentCountryWithMedia(env: Env, row: CountryRow): Promise<ContentCountryDto> {
+  if (row.hero_url) return toContentCountry(row);
+  const resolved = await resolveAtlasMedia(env, 'country', { code: row.code, slug: row.slug, max: 1 });
+  return { ...toContentCountry(row), heroImage: resolved.urls[0] ?? null };
+}
+
+async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCityDto> {
+  if (row.hero_url) return toContentCity(row);
+  const resolved = await resolveAtlasMedia(env, 'city', { slug: row.slug, max: 1 });
+  return { ...toContentCity(row), heroImage: resolved.urls[0] ?? null };
+}
+
+async function toContentPlaceWithMedia(env: Env, row: PlaceRow): Promise<ContentPlaceDto> {
+  const base = toContentPlace(row);
+  if (base.photos.length > 0) return base;
+  const resolved = await resolveAtlasMedia(env, 'place', { slug: row.slug, max: 5 });
+  const photos = resolved.urls.length > 0 ? resolved.urls : base.photos;
+  const heroImage = photos[0] ?? base.heroImage ?? null;
+  return { ...base, heroImage, photos };
+}
+
 function toContentArticle(row: ArticleRow): ContentArticleDto {
   let tags: string[] | null = null;
   if (row.tags) {
@@ -603,7 +682,8 @@ async function handleListCountries(env: Env, logger: ReturnType<typeof createLog
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   try {
     const rows = await listCountries(sqlClient);
-    return json({ items: rows.map(toContentCountry) } satisfies ListResponse<ContentCountryDto>, 200);
+    const items = await Promise.all(rows.map((r) => toContentCountryWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentCountryDto>, 200);
   } catch (error) {
     logger.error('List countries error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch countries' } }, 500);
@@ -616,7 +696,8 @@ async function handleListCities(env: Env, url: URL, logger: ReturnType<typeof cr
   const countryId = url.searchParams.get('countryId') ?? undefined;
   try {
     const rows = await listCities(sqlClient, countryId);
-    return json({ items: rows.map(toContentCity) } satisfies ListResponse<ContentCityDto>, 200);
+    const items = await Promise.all(rows.map((r) => toContentCityWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentCityDto>, 200);
   } catch (error) {
     logger.error('List cities error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch cities' } }, 500);
@@ -630,7 +711,8 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
   try {
     const rows = await listPlaces(sqlClient, cityId, limit);
-    return json({ items: rows.map(toContentPlace) } satisfies ListResponse<ContentPlaceDto>, 200);
+    const items = await Promise.all(rows.map((r) => toContentPlaceWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentPlaceDto>, 200);
   } catch (error) {
     logger.error('List places error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch places' } }, 500);
@@ -643,7 +725,8 @@ async function handleGetPlaceById(env: Env, idOrSlug: string, logger: ReturnType
   try {
     const row = await getPlaceByIdOrSlug(sqlClient, idOrSlug);
     if (!row) return json({ error: { code: 'NotFound', message: 'Place not found' } }, 404);
-    return json(toContentPlace(row), 200);
+    const dto = await toContentPlaceWithMedia(env, row);
+    return json(dto, 200);
   } catch (error) {
     logger.error('Get place error', error, { idOrSlug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch place' } }, 500);

@@ -33,6 +33,7 @@ export function CitiesClient() {
         countryId: city.countryId,
         description: city.description || '',
         placesCount: city.placesCount || 0,
+        heroImage: city.heroImage || undefined,
       }));
     }
     
@@ -218,12 +219,26 @@ export function CitiesClient() {
               {apiCities.map((city) => (
                 <Link key={city.id} href={`/atlas/cities/${city.id}`}>
                   <Card hover className="h-full overflow-hidden p-0 !border-0">
-                    <div className="relative w-full h-48 overflow-hidden bg-slate-200">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-xl font-bold text-white mb-1">{city.name}</h3>
+                    {city.heroImage ? (
+                      <div className="relative w-full h-48 overflow-hidden">
+                        <img
+                          src={city.heroImage}
+                          alt={city.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <h3 className="text-xl font-bold text-white mb-1">{city.name}</h3>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="relative w-full h-48 overflow-hidden bg-slate-200">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <h3 className="text-xl font-bold text-white mb-1">{city.name}</h3>
+                        </div>
+                      </div>
+                    )}
                     <CardContent className="p-6">
                       {city.description && (
                         <p className="text-small text-slate-600 mb-3 line-clamp-2">

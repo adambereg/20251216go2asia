@@ -48,7 +48,8 @@ export function CountriesClient() {
         placesCount: country.placesCount || 0,
         citiesCount: country.citiesCount || 0,
         description: country.description || '',
-        heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+        // Берём реальное медиа из API (R2 public URL), моки только как fallback если поля нет
+        heroImage: country.heroImage || undefined,
       }));
     }
     
