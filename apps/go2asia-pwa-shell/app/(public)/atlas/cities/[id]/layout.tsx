@@ -51,6 +51,9 @@ export default function CityLayout({
   const cityId = pathname.split('/').slice(0, 4).join('/'); // /atlas/cities/[id]
 
   const dataSource = getDataSource();
+  // PROD: показываем только страницы, которые реально работают с API.
+  const navItems =
+    dataSource === 'mock' ? sideNavItems : sideNavItems.filter((i) => i.key === 'overview');
 
   // Загружаем данные города из API через SDK hook
   const { 
@@ -68,7 +71,7 @@ export default function CityLayout({
     dataSource === 'mock' ? mockCountry?.name : ''; // TODO(api): derive from countryId
   const heroImageUrl =
     (dataSource === 'mock' ? mockCity?.heroImage : undefined) ||
-    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+    '/atlas/hero-placeholder.svg';
   const heroImageAlt = cityName || 'Город';
   // ContentCityDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
   const updatedAt = dataSource === 'mock' ? mockCity?.updatedAt : undefined;
@@ -103,7 +106,7 @@ export default function CityLayout({
               Структура справочника
             </div>
             <nav className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
-              {sideNavItems.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.href === '' ? cityId : `${cityId}/${item.href}`;
                 const isActive =
@@ -138,7 +141,7 @@ export default function CityLayout({
                 Структура справочника
               </div>
               <nav className="space-y-1">
-                {sideNavItems.map((item) => {
+                {navItems.map((item) => {
                   const Icon = item.icon;
                   const href = item.href === '' ? cityId : `${cityId}/${item.href}`;
                   const isActive =

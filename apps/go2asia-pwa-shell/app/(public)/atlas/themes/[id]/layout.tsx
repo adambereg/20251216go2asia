@@ -82,21 +82,36 @@ export default function ThemeLayout({
       .catch(() => {
         setIsLoading(false);
       });
-  }, [themeIdFromUrl]);
+  }, [dataSource, themeIdFromUrl]);
 
-  // Определяем данные темы: сначала из API, потом из моков, потом дефолт
+  // Определяем данные темы:
+  // - в mock-режиме берём mockRepo
+  // - в api-режиме не используем mock как fallback (prod-ready требование)
   const themeIdKey = themeIdFromUrl?.toLowerCase() || '';
-  const fallbackMockTheme =
-    mockThemes.find((t) => t.id === themeIdKey) || mockThemes[0];
-  
-  const title = themeData?.title || fallbackMockTheme.title;
-  const description = themeData?.description || fallbackMockTheme.description;
-  const heroImageUrl = themeData?.heroImage || fallbackMockTheme.heroImage;
-  const heroImageAlt = themeData?.title || fallbackMockTheme.title;
-  const tags = themeData?.tags || fallbackMockTheme.tags;
-  const lastUpdatedAt = (themeData?.updatedAt || fallbackMockTheme.updatedAt)
-    ? `Последнее обновление: ${new Date((themeData?.updatedAt || fallbackMockTheme.updatedAt) as string).toLocaleDateString('ru-RU')}`
-    : 'Последнее обновление: 17.11.2025';
+  const mockTheme = mockThemes.find((t) => t.id === themeIdKey) || mockThemes[0];
+
+  const title =
+    dataSource === 'mock'
+      ? mockTheme?.title ?? 'Тема'
+      : themeData?.title ?? 'Тема в разработке';
+  const description =
+    dataSource === 'mock'
+      ? mockTheme?.description
+      : themeData?.description ?? 'Контент для темы появится после подключения реального API.';
+  const heroImageUrl =
+    dataSource === 'mock'
+      ? mockTheme?.heroImage
+      : themeData?.heroImage ?? '/atlas/hero-placeholder.svg';
+  const heroImageAlt = title;
+  const tags = dataSource === 'mock' ? mockTheme?.tags : themeData?.tags;
+  const lastUpdatedAt =
+    dataSource === 'mock'
+      ? mockTheme?.updatedAt
+        ? `Последнее обновление: ${new Date(mockTheme.updatedAt).toLocaleDateString('ru-RU')}`
+        : 'Последнее обновление: недавно'
+      : themeData?.updatedAt
+        ? `Последнее обновление: ${new Date(themeData.updatedAt).toLocaleDateString('ru-RU')}`
+        : 'Последнее обновление: недавно';
 
   return (
     <AtlasThemeLayout

@@ -41,6 +41,9 @@ export default function GuideLayout({
   const guideId = pathname.split('/').slice(0, 4).join('/'); // /atlas/guides/[id]
 
   const dataSource = getDataSource();
+  // PROD: показываем только страницы, которые реально работают с API.
+  const navItems =
+    dataSource === 'mock' ? sideNavItems : sideNavItems.filter((i) => i.key === 'overview');
 
   // API: Загружаем данные гайда из API через SDK hook (используем slug из URL)
   const { 
@@ -61,7 +64,7 @@ export default function GuideLayout({
   const countryName = dataSource === 'mock' ? mockCountry?.name : ''; // TODO(api): derive from atlas links
   const heroImageUrl =
     (dataSource === 'mock' ? mockGuide?.coverImage : articleData?.coverImage) ||
-    'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg';
+    '/atlas/hero-placeholder.svg';
   const heroImageAlt = title || 'Гайд';
   const guideType = (dataSource === 'mock' ? mockGuide?.category : articleData?.category) || '';
   const readingTime = 0; // TODO: Get readingTime when API supports it
@@ -107,7 +110,7 @@ export default function GuideLayout({
               Структура справочника
             </div>
             <nav className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
-              {sideNavItems.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.href === '' ? guideId : `${guideId}/${item.href}`;
                 const isActive =
@@ -142,7 +145,7 @@ export default function GuideLayout({
                 Структура справочника
               </div>
               <nav className="space-y-1">
-                {sideNavItems.map((item) => {
+                {navItems.map((item) => {
                   const Icon = item.icon;
                   const href = item.href === '' ? guideId : `${guideId}/${item.href}`;
                   const isActive =

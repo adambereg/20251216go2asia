@@ -37,18 +37,6 @@ export function PlacesClient() {
       }));
     }
     if (!placesData?.items || placesData.items.length === 0) {
-      // Fallback на моки при пустом API ответе (не во время загрузки)
-      if (!isLoading) {
-        console.warn('[PlacesClient] API returned empty, falling back to mocks');
-        return mockRepo.atlas.listPlaces().map((place) => ({
-          id: place.id,
-          title: place.name,
-          description: place.description || '',
-          cityId: undefined,
-          categories: place.categories || [],
-          photos: place.photos || [],
-        }));
-      }
       return [];
     }
     return placesData.items.map((place) => ({

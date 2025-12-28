@@ -41,20 +41,6 @@ export function GuidesClient() {
       }));
     }
     if (!guidesData?.items || guidesData.items.length === 0) {
-      // Fallback на моки при пустом API ответе (не во время загрузки)
-      if (!isLoading) {
-        console.warn('[GuidesClient] API returned empty, falling back to mocks');
-        return mockRepo.atlas.listGuides().map((g) => ({
-          id: g.id,
-          slug: g.slug,
-          title: g.title,
-          excerpt: g.excerpt || '',
-          coverImage: g.coverImage,
-          category: g.category,
-          tags: g.tags || [],
-          publishedAt: g.publishedAt || g.updatedAt || '',
-        }));
-      }
       return [];
     }
     return guidesData.items.map((article) => ({

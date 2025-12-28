@@ -14,10 +14,12 @@ export default function CityOverviewPage() {
   // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
   const { 
     data: cityData, 
-    isLoading 
+    isLoading,
+    isError,
+    error,
   } = useGetCityById(dataSource === 'api' ? (cityId || '') : '');
   const mockCity = dataSource === 'mock' ? mockRepo.atlas.getCityById(cityId || '') : null;
-  const resolved: any = dataSource === 'mock' ? mockCity : (cityData ?? mockCity);
+  const resolved: any = dataSource === 'mock' ? mockCity : cityData;
 
   if (isLoading) {
     return (
@@ -28,23 +30,24 @@ export default function CityOverviewPage() {
     );
   }
 
-  const isFallback = dataSource === 'api' && !cityData && Boolean(mockCity);
+  const toFiniteNumber = (v: unknown): number | null => {
+    if (v === null || v === undefined) return null;
+    const n = typeof v === 'number' ? v : Number.parseFloat(String(v));
+    return Number.isFinite(n) ? n : null;
+  };
+  const lat = toFiniteNumber(resolved?.latitude);
+  const lng = toFiniteNumber(resolved?.longitude);
 
   if (!resolved) {
     return (
       <div className="text-center py-12 text-slate-600">
-        Данные о городе не найдены.
+        {isError ? `Ошибка загрузки: ${error instanceof Error ? error.message : 'неизвестно'}` : 'Данные о городе не найдены.'}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {isFallback ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          DEMO MODE / fallback: показаны мок-данные (API недоступен).
-        </div>
-      ) : null}
       <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -68,19 +71,19 @@ export default function CityOverviewPage() {
             </div>
             <div className="mt-1 font-semibold">{resolved.placesCount || 0}</div>
           </div>
-          {resolved.latitude && resolved.longitude && (
+          {lat !== null && lng !== null && (
             <>
               <div className="rounded-xl bg-slate-50 px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">
                   Широта
                 </div>
-                <div className="mt-1 font-semibold">{resolved.latitude.toFixed(4)}</div>
+                <div className="mt-1 font-semibold">{lat.toFixed(4)}</div>
               </div>
               <div className="rounded-xl bg-slate-50 px-4 py-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">
                   Долгота
                 </div>
-                <div className="mt-1 font-semibold">{resolved.longitude.toFixed(4)}</div>
+                <div className="mt-1 font-semibold">{lng.toFixed(4)}</div>
               </div>
             </>
           )}

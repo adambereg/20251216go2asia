@@ -45,6 +45,9 @@ export default function PlaceLayout({
   const placeId = pathname.split('/').slice(0, 4).join('/'); // /atlas/places/[id]
 
   const dataSource = getDataSource();
+  // PROD: показываем только страницы, которые реально работают с API.
+  const navItems =
+    dataSource === 'mock' ? sideNavItems : sideNavItems.filter((i) => i.key === 'overview');
 
   // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
   const { data: placeData, isLoading } = useGetPlaceById(dataSource === 'api' ? (placeIdFromUrl || '') : '');
@@ -56,7 +59,7 @@ export default function PlaceLayout({
   const countryName = (dataSource === 'mock' ? mockPlace?.country : '') || '';
   const heroImageUrl =
     (dataSource === 'mock' ? mockPlace?.photos?.[0] : placeData?.photos?.[0]) ||
-    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+    '/atlas/hero-placeholder.svg';
   const heroImageAlt = title || 'Место';
   // ContentPlaceDto не содержит categories → теги сейчас доступны только в mock-режиме
   const tags = (dataSource === 'mock' ? mockPlace?.categories : []) || [];
@@ -98,7 +101,7 @@ export default function PlaceLayout({
           <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="font-semibold text-slate-900 mb-3 text-sm">Структура справочника</div>
             <nav className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
-              {sideNavItems.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.href === '' ? placeId : `${placeId}/${item.href}`;
                 const isActive = item.href === '' ? pathname === placeId : pathname === href;
@@ -126,7 +129,7 @@ export default function PlaceLayout({
             <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-sm">
               <div className="font-semibold text-slate-900 mb-3">Структура справочника</div>
               <nav className="space-y-1">
-                {sideNavItems.map((item) => {
+                {navItems.map((item) => {
                   const Icon = item.icon;
                   const href = item.href === '' ? placeId : `${placeId}/${item.href}`;
                   const isActive = item.href === '' ? pathname === placeId : pathname === href;

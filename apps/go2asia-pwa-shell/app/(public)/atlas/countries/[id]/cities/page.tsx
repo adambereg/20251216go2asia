@@ -27,7 +27,7 @@ export default function CountryCitiesPage() {
     limit: 50,
     countryId: countryId,
     enabled: dataSource === 'api',
-  } as any);
+  });
 
   if (isLoading) {
     return (
@@ -44,7 +44,7 @@ export default function CountryCitiesPage() {
   const cities =
     dataSource === 'mock'
       ? mockRepo.atlas.listCities().filter((c) => c.countryId === countryId)
-      : (citiesData?.items && citiesData.items.length > 0 ? citiesData.items : mockRepo.atlas.listCities().filter((c) => c.countryId === countryId));
+      : (citiesData?.items && citiesData.items.length > 0 ? citiesData.items : []);
 
   return (
     <div className="space-y-6">

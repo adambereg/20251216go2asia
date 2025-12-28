@@ -13,9 +13,14 @@ export default function PlaceOverviewPage() {
   const dataSource = getDataSource();
 
   // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
-  const { data: placeData, isLoading } = useGetPlaceById(dataSource === 'api' ? (placeId || '') : '');
+  const {
+    data: placeData,
+    isLoading,
+    isError,
+    error,
+  } = useGetPlaceById(dataSource === 'api' ? (placeId || '') : '');
 
-  const mockPlace = mockRepo.atlas.getPlaceById(placeId || '');
+  const mockPlace = dataSource === 'mock' ? mockRepo.atlas.getPlaceById(placeId || '') : null;
 
   if (isLoading) {
     return (
@@ -26,24 +31,18 @@ export default function PlaceOverviewPage() {
     );
   }
 
-  const resolved = dataSource === 'mock' ? mockPlace : placeData ?? mockPlace;
-  const isFallback = dataSource === 'api' && !placeData && Boolean(mockPlace);
+  const resolved = dataSource === 'mock' ? mockPlace : placeData;
 
   if (!resolved) {
     return (
       <div className="text-center py-12 text-slate-600">
-        Данные о месте не найдены.
+        {isError ? `Ошибка загрузки: ${error instanceof Error ? error.message : 'неизвестно'}` : 'Данные о месте не найдены.'}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {isFallback ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          DEMO MODE / fallback: показаны мок-данные (API недоступен).
-        </div>
-      ) : null}
       <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">

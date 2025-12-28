@@ -36,19 +36,6 @@ export function CitiesClient() {
         heroImage: city.heroImage || undefined,
       }));
     }
-    
-    // Fallback на моки при пустом API ответе (но не во время загрузки)
-    if (dataSource === 'api' && !isLoading) {
-      console.warn('[CitiesClient] API returned empty, falling back to mocks');
-      return mockRepo.atlas.listCities().map((city) => ({
-        id: city.id,
-        name: city.name,
-        countryId: city.countryId,
-        description: city.description || '',
-        placesCount: city.placesCount || 0,
-      }));
-    }
-    
     return [];
   }, [citiesData, dataSource, isLoading]);
 

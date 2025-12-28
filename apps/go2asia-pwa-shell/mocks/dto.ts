@@ -7,6 +7,8 @@ export type ID = string;
 export type DataSource = 'mock' | 'api';
 
 export function getDataSource(): DataSource {
+  // PROD GUARD: mocks запрещены в production (prod-ready требование).
+  if (process.env.NODE_ENV === 'production') return 'api';
   const v = process.env.NEXT_PUBLIC_DATA_SOURCE;
   return v === 'mock' ? 'mock' : 'api';
 }
