@@ -20,6 +20,7 @@
     "db:seed": "tsx src/seed.ts",
     "db:seed:content": "tsx src/seed.ts",
     "db:seed:pulse": "tsx src/seed.ts",
+    "db:seed:atlas-tabs": "tsx src/seedAtlasTabs.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

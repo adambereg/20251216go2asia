@@ -6,12 +6,23 @@
  * - Integration with Points Service (event_registration)
  */
 
-import type { ArticleRow, CityRow, CountryRow, EventRow, PlaceRow, SqlClient } from '@go2asia/db/queries/content';
+import type {
+  ArticleRow,
+  CityRow,
+  ContentBlockRow,
+  CountryRow,
+  EventRow,
+  PlaceRow,
+  SqlClient,
+} from '@go2asia/db/queries/content';
 import {
   createSqlClient,
   getArticleBySlug,
   getEventByIdOrSlug,
+  getCityIdByIdOrSlug,
+  getCountryIdByIdOrSlug,
   getPlaceByIdOrSlug,
+  listContentBlocks,
   listArticles,
   listCities,
   listCountries,
@@ -107,6 +118,14 @@ export interface ContentArticleDto {
   coverImage: string | null;
   publishedAt: string | null;
   status: string;
+}
+
+export interface ContentTabDto {
+  tabKey: string;
+  lang: string;
+  title: string | null;
+  bodyMarkdown: string;
+  updatedAt: string | null;
 }
 
 function json(data: unknown, status = 200): Response {
@@ -568,6 +587,16 @@ function toContentArticle(row: ArticleRow): ContentArticleDto {
   };
 }
 
+function toContentTab(row: ContentBlockRow): ContentTabDto {
+  return {
+    tabKey: row.tab_key,
+    lang: row.lang,
+    title: row.title,
+    bodyMarkdown: row.body_markdown,
+    updatedAt: row.updated_at ?? null,
+  };
+}
+
 async function handleListEvents(
   env: Env,
   url: URL,
@@ -730,6 +759,48 @@ async function handleGetPlaceById(env: Env, idOrSlug: string, logger: ReturnType
   } catch (error) {
     logger.error('Get place error', error, { idOrSlug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch place' } }, 500);
+  }
+}
+
+async function handleListCountryTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const countryId = await getCountryIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!countryId) return json({ error: { code: 'NotFound', message: 'Country not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'country', countryId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List country tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch country tabs' } }, 500);
+  }
+}
+
+async function handleListCityTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'city', cityId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List city tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city tabs' } }, 500);
   }
 }
 
@@ -1000,6 +1071,20 @@ export default {
     }
     if (path === '/v1/content/places' && request.method === 'GET') {
       const res = await handleListPlaces(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const countryTabsMatch = path.match(/^\/v1\/content\/countries\/([^/]+)\/tabs$/);
+    if (countryTabsMatch && request.method === 'GET') {
+      const idOrSlug = countryTabsMatch[1];
+      const res = await handleListCountryTabs(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const cityTabsMatch = path.match(/^\/v1\/content\/cities\/([^/]+)\/tabs$/);
+    if (cityTabsMatch && request.method === 'GET') {
+      const idOrSlug = cityTabsMatch[1];
+      const res = await handleListCityTabs(env, url, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

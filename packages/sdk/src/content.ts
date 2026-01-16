@@ -79,6 +79,51 @@ export interface ContentArticleDto {
   status: string;
 }
 
+export interface ContentTabDto {
+  tabKey: string;
+  lang: string;
+  title: string | null;
+  bodyMarkdown: string;
+  updatedAt: string | null;
+}
+
+export const COUNTRY_TAB_KEYS = [
+  'overview',
+  'gallery',
+  'map',
+  'cities',
+  'weather',
+  'history',
+  'geography',
+  'culture',
+  'living',
+  'visas',
+  'business',
+  'places',
+  'phrasebook',
+  'reviews',
+  'calculator',
+] as const;
+
+export const CITY_TAB_KEYS = [
+  'overview',
+  'districts',
+  'accommodation',
+  'food',
+  'places',
+  'transport',
+  'weather',
+  'shopping',
+  'nightlife',
+  'guides',
+  'tips',
+  'reviews',
+  'budget',
+] as const;
+
+export type CountryTabKey = typeof COUNTRY_TAB_KEYS[number];
+export type CityTabKey = typeof CITY_TAB_KEYS[number];
+
 /**
  * Fetch single event by ID.
  * Public endpoint.
@@ -126,6 +171,34 @@ export async function listPlaces(params?: { cityId?: string; limit?: number }): 
  */
 export async function getPlaceByIdOrSlug(idOrSlug: string): Promise<ContentPlaceDto> {
   return customInstance<ContentPlaceDto>({ method: 'GET' }, `/v1/content/places/${idOrSlug}`);
+}
+
+/**
+ * Atlas: list country tabs (public)
+ */
+export async function listCountryTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: CountryTabKey }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/countries/${idOrSlug}/tabs${qs}`);
+}
+
+/**
+ * Atlas: list city tabs (public)
+ */
+export async function listCityTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: CityTabKey }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/cities/${idOrSlug}/tabs${qs}`);
 }
 
 /**

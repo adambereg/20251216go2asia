@@ -95,6 +95,17 @@ export interface ArticleRow {
   status: string;
 }
 
+export interface ContentBlockRow {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  tab_key: string;
+  lang: string;
+  title: string | null;
+  body_markdown: string;
+  updated_at: string;
+}
+
 // ============================================================================
 // Queries
 // ============================================================================
@@ -415,6 +426,81 @@ export async function getArticleBySlug(sql: SqlClient, slug: string): Promise<Ar
     LIMIT 1
   `;
   return (rows[0] as ArticleRow) ?? null;
+}
+
+// ============================================================================
+// Atlas tabs (content_blocks)
+// ============================================================================
+
+export async function getCountryIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT id::text AS id
+    FROM countries
+    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function getCityIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT id::text AS id
+    FROM cities
+    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function listContentBlocks(
+  sql: SqlClient,
+  entityType: string,
+  entityId: string,
+  filters?: { tabKey?: string; lang?: string }
+): Promise<ContentBlockRow[]> {
+  const tabKey = filters?.tabKey ?? null;
+  const lang = filters?.lang ?? null;
+
+  if (tabKey && lang) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+        AND tab_key = ${tabKey} AND lang = ${lang}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  if (tabKey) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+        AND tab_key = ${tabKey}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  if (lang) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+        AND lang = ${lang}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  const rows = await sql`
+    SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+    FROM content_blocks
+    WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+    ORDER BY tab_key ASC
+  `;
+  return rows as ContentBlockRow[];
 }
 
 

@@ -22,6 +22,7 @@ import {
   index,
   check,
   pgEnum,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -193,6 +194,32 @@ export const articles = pgTable('articles', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+export const contentBlocks = pgTable(
+  'content_blocks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    entityType: text('entity_type').notNull(), // country | city | place
+    entityId: uuid('entity_id').notNull(), // FK to countries/cities/places.id (uuid)
+    tabKey: text('tab_key').notNull(),
+    lang: text('lang').notNull(),
+    title: text('title'),
+    bodyMarkdown: text('body_markdown').notNull(),
+    source: text('source').notNull().default('seed'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueEntityTabLang: unique('content_blocks_unique').on(
+      table.entityType,
+      table.entityId,
+      table.tabKey,
+      table.lang
+    ),
+    idxEntity: index('idx_content_blocks_entity').on(table.entityType, table.entityId),
+    idxTabLang: index('idx_content_blocks_tab_lang').on(table.tabKey, table.lang),
+  })
+);
 
 export const eventRegistrations = pgTable('event_registrations', {
   id: text('id').primaryKey(),

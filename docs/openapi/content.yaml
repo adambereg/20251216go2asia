@@ -237,6 +237,48 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/content/countries/{idOrSlug}/tabs:
+    get:
+      tags: [content]
+      operationId: listCountryTabs
+      summary: List country tabs (public)
+      parameters:
+        - $ref: "#/components/parameters/CountryIdOrSlug"
+        - $ref: "#/components/parameters/TabKey"
+        - $ref: "#/components/parameters/Lang"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListContentTabsResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/content/cities/{idOrSlug}/tabs:
+    get:
+      tags: [content]
+      operationId: listCityTabs
+      summary: List city tabs (public)
+      parameters:
+        - $ref: "#/components/parameters/CityIdOrSlug"
+        - $ref: "#/components/parameters/TabKey"
+        - $ref: "#/components/parameters/Lang"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListContentTabsResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /v1/content/places:
     get:
       tags: [content]
@@ -362,10 +404,34 @@ components:
       required: true
       schema:
         type: string
+    CountryIdOrSlug:
+      name: idOrSlug
+      in: path
+      required: true
+      schema:
+        type: string
+    CityIdOrSlug:
+      name: idOrSlug
+      in: path
+      required: true
+      schema:
+        type: string
     ArticleSlug:
       name: slug
       in: path
       required: true
+      schema:
+        type: string
+    TabKey:
+      name: tabKey
+      in: query
+      required: false
+      schema:
+        type: string
+    Lang:
+      name: lang
+      in: query
+      required: false
       schema:
         type: string
     Limit:
@@ -500,6 +566,15 @@ components:
           items:
             $ref: "#/components/schemas/ContentArticleDto"
 
+    ListContentTabsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTabDto"
+
     EventRegistrationResponse:
       type: object
       required: [ok, registrationId, eventId, userId]
@@ -517,6 +592,23 @@ components:
       type: string
       description: Logical scope for object key prefixing (Phase 2).
       enum: [content, space, rf, rielt, quest, avatar]
+
+    ContentTabDto:
+      type: object
+      required: [tabKey, lang, bodyMarkdown]
+      properties:
+        tabKey:
+          type: string
+        lang:
+          type: string
+        title:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+        updatedAt:
+          type: string
+          nullable: true
 
     CreateUploadTokenRequest:
       type: object
