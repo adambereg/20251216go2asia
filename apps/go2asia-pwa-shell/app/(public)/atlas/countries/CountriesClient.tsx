@@ -35,7 +35,7 @@ export function CountriesClient() {
         placesCount: country.placesCount || 0,
         citiesCount: country.citiesCount || 0,
         description: country.description || '',
-        heroImage: country.heroImage || '/atlas/hero-placeholder.svg',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
       }));
     }
     
@@ -52,6 +52,21 @@ export function CountriesClient() {
         heroImage: country.heroImage || undefined,
       }));
     }
+    
+    // Fallback на моки при пустом API ответе (но не во время загрузки)
+    if (!isLoading) {
+      console.warn('[CountriesClient] API returned empty, falling back to mocks');
+      return mockRepo.atlas.listCountries().map((country) => ({
+        id: country.id,
+        name: country.name,
+        flag: country.flag || '🌏',
+        placesCount: country.placesCount || 0,
+        citiesCount: country.citiesCount || 0,
+        description: country.description || '',
+        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+      }));
+    }
+    
     return [];
   }, [countriesData, dataSource, isLoading]);
 

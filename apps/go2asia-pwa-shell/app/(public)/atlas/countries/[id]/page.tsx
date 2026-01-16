@@ -15,13 +15,14 @@ export default function CountryOverviewPage() {
   // enabled обрабатывается автоматически внутри hook (проверка на пустой id)
   const { 
     data: countryData, 
-    isLoading,
-    isError,
-    error,
+    isLoading 
   } = useGetCountryById(dataSource === 'api' ? (countryId || '') : '');
 
   const mockCountry = dataSource === 'mock' ? mockRepo.atlas.getCountryById(countryId || '') : null;
-  const resolved: any = dataSource === 'mock' ? mockCountry : countryData;
+  const resolved: any =
+    dataSource === 'mock'
+      ? mockCountry
+      : countryData ?? mockRepo.atlas.getCountryById(countryId || '');
 
   if (isLoading) {
     return (
@@ -40,9 +41,7 @@ export default function CountryOverviewPage() {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-          <p className="text-slate-600">
-            {isError ? `Ошибка загрузки: ${error instanceof Error ? error.message : 'неизвестно'}` : 'Данные о стране не найдены.'}
-          </p>
+          <p className="text-slate-600">Данные о стране не найдены.</p>
         </div>
       </div>
     );

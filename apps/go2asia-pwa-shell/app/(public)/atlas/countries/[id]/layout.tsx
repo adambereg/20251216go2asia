@@ -55,11 +55,6 @@ export default function CountryLayout({
   const countryId = pathname.split('/').slice(0, 4).join('/'); // /atlas/countries/[id]
 
   const dataSource = getDataSource();
-  // PROD: показываем только страницы, которые реально работают с API.
-  const navItems =
-    dataSource === 'mock'
-      ? sideNavItems
-      : sideNavItems.filter((i) => ['overview', 'cities', 'sights'].includes(i.key));
 
   // Загружаем данные страны из API через SDK hook
   // enabled обрабатывается автоматически внутри hook (проверка на пустой id)
@@ -75,7 +70,7 @@ export default function CountryLayout({
   const flagEmoji = (dataSource === 'mock' ? mockCountry?.flag : countryData?.flag) || '🌏';
   const heroImageUrl =
     (dataSource === 'mock' ? mockCountry?.heroImage : undefined) ||
-    '/atlas/hero-placeholder.svg';
+    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
   const heroImageAlt = countryName || 'Страна';
   // ContentCountryDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
   const updatedAt = dataSource === 'mock' ? mockCountry?.updatedAt : undefined;
@@ -119,7 +114,7 @@ export default function CountryLayout({
               Структура справочника
             </div>
             <nav className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
-              {navItems.map((item) => {
+              {sideNavItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.href === '' ? countryId : `${countryId}/${item.href}`;
                 const isActive =
@@ -154,7 +149,7 @@ export default function CountryLayout({
                 Структура справочника
               </div>
               <nav className="space-y-1">
-                {navItems.map((item) => {
+                {sideNavItems.map((item) => {
                   const Icon = item.icon;
                   const href = item.href === '' ? countryId : `${countryId}/${item.href}`;
                   const isActive =
