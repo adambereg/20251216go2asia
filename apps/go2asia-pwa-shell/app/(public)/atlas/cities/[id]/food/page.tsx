@@ -1,19 +1,14 @@
-import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
+import { EmptyStateAtlas } from '@/modules/atlas';
 
-export default function CityFoodPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function CityFoodPage() {
   return (
-    <AtlasContentPage
-      kind="city"
-      id={params.id}
-      sectionKey="food"
-      title="Еда и кафе"
-      emptyTitle="Еда и кафе"
-      emptyDescription="Раздел о еде и кафе появится после подключения контента."
-    />
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-slate-900">Еда и кафе</h2>
+      <EmptyStateAtlas
+        title="Гастрономия города"
+        description="Street food районы, топ-заведения, куда пойти вечером, местные блюда и где их пробовать, партнеры Russian Friendly."
+      />
+    </div>
   );
 }
 

@@ -1,19 +1,14 @@
-import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
+import { EmptyStateAtlas } from '@/modules/atlas';
 
-export default function CityTransportPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function CityTransportPage() {
   return (
-    <AtlasContentPage
-      kind="city"
-      id={params.id}
-      sectionKey="transport"
-      title="Транспорт"
-      emptyTitle="Как передвигаться по городу"
-      emptyDescription="Раздел о транспорте появится после подключения контента."
-    />
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-slate-900">Транспорт</h2>
+      <EmptyStateAtlas
+        title="Как передвигаться по городу"
+        description="Как добраться из аэропорта, городские виды транспорта (метро, автобусы, тук-туки), схема метро, стоимость, локальные лайфхаки, аренда байков."
+      />
+    </div>
   );
 }
 

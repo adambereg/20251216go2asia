@@ -1,19 +1,14 @@
-import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
+import { EmptyStateAtlas } from '@/modules/atlas';
 
-export default function CityGuidesPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function CityGuidesPage() {
   return (
-    <AtlasContentPage
-      kind="city"
-      id={params.id}
-      sectionKey="guides"
-      title="Гайды"
-      emptyTitle="Маршруты по городу"
-      emptyDescription="Раздел с гайдами появится после подключения контента."
-    />
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-slate-900">Гайды</h2>
+      <EmptyStateAtlas
+        title="Маршруты по городу"
+        description="Маршруты 1 день / 3 дня / 5 дней, подборки для первого туриста, маршруты 'фототур', 'еда', 'семейный отдых', UGC-гайды пользователей."
+      />
+    </div>
   );
 }
 

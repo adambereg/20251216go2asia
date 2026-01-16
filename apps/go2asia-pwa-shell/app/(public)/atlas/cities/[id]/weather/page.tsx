@@ -1,19 +1,14 @@
-import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
+import { EmptyStateAtlas } from '@/modules/atlas';
 
-export default function CityWeatherPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function CityWeatherPage() {
   return (
-    <AtlasContentPage
-      kind="city"
-      id={params.id}
-      sectionKey="weather"
-      title="Погода и сезонность"
-      emptyTitle="Климат города"
-      emptyDescription="Раздел о погоде появится после подключения контента."
-    />
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-slate-900">Погода и сезонность</h2>
+      <EmptyStateAtlas
+        title="Климат города"
+        description="Климат, месячная сезонность, лучшие месяцы для поездки, температуры по сезонам."
+      />
+    </div>
   );
 }
 
