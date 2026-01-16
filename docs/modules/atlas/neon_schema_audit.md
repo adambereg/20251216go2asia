@@ -77,7 +77,19 @@
 - **Places**: `description_short`, `hero_url`, `images`
 - **Articles**: `content` + `excerpt` + `tags`
 
-**Нет таблиц/полей**, куда можно положить **контент вкладок**:
+### Подтверждение по Neon JSON (2026‑01‑16)
+
+Файл: `polished-cake-41504508_staging-m4-content-seed_neondb_2026-01-16_21-34-40.json`  
+SQL: `information_schema.columns` по таблицам `countries/cities/places/articles/media_files`.
+
+Подтверждено:
+- `countries` имеет только `description_short` + `hero_media_id` для контента.
+- `cities` имеет только `description_short` + `hero_media_id` для контента.
+- `places` имеет только `description_short` + `hero_media_id` + `images`.
+- `articles` хранит `content/excerpt/tags`, но это **guides/blog**, не вкладки стран/городов.
+- **таблиц вида** `*block*/*tab*/*section*/*content*` **в public‑схеме нет** (SQL‑поиск вернул 0 строк).
+
+**Вывод:** **нет таблиц/полей**, куда можно положить **контент вкладок**:
 - history / geography / culture / visas / living / phrasebook / reviews / calculator и т.д.
 - аналогично для городских вкладок: districts / accommodation / food / transport / shopping / nightlife / tips / budget и т.д.
 
@@ -136,3 +148,12 @@ content_blocks(body_json jsonb)
 3) В SDK добавить методы:
    - `useGetCountryTabs`, `useGetCityTabs`, `useGetPlaceTabs`
 4) В UI Atlas: показывать вкладки только из API (без markdown‑файлов).
+
+## План ingest/seed (Этап C, после согласования схемы)
+
+Минимально‑безопасный seed:
+- читает `content/atlas/philippines/*`
+- маппит секции → `tab_key`
+- **UPSERT** в `content_blocks` по `(entity_type, entity_id, tab_key, lang)`
+- опционально: загрузка hero/cover в R2 с сохранением `media_files` + ссылок в `countries/cities`
+
