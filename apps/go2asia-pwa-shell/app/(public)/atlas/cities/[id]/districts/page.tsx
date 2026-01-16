@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityDistrictsPage() {
+export default function CityDistrictsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Районы</h2>
-      <EmptyStateAtlas
-        title="Районы города"
-        description="Карта районов, краткая характеристика: где жить, где безопасно, где шумно. Районы для экспатов и туристов, районы с ночной жизнью и шопингом."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="districts"
+      title="Районы"
+      emptyTitle="Районы города"
+      emptyDescription="Раздел о районах появится после подключения контента."
+    />
   );
 }
 

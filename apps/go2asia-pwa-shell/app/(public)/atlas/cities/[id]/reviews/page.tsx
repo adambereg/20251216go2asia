@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityReviewsPage() {
+export default function CityReviewsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Отзывы</h2>
-      <EmptyStateAtlas
-        title="Отзывы туристов и экспатов"
-        description="UGC отзывы, рейтинги, личные советы, топ комментарии."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="reviews"
+      title="Отзывы"
+      emptyTitle="Отзывы туристов и экспатов"
+      emptyDescription="Отзывы появятся после подключения контента."
+    />
   );
 }
 

@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityNightlifePage() {
+export default function CityNightlifePage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Ночная жизнь</h2>
-      <EmptyStateAtlas
-        title="Вечерние развлечения"
-        description="Бары, rooftop-площадки, клубы, вечерние рынки."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="nightlife"
+      title="Ночная жизнь"
+      emptyTitle="Вечерние развлечения"
+      emptyDescription="Раздел о ночной жизни появится после подключения контента."
+    />
   );
 }
 

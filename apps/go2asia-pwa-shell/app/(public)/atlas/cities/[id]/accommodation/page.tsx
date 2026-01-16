@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityAccommodationPage() {
+export default function CityAccommodationPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Проживание</h2>
-      <EmptyStateAtlas
-        title="Где остановиться"
-        description="Лучшие районы для жилья, подборки бюджетных и премиум отелей, апартаменты на Airbnb, русскоязычные хозяева, ссылки на партнёрские отели."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="accommodation"
+      title="Проживание"
+      emptyTitle="Где остановиться"
+      emptyDescription="Раздел о проживании появится после подключения контента."
+    />
   );
 }
 

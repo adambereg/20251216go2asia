@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityShoppingPage() {
+export default function CityShoppingPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Шопинг</h2>
-      <EmptyStateAtlas
-        title="Где делать покупки"
-        description="Рынки, моллы, товары по выгодным ценам, рекомендации."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="shopping"
+      title="Шопинг"
+      emptyTitle="Где делать покупки"
+      emptyDescription="Раздел о шопинге появится после подключения контента."
+    />
   );
 }
 

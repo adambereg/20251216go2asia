@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityPlacesPage() {
+export default function CityPlacesPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Достопримечательности</h2>
-      <EmptyStateAtlas
-        title="Места города"
-        description="Разделение: природа / культура / фото-поинты / must-see. Топ места, карта POI."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="places"
+      title="Достопримечательности"
+      emptyTitle="Места города"
+      emptyDescription="Раздел о достопримечательностях появится после подключения контента."
+    />
   );
 }
 

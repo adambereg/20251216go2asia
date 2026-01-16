@@ -1,14 +1,19 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasContentPage } from '@/modules/atlas/components/AtlasContentPage';
 
-export default function CityBudgetPage() {
+export default function CityBudgetPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Цены и бюджет</h2>
-      <EmptyStateAtlas
-        title="Калькулятор стоимости"
-        description="Цены на еду, проезд, отели, развлечения, пример затрат в день."
-      />
-    </div>
+    <AtlasContentPage
+      kind="city"
+      id={params.id}
+      sectionKey="budget"
+      title="Цены и бюджет"
+      emptyTitle="Калькулятор стоимости"
+      emptyDescription="Раздел с ценами и бюджетом появится после подключения контента."
+    />
   );
 }
 
