@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS "content_blocks" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "entity_type" text NOT NULL,
-  "entity_id" uuid NOT NULL,
+  "entity_id" text NOT NULL,
   "tab_key" text NOT NULL,
   "lang" text NOT NULL,
   "title" text,

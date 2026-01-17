@@ -91,14 +91,6 @@ function normalizeTitle(title: string): string {
   return title.toLowerCase().trim();
 }
 
-function assertUuid(value: string, label: string): string {
-  const ok = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-  if (!ok) {
-    throw new Error(`${label} is not a valid UUID: ${value}`);
-  }
-  return value;
-}
-
 async function resolveCountryId(db: ReturnType<typeof createDb>, options: { slug?: string; code?: string; name?: string }) {
   const slug = options.slug ?? null;
   const code = options.code ?? null;
@@ -113,7 +105,7 @@ async function resolveCountryId(db: ReturnType<typeof createDb>, options: { slug
   `);
   const id = (rows[0] as { id?: string } | undefined)?.id;
   if (!id) throw new Error('Country not found for seed');
-  return assertUuid(id, 'country.id');
+  return id;
 }
 
 async function resolveCityId(db: ReturnType<typeof createDb>, options: { slug?: string; name?: string }) {
@@ -128,7 +120,7 @@ async function resolveCityId(db: ReturnType<typeof createDb>, options: { slug?: 
   `);
   const id = (rows[0] as { id?: string } | undefined)?.id;
   if (!id) throw new Error('City not found for seed');
-  return assertUuid(id, 'city.id');
+  return id;
 }
 
 async function upsertBlocks(

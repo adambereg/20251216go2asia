@@ -149,6 +149,7 @@ async function main() {
 
   const url = getDatabaseUrl();
   const u = new URL(url);
+  const baselineUpTo = process.env.DDL_BASELINE_UP_TO;
 
   // eslint-disable-next-line no-console
   console.log(`🔧 Applying DDL migrations (env=${env}) to host=${u.host}, db=${u.pathname}`);
@@ -166,6 +167,34 @@ async function main() {
   try {
     // Get already applied migrations (outside any tx to read latest state)
     const applied = await getApplied(client);
+    // eslint-disable-next-line no-console
+    console.log(`- applied migrations (${applied.size}): ${[...applied.keys()].join(', ') || '(none)'}`);
+
+    if (baselineUpTo) {
+      if (!files.includes(baselineUpTo)) {
+        throw new Error(`DDL_BASELINE_UP_TO not found in migrations: ${baselineUpTo}`);
+      }
+      if (applied.size === 0) {
+        // Insert baseline rows without executing migrations (align with existing schema)
+        await ensureMigrationsTable(client);
+        for (const f of files) {
+          const full = path.join(dir, f);
+          const contents = fs.readFileSync(full, 'utf8');
+          const checksum = sha256(contents);
+          await client.query(`INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)`, [
+            f,
+            checksum,
+          ]);
+          applied.set(f, checksum);
+          if (f === baselineUpTo) break;
+        }
+        // eslint-disable-next-line no-console
+        console.log(`- baseline applied up to ${baselineUpTo} (no DDL executed)`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(`- baseline skipped (schema_migrations already has entries)`);
+      }
+    }
 
     for (const f of files) {
       const full = path.join(dir, f);
@@ -178,12 +207,12 @@ async function main() {
           throw new Error(`Checksum mismatch for already-applied migration: ${f}`);
         }
         // eslint-disable-next-line no-console
-        console.log(`- skip ${f} (already applied)`);
+        console.log(`- ${f} | isApplied=true | decision=skip`);
         continue;
       }
 
       // eslint-disable-next-line no-console
-      console.log(`- apply ${f}`);
+      console.log(`- ${f} | isApplied=false | decision=apply`);
       await applyMigration(client, f, contents, checksum);
       // Update local map so subsequent checks work correctly
       applied.set(f, checksum);

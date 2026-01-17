@@ -465,7 +465,7 @@ export async function listContentBlocks(
     const rows = await sql`
       SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
       FROM content_blocks
-      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
         AND tab_key = ${tabKey} AND lang = ${lang}
       ORDER BY tab_key ASC
     `;
@@ -476,7 +476,7 @@ export async function listContentBlocks(
     const rows = await sql`
       SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
       FROM content_blocks
-      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
         AND tab_key = ${tabKey}
       ORDER BY tab_key ASC
     `;
@@ -487,7 +487,7 @@ export async function listContentBlocks(
     const rows = await sql`
       SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
       FROM content_blocks
-      WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
         AND lang = ${lang}
       ORDER BY tab_key ASC
     `;
@@ -497,7 +497,7 @@ export async function listContentBlocks(
   const rows = await sql`
     SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
     FROM content_blocks
-    WHERE entity_type = ${entityType} AND entity_id = ${entityId}::uuid
+    WHERE entity_type = ${entityType} AND entity_id = ${entityId}
     ORDER BY tab_key ASC
   `;
   return rows as ContentBlockRow[];

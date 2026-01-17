@@ -200,7 +200,7 @@ export const contentBlocks = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     entityType: text('entity_type').notNull(), // country | city | place
-    entityId: uuid('entity_id').notNull(), // FK to countries/cities/places.id (uuid)
+    entityId: text('entity_id').notNull(), // FK to countries/cities/places.id (text)
     tabKey: text('tab_key').notNull(),
     lang: text('lang').notNull(),
     title: text('title'),
