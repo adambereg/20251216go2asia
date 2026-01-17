@@ -91,36 +91,130 @@ function normalizeTitle(title: string): string {
   return title.toLowerCase().trim();
 }
 
-async function resolveCountryId(db: ReturnType<typeof createDb>, options: { slug?: string; code?: string; name?: string }) {
+async function logCountryCandidates(db: ReturnType<typeof createDb>) {
+  const rows = await db.execute(sql`
+    SELECT id::text AS id, slug, name
+    FROM countries
+    ORDER BY name
+    LIMIT 10
+  `);
+  // eslint-disable-next-line no-console
+  console.error('Country candidates (top 10):', rows);
+}
+
+async function resolveCountryId(
+  db: ReturnType<typeof createDb>,
+  options: { id?: string; slug?: string; code?: string; name?: string }
+) {
+  const id = options.id ?? null;
   const slug = options.slug ?? null;
   const code = options.code ?? null;
   const name = options.name ?? null;
-  const rows = await db.execute(sql`
-    SELECT id::text AS id
-    FROM countries
-    WHERE (${slug}::text IS NOT NULL AND (slug = ${slug} OR id::text = ${slug}))
-       OR (${code}::text IS NOT NULL AND code = ${code})
-       OR (${name}::text IS NOT NULL AND lower(name) = lower(${name}))
-    LIMIT 1
-  `);
-  const id = (rows[0] as { id?: string } | undefined)?.id;
-  if (!id) throw new Error('Country not found for seed');
-  return id;
+  const strategies: string[] = [];
+
+  if (id) {
+    strategies.push('id=exact');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM countries
+      WHERE id::text = ${id}
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  if (slug) {
+    strategies.push('slug=exact');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM countries
+      WHERE slug = ${slug}
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  if (code) {
+    strategies.push('code=exact');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM countries
+      WHERE code = ${code}
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  if (name) {
+    strategies.push('name=ilike');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM countries
+      WHERE name ILIKE ${'%' + name + '%'}
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  // eslint-disable-next-line no-console
+  console.error('Country not found for seed', { id, slug, code, name, strategies });
+  await logCountryCandidates(db);
+  throw new Error('Country not found for seed');
 }
 
-async function resolveCityId(db: ReturnType<typeof createDb>, options: { slug?: string; name?: string }) {
-  const slug = options.slug ?? null;
-  const name = options.name ?? null;
+async function logCityCandidates(db: ReturnType<typeof createDb>, countryId: string) {
   const rows = await db.execute(sql`
-    SELECT id::text AS id
+    SELECT id::text AS id, slug, name
     FROM cities
-    WHERE (${slug}::text IS NOT NULL AND (slug = ${slug} OR id::text = ${slug}))
-       OR (${name}::text IS NOT NULL AND lower(name) = lower(${name}))
-    LIMIT 1
+    WHERE country_id = ${countryId}
+    ORDER BY name
+    LIMIT 10
   `);
-  const id = (rows[0] as { id?: string } | undefined)?.id;
-  if (!id) throw new Error('City not found for seed');
-  return id;
+  // eslint-disable-next-line no-console
+  console.error('City candidates (top 10):', rows);
+}
+
+async function resolveCityId(
+  db: ReturnType<typeof createDb>,
+  options: { countryId: string; idOrSlug?: string; name?: string }
+) {
+  const countryId = options.countryId;
+  const idOrSlug = options.idOrSlug ?? null;
+  const name = options.name ?? null;
+  const strategies: string[] = [];
+
+  if (idOrSlug) {
+    strategies.push('idOrSlug=exact');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM cities
+      WHERE country_id = ${countryId} AND (id::text = ${idOrSlug} OR slug = ${idOrSlug})
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  if (name) {
+    strategies.push('name=ilike');
+    const rows = await db.execute(sql`
+      SELECT id::text AS id
+      FROM cities
+      WHERE country_id = ${countryId} AND name ILIKE ${'%' + name + '%'}
+      LIMIT 1
+    `);
+    const found = (rows[0] as { id?: string } | undefined)?.id;
+    if (found) return found;
+  }
+
+  // eslint-disable-next-line no-console
+  console.error('City not found for seed', { countryId, idOrSlug, name, strategies });
+  await logCityCandidates(db, countryId);
+  throw new Error('City not found for seed');
 }
 
 async function upsertBlocks(
@@ -170,19 +264,19 @@ async function main() {
   const repoRoot = join(process.cwd(), '..', '..');
   const baseDir = join(repoRoot, 'content', 'atlas', 'philippines');
 
-  const countryId = await resolveCountryId(db, { slug: 'ph', code: 'PH', name: 'Филиппины' });
+  const countryId = await resolveCountryId(db, { id: 'ph', slug: 'ph', code: 'PH', name: 'Филиппины' });
   const countryMd = readFileSync(join(baseDir, 'Филиппины.md'), 'utf-8');
   await upsertBlocks(db, 'country', countryId, 'ru', parseSections(countryMd), COUNTRY_TAB_KEYS);
 
-  const manilaId = await resolveCityId(db, { slug: 'mnl', name: 'Манила' });
+  const manilaId = await resolveCityId(db, { countryId, idOrSlug: 'mnl', name: 'Манила' });
   const manilaMd = readFileSync(join(baseDir, 'Philippines-Manila-City.md'), 'utf-8');
   await upsertBlocks(db, 'city', manilaId, 'ru', parseSections(manilaMd), CITY_TAB_KEYS);
 
-  const cebuId = await resolveCityId(db, { slug: 'ceb', name: 'Себу' });
+  const cebuId = await resolveCityId(db, { countryId, idOrSlug: 'ceb', name: 'Себу' });
   const cebuMd = readFileSync(join(baseDir, 'Philippines-Cebu-City.md'), 'utf-8');
   await upsertBlocks(db, 'city', cebuId, 'ru', parseSections(cebuMd), CITY_TAB_KEYS);
 
-  const palawanId = await resolveCityId(db, { slug: 'pal', name: 'Палаван' });
+  const palawanId = await resolveCityId(db, { countryId, idOrSlug: 'palawan', name: 'Палаван' });
   const palawanMd = readFileSync(join(baseDir, 'Philippines-Palawan.md'), 'utf-8');
   await upsertBlocks(db, 'city', palawanId, 'ru', parseSections(palawanMd), CITY_TAB_KEYS);
 }
