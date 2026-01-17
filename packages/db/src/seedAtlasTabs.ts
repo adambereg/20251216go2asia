@@ -14,6 +14,16 @@ import { sql } from 'drizzle-orm';
 
 type TabSection = { title: string; body: string };
 
+type QueryResult<T> = { rows?: T[] };
+
+function getFirstRow<T>(result: unknown): T | undefined {
+  return (result as QueryResult<T>)?.rows?.[0];
+}
+
+function getRows<T>(result: unknown): T[] {
+  return (result as QueryResult<T>)?.rows ?? [];
+}
+
 const COUNTRY_TAB_KEYS = new Map<string, string>([
   ['обзор', 'overview'],
   ['фотогалерея', 'gallery'],
@@ -92,12 +102,13 @@ function normalizeTitle(title: string): string {
 }
 
 async function logCountryCandidates(db: ReturnType<typeof createDb>) {
-  const rows = await db.execute(sql`
+  const result = await db.execute(sql`
     SELECT id::text AS id, slug, name
     FROM countries
     ORDER BY name
     LIMIT 10
   `);
+  const rows = getRows<{ id: string; slug: string | null; name: string | null }>(result);
   // eslint-disable-next-line no-console
   console.error('Country candidates (top 10):', rows);
 }
@@ -120,7 +131,7 @@ async function resolveCountryId(
       WHERE id::text = ${id}
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
@@ -132,7 +143,7 @@ async function resolveCountryId(
       WHERE slug = ${slug}
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
@@ -144,7 +155,7 @@ async function resolveCountryId(
       WHERE code = ${code}
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
@@ -156,7 +167,7 @@ async function resolveCountryId(
       WHERE name ILIKE ${'%' + name + '%'}
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
@@ -167,13 +178,14 @@ async function resolveCountryId(
 }
 
 async function logCityCandidates(db: ReturnType<typeof createDb>, countryId: string) {
-  const rows = await db.execute(sql`
+  const result = await db.execute(sql`
     SELECT id::text AS id, slug, name
     FROM cities
     WHERE country_id = ${countryId}
     ORDER BY name
     LIMIT 10
   `);
+  const rows = getRows<{ id: string; slug: string | null; name: string | null }>(result);
   // eslint-disable-next-line no-console
   console.error('City candidates (top 10):', rows);
 }
@@ -195,7 +207,7 @@ async function resolveCityId(
       WHERE country_id = ${countryId} AND (id::text = ${idOrSlug} OR slug = ${idOrSlug})
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
@@ -207,7 +219,7 @@ async function resolveCityId(
       WHERE country_id = ${countryId} AND name ILIKE ${'%' + name + '%'}
       LIMIT 1
     `);
-    const found = (rows[0] as { id?: string } | undefined)?.id;
+    const found = getFirstRow<{ id?: string }>(rows)?.id;
     if (found) return found;
   }
 
