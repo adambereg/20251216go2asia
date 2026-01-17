@@ -236,7 +236,7 @@ async function upsertBlocks(
   lang: string,
   sections: TabSection[],
   tabMap: Map<string, string>
-) {
+) : Promise<number> {
   const rows = sections
     .map((s) => {
       const key = tabMap.get(normalizeTitle(s.title));
@@ -255,7 +255,7 @@ async function upsertBlocks(
     })
     .filter(Boolean) as Array<typeof contentBlocks.$inferInsert>;
 
-  if (rows.length === 0) return;
+  if (rows.length === 0) return 0;
 
   await db
     .insert(contentBlocks)
@@ -269,28 +269,51 @@ async function upsertBlocks(
         updatedAt: sql`now()`,
       },
     });
+
+  return rows.length;
 }
 
 async function main() {
   const db = createDb(getDatabaseUrl());
   const repoRoot = join(process.cwd(), '..', '..');
   const baseDir = join(repoRoot, 'content', 'atlas', 'philippines');
+  let totalBlocks = 0;
 
   const countryId = await resolveCountryId(db, { id: 'ph', slug: 'ph', code: 'PH', name: 'Филиппины' });
   const countryMd = readFileSync(join(baseDir, 'Филиппины.md'), 'utf-8');
-  await upsertBlocks(db, 'country', countryId, 'ru', parseSections(countryMd), COUNTRY_TAB_KEYS);
+  totalBlocks += await upsertBlocks(db, 'country', countryId, 'ru', parseSections(countryMd), COUNTRY_TAB_KEYS);
 
   const manilaId = await resolveCityId(db, { countryId, idOrSlug: 'mnl', name: 'Манила' });
   const manilaMd = readFileSync(join(baseDir, 'Philippines-Manila-City.md'), 'utf-8');
-  await upsertBlocks(db, 'city', manilaId, 'ru', parseSections(manilaMd), CITY_TAB_KEYS);
+  totalBlocks += await upsertBlocks(db, 'city', manilaId, 'ru', parseSections(manilaMd), CITY_TAB_KEYS);
 
   const cebuId = await resolveCityId(db, { countryId, idOrSlug: 'ceb', name: 'Себу' });
   const cebuMd = readFileSync(join(baseDir, 'Philippines-Cebu-City.md'), 'utf-8');
-  await upsertBlocks(db, 'city', cebuId, 'ru', parseSections(cebuMd), CITY_TAB_KEYS);
+  totalBlocks += await upsertBlocks(db, 'city', cebuId, 'ru', parseSections(cebuMd), CITY_TAB_KEYS);
 
-  const palawanId = await resolveCityId(db, { countryId, idOrSlug: 'palawan', name: 'Палаван' });
+  const palawanId = await resolveCityId(db, { countryId, idOrSlug: 'pps', name: 'Пуэрто Принсеса' });
   const palawanMd = readFileSync(join(baseDir, 'Philippines-Palawan.md'), 'utf-8');
-  await upsertBlocks(db, 'city', palawanId, 'ru', parseSections(palawanMd), CITY_TAB_KEYS);
+  totalBlocks += await upsertBlocks(db, 'city', palawanId, 'ru', parseSections(palawanMd), CITY_TAB_KEYS);
+
+  const boholId = await resolveCityId(db, { countryId, idOrSlug: 'tag', name: 'Тагбиларан' });
+  const boholMd = readFileSync(join(baseDir, 'Philippines-Bohol.md'), 'utf-8');
+  totalBlocks += await upsertBlocks(db, 'city', boholId, 'ru', parseSections(boholMd), CITY_TAB_KEYS);
+
+  const siargaoId = await resolveCityId(db, { countryId, idOrSlug: 'srg', name: 'Сиаргао' });
+  const siargaoMd = readFileSync(join(baseDir, 'Philippines-Siargao.md'), 'utf-8');
+  totalBlocks += await upsertBlocks(db, 'city', siargaoId, 'ru', parseSections(siargaoMd), CITY_TAB_KEYS);
+
+  const dumagueteMd = readFileSync(join(baseDir, 'Philippines-Dumaguete.md'), 'utf-8');
+  try {
+    const dumagueteId = await resolveCityId(db, { countryId, name: 'Думаг' });
+    totalBlocks += await upsertBlocks(db, 'city', dumagueteId, 'ru', parseSections(dumagueteMd), CITY_TAB_KEYS);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn('Skipping Dumaguete seed: city not found by name', { countryId, name: 'Думаг' });
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`Seed completed: inserted/updated ${totalBlocks} blocks`);
 }
 
 main().catch((error) => {
