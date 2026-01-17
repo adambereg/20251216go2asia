@@ -1,14 +1,6 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
 export default function CityWeatherPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Погода и сезонность</h2>
-      <EmptyStateAtlas
-        title="Климат города"
-        description="Климат, месячная сезонность, лучшие месяцы для поездки, температуры по сезонам."
-      />
-    </div>
-  );
+  return <AtlasTabContent entityType="city" tabKey="weather" title="Погода и сезонность" />;
 }
 

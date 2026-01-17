@@ -5,6 +5,7 @@ import { useGetCityById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
+import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
 export default function CityOverviewPage() {
   const params = useParams();
@@ -91,6 +92,8 @@ export default function CityOverviewPage() {
           Последнее обновление: {resolved.updatedAt ? new Date(resolved.updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
         </div>
       </section>
+
+      <AtlasTabContent entityType="city" tabKey="overview" title="Текст раздела" />
     </div>
   );
 }

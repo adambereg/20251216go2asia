@@ -5,6 +5,7 @@ import { useGetCountryById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
+import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
 export default function CountryOverviewPage() {
   const params = useParams();
@@ -101,6 +102,8 @@ export default function CountryOverviewPage() {
           </div>
         )}
       </section>
+
+      <AtlasTabContent entityType="country" tabKey="overview" title="Текст раздела" />
     </div>
   );
 }

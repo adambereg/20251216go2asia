@@ -1,14 +1,6 @@
-import { EmptyStateAtlas } from '@/modules/atlas';
+import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
 export default function CityNightlifePage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900">Ночная жизнь</h2>
-      <EmptyStateAtlas
-        title="Вечерние развлечения"
-        description="Бары, rooftop-площадки, клубы, вечерние рынки."
-      />
-    </div>
-  );
+  return <AtlasTabContent entityType="city" tabKey="nightlife" title="Ночная жизнь" />;
 }
 
