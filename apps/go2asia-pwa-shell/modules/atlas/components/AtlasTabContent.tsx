@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Skeleton } from '@go2asia/ui';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   type ContentTabDto,
   type CountryTabKey,
@@ -77,7 +79,11 @@ export function AtlasTabContent({ entityType, tabKey, title, emptyMessage }: Atl
         {error ? (
           <div className="px-4 py-4 text-sm text-amber-900">{error}</div>
         ) : body ? (
-          <div className="px-4 py-4 text-sm text-slate-700 whitespace-pre-wrap">{body}</div>
+          <div className="px-4 py-4 prose prose-sm max-w-none prose-slate">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>
+              {body}
+            </ReactMarkdown>
+          </div>
         ) : (
           <div className="px-4 py-4 text-sm text-slate-600">
             {emptyMessage ?? 'Контент в разработке.'}

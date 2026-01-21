@@ -122,5 +122,3 @@ pnpm -C packages/db db:seed
 
 DDL (таблицы/индексы/enum) применяем **чистым SQL** из `packages/db/migrations/*.sql` через Node-only скрипт `db:ddl:apply`.
 Это устраняет нестабильность и ограничения окружений (например, Cloudflare Workers + Neon HTTP driver).
-
-

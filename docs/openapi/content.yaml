@@ -286,6 +286,8 @@ paths:
       summary: List places (public)
       parameters:
         - $ref: "#/components/parameters/CityId"
+        - $ref: "#/components/parameters/CountryId"
+        - $ref: "#/components/parameters/PlaceKind"
         - $ref: "#/components/parameters/Limit"
       responses:
         "200":
@@ -398,6 +400,13 @@ components:
       required: false
       schema:
         type: string
+    PlaceKind:
+      name: kind
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [showplace, business]
     PlaceIdOrSlug:
       name: idOrSlug
       in: path
@@ -758,7 +767,7 @@ components:
 
     ContentPlaceDto:
       type: object
-      required: [id, slug, name, type, photos]
+      required: [id, slug, name, type, kind, photos]
       properties:
         id:
           type: string
@@ -768,6 +777,37 @@ components:
           type: string
         type:
           type: string
+        kind:
+          type: string
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+        website:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        instagram:
+          type: string
+          nullable: true
+        googleMapsUrl:
+          type: string
+          nullable: true
+        priceLevel:
+          type: string
+          nullable: true
+        countryId:
+          type: string
+          nullable: true
+        cityId:
+          type: string
+          nullable: true
         description:
           type: string
           nullable: true

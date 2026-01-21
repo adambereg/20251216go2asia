@@ -22,6 +22,7 @@ import {
   getCityIdByIdOrSlug,
   getCountryIdByIdOrSlug,
   getPlaceByIdOrSlug,
+  getPlaceIdByIdOrSlug,
   listContentBlocks,
   listArticles,
   listCities,
@@ -97,6 +98,16 @@ export interface ContentPlaceDto {
   slug: string;
   name: string;
   type: string;
+  kind: string;
+  category: string | null;
+  tags: string[] | null;
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  googleMapsUrl: string | null;
+  priceLevel: string | null;
+  countryId: string | null;
+  cityId: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -516,12 +527,21 @@ function toContentCity(row: CityRow): ContentCityDto {
 
 function toContentPlace(row: PlaceRow): ContentPlaceDto {
   let photos: string[] = [];
+  let tags: string[] | null = null;
   if (row.images) {
     try {
       const parsed = JSON.parse(row.images);
       if (Array.isArray(parsed)) photos = parsed.filter((x) => typeof x === 'string');
     } catch {
       // ignore
+    }
+  }
+  if (row.tags) {
+    try {
+      const parsed = JSON.parse(row.tags);
+      if (Array.isArray(parsed)) tags = parsed.filter((x) => typeof x === 'string');
+    } catch {
+      tags = null;
     }
   }
   if (photos.length === 0 && row.hero_url) photos = [row.hero_url];
@@ -531,6 +551,16 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
     slug: row.slug,
     name: row.name,
     type: row.type,
+    kind: row.place_kind,
+    category: row.category,
+    tags,
+    website: row.website,
+    phone: row.phone,
+    instagram: row.instagram,
+    googleMapsUrl: row.google_maps_url,
+    priceLevel: row.price_level,
+    countryId: row.country_id,
+    cityId: row.city_id,
     description: row.description_short,
     country: row.country_name,
     city: row.city_name,
@@ -737,9 +767,11 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   const cityId = url.searchParams.get('cityId') ?? undefined;
+  const countryId = url.searchParams.get('countryId') ?? undefined;
+  const kind = url.searchParams.get('kind') ?? undefined;
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
   try {
-    const rows = await listPlaces(sqlClient, cityId, limit);
+    const rows = await listPlaces(sqlClient, { cityId, countryId, kind, limit });
     const items = await Promise.all(rows.map((r) => toContentPlaceWithMedia(env, r)));
     return json({ items } satisfies ListResponse<ContentPlaceDto>, 200);
   } catch (error) {
@@ -801,6 +833,27 @@ async function handleListCityTabs(
   } catch (error) {
     logger.error('List city tabs error', error, { idOrSlug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch city tabs' } }, 500);
+  }
+}
+
+async function handleListPlaceTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const placeId = await getPlaceIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!placeId) return json({ error: { code: 'NotFound', message: 'Place not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'place', placeId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List place tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch place tabs' } }, 500);
   }
 }
 
@@ -1085,6 +1138,13 @@ export default {
     if (cityTabsMatch && request.method === 'GET') {
       const idOrSlug = cityTabsMatch[1];
       const res = await handleListCityTabs(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const placeTabsMatch = path.match(/^\/v1\/content\/places\/([^/]+)\/tabs$/);
+    if (placeTabsMatch && request.method === 'GET') {
+      const idOrSlug = placeTabsMatch[1];
+      const res = await handleListPlaceTabs(env, url, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

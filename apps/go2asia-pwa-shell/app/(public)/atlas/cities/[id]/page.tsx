@@ -5,6 +5,7 @@ import { useGetCityById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
+import { formatNumber } from '@/modules/atlas/utils/number';
 import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
 export default function CityOverviewPage() {
@@ -39,6 +40,9 @@ export default function CityOverviewPage() {
     );
   }
 
+  const latitude = formatNumber(resolved.latitude, 4);
+  const longitude = formatNumber(resolved.longitude, 4);
+
   return (
     <div className="space-y-6">
       {isFallback ? (
@@ -69,22 +73,18 @@ export default function CityOverviewPage() {
             </div>
             <div className="mt-1 font-semibold">{resolved.placesCount || 0}</div>
           </div>
-          {resolved.latitude && resolved.longitude && (
-            <>
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Широта
-                </div>
-                <div className="mt-1 font-semibold">{resolved.latitude.toFixed(4)}</div>
-              </div>
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Долгота
-                </div>
-                <div className="mt-1 font-semibold">{resolved.longitude.toFixed(4)}</div>
-              </div>
-            </>
-          )}
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <div className="text-xs uppercase tracking-wide text-slate-500">
+              Широта
+            </div>
+            <div className="mt-1 font-semibold">{latitude ?? '—'}</div>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <div className="text-xs uppercase tracking-wide text-slate-500">
+              Долгота
+            </div>
+            <div className="mt-1 font-semibold">{longitude ?? '—'}</div>
+          </div>
         </div>
 
         {/* Метаданные */}

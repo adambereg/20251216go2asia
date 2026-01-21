@@ -21,6 +21,8 @@
     "db:seed:content": "tsx src/seed.ts",
     "db:seed:pulse": "tsx src/seed.ts",
     "db:seed:atlas-tabs": "tsx src/seedAtlasTabs.ts",
+    "db:seed:atlas-places-ph": "tsx src/seedAtlasPlacesPhilippines.ts",
+    "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

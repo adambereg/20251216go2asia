@@ -104,6 +104,9 @@ export const places = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
     type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
+    placeKind: text('place_kind').notNull().default('showplace'), // showplace | business
+    category: text('category'),
+    tags: jsonb('tags'),
     descriptionShort: text('description_short'),
     // Legacy geo columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
@@ -113,6 +116,11 @@ export const places = pgTable(
     lat: numeric('lat', { precision: 9, scale: 6 }),
     lng: numeric('lng', { precision: 9, scale: 6 }),
     address: text('address'),
+    website: text('website'),
+    phone: text('phone'),
+    instagram: text('instagram'),
+    googleMapsUrl: text('google_maps_url'),
+    priceLevel: text('price_level'),
     heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
     // Temporary compatibility for UI-first stage: keep optional list of public URLs.
     // In API integration (PR#3+), UI should read via media_files.

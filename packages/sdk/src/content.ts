@@ -56,6 +56,16 @@ export interface ContentPlaceDto {
   slug: string;
   name: string;
   type: string;
+  kind: string;
+  category: string | null;
+  tags: string[] | null;
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  googleMapsUrl: string | null;
+  priceLevel: string | null;
+  countryId: string | null;
+  cityId: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -158,9 +168,16 @@ export async function listCities(params?: { countryId?: string }): Promise<ListR
 /**
  * Atlas: list places (public)
  */
-export async function listPlaces(params?: { cityId?: string; limit?: number }): Promise<ListResponse<ContentPlaceDto>> {
+export async function listPlaces(params?: {
+  cityId?: string;
+  countryId?: string;
+  kind?: 'showplace' | 'business';
+  limit?: number;
+}): Promise<ListResponse<ContentPlaceDto>> {
   const sp = new URLSearchParams();
   if (params?.cityId) sp.set('cityId', params.cityId);
+  if (params?.countryId) sp.set('countryId', params.countryId);
+  if (params?.kind) sp.set('kind', params.kind);
   if (params?.limit) sp.set('limit', String(params.limit));
   const qs = sp.toString() ? `?${sp.toString()}` : '';
   return customInstance<ListResponse<ContentPlaceDto>>({ method: 'GET' }, `/v1/content/places${qs}`);
@@ -199,6 +216,20 @@ export async function listCityTabs(
   if (params?.tabKey) sp.set('tabKey', params.tabKey);
   const qs = sp.toString() ? `?${sp.toString()}` : '';
   return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/cities/${idOrSlug}/tabs${qs}`);
+}
+
+/**
+ * Atlas: list place tabs (public)
+ */
+export async function listPlaceTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: string }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/places/${idOrSlug}/tabs${qs}`);
 }
 
 /**

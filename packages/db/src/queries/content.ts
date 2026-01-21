@@ -72,9 +72,19 @@ export interface PlaceRow {
   slug: string;
   name: string;
   type: string;
+  place_kind: string;
+  category: string | null;
+  tags: string | null; // JSON
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  google_maps_url: string | null;
+  price_level: string | null;
   description_short: string | null;
   country_name: string | null;
   city_name: string | null;
+  country_id: string | null;
+  city_id: string | null;
   address: string | null;
   lat: string | null;
   lng: string | null;
@@ -300,42 +310,34 @@ export async function getCityByIdOrSlug(sql: SqlClient, idOrSlug: string): Promi
 /**
  * List places
  */
-export async function listPlaces(sql: SqlClient, cityId?: string, limit = 100): Promise<PlaceRow[]> {
-  if (cityId) {
-    const rows = await sql`
-      SELECT 
-        p.id,
-        p.slug,
-        p.name,
-        p.type,
-        p.description_short,
-        co.name AS country_name,
-        ci.name AS city_name,
-        p.address,
-        COALESCE(p.lat, p.latitude) AS lat,
-        COALESCE(p.lng, p.longitude) AS lng,
-        m.public_url AS hero_url,
-        p.images::text AS images
-      FROM places p
-      LEFT JOIN countries co ON p.country_id = co.id
-      LEFT JOIN cities ci ON p.city_id = ci.id
-      LEFT JOIN media_files m ON p.hero_media_id = m.id
-      WHERE p.city_id = ${cityId}
-      ORDER BY p.name
-      LIMIT ${limit}
-    `;
-    return rows as PlaceRow[];
-  }
-  
+export async function listPlaces(
+  sql: SqlClient,
+  params?: { cityId?: string; countryId?: string; kind?: string; limit?: number }
+): Promise<PlaceRow[]> {
+  const cityId = params?.cityId ?? null;
+  const countryId = params?.countryId ?? null;
+  const kind = params?.kind ?? null;
+  const limit = Math.min(500, Math.max(1, params?.limit ?? 100));
+
   const rows = await sql`
     SELECT 
       p.id,
       p.slug,
       p.name,
       p.type,
+      p.place_kind,
+      p.category,
+      p.tags::text AS tags,
+      p.website,
+      p.phone,
+      p.instagram,
+      p.google_maps_url,
+      p.price_level,
       p.description_short,
       co.name AS country_name,
       ci.name AS city_name,
+      p.country_id,
+      p.city_id,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -345,6 +347,9 @@ export async function listPlaces(sql: SqlClient, cityId?: string, limit = 100): 
     LEFT JOIN countries co ON p.country_id = co.id
     LEFT JOIN cities ci ON p.city_id = ci.id
     LEFT JOIN media_files m ON p.hero_media_id = m.id
+    WHERE (${cityId}::text IS NULL OR p.city_id = ${cityId})
+      AND (${countryId}::text IS NULL OR p.country_id = ${countryId})
+      AND (${kind}::text IS NULL OR p.place_kind = ${kind})
     ORDER BY p.name
     LIMIT ${limit}
   `;
@@ -361,9 +366,19 @@ export async function getPlaceByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       p.slug,
       p.name,
       p.type,
+      p.place_kind,
+      p.category,
+      p.tags::text AS tags,
+      p.website,
+      p.phone,
+      p.instagram,
+      p.google_maps_url,
+      p.price_level,
       p.description_short,
       co.name AS country_name,
       ci.name AS city_name,
+      p.country_id,
+      p.city_id,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -446,6 +461,16 @@ export async function getCityIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Pro
   const rows = await sql`
     SELECT id::text AS id
     FROM cities
+    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function getPlaceIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT id::text AS id
+    FROM places
     WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
     LIMIT 1
   `;
