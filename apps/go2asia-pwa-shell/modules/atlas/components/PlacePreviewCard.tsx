@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Chip } from '@go2asia/ui';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -21,13 +22,19 @@ export interface PlacePreviewData {
 export function PlacePreviewCard({ data }: { data: PlacePreviewData }) {
   const gradient = data.kind === 'showplace' ? 'from-emerald-500 to-sky-500' : 'from-amber-500 to-orange-500';
   const image = data.heroImage;
+  const [imageError, setImageError] = React.useState(false);
 
   return (
     <Link href={`/atlas/places/${data.slug}`}>
       <Card hover className="h-full overflow-hidden p-0 !border-0">
-        {image ? (
+        {image && !imageError ? (
           <div className="relative w-full h-44 overflow-hidden">
-            <img src={image} alt={data.name} className="w-full h-full object-cover" />
+            <img
+              src={image}
+              alt={data.name}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-3 left-4 right-4">
               <h3 className="text-lg font-semibold text-white">{data.name}</h3>

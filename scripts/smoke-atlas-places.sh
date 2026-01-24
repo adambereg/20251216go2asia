@@ -92,6 +92,28 @@ async function main() {
     }
   }
 
+  // 4. Check specific PH places (canonical)
+  const canonicalSlugs = ['boracay-puka-shell-beach', 'pps-tubbataha-reef'];
+  console.log('\n4. Place tabs (canonical slugs):');
+  for (const slug of canonicalSlugs) {
+    const canonicalRes = await checkEndpoint(
+      `${base}/v1/content/places/${slug}/tabs?lang=ru&tabKey=overview`,
+      `Place tabs (${slug})`
+    );
+    if (!canonicalRes.ok) {
+      console.error(`  [FAIL] ${slug}: ${canonicalRes.error}`);
+      process.exit(1);
+    }
+    const items = canonicalRes.data?.items ?? [];
+    const overview = items.find((t) => t.tabKey === 'overview');
+    const mdLen = overview?.bodyMarkdown?.length ?? 0;
+    if (mdLen === 0) {
+      console.error(`  [FAIL] ${slug}: overview markdown empty`);
+      process.exit(1);
+    }
+    console.log(`  [OK] ${slug}: overview markdown ${mdLen} chars`);
+  }
+
   console.log('\n✅ All smoke tests passed');
 }
 

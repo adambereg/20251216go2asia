@@ -9,6 +9,7 @@ import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
 import { getDataSource } from '@/mocks/dto';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
+import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
 
 export function PlacesClient() {
   const dataSource = getDataSource();
@@ -35,7 +36,7 @@ export function PlacesClient() {
       slug: place.slug,
       name: place.name,
       description: place.description || null,
-      heroImage: place.heroImage || (place.photos?.[0] ?? null),
+      heroImage: getPlaceHeroImage(place.id, place.heroImage || place.photos?.[0]),
       cityName: place.city ?? null,
       kind: place.kind as 'showplace' | 'business',
       category: place.category ?? null,

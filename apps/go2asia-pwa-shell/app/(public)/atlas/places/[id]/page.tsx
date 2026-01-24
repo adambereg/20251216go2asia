@@ -5,6 +5,7 @@ import { useGetPlaceById, useGetPlaceTabs } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { formatNumber } from '@/modules/atlas/utils/number';
 import { PlaceLandingLayoutBusiness, PlaceLandingLayoutShowplace } from '@/modules/atlas/components/PlaceLandingLayouts';
+import { getPlaceHeroImage, getPlacePhotos } from '@/modules/atlas/utils/placeMedia';
 
 export default function PlaceOverviewPage() {
   const params = useParams();
@@ -34,14 +35,21 @@ export default function PlaceOverviewPage() {
   const overviewTab = tabsData?.items?.find((t) => t.tabKey === 'overview');
   const overviewMarkdown = overviewTab?.bodyMarkdown ?? null;
 
+  // Generate R2 photo URLs for place gallery
+  const r2Photos = getPlacePhotos(placeData.id);
+  // Merge API photos (if any) with R2 photos, prioritizing API
+  const allPhotos = placeData.photos && placeData.photos.length > 0 
+    ? [...placeData.photos, ...r2Photos.filter(p => !placeData.photos?.includes(p))]
+    : r2Photos;
+
   const detailData = {
     id: placeData.id,
     slug: placeData.slug,
     name: placeData.name,
     kind: (placeData.kind as 'showplace' | 'business') ?? 'showplace',
     description: placeData.description ?? null, // Short teaser only
-    heroImage: placeData.heroImage ?? placeData.photos?.[0] ?? null,
-    photos: placeData.photos ?? [],
+    heroImage: getPlaceHeroImage(placeData.id, placeData.heroImage ?? placeData.photos?.[0]),
+    photos: allPhotos,
     cityName: placeData.city ?? null,
     countryName: placeData.country ?? null,
     category: placeData.category ?? null,

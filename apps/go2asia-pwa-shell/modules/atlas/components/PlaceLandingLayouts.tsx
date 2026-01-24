@@ -30,35 +30,44 @@ export interface PlaceLandingData {
 
 const EMPTY_TEXT = 'Данные уточняются редакцией.';
 
-// Parse markdown sections (## Title) into structured sections
-function parseMarkdownSections(markdown: string | null): Map<string, string> {
+function normalizeHeaderTitle(title: string): string {
+  return title
+    .replace(/^[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Emoji}\s]+/gu, '')
+    .replace(/[:：]+$/g, '')
+    .trim();
+}
+
+// Parse markdown sections (## Title) into structured sections by key
+function parseMarkdownSections(markdown: string | null, kind: PlaceKind): Map<string, string> {
   const sections = new Map<string, string>();
   if (!markdown) return sections;
 
   const lines = markdown.split(/\r?\n/);
-  let currentSection: string | null = null;
+  let currentSectionKey: string | null = null;
   let currentContent: string[] = [];
+
+  const flush = () => {
+    if (currentSectionKey && currentContent.length > 0) {
+      sections.set(currentSectionKey, currentContent.join('\n').trim());
+    }
+  };
 
   for (const line of lines) {
     const headerMatch = line.match(/^##\s+(.+)$/);
     if (headerMatch) {
-      // Save previous section
-      if (currentSection && currentContent.length > 0) {
-        sections.set(currentSection, currentContent.join('\n').trim());
-      }
-      // Start new section
-      currentSection = headerMatch[1]?.trim() ?? null;
+      flush();
+      const rawTitle = headerMatch[1]?.trim() ?? '';
+      const cleanedTitle = normalizeHeaderTitle(rawTitle);
+      currentSectionKey = getSectionKey(cleanedTitle, kind);
       currentContent = [];
-    } else if (currentSection) {
+      continue;
+    }
+    if (currentSectionKey) {
       currentContent.push(line);
     }
   }
 
-  // Save last section
-  if (currentSection && currentContent.length > 0) {
-    sections.set(currentSection, currentContent.join('\n').trim());
-  }
-
+  flush();
   return sections;
 }
 
@@ -122,7 +131,7 @@ function Hero({
 }
 
 function PhotoStrip({ data }: { data: PlaceLandingData }) {
-  // No pexels fallback - use only API data or show placeholder
+  // No pexels fallback - use only API data or R2 URLs
   const images = data.photos.slice(0, 5);
   if (images.length === 0) {
     return (
@@ -137,9 +146,17 @@ function PhotoStrip({ data }: { data: PlaceLandingData }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 snap-x snap-mandatory">
         {images.map((src, idx) => (
-          <div key={idx} className="flex-shrink-0 w-[271px] snap-start">
+          <div key={`${src}-${idx}`} className="flex-shrink-0 w-[271px] snap-start">
             <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100">
-              <img src={src} alt={`${data.name} - фото ${idx + 1}`} className="w-full h-full object-cover" />
+              <img
+                src={src}
+                alt={`${data.name} - фото ${idx + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide broken images
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
             </div>
           </div>
         ))}
@@ -226,7 +243,7 @@ function SectionCard({
   title: string;
   tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple';
   markdown: string | null;
-  fallback: string;
+  fallback: string | null;
 }) {
   const toneMap: Record<typeof tone, string> = {
     red: 'bg-rose-50 border-rose-200',
@@ -241,16 +258,27 @@ function SectionCard({
       <div className="text-sm text-slate-700">
         {markdown ? (
           <MarkdownRenderer markdown={markdown} className="prose prose-sm max-w-none prose-slate" />
-        ) : (
+        ) : fallback ? (
           <div className="text-slate-500 italic">{fallback}</div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 }
 
 export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData }) {
-  const sections = parseMarkdownSections(data.overviewMarkdown);
+  const hasOverview = Boolean(data.overviewMarkdown?.trim());
+  const sections = parseMarkdownSections(data.overviewMarkdown, data.kind);
+  const sectionDefs: Array<{ key: string; title: string; tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple' }> = [
+    { key: 'whyVisit', title: 'Почему стоит зайти?', tone: 'amber' },
+    { key: 'mustTry', title: 'Что попробовать обязательно', tone: 'sky' },
+    { key: 'prices', title: 'Цены', tone: 'emerald' },
+    { key: 'howToGet', title: 'Как добраться', tone: 'amber' },
+    { key: 'service', title: 'Коммуникация & сервис', tone: 'sky' },
+    { key: 'nuances', title: 'Полезные нюансы', tone: 'amber' },
+    { key: 'localValue', title: 'Локальная ценность', tone: 'emerald' },
+    { key: 'photoTips', title: 'Что стоит сфотографировать', tone: 'sky' },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[864px] space-y-4">
@@ -265,21 +293,41 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
       <PhotoStrip data={data} />
       <TagRow tags={data.tags} />
       <MetaRow data={data} />
-      {/* Business sections - order matters */}
-      <SectionCard title="Почему стоит зайти?" tone="amber" markdown={sections.get('Почему стоит зайти?') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Что попробовать обязательно" tone="sky" markdown={sections.get('Что попробовать обязательно') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Цены" tone="emerald" markdown={sections.get('Цены') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Как добраться" tone="amber" markdown={sections.get('Как добраться') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Коммуникация & сервис" tone="sky" markdown={sections.get('Коммуникация & сервис') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Полезные нюансы" tone="amber" markdown={sections.get('Полезные нюансы') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Локальная ценность" tone="emerald" markdown={sections.get('Локальная ценность') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Что стоит сфотографировать" tone="sky" markdown={sections.get('Что стоит сфотографировать') ?? null} fallback={EMPTY_TEXT} />
+      {sections.size === 0 && hasOverview ? (
+        <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
+      ) : (
+        sectionDefs.map((section) => {
+          const content = sections.get(section.key) ?? null;
+          if (hasOverview && !content) return null;
+          return (
+            <SectionCard
+              key={section.key}
+              title={section.title}
+              tone={section.tone}
+              markdown={content}
+              fallback={hasOverview ? null : EMPTY_TEXT}
+            />
+          );
+        })
+      )}
     </div>
   );
 }
 
 export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }) {
-  const sections = parseMarkdownSections(data.overviewMarkdown);
+  const hasOverview = Boolean(data.overviewMarkdown?.trim());
+  const sections = parseMarkdownSections(data.overviewMarkdown, data.kind);
+  const sectionDefs: Array<{ key: string; title: string; tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple' }> = [
+    { key: 'whyImportant', title: 'Почему это важно?', tone: 'red' },
+    { key: 'structure', title: 'Структура комплекса', tone: 'amber' },
+    { key: 'tickets', title: 'Билеты и посещение', tone: 'sky' },
+    { key: 'timeAllocation', title: 'Сколько времени заложить?', tone: 'emerald' },
+    { key: 'photoSpots', title: 'Лучшие точки для фото', tone: 'amber' },
+    { key: 'practicalTips', title: 'Практические советы', tone: 'sky' },
+    { key: 'history', title: 'Историческая справка', tone: 'red' },
+    { key: 'nearby', title: 'Что посмотреть рядом', tone: 'emerald' },
+    { key: 'interestingFact', title: 'Интересный факт', tone: 'amber' },
+  ];
   const unescoTag = data.tags.includes('unesco') || data.tags.includes('UNESCO');
 
   return (
@@ -295,16 +343,23 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
       <PhotoStrip data={data} />
       <TagRow tags={data.tags} />
       <MetaRow data={data} />
-      {/* Showplace sections - order matters */}
-      <SectionCard title="Почему это важно?" tone="red" markdown={sections.get('Почему это важно?') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Структура комплекса" tone="amber" markdown={sections.get('Структура комплекса') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Билеты и посещение" tone="sky" markdown={sections.get('Билеты и посещение') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Сколько времени заложить?" tone="emerald" markdown={sections.get('Сколько времени заложить?') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Лучшие точки для фото" tone="amber" markdown={sections.get('Лучшие точки для фото') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Практические советы" tone="sky" markdown={sections.get('Практические советы') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Историческая справка" tone="red" markdown={sections.get('Историческая справка') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Что посмотреть рядом" tone="emerald" markdown={sections.get('Что посмотреть рядом') ?? null} fallback={EMPTY_TEXT} />
-      <SectionCard title="Интересный факт" tone="amber" markdown={sections.get('Интересный факт') ?? null} fallback={EMPTY_TEXT} />
+      {sections.size === 0 && hasOverview ? (
+        <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
+      ) : (
+        sectionDefs.map((section) => {
+          const content = sections.get(section.key) ?? null;
+          if (hasOverview && !content) return null;
+          return (
+            <SectionCard
+              key={section.key}
+              title={section.title}
+              tone={section.tone}
+              markdown={content}
+              fallback={hasOverview ? null : EMPTY_TEXT}
+            />
+          );
+        })
+      )}
     </div>
   );
 }
