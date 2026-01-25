@@ -42,6 +42,11 @@ export default function PlaceOverviewPage() {
     ? [...placeData.photos, ...r2Photos.filter(p => !placeData.photos?.includes(p))]
     : r2Photos;
 
+  // API maps lat/lng → latitude/longitude in DTO for backward compatibility
+  // Use latitude/longitude (which come from DB lat/lng) and also expose as lat/lng for future migration
+  const formattedLat = placeData.latitude ? formatNumber(placeData.latitude, 4) : null;
+  const formattedLng = placeData.longitude ? formatNumber(placeData.longitude, 4) : null;
+
   const detailData = {
     id: placeData.id,
     slug: placeData.slug,
@@ -60,8 +65,10 @@ export default function PlaceOverviewPage() {
     website: placeData.website ?? null,
     phone: placeData.phone ?? null,
     googleMapsUrl: placeData.googleMapsUrl ?? null,
-    latitude: formatNumber(placeData.latitude, 4),
-    longitude: formatNumber(placeData.longitude, 4),
+    lat: formattedLat, // Preferred: from DB lat (via API latitude field)
+    lng: formattedLng, // Preferred: from DB lng (via API longitude field)
+    latitude: formattedLat, // Legacy: kept for backward compatibility
+    longitude: formattedLng, // Legacy: kept for backward compatibility
     overviewMarkdown, // ONLY source for content sections
   };
 

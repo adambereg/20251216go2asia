@@ -23,7 +23,9 @@ export interface PlaceLandingData {
   website: string | null;
   phone: string | null;
   googleMapsUrl: string | null;
-  latitude: string | null;
+  lat: string | null; // Preferred: lat/lng from DB
+  lng: string | null;
+  latitude: string | null; // Legacy: deprecated, kept for backward compatibility
   longitude: string | null;
   overviewMarkdown: string | null; // Markdown from content_blocks (place tabs) - ONLY source
 }
@@ -72,26 +74,37 @@ function parseMarkdownSections(markdown: string | null, kind: PlaceKind): Map<st
 }
 
 // Map section titles to section keys for business/showplace
+// Supports synonyms from content templates (Philippines-places.md format)
 function getSectionKey(title: string, kind: PlaceKind): string | null {
   const lower = title.toLowerCase();
   if (kind === 'business') {
     if (lower.includes('почему') || lower.includes('зайти')) return 'whyVisit';
-    if (lower.includes('попробовать') || lower.includes('что попробовать')) return 'mustTry';
-    if (lower.includes('цена') || lower.includes('цены')) return 'prices';
+    if (lower.includes('попробовать') || lower.includes('что попробовать') || lower.includes('что заказать')) return 'mustTry';
+    if (lower.includes('цена') || lower.includes('цены') || lower.includes('стоимость')) return 'prices';
     if (lower.includes('добраться') || lower.includes('как добраться')) return 'howToGet';
-    if (lower.includes('сервис') || lower.includes('коммуникация')) return 'service';
-    if (lower.includes('нюанс') || lower.includes('совет')) return 'nuances';
-    if (lower.includes('ценность') || lower.includes('локальн')) return 'localValue';
+    if (lower.includes('сервис') || lower.includes('коммуникация') || lower.includes('язык') || lower.includes('wi-fi')) return 'service';
+    if (lower.includes('нюанс') || lower.includes('совет') || lower.includes('важно')) return 'nuances';
+    if (lower.includes('ценность') || lower.includes('локальн') || lower.includes('контекст')) return 'localValue';
     if (lower.includes('фото') || lower.includes('сфотографировать')) return 'photoTips';
   } else {
-    if (lower.includes('почему') || lower.includes('важно')) return 'whyImportant';
-    if (lower.includes('структура') || lower.includes('комплекс')) return 'structure';
+    // Showplace sections with expanded synonyms
+    if (lower.includes('почему') || lower.includes('важно') || lower.includes('почему это важно')) return 'whyImportant';
+    // Structure: supports "Что увидеть", "Что внутри", "Что посмотреть", "Структура комплекса"
+    if (lower.includes('структура') || lower.includes('комплекс') || 
+        lower.includes('что увидеть') || lower.includes('что внутри') || 
+        lower.includes('что посмотреть')) return 'structure';
     if (lower.includes('билет') || lower.includes('посещение')) return 'tickets';
-    if (lower.includes('время') || lower.includes('заложить')) return 'timeAllocation';
-    if (lower.includes('фото') || lower.includes('точки')) return 'photoSpots';
-    if (lower.includes('совет') || lower.includes('практическ')) return 'practicalTips';
+    // Time allocation: supports "Когда лучше посетить", "Сколько времени заложить"
+    if (lower.includes('время') || lower.includes('заложить') || 
+        lower.includes('когда лучше') || lower.includes('сколько времени')) return 'timeAllocation';
+    // Photo spots: supports "Лучшие точки для фото", "Что сфотографировать"
+    if (lower.includes('фото') || lower.includes('точки') || 
+        lower.includes('сфотографировать') || lower.includes('точки для фото')) return 'photoSpots';
+    // Practical tips: supports "Активности", "Практические советы"
+    if (lower.includes('совет') || lower.includes('практическ') || 
+        lower.includes('активности')) return 'practicalTips';
     if (lower.includes('истори') || lower.includes('справка')) return 'history';
-    if (lower.includes('рядом') || lower.includes('посмотреть')) return 'nearby';
+    if (lower.includes('рядом') || lower.includes('посмотреть рядом')) return 'nearby';
     if (lower.includes('факт') || lower.includes('интересный')) return 'interestingFact';
   }
   return null;
@@ -179,7 +192,12 @@ function TagRow({ tags }: { tags: string[] }) {
 }
 
 function MetaRow({ data }: { data: PlaceLandingData }) {
-  const coords = data.latitude && data.longitude ? `${data.latitude}, ${data.longitude}` : '—';
+  // Prefer lat/lng (new), fallback to latitude/longitude (legacy) for backward compatibility
+  const coords = (data.lat && data.lng) 
+    ? `${data.lat}, ${data.lng}` 
+    : (data.latitude && data.longitude 
+      ? `${data.latitude}, ${data.longitude}` 
+      : '—');
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600">
       <div className="space-y-2">
@@ -332,6 +350,8 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
 
   return (
     <div className="mx-auto w-full max-w-[864px] space-y-4">
+      {/* Note: Gradient differs from PlacePreviewCard (emerald-sky) - this is intentional:
+          PreviewCard uses emerald-sky for compact view, LandingLayout uses rose-amber for detailed view */}
       <Hero
         data={data}
         gradient="bg-gradient-to-r from-rose-600 to-amber-500"
