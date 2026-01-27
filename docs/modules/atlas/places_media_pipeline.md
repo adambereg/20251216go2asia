@@ -276,6 +276,44 @@ export function getPlacePhotoUrl(placeId: string, photoNumber: number): string {
 
 ---
 
+## Примеры для Vietnam (VN)
+
+**Стандарт R2 для VN мест (идентичен PH/KH):**
+
+```
+go2asia-media/
+  place/
+    hue-imperial-city-hue/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    dad-my-khe-beach/
+      01.jpg
+      02.jpg
+      03.jpg
+    sgn-banh-mi-huynh-hoa/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/hue-imperial-city-hue/01.jpg` (hero)
+- `https://media.go2asia.space/place/hue-imperial-city-hue/02.jpg` (gallery)
+- `https://media.go2asia.space/place/hue-imperial-city-hue/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `hue-imperial-city-hue`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
 **Дата создания:** 2026-01-21  
-**Дата обновления:** 2026-01-23 (стандарт зафиксирован)  
+**Дата обновления:** 2026-01-26 (добавлены примеры VN)  
 **Версия:** Atlas Content Canon v1

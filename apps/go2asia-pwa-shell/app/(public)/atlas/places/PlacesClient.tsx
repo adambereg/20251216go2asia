@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Chip, Skeleton, SkeletonCard } from '@go2asia/ui';
+import { useMemo, useState, useCallback } from 'react';
+import { Chip, Skeleton, SkeletonCard, Button } from '@go2asia/ui';
 import { ModuleHero } from '@/components/modules';
-import { Globe } from 'lucide-react';
+import { Globe, Loader2 } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
@@ -11,21 +11,39 @@ import { getDataSource } from '@/mocks/dto';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
 
+const INITIAL_LIMIT = 50;
+const LOAD_MORE_STEP = 50;
+const MAX_LIMIT = 500; // API max limit
+
 export function PlacesClient() {
   const dataSource = getDataSource();
   const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
   const [kind, setKind] = useState<'showplace' | 'business'>('showplace');
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT);
   
-  // Загружаем места из API
+  // Загружаем места из API с текущим лимитом
   const { 
     data: placesData, 
-    isLoading
+    isLoading,
+    isFetching
   } = useGetPlaces({
-    countryId: dataSource === 'api' ? 'ph' : undefined,
+    // Do not hardcode country: list all places (PH + KH + VN + ...)
+    countryId: undefined,
     kind: dataSource === 'api' ? kind : undefined,
-    limit: 50,
+    limit: displayLimit,
     enabled: dataSource === 'api',
   });
+
+  // Сброс лимита при смене kind
+  const handleKindChange = useCallback((newKind: 'showplace' | 'business') => {
+    setKind(newKind);
+    setDisplayLimit(INITIAL_LIMIT);
+  }, []);
+
+  // Загрузить ещё
+  const handleLoadMore = useCallback(() => {
+    setDisplayLimit((prev) => Math.min(prev + LOAD_MORE_STEP, MAX_LIMIT));
+  }, []);
 
   // Преобразуем данные из API
   const places = useMemo<PlacePreviewData[]>(() => {
@@ -43,6 +61,15 @@ export function PlacesClient() {
       tags: place.tags ?? [],
     }));
   }, [placesData, dataSource]);
+
+  // Проверяем, есть ли ещё места для загрузки
+  // Если API вернул меньше записей, чем запрошено, значит больше нет
+  const itemsCount = placesData?.items?.length ?? 0;
+  const hasMore = itemsCount >= displayLimit && displayLimit < MAX_LIMIT;
+  const isLoadingMore = isFetching && !isLoading && places.length > 0;
+  
+  // Показываем сообщение, если загружены все доступные места
+  const showAllLoadedMessage = !hasMore && itemsCount > 0 && itemsCount < displayLimit;
 
   // Показываем состояние загрузки
   if (dataSource === 'api' && isLoading && !placesData) {
@@ -95,13 +122,13 @@ export function PlacesClient() {
         <div className="flex flex-wrap gap-2 mb-6">
           <Chip
             className={kind === 'showplace' ? 'bg-sky-100 text-sky-700' : ''}
-            onClick={() => setKind('showplace')}
+            onClick={() => handleKindChange('showplace')}
           >
             Достопримечательности
           </Chip>
           <Chip
             className={kind === 'business' ? 'bg-amber-100 text-amber-700' : ''}
-            onClick={() => setKind('business')}
+            onClick={() => handleKindChange('business')}
           >
             Заведения
           </Chip>
@@ -110,18 +137,55 @@ export function PlacesClient() {
 
       {/* Places Content */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h2 className="text-h2 md:text-3xl font-bold text-slate-900 mb-6">
-          {kind === 'showplace' ? 'Достопримечательности' : 'Заведения'}
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-h2 md:text-3xl font-bold text-slate-900">
+            {kind === 'showplace' ? 'Достопримечательности' : 'Заведения'}
+          </h2>
+          {places.length > 0 && (
+            <span className="text-sm text-slate-600">
+              Показано: {places.length}
+            </span>
+          )}
+        </div>
         {places.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {places.map((place) => (
-            <PlacePreviewCard key={place.id} data={place} />
-          ))}
+              {places.map((place) => (
+                <PlacePreviewCard key={place.id} data={place} />
+              ))}
             </div>
             
-            {/* Cursor pagination not supported in current ListResponse контракте */}
+            {/* Load More button */}
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  variant="outline"
+                  className="min-w-[200px]"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Загрузка...
+                    </>
+                  ) : (
+                    'Загрузить ещё'
+                  )}
+                </Button>
+              </div>
+            )}
+            
+            {showAllLoadedMessage && (
+              <div className="text-center mt-6 text-sm text-slate-500">
+                Показаны все доступные места ({itemsCount})
+              </div>
+            )}
+            {!hasMore && displayLimit >= MAX_LIMIT && itemsCount >= MAX_LIMIT && (
+              <div className="text-center mt-6 text-sm text-slate-500">
+                Показаны все доступные места (максимум {MAX_LIMIT})
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-12">

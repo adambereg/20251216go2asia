@@ -250,11 +250,15 @@ function pickMediaBucket(env: Env, scope: MediaScope): R2Bucket | null {
   return env.MEDIA_BUCKET ?? null;
 }
 
+function getMediaBaseUrl(env: Env): string {
+  const base = (env.MEDIA_PUBLIC_BASE_URL ?? 'https://media.go2asia.space').trim();
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
 function getPublicUrl(env: Env, key: string): string | null {
-  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  const base = getMediaBaseUrl(env);
   if (!base) return null;
-  const trimmed = base.endsWith('/') ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
+  return `${base}/${key}`;
 }
 
 type AtlasMediaKind = 'country' | 'city' | 'place';
@@ -264,11 +268,14 @@ const atlasMediaCache = new Map<string, CachedMedia>();
 
 async function listR2UrlsByPrefix(env: Env, prefix: string, limit: number): Promise<{ keys: string[]; urls: string[] }> {
   const bucket = env.MEDIA_BUCKET;
-  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  const base = getMediaBaseUrl(env);
   if (!bucket || !base) return { keys: [], urls: [] };
 
   const res = await bucket.list({ prefix, limit });
-  const keys = (res.objects ?? []).map((o) => o.key).filter((k) => typeof k === 'string' && k.length > 0);
+  const keys = (res.objects ?? [])
+    .map((o) => o.key)
+    .filter((k) => typeof k === 'string' && k.length > 0)
+    .sort();
   const urls = keys.map((k) => getPublicUrl(env, k)).filter((u): u is string => typeof u === 'string' && u.length > 0);
   return { keys, urls };
 }
@@ -277,7 +284,7 @@ async function resolveAtlasMedia(env: Env, kind: AtlasMediaKind, opts: { code?: 
   keys: string[];
   urls: string[];
 }> {
-  const base = (env.MEDIA_PUBLIC_BASE_URL ?? '').trim();
+  const base = getMediaBaseUrl(env);
   if (!base) return { keys: [], urls: [] };
 
   const cacheKey = `${kind}:${opts.code ?? ''}:${opts.slug}:${opts.max}`;
@@ -584,12 +591,65 @@ async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCi
   return { ...toContentCity(row), heroImage: resolved.urls[0] ?? null };
 }
 
+function pickPlaceHeroAndPhotos(keys: string[], urls: string[]): { heroImage: string | null; photos: string[] } {
+  // R2 structure (current contract):
+  // place/{place_id}/hero.jpg OR place/{place_id}/01.jpg ... 05.jpg
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) {
+      keyToUrl.set(k, u);
+    }
+  }
+
+  // Prefer hero.jpg if present
+  const heroKey = keys.find((k) => /\/hero\.jpg$/i.test(k)) ?? null;
+  const heroImage = heroKey ? keyToUrl.get(heroKey) ?? null : null;
+
+  // Photos: 01..05 in order (only those that exist)
+  const photos: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const num = String(i).padStart(2, '0');
+    const k = keys.find((x) => new RegExp(`/${num}\\.jpg$`, 'i').test(x));
+    if (k) {
+      const u = keyToUrl.get(k);
+      if (u) photos.push(u);
+    }
+  }
+
+  // If none found by 01..05, fall back to all jpg urls (sorted by key)
+  if (photos.length === 0) {
+    for (const k of keys) {
+      if (/\.jpg$/i.test(k)) {
+        const u = keyToUrl.get(k);
+        if (u) photos.push(u);
+      }
+    }
+  }
+
+  // If no explicit hero.jpg, hero falls back to 01.jpg (or first photo)
+  const heroFallback = photos[0] ?? null;
+  return { heroImage: heroImage ?? heroFallback, photos };
+}
+
 async function toContentPlaceWithMedia(env: Env, row: PlaceRow): Promise<ContentPlaceDto> {
   const base = toContentPlace(row);
-  if (base.photos.length > 0) return base;
-  const resolved = await resolveAtlasMedia(env, 'place', { slug: row.slug, max: 5 });
-  const photos = resolved.urls.length > 0 ? resolved.urls : base.photos;
-  const heroImage = photos[0] ?? base.heroImage ?? null;
+  // If DB has explicit gallery urls (images json), trust DB (no R2 listing).
+  // If DB only has hero_url (and no images), we still want R2 gallery photos.
+  if (row.images) return base;
+
+  // R2 fallback for places (works for all countries: PH, KH, VN, ...):
+  // prefix: place/{place_id}/ where place_id == places.id
+  // Example: place/hue-imperial-city-hue/01.jpg (VN), place/rep-angkor-wat/01.jpg (KH)
+  const resolved = await resolveAtlasMedia(env, 'place', { slug: row.id, max: 50 });
+  const picked = pickPlaceHeroAndPhotos(resolved.keys, resolved.urls);
+
+  // heroImage: DB wins if present; else R2 (hero.jpg > 01.jpg)
+  const heroImage = base.heroImage ?? picked.heroImage ?? null;
+  // photos: if DB didn't provide images, use R2 (01..05)
+  const photos = picked.photos.length > 0 ? picked.photos : base.photos;
+
   return { ...base, heroImage, photos };
 }
 
