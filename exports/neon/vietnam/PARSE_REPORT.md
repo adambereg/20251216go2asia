@@ -1,6 +1,6 @@
 # VN Export Report
 
-**Generated:** 2026-01-26T12:55:49.747Z
+**Generated:** 2026-01-31T13:57:13.206Z
 **Cities in file:** 8
 **Places parsed:** 159
 

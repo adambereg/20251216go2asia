@@ -42,12 +42,18 @@ function safeDbInfoFromUrl(databaseUrl: string): { host: string; db: string } {
  * CRITICAL: Never delete country_id='ph' (Philippines anchor country).
  */
 const DEMO_PATTERNS = [
-  // Bangkok demo places (TH only)
+  // Thailand demo places (safe sweep): remove "* Place *" only within TH.
+  // Covers Bangkok/Chiang Mai/Phuket demo places generated from UI mocks.
+  // NOTE: Intentionally scoped to country_id='th' to avoid accidental deletions in other countries.
+  { pattern: "% Place %", country: 'th', excludeCountry: 'ph' },
+  // Bangkok demo places (TH only) - kept for explicitness / historical patterns
   { pattern: "Bangkok Place%", country: 'th', excludeCountry: 'ph' },
   { pattern: "Bangkok Test%", country: 'th', excludeCountry: 'ph' },
-  // Chiang Mai demo places (TH only)
+  // Chiang Mai demo places (TH only) - kept for explicitness / historical patterns
   { pattern: "Chiang Mai Place%", country: 'th', excludeCountry: 'ph' },
   { pattern: "Chiang Mai Test%", country: 'th', excludeCountry: 'ph' },
+  // Phuket demo places (TH only) - explicit
+  { pattern: "Phuket Place%", country: 'th', excludeCountry: 'ph' },
   // Generic test patterns (exclude PH)
   { pattern: "Test Place%", country: null, excludeCountry: 'ph' },
   { pattern: "Demo Place%", country: null, excludeCountry: 'ph' },
@@ -72,7 +78,7 @@ async function main() {
       SELECT p.id, p.slug, p.name, p.country_id, c.name AS country_name
       FROM places p
       LEFT JOIN countries c ON p.country_id = c.id
-      WHERE p.name LIKE ${pattern}
+      WHERE p.name ILIKE ${pattern}
     `;
 
     // Add country filter if specified
@@ -81,7 +87,7 @@ async function main() {
         SELECT p.id, p.slug, p.name, p.country_id, c.name AS country_name
         FROM places p
         JOIN countries c ON p.country_id = c.id
-        WHERE p.name LIKE ${pattern}
+        WHERE p.name ILIKE ${pattern}
           AND (c.id = ${country} OR c.slug = ${country})
       `;
     }
@@ -92,7 +98,7 @@ async function main() {
         SELECT p.id, p.slug, p.name, p.country_id, c.name AS country_name
         FROM places p
         LEFT JOIN countries c ON p.country_id = c.id
-        WHERE p.name LIKE ${pattern}
+        WHERE p.name ILIKE ${pattern}
           AND (p.country_id != ${excludeCountry} AND (c.id IS NULL OR c.id != ${excludeCountry}))
       `;
       
@@ -101,7 +107,7 @@ async function main() {
           SELECT p.id, p.slug, p.name, p.country_id, c.name AS country_name
           FROM places p
           JOIN countries c ON p.country_id = c.id
-          WHERE p.name LIKE ${pattern}
+          WHERE p.name ILIKE ${pattern}
             AND (c.id = ${country} OR c.slug = ${country})
             AND c.id != ${excludeCountry}
         `;
@@ -134,20 +140,20 @@ async function main() {
     // Build delete query
     let deleteQuery = sql`
       DELETE FROM places
-      WHERE name LIKE ${pattern}
+      WHERE name ILIKE ${pattern}
         AND country_id != 'ph'
     `;
 
     if (country) {
       deleteQuery = sql`
         DELETE FROM places
-        WHERE name LIKE ${pattern}
+        WHERE name ILIKE ${pattern}
           AND country_id IN (SELECT id FROM countries WHERE (id = ${country} OR slug = ${country}) AND id != 'ph')
       `;
     } else if (excludeCountry) {
       deleteQuery = sql`
         DELETE FROM places
-        WHERE name LIKE ${pattern}
+        WHERE name ILIKE ${pattern}
           AND country_id != ${excludeCountry}
       `;
     }

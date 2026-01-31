@@ -28,8 +28,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -72,8 +73,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -116,8 +118,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -160,8 +163,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -204,8 +208,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -248,8 +253,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -292,8 +298,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -336,8 +343,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -380,8 +388,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -424,8 +433,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -468,8 +478,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -512,8 +523,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -556,8 +568,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -600,8 +613,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -644,8 +658,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -688,8 +703,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -732,8 +748,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -776,8 +793,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -820,8 +838,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -864,8 +883,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -908,8 +928,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -952,8 +973,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -996,8 +1018,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1040,8 +1063,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1084,8 +1108,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1128,8 +1153,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1172,8 +1198,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1216,8 +1243,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1260,8 +1288,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1304,8 +1333,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1348,8 +1378,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1392,8 +1423,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1436,8 +1468,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1480,8 +1513,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1524,8 +1558,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1568,8 +1603,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1612,8 +1648,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1656,8 +1693,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1700,8 +1738,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1744,8 +1783,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1788,8 +1828,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1832,8 +1873,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1876,8 +1918,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1920,8 +1963,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -1964,8 +2008,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2008,8 +2053,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2052,8 +2098,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2096,8 +2143,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2140,8 +2188,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2184,8 +2233,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2228,8 +2278,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2272,8 +2323,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2316,8 +2368,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2360,8 +2413,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2404,8 +2458,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2448,8 +2503,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2492,8 +2548,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2536,8 +2593,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2580,8 +2638,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2624,8 +2683,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2668,8 +2728,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2712,8 +2773,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2756,8 +2818,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2800,8 +2863,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2844,8 +2908,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2888,8 +2953,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2932,8 +2998,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -2976,8 +3043,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3020,8 +3088,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3064,8 +3133,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3108,8 +3178,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3152,8 +3223,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3196,8 +3268,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3240,8 +3313,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3284,8 +3358,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3328,8 +3403,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3372,8 +3448,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3416,8 +3493,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3460,8 +3538,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3504,8 +3583,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3548,8 +3628,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3592,8 +3673,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3636,8 +3718,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3680,8 +3763,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3724,8 +3808,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3768,8 +3853,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3812,8 +3898,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3856,8 +3943,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3900,8 +3988,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3944,8 +4033,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -3988,8 +4078,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4032,8 +4123,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4076,8 +4168,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4120,8 +4213,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4164,8 +4258,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4208,8 +4303,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4252,8 +4348,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4296,8 +4393,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4340,8 +4438,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4384,8 +4483,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4428,8 +4528,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4472,8 +4573,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4516,8 +4618,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4560,8 +4663,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4604,8 +4708,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4648,8 +4753,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4692,8 +4798,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4736,8 +4843,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4780,8 +4888,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4824,8 +4933,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4868,8 +4978,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4912,8 +5023,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -4956,8 +5068,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5000,8 +5113,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5044,8 +5158,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5088,8 +5203,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5132,8 +5248,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5176,8 +5293,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5220,8 +5338,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5264,8 +5383,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5308,8 +5428,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5352,8 +5473,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5396,8 +5518,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5440,8 +5563,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5484,8 +5608,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5528,8 +5653,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5572,8 +5698,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5616,8 +5743,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5660,8 +5788,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5704,8 +5833,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5748,8 +5878,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5792,8 +5923,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5836,8 +5968,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5880,8 +6013,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5924,8 +6058,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -5968,8 +6103,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6012,8 +6148,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6056,8 +6193,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6100,8 +6238,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6144,8 +6283,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6188,8 +6328,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6232,8 +6373,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6276,8 +6418,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6320,8 +6463,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6364,8 +6508,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6408,8 +6553,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6452,8 +6598,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6496,8 +6643,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6540,8 +6688,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6584,8 +6733,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6628,8 +6778,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6672,8 +6823,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6716,8 +6868,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6760,8 +6913,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6804,8 +6958,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6848,8 +7003,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6892,8 +7048,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6936,8 +7093,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,
@@ -6980,8 +7138,9 @@ INSERT INTO places (
   NOW(),
   NOW()
 )
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
   type = EXCLUDED.type,
   place_kind = EXCLUDED.place_kind,
   category = EXCLUDED.category,

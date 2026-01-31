@@ -22,7 +22,9 @@
     "db:seed:pulse": "tsx src/seed.ts",
     "db:seed:atlas-tabs": "tsx src/seedAtlasTabs.ts",
     "db:seed:atlas-places-ph": "tsx src/seedAtlasPlacesPhilippines.ts",
+    "db:seed:atlas-places-kh": "tsx src/seedAtlasPlacesCambodia.ts",
     "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
+    "db:export:places-neon": "tsx src/exportPlacesToNeon.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

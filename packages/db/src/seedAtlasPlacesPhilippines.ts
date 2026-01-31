@@ -152,14 +152,25 @@ function detectKind(title: string | null): PlaceKind | null {
 
 function extractShortDescription(fullText: string | null): string | null {
   if (!fullText) return null;
-  // Take first 2-3 sentences (up to ~300 chars)
+  // Take first 2-3 sentences (up to 500 chars per UI/DTO requirement)
   const sentences = fullText.match(/[^.!?]+[.!?]+/g) ?? [];
   if (sentences.length === 0) {
-    // Fallback: take first 250 chars
-    return fullText.length > 250 ? fullText.substring(0, 250) + '...' : fullText;
+    // Fallback: take first 500 chars
+    const trimmed = fullText.trim();
+    if (trimmed.length > 500) {
+      // eslint-disable-next-line no-console
+      console.warn(`Description exceeds 500 chars (${trimmed.length}), truncating`);
+      return trimmed.substring(0, 500);
+    }
+    return trimmed;
   }
   const short = sentences.slice(0, 3).join(' ').trim();
-  return short.length > 300 ? short.substring(0, 300) + '...' : short;
+  if (short.length > 500) {
+    // eslint-disable-next-line no-console
+    console.warn(`Description exceeds 500 chars (${short.length}), truncating`);
+    return short.substring(0, 500);
+  }
+  return short;
 }
 
 // Parse place from new format:
@@ -167,13 +178,18 @@ function extractShortDescription(fullText: string | null): string | null {
 // lat, lng
 // description...
 // • bullets...
-function createPlaceFromHeader(name: string, cityName: string, kind: PlaceKind): PlaceSeed {
+function createPlaceFromHeader(name: string, cityName: string, kind: PlaceKind, cityRefMap: Record<string, string>): PlaceSeed {
   const defaultCategory = kind === 'showplace' ? 'Достопримечательность' : kind === 'business' ? 'Заведение' : null;
+  const nameSlug = slugify(name.trim());
+  // Generate globally unique slug: {city_id}-{name-slug}
+  // This ensures no conflicts when scaling to other countries
+  const cityId = cityRefMap[cityName];
+  const uniqueSlug = cityId ? `${cityId}-${nameSlug}` : nameSlug;
   return {
     cityName,
     kind,
     name: name.trim(),
-    slug: slugify(name.trim()),
+    slug: uniqueSlug,
     descriptionShort: null,
     lat: null,
     lng: null,
@@ -228,9 +244,20 @@ function detectSectionKey(bullet: string, kind: PlaceKind): string | null {
   return null;
 }
 
-function parsePlaces(markdown: string): PlaceSeed[] {
+type ParseSummary = {
+  totalPlaces: number;
+  missingCoords: string[];
+  missingDescription: string[];
+};
+
+function parsePlaces(markdown: string, cityRefMap: Record<string, string>): { places: PlaceSeed[]; summary: ParseSummary } {
   const lines = markdown.split(/\r?\n/);
   const places: PlaceSeed[] = [];
+  const summary: ParseSummary = {
+    totalPlaces: 0,
+    missingCoords: [],
+    missingDescription: [],
+  };
 
   let currentCity: string | null = null;
   let currentKind: PlaceKind | null = null;
@@ -246,11 +273,22 @@ function parsePlaces(markdown: string): PlaceSeed[] {
 
     // City header: # City Name
     if (trimmed.startsWith('# ') && !trimmed.startsWith('##') && !trimmed.startsWith('###')) {
-      // Save previous place if exists
-      if (currentItem && descriptionBuffer.length > 0) {
-        const fullDescription = descriptionBuffer.join(' ').trim();
-        currentItem.descriptionShort = extractShortDescription(fullDescription);
-        descriptionBuffer = [];
+      // Finalize previous place if exists
+      if (currentItem) {
+        if (descriptionBuffer.length > 0) {
+          const fullDescription = descriptionBuffer.join(' ').trim();
+          currentItem.descriptionShort = extractShortDescription(fullDescription);
+          descriptionBuffer = [];
+        }
+        if (expectingCoords && !currentItem.lat && !currentItem.lng) {
+          summary.missingCoords.push(currentItem.slug);
+          // eslint-disable-next-line no-console
+          console.warn(`  Coords missing for ${currentItem.slug} (${currentItem.name})`);
+        }
+        if (!currentItem.descriptionShort || currentItem.descriptionShort.length === 0) {
+          summary.missingDescription.push(currentItem.slug);
+        }
+        summary.totalPlaces++;
       }
       currentCity = normalizeCityName(trimmed.replace(/^#\s+/, ''));
       currentKind = null;
@@ -263,11 +301,22 @@ function parsePlaces(markdown: string): PlaceSeed[] {
 
     // Section header: ## Достопримечательности / Коммерческие заведения
     if (trimmed.startsWith('## ') && !trimmed.startsWith('###')) {
-      // Save previous place if exists
-      if (currentItem && descriptionBuffer.length > 0) {
-        const fullDescription = descriptionBuffer.join(' ').trim();
-        currentItem.descriptionShort = extractShortDescription(fullDescription);
-        descriptionBuffer = [];
+      // Finalize previous place if exists
+      if (currentItem) {
+        if (descriptionBuffer.length > 0) {
+          const fullDescription = descriptionBuffer.join(' ').trim();
+          currentItem.descriptionShort = extractShortDescription(fullDescription);
+          descriptionBuffer = [];
+        }
+        if (expectingCoords && !currentItem.lat && !currentItem.lng) {
+          summary.missingCoords.push(currentItem.slug);
+          // eslint-disable-next-line no-console
+          console.warn(`  Coords missing for ${currentItem.slug} (${currentItem.name})`);
+        }
+        if (!currentItem.descriptionShort || currentItem.descriptionShort.length === 0) {
+          summary.missingDescription.push(currentItem.slug);
+        }
+        summary.totalPlaces++;
       }
       currentKind = detectKind(trimmed.replace(/^##\s+/, '').trim());
       currentItem = null;
@@ -281,14 +330,29 @@ function parsePlaces(markdown: string): PlaceSeed[] {
 
     // Place header: ### Name
     if (trimmed.startsWith('### ')) {
-      // Save previous place if exists
-      if (currentItem && descriptionBuffer.length > 0) {
-        const fullDescription = descriptionBuffer.join(' ').trim();
-        currentItem.descriptionShort = extractShortDescription(fullDescription);
-        descriptionBuffer = [];
+      // Finalize previous place if exists
+      if (currentItem) {
+        // Save description if we were collecting it
+        if (descriptionBuffer.length > 0) {
+          const fullDescription = descriptionBuffer.join(' ').trim();
+          currentItem.descriptionShort = extractShortDescription(fullDescription);
+          descriptionBuffer = [];
+        }
+        // Check if coords missing
+        if (expectingCoords && !currentItem.lat && !currentItem.lng) {
+          summary.missingCoords.push(currentItem.slug);
+          // eslint-disable-next-line no-console
+          console.warn(`  Coords missing for ${currentItem.slug} (${currentItem.name})`);
+        }
+        // Check if description missing
+        if (!currentItem.descriptionShort || currentItem.descriptionShort.length === 0) {
+          summary.missingDescription.push(currentItem.slug);
+        }
+        summary.totalPlaces++;
       }
+      // Start new place
       const placeName = trimmed.replace(/^###\s+/, '').trim();
-      currentItem = createPlaceFromHeader(placeName, currentCity, currentKind);
+      currentItem = createPlaceFromHeader(placeName, currentCity, currentKind, cityRefMap);
       places.push(currentItem);
       currentSection = null;
       expectingCoords = true;
@@ -299,9 +363,9 @@ function parsePlaces(markdown: string): PlaceSeed[] {
 
     if (!currentItem) continue;
 
-    // Coordinates line: lat, lng
+    // Coordinates line: lat, lng (supports integers, negatives, spaces)
     if (expectingCoords) {
-      const coordsMatch = trimmed.match(/^(\d+\.\d+),\s*(\d+\.\d+)$/);
+      const coordsMatch = trimmed.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
       if (coordsMatch) {
         currentItem.lat = coordsMatch[1] ?? null;
         currentItem.lng = coordsMatch[2] ?? null;
@@ -413,13 +477,26 @@ function parsePlaces(markdown: string): PlaceSeed[] {
     }
   }
 
-  // Save last place description if exists
-  if (currentItem && descriptionBuffer.length > 0) {
-    const fullDescription = descriptionBuffer.join(' ').trim();
-    currentItem.descriptionShort = extractShortDescription(fullDescription);
+  // Finalize last place if exists
+  if (currentItem) {
+    if (descriptionBuffer.length > 0) {
+      const fullDescription = descriptionBuffer.join(' ').trim();
+      currentItem.descriptionShort = extractShortDescription(fullDescription);
+    }
+    // Check if coords missing
+    if (expectingCoords && !currentItem.lat && !currentItem.lng) {
+      summary.missingCoords.push(currentItem.slug);
+      // eslint-disable-next-line no-console
+      console.warn(`  Coords missing for ${currentItem.slug} (${currentItem.name})`);
+    }
+    // Check if description missing
+    if (!currentItem.descriptionShort || currentItem.descriptionShort.length === 0) {
+      summary.missingDescription.push(currentItem.slug);
+    }
+    summary.totalPlaces++;
   }
 
-  return places;
+  return { places, summary };
 }
 
 async function resolveCountryId(db: ReturnType<typeof createDb>, idOrSlug: string): Promise<string | null> {
@@ -562,9 +639,23 @@ async function main() {
     Боракай: 'boracay',
   };
 
-  const items = parsePlaces(markdown);
+  const { places: parsedPlaces, summary: parseSummary } = parsePlaces(markdown, cityRefMap);
+  
+  // eslint-disable-next-line no-console
+  console.log('\n=== Parse Summary ===');
+  // eslint-disable-next-line no-console
+  console.log(`Total places parsed: ${parseSummary.totalPlaces}`);
+  if (parseSummary.missingCoords.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`Places missing coords: ${parseSummary.missingCoords.length} (${parseSummary.missingCoords.join(', ')})`);
+  }
+  if (parseSummary.missingDescription.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`Places missing description: ${parseSummary.missingDescription.length} (${parseSummary.missingDescription.join(', ')})`);
+  }
+
   const grouped = new Map<string, PlaceSeed[]>();
-  for (const item of items) {
+  for (const item of parsedPlaces) {
     const key = item.cityName;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)?.push(item);
@@ -576,6 +667,7 @@ async function main() {
   let totalContentBlocks = 0;
   let skippedCities = 0;
   let skippedPlaces = 0;
+  let resolvedCities = 0;
 
   for (const [cityName, list] of grouped.entries()) {
     const ref = cityRefMap[cityName] ?? cityName;
@@ -587,12 +679,15 @@ async function main() {
       skippedPlaces += list.length;
       continue;
     }
+    resolvedCities++;
 
     const rows: Array<typeof places.$inferInsert> = [];
     const contentBlocksData: Array<{ placeId: string; sections: Map<string, string> }> = [];
 
     for (const p of list) {
-      const placeId = `${cityId}-${p.slug}`;
+      // slug already contains city_id prefix (e.g., "mnl-intramuros")
+      // so placeId = slug (they are the same for global uniqueness)
+      const placeId = p.slug;
       rows.push({
         id: placeId,
         countryId,
@@ -632,14 +727,16 @@ async function main() {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`\nSeed completed:`);
+  console.log(`\n=== Seed Summary ===`);
   // eslint-disable-next-line no-console
   console.log(`  inserted/updated places: ${totalPlaces} (business: ${totalBusiness} / showplace: ${totalShowplace})`);
   // eslint-disable-next-line no-console
   console.log(`  inserted/updated place content_blocks: ${totalContentBlocks}`);
-  if (skippedCities > 0 || skippedPlaces > 0) {
+  // eslint-disable-next-line no-console
+  console.log(`  cities resolved: ${resolvedCities} / skipped: ${skippedCities}`);
+  if (skippedPlaces > 0) {
     // eslint-disable-next-line no-console
-    console.log(`  skipped cities: ${skippedCities} / skipped places: ${skippedPlaces}`);
+    console.log(`  skipped places: ${skippedPlaces}`);
   }
 }
 

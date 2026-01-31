@@ -314,6 +314,86 @@ go2asia-media/
 
 ---
 
+---
+
+## Примеры для Thailand (TH)
+
+**Стандарт R2 для TH мест (идентичен PH/KH/VN):**
+
+```
+go2asia-media/
+  place/
+    bkk-grand-palace/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    cnx-wat-phra-that-doi-suthep/
+      01.jpg
+      02.jpg
+      03.jpg
+    phk-patong-beach/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/bkk-grand-palace/01.jpg` (hero)
+- `https://media.go2asia.space/place/bkk-grand-palace/02.jpg` (gallery)
+- `https://media.go2asia.space/place/bkk-grand-palace/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `bkk-grand-palace`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
+---
+
+## Примеры для Laos (LA)
+
+**Стандарт R2 для LA мест (идентичен PH/KH/VN/TH):**
+
+```
+go2asia-media/
+  place/
+    vte-pha-that-luang/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    lpq-royal-palace-museum/
+      01.jpg
+      02.jpg
+      03.jpg
+    vvg-blue-lagoon-1/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/vte-pha-that-luang/01.jpg` (hero)
+- `https://media.go2asia.space/place/vte-pha-that-luang/02.jpg` (gallery)
+- `https://media.go2asia.space/place/vte-pha-that-luang/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `vte-pha-that-luang`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
 **Дата создания:** 2026-01-21  
-**Дата обновления:** 2026-01-26 (добавлены примеры VN)  
+**Дата обновления:** 2026-01-31 (добавлены примеры LA)  
 **Версия:** Atlas Content Canon v1

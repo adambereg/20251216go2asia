@@ -62,31 +62,34 @@ pnpm -C packages/db db:seed:atlas-places-ph
 
 ## Шаг 3 — Масштабирование на другие страны
 
-**Для добавления новой страны (например, Вьетнам):**
+**Для добавления новой страны (например, Камбоджа):**
 
 1. **Создать markdown файл:**
    ```
-   content/atlas/vietnam/Vietnam-places.md
+   content/atlas/cambodia/cambodia-places.md
    ```
 
-2. **Создать seed-скрипт** (скопировать `seedAtlasPlacesPhilippines.ts`):
+2. **Создать seed-скрипт** (скопировать `seedAtlasPlacesPhilippines.ts` или `seedAtlasPlacesCambodia.ts`):
    ```typescript
-   // packages/db/src/seedAtlasPlacesVietnam.ts
+   // packages/db/src/seedAtlasPlacesCambodia.ts
    // Изменить:
-   // - countryId: 'vn'
-   // - cityRefMap для вьетнамских городов
+   // - countryId: 'kh'
+   // - cityRefMap для камбоджийских городов
    // - путь к markdown файлу
+   // - парсер под формат markdown файла
    ```
 
 3. **Добавить команду в `packages/db/package.json`:**
    ```json
-   "db:seed:atlas-places-vn": "tsx src/seedAtlasPlacesVietnam.ts"
+   "db:seed:atlas-places-kh": "tsx src/seedAtlasPlacesCambodia.ts"
    ```
 
 4. **Запустить seed:**
    ```bash
-   pnpm -C packages/db db:seed:atlas-places-vn
+   pnpm -C packages/db db:seed:atlas-places-kh
    ```
+
+**Примечание:** Формат markdown может отличаться между странами. Камбоджа использует формат с эмодзи-секциями (`### 🟡 Почему стоит посетить`), в то время как Филиппины используют bullet points (`•`). Seed-скрипт должен быть адаптирован под конкретный формат.
 
 **Универсальность схемы:**
 - Схема `places` подходит для любых стран (PH/VN/TH/KH/...)
@@ -201,3 +204,37 @@ scripts/smoke-atlas-places.sh
 - Используется `react-markdown + remark-gfm` (без rehypeRaw)
 - Если секция отсутствует — показывается `EmptyState` (не вымышленный текст)
 
+---
+
+## Milestone: Atlas PH Content → Neon Ready ✅
+
+**Статус:** Завершено (2026-01-21)
+
+**Что сделано:**
+- ✅ Схема `places` расширена (`place_kind`, `category`, `tags`, контакты)
+- ✅ Seed-скрипт для Philippines (`seedAtlasPlacesPhilippines.ts`)
+- ✅ Export-скрипт для SQL/CSV (`exportPlacesToNeon.ts`)
+- ✅ API endpoints для places с фильтрами
+- ✅ SDK методы и React Query hooks
+- ✅ UI компоненты (PlaceLandingLayout, PlacePreviewCard)
+- ✅ Content blocks для секций (markdown)
+- ✅ Cleanup демо-данных
+- ✅ Smoke тесты
+
+**Документация:**
+- ✅ `docs/modules/atlas/places_pipeline.md` — полный пайплайн
+- ✅ `docs/modules/atlas/neon_schema_places.md` — схема БД
+- ✅ `docs/modules/atlas/places_design_decisions.md` — архитектурные решения
+- ✅ `docs/modules/atlas/places_media_pipeline.md` — план медиа-контента
+
+**Готово к масштабированию:**
+- Вьетнам (VN)
+- Камбоджа (KH)
+- Таиланд (TH)
+- Другие страны Юго-Восточной Азии
+
+**Следующие шаги:**
+1. Запустить экспорт: `pnpm -C packages/db db:export:places-neon`
+2. Импортировать в Neon через SQL Editor
+3. Подготовить медиа-контент (`place_media_plan.csv`)
+4. Повторить пайплайн для следующей страны
