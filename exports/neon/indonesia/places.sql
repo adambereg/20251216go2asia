@@ -1,0 +1,6264 @@
+-- Places UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Place: 🛕 Tanah Lot Temple (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-tanah-lot-temple',
+  'id',
+  'bali',
+  '🛕 Tanah Lot Temple',
+  'bali-tanah-lot-temple',
+  'temple',
+  'showplace',
+  'temple',
+  '["temple","ocean","sunset"]'::jsonb,
+  'Один из самых известных храмов Бали, расположенный на скале в океане и особенно впечатляющий на закате. - 🛕 Храм Tanah Lot - 🌊 Скалу и океанские волны - 🌅 Закат - 🕒 07:00–19:00 - 🌐 Английский, индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.6211,
+  115.0865,
+  'Tanah Lot, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🐒 Ubud Monkey Forest (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-ubud-monkey-forest',
+  'id',
+  'bali',
+  '🐒 Ubud Monkey Forest',
+  'bali-ubud-monkey-forest',
+  'forest',
+  'showplace',
+  'forest',
+  '["forest","wildlife","culture"]'::jsonb,
+  'Священный лес в центре Убуда с храмами и сотнями макак, свободно гуляющих по территории. - 🌳 Лесные тропы - 🛕 Храмы - 🐒 Наблюдение за макаками - 🕒 08:30–18:00 - 🌐 Английский - 📶 Интернет - 💳 Наличные',
+  -8.5194,
+  115.2599,
+  'Monkey Forest Rd, Ubud',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌾 Tegallalang Rice Terraces (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-tegallalang-rice-terraces',
+  'id',
+  'bali',
+  '🌾 Tegallalang Rice Terraces',
+  'bali-tegallalang-rice-terraces',
+  'rice-terrace',
+  'showplace',
+  'rice-terrace',
+  '["rice-terrace","nature","landscape"]'::jsonb,
+  'Знаменитые рисовые террасы недалеко от Убуда — символ балийского сельского ландшафта. - 🌾 Рисовые террасы - 🚶 Прогулку по тропам - 📷 Фото с обзорных точек - 🕒 Круглосуточно - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.4356,
+  115.2797,
+  'Tegallalang, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏔️ Uluwatu Temple (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-uluwatu-temple',
+  'id',
+  'bali',
+  '🏔️ Uluwatu Temple',
+  'bali-uluwatu-temple',
+  'temple',
+  'showplace',
+  'temple',
+  '["temple","cliff","sunset"]'::jsonb,
+  'Храм на утёсе над океаном в Улувату, известный закатами и традиционными танцами кечак. - 🛕 Храм - 🎭 Танец кечак - 🌅 Закат - 🕒 07:00–19:00 - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.8291,
+  115.0849,
+  'Uluwatu, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌋 Mount Batur (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-mount-batur',
+  'id',
+  'bali',
+  '🌋 Mount Batur',
+  'bali-mount-batur',
+  'volcano',
+  'showplace',
+  'volcano',
+  '["volcano","hiking","sunrise"]'::jsonb,
+  'Активный вулкан, популярный для ночных восхождений ради рассвета. - 🥾 Восхождение - 🌅 Рассвет - 🌋 Кратер - 🕒 Ночью/утром - 🌐 Английский - 📶 Связь ограничена - 💳 Наличные',
+  -8.242,
+  115.375,
+  'Kintamani, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 💧 Tirta Empul Temple (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-tirta-empul-temple',
+  'id',
+  'bali',
+  '💧 Tirta Empul Temple',
+  'bali-tirta-empul-temple',
+  'temple',
+  'showplace',
+  'temple',
+  '["temple","ritual","water"]'::jsonb,
+  'Священный водный храм, известный ритуалами очищения в источниках. - 💦 Ритуал омовения - 🛕 Храмовый комплекс - 📷 Источники - 🕒 08:00–18:00 - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.4157,
+  115.3156,
+  'Tampaksiring, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏖️ Potato Head Beach Club (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-potato-head-beach-club',
+  'id',
+  'bali',
+  '🏖️ Potato Head Beach Club',
+  'bali-potato-head-beach-club',
+  'beach-club',
+  'business',
+  'beach-club',
+  '["beach-club","lifestyle","sunset"]'::jsonb,
+  'Знаменитый бич-клуб в Семиньяке с бассейнами, диджеями и видом на океан. - 🍹 Коктейли - 🏊 Бассейн - 🌅 Закат - 🕒 10:00–00:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -8.6705,
+  115.1381,
+  'Seminyak, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏝️ FINNS Beach Club (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-finns-beach-club',
+  'id',
+  'bali',
+  '🏝️ FINNS Beach Club',
+  'bali-finns-beach-club',
+  'beach-club',
+  'business',
+  'beach-club',
+  '["beach-club","party","lifestyle"]'::jsonb,
+  'Огромный пляжный клуб в Чангу с бассейнами, вечеринками и международной кухней. - 🍹 Напитки - 🏊 Бассейны - 🌅 Закат - 🕒 11:00–00:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -8.663,
+  115.1384,
+  'Canggu, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🪨 The Rock Bar Bali (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-the-rock-bar-bali',
+  'id',
+  'bali',
+  '🪨 The Rock Bar Bali',
+  'bali-the-rock-bar-bali',
+  'bar',
+  'business',
+  'bar',
+  '["bar","cliff","sunset"]'::jsonb,
+  'Знаменитый бар на скале в Улувату с панорамным видом на океан. - 🍹 Коктейли - 🌊 Вид на океан - 🌅 Закат - 🕒 16:00–23:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -8.7892,
+  115.1623,
+  'Uluwatu, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Clear Café Ubud (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-clear-cafe-ubud',
+  'id',
+  'bali',
+  '☕ Clear Café Ubud',
+  'bali-clear-cafe-ubud',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","healthy-food","wellness"]'::jsonb,
+  'Популярное кафе здоровой кухни в Убуде с вегетарианскими и веганскими блюдами, смузи и уютной атмосферой. - 🥗 Боулы и салаты - 🥤 Смузи и соки - 🍰 Полезные десерты - 🕒 08:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -8.5074,
+  115.2641,
+  'Ubud, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍽️ Locavore Restaurant (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-locavore-restaurant',
+  'id',
+  'bali',
+  '🍽️ Locavore Restaurant',
+  'bali-locavore-restaurant',
+  'fine-dining',
+  'business',
+  'fine-dining',
+  '["fine-dining","restaurant","local"]'::jsonb,
+  'Один из самых известных ресторанов высокой кухни на Бали, работающий с локальными ингредиентами. - 🍽 Дегустационный сет - 🍷 Вино и pairing - 🌿 Блюда из локальных продуктов - 🕒 18:00–23:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -8.5089,
+  115.2626,
+  'Ubud, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏄 Single Fin Bali (Bali)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'bali-single-fin-bali',
+  'id',
+  'bali',
+  '🏄 Single Fin Bali',
+  'bali-single-fin-bali',
+  'bar',
+  'business',
+  'bar',
+  '["bar","surf","sunset"]'::jsonb,
+  'Легендарный бар для серферов в Улувату с видом на океан и вечеринки на закате. - 🍹 Коктейли - 🎶 DJ-сеты - 🌅 Закат - 🕒 16:00–00:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -8.8286,
+  115.0867,
+  'Uluwatu, Bali',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🗼 National Monument (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-national-monument',
+  'id',
+  'jkt',
+  '🗼 National Monument',
+  'jkt-national-monument',
+  'monument',
+  'showplace',
+  'monument',
+  '["monument","history","landmark"]'::jsonb,
+  'Главный национальный монумент Индонезии, символ независимости страны, расположенный в самом центре Джакарты. - 🕒 08:00–22:00 - 🌐 Английский, индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -6.1754,
+  106.8272,
+  'Merdeka Square, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏛 Kota Tua Jakarta (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-kota-tua-jakarta',
+  'id',
+  'jkt',
+  '🏛 Kota Tua Jakarta',
+  'jkt-kota-tua-jakarta',
+  'old-town',
+  'showplace',
+  'old-town',
+  '["old-town","colonial","heritage"]'::jsonb,
+  'Исторический район с голландской колониальной архитектурой и музеями. - 🕒 Днём - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -6.1352,
+  106.8133,
+  'Kota Tua, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🕌 Istiqlal Mosque (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-istiqlal-mosque',
+  'id',
+  'jkt',
+  '🕌 Istiqlal Mosque',
+  'jkt-istiqlal-mosque',
+  'mosque',
+  'showplace',
+  'mosque',
+  '["mosque","religion","architecture"]'::jsonb,
+  'Крупнейшая мечеть Юго-Восточной Азии, символ религиозной терпимости и современной Индонезии. - 🕒 08:00–17:00 - 🌐 Английский, индонезийский - 📶 Интернет - 💳 —',
+  -6.1702,
+  106.8319,
+  'Central Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ⛪ Jakarta Cathedral (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-jakarta-cathedral',
+  'id',
+  'jkt',
+  '⛪ Jakarta Cathedral',
+  'jkt-jakarta-cathedral',
+  'cathedral',
+  'showplace',
+  'cathedral',
+  '["cathedral","religion","colonial"]'::jsonb,
+  'Неоготический католический собор, расположенный напротив мечети Istiqlal. - 🕒 Днём - 🌐 Английский - 📶 Интернет - 💳 —',
+  -6.17,
+  106.8326,
+  'Central Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🎢 Ancol Dreamland (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-ancol-dreamland',
+  'id',
+  'jkt',
+  '🎢 Ancol Dreamland',
+  'jkt-ancol-dreamland',
+  'amusement',
+  'showplace',
+  'amusement',
+  '["amusement","beach","family"]'::jsonb,
+  'Крупный прибрежный развлекательный комплекс с парками, пляжами и океанариумом. - 🕒 10:00–22:00 - 🌐 Английский - 📶 Интернет - 💳 Наличные, карты',
+  -6.1236,
+  106.8365,
+  'Ancol, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌳 Taman Mini Indonesia Indah (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-taman-mini-indonesia-indah',
+  'id',
+  'jkt',
+  '🌳 Taman Mini Indonesia Indah',
+  'jkt-taman-mini-indonesia-indah',
+  'culture',
+  'showplace',
+  'culture',
+  '["culture","park","heritage"]'::jsonb,
+  'Этнографический парк, представляющий культуру и архитектуру всех регионов Индонезии. - 🕒 08:00–17:00 - 🌐 Английский - 📶 Интернет - 💳 Наличные',
+  -6.3027,
+  106.8955,
+  'East Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌃 Skye Bar & Restaurant (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-skye-bar-restaurant',
+  'id',
+  'jkt',
+  '🌃 Skye Bar & Restaurant',
+  'jkt-skye-bar-restaurant',
+  'rooftop',
+  'business',
+  'rooftop',
+  '["rooftop","bar","skyline"]'::jsonb,
+  'Руфтоп-бар и ресторан в центре Джакарты с панорамным видом на небоскрёбы. - 🍹 Коктейли - 🍽 Ужин - 🌅 Закат - 🕒 17:00–00:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -6.2,
+  106.819,
+  'Central Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Café Batavia (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-cafe-batavia',
+  'id',
+  'jkt',
+  '☕ Café Batavia',
+  'jkt-cafe-batavia',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","colonial","heritage"]'::jsonb,
+  'Историческое кафе-ресторан в колониальном здании на площади Fatahillah. - 🍽 Интернациональную кухню - 🍰 Десерты - 🕰 Атмосферу прошлого - 🕒 10:00–23:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -6.1359,
+  106.8135,
+  'Fatahillah Square, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍜 Nasi Goreng Kambing Kebon Sirih (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-nasi-goreng-kambing-kebon-sirih',
+  'id',
+  'jkt',
+  '🍜 Nasi Goreng Kambing Kebon Sirih',
+  'jkt-nasi-goreng-kambing-kebon-sirih',
+  'street-food',
+  'business',
+  'street-food',
+  '["street-food","nasi-goreng","local"]'::jsonb,
+  'Легендарная уличная точка с одним из лучших nasi goreng kambing в Джакарте. - 🍚 Nasi goreng kambing - 🥩 Баранина - 🥤 Напитки - 🕒 Вечером - 🌐 Индонезийский - 📶 Связь ограничена - 💳 Наличные',
+  -6.1817,
+  106.8303,
+  'Kebon Sirih, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍽 Plataran Menteng (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-plataran-menteng',
+  'id',
+  'jkt',
+  '🍽 Plataran Menteng',
+  'jkt-plataran-menteng',
+  'fine-dining',
+  'business',
+  'fine-dining',
+  '["fine-dining","indonesian-food","heritage"]'::jsonb,
+  'Ресторан высокой индонезийской кухни в отреставрированном колониальном особняке в районе Ментенг. - 🍽 Традиционные блюда с авторской подачей - 🍷 Напитки и десерты - 🌿 Ужин в саду - 🕒 11:00–22:00 - 🌐 Английский, индонезийский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -6.193,
+  106.8293,
+  'Menteng, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Union Café (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-union-cafe',
+  'id',
+  'jkt',
+  '☕ Union Café',
+  'jkt-union-cafe',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","dessert","urban"]'::jsonb,
+  'Популярное кафе и ресторан с европейско-азиатской кухней и культовыми десертами. - 🍰 Фирменные торты - ☕ Кофе - 🍽 Основные блюда - 🕒 10:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -6.2244,
+  106.8039,
+  'Plaza Senayan, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍹 Social House (Jakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'jkt-social-house',
+  'id',
+  'jkt',
+  '🍹 Social House',
+  'jkt-social-house',
+  'restaurant',
+  'business',
+  'restaurant',
+  '["restaurant","bar","modern"]'::jsonb,
+  'Модный ресторан и бар с интернациональной кухней и видом на центр города. - 🍽 Интернациональные блюда - 🍹 Коктейли - 🌆 Вечерний вид - 🕒 11:00–23:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -6.195,
+  106.8213,
+  'Grand Indonesia, Jakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🦎 Komodo National Park (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-komodo-national-park',
+  'id',
+  'lbj',
+  '🦎 Komodo National Park',
+  'lbj-komodo-national-park',
+  'unesco',
+  'showplace',
+  'unesco',
+  '["unesco","komodo","islands","diving"]'::jsonb,
+  'Национальный парк и объект UNESCO, знаменитый драконами Комодо, розовыми пляжами и одним из лучших дайвингов в мире. - 🦎 Драконов Комодо (с рейнджером) - 🏝 Остров Padar (панорама) - 🤿 Сноркелинг/дайвинг на рифах - 🕒 По расписанию туров - 🌐 Английский, индонезийский - 📶 Связь ограничена на островах - 💳 Наличные (часто), карты — у операторов',
+  -8.52,
+  119.55,
+  'Komodo National Park, Flores',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌄 Padar Island Viewpoint (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-padar-island-viewpoint',
+  'id',
+  'lbj',
+  '🌄 Padar Island Viewpoint',
+  'lbj-padar-island-viewpoint',
+  'viewpoint',
+  'showplace',
+  'viewpoint',
+  '["viewpoint","hiking","islands"]'::jsonb,
+  'Знаменитая панорама острова Падар с тремя бухтами разных оттенков — один из самых узнаваемых видов Индонезии. - 🥾 Подъём на смотровую - 📷 Фото панорамы - 🌅 Утренний свет - 🕒 По расписанию туров - 🌐 Английский - 📶 Связь отсутствует - 💳 Наличные',
+  -8.6504,
+  119.7461,
+  'Padar Island, Komodo NP',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏖 Pink Beach (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-pink-beach',
+  'id',
+  'lbj',
+  '🏖 Pink Beach',
+  'lbj-pink-beach',
+  'beach',
+  'showplace',
+  'beach',
+  '["beach","snorkeling","nature"]'::jsonb,
+  'Редкий розовый пляж с коралловым песком и отличным сноркелингом. - 🏖 Пляж - 🤿 Сноркелинг - 📷 Фото песка - 🕒 Днём - 🌐 Английский - 📶 Нет связи - 💳 Наличные',
+  -8.6304,
+  119.5589,
+  'Komodo National Park',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🐋 Manta Point (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-manta-point',
+  'id',
+  'lbj',
+  '🐋 Manta Point',
+  'lbj-manta-point',
+  'diving',
+  'showplace',
+  'diving',
+  '["diving","manta","snorkeling"]'::jsonb,
+  'Известная точка сноркелинга и дайвинга, где часто встречаются манты. - 🤿 Сноркелинг с мантами - 🐠 Дайвинг - 📷 Подводные фото - 🕒 По условиям погоды - 🌐 Английский - 📶 Нет связи - 💳 Наличные',
+  -8.551,
+  119.619,
+  'Komodo NP waters',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🕳 Batu Cermin Cave (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-batu-cermin-cave',
+  'id',
+  'lbj',
+  '🕳 Batu Cermin Cave',
+  'lbj-batu-cermin-cave',
+  'cave',
+  'showplace',
+  'cave',
+  '["cave","geology","easy-trip"]'::jsonb,
+  '«Зеркальная пещера» рядом с Лабуан-Баджо, где свет отражается на стенах известняка. - 🕳 Пещеру - 🔦 Луч света - 📷 Сталагмиты - 🕒 08:00–17:00 - 🌐 Индонезийский, базовый английский - 📶 Связь стабильная - 💳 Наличные',
+  -8.4866,
+  119.8847,
+  'Batu Cermin, Labuan Bajo',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌅 Labuan Bajo Sunset Harbor (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-labuan-bajo-sunset-harbor',
+  'id',
+  'lbj',
+  '🌅 Labuan Bajo Sunset Harbor',
+  'lbj-labuan-bajo-sunset-harbor',
+  'harbor',
+  'showplace',
+  'harbor',
+  '["harbor","sunset","city-walk"]'::jsonb,
+  'Набережная и порт Лабуан-Баджо — лучшее место для вечерних прогулок, закатов и наблюдения за лодками. - 🌅 Закат у воды - 🚶 Прогулку по набережной - 📷 Фото лодок и бухты - 🕒 Круглосуточно - 🌐 Английский - 📶 Интернет стабильный - 💳 —',
+  -8.4966,
+  119.8872,
+  'Labuan Bajo Harbour',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍽️ La Cucina (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-la-cucina',
+  'id',
+  'lbj',
+  '🍽️ La Cucina',
+  'lbj-la-cucina',
+  'fine-dining',
+  'business',
+  'fine-dining',
+  '["fine-dining","premium","sea-view"]'::jsonb,
+  'Премиальный ресторан при AYANA Komodo Resort с видом на море и качественной кухней. - 🍽 Морепродукты - 🍷 Вино/коктейли - 🌅 Закат с террасы - 🕒 12:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -8.4969,
+  119.878,
+  'Labuan Bajo, Flores',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌃 Atlantis on the Rock (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-atlantis-on-the-rock',
+  'id',
+  'lbj',
+  '🌃 Atlantis on the Rock',
+  'lbj-atlantis-on-the-rock',
+  'rooftop',
+  'business',
+  'rooftop',
+  '["rooftop","bar","sunset"]'::jsonb,
+  'Популярный rooftop-бар с видом на порт и закаты, один из лучших вечерних спотов города. - 🍹 Коктейли - 🌅 Закат - 🎶 Музыку вечером - 🕒 17:00–00:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -8.496,
+  119.889,
+  'Labuan Bajo Harbour',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🥗 Happy Banana Komodo (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-happy-banana-komodo',
+  'id',
+  'lbj',
+  '🥗 Happy Banana Komodo',
+  'lbj-happy-banana-komodo',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","healthy","coffee"]'::jsonb,
+  'Кафе здорового питания с боулами, смузи и кофе — популярное место среди дайверов и путешественников. - 🥗 Smoothie bowl - 🥤 Смузи - ☕ Кофе - 🕒 07:00–21:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные, карты',
+  -8.497,
+  119.8879,
+  'Labuan Bajo',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🦞 Taman Laut Handayani Seafood (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-taman-laut-handayani-seafood',
+  'id',
+  'lbj',
+  '🦞 Taman Laut Handayani Seafood',
+  'lbj-taman-laut-handayani-seafood',
+  'seafood',
+  'business',
+  'seafood',
+  '["seafood","local","restaurant"]'::jsonb,
+  'Популярный ресторан морепродуктов рядом с портом, где можно выбрать свежий улов и поужинать у воды. - 🍤 Морепродукты на гриле - 🦀 Крабы/креветки - 🍚 Рис и соусы - 🕒 11:00–22:00 - 🌐 Индонезийский, базовый английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.4976,
+  119.887,
+  'Labuan Bajo Harbour',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌮 Bajo Taco (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-bajo-taco',
+  'id',
+  'lbj',
+  '🌮 Bajo Taco',
+  'lbj-bajo-taco',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","fast-casual","international"]'::jsonb,
+  'Небольшое, но очень популярное кафе с тако и буррито — быстрый и вкусный вариант перекуса между турами. - 🌮 Тако - 🌯 Буррито - 🥤 Напитки - 🕒 11:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -8.4968,
+  119.8884,
+  'Labuan Bajo',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🤿 Scuba Junkie Komodo (Labuan Bajo)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lbj-scuba-junkie-komodo',
+  'id',
+  'lbj',
+  '🤿 Scuba Junkie Komodo',
+  'lbj-scuba-junkie-komodo',
+  'diving',
+  'business',
+  'diving',
+  '["diving","tours","service"]'::jsonb,
+  'Дайв-центр с погружениями в Комодо — один из ключевых сервисов города для туристов, ориентированных на подводный мир. - 🤿 Дайв-туры - 🧑‍🏫 Курс (по желанию) - 🪸 Сноркелинг-трип - 🕒 08:00–18:00 - 🌐 Английский, индонезийский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -8.4972,
+  119.8875,
+  'Labuan Bajo',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌋 Mount Rinjani National Park (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-mount-rinjani-national-park',
+  'id',
+  'lom',
+  '🌋 Mount Rinjani National Park',
+  'lom-mount-rinjani-national-park',
+  'volcano',
+  'showplace',
+  'volcano',
+  '["volcano","hiking","nature","national-park"]'::jsonb,
+  'Главная природная достопримечательность Ломбока — вулкан Ринджани и национальный парк с треккингом к кратеру и озеру. - 🥾 Трек к кратеру - 🏞 Озеро Segara Anak - 🌅 Рассвет на маршруте - 🕒 Туры 2–4 дня - 🌐 Английский у гидов, индонезийский - 📶 Связь ограничена - 💳 Наличные (часто)',
+  -8.4113,
+  116.4573,
+  'Rinjani National Park, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏝️ Gili Islands (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-gili-islands',
+  'id',
+  'lom',
+  '🏝️ Gili Islands',
+  'lom-gili-islands',
+  'islands',
+  'showplace',
+  'islands',
+  '["islands","snorkeling","beach"]'::jsonb,
+  'Три знаменитых острова у северо-западного Ломбока с белыми пляжами, сноркелингом и расслабленной атмосферой. - 🤿 Сноркелинг с черепахами - 🚲 Велопрогулки - 🌅 Закат на Gili T - 🕒 Круглосуточно - 🌐 Английский - 📶 Интернет стабильнее на Gili T - 💳 Наличные (часто), карты — в отелях',
+  -8.3498,
+  116.0385,
+  'Gili Islands, North Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏖️ Kuta Lombok (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-kuta-lombok',
+  'id',
+  'lom',
+  '🏖️ Kuta Lombok',
+  'lom-kuta-lombok',
+  'beach',
+  'showplace',
+  'beach',
+  '["beach","surf","resort"]'::jsonb,
+  'Курортная зона южного Ломбока с длинными пляжами, серф-спотами и инфраструктурой Mandalika. - 🏖 Пляжи Kuta и окрестности - 🏄 Серфинг - 🌅 Закат - 🕒 Круглосуточно - 🌐 Английский - 📶 Интернет стабильный - 💳 Наличные, карты в отелях',
+  -8.8917,
+  116.2819,
+  'Kuta, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏝️ Tanjung Aan Beach (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-tanjung-aan-beach',
+  'id',
+  'lom',
+  '🏝️ Tanjung Aan Beach',
+  'lom-tanjung-aan-beach',
+  'beach',
+  'showplace',
+  'beach',
+  '["beach","lagoon","nature"]'::jsonb,
+  'Один из самых красивых пляжей южного Ломбока с белым песком и бирюзовой водой. - 🏖 Купание - 🏄 Серфинг на лёгких волнах - 🌅 Закат - 🕒 Круглосуточно - 🌐 Английский - 📶 Связь стабильная - 💳 Наличные',
+  -8.9075,
+  116.3167,
+  'Tanjung Aan, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 💦 Sendang Gile Waterfall (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-sendang-gile-waterfall',
+  'id',
+  'lom',
+  '💦 Sendang Gile Waterfall',
+  'lom-sendang-gile-waterfall',
+  'waterfall',
+  'showplace',
+  'waterfall',
+  '["waterfall","nature","jungle"]'::jsonb,
+  'Красивый водопад у деревни Senaru — популярная остановка на пути к Ринджани. - 💦 Водопад - 🚶 Тропу - 📷 Фото у воды - 🕒 08:00–17:00 - 🌐 Индонезийский, базовый английский - 📶 Связь слабая - 💳 Наличные',
+  -8.3125,
+  116.4041,
+  'Senaru, North Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏄 Selong Belanak Beach (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-selong-belanak-beach',
+  'id',
+  'lom',
+  '🏄 Selong Belanak Beach',
+  'lom-selong-belanak-beach',
+  'beach',
+  'showplace',
+  'beach',
+  '["beach","surf","beginner"]'::jsonb,
+  'Широкий пляж с мягким песком и спокойной водой, популярный у начинающих серферов. - 🏄 Урок серфинга - 🏖 Купание - 🌅 Закат - 🕒 Круглосуточно - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.8793,
+  116.1734,
+  'Selong Belanak, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Ashtari Lounge & Kitchen (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-ashtari-lounge-kitchen',
+  'id',
+  'lom',
+  '☕ Ashtari Lounge & Kitchen',
+  'lom-ashtari-lounge-kitchen',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","view","brunch"]'::jsonb,
+  'Атмосферное кафе на холме рядом с Kuta Lombok с панорамным видом на побережье. - 🍽 Лёгкие блюда - ☕ Кофе - 🌅 Закат с террасы - 🕒 08:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные, карты',
+  -8.9052,
+  116.2969,
+  'Kuta Lombok area',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🥐 El Bazar Café & Restaurant (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-el-bazar-cafe-restaurant',
+  'id',
+  'lom',
+  '🥐 El Bazar Café & Restaurant',
+  'lom-el-bazar-cafe-restaurant',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","breakfast","coffee"]'::jsonb,
+  'Популярное кафе в Kuta Lombok с кофе, завтраками и интернациональной кухней. - 🍳 Завтраки - ☕ Кофе - 🍰 Десерты - 🕒 07:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -8.8973,
+  116.281,
+  'Kuta, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌮 The Mexican in Lombok (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-the-mexican-in-lombok',
+  'id',
+  'lom',
+  '🌮 The Mexican in Lombok',
+  'lom-the-mexican-in-lombok',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","international","fast-casual"]'::jsonb,
+  'Небольшое популярное кафе с мексиканской кухней — тако, буррито и быстрые перекусы после серфинга. - 🌮 Тако - 🌯 Буррито - 🥤 Напитки - 🕒 11:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -8.897,
+  116.2792,
+  'Kuta, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🦞 Senggigi Seafood Market & BBQ (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-senggigi-seafood-market-bbq',
+  'id',
+  'lom',
+  '🦞 Senggigi Seafood Market & BBQ',
+  'lom-senggigi-seafood-market-bbq',
+  'seafood',
+  'business',
+  'seafood',
+  '["seafood","bbq","local"]'::jsonb,
+  'Место у моря в районе Senggigi, где можно выбрать свежие морепродукты и приготовить их на гриле. - 🍤 Морепродукты на гриле - 🦀 Крабы/креветки - 🌅 Ужин у моря - 🕒 17:00–22:00 - 🌐 Индонезийский, базовый английский - 📶 Интернет ограничен - 💳 Наличные',
+  -8.4916,
+  116.0438,
+  'Senggigi, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Lombok Coffee House (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-lombok-coffee-house',
+  'id',
+  'lom',
+  '☕ Lombok Coffee House',
+  'lom-lombok-coffee-house',
+  'coffee',
+  'business',
+  'coffee',
+  '["coffee","cafe","work-friendly"]'::jsonb,
+  'Кофейня в Kuta Lombok со specialty-кофе и спокойной атмосферой для работы и отдыха. - ☕ Фильтр-кофе - 🥐 Выпечку - 🍰 Десерты - 🕒 07:00–18:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -8.8979,
+  116.2817,
+  'Kuta, Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏄 Surf Shack Lombok (Lombok)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'lom-surf-shack-lombok',
+  'id',
+  'lom',
+  '🏄 Surf Shack Lombok',
+  'lom-surf-shack-lombok',
+  'surf',
+  'business',
+  'surf',
+  '["surf","rental","lessons"]'::jsonb,
+  'Серф-школа и прокат досок в районе Kuta Lombok — удобный сервис для новичков и продолжающих. - 🏄 Урок серфинга - 🧰 Аренду доски - 🏖 Выезд на пляжи (Tanjung Aan / Selong Belanak) - 🕒 08:00–18:00 - 🌐 Английский, индонезийский - 📶 Интернет - 💳 Наличные',
+  -8.8926,
+  116.2824,
+  'Kuta Lombok',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏯 Borobudur Temple (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-borobudur-temple',
+  'id',
+  'yog',
+  '🏯 Borobudur Temple',
+  'yog-borobudur-temple',
+  'unesco',
+  'showplace',
+  'unesco',
+  '["unesco","temple","buddhism","landmark"]'::jsonb,
+  'Самый большой буддийский храм в мире и объект Всемирного наследия ЮНЕСКО, расположенный недалеко от Джокьякарты. - 🏯 Подъём на вершину храма - 📷 Фото барельефов и ступ - 🌅 Рассвет с точки Penataran Hill - 🕒 06:00–17:00 - 🌐 Английский, индонезийский - 📶 Интернет ограничен - 💳 Наличные, карты у операторов',
+  -7.6079,
+  110.2038,
+  'Borobudur, Magelang',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏛 Prambanan Temple (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-prambanan-temple',
+  'id',
+  'yog',
+  '🏛 Prambanan Temple',
+  'yog-prambanan-temple',
+  'unesco',
+  'showplace',
+  'unesco',
+  '["unesco","temple","hinduism","architecture"]'::jsonb,
+  'Крупнейший индуистский храмовый комплекс в Индонезии, посвящённый Шиве. - 🏛 Главные башни Шивы, Вишну и Брахмы - 🎭 Шоу Ramayana Ballet (вечером) - 📷 Детали скульптур - 🕒 06:00–17:00 - 🌐 Английский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.752,
+  110.4916,
+  'Prambanan, Sleman',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🏰 Kraton Yogyakarta (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-kraton-yogyakarta',
+  'id',
+  'yog',
+  '🏰 Kraton Yogyakarta',
+  'yog-kraton-yogyakarta',
+  'palace',
+  'showplace',
+  'palace',
+  '["palace","heritage","culture","royal"]'::jsonb,
+  'Резиденция султана Джокьякарты и центр культуры и традиций королевства. - 🏰 Дворцовые залы - 🖼 Музей регалий - 🎶 Традиционные выступления (по расписанию) - 🕒 08:00–14:00 - 🌐 Английский, индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.8014,
+  110.364,
+  'Jl. Rotowijayan, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 💧 Taman Sari Water Castle (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-taman-sari-water-castle',
+  'id',
+  'yog',
+  '💧 Taman Sari Water Castle',
+  'yog-taman-sari-water-castle',
+  'palace',
+  'showplace',
+  'palace',
+  '["palace","water-garden","history"]'::jsonb,
+  'Бывший королевский водный сад и купальни XVIII века. - 💦 Купальни для гарема - 🕳 Подземные ходы - 📷 Фото арочных галерей - 🕒 09:00–15:00 - 🌐 Индонезийский, базовый английский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.803,
+  110.363,
+  'Jl. Taman, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🛍 Malioboro Street (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-malioboro-street',
+  'id',
+  'yog',
+  '🛍 Malioboro Street',
+  'yog-malioboro-street',
+  'market',
+  'showplace',
+  'market',
+  '["market","shopping","street","night"]'::jsonb,
+  'Главная торговая улица Джокьякарты с сувенирами, едой и уличной жизнью. - 🛍 Сувениры и батик - 🍢 Уличную еду - 🚶 Прогулку вечером - 🕒 Круглосуточно - 🌐 Английский, индонезийский - 📶 Интернет стабильный - 💳 Наличные',
+  -7.797,
+  110.369,
+  'Jl. Malioboro, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🌋 Mount Merapi (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-mount-merapi',
+  'id',
+  'yog',
+  '🌋 Mount Merapi',
+  'yog-mount-merapi',
+  'volcano',
+  'showplace',
+  'volcano',
+  '["volcano","adventure","nature"]'::jsonb,
+  'Активный вулкан к северу от Джокьякарты, популярный для джип-туров и восхождений. - 🚙 Джип-тур к лавовым полям - 🥾 Восхождение (для опытных) - 📷 Музей Merapi - 🕒 По расписанию туров - 🌐 Английский - 📶 Связь ограничена - 💳 Наличные',
+  -7.5442,
+  110.4478,
+  'Mount Merapi, Sleman',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍛 Gudeg Yu Djum (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-gudeg-yu-djum',
+  'id',
+  'yog',
+  '🍛 Gudeg Yu Djum',
+  'yog-gudeg-yu-djum',
+  'local-food',
+  'business',
+  'local-food',
+  '["local-food","gudeg","heritage"]'::jsonb,
+  'Легендарный ресторан, специализирующийся на gudeg — традиционном блюде Джокьякарты из молодого баньян-дерева. - 🍛 Gudeg с курицей и яйцом - 🍚 Рис и соусы - 🥤 Напитки - 🕒 08:00–21:00 - 🌐 Индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.795,
+  110.37,
+  'Jl. Kaliurang, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍚 Nasi Kucing Angkringan Lik Man (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-nasi-kucing-angkringan-lik-man',
+  'id',
+  'yog',
+  '🍚 Nasi Kucing Angkringan Lik Man',
+  'yog-nasi-kucing-angkringan-lik-man',
+  'street-food',
+  'business',
+  'street-food',
+  '["street-food","night","local"]'::jsonb,
+  'Знаменитая точка уличной еды, где подают nasi kucing — маленькие порции риса с начинками. - 🍚 Nasi kucing - 🍢 Saté и tempe - ☕ Kopi joss (кофе с углём) - 🕒 18:00–06:00 - 🌐 Индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.798,
+  110.3695,
+  'Jl. Malioboro, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Via Via Café (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-via-via-cafe',
+  'id',
+  'yog',
+  '☕ Via Via Café',
+  'yog-via-via-cafe',
+  'cafe',
+  'business',
+  'cafe',
+  '["cafe","international","view"]'::jsonb,
+  'Популярное кафе с международной кухней и видом на улицу Malioboro. - ☕ Кофе - 🍽 Лёгкие блюда - 🍰 Десерты - 🕒 08:00–23:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты, наличные',
+  -7.7975,
+  110.3692,
+  'Jl. Prawirotaman, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍽 Milas Restaurant (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-milas-restaurant',
+  'id',
+  'yog',
+  '🍽 Milas Restaurant',
+  'yog-milas-restaurant',
+  'organic',
+  'business',
+  'organic',
+  '["organic","healthy","javanese"]'::jsonb,
+  'Ресторан органической яванской кухни в саду, ориентированный на осознанное питание. - 🍽 Органические сеты - 🥗 Салаты и закуски - 🍵 Напитки из трав - 🕒 10:00–21:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Наличные',
+  -7.792,
+  110.375,
+  'Jl. Prawirotaman, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: ☕ Sosro Coffee (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-sosro-coffee',
+  'id',
+  'yog',
+  '☕ Sosro Coffee',
+  'yog-sosro-coffee',
+  'coffee',
+  'business',
+  'coffee',
+  '["coffee","heritage","traditional"]'::jsonb,
+  'Историческая кофейня с 1930 года, известная традиционным яванским кофе. - ☕ Javanese coffee - 🍪 Печенье - 🍰 Традиционные сладости - 🕒 07:00–21:00 - 🌐 Индонезийский - 📶 Интернет ограничен - 💳 Наличные',
+  -7.796,
+  110.371,
+  'Jl. Sosrowijayan, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+-- Place: 🍽 Abhayagiri Restaurant (Yogyakarta)
+INSERT INTO places (
+  id, country_id, city_id, name, slug, type, place_kind, category,
+  tags, description_short, lat, lng, address, website, phone,
+  instagram, google_maps_url, price_level, created_at, updated_at
+) VALUES (
+  'yog-abhayagiri-restaurant',
+  'id',
+  'yog',
+  '🍽 Abhayagiri Restaurant',
+  'yog-abhayagiri-restaurant',
+  'fine-dining',
+  'business',
+  'fine-dining',
+  '["fine-dining","javanese","heritage"]'::jsonb,
+  'Элегантный ресторан в колониальном особняке с авторской яванской кухней. - 🍽 Дегустационные сеты - 🍷 Вино - 🍰 Авторские десерты - 🕒 18:00–22:00 - 🌐 Английский - 📶 Wi-Fi - 💳 Карты',
+  -7.793,
+  110.374,
+  'Jl. Prawirotaman, Yogyakarta',
+  '—',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  type = EXCLUDED.type,
+  place_kind = EXCLUDED.place_kind,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  description_short = EXCLUDED.description_short,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  address = EXCLUDED.address,
+  website = EXCLUDED.website,
+  phone = EXCLUDED.phone,
+  instagram = EXCLUDED.instagram,
+  google_maps_url = EXCLUDED.google_maps_url,
+  price_level = EXCLUDED.price_level,
+  updated_at = NOW();
+
+
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🛕 Tanah Lot Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tanah-lot-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главный визуальный символ Бали  
+- 🌍 Священное место балийского индуизма  
+- 📸 Храм на фоне океана и заката
+
+## Билеты и посещение
+
+- 💰 ~60 000 IDR  
+- 🎟️ Билет на входе  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Храм с берега  
+- 📷 Волны у скалы  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Tanah Lot, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси / Grab  
+- 🛵 Байк  
+- 🗺️ Запад Бали, район Табанан
+
+## Полезные нюансы
+
+- ⚠️ Очень многолюдно на закате  
+- 🌞 Лучше приезжать днём  
+- 👕 Уважительная одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Храм является духовной опорой региона и ключевым объектом религиозного туризма.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐒 Ubud Monkey Forest
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-ubud-monkey-forest',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Уникальное сочетание природы и культуры  
+- 🌍 Духовное пространство Убуда  
+- 📸 Джунгли, храмы и обезьяны
+
+## Билеты и посещение
+
+- 💰 ~80 000 IDR  
+- 🎟️ Билет на входе  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Обезьян  
+- 📷 Каменные мосты  
+- 🌅 Свет в джунглях
+
+## Практическая информация
+
+- **Адрес:** Monkey Forest Rd, Ubud  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком из центра Убуда  
+- 🚕 Такси  
+- 🗺️ Ubud
+
+## Полезные нюансы
+
+- ⚠️ Следите за вещами  
+- 🌞 Лучше утром  
+- 👕 Удобная обувь  
+- 🐾 Не кормить животных
+
+## Локальная ценность
+
+Лес сохраняет природный баланс и финансирует локальные храмы.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌾 Tegallalang Rice Terraces
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tegallalang-rice-terraces',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Икона балийских пейзажей  
+- 🌍 Традиционная система орошения subak (UNESCO)  
+- 📸 Террасы и пальмы
+
+## Билеты и посещение
+
+- 💰 Пожертвование ~10–20k IDR  
+- 🎟️ —  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Террасы сверху  
+- 📷 Тропы  
+- 🌅 Утренний туман
+
+## Практическая информация
+
+- **Адрес:** Tegallalang, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Север Убуда
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно днём  
+- 🌞 Лучшее время — утро  
+- 👕 Удобная обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Террасы отражают устойчивое земледелие и образ жизни балийцев.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏔️ Uluwatu Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-uluwatu-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Самый драматичный храм Бали  
+- 🌍 Священное место на краю острова  
+- 📸 Утёсы и океан
+
+## Билеты и посещение
+
+- 💰 ~50 000 IDR  
+- 🎟️ Танец — отдельно  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Утёсы  
+- 📷 Храм  
+- 🌅 Закат над океаном
+
+## Практическая информация
+
+- **Адрес:** Uluwatu, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Южный Бали, Улувату
+
+## Полезные нюансы
+
+- ⚠️ Обезьяны воруют вещи  
+- 🌞 Лучше к закату  
+- 👕 Саронг обязателен  
+- 🐾 —
+
+## Локальная ценность
+
+Храм — важная часть духовной защиты острова в балийской космологии.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Batur
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-mount-batur',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Один из лучших рассветов на Бали  
+- 🌍 Вулканический ландшафт  
+- 📸 Вид на кальдеру
+
+## Билеты и посещение
+
+- 💰 Тур ~400–600k IDR  
+- 🎟️ С гидом  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Рассвет  
+- 📷 Кальдеру  
+- 🌅 Озеро Батур
+
+## Практическая информация
+
+- **Адрес:** Kintamani, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Тур из Убуда  
+- 🗺️ Северо-восток Бали
+
+## Полезные нюансы
+
+- ⚠️ Холодно наверху  
+- 🌞 Нужна тёплая одежда  
+- 👕 Треккинговая обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Вулкан поддерживает экотуризм и доход горных деревень.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💧 Tirta Empul Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tirta-empul-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главный храм очищения Бали  
+- 🌍 Живые ритуалы  
+- 📸 Источники и каменная архитектура
+
+## Билеты и посещение
+
+- 💰 ~50 000 IDR  
+- 🎟️ Аренда саронга отдельно  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Источники  
+- 📷 Ритуалы  
+- 🌅 Свет в храме
+
+## Практическая информация
+
+- **Адрес:** Tampaksiring, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Tampaksiring, Bali
+
+## Полезные нюансы
+
+- ⚠️ Соблюдайте ритуальные правила  
+- 🌞 Лучше утром  
+- 👕 Купальная одежда под саронг  
+- 🐾 —
+
+## Локальная ценность
+
+Храм сохраняет духовные традиции и привлекает паломников со всего острова.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Potato Head Beach Club
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-potato-head-beach-club',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Seminyak
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно вечером  
+- 🌞 Лучше днём  
+- 👕 Beach chic  
+- 🐾 —
+
+## Локальная ценность
+
+Клуб формирует имидж Бали как мировой лайфстайл-локации.
+
+## Лучшие точки для фото
+
+- 📷 Бассейн  
+- 📷 Интерьер  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Seminyak, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Самый известный beach club Бали  
+- 🌍 Музыка, дизайн и закаты  
+- 📸 Бассейн и океан
+
+## Билеты и посещение
+
+- 💰 Средний–высокий чек  
+- 🎟️ Минимальный депозит  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ FINNS Beach Club
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-finns-beach-club',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Canggu
+
+## Полезные нюансы
+
+- ⚠️ Очень многолюдно  
+- 🌞 Лучше днём  
+- 👕 Beachwear  
+- 🐾 —
+
+## Локальная ценность
+
+Клуб поддерживает туристическую экономику и ночную жизнь Бали.
+
+## Лучшие точки для фото
+
+- 📷 Бассейны  
+- 📷 Толпы  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Canggu, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Самый масштабный beach club острова  
+- 🌍 Молодёжная и серф-атмосфера  
+- 📸 Бассейны и вечеринки
+
+## Билеты и посещение
+
+- 💰 Средний–высокий чек  
+- 🎟️ Депозит на лежаки  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🪨 The Rock Bar Bali
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-the-rock-bar-bali',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Uluwatu
+
+## Полезные нюансы
+
+- ⚠️ Дресс-код  
+- 🌞 Лучше к закату  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Бар стал мировым символом балийского курортного дизайна.
+
+## Лучшие точки для фото
+
+- 📷 Бар  
+- 📷 Волны  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Uluwatu, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Один из самых известных баров мира  
+- 🌍 Архитектура и океан  
+- 📸 Бар на скале
+
+## Билеты и посещение
+
+- 💰 Высокий чек  
+- 🎟️ Очереди  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Clear Café Ubud
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-clear-cafe-ubud',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком из центра Убуда  
+- 🚕 Такси  
+- 🗺️ Central Ubud
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно в обед  
+- 🌞 Лучше утром или вечером  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кафе поддерживает устойчивую гастрономию и wellness-культуру Убуда.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер  
+- 📷 Боулы и смузи  
+- 🌅 Свет во дворике
+
+## Практическая информация
+
+- **Адрес:** Ubud, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Культовое место wellness-сцены Убуда  
+- 🌍 Фокус на здоровье и осознанное питание  
+- 📸 Интерьер, подача и зелёные дворики
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Locavore Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-locavore-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Central Ubud
+
+## Полезные нюансы
+
+- ⚠️ Бронировать за несколько дней  
+- 🌞 Только вечерний формат  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Ресторан продвигает балийские продукты и фермеров на мировой гастросцене.
+
+## Лучшие точки для фото
+
+- 📷 Подачу блюд  
+- 📷 Интерьер  
+- 🌅 Атмосферу вечера
+
+## Практическая информация
+
+- **Адрес:** Ubud, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Ресторан мирового уровня  
+- 🌍 Современная интерпретация балийской кухни  
+- 📸 Авторская подача
+
+## Билеты и посещение
+
+- 💰 💎 Premium  
+- 🎟️ Бронирование обязательно  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Single Fin Bali
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-single-fin-bali',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Uluwatu
+
+## Полезные нюансы
+
+- ⚠️ Очень многолюдно по выходным  
+- 🌞 Лучше прийти заранее  
+- 👕 Casual / surf  
+- 🐾 —
+
+## Локальная ценность
+
+Бар сформировал глобальный образ Улувату как серф-столицы Бали.
+
+## Лучшие точки для фото
+
+- 📷 Океан  
+- 📷 Бар  
+- 🌅 Закат над скалами
+
+## Практическая информация
+
+- **Адрес:** Uluwatu, Bali  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Икона серф-культуры Бали  
+- 🌍 Музыка, океан и закаты  
+- 📸 Бар над волнами
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ Вход свободный  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗼 National Monument
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-national-monument',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главный символ Индонезии  
+- 🌍 Историческое и политическое сердце страны  
+- 📸 Монумент и панорама города
+
+## Структура комплекса
+
+- 🗼 Монумент Monas  
+- 🔭 Смотровую площадку  
+- 🚶 Прогулку по площади
+
+## Билеты и посещение
+
+- 💰 ~24 000 IDR  
+- 🎟️ Билет на подъём отдельно  
+- 🆓 Парк вокруг — бесплатно
+
+## Лучшие точки для фото
+
+- 📷 Монумент целиком  
+- 📷 Панораму города  
+- 🌅 Закат над центром
+
+## Практическая информация
+
+- **Адрес:** Merdeka Square, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚇 MRT Bundaran HI + пешком  
+- 🚕 Такси / Grab  
+- 🗺️ Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Очереди в выходные  
+- 🌞 Лучше утром  
+- 👕 Лёгкая одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Monas — ключевой символ национальной идентичности и независимости Индонезии.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛 Kota Tua Jakarta
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-kota-tua-jakarta',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Исторические корни Джакарты  
+- 🌍 Колониальное наследие  
+- 📸 Площади и музеи
+
+## Структура комплекса
+
+- 🏛 Fatahillah Square  
+- 🚲 Прокат велосипедов  
+- 🖼 Музеи
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Музеи — платно  
+- 🆓 Прогулка свободная
+
+## Лучшие точки для фото
+
+- 📷 Колониальные здания  
+- 📷 Площадь  
+- 🌅 Вечерний свет
+
+## Практическая информация
+
+- **Адрес:** Kota Tua, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚆 KRL до Jakarta Kota  
+- 🚕 Такси  
+- 🗺️ North Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Жарко днём  
+- 🌞 Лучше утром  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Район сохраняет историческую память и культурные институции города.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕌 Istiqlal Mosque
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-istiqlal-mosque',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Самая большая мечеть региона  
+- 🌍 Символ межрелигиозного диалога  
+- 📸 Масштаб и архитектура
+
+## Структура комплекса
+
+- 🕌 Главный зал  
+- 🚶 Внутренние галереи  
+- 📷 Архитектурные детали
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Экскурсии возможны  
+- 🆓 Свободный вход
+
+## Лучшие точки для фото
+
+- 📷 Купол  
+- 📷 Интерьеры  
+- 🌅 Свет в зале
+
+## Практическая информация
+
+- **Адрес:** Central Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🚶 Пешком от Monas  
+- 🗺️ Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Скромная одежда обязательна  
+- 🌞 Лучше вне молитв  
+- 👕 Закрытая одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Мечеть играет ключевую роль в религиозной и общественной жизни страны.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Jakarta Cathedral
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-jakarta-cathedral',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Символ религиозного сосуществования  
+- 🌍 Колониальная архитектура  
+- 📸 Контраст с мечетью
+
+## Структура комплекса
+
+- ⛪ Интерьер  
+- 🚶 Площадь  
+- 📷 Фото фасада
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ —  
+- 🆓 Свободный вход
+
+## Лучшие точки для фото
+
+- 📷 Фасад  
+- 📷 Интерьер  
+- 🌅 Контраст с мечетью
+
+## Практическая информация
+
+- **Адрес:** Central Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком от Istiqlal  
+- 🚕 Такси  
+- 🗺️ Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Тихое поведение  
+- 🌞 Лучше днём  
+- 👕 Скромная одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Собор подчёркивает межрелигиозную гармонию индонезийского общества.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎢 Ancol Dreamland
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-ancol-dreamland',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главная зона развлечений города  
+- 🌍 Море, парки и семейный отдых  
+- 📸 Побережье и аттракционы
+
+## Структура комплекса
+
+- 🎢 Аттракционы  
+- 🏖 Пляжи  
+- 🐠 Sea World
+
+## Билеты и посещение
+
+- 💰 ~25 000 IDR + зоны отдельно  
+- 🎟️ Комбинированные билеты  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Побережье  
+- 📷 Аттракционы  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Ancol, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🚌 Автобус  
+- 🗺️ North Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно в выходные  
+- 🌞 Лучше днём  
+- 👕 Повседневная одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Комплекс создаёт рабочие места и формирует досуг мегаполиса.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Taman Mini Indonesia Indah
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-taman-mini-indonesia-indah',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Вся Индонезия в одном месте  
+- 🌍 Этнографическое разнообразие  
+- 📸 Традиционные дома
+
+## Структура комплекса
+
+- 🏘 Павильоны регионов  
+- 🖼 Музеи  
+- 🚶 Прогулки по парку
+
+## Билеты и посещение
+
+- 💰 ~25 000 IDR  
+- 🎟️ Музеи отдельно  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Дома  
+- 📷 Озеро  
+- 🌅 Панорамы
+
+## Практическая информация
+
+- **Адрес:** East Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🗺️ East Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Территория большая  
+- 🌞 Лучше утром  
+- 👕 Удобная обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Парк способствует сохранению культурного наследия страны.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Skye Bar & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-skye-bar-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Дресс-код  
+- 🌞 Лучше вечером  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Rooftops формируют современный городской лайфстайл Джакарты.
+
+## Лучшие точки для фото
+
+- 📷 Панораму  
+- 📷 Бар  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Central Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший rooftop в центре  
+- 🌍 Современный облик города  
+- 📸 Skyline и вечерние огни
+
+## Билеты и посещение
+
+- 💰 Средний–высокий чек  
+- 🎟️ Вход свободный  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Café Batavia
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-cafe-batavia',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком  
+- 🚕 Такси  
+- 🗺️ Kota Tua
+
+## Полезные нюансы
+
+- ⚠️ Туристическое место  
+- 🌞 Лучше днём  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кафе сохраняет атмосферу колониального прошлого города.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер  
+- 📷 Площадь  
+- 🌅 Свет в окнах
+
+## Практическая информация
+
+- **Адрес:** Fatahillah Square, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Икона колониальной Джакарты  
+- 🌍 Историческая атмосфера  
+- 📸 Интерьеры в стиле ар-деко
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Nasi Goreng Kambing Kebon Sirih
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-nasi-goreng-kambing-kebon-sirih',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Очереди  
+- 🌞 Лучше вечером  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Место сохраняет уличные гастрономические традиции города.
+
+## Лучшие точки для фото
+
+- 📷 Вок  
+- 📷 Блюдо  
+- 🌅 Ночная улица
+
+## Практическая информация
+
+- **Адрес:** Kebon Sirih, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Культовая уличная еда  
+- 🌍 Подлинный вкус Джакарты  
+- 📸 Приготовление на воке
+
+## Билеты и посещение
+
+- 💰 Бюджетно  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Plataran Menteng
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-plataran-menteng',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси / Grab  
+- 🗺️ Menteng, Central Jakarta
+
+## Полезные нюансы
+
+- ⚠️ Подходит для спокойного ужина  
+- 🌞 Лучшее время — вечер  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Ресторан продвигает национальную кухню Индонезии на высоком гастрономическом уровне.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер особняка  
+- 📷 Подачу блюд  
+- 🌅 Вечерний сад
+
+## Практическая информация
+
+- **Адрес:** Menteng, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Эталон индонезийской кухни  
+- 🌍 Историческое здание и сад  
+- 📸 Атмосфера колониальной Джакарты
+
+## Билеты и посещение
+
+- 💰 💎 Premium  
+- 🎟️ Бронирование рекомендуется  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Union Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-union-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Plaza Senayan
+
+## Полезные нюансы
+
+- ⚠️ Очень популярно  
+- 🌞 Подходит в любое время дня  
+- 👕 Casual chic  
+- 🐾 —
+
+## Локальная ценность
+
+Union стал частью современной гастрономической сцены Джакарты.
+
+## Лучшие точки для фото
+
+- 📷 Десерты  
+- 📷 Интерьер  
+- 🌅 Атмосфера зала
+
+## Практическая информация
+
+- **Адрес:** Plaza Senayan, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Одно из самых популярных кафе Джакарты  
+- 🌍 Современный городской формат  
+- 📸 Десерты и стильный интерьер
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ Очереди в выходные  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Social House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-social-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ Grand Indonesia Mall
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно вечером  
+- 🌞 Лучше вечером  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Заведение отражает современную космополитичную культуру Джакарты.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер  
+- 📷 Коктейли  
+- 🌅 Вечерний город
+
+## Практическая информация
+
+- **Адрес:** Grand Indonesia, Jakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Популярное место для встреч  
+- 🌍 Современный городской лайфстайл  
+- 📸 Вид на центр Джакарты
+
+## Билеты и посещение
+
+- 💰 Средний–высокий чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦎 Komodo National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-komodo-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главная причина приехать в Лабуан-Баджо  
+- 🌍 Уникальная экосистема UNESCO  
+- 📸 Драконы, острова и бирюзовые бухты
+
+## Билеты и посещение
+
+- 💰 Пакеты/вход зависит от маршрута  
+- 🎟️ Туры на лодке — основной формат  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Драконов  
+- 📷 Панорамы островов  
+- 🌅 Закат с лодки
+
+## Практическая информация
+
+- **Адрес:** Komodo National Park, Flores  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚤 Лодка из Labuan Bajo Harbour  
+- 🚕 До порта на такси  
+- 🗺️ Острова вокруг Flores
+
+## Полезные нюансы
+
+- ⚠️ Драконы опасны — только с рейнджером  
+- 🌞 Лучший сезон — сухой  
+- 👕 Трекинговая обувь и вода  
+- 🐾 Не подходить к животным
+
+## Локальная ценность
+
+Парк обеспечивает основную занятость региона и финансирует охрану уникальной природы.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌄 Padar Island Viewpoint
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-padar-island-viewpoint',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Самая “открыточная” точка региона  
+- 🌍 Уникальный ландшафт национального парка  
+- 📸 Панорама трёх бухт
+
+## Билеты и посещение
+
+- 💰 В составе тура  
+- 🎟️ Оплачивается через лодочные пакеты  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Три бухты  
+- 📷 Тропу на вершину  
+- 🌅 Рассвет
+
+## Практическая информация
+
+- **Адрес:** Padar Island, Komodo NP  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚤 На лодке из Labuan Bajo  
+- 🗺️ Padar Island
+
+## Полезные нюансы
+
+- ⚠️ Очень жарко и пыльно  
+- 🌞 Лучшее время — рассвет  
+- 👕 Кроссовки и вода  
+- 🐾 Осторожно на тропе
+
+## Локальная ценность
+
+Площадка стала визитной карточкой региона и стимулирует устойчивый туризм.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖 Pink Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-pink-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Один из немногих розовых пляжей в мире  
+- 🌍 Коралловая экосистема  
+- 📸 Розовый песок и прозрачная вода
+
+## Билеты и посещение
+
+- 💰 В составе тура  
+- 🎟️ —  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Розовый песок  
+- 📷 Береговую линию  
+- 🌅 Свет на воде
+
+## Практическая информация
+
+- **Адрес:** Komodo National Park  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚤 На лодке  
+- 🗺️ Komodo NP
+
+## Полезные нюансы
+
+- ⚠️ Беречь кораллы  
+- 🌞 Лучше утром  
+- 👕 Акваобувь  
+- 🐾 Экоправила
+
+## Локальная ценность
+
+Пляж поддерживает экотуризм и охрану морской природы.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐋 Manta Point
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-manta-point',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Шанс увидеть мант в дикой природе  
+- 🌍 Один из лучших дайв-спотов региона  
+- 📸 Подводный мир
+
+## Билеты и посещение
+
+- 💰 В составе тура  
+- 🎟️ Дайв-пакеты отдельно  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Мант  
+- 📷 Кораллы  
+- 🌅 Вид с лодки
+
+## Практическая информация
+
+- **Адрес:** Komodo NP waters  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚤 На лодке из Labuan Bajo  
+- 🗺️ Komodo NP waters
+
+## Полезные нюансы
+
+- ⚠️ Течения сильные  
+- 🌞 Лучшее время — сухой сезон  
+- 👕 Акваобувь / гидрокостюм  
+- 🐾 Не касаться мант
+
+## Локальная ценность
+
+Точка поддерживает дайв-экономику региона и мотивирует сохранение морской фауны.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳 Batu Cermin Cave
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-batu-cermin-cave',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Лёгкая экскурсия недалеко от города  
+- 🌍 Геология острова Flores  
+- 📸 Луч света внутри пещеры
+
+## Билеты и посещение
+
+- 💰 Бюджетно  
+- 🎟️ Билет на месте  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Вход  
+- 📷 Луч света  
+- 🌅 Текстуры стен
+
+## Практическая информация
+
+- **Адрес:** Batu Cermin, Labuan Bajo  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ 10–15 минут от центра
+
+## Полезные нюансы
+
+- ⚠️ Нужен фонарик/гид  
+- 🌞 Лучше днём  
+- 👕 Удобная обувь  
+- 🐾 Осторожно на камнях
+
+## Локальная ценность
+
+Пещера поддерживает локальные экскурсии и знакомит туристов с природой Флореса.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌅 Labuan Bajo Sunset Harbor
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-labuan-bajo-sunset-harbor',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Лучшие закаты в городе  
+- 🌍 Центр морской жизни и туров  
+- 📸 Лодки, бухта и вечерние огни
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ —  
+- 🆓 Свободный доступ
+
+## Лучшие точки для фото
+
+- 📷 Лодки в бухте  
+- 📷 Закат  
+- 🌅 Огни города
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo Harbour  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком из центра  
+- 🚕 Такси  
+- 🗺️ Harbor area
+
+## Полезные нюансы
+
+- ⚠️ Очень оживлённо вечером  
+- 🌞 Лучшее время — закат  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Набережная объединяет местных и туристов и поддерживает экономику лодочных туров.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ La Cucina
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-la-cucina',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🗺️ AYANA Komodo, Labuan Bajo
+
+## Полезные нюансы
+
+- ⚠️ Smart casual  
+- 🌞 Лучшее время — закат  
+- 👕 Опрятная одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Премиальный сервис поднимает статус направления и развивает качественный туризм.
+
+## Лучшие точки для фото
+
+- 📷 Террасу  
+- 📷 Подачу блюд  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo, Flores  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший premium dining в городе  
+- 🌍 Ужин с видом на острова  
+- 📸 Панорамная терраса и закаты
+
+## Билеты и посещение
+
+- 💰 💎 Premium  
+- 🎟️ Бронирование желательно  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Atlantis on the Rock
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-atlantis-on-the-rock',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком из центра  
+- 🚕 Такси  
+- 🗺️ Harbor area
+
+## Полезные нюансы
+
+- ⚠️ Лучшие места быстро занимают  
+- 🌞 Приходить заранее  
+- 👕 Casual chic  
+- 🐾 —
+
+## Локальная ценность
+
+Rooftop-бары развивают городскую экономику и вечернюю инфраструктуру направления.
+
+## Лучшие точки для фото
+
+- 📷 Порт сверху  
+- 📷 Коктейль на фоне заката  
+- 🌅 Огни города
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo Harbour  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший rooftop для заката  
+- 🌍 Атмосфера вечерней Лабуан-Баджо  
+- 📸 Панорамы гавани
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ Вход свободный  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥗 Happy Banana Komodo
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-happy-banana-komodo',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком из центра  
+- 🗺️ Central Labuan Bajo
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно утром  
+- 🌞 Лучшее время — завтрак  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кафе поддерживает современную туристическую инфраструктуру и здоровый формат питания в городе.
+
+## Лучшие точки для фото
+
+- 📷 Боулы  
+- 📷 Интерьер  
+- 🌅 Утренний свет
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший healthy-формат в городе  
+- 🌍 Любимо у путешественников и цифровых кочевников  
+- 📸 Яркие боулы и напитки
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Taman Laut Handayani Seafood
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-taman-laut-handayani-seafood',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком от порта  
+- 🚕 Такси  
+- 🗺️ Harbor area
+
+## Полезные нюансы
+
+- ⚠️ Лучше приходить на ужин  
+- 🌞 Вечером приятнее  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Ресторан поддерживает местных рыбаков и формирует гастрономический образ направления.
+
+## Лучшие точки для фото
+
+- 📷 Витрины с уловом  
+- 📷 Подачу блюд  
+- 🌅 Вечерний порт
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo Harbour  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Надёжный выбор морепродуктов  
+- 🌍 Локальная кухня у гавани  
+- 📸 Атмосфера порта
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌮 Bajo Taco
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-bajo-taco',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком из центра  
+- 🗺️ Central Labuan Bajo
+
+## Полезные нюансы
+
+- ⚠️ Быстро разбирают популярные позиции  
+- 🌞 Хорошо для обеда  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Место поддерживает туристический формат “быстро и качественно” для тех, кто живёт турами по Комодо.
+
+## Лучшие точки для фото
+
+- 📷 Тако/буррито  
+- 📷 Интерьер  
+- 🌅 Вечерний вайб улиц
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший “быстрый” формат для путешественников  
+- 🌍 Интернациональная кухня в туристическом хабе  
+- 📸 Яркая подача
+
+## Билеты и посещение
+
+- 💰 Бюджет–средний  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🤿 Scuba Junkie Komodo
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-scuba-junkie-komodo',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком из центра  
+- 🚕 Такси  
+- 🗺️ Central Labuan Bajo
+
+## Полезные нюансы
+
+- ⚠️ Планируйте заранее в сезон  
+- 🌞 Лучшее время — сухой сезон  
+- 👕 Купальные вещи/сменная одежда  
+- 🐾 Следовать инструктажу
+
+## Локальная ценность
+
+Дайв-центры формируют ядро экономики Лабуан-Баджо и поддерживают устойчивый морской туризм.
+
+## Лучшие точки для фото
+
+- 📷 Экипировку  
+- 📷 Лодку/порт  
+- 🌅 Рассвет перед выходом
+
+## Практическая информация
+
+- **Адрес:** Labuan Bajo  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Удобный сервис для дайвинга в Комодо  
+- 🌍 Безопасный формат с инструкторами  
+- 📸 Подводные впечатления и обучение
+
+## Билеты и посещение
+
+- 💰 Дайв-туры: средний–высокий чек  
+- 🎟️ По бронированию  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Rinjani National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-mount-rinjani-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Лучший треккинг в Индонезии после Бали  
+- 🌍 Активный вулкан и уникальная природа  
+- 📸 Озеро в кальдере и панорамы с высоты
+
+## Билеты и посещение
+
+- 💰 Парк + тур: средний–высокий чек  
+- 🎟️ Только с гидом/туроператором  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Кальдеру и озеро  
+- 📷 Линию рассвета  
+- 🌅 Туман над склонами
+
+## Практическая информация
+
+- **Адрес:** Rinjani National Park, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Трансфер из Senggigi или Kuta Lombok  
+- 🚌 Тур  
+- 🗺️ Север Ломбока
+
+## Полезные нюансы
+
+- ⚠️ Требуется хорошая физподготовка  
+- 🌞 Лучший сезон — сухой  
+- 👕 Тёплая одежда и трек-обувь  
+- 🐾 Соблюдать безопасность вулкана
+
+## Локальная ценность
+
+Ринджани — главный природный ресурс острова и источник дохода местных общин через треккинг-туризм.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Gili Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-gili-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Самые популярные острова региона  
+- 🌍 Чистая вода и подводный мир  
+- 📸 Пляжи, велосипеды и закаты
+
+## Билеты и посещение
+
+- 💰 Переправа: бюджет–средний  
+- 🎟️ Лодки и туры — отдельно  
+- 🆓 Пляжи бесплатны
+
+## Лучшие точки для фото
+
+- 📷 Закат  
+- 📷 Подводный мир  
+- 🌅 Велосипеды на пляже
+
+## Практическая информация
+
+- **Адрес:** Gili Islands, North Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚤 Лодка из Bangsal / Teluk Nare  
+- 🚕 Такси до порта  
+- 🗺️ Северо-запад Ломбока
+
+## Полезные нюансы
+
+- ⚠️ На островах нет машин  
+- 🌞 Лучше сухой сезон  
+- 👕 Акваобувь  
+- 🐾 Уважайте рифы
+
+## Локальная ценность
+
+Острова поддерживают экономику Ломбока через морской туризм и дайв-сервисы.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Kuta Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-kuta-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Лучшие пляжи юга Ломбока  
+- 🌍 Альтернатива Бали без толп  
+- 📸 Береговые линии и холмы
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Парковки/въезды на отдельные пляжи — платно  
+- 🆓 Пляжи общественные
+
+## Лучшие точки для фото
+
+- 📷 Холмы у побережья  
+- 📷 Пляжи  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Kuta, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Трансфер из аэропорта LOP  
+- 🛵 Байк  
+- 🗺️ Южный Ломбок
+
+## Полезные нюансы
+
+- ⚠️ Дороги на байке местами плохие  
+- 🌞 Лучшее время — сухой сезон  
+- 👕 Солнцезащита обязательна  
+- 🐾 —
+
+## Локальная ценность
+
+Mandalika развивает туризм острова и создаёт новые рабочие места для местного населения.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Tanjung Aan Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-tanjung-aan-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Лучший “открыточный” пляж Mandalika  
+- 🌍 Чистая вода и мягкий песок  
+- 📸 Просторные виды
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Парковка платно  
+- 🆓 Пляж общественный
+
+## Лучшие точки для фото
+
+- 📷 Берег  
+- 📷 Бирюзовую воду  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Tanjung Aan, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ 15–20 минут от Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Мало тени  
+- 🌞 Лучше утром  
+- 👕 Головной убор  
+- 🐾 —
+
+## Локальная ценность
+
+Пляж поддерживает малый локальный бизнес (парковка, напитки, прокат).
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Sendang Gile Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-sendang-gile-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Природная локация рядом с Ринджани  
+- 🌍 Тропический лес  
+- 📸 Вода и зелень
+
+## Билеты и посещение
+
+- 💰 Бюджетно (входной сбор)  
+- 🎟️ Гид по желанию  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Каскад  
+- 📷 Тропу  
+- 🌅 Свет в лесу
+
+## Практическая информация
+
+- **Адрес:** Senaru, North Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси / тур  
+- 🛵 Байк  
+- 🗺️ Senaru, North Lombok
+
+## Полезные нюансы
+
+- ⚠️ Скользко после дождей  
+- 🌞 Лучше утром  
+- 👕 Акваобувь  
+- 🐾 —
+
+## Локальная ценность
+
+Водопад поддерживает экотуризм и доход местных жителей в Senaru.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Selong Belanak Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-selong-belanak-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Один из лучших пляжей для новичков в серфинге  
+- 🌍 Спокойная бухта  
+- 📸 Просторная береговая линия
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Уроки серфинга — платно  
+- 🆓 Пляж общественный
+
+## Лучшие точки для фото
+
+- 📷 Волны  
+- 📷 Серферов  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Selong Belanak, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Юг Ломбока, 30–40 минут от Kuta
+
+## Полезные нюансы
+
+- ⚠️ Мало тени  
+- 🌞 Лучше утром  
+- 👕 Солнцезащита  
+- 🐾 —
+
+## Локальная ценность
+
+Пляж развивает серф-школы и небольшие местные сервисы.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Ashtari Lounge & Kitchen
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-ashtari-lounge-kitchen',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Рядом с Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Дорога на холм узкая  
+- 🌞 Лучше к закату  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Заведение поддерживает развитие туристической сцены Mandalika.
+
+## Лучшие точки для фото
+
+- 📷 Вид на море  
+- 📷 Террасу  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Kuta Lombok area  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучшее кафе-видовая точка Mandalika  
+- 🌍 Расслабленная атмосфера и йога-вайб  
+- 📸 Панорамы и закаты
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥐 El Bazar Café & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-el-bazar-cafe-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком по Kuta  
+- 🚕 Такси  
+- 🗺️ Central Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно утром  
+- 🌞 Лучше ранний завтрак  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кафе поддерживает современный туристический сервис в Kuta Lombok.
+
+## Лучшие точки для фото
+
+- 📷 Завтрак  
+- 📷 Интерьер  
+- 🌅 Утренний свет
+
+## Практическая информация
+
+- **Адрес:** Kuta, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший завтрак в Куте  
+- 🌍 Уютная атмосфера  
+- 📸 Дизайн и подача
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌮 The Mexican in Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-the-mexican-in-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком  
+- 🚕 Такси  
+- 🗺️ Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Быстро разбирают популярные позиции  
+- 🌞 Хорошо для обеда  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Такие заведения поддерживают туризм и разнообразие гастросцены на острове.
+
+## Лучшие точки для фото
+
+- 📷 Тако/буррито  
+- 📷 Интерьер  
+- 🌅 Вечерний вайб
+
+## Практическая информация
+
+- **Адрес:** Kuta, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший быстрый формат для серферов  
+- 🌍 Разнообразие кухни в туристической зоне  
+- 📸 Яркая подача
+
+## Билеты и посещение
+
+- 💰 Бюджет–средний  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Senggigi Seafood Market & BBQ
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-senggigi-seafood-market-bbq',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Senggigi, West Lombok
+
+## Полезные нюансы
+
+- ⚠️ Лучшие позиции заканчиваются  
+- 🌞 Лучше вечером  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Поддерживает местных рыбаков и формирует гастрономическую культуру побережья.
+
+## Лучшие точки для фото
+
+- 📷 Гриль  
+- 📷 Блюда  
+- 🌅 Закат у моря
+
+## Практическая информация
+
+- **Адрес:** Senggigi, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Свежие морепродукты  
+- 🌍 Аутентичный локальный опыт  
+- 📸 Гриль и вечерняя атмосфера
+
+## Билеты и посещение
+
+- 💰 Бюджет–средний  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Lombok Coffee House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-lombok-coffee-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком по Kuta  
+- 🚕 Такси  
+- 🗺️ Central Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно утром  
+- 🌞 Лучшее время — завтрак  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кофейня поддерживает рост современной сервисной экономики Kuta Lombok.
+
+## Лучшие точки для фото
+
+- 📷 Кофе  
+- 📷 Интерьер  
+- 🌅 Утренний свет
+
+## Практическая информация
+
+- **Адрес:** Kuta, Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Хороший кофе и спокойный формат  
+- 🌍 Удобно для утренней рутины путешественника  
+- 📸 Минималистичный интерьер
+
+## Билеты и посещение
+
+- 💰 Бюджет–средний  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Surf Shack Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-surf-shack-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком по Kuta  
+- 🚕 Такси  
+- 🗺️ Kuta Lombok
+
+## Полезные нюансы
+
+- ⚠️ Лучше бронировать утром  
+- 🌞 Сезон волн зависит от месяца  
+- 👕 Купальная одежда и защита от солнца  
+- 🐾 Следовать инструктажу
+
+## Локальная ценность
+
+Серф-школы развивают устойчивый туризм и создают рабочие места для местных инструкторов.
+
+## Лучшие точки для фото
+
+- 📷 Доски и экипировку  
+- 📷 Урок на пляже  
+- 🌅 Серф на закате
+
+## Практическая информация
+
+- **Адрес:** Kuta Lombok  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Лучший сервис для серфинга на юге Ломбока  
+- 🌍 Удобно для обучения и аренды  
+- 📸 Серф-вайб и пляжная культура
+
+## Билеты и посещение
+
+- 💰 Уроки/аренда: средний чек  
+- 🎟️ По записи  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 Borobudur Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-borobudur-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Главная достопримечательность Индонезии  
+- 🌍 Шедевр древней инженерии и духовности  
+- 📸 Рассвет над храмом — один из лучших моментов в стране
+
+## Билеты и посещение
+
+- 💰 ~500 000 IDR (включая трансфер)  
+- 🎟️ Билеты лучше покупать онлайн  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Храм на рассвете  
+- 📷 Барельефы  
+- 🌅 Панораму с холма
+
+## Практическая информация
+
+- **Адрес:** Borobudur, Magelang  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси / Grab из Джокьякарты (~1 час)  
+- 🚌 Экскурсионные автобусы  
+- 🗺️ Magelang Regency
+
+## Полезные нюансы
+
+- ⚠️ Очень многолюдно на рассвете  
+- 🌞 Лучше приехать до 05:00  
+- 👕 Удобная обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Храм — духовный центр буддизма в Индонезии и источник гордости для местных жителей.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛 Prambanan Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-prambanan-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Самый красивый индуистский храм страны  
+- 🌍 Архитектурный шедевр IX века  
+- 📸 Высокие башни и детализированные рельефы
+
+## Билеты и посещение
+
+- 💰 ~350 000 IDR  
+- 🎟️ Отдельный билет на балет  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Башни  
+- 📷 Рельефы  
+- 🌅 Закат
+
+## Практическая информация
+
+- **Адрес:** Prambanan, Sleman  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Такси из Джокьякарты (~30 мин)  
+- 🚌 Экскурсии  
+- 🗺️ Граница провинций Yogyakarta и Central Java
+
+## Полезные нюансы
+
+- ⚠️ Жарко днём  
+- 🌞 Лучше утром  
+- 👕 Удобная обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Прамбанан символизирует культурное наследие и религиозное многообразие острова Ява.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏰 Kraton Yogyakarta
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-kraton-yogyakarta',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Сердце культурной идентичности Джокьякарты  
+- 🌍 Живая монархия в современной Индонезии  
+- 📸 Дворцовая архитектура и музей
+
+## Билеты и посещение
+
+- 💰 ~15 000 IDR  
+- 🎟️ Аудиогид — отдельно  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Ворота дворца  
+- 📷 Интерьеры  
+- 🌅 Дворцовый парк
+
+## Практическая информация
+
+- **Адрес:** Jl. Rotowijayan, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком из центра  
+- 🚕 Такси  
+- 🗺️ Центр Джокьякарты
+
+## Полезные нюансы
+
+- ⚠️ Закрыто по понедельникам  
+- 🌞 Лучше днём  
+- 👕 Скромная одежда  
+- 🐾 —
+
+## Локальная ценность
+
+Кратон — не просто музей, а действующая резиденция, поддерживающая традиции и стабильность региона.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💧 Taman Sari Water Castle
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-taman-sari-water-castle',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Уникальная гидроинженерия прошлого  
+- 🌍 История султанского двора  
+- 📸 Подземные тоннели и бассейны
+
+## Билеты и посещение
+
+- 💰 ~5 000 IDR  
+- 🎟️ Гид — по желанию  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Бассейны  
+- 📷 Арки  
+- 🌅 Свет в тоннелях
+
+## Практическая информация
+
+- **Адрес:** Jl. Taman, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком от Кратона  
+- 🚕 Такси  
+- 🗺️ Центр города
+
+## Полезные нюансы
+
+- ⚠️ Часть территории закрыта  
+- 🌞 Лучше утром  
+- 👕 Удобная обувь  
+- 🐾 —
+
+## Локальная ценность
+
+Объект напоминает о богатстве и изощрённости султанского двора.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍 Malioboro Street
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-malioboro-street',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Сердце туристической жизни города  
+- 🌍 Аутентичный рынок и ремёсла  
+- 📸 Ночная атмосфера и фонари
+
+## Билеты и посещение
+
+- 💰 Бесплатно  
+- 🎟️ Покупки — по желанию  
+- 🆓 Свободный доступ
+
+## Лучшие точки для фото
+
+- 📷 Ряды лавок  
+- 📷 Уличные фонари  
+- 🌅 Ночную жизнь
+
+## Практическая информация
+
+- **Адрес:** Jl. Malioboro, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚶 Пешком из центра  
+- 🚕 Такси  
+- 🗺️ Центр Джокьякарты
+
+## Полезные нюансы
+
+- ⚠️ Торгуйтесь активно  
+- 🌞 Лучше вечером  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Улица поддерживает тысячи мелких торговцев и ремесленников.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Merapi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-mount-merapi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
+
+- 🌟 Один из самых активных вулканов мира  
+- 🌍 Драматические пейзажи после извержений  
+- 📸 Джип-туры по лавовым полям
+
+## Билеты и посещение
+
+- 💰 Тур: ~500 000–800 000 IDR  
+- 🎟️ Только с лицензированными гидами  
+- 🆓 —
+
+## Лучшие точки для фото
+
+- 📷 Лавовые поля  
+- 📷 Кратер  
+- 🌅 Рассвет над дымом
+
+## Практическая информация
+
+- **Адрес:** Mount Merapi, Sleman  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Как добраться
+
+- 🚕 Трансфер из Джокьякарты  
+- 🚌 Тур  
+- 🗺️ Север Джокьякарты
+
+## Полезные нюансы
+
+- ⚠️ Опасно без гида  
+- 🌞 Лучший сезон — сухой  
+- 👕 Тёплая одежда ночью  
+- 🐾 —
+
+## Локальная ценность
+
+Вулкан — часть мифологии и повседневной жизни региона.
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍛 Gudeg Yu Djum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-gudeg-yu-djum',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком от центра  
+- 🚕 Такси  
+- 🗺️ Jalan Kaliurang
+
+## Полезные нюансы
+
+- ⚠️ Можно взять с собой  
+- 🌞 Подходит для обеда  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Yu Djum — символ кулинарной идентичности Джокьякарты.
+
+## Лучшие точки для фото
+
+- 📷 Подачу блюд  
+- 📷 Упаковку  
+- 🌅 Атмосферу зала
+
+## Практическая информация
+
+- **Адрес:** Jl. Kaliurang, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Самый известный gudeg в городе  
+- 🌍 Аутентичный вкус и семейные рецепты  
+- 📸 Упаковка для вывоза
+
+## Билеты и посещение
+
+- 💰 Бюджетно  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍚 Nasi Kucing Angkringan Lik Man
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-nasi-kucing-angkringan-lik-man',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком от Malioboro  
+- 🚕 Такси  
+- 🗺️ Центр города
+
+## Полезные нюансы
+
+- ⚠️ Только ночью  
+- 🌞 Не для слабонервных (kopi joss)  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Angkringan — часть повседневной жизни студентов и рабочих Джокьякарты.
+
+## Лучшие точки для фото
+
+- 📷 Столики на улице  
+- 📷 Приготовление кофе  
+- 🌅 Ночную улицу
+
+## Практическая информация
+
+- **Адрес:** Jl. Malioboro, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Культовое место ночной еды  
+- 🌍 Аутентичная культура angkringan  
+- 📸 Ночные огни и атмосфера
+
+## Билеты и посещение
+
+- 💰 Очень бюджетно  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Via Via Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-via-via-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком  
+- 🚕 Такси  
+- 🗺️ Malioboro
+
+## Полезные нюансы
+
+- ⚠️ Многолюдно  
+- 🌞 Подходит в любое время  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Кафе объединяет туристов и местных в одном пространстве.
+
+## Лучшие точки для фото
+
+- 📷 Вид из окна  
+- 📷 Интерьер  
+- 🌅 Вечернюю улицу
+
+## Практическая информация
+
+- **Адрес:** Jl. Prawirotaman, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Удобное место для отдыха в центре  
+- 🌍 Интернациональное меню  
+- 📸 Вид на улицу
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Milas Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-milas-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Prawirotaman
+
+## Полезные нюансы
+
+- ⚠️ Закрывается рано  
+- 🌞 Подходит для обеда  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Milas продвигает устойчивую гастрономию и поддерживает фермеров.
+
+## Лучшие точки для фото
+
+- 📷 Сад  
+- 📷 Подачу блюд  
+- 🌅 Атмосферу вечера
+
+## Практическая информация
+
+- **Адрес:** Jl. Prawirotaman, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Здоровая интерпретация местной кухни  
+- 🌍 Эко-подход и локальные продукты  
+- 📸 Садовая атмосфера
+
+## Билеты и посещение
+
+- 💰 Средний чек  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Sosro Coffee
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-sosro-coffee',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚶 Пешком от центра  
+- 🚕 Такси  
+- 🗺️ Jalan Sosrowijayan
+
+## Полезные нюансы
+
+- ⚠️ Простые условия  
+- 🌞 Подходит для завтрака  
+- 👕 Casual  
+- 🐾 —
+
+## Локальная ценность
+
+Sosro — живая история кофейной культуры Джокьякарты.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер  
+- 📷 Чашки  
+- 🌅 Утренний свет
+
+## Практическая информация
+
+- **Адрес:** Jl. Sosrowijayan, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Самая старая кофейня Джокьякарты  
+- 🌍 Аутентичный вкус и атмосфера  
+- 📸 Ретро-интерьер
+
+## Билеты и посещение
+
+- 💰 Бюджетно  
+- 🎟️ —  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Abhayagiri Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-abhayagiri-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
+
+- 🚕 Такси  
+- 🛵 Байк  
+- 🗺️ Prawirotaman
+
+## Полезные нюансы
+
+- ⚠️ Только вечером  
+- 🌞 Подходит для особых случаев  
+- 👕 Smart casual  
+- 🐾 —
+
+## Локальная ценность
+
+Ресторан поднимает статус яванской кухни на мировой уровень.
+
+## Лучшие точки для фото
+
+- 📷 Интерьер  
+- 📷 Подачу блюд  
+- 🌅 Вечернюю атмосферу
+
+## Практическая информация
+
+- **Адрес:** Jl. Prawirotaman, Yogyakarta  
+- **Сайт:** —  
+- **Телефон:** —
+
+## Почему это важно?
+
+- 🌟 Fine dining в историческом здании  
+- 🌍 Современная интерпретация традиций  
+- 📸 Роскошный интерьер
+
+## Билеты и посещение
+
+- 💰 💎 Premium  
+- 🎟️ Бронирование обязательно  
+- 🆓 —
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

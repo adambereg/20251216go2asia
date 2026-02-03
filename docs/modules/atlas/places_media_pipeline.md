@@ -394,6 +394,126 @@ go2asia-media/
 
 ---
 
+---
+
+## Примеры для Malaysia (MY)
+
+**Стандарт R2 для MY мест (идентичен PH/KH/VN/TH/LA):**
+
+```
+go2asia-media/
+  place/
+    kll-petronas-twin-towers/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    png-kek-lok-si-temple/
+      01.jpg
+      02.jpg
+      03.jpg
+    lgk-langkawi-sky-bridge/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/kll-petronas-twin-towers/01.jpg` (hero)
+- `https://media.go2asia.space/place/kll-petronas-twin-towers/02.jpg` (gallery)
+- `https://media.go2asia.space/place/kll-petronas-twin-towers/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `kll-petronas-twin-towers`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
+---
+
+## Примеры для Indonesia (ID)
+
+**Стандарт R2 для ID мест (идентичен PH/KH/VN/TH/LA/MY):**
+
+```
+go2asia-media/
+  place/
+    bali-tanah-lot-temple/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    jkt-national-monument-monas/
+      01.jpg
+      02.jpg
+      03.jpg
+    yog-borobudur-temple/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/bali-tanah-lot-temple/01.jpg` (hero)
+- `https://media.go2asia.space/place/bali-tanah-lot-temple/02.jpg` (gallery)
+- `https://media.go2asia.space/place/bali-tanah-lot-temple/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `bali-tanah-lot-temple`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
+---
+
+## Примеры для Singapore (SG)
+
+**Стандарт R2 для SG мест (идентичен PH/KH/VN/TH/LA/MY/ID):**
+
+```
+go2asia-media/
+  place/
+    sgp-marina-bay-sands-skypark/
+      01.jpg  (hero image)
+      02.jpg  (gallery)
+      03.jpg  (gallery)
+    sgp-gardens-by-the-bay/
+      01.jpg
+      02.jpg
+      03.jpg
+    sgp-lau-pa-sat-hawker-centre/
+      01.jpg
+      02.jpg
+      03.jpg
+```
+
+**Public URLs:**
+- `https://media.go2asia.space/place/sgp-marina-bay-sands-skypark/01.jpg` (hero)
+- `https://media.go2asia.space/place/sgp-marina-bay-sands-skypark/02.jpg` (gallery)
+- `https://media.go2asia.space/place/sgp-marina-bay-sands-skypark/03.jpg` (gallery)
+
+**API резолвинг:**
+- `content-service` автоматически резолвит медиа для всех стран через `resolveAtlasMedia(env, 'place', { slug: place.id, max: 50 })`
+- Prefix: `place/{place_id}/` где `place_id` = `places.id` (например, `sgp-marina-bay-sands-skypark`)
+- Кэш: 10 минут для успешных результатов, 5 минут для пустых (in-memory TTL)
+
+**UI отображение:**
+- `PlacePreviewCard` показывает `heroImage` (01.jpg или первый доступный)
+- `PlaceLandingLayouts` показывает carousel из `photos[]` (01..05.jpg)
+- Fallback: placeholder, если медиа отсутствует
+
+---
+
 **Дата создания:** 2026-01-21  
-**Дата обновления:** 2026-01-31 (добавлены примеры LA)  
+**Дата обновления:** 2026-02-03 (добавлены примеры SG)  
 **Версия:** Atlas Content Canon v1

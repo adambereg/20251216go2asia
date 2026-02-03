@@ -4,9 +4,9 @@
 
 This directory contains exported data from Atlas Content Canon v1 markdown files for import into Neon Postgres.
 
-**Generated:** 2026-02-03T05:24:47.484Z  
-**Country:** Thailand (`th`)  
-**Total places:** 70
+**Generated:** 2026-02-03T05:24:47.536Z  
+**Country:** Singapore (`sg`)  
+**Total places:** 12
 
 ## Files
 
@@ -52,19 +52,12 @@ EOF
 
 ## City ID Mapping
 
-- Bangkok → `bkk`
-- Chiang Mai → `cnx`
-- Phuket → `phk`
-- Pattaya → `pty`
-- Krabi → `kbi`
-- Koh Samui → `usm`
-- Hua Hin → `hhn`
-- Ayutthaya → `aya`
+- Singapore → `sgp`
 
 ## Validation
 
 Before import, verify:
-1. Country `th` exists in `countries` table
+1. Country `sg` exists in `countries` table
 2. All city IDs exist in `cities` table
 3. No duplicate slugs (SQL handles this via ON CONFLICT)
 
@@ -75,8 +68,8 @@ To remove imported data:
 ```sql
 DELETE FROM content_blocks
 WHERE entity_type = 'place'
-  AND entity_id IN (SELECT id FROM places WHERE country_id = 'th');
+  AND entity_id IN (SELECT id FROM places WHERE country_id = 'sg');
 
 DELETE FROM places
-WHERE country_id = 'th';
+WHERE country_id = 'sg';
 ```

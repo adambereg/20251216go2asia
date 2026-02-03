@@ -27,7 +27,7 @@ export function PlacesClient() {
     isLoading,
     isFetching
   } = useGetPlaces({
-    // Do not hardcode country: list all places (PH + KH + VN + TH + LA + ...)
+    // Do not hardcode country: list all places (PH + KH + VN + TH + LA + MY + ID + SG + ...)
     countryId: undefined,
     kind: dataSource === 'api' ? kind : undefined,
     limit: displayLimit,

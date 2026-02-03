@@ -87,6 +87,30 @@ const CITY_ID_MAP_LA: Record<string, string> = {
   Savannakhet: 'svk',
 };
 
+// Malaysia (city_id mapping)
+const CITY_ID_MAP_MY: Record<string, string> = {
+  'Kuala Lumpur': 'kll',
+  'Penang': 'png',
+  'George Town': 'png', // Penang and George Town share the same city_id
+  Langkawi: 'lgk',
+  Melaka: 'mkz',
+  'Kota Kinabalu': 'bki',
+};
+
+// Indonesia (city_id mapping)
+const CITY_ID_MAP_ID: Record<string, string> = {
+  Bali: 'bali',
+  Jakarta: 'jkt',
+  Yogyakarta: 'yog',
+  'Labuan Bajo': 'lbj',
+  Lombok: 'lom',
+};
+
+// Singapore (city_id mapping)
+const CITY_ID_MAP_SG: Record<string, string> = {
+  Singapore: 'sgp',
+};
+
 // ============================================================================
 // Section Key Mapping (Atlas Content Canon v1)
 // ============================================================================
@@ -943,6 +967,144 @@ function parseLaosFile(filePath: string): { places: ParsedPlace[]; cities: strin
   return { places, cities: cityNames, unknownCities };
 }
 
+function parseMalaysiaFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
+  const content = readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const cityStarts: number[] = [];
+  const cityNames: string[] = [];
+  const unknownCities: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('# ')) continue;
+    // Example: "# 🇲🇾 Kuala Lumpur (Куала-Лумпур)" or "# 🇲🇾 Penang (Пенанг / Джорджтаун)"
+    const raw = line.replace(/^#\s+/, '').trim();
+    const withoutFlag = raw.replace(/^🇲🇾\s+/, '').trim();
+    const cityName = withoutFlag.split('(')[0].trim();
+    if (!cityName) continue;
+    cityStarts.push(i);
+    cityNames.push(cityName);
+    
+    // Check if city is in mapping (handle both "Penang" and "George Town" -> png)
+    const normalizedCityName = cityName === 'Penang' || cityName.includes('Penang') ? 'Penang' : cityName;
+    if (!CITY_ID_MAP_MY[cityName] && !CITY_ID_MAP_MY[normalizedCityName]) {
+      unknownCities.push(cityName);
+    }
+  }
+
+  const places: ParsedPlace[] = [];
+  for (let idx = 0; idx < cityStarts.length; idx++) {
+    const start = cityStarts[idx];
+    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
+    const cityName = cityNames[idx];
+    // Handle Penang / George Town mapping
+    const normalizedCityName = cityName === 'Penang' || cityName.includes('Penang') ? 'Penang' : cityName;
+    const cityId = CITY_ID_MAP_MY[cityName] ?? CITY_ID_MAP_MY[normalizedCityName];
+    
+    // Skip places from unknown cities
+    if (!cityId) {
+      console.warn(`MY: Skipping city "${cityName}" (not in CITY_ID_MAP_MY)`);
+      continue;
+    }
+    
+    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
+    const parsed = parsePlaceMarkdown(cityBlock, { cityName: normalizedCityName, countryId: 'my', countryCode: 'MY', cityIdMap: CITY_ID_MAP_MY });
+    places.push(...parsed);
+  }
+
+  return { places, cities: cityNames, unknownCities };
+}
+
+function parseIndonesiaFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
+  const content = readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const cityStarts: number[] = [];
+  const cityNames: string[] = [];
+  const unknownCities: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('# ')) continue;
+    // Example: "# 🇮🇩 Bali (Бали)" or "# 🇮🇩 Jakarta (Джакарта)"
+    const raw = line.replace(/^#\s+/, '').trim();
+    const withoutFlag = raw.replace(/^🇮🇩\s+/, '').trim();
+    const cityName = withoutFlag.split('(')[0].trim();
+    if (!cityName) continue;
+    cityStarts.push(i);
+    cityNames.push(cityName);
+    
+    // Check if city is in mapping
+    if (!CITY_ID_MAP_ID[cityName]) {
+      unknownCities.push(cityName);
+    }
+  }
+
+  const places: ParsedPlace[] = [];
+  for (let idx = 0; idx < cityStarts.length; idx++) {
+    const start = cityStarts[idx];
+    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
+    const cityName = cityNames[idx];
+    const cityId = CITY_ID_MAP_ID[cityName];
+    
+    // Skip places from unknown cities
+    if (!cityId) {
+      console.warn(`ID: Skipping city "${cityName}" (not in CITY_ID_MAP_ID)`);
+      continue;
+    }
+    
+    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
+    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'id', countryCode: 'ID', cityIdMap: CITY_ID_MAP_ID });
+    places.push(...parsed);
+  }
+
+  return { places, cities: cityNames, unknownCities };
+}
+
+function parseSingaporeFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
+  const content = readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const cityStarts: number[] = [];
+  const cityNames: string[] = [];
+  const unknownCities: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('# ')) continue;
+    // Example: "# 🇸🇬 Singapore (Сингапур)"
+    const raw = line.replace(/^#\s+/, '').trim();
+    const withoutFlag = raw.replace(/^🇸🇬\s+/, '').trim();
+    const cityName = withoutFlag.split('(')[0].trim();
+    if (!cityName) continue;
+    cityStarts.push(i);
+    cityNames.push(cityName);
+    
+    // Check if city is in mapping
+    if (!CITY_ID_MAP_SG[cityName]) {
+      unknownCities.push(cityName);
+    }
+  }
+
+  const places: ParsedPlace[] = [];
+  for (let idx = 0; idx < cityStarts.length; idx++) {
+    const start = cityStarts[idx];
+    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
+    const cityName = cityNames[idx];
+    const cityId = CITY_ID_MAP_SG[cityName];
+    
+    // Skip places from unknown cities
+    if (!cityId) {
+      console.warn(`SG: Skipping city "${cityName}" (not in CITY_ID_MAP_SG)`);
+      continue;
+    }
+    
+    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
+    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'sg', countryCode: 'SG', cityIdMap: CITY_ID_MAP_SG });
+    places.push(...parsed);
+  }
+
+  return { places, cities: cityNames, unknownCities };
+}
+
 function formatIssues(title: string, issues: string[]): string {
   if (issues.length === 0) return `## ${title}\n\n- (нет)\n`;
   return `## ${title}\n\n${issues.map((x) => `- ${x}`).join('\n')}\n`;
@@ -954,6 +1116,9 @@ function main() {
   const contentDirVn = join(repoRoot, 'content', 'atlas', 'vietnam');
   const contentDirTh = join(repoRoot, 'content', 'atlas', 'thailand');
   const contentDirLa = join(repoRoot, 'content', 'atlas', 'laos');
+  const contentDirMy = join(repoRoot, 'content', 'atlas', 'malaysia');
+  const contentDirId = join(repoRoot, 'content', 'atlas', 'indonesia');
+  const contentDirSg = join(repoRoot, 'content', 'atlas', 'singapore');
   const exportRoot = join(repoRoot, 'exports', 'neon');
   mkdirSync(exportRoot, { recursive: true });
   
@@ -1208,6 +1373,231 @@ function main() {
   console.log(`LA: Generated: ${exportDirLa}/places.csv`);
   console.log(`LA: Generated: ${exportDirLa}/content_blocks.csv`);
   console.log(`LA: Generated: ${exportDirLa}/PARSE_REPORT.md`);
+
+  // --------------------------------------------------------------------------
+  // MY export (new output in exports/neon/malaysia/*)
+  // --------------------------------------------------------------------------
+  const malaysiaPath = join(contentDirMy, 'malaysia-places.md');
+  if (!existsSync(malaysiaPath)) {
+    console.warn(`MY: Missing file ${malaysiaPath} (skipping MY export)`);
+    return;
+  }
+
+  const exportDirMy = join(exportRoot, 'malaysia');
+  mkdirSync(exportDirMy, { recursive: true });
+
+  const myParsed = parseMalaysiaFile(malaysiaPath);
+  const myPlaces = myParsed.places;
+
+  const myPlacesSql = generatePlacesSQL(myPlaces, CITY_ID_MAP_MY, 'my');
+  const myBlocksSql = generateContentBlocksSQL(myPlaces, CITY_ID_MAP_MY);
+  writeFileSync(join(exportDirMy, 'places.sql'), `${myPlacesSql.sql}\n\n${myBlocksSql.sql}`, 'utf-8');
+
+  const myPlacesCsv = generatePlacesCSV(myPlaces, CITY_ID_MAP_MY, 'my');
+  const myBlocksCsv = generateContentBlocksCSV(myPlaces, CITY_ID_MAP_MY);
+  writeFileSync(join(exportDirMy, 'places.csv'), myPlacesCsv.csv, 'utf-8');
+  writeFileSync(join(exportDirMy, 'content_blocks.csv'), myBlocksCsv.csv, 'utf-8');
+
+  // Parsing report (no silent skips)
+  const myMissingCoords = myPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
+  const myReport = [
+    `# MY Export Report`,
+    ``,
+    `**Generated:** ${new Date().toISOString()}`,
+    `**Cities in file:** ${myParsed.cities.length}`,
+    `**Places parsed:** ${myPlaces.length}`,
+    ``,
+    formatIssues('SQL issues', myPlacesSql.issues.concat(myBlocksSql.issues)),
+    formatIssues('CSV issues', myPlacesCsv.issues.concat(myBlocksCsv.issues)),
+    formatIssues('Missing coords (allowed, but needs review)', myMissingCoords),
+    myParsed.unknownCities.length > 0
+      ? formatIssues('Unknown cities (skipped)', myParsed.unknownCities)
+      : `## Unknown cities\n\n- (нет)\n`,
+    ``,
+    `## City ID mapping used`,
+    ``,
+    Object.entries(CITY_ID_MAP_MY)
+      .map(([name, id]) => `- ${name} -> \`${id}\``)
+      .join('\n'),
+    ``,
+    `## Places by city_id and place_kind`,
+    ``,
+    ...Array.from(
+      myPlaces.reduce((acc, p) => {
+        const cityId = CITY_ID_MAP_MY[p.cityName] ?? 'unknown';
+        const key = `${cityId}:${p.placeKind}`;
+        acc.set(key, (acc.get(key) ?? 0) + 1);
+        return acc;
+      }, new Map<string, number>())
+    )
+      .sort()
+      .map(([key, count]) => `- ${key}: ${count}`),
+    ``,
+  ].join('\n');
+  writeFileSync(join(exportDirMy, 'PARSE_REPORT.md'), myReport, 'utf-8');
+
+  const myReadme = generateREADME({
+    places: myPlaces,
+    countryId: 'my',
+    cityIdMap: CITY_ID_MAP_MY,
+    label: 'Malaysia',
+  });
+  writeFileSync(join(exportDirMy, 'README.md'), myReadme, 'utf-8');
+
+  console.log(`MY: Generated: ${exportDirMy}/places.sql`);
+  console.log(`MY: Generated: ${exportDirMy}/places.csv`);
+  console.log(`MY: Generated: ${exportDirMy}/content_blocks.csv`);
+  console.log(`MY: Generated: ${exportDirMy}/PARSE_REPORT.md`);
+
+  // --------------------------------------------------------------------------
+  // ID export (new output in exports/neon/indonesia/*)
+  // --------------------------------------------------------------------------
+  const indonesiaPath = join(contentDirId, 'Indonesia-Places.md');
+  if (!existsSync(indonesiaPath)) {
+    console.warn(`ID: Missing file ${indonesiaPath} (skipping ID export)`);
+    return;
+  }
+
+  const exportDirId = join(exportRoot, 'indonesia');
+  mkdirSync(exportDirId, { recursive: true });
+
+  const idParsed = parseIndonesiaFile(indonesiaPath);
+  const idPlaces = idParsed.places;
+
+  const idPlacesSql = generatePlacesSQL(idPlaces, CITY_ID_MAP_ID, 'id');
+  const idBlocksSql = generateContentBlocksSQL(idPlaces, CITY_ID_MAP_ID);
+  writeFileSync(join(exportDirId, 'places.sql'), `${idPlacesSql.sql}\n\n${idBlocksSql.sql}`, 'utf-8');
+
+  const idPlacesCsv = generatePlacesCSV(idPlaces, CITY_ID_MAP_ID, 'id');
+  const idBlocksCsv = generateContentBlocksCSV(idPlaces, CITY_ID_MAP_ID);
+  writeFileSync(join(exportDirId, 'places.csv'), idPlacesCsv.csv, 'utf-8');
+  writeFileSync(join(exportDirId, 'content_blocks.csv'), idBlocksCsv.csv, 'utf-8');
+
+  // Parsing report (no silent skips)
+  const idMissingCoords = idPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
+  const idReport = [
+    `# ID Export Report`,
+    ``,
+    `**Generated:** ${new Date().toISOString()}`,
+    `**Cities in file:** ${idParsed.cities.length}`,
+    `**Places parsed:** ${idPlaces.length}`,
+    ``,
+    formatIssues('SQL issues', idPlacesSql.issues.concat(idBlocksSql.issues)),
+    formatIssues('CSV issues', idPlacesCsv.issues.concat(idBlocksCsv.issues)),
+    formatIssues('Missing coords (allowed, but needs review)', idMissingCoords),
+    idParsed.unknownCities.length > 0
+      ? formatIssues('Unknown cities (skipped)', idParsed.unknownCities)
+      : `## Unknown cities\n\n- (нет)\n`,
+    ``,
+    `## City ID mapping used`,
+    ``,
+    Object.entries(CITY_ID_MAP_ID)
+      .map(([name, id]) => `- ${name} -> \`${id}\``)
+      .join('\n'),
+    ``,
+    `## Places by city_id and place_kind`,
+    ``,
+    ...Array.from(
+      idPlaces.reduce((acc, p) => {
+        const cityId = CITY_ID_MAP_ID[p.cityName] ?? 'unknown';
+        const key = `${cityId}:${p.placeKind}`;
+        acc.set(key, (acc.get(key) ?? 0) + 1);
+        return acc;
+      }, new Map<string, number>())
+    )
+      .sort()
+      .map(([key, count]) => `- ${key}: ${count}`),
+    ``,
+  ].join('\n');
+  writeFileSync(join(exportDirId, 'PARSE_REPORT.md'), idReport, 'utf-8');
+
+  const idReadme = generateREADME({
+    places: idPlaces,
+    countryId: 'id',
+    cityIdMap: CITY_ID_MAP_ID,
+    label: 'Indonesia',
+  });
+  writeFileSync(join(exportDirId, 'README.md'), idReadme, 'utf-8');
+
+  console.log(`ID: Generated: ${exportDirId}/places.sql`);
+  console.log(`ID: Generated: ${exportDirId}/places.csv`);
+  console.log(`ID: Generated: ${exportDirId}/content_blocks.csv`);
+  console.log(`ID: Generated: ${exportDirId}/PARSE_REPORT.md`);
+
+  // --------------------------------------------------------------------------
+  // SG export (new output in exports/neon/singapore/*)
+  // --------------------------------------------------------------------------
+  const singaporePath = join(contentDirSg, 'singapore-places-sgp.md');
+  if (!existsSync(singaporePath)) {
+    console.warn(`SG: Missing file ${singaporePath} (skipping SG export)`);
+    return;
+  }
+
+  const exportDirSg = join(exportRoot, 'singapore');
+  mkdirSync(exportDirSg, { recursive: true });
+
+  const sgParsed = parseSingaporeFile(singaporePath);
+  const sgPlaces = sgParsed.places;
+
+  const sgPlacesSql = generatePlacesSQL(sgPlaces, CITY_ID_MAP_SG, 'sg');
+  const sgBlocksSql = generateContentBlocksSQL(sgPlaces, CITY_ID_MAP_SG);
+  writeFileSync(join(exportDirSg, 'places.sql'), `${sgPlacesSql.sql}\n\n${sgBlocksSql.sql}`, 'utf-8');
+
+  const sgPlacesCsv = generatePlacesCSV(sgPlaces, CITY_ID_MAP_SG, 'sg');
+  const sgBlocksCsv = generateContentBlocksCSV(sgPlaces, CITY_ID_MAP_SG);
+  writeFileSync(join(exportDirSg, 'places.csv'), sgPlacesCsv.csv, 'utf-8');
+  writeFileSync(join(exportDirSg, 'content_blocks.csv'), sgBlocksCsv.csv, 'utf-8');
+
+  // Parsing report (no silent skips)
+  const sgMissingCoords = sgPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
+  const sgReport = [
+    `# SG Export Report`,
+    ``,
+    `**Generated:** ${new Date().toISOString()}`,
+    `**Cities in file:** ${sgParsed.cities.length}`,
+    `**Places parsed:** ${sgPlaces.length}`,
+    ``,
+    formatIssues('SQL issues', sgPlacesSql.issues.concat(sgBlocksSql.issues)),
+    formatIssues('CSV issues', sgPlacesCsv.issues.concat(sgBlocksCsv.issues)),
+    formatIssues('Missing coords (allowed, but needs review)', sgMissingCoords),
+    sgParsed.unknownCities.length > 0
+      ? formatIssues('Unknown cities (skipped)', sgParsed.unknownCities)
+      : `## Unknown cities\n\n- (нет)\n`,
+    ``,
+    `## City ID mapping used`,
+    ``,
+    Object.entries(CITY_ID_MAP_SG)
+      .map(([name, id]) => `- ${name} -> \`${id}\``)
+      .join('\n'),
+    ``,
+    `## Places by city_id and place_kind`,
+    ``,
+    ...Array.from(
+      sgPlaces.reduce((acc, p) => {
+        const cityId = CITY_ID_MAP_SG[p.cityName] ?? 'unknown';
+        const key = `${cityId}:${p.placeKind}`;
+        acc.set(key, (acc.get(key) ?? 0) + 1);
+        return acc;
+      }, new Map<string, number>())
+    )
+      .sort()
+      .map(([key, count]) => `- ${key}: ${count}`),
+    ``,
+  ].join('\n');
+  writeFileSync(join(exportDirSg, 'PARSE_REPORT.md'), sgReport, 'utf-8');
+
+  const sgReadme = generateREADME({
+    places: sgPlaces,
+    countryId: 'sg',
+    cityIdMap: CITY_ID_MAP_SG,
+    label: 'Singapore',
+  });
+  writeFileSync(join(exportDirSg, 'README.md'), sgReadme, 'utf-8');
+
+  console.log(`SG: Generated: ${exportDirSg}/places.sql`);
+  console.log(`SG: Generated: ${exportDirSg}/places.csv`);
+  console.log(`SG: Generated: ${exportDirSg}/content_blocks.csv`);
+  console.log(`SG: Generated: ${exportDirSg}/PARSE_REPORT.md`);
 }
 
 function generateREADME(params: {

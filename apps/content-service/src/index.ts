@@ -639,9 +639,9 @@ async function toContentPlaceWithMedia(env: Env, row: PlaceRow): Promise<Content
   // If DB only has hero_url (and no images), we still want R2 gallery photos.
   if (row.images) return base;
 
-  // R2 fallback for places (works for all countries: PH, KH, VN, TH, LA, ...):
+  // R2 fallback for places (works for all countries: PH, KH, VN, TH, LA, MY, ID, SG, ...):
   // prefix: place/{place_id}/ where place_id == places.id
-  // Example: place/hue-imperial-city-hue/01.jpg (VN), place/rep-angkor-wat/01.jpg (KH), place/bkk-grand-palace/01.jpg (TH), place/vte-pha-that-luang/01.jpg (LA)
+  // Example: place/hue-imperial-city-hue/01.jpg (VN), place/rep-angkor-wat/01.jpg (KH), place/bkk-grand-palace/01.jpg (TH), place/vte-pha-that-luang/01.jpg (LA), place/kll-petronas-twin-towers/01.jpg (MY), place/bali-tanah-lot-temple/01.jpg (ID), place/sgp-marina-bay-sands-skypark/01.jpg (SG)
   const resolved = await resolveAtlasMedia(env, 'place', { slug: row.id, max: 50 });
   const picked = pickPlaceHeroAndPhotos(resolved.keys, resolved.urls);
 
