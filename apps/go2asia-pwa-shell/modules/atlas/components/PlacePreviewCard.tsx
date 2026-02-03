@@ -17,6 +17,9 @@ export interface PlacePreviewData {
   kind: PlaceKind;
   category: string | null;
   tags: string[];
+  countryId?: string | null;
+  cityId?: string | null;
+  hasPhoto?: boolean;
 }
 
 export function PlacePreviewCard({ data }: { data: PlacePreviewData }) {
