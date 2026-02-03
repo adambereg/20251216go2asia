@@ -10,6 +10,13 @@ import { useGetPlaces, useGetCountries, useGetCities } from '@go2asia/sdk/atlas'
 import { getDataSource } from '@/mocks/dto';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
+import {
+  PLACE_CATEGORIES_V1,
+  type PlaceCategoryKey,
+  computePlaceCategoryV1,
+  getCategoryTags,
+  normalizeTag,
+} from '@/modules/atlas/utils/placeCategories.v1';
 
 const INITIAL_LIMIT = 50;
 const LOAD_MORE_STEP = 50;
@@ -17,6 +24,7 @@ const MAX_LIMIT = 500; // API max limit
 
 type KindFilter = 'all' | 'showplace' | 'business';
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'photo_first';
+type CategoryFilter = '' | PlaceCategoryKey;
 
 export function PlacesClient() {
   const dataSource = getDataSource();
@@ -31,6 +39,7 @@ export function PlacesClient() {
   const [isTagsExpanded, setIsTagsExpanded] = useState<boolean>(false);
   const [onlyWithPhotos, setOnlyWithPhotos] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<SortOption>('default');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
   
   // Загружаем страны и города для фильтров
   const { data: countriesData } = useGetCountries({ enabled: dataSource === 'api' });
@@ -83,12 +92,18 @@ export function PlacesClient() {
     setDisplayLimit(INITIAL_LIMIT);
   }, []);
 
+  const handleCategoryChange = useCallback((category: CategoryFilter) => {
+    setSelectedCategory(category);
+    setDisplayLimit(INITIAL_LIMIT);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setSelectedCountryId('');
     setSelectedCityId('');
     setSelectedTags(new Set());
     setOnlyWithPhotos(false);
     setSortBy('default');
+    setSelectedCategory('');
     setDisplayLimit(INITIAL_LIMIT);
   }, []);
 
@@ -134,23 +149,90 @@ export function PlacesClient() {
     return allPlaces.filter((p) => Boolean(p.hasPhoto));
   }, [allPlaces, onlyWithPhotos]);
 
-  // Извлекаем уникальные теги из мест после фильтра "С фото" (и после API-фильтров страны/города/типа)
-  const availableTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    placesWithPhotoFilter.forEach((place) => {
-      place.tags?.forEach((tag) => tagSet.add(tag));
-    });
-    return Array.from(tagSet).sort();
+  // Facet: виртуальные категории (считаем по текущей выборке после API-фильтров и "С фото", но до category/tag фильтров)
+  const categoryFacets = useMemo(() => {
+    const counts: Record<string, number> = Object.fromEntries(PLACE_CATEGORIES_V1.map((c) => [c.key, 0]));
+    for (const p of placesWithPhotoFilter) {
+      const cat = computePlaceCategoryV1(p.tags ?? []);
+      if (cat) counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return PLACE_CATEGORIES_V1.map((c) => ({
+      ...c,
+      count: counts[c.key] ?? 0,
+    }));
   }, [placesWithPhotoFilter]);
+
+  // Фильтр по категории (виртуальный): category = alias набора тегов
+  const placesAfterCategory = useMemo<PlacePreviewData[]>(() => {
+    if (!selectedCategory) return placesWithPhotoFilter;
+    const categoryTags = new Set(getCategoryTags(selectedCategory));
+    return placesWithPhotoFilter.filter((p) => (p.tags ?? []).some((t) => categoryTags.has(normalizeTag(t))));
+  }, [placesWithPhotoFilter, selectedCategory]);
+
+  // Facet: динамические теги.
+  // До выбора категории: показываем TOP-N популярных тегов (8–12).
+  // После выбора категории: только теги выбранной категории, которые реально есть в текущей выборке (страна/город/тип/с фото/категория).
+  // Важно: выбранные теги не исчезают "магически" — добавляем их в список отдельно.
+  const tagsFacet = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of placesAfterCategory) {
+      for (const raw of p.tags ?? []) {
+        const t = normalizeTag(raw);
+        if (!t) continue;
+        counts.set(t, (counts.get(t) ?? 0) + 1);
+      }
+    }
+
+    const categoryTagSet = selectedCategory ? new Set(getCategoryTags(selectedCategory).map(normalizeTag)) : null;
+
+    let keys = Array.from(counts.keys());
+    if (categoryTagSet) {
+      keys = keys.filter((t) => categoryTagSet.has(t));
+    }
+
+    // сортировка по популярности, затем по алфавиту
+    keys.sort((a, b) => {
+      const da = counts.get(a) ?? 0;
+      const db = counts.get(b) ?? 0;
+      if (db !== da) return db - da;
+      return a.localeCompare(b);
+    });
+
+    // до выбора категории показываем компактный набор популярных тегов (12)
+    const TOP_N = 12;
+    if (!selectedCategory) keys = keys.slice(0, TOP_N);
+
+    // Добавляем выбранные теги (даже если они вне категории/не популярные)
+    for (const raw of selectedTags) {
+      const t = normalizeTag(raw);
+      if (!t) continue;
+      if (!keys.includes(t)) keys.unshift(t);
+    }
+
+    // Уникализируем, сохраняя порядок
+    const seen = new Set<string>();
+    const finalKeys: string[] = [];
+    for (const k of keys) {
+      if (seen.has(k)) continue;
+      seen.add(k);
+      finalKeys.push(k);
+    }
+
+    return {
+      counts,
+      categoryTagSet,
+      keys: finalKeys,
+    };
+  }, [placesAfterCategory, selectedCategory, selectedTags]);
 
   // Применяем фильтр по тегам (клиентская фильтрация, т.к. API не поддерживает tags параметр)
   const placesAfterTags = useMemo<PlacePreviewData[]>(() => {
-    if (selectedTags.size === 0) return placesWithPhotoFilter;
-    return placesWithPhotoFilter.filter((place) => {
+    if (selectedTags.size === 0) return placesAfterCategory;
+    return placesAfterCategory.filter((place) => {
       if (!place.tags || place.tags.length === 0) return false;
       return Array.from(selectedTags).some((selectedTag) => place.tags?.includes(selectedTag));
     });
-  }, [placesWithPhotoFilter, selectedTags]);
+  }, [placesAfterCategory, selectedTags]);
 
   // Сортировка (клиентская)
   const places = useMemo<PlacePreviewData[]>(() => {
@@ -286,6 +368,25 @@ export function PlacesClient() {
           </div>
 
           <div className="flex items-center gap-2">
+            <label htmlFor="category-filter" className="text-sm font-medium text-slate-700">
+              Категория:
+            </label>
+            <select
+              id="category-filter"
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value as CategoryFilter)}
+              className="px-3 py-1.5 text-sm border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            >
+              <option value="">Все категории</option>
+              {categoryFacets.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label}{typeof c.count === 'number' ? ` (${c.count})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
             <label htmlFor="sort-filter" className="text-sm font-medium text-slate-700">
               Сортировка:
             </label>
@@ -324,7 +425,13 @@ export function PlacesClient() {
           </div>
 
           {/* Кнопка очистки фильтров */}
-          {(kind !== 'all' || selectedCountryId || selectedCityId || selectedTags.size > 0 || onlyWithPhotos || sortBy !== 'default') && (
+          {(kind !== 'all' ||
+            selectedCountryId ||
+            selectedCityId ||
+            selectedCategory ||
+            selectedTags.size > 0 ||
+            onlyWithPhotos ||
+            sortBy !== 'default') && (
             <Button
               variant="outline"
               size="sm"
@@ -338,7 +445,7 @@ export function PlacesClient() {
         </div>
 
         {/* Фильтр по тегам */}
-        {availableTags.length > 0 && (
+        {tagsFacet.keys.length > 0 && (
           <div className="mb-4">
             <button
               type="button"
@@ -361,16 +468,30 @@ export function PlacesClient() {
             </button>
             {isTagsExpanded && (
               <div className="flex flex-wrap gap-2">
-                {availableTags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    selected={selectedTags.has(tag)}
-                    onClick={() => handleTagToggle(tag)}
-                    className="cursor-pointer hover:bg-sky-50 transition-colors"
-                  >
-                    {tag}
-                  </Chip>
-                ))}
+                {tagsFacet.keys.map((tag) => {
+                  const isSelected = selectedTags.has(tag);
+                  const isOutOfCategory =
+                    Boolean(tagsFacet.categoryTagSet) && !tagsFacet.categoryTagSet?.has(normalizeTag(tag));
+                  const isDisabled = !isSelected && Boolean(tagsFacet.categoryTagSet) && isOutOfCategory;
+
+                  return (
+                    <Chip
+                      key={tag}
+                      selected={isSelected}
+                      onClick={() => {
+                        // запрещаем выбирать новые теги вне категории, но разрешаем снять уже выбранные
+                        if (isDisabled) return;
+                        handleTagToggle(tag);
+                      }}
+                      className={[
+                        'transition-colors',
+                        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-sky-50',
+                      ].join(' ')}
+                    >
+                      {tag}
+                    </Chip>
+                  );
+                })}
               </div>
             )}
           </div>
