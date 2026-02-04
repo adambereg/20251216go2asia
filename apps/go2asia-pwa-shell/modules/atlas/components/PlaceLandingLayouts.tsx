@@ -153,9 +153,12 @@ function PhotoStrip({ data }: { data: PlaceLandingData }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   
-  // Include heroImage if available, then photos
+  // Include heroImage if available, then photos (excluding heroImage to avoid duplication)
+  const photosWithoutHero = data.heroImage 
+    ? data.photos.filter(photo => photo !== data.heroImage)
+    : data.photos;
   const allImages = data.heroImage 
-    ? [data.heroImage, ...data.photos]
+    ? [data.heroImage, ...photosWithoutHero]
     : data.photos;
   const images = allImages.slice(0, 5);
   
