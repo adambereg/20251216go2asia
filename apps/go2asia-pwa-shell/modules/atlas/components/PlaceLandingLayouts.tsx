@@ -3,6 +3,7 @@
 import { Chip } from '@go2asia/ui';
 import { MapPin, Phone, Instagram, Globe, Star, Clock } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { SectionContentRenderer } from './SectionContentRenderer';
 import type { PlaceKind } from './PlacePreviewCard';
 
 export interface PlaceLandingData {
@@ -257,11 +258,13 @@ function SectionCard({
   tone,
   markdown,
   fallback,
+  sectionKey,
 }: {
   title: string;
   tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple';
   markdown: string | null;
   fallback: string | null;
+  sectionKey?: string;
 }) {
   const toneMap: Record<typeof tone, string> = {
     red: 'bg-rose-50 border-rose-200',
@@ -272,10 +275,10 @@ function SectionCard({
   };
   return (
     <div className={`rounded-2xl border p-4 ${toneMap[tone]}`}>
-      <div className="font-semibold text-slate-900 mb-2">{title}</div>
+      <div className="font-semibold text-slate-900 mb-3">{title}</div>
       <div className="text-sm text-slate-700">
         {markdown ? (
-          <MarkdownRenderer markdown={markdown} className="prose prose-sm max-w-none prose-slate" />
+          <SectionContentRenderer markdown={markdown} sectionKey={sectionKey} />
         ) : fallback ? (
           <div className="text-slate-500 italic">{fallback}</div>
         ) : null}
@@ -324,6 +327,7 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
               tone={section.tone}
               markdown={content}
               fallback={hasOverview ? null : EMPTY_TEXT}
+              sectionKey={section.key}
             />
           );
         })
@@ -376,6 +380,7 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
               tone={section.tone}
               markdown={content}
               fallback={hasOverview ? null : EMPTY_TEXT}
+              sectionKey={section.key}
             />
           );
         })
