@@ -7,6 +7,7 @@
 
 См. также:
 - `docs/decisions/search_strategy.md`
+- `docs/standards/counts_conventions_v1.md` — стандарт отображения total vs filtered counts
 
 ---
 

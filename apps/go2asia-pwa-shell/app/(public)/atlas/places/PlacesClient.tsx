@@ -61,6 +61,16 @@ export function PlacesClient() {
     enabled: dataSource === 'api',
   });
 
+  // Загружаем места для facets (self-exclusion: БЕЗ фильтров по стране/городу, но с фильтром kind и увеличенным limit)
+  // Это нужно для корректного подсчёта filtered counts в dropdown'ах
+  // Загружаем всегда, чтобы facets были точными даже когда нет фильтров по стране/городу
+  const { data: placesDataForFacets } = useGetPlaces({
+    // БЕЗ countryId и cityId (self-exclusion)
+    kind: dataSource === 'api' && kind !== 'all' ? kind : undefined,
+    limit: MAX_LIMIT, // Увеличенный limit для более точных facets
+    enabled: dataSource === 'api', // Загружаем всегда для facets
+  });
+
   // Сброс лимита при смене kind или фильтров
   const handleKindChange = useCallback((newKind: KindFilter) => {
     setKind(newKind);
@@ -143,16 +153,87 @@ export function PlacesClient() {
     }));
   }, [placesData, dataSource]);
 
+  // Преобразуем данные для facets (БЕЗ фильтров по стране/городу)
+  const allPlacesForFacets = useMemo<PlacePreviewData[]>(() => {
+    if (dataSource !== 'api') return [];
+    // Используем placesDataForFacets (БЕЗ фильтров по стране/городу) для более точных facets
+    const sourceData = placesDataForFacets || placesData;
+    if (!sourceData?.items) return [];
+    return sourceData.items.map((place) => ({
+      id: place.id,
+      slug: place.slug,
+      name: place.name,
+      description: place.description || null,
+      heroImage: getPlaceHeroImage(place.id, place.heroImage || place.photos?.[0]),
+      cityName: place.city ?? null,
+      kind: place.kind as 'showplace' | 'business',
+      category: place.category ?? null,
+      tags: place.tags ?? [],
+      countryId: place.countryId ?? null,
+      cityId: place.cityId ?? null,
+      hasPhoto: Boolean(place.heroImage) || (Array.isArray(place.photos) && place.photos.length > 0),
+    }));
+  }, [placesDataForFacets, placesData, dataSource]);
+
   // Фильтр "С фото" (клиентский)
   const placesWithPhotoFilter = useMemo<PlacePreviewData[]>(() => {
     if (!onlyWithPhotos) return allPlaces;
     return allPlaces.filter((p) => Boolean(p.hasPhoto));
   }, [allPlaces, onlyWithPhotos]);
 
-  // Facet: виртуальные категории (считаем по текущей выборке после API-фильтров и "С фото", но до category/tag фильтров)
+  // Базовая выборка для facets: после фильтров kind и "С фото", но БЕЗ фильтров по стране/городу/категории/тегам
+  // (self-exclusion: facets считаются так, как будто соответствующий фильтр не применён)
+  const placesForFacets = useMemo<PlacePreviewData[]>(() => {
+    // Используем allPlacesForFacets (БЕЗ фильтров по стране/городу) для более точных facets
+    const basePlaces = allPlacesForFacets.length > 0 ? allPlacesForFacets : allPlaces;
+    if (!onlyWithPhotos) return basePlaces;
+    return basePlaces.filter((p) => Boolean(p.hasPhoto));
+  }, [allPlacesForFacets, allPlaces, onlyWithPhotos]);
+
+  // Facet: страны (filtered counts с self-exclusion: считаем БЕЗ фильтра countryId)
+  const countryFacets = useMemo(() => {
+    if (!countriesData?.items) return [];
+    const counts = new Map<string, number>();
+    // Считаем по выборке БЕЗ фильтра countryId (self-exclusion)
+    for (const place of placesForFacets) {
+      if (place.countryId) {
+        counts.set(place.countryId, (counts.get(place.countryId) ?? 0) + 1);
+      }
+    }
+    return countriesData.items.map((country) => ({
+      ...country,
+      count: counts.get(country.id) ?? 0,
+    }));
+  }, [placesForFacets, countriesData]);
+
+  // Facet: города (filtered counts с self-exclusion: считаем БЕЗ фильтра cityId, но с учётом выбранной страны)
+  const cityFacets = useMemo(() => {
+    if (!citiesData?.items) return [];
+    const counts = new Map<string, number>();
+    // Считаем по выборке БЕЗ фильтра cityId (self-exclusion)
+    // Но если выбрана страна, показываем только города этой страны (UX: меньше "нулей")
+    const filteredForCityFacets = selectedCountryId
+      ? placesForFacets.filter((p) => p.countryId === selectedCountryId)
+      : placesForFacets;
+    for (const place of filteredForCityFacets) {
+      if (place.cityId) {
+        counts.set(place.cityId, (counts.get(place.cityId) ?? 0) + 1);
+      }
+    }
+    // Фильтруем города: если выбрана страна, показываем только города этой страны
+    const citiesToShow = selectedCountryId
+      ? citiesData.items.filter((city) => city.countryId === selectedCountryId)
+      : citiesData.items;
+    return citiesToShow.map((city) => ({
+      ...city,
+      count: counts.get(city.id) ?? 0,
+    }));
+  }, [placesForFacets, citiesData, selectedCountryId]);
+
+  // Facet: виртуальные категории (filtered counts с self-exclusion: считаем БЕЗ фильтра categoryKey)
   const categoryFacets = useMemo(() => {
-    return computeCategoryFacetsFromItems(placesWithPhotoFilter);
-  }, [placesWithPhotoFilter]);
+    return computeCategoryFacetsFromItems(placesForFacets);
+  }, [placesForFacets]);
 
   // Фильтр по категории (виртуальный): category = alias набора тегов
   const placesAfterCategory = useMemo<PlacePreviewData[]>(() => {
@@ -213,6 +294,45 @@ export function PlacesClient() {
   
   // Показываем сообщение, если загружены все доступные места
   const showAllLoadedMessage = !hasMore && allItemsCount > 0 && allItemsCount < displayLimit;
+
+  // Total count для текущего scope (для отображения в заголовке)
+  // Используем placesCount из данных страны/города, если доступно, иначе allItemsCount
+  const totalCount = useMemo(() => {
+    if (selectedCityId && citiesData?.items) {
+      const city = citiesData.items.find((c) => c.id === selectedCityId);
+      if (city?.placesCount !== undefined) return city.placesCount;
+    }
+    if (selectedCountryId && countriesData?.items) {
+      const country = countriesData.items.find((c) => c.id === selectedCountryId);
+      if (country?.placesCount !== undefined) {
+        // Если выбран kind, нужно приблизительно оценить (или использовать allItemsCount)
+        return country.placesCount;
+      }
+    }
+    // Fallback: используем количество загруженных мест
+    return allItemsCount;
+  }, [selectedCityId, selectedCountryId, citiesData, countriesData, allItemsCount]);
+
+  // Формируем заголовок с total count
+  const placesTitle = useMemo(() => {
+    const kindLabel =
+      kind === 'showplace'
+        ? 'Достопримечательности'
+        : kind === 'business'
+          ? 'Заведения'
+          : 'Места';
+    
+    let scopeLabel = '';
+    if (selectedCityId && citiesData?.items) {
+      const city = citiesData.items.find((c) => c.id === selectedCityId);
+      if (city) scopeLabel = ` в ${city.name}`;
+    } else if (selectedCountryId && countriesData?.items) {
+      const country = countriesData.items.find((c) => c.id === selectedCountryId);
+      if (country) scopeLabel = ` в ${country.name}`;
+    }
+    
+    return `${kindLabel}${scopeLabel}`;
+  }, [kind, selectedCityId, selectedCountryId, citiesData, countriesData]);
 
   // Показываем состояние загрузки
   if (dataSource === 'api' && isLoading && !placesData) {
@@ -291,9 +411,9 @@ export function PlacesClient() {
               className="px-3 py-1.5 text-sm border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             >
               <option value="">Все страны</option>
-              {countriesData?.items?.map((country) => (
+              {countryFacets.map((country) => (
                 <option key={country.id} value={country.id}>
-                  {country.name}
+                  {country.name}{typeof country.count === 'number' ? ` (${country.count})` : ''}
                 </option>
               ))}
             </select>
@@ -310,9 +430,9 @@ export function PlacesClient() {
               className="px-3 py-1.5 text-sm border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             >
               <option value="">Все города</option>
-              {citiesData?.items?.map((city) => (
+              {cityFacets.map((city) => (
                 <option key={city.id} value={city.id}>
-                  {city.name}
+                  {city.name}{typeof city.count === 'number' ? ` (${city.count})` : ''}
                 </option>
               ))}
             </select>
@@ -452,17 +572,19 @@ export function PlacesClient() {
       {/* Places Content */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-h2 md:text-3xl font-bold text-slate-900">
-            {kind === 'showplace'
-              ? 'Достопримечательности'
-              : kind === 'business'
-                ? 'Заведения'
-                : 'Места'}
-          </h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-h2 md:text-3xl font-bold text-slate-900">
+              {placesTitle}
+            </h2>
+            {totalCount > 0 && (
+              <span className="text-base md:text-lg text-slate-500 font-normal">
+                — {totalCount}
+              </span>
+            )}
+          </div>
           {places.length > 0 && (
             <span className="text-sm text-slate-600">
               Показано: {filteredItemsCount}
-              {selectedTags.size > 0 && ` (отфильтровано из ${allItemsCount})`}
             </span>
           )}
         </div>
