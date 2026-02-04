@@ -1,9 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
 import { Chip } from '@go2asia/ui';
 import { MapPin, Phone, Instagram, Globe, Star, Clock } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { SectionContentRenderer } from './SectionContentRenderer';
+import { ImageLightbox } from './ImageLightbox';
+import { buildTagLink, buildCategoryLink } from '../utils/navigation';
+import { getCategoryKeyFromTags, categoriesV1 } from '@go2asia/atlas-taxonomy';
 import type { PlaceKind } from './PlacePreviewCard';
 
 export interface PlaceLandingData {
@@ -145,8 +150,15 @@ function Hero({
 }
 
 function PhotoStrip({ data }: { data: PlaceLandingData }) {
-  // No pexels fallback - use only API data or R2 URLs
-  const images = data.photos.slice(0, 5);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Include heroImage if available, then photos
+  const allImages = data.heroImage 
+    ? [data.heroImage, ...data.photos]
+    : data.photos;
+  const images = allImages.slice(0, 5);
+  
   if (images.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-100 p-3 shadow-sm">
@@ -156,39 +168,81 @@ function PhotoStrip({ data }: { data: PlaceLandingData }) {
       </div>
     );
   }
+  
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 snap-x snap-mandatory">
-        {images.map((src, idx) => (
-          <div key={`${src}-${idx}`} className="flex-shrink-0 w-[271px] snap-start">
-            <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100">
-              <img
-                src={src}
-                alt={`${data.name} - фото ${idx + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Hide broken images
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
+    <>
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 snap-x snap-mandatory">
+          {images.map((src, idx) => (
+            <div 
+              key={`${src}-${idx}`} 
+              className="flex-shrink-0 w-[271px] snap-start cursor-pointer"
+              onClick={() => {
+                setLightboxIndex(idx);
+                setLightboxOpen(true);
+              }}
+            >
+              <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 hover:opacity-90 transition-opacity">
+                <img
+                  src={src}
+                  alt={`${data.name} - фото ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Hide broken images
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+      <ImageLightbox
+        images={allImages}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onNavigate={(index) => setLightboxIndex(index)}
+      />
+    </>
+  );
+}
+
+function TagRow({ tags, kind }: { tags: string[]; kind: PlaceKind }) {
+  if (tags.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tags.map((tag) => {
+        const tagLink = buildTagLink('atlas', tag, 'places', { kind });
+        return (
+          <Link key={tag} href={tagLink}>
+            <Chip 
+              size="sm" 
+              className="bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors cursor-pointer"
+            >
+              {tag}
+            </Chip>
+          </Link>
+        );
+      })}
     </div>
   );
 }
 
-function TagRow({ tags }: { tags: string[] }) {
-  if (tags.length === 0) return null;
+function CategoryBadge({ categoryKey }: { categoryKey: string | null }) {
+  if (!categoryKey) return null;
+  
+  const category = categoriesV1.find((c) => c.key === categoryKey);
+  if (!category) return null;
+  
+  const categoryLink = buildCategoryLink('atlas', categoryKey, 'places');
+  
   return (
-    <div className="flex flex-wrap gap-2">
-      {tags.map((tag) => (
-        <Chip key={tag} size="sm" className="bg-slate-100 text-slate-700">
-          {tag}
-        </Chip>
-      ))}
-    </div>
+    <Link href={categoryLink}>
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200 hover:text-sky-900 transition-colors cursor-pointer border border-sky-200">
+        <span className="text-xs font-medium">{category.label}</span>
+      </div>
+    </Link>
   );
 }
 
@@ -307,12 +361,13 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
         data={data}
         gradient="bg-gradient-to-r from-amber-700 to-orange-500"
         subtitle={data.category ?? 'Заведение'}
-        showMeta={false}
+        showMeta={true}
         titleClassName="text-4xl font-bold mb-2"
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
-      <TagRow tags={data.tags} />
+      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} />
+      <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
       {sections.size === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
@@ -365,7 +420,8 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
-      <TagRow tags={data.tags} />
+      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} />
+      <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
       {sections.size === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
