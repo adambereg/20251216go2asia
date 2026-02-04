@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Chip, Skeleton, SkeletonCard, Button } from '@go2asia/ui';
 import { ModuleHero } from '@/components/modules';
 import { Globe, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -29,17 +30,57 @@ type CategoryFilter = '' | CategoryKey;
 export function PlacesClient() {
   const dataSource = getDataSource();
   const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
-  const [kind, setKind] = useState<KindFilter>('all');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Парсим параметры из URL при инициализации
+  const parseFiltersFromURL = useCallback(() => {
+    const categoryKey = searchParams.get('categoryKey') || '';
+    const tagsParam = searchParams.get('tags') || '';
+    const kindParam = searchParams.get('kind') || 'all';
+    const countryId = searchParams.get('countryId') || '';
+    const cityId = searchParams.get('cityId') || '';
+    const withPhotos = searchParams.get('withPhotos') === '1';
+    
+    // Парсим tags из CSV формата
+    const tags = tagsParam 
+      ? new Set(tagsParam.split(',').map(t => t.trim()).filter(Boolean))
+      : new Set<string>();
+    
+    return {
+      categoryKey: categoryKey as CategoryFilter,
+      tags,
+      kind: (kindParam === 'showplace' || kindParam === 'business' ? kindParam : 'all') as KindFilter,
+      countryId,
+      cityId,
+      withPhotos,
+    };
+  }, [searchParams]);
+  
+  const urlFilters = parseFiltersFromURL();
+  
+  const [kind, setKind] = useState<KindFilter>(urlFilters.kind);
   const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT);
   
-  // Фильтры
-  const [selectedCountryId, setSelectedCountryId] = useState<string>('');
-  const [selectedCityId, setSelectedCityId] = useState<string>('');
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  // Фильтры - инициализируем из URL
+  const [selectedCountryId, setSelectedCountryId] = useState<string>(urlFilters.countryId);
+  const [selectedCityId, setSelectedCityId] = useState<string>(urlFilters.cityId);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(urlFilters.tags);
   const [isTagsExpanded, setIsTagsExpanded] = useState<boolean>(false);
-  const [onlyWithPhotos, setOnlyWithPhotos] = useState<boolean>(false);
+  const [onlyWithPhotos, setOnlyWithPhotos] = useState<boolean>(urlFilters.withPhotos);
   const [sortBy, setSortBy] = useState<SortOption>('default');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>(urlFilters.categoryKey);
+  
+  // Синхронизируем state с URL при изменении searchParams (например, при переходе по ссылке)
+  useEffect(() => {
+    const urlFilters = parseFiltersFromURL();
+    setKind(urlFilters.kind);
+    setSelectedCountryId(urlFilters.countryId);
+    setSelectedCityId(urlFilters.cityId);
+    setSelectedTags(urlFilters.tags);
+    setOnlyWithPhotos(urlFilters.withPhotos);
+    setSelectedCategory(urlFilters.categoryKey);
+  }, [searchParams, parseFiltersFromURL]);
   
   // Загружаем страны и города для фильтров
   const { data: countriesData } = useGetCountries({ enabled: dataSource === 'api' });
@@ -71,23 +112,83 @@ export function PlacesClient() {
     enabled: dataSource === 'api', // Загружаем всегда для facets
   });
 
+  // Функция для синхронизации фильтров с URL
+  const updateURLWithFilters = useCallback((filters: {
+    kind?: KindFilter;
+    categoryKey?: CategoryFilter;
+    tags?: Set<string>;
+    countryId?: string;
+    cityId?: string;
+    withPhotos?: boolean;
+  }) => {
+    const params = new URLSearchParams();
+    
+    if (filters.kind && filters.kind !== 'all') {
+      params.set('kind', filters.kind);
+    }
+    if (filters.categoryKey) {
+      params.set('categoryKey', filters.categoryKey);
+    }
+    if (filters.tags && filters.tags.size > 0) {
+      params.set('tags', Array.from(filters.tags).join(','));
+    }
+    if (filters.countryId) {
+      params.set('countryId', filters.countryId);
+    }
+    if (filters.cityId) {
+      params.set('cityId', filters.cityId);
+    }
+    if (filters.withPhotos) {
+      params.set('withPhotos', '1');
+    }
+    
+    const queryString = params.toString();
+    const newUrl = queryString ? `/atlas/places?${queryString}` : '/atlas/places';
+    
+    router.replace(newUrl, { scroll: false });
+  }, [router]);
+
   // Сброс лимита при смене kind или фильтров
   const handleKindChange = useCallback((newKind: KindFilter) => {
     setKind(newKind);
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    updateURLWithFilters({ 
+      kind: newKind,
+      categoryKey: selectedCategory,
+      tags: selectedTags,
+      countryId: selectedCountryId,
+      cityId: selectedCityId,
+      withPhotos: onlyWithPhotos,
+    });
+  }, [selectedCategory, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
 
   // Обработчики фильтров
   const handleCountryChange = useCallback((countryId: string) => {
     setSelectedCountryId(countryId);
     setSelectedCityId(''); // Сбрасываем город при смене страны
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    updateURLWithFilters({ 
+      kind,
+      categoryKey: selectedCategory,
+      tags: selectedTags,
+      countryId,
+      cityId: '', // Сбрасываем город
+      withPhotos: onlyWithPhotos,
+    });
+  }, [kind, selectedCategory, selectedTags, onlyWithPhotos, updateURLWithFilters]);
 
   const handleCityChange = useCallback((cityId: string) => {
     setSelectedCityId(cityId);
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    updateURLWithFilters({ 
+      kind,
+      categoryKey: selectedCategory,
+      tags: selectedTags,
+      countryId: selectedCountryId,
+      cityId,
+      withPhotos: onlyWithPhotos,
+    });
+  }, [kind, selectedCategory, selectedTags, selectedCountryId, onlyWithPhotos, updateURLWithFilters]);
 
   const handleTagToggle = useCallback((tag: string) => {
     setSelectedTags((prev) => {
@@ -97,15 +198,31 @@ export function PlacesClient() {
       } else {
         next.add(tag);
       }
+      setDisplayLimit(INITIAL_LIMIT);
+      updateURLWithFilters({ 
+        kind,
+        categoryKey: selectedCategory,
+        tags: next,
+        countryId: selectedCountryId,
+        cityId: selectedCityId,
+        withPhotos: onlyWithPhotos,
+      });
       return next;
     });
-    setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+  }, [kind, selectedCategory, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
 
   const handleCategoryChange = useCallback((category: CategoryFilter) => {
     setSelectedCategory(category);
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    updateURLWithFilters({ 
+      kind,
+      categoryKey: category,
+      tags: selectedTags,
+      countryId: selectedCountryId,
+      cityId: selectedCityId,
+      withPhotos: onlyWithPhotos,
+    });
+  }, [kind, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
 
   const handleClearFilters = useCallback(() => {
     setSelectedCountryId('');
@@ -115,12 +232,22 @@ export function PlacesClient() {
     setSortBy('default');
     setSelectedCategory('');
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    router.replace('/atlas/places', { scroll: false });
+  }, [router]);
 
   const handleOnlyWithPhotosToggle = useCallback(() => {
-    setOnlyWithPhotos((prev) => !prev);
+    const newValue = !onlyWithPhotos;
+    setOnlyWithPhotos(newValue);
     setDisplayLimit(INITIAL_LIMIT);
-  }, []);
+    updateURLWithFilters({ 
+      kind,
+      categoryKey: selectedCategory,
+      tags: selectedTags,
+      countryId: selectedCountryId,
+      cityId: selectedCityId,
+      withPhotos: newValue,
+    });
+  }, [kind, selectedCategory, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
 
   const handleSortChange = useCallback((next: SortOption) => {
     setSortBy(next);

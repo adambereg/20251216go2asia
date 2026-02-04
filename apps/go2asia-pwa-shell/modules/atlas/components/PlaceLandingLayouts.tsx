@@ -216,6 +216,7 @@ function TagRow({ tags, kind }: { tags: string[]; kind: PlaceKind }) {
   return (
     <div className="flex flex-wrap gap-2">
       {tags.map((tag) => {
+        // Передаём kind в URL, чтобы сохранить фильтр при переходе
         const tagLink = buildTagLink('atlas', tag, 'places', { kind });
         return (
           <Link key={tag} href={tagLink}>
@@ -232,13 +233,14 @@ function TagRow({ tags, kind }: { tags: string[]; kind: PlaceKind }) {
   );
 }
 
-function CategoryBadge({ categoryKey }: { categoryKey: string | null }) {
+function CategoryBadge({ categoryKey, kind }: { categoryKey: string | null; kind: PlaceKind }) {
   if (!categoryKey) return null;
   
   const category = categoriesV1.find((c) => c.key === categoryKey);
   if (!category) return null;
   
-  const categoryLink = buildCategoryLink('atlas', categoryKey, 'places');
+  // Передаём kind в URL, чтобы сохранить фильтр при переходе
+  const categoryLink = buildCategoryLink('atlas', categoryKey, 'places', { kind });
   
   return (
     <Link href={categoryLink}>
@@ -369,7 +371,7 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
-      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} />
+      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
       {sections.size === 0 && hasOverview ? (
@@ -423,7 +425,7 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
-      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} />
+      <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
       {sections.size === 0 && hasOverview ? (

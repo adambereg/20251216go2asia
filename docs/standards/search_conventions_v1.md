@@ -8,6 +8,7 @@
 См. также:
 - `docs/decisions/search_strategy.md`
 - `docs/standards/counts_conventions_v1.md` — стандарт отображения total vs filtered counts
+- `docs/standards/navigation_conventions_v1.md` — навигация по тегам и категориям через URL
 
 ---
 
