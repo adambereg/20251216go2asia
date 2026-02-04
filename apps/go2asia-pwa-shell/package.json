@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^5.0.0",
+    "@go2asia/atlas-taxonomy": "workspace:*",
     "@go2asia/sdk": "workspace:*",
     "@go2asia/ui": "workspace:*",
     "@tanstack/react-query": "^5.14.0",

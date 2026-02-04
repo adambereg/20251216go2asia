@@ -98,6 +98,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^5.0.0
         version: 5.7.5(next@15.5.9)(react-dom@18.3.1)(react@18.3.1)
+      '@go2asia/atlas-taxonomy':
+        specifier: workspace:*
+        version: link:../../packages/atlas-taxonomy
       '@go2asia/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -246,6 +249,15 @@ importers:
       wrangler:
         specifier: ^3.19.0
         version: 3.114.15(@cloudflare/workers-types@4.20251216.0)
+
+  packages/atlas-taxonomy:
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.27)
 
   packages/config:
     devDependencies:

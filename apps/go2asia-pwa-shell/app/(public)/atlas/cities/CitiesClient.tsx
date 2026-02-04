@@ -46,6 +46,7 @@ export function CitiesClient() {
         countryId: city.countryId,
         description: city.description || '',
         placesCount: city.placesCount || 0,
+        heroImage: undefined,
       }));
     }
     

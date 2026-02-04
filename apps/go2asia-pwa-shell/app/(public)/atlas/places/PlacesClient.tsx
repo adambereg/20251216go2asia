@@ -11,12 +11,12 @@ import { getDataSource } from '@/mocks/dto';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
 import {
-  PLACE_CATEGORIES_V1,
-  type PlaceCategoryKey,
-  computePlaceCategoryV1,
+  type CategoryKey,
   getCategoryTags,
   normalizeTag,
-} from '@/modules/atlas/utils/placeCategories.v1';
+  computeCategoryFacetsFromItems,
+  computeTagFacetsFromItems,
+} from '@go2asia/atlas-taxonomy';
 
 const INITIAL_LIMIT = 50;
 const LOAD_MORE_STEP = 50;
@@ -24,7 +24,7 @@ const MAX_LIMIT = 500; // API max limit
 
 type KindFilter = 'all' | 'showplace' | 'business';
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'photo_first';
-type CategoryFilter = '' | PlaceCategoryKey;
+type CategoryFilter = '' | CategoryKey;
 
 export function PlacesClient() {
   const dataSource = getDataSource();
@@ -151,15 +151,7 @@ export function PlacesClient() {
 
   // Facet: виртуальные категории (считаем по текущей выборке после API-фильтров и "С фото", но до category/tag фильтров)
   const categoryFacets = useMemo(() => {
-    const counts: Record<string, number> = Object.fromEntries(PLACE_CATEGORIES_V1.map((c) => [c.key, 0]));
-    for (const p of placesWithPhotoFilter) {
-      const cat = computePlaceCategoryV1(p.tags ?? []);
-      if (cat) counts[cat] = (counts[cat] ?? 0) + 1;
-    }
-    return PLACE_CATEGORIES_V1.map((c) => ({
-      ...c,
-      count: counts[c.key] ?? 0,
-    }));
+    return computeCategoryFacetsFromItems(placesWithPhotoFilter);
   }, [placesWithPhotoFilter]);
 
   // Фильтр по категории (виртуальный): category = alias набора тегов
@@ -174,55 +166,14 @@ export function PlacesClient() {
   // После выбора категории: только теги выбранной категории, которые реально есть в текущей выборке (страна/город/тип/с фото/категория).
   // Важно: выбранные теги не исчезают "магически" — добавляем их в список отдельно.
   const tagsFacet = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of placesAfterCategory) {
-      for (const raw of p.tags ?? []) {
-        const t = normalizeTag(raw);
-        if (!t) continue;
-        counts.set(t, (counts.get(t) ?? 0) + 1);
-      }
-    }
-
-    const categoryTagSet = selectedCategory ? new Set(getCategoryTags(selectedCategory).map(normalizeTag)) : null;
-
-    let keys = Array.from(counts.keys());
-    if (categoryTagSet) {
-      keys = keys.filter((t) => categoryTagSet.has(t));
-    }
-
-    // сортировка по популярности, затем по алфавиту
-    keys.sort((a, b) => {
-      const da = counts.get(a) ?? 0;
-      const db = counts.get(b) ?? 0;
-      if (db !== da) return db - da;
-      return a.localeCompare(b);
-    });
-
-    // до выбора категории показываем компактный набор популярных тегов (12)
     const TOP_N = 12;
-    if (!selectedCategory) keys = keys.slice(0, TOP_N);
-
-    // Добавляем выбранные теги (даже если они вне категории/не популярные)
-    for (const raw of selectedTags) {
-      const t = normalizeTag(raw);
-      if (!t) continue;
-      if (!keys.includes(t)) keys.unshift(t);
-    }
-
-    // Уникализируем, сохраняя порядок
-    const seen = new Set<string>();
-    const finalKeys: string[] = [];
-    for (const k of keys) {
-      if (seen.has(k)) continue;
-      seen.add(k);
-      finalKeys.push(k);
-    }
-
-    return {
-      counts,
-      categoryTagSet,
-      keys: finalKeys,
-    };
+    const facets = computeTagFacetsFromItems(placesAfterCategory, {
+      topN: TOP_N,
+      categoryKey: selectedCategory || null,
+      selectedTags: Array.from(selectedTags),
+    });
+    const categoryTagSet = selectedCategory ? new Set(getCategoryTags(selectedCategory).map(normalizeTag)) : null;
+    return { facets, categoryTagSet };
   }, [placesAfterCategory, selectedCategory, selectedTags]);
 
   // Применяем фильтр по тегам (клиентская фильтрация, т.к. API не поддерживает tags параметр)
@@ -433,7 +384,7 @@ export function PlacesClient() {
             onlyWithPhotos ||
             sortBy !== 'default') && (
             <Button
-              variant="outline"
+              variant={'outline' as unknown as 'primary'}
               size="sm"
               onClick={handleClearFilters}
               className="text-sm"
@@ -445,7 +396,7 @@ export function PlacesClient() {
         </div>
 
         {/* Фильтр по тегам */}
-        {tagsFacet.keys.length > 0 && (
+        {tagsFacet.facets.length > 0 && (
           <div className="mb-4">
             <button
               type="button"
@@ -468,7 +419,7 @@ export function PlacesClient() {
             </button>
             {isTagsExpanded && (
               <div className="flex flex-wrap gap-2">
-                {tagsFacet.keys.map((tag) => {
+                {tagsFacet.facets.map(({ key: tag }) => {
                   const isSelected = selectedTags.has(tag);
                   const isOutOfCategory =
                     Boolean(tagsFacet.categoryTagSet) && !tagsFacet.categoryTagSet?.has(normalizeTag(tag));
@@ -529,7 +480,7 @@ export function PlacesClient() {
                 <Button
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
-                  variant="outline"
+                  variant={'outline' as unknown as 'primary'}
                   className="min-w-[200px]"
                 >
                   {isLoadingMore ? (
