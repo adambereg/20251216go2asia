@@ -23,10 +23,31 @@ function Require-StagingDbUrl {
   }
 }
 
+function Get-DbHost([string]$url) {
+  # Works for postgresql://user:pass@host:port/db?...
+  $m = [regex]::Match($url, '^[a-zA-Z]+:\/\/[^@]+@([^\/\?:]+)')
+  if ($m.Success) { return $m.Groups[1].Value }
+  return $null
+}
+
+function Test-DbHostDns {
+  $host = Get-DbHost $env:STAGING_DATABASE_URL
+  if (-not $host) {
+    throw "Could not parse DB host from STAGING_DATABASE_URL. Please re-check the connection string format."
+  }
+  Write-Host ("DB host: " + $host) -ForegroundColor DarkGray
+  try {
+    # Resolve-DnsName exists in Windows PowerShell 5.1+
+    Resolve-DnsName $host | Out-Null
+  } catch {
+    throw "DNS resolution failed for DB host '$host'. Try Neon 'Direct connection' string or fix network/VPN/DNS."
+  }
+}
+
 function Run-Import([string]$country, [string]$slug = $null) {
   $slugArg = ""
   if ($slug -and $slug.Trim().Length -gt 0) {
-    $slugArg = " --slug $slug"
+    $slugArg = $slug
   }
 
   Write-Host ""
@@ -36,10 +57,12 @@ function Run-Import([string]$country, [string]$slug = $null) {
   }
   Write-Host $label -ForegroundColor Cyan
 
-  # Важно: используем pnpm exec -- tsx (Windows-friendly)
-  $cmd = "pnpm -C packages/db exec -- tsx src/applyAtlasExportsToNeon.ts $country$slugArg"
-  Write-Host $cmd -ForegroundColor DarkGray
-  Invoke-Expression $cmd
+  # Важно: НЕ используем Invoke-Expression (может ломать парсинг). Вызываем pnpm напрямую.
+  if ($slugArg) {
+    & pnpm -C packages/db exec -- tsx src/applyAtlasExportsToNeon.ts $country --slug $slugArg
+  } else {
+    & pnpm -C packages/db exec -- tsx src/applyAtlasExportsToNeon.ts $country
+  }
 
   if ($LASTEXITCODE -ne 0) {
     throw "Import failed for $country (exit=$LASTEXITCODE)"
@@ -47,6 +70,7 @@ function Run-Import([string]$country, [string]$slug = $null) {
 }
 
 Require-StagingDbUrl
+Test-DbHostDns
 
 # Порядок: сначала “большие” страны, затем остальные (можно менять при необходимости)
 $countries = @(
