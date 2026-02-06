@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Chip } from '@go2asia/ui';
 import { MapPin, Phone, Instagram, Globe, Star, Clock } from 'lucide-react';
-import { MarkdownRenderer } from './MarkdownRenderer';
 import { SectionContentRenderer } from './SectionContentRenderer';
 import { ImageLightbox } from './ImageLightbox';
 import { buildTagLink, buildCategoryLink } from '../utils/navigation';
@@ -45,19 +44,35 @@ function normalizeHeaderTitle(title: string): string {
     .trim();
 }
 
-// Parse markdown sections (## Title) into structured sections by key
-function parseMarkdownSections(markdown: string | null, kind: PlaceKind): Map<string, string> {
-  const sections = new Map<string, string>();
-  if (!markdown) return sections;
+type ParsedOverviewSection = {
+  /** Original header text after "## " (may include emoji). */
+  rawTitle: string;
+  /** Normalized title used for mapping/labels. */
+  title: string;
+  /** Canonical section key if recognized; otherwise null. */
+  sectionKey: string | null;
+  /** Markdown body for this section (WITHOUT the "##" header). */
+  markdown: string;
+};
+
+// Parse overview body_markdown (## Title) into ordered sections (no silent drops).
+function parseOverviewSections(markdown: string | null, kind: PlaceKind): ParsedOverviewSection[] {
+  if (!markdown) return [];
 
   const lines = markdown.split(/\r?\n/);
-  let currentSectionKey: string | null = null;
-  let currentContent: string[] = [];
+  const out: ParsedOverviewSection[] = [];
+  let current: { rawTitle: string; title: string; sectionKey: string | null; body: string[] } | null = null;
 
   const flush = () => {
-    if (currentSectionKey && currentContent.length > 0) {
-      sections.set(currentSectionKey, currentContent.join('\n').trim());
-    }
+    if (!current) return;
+    const body = current.body.join('\n').trim();
+    if (body.length === 0) return;
+    out.push({
+      rawTitle: current.rawTitle,
+      title: current.title,
+      sectionKey: current.sectionKey,
+      markdown: body,
+    });
   };
 
   for (const line of lines) {
@@ -65,18 +80,19 @@ function parseMarkdownSections(markdown: string | null, kind: PlaceKind): Map<st
     if (headerMatch) {
       flush();
       const rawTitle = headerMatch[1]?.trim() ?? '';
-      const cleanedTitle = normalizeHeaderTitle(rawTitle);
-      currentSectionKey = getSectionKey(cleanedTitle, kind);
-      currentContent = [];
+      const title = normalizeHeaderTitle(rawTitle);
+      current = { rawTitle, title, sectionKey: getSectionKey(title, kind), body: [] };
       continue;
     }
-    if (currentSectionKey) {
-      currentContent.push(line);
+    if (!current) {
+      // Ignore preamble outside sections (should not happen for canonical exports, but keep safe).
+      continue;
     }
+    current.body.push(line);
   }
 
   flush();
-  return sections;
+  return out;
 }
 
 // Map section titles to section keys for business/showplace
@@ -84,16 +100,22 @@ function parseMarkdownSections(markdown: string | null, kind: PlaceKind): Map<st
 function getSectionKey(title: string, kind: PlaceKind): string | null {
   const lower = title.toLowerCase();
   if (kind === 'business') {
+    if (lower.includes('практическая информация')) return 'practicalInfo';
     if (lower.includes('почему') || lower.includes('зайти')) return 'whyVisit';
     if (lower.includes('попробовать') || lower.includes('что попробовать') || lower.includes('что заказать')) return 'mustTry';
-    if (lower.includes('цена') || lower.includes('цены') || lower.includes('стоимость')) return 'prices';
+    if (lower.includes('цена') || lower.includes('цены') || lower.includes('стоимость') || lower.includes('чек')) return 'prices';
     if (lower.includes('добраться') || lower.includes('как добраться')) return 'howToGet';
     if (lower.includes('сервис') || lower.includes('коммуникация') || lower.includes('язык') || lower.includes('wi-fi')) return 'service';
-    if (lower.includes('нюанс') || lower.includes('совет') || lower.includes('важно')) return 'nuances';
+    if (lower.includes('нюанс') || lower.includes('совет')) return 'nuances';
     if (lower.includes('ценность') || lower.includes('локальн') || lower.includes('контекст')) return 'localValue';
     if (lower.includes('фото') || lower.includes('сфотографировать')) return 'photoTips';
   } else {
     // Showplace sections with expanded synonyms
+    if (lower.includes('практическая информация')) return 'practicalInfo';
+    if (lower.includes('как добраться') || lower.includes('добраться')) return 'howToGet';
+    if (lower.includes('коммуникация') || lower.includes('сервис') || lower.includes('инфраструктура')) return 'service';
+    if (lower.includes('нюанс') || lower.includes('совет')) return 'nuances';
+    if (lower.includes('локальная ценность') || (lower.includes('ценность') && lower.includes('локальн'))) return 'localValue';
     if (lower.includes('почему') || lower.includes('важно') || lower.includes('почему это важно')) return 'whyImportant';
     // Structure: supports "Что увидеть", "Что внутри", "Что посмотреть", "Структура комплекса"
     if (lower.includes('структура') || lower.includes('комплекс') || 
@@ -348,17 +370,32 @@ function SectionCard({
 
 export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData }) {
   const hasOverview = Boolean(data.overviewMarkdown?.trim());
-  const sections = parseMarkdownSections(data.overviewMarkdown, data.kind);
-  const sectionDefs: Array<{ key: string; title: string; tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple' }> = [
-    { key: 'whyVisit', title: 'Почему стоит зайти?', tone: 'amber' },
-    { key: 'mustTry', title: 'Что попробовать обязательно', tone: 'sky' },
-    { key: 'prices', title: 'Цены', tone: 'emerald' },
-    { key: 'howToGet', title: 'Как добраться', tone: 'amber' },
-    { key: 'service', title: 'Коммуникация & сервис', tone: 'sky' },
-    { key: 'nuances', title: 'Полезные нюансы', tone: 'amber' },
-    { key: 'localValue', title: 'Локальная ценность', tone: 'emerald' },
-    { key: 'photoTips', title: 'Что стоит сфотографировать', tone: 'sky' },
-  ];
+  const sections = parseOverviewSections(data.overviewMarkdown, data.kind);
+
+  const toneByKey: Record<string, 'red' | 'amber' | 'emerald' | 'sky' | 'purple'> = {
+    whyVisit: 'amber',
+    mustTry: 'sky',
+    prices: 'emerald',
+    howToGet: 'amber',
+    service: 'sky',
+    nuances: 'amber',
+    localValue: 'emerald',
+    photoTips: 'sky',
+    practicalInfo: 'purple',
+    tickets: 'emerald',
+  };
+  const titleByKey: Record<string, string> = {
+    whyVisit: 'Почему стоит зайти?',
+    mustTry: 'Что попробовать обязательно',
+    prices: 'Цены',
+    howToGet: 'Как добраться',
+    service: 'Коммуникация & сервис',
+    nuances: 'Полезные нюансы',
+    localValue: 'Локальная ценность',
+    photoTips: 'Что стоит сфотографировать',
+    practicalInfo: 'Практическая информация',
+    tickets: 'Билеты и посещение',
+  };
 
   return (
     <div className="mx-auto w-full max-w-[864px] space-y-4">
@@ -374,20 +411,18 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
-      {sections.size === 0 && hasOverview ? (
+      {sections.length === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
       ) : (
-        sectionDefs.map((section) => {
-          const content = sections.get(section.key) ?? null;
-          if (hasOverview && !content) return null;
+        sections.map((section, idx) => {
           return (
             <SectionCard
-              key={section.key}
-              title={section.title}
-              tone={section.tone}
-              markdown={content}
+              key={`${section.sectionKey ?? 'raw'}:${section.title}:${idx}`}
+              title={section.sectionKey ? (titleByKey[section.sectionKey] ?? section.title) : section.title || 'Раздел'}
+              tone={section.sectionKey ? (toneByKey[section.sectionKey] ?? 'sky') : 'sky'}
+              markdown={section.markdown}
               fallback={hasOverview ? null : EMPTY_TEXT}
-              sectionKey={section.key}
+              sectionKey={section.sectionKey ?? undefined}
             />
           );
         })
@@ -398,18 +433,39 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
 
 export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }) {
   const hasOverview = Boolean(data.overviewMarkdown?.trim());
-  const sections = parseMarkdownSections(data.overviewMarkdown, data.kind);
-  const sectionDefs: Array<{ key: string; title: string; tone: 'red' | 'amber' | 'emerald' | 'sky' | 'purple' }> = [
-    { key: 'whyImportant', title: 'Почему это важно?', tone: 'red' },
-    { key: 'structure', title: 'Структура комплекса', tone: 'amber' },
-    { key: 'tickets', title: 'Билеты и посещение', tone: 'sky' },
-    { key: 'timeAllocation', title: 'Сколько времени заложить?', tone: 'emerald' },
-    { key: 'photoSpots', title: 'Лучшие точки для фото', tone: 'amber' },
-    { key: 'practicalTips', title: 'Практические советы', tone: 'sky' },
-    { key: 'history', title: 'Историческая справка', tone: 'red' },
-    { key: 'nearby', title: 'Что посмотреть рядом', tone: 'emerald' },
-    { key: 'interestingFact', title: 'Интересный факт', tone: 'amber' },
-  ];
+  const sections = parseOverviewSections(data.overviewMarkdown, data.kind);
+  const toneByKey: Record<string, 'red' | 'amber' | 'emerald' | 'sky' | 'purple'> = {
+    whyImportant: 'red',
+    structure: 'amber',
+    tickets: 'sky',
+    timeAllocation: 'emerald',
+    photoSpots: 'amber',
+    practicalTips: 'sky',
+    history: 'red',
+    nearby: 'emerald',
+    interestingFact: 'amber',
+    howToGet: 'amber',
+    service: 'sky',
+    nuances: 'amber',
+    localValue: 'emerald',
+    practicalInfo: 'purple',
+  };
+  const titleByKey: Record<string, string> = {
+    whyImportant: 'Почему это важно?',
+    structure: 'Структура комплекса',
+    tickets: 'Билеты и посещение',
+    timeAllocation: 'Сколько времени заложить?',
+    photoSpots: 'Лучшие точки для фото',
+    practicalTips: 'Практические советы',
+    history: 'Историческая справка',
+    nearby: 'Что посмотреть рядом',
+    interestingFact: 'Интересный факт',
+    howToGet: 'Как добраться',
+    service: 'Коммуникация & сервис',
+    nuances: 'Полезные нюансы',
+    localValue: 'Локальная ценность',
+    practicalInfo: 'Практическая информация',
+  };
   const unescoTag = data.tags.includes('unesco') || data.tags.includes('UNESCO');
 
   return (
@@ -428,20 +484,18 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
-      {sections.size === 0 && hasOverview ? (
+      {sections.length === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
       ) : (
-        sectionDefs.map((section) => {
-          const content = sections.get(section.key) ?? null;
-          if (hasOverview && !content) return null;
+        sections.map((section, idx) => {
           return (
             <SectionCard
-              key={section.key}
-              title={section.title}
-              tone={section.tone}
-              markdown={content}
+              key={`${section.sectionKey ?? 'raw'}:${section.title}:${idx}`}
+              title={section.sectionKey ? (titleByKey[section.sectionKey] ?? section.title) : section.title || 'Раздел'}
+              tone={section.sectionKey ? (toneByKey[section.sectionKey] ?? 'sky') : 'sky'}
+              markdown={section.markdown}
               fallback={hasOverview ? null : EMPTY_TEXT}
-              sectionKey={section.key}
+              sectionKey={section.sectionKey ?? undefined}
             />
           );
         })
