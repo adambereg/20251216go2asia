@@ -116,12 +116,23 @@ function getSectionKey(title: string, kind: PlaceKind): string | null {
     if (lower.includes('коммуникация') || lower.includes('сервис') || lower.includes('инфраструктура')) return 'service';
     if (lower.includes('нюанс') || lower.includes('совет')) return 'nuances';
     if (lower.includes('локальная ценность') || (lower.includes('ценность') && lower.includes('локальн'))) return 'localValue';
-    if (lower.includes('почему') || lower.includes('важно') || lower.includes('почему это важно')) return 'whyImportant';
+    // Why visit: "Почему стоит посетить" (canon) + legacy "Почему это важно?"
+    if (lower.includes('почему') || lower.includes('важно') || lower.includes('почему это важно') || lower.includes('стоит посетить'))
+      return 'whyImportant';
     // Structure: supports "Что увидеть", "Что внутри", "Что посмотреть", "Структура комплекса"
-    if (lower.includes('структура') || lower.includes('комплекс') || 
-        lower.includes('что увидеть') || lower.includes('что внутри') || 
-        lower.includes('что посмотреть')) return 'structure';
-    if (lower.includes('билет') || lower.includes('посещение')) return 'tickets';
+    if (
+      lower.includes('структура') ||
+      lower.includes('комплекс') ||
+      lower.includes('что увидеть') ||
+      lower.includes('что внутри') ||
+      lower.includes('что посмотреть') ||
+      lower.includes('что обязательно посмотреть') ||
+      lower.includes('обязательно посмотреть') ||
+      (lower.includes('что') && lower.includes('посмотреть'))
+    )
+      return 'structure';
+    // Pricing/entry: "Цены и вход" (canon) + legacy "Билеты и посещение"
+    if (lower.includes('цены') || lower.includes('вход') || lower.includes('билет') || lower.includes('посещение')) return 'tickets';
     // Time allocation: supports "Когда лучше посетить", "Сколько времени заложить"
     if (lower.includes('время') || lower.includes('заложить') || 
         lower.includes('когда лучше') || lower.includes('сколько времени')) return 'timeAllocation';
@@ -394,16 +405,16 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
     tickets: 'emerald',
   };
   const titleByKey: Record<string, string> = {
-    whyVisit: 'Почему стоит зайти?',
+    whyVisit: 'Почему стоит зайти',
     mustTry: 'Что попробовать обязательно',
     prices: 'Цены',
     howToGet: 'Как добраться',
-    service: 'Коммуникация & сервис',
+    service: 'Коммуникация и сервис',
     nuances: 'Полезные нюансы',
     localValue: 'Локальная ценность',
     photoTips: 'Что стоит сфотографировать',
     practicalInfo: 'Практическая информация',
-    tickets: 'Билеты и посещение',
+    tickets: 'Цены и вход',
   };
 
   return (
@@ -461,17 +472,17 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
     practicalInfo: 'purple',
   };
   const titleByKey: Record<string, string> = {
-    whyImportant: 'Почему это важно?',
-    structure: 'Структура комплекса',
-    tickets: 'Билеты и посещение',
+    whyImportant: 'Почему стоит посетить',
+    structure: 'Что обязательно посмотреть',
+    tickets: 'Цены и вход',
     timeAllocation: 'Сколько времени заложить?',
-    photoSpots: 'Лучшие точки для фото',
+    photoSpots: 'Что стоит сфотографировать',
     practicalTips: 'Практические советы',
     history: 'Историческая справка',
     nearby: 'Что посмотреть рядом',
     interestingFact: 'Интересный факт',
     howToGet: 'Как добраться',
-    service: 'Коммуникация & сервис',
+    service: 'Коммуникация и сервис',
     nuances: 'Полезные нюансы',
     localValue: 'Локальная ценность',
     practicalInfo: 'Практическая информация',
