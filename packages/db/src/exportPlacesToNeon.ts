@@ -9,7 +9,7 @@
  *   pnpm -C packages/db tsx src/exportPlacesToNeon.ts
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // ============================================================================
@@ -39,6 +39,34 @@ interface ParsedPlace {
     status?: string;
   };
 }
+
+type ParseIssueCode =
+  | 'PARSE_SKIP_MISSING_TYPE'
+  | 'PARSE_MISSING_COORDS'
+  | 'PARSE_MISSING_TAGS'
+  | 'PARSE_MISSING_DESCRIPTION'
+  | 'PARSE_UNKNOWN_SECTION_TITLE'
+  | 'PARSE_EMPTY_OVERVIEW';
+
+type ParseIssue = {
+  code: ParseIssueCode;
+  placeName?: string;
+  slug?: string;
+  cityName?: string;
+  details?: string;
+};
+
+type ParsePlaceResult = {
+  places: ParsedPlace[];
+  issues: ParseIssue[];
+};
+
+type CountryConfig = {
+  countryId: string;
+  countryCode: string;
+  cityIdMap: Record<string, string>;
+  normalizeCityName?: (cityName: string) => string;
+};
 
 // ============================================================================
 // City ID Mapping
@@ -155,6 +183,7 @@ const SECTION_TITLES: Record<string, string> = {
   history: 'Историческая справка',
   nearby: 'Что посмотреть рядом',
   interestingFact: 'Интересный факт',
+  practicalInfo: 'Практическая информация',
   // business
   whyVisit: 'Почему стоит зайти?',
   mustTry: 'Что попробовать обязательно',
@@ -163,7 +192,6 @@ const SECTION_TITLES: Record<string, string> = {
   service: 'Коммуникация & сервис',
   nuances: 'Полезные нюансы',
   localValue: 'Локальная ценность',
-  practicalInfo: 'Практическая информация',
 };
 
 const SECTION_ORDER: Record<'showplace' | 'business', string[]> = {
@@ -272,12 +300,14 @@ function extractMetadata(line: string): Record<string, string> {
 function parsePlaceMarkdown(
   content: string,
   opts: { cityName: string; countryId: string; countryCode: string; cityIdMap: Record<string, string> },
-): ParsedPlace[] {
+): ParsePlaceResult {
   const places: ParsedPlace[] = [];
+  const issues: ParseIssue[] = [];
   const lines = content.split('\n');
   
   let currentPlace: Partial<ParsedPlace> | null = null;
   let currentSection: string | null = null;
+  let currentRawSectionTitle: string | null = null;
   let descriptionBuffer: string[] = [];
   let sectionBuffer: string[] = [];
   let inMetadata = false;
@@ -287,6 +317,72 @@ function parsePlaceMarkdown(
   const countryId = opts.countryId;
   const countryCode = opts.countryCode;
   
+  const finalizePlace = () => {
+    if (!currentPlace) return;
+
+    // finalize description
+    const fullDescription = descriptionBuffer.join(' ').trim();
+    if (fullDescription.length > 0) {
+      if (fullDescription.length > 500) {
+        console.warn(`Description for "${currentPlace.name}" exceeds 500 chars (${fullDescription.length}), truncating`);
+      }
+      currentPlace.descriptionShort = fullDescription.substring(0, 500);
+    } else {
+      issues.push({
+        code: 'PARSE_MISSING_DESCRIPTION',
+        placeName: currentPlace.name,
+        slug: currentPlace.slug,
+        cityName: currentPlace.cityName,
+      });
+    }
+
+    // finalize last open section
+    if (currentSection && sectionBuffer.length > 0) {
+      const body = sectionBuffer.join('\n').trimEnd();
+      if (body.trim().length > 0) {
+        if (currentSection === '__raw__' && currentRawSectionTitle) {
+          currentPlace.sections?.set(`raw:${currentRawSectionTitle}`, `## ${currentRawSectionTitle}\n\n${body}`);
+        } else {
+          currentPlace.sections?.set(currentSection, body);
+        }
+      }
+    }
+
+    // base field checks (non-fatal here; export will still proceed)
+    if (!currentPlace.coords) {
+      issues.push({
+        code: 'PARSE_MISSING_COORDS',
+        placeName: currentPlace.name,
+        slug: currentPlace.slug,
+        cityName: currentPlace.cityName,
+      });
+    }
+    if (!currentPlace.tags || currentPlace.tags.length === 0) {
+      issues.push({
+        code: 'PARSE_MISSING_TAGS',
+        placeName: currentPlace.name,
+        slug: currentPlace.slug,
+        cityName: currentPlace.cityName,
+      });
+    }
+
+    if (currentPlace.name && currentPlace.placeKind) {
+      // Set default category if missing
+      if (!currentPlace.category && currentPlace.tags && currentPlace.tags.length > 0) {
+        currentPlace.category = currentPlace.tags[0];
+      }
+      places.push(currentPlace as ParsedPlace);
+    } else {
+      issues.push({
+        code: 'PARSE_SKIP_MISSING_TYPE',
+        placeName: currentPlace.name,
+        slug: currentPlace.slug,
+        cityName: currentPlace.cityName,
+        details: `Missing placeKind for parsed place; place skipped from export.`,
+      });
+    }
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i]; // Keep original for markdown formatting
     const line = rawLine.trim();
@@ -297,18 +393,8 @@ function parsePlaceMarkdown(
       if (line.toLowerCase().includes('оглавление') || line.includes('📚')) {
         continue;
       }
-      // Finalize previous place
-      if (currentPlace) {
-        if (descriptionBuffer.length > 0) {
-          currentPlace.descriptionShort = descriptionBuffer.join(' ').substring(0, 500);
-        }
-        if (currentSection && sectionBuffer.length > 0) {
-          currentPlace.sections.set(currentSection, sectionBuffer.join('\n'));
-        }
-        if (currentPlace.name && currentPlace.placeKind) {
-          places.push(currentPlace as ParsedPlace);
-        }
-      }
+      // Finalize previous place (strictly: no silent skip; issues collected)
+      finalizePlace();
       
       // Start new place
       const nameMatch = line.match(/^##\s+(.+?)(?:\s*\(|$)/);
@@ -341,6 +427,7 @@ function parsePlaceMarkdown(
         descriptionBuffer = [];
         sectionBuffer = [];
         currentSection = null;
+        currentRawSectionTitle = null;
         inMetadata = false;
         inPracticalInfo = false;
       }
@@ -355,10 +442,7 @@ function parsePlaceMarkdown(
       const coordsPattern = /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/;
       const coordsMatch = rawLine.match(coordsPattern) || line.match(coordsPattern);
       if (coordsMatch && coordsMatch.length >= 3) {
-        currentPlace.coords = {
-          lat: parseFloat(coordsMatch[1]),
-          lng: parseFloat(coordsMatch[2]),
-        };
+        currentPlace.coords = parseCoords(`${coordsMatch[1]}, ${coordsMatch[2]}`);
       }
       continue;
     }
@@ -369,7 +453,15 @@ function parsePlaceMarkdown(
       
       // Save previous section
       if (currentSection && currentPlace && sectionBuffer.length > 0) {
-        currentPlace.sections.set(currentSection, sectionBuffer.join('\n'));
+        if (!currentPlace.sections) currentPlace.sections = new Map();
+        const body = sectionBuffer.join('\n').trimEnd();
+        if (body.trim().length > 0) {
+          if (currentSection === '__raw__' && currentRawSectionTitle) {
+            currentPlace.sections.set(`raw:${currentRawSectionTitle}`, `## ${currentRawSectionTitle}\n\n${body}`);
+          } else {
+            currentPlace.sections.set(currentSection, body);
+          }
+        }
       }
       sectionBuffer = [];
       
@@ -377,6 +469,7 @@ function parsePlaceMarkdown(
       if (sectionTitle.includes('Практическая информация')) {
         inPracticalInfo = true;
         currentSection = 'practicalInfo';
+        currentRawSectionTitle = null;
         continue;
       }
       
@@ -385,6 +478,7 @@ function parsePlaceMarkdown(
         inMetadata = true;
         inPracticalInfo = false;
         currentSection = null;
+        currentRawSectionTitle = null;
         continue;
       }
       
@@ -393,8 +487,21 @@ function parsePlaceMarkdown(
       if (sectionKey && currentPlace) {
         currentSection = sectionKey;
         inPracticalInfo = false;
+        currentRawSectionTitle = null;
       } else {
-        currentSection = null;
+        // Preserve unknown sections to avoid data loss (A3)
+        if (currentPlace) {
+          issues.push({
+            code: 'PARSE_UNKNOWN_SECTION_TITLE',
+            placeName: currentPlace.name,
+            slug: currentPlace.slug,
+            cityName: currentPlace.cityName,
+            details: sectionTitle,
+          });
+        }
+        currentSection = '__raw__';
+        currentRawSectionTitle = sectionTitle;
+        inPracticalInfo = false;
       }
       continue;
     }
@@ -438,6 +545,7 @@ function parsePlaceMarkdown(
     
     // Metadata parsing
     if (inMetadata && currentPlace && line) {
+      if (!currentPlace.metadata) currentPlace.metadata = {};
       const metadata = extractMetadata(line);
       Object.assign(currentPlace.metadata, metadata);
       
@@ -457,10 +565,11 @@ function parsePlaceMarkdown(
       const tagsMatch = line.match(/\*\*tags:\*\*\s*(.+)/i);
       if (tagsMatch) {
         const tagsStr = tagsMatch[1].trim();
-        currentPlace.tags = tagsStr.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+        currentPlace.tags = tagsStr.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
       }
       
       // Extract category from type or tags
+      if (!currentPlace.tags) currentPlace.tags = [];
       if (!currentPlace.category && currentPlace.tags.length > 0) {
         // Use first tag as category fallback
         currentPlace.category = currentPlace.tags[0];
@@ -493,53 +602,21 @@ function parsePlaceMarkdown(
   }
   
   // Finalize last place
-  if (currentPlace) {
-    if (descriptionBuffer.length > 0) {
-      const fullDescription = descriptionBuffer.join(' ').trim();
-      if (fullDescription.length > 500) {
-        console.warn(`Description for "${currentPlace.name}" exceeds 500 chars (${fullDescription.length}), truncating`);
-      }
-      currentPlace.descriptionShort = fullDescription.substring(0, 500);
-    }
-    if (currentSection && sectionBuffer.length > 0) {
-      currentPlace.sections.set(currentSection, sectionBuffer.join('\n'));
-    }
-    if (currentPlace.name && currentPlace.placeKind) {
-      // Set default category if missing
-      if (!currentPlace.category && currentPlace.tags.length > 0) {
-        currentPlace.category = currentPlace.tags[0];
-      }
-      places.push(currentPlace as ParsedPlace);
-    }
-  }
-  
-  return places;
-}
+  finalizePlace();
 
-function parseGuideFile(filePath: string): ParsedPlace[] {
-  const content = readFileSync(filePath, 'utf-8');
-  const fileName = filePath.split(/[/\\]/).pop() || '';
-  
-  // Extract city name from filename: 01-philippines-manila-guide.md -> Manila
-  const cityMatch = fileName.match(/01-philippines-(\w+)-guide\.md/);
-  if (!cityMatch) {
-    throw new Error(`Cannot extract city name from filename: ${fileName}`);
+  // A3 guardrail: overview must not be empty if we have any sections at all
+  for (const p of places) {
+    if (!p.sections || p.sections.size === 0) {
+      issues.push({
+        code: 'PARSE_EMPTY_OVERVIEW',
+        placeName: p.name,
+        slug: p.slug,
+        cityName: p.cityName,
+      });
+    }
   }
-  
-  const citySlug = cityMatch[1];
-  const cityNameMap: Record<string, string> = {
-    manila: 'Manila',
-    cebu: 'Cebu',
-    palawan: 'Palawan',
-    bohol: 'Bohol',
-    boracay: 'Boracay',
-    dumaguete: 'Dumaguete',
-    siargao: 'Siargao',
-  };
-  
-  const cityName = cityNameMap[citySlug] || citySlug.charAt(0).toUpperCase() + citySlug.slice(1);
-  
-  return parsePlaceMarkdown(content, { cityName, countryId: 'ph', countryCode: 'PH', cityIdMap: CITY_ID_MAP_PH });
+
+  return { places, issues };
 }
 
 // ============================================================================
@@ -560,7 +637,7 @@ function escapeSqlJsonb(arr: string[] | null | undefined): string {
   return `'${escaped}'::jsonb`;
 }
 
-function generatePlaceId(cityId: string, slug: string): string {
+function generatePlaceId(_cityId: string, slug: string): string {
   // slug already contains city_id prefix (e.g., "mnl-intramuros")
   // so placeId = slug (they are the same for global uniqueness)
   return slug;
@@ -856,748 +933,260 @@ function generateContentBlocksCSV(
   return { csv: rows.join('\n'), issues };
 }
 
-// ============================================================================
-// Main
-// ============================================================================
-
-function parseVietnamFile(filePath: string): { places: ParsedPlace[]; cities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇻🇳 Hue (Хюэ)" or "# 🇻🇳 Ho Chi Minh City (Сайгон)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇻🇳\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'vn', countryCode: 'VN', cityIdMap: CITY_ID_MAP_VN });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames };
-}
-
-function parseThailandFile(filePath: string): { places: ParsedPlace[]; cities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇹🇭 Bangkok (Бангкок)" or "# 🇹🇭 Chiang Mai (Чиангмай)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇹🇭\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'th', countryCode: 'TH', cityIdMap: CITY_ID_MAP_TH });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames };
-}
-
-function parseLaosFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-  const unknownCities: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇱🇦 Vientiane (Вьентьян)" or "# 🇱🇦 Luang Prabang (Луангпхабанг)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇱🇦\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-    
-    // Check if city is in mapping
-    if (!CITY_ID_MAP_LA[cityName]) {
-      unknownCities.push(cityName);
-    }
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    const cityId = CITY_ID_MAP_LA[cityName];
-    
-    // Skip places from unknown cities
-    if (!cityId) {
-      console.warn(`LA: Skipping city "${cityName}" (not in CITY_ID_MAP_LA)`);
-      continue;
-    }
-    
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'la', countryCode: 'LA', cityIdMap: CITY_ID_MAP_LA });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames, unknownCities };
-}
-
-function parseMalaysiaFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-  const unknownCities: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇲🇾 Kuala Lumpur (Куала-Лумпур)" or "# 🇲🇾 Penang (Пенанг / Джорджтаун)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇲🇾\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-    
-    // Check if city is in mapping (handle both "Penang" and "George Town" -> png)
-    const normalizedCityName = cityName === 'Penang' || cityName.includes('Penang') ? 'Penang' : cityName;
-    if (!CITY_ID_MAP_MY[cityName] && !CITY_ID_MAP_MY[normalizedCityName]) {
-      unknownCities.push(cityName);
-    }
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    // Handle Penang / George Town mapping
-    const normalizedCityName = cityName === 'Penang' || cityName.includes('Penang') ? 'Penang' : cityName;
-    const cityId = CITY_ID_MAP_MY[cityName] ?? CITY_ID_MAP_MY[normalizedCityName];
-    
-    // Skip places from unknown cities
-    if (!cityId) {
-      console.warn(`MY: Skipping city "${cityName}" (not in CITY_ID_MAP_MY)`);
-      continue;
-    }
-    
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName: normalizedCityName, countryId: 'my', countryCode: 'MY', cityIdMap: CITY_ID_MAP_MY });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames, unknownCities };
-}
-
-function parseIndonesiaFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-  const unknownCities: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇮🇩 Bali (Бали)" or "# 🇮🇩 Jakarta (Джакарта)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇮🇩\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-    
-    // Check if city is in mapping
-    if (!CITY_ID_MAP_ID[cityName]) {
-      unknownCities.push(cityName);
-    }
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    const cityId = CITY_ID_MAP_ID[cityName];
-    
-    // Skip places from unknown cities
-    if (!cityId) {
-      console.warn(`ID: Skipping city "${cityName}" (not in CITY_ID_MAP_ID)`);
-      continue;
-    }
-    
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'id', countryCode: 'ID', cityIdMap: CITY_ID_MAP_ID });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames, unknownCities };
-}
-
-function parseSingaporeFile(filePath: string): { places: ParsedPlace[]; cities: string[]; unknownCities: string[] } {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const cityStarts: number[] = [];
-  const cityNames: string[] = [];
-  const unknownCities: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('# ')) continue;
-    // Example: "# 🇸🇬 Singapore (Сингапур)"
-    const raw = line.replace(/^#\s+/, '').trim();
-    const withoutFlag = raw.replace(/^🇸🇬\s+/, '').trim();
-    const cityName = withoutFlag.split('(')[0].trim();
-    if (!cityName) continue;
-    cityStarts.push(i);
-    cityNames.push(cityName);
-    
-    // Check if city is in mapping
-    if (!CITY_ID_MAP_SG[cityName]) {
-      unknownCities.push(cityName);
-    }
-  }
-
-  const places: ParsedPlace[] = [];
-  for (let idx = 0; idx < cityStarts.length; idx++) {
-    const start = cityStarts[idx];
-    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1] : lines.length;
-    const cityName = cityNames[idx];
-    const cityId = CITY_ID_MAP_SG[cityName];
-    
-    // Skip places from unknown cities
-    if (!cityId) {
-      console.warn(`SG: Skipping city "${cityName}" (not in CITY_ID_MAP_SG)`);
-      continue;
-    }
-    
-    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
-    const parsed = parsePlaceMarkdown(cityBlock, { cityName, countryId: 'sg', countryCode: 'SG', cityIdMap: CITY_ID_MAP_SG });
-    places.push(...parsed);
-  }
-
-  return { places, cities: cityNames, unknownCities };
-}
-
 function formatIssues(title: string, issues: string[]): string {
   if (issues.length === 0) return `## ${title}\n\n- (нет)\n`;
   return `## ${title}\n\n${issues.map((x) => `- ${x}`).join('\n')}\n`;
 }
 
+function formatParseIssues(title: string, issues: ParseIssue[]): string {
+  if (issues.length === 0) return `## ${title}\n\n- (нет)\n`;
+  const lines = issues.map((i) => {
+    const who = [i.slug, i.placeName, i.cityName].filter(Boolean).join(' | ');
+    const tail = i.details ? ` — ${i.details}` : '';
+    return `- ${i.code}${who ? ` — ${who}` : ''}${tail}`;
+  });
+  return `## ${title}\n\n${lines.join('\n')}\n`;
+}
+
+function stripLeadingFlagEmoji(raw: string): string {
+  // Typical country flags are 2 "regional indicator symbol" codepoints.
+  return raw.replace(/^[\u{1F1E6}-\u{1F1FF}]{2}\s+/u, '').trim();
+}
+
+function walkFiles(dir: string): string[] {
+  const out: string[] = [];
+  const entries = readdirSync(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...walkFiles(p));
+    else out.push(p);
+  }
+  return out;
+}
+
+function isPlacesMarkdownFile(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return lower.endsWith('.md') && lower.includes('places');
+}
+
+function isExportablePlace(place: ParsedPlace): boolean {
+  const hasDescription = typeof place.descriptionShort === 'string' && place.descriptionShort.trim().length > 0;
+  return Boolean(place.placeKind) && Boolean(place.coords) && place.tags.length > 0 && hasDescription;
+}
+
+function parsePlacesFileByCityHeaders(filePath: string, cfg: CountryConfig): { places: ParsedPlace[]; cities: string[]; unknownCities: string[]; issues: ParseIssue[] } {
+  const content = readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const cityStarts: number[] = [];
+  const cityNames: string[] = [];
+  const unknownCities: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = (lines[i] ?? '').trim();
+    if (!line.startsWith('# ')) continue;
+    // City header in canonical files: "# 🇱🇦 Vang Vieng (Ванг Виенг)"
+    const raw = line.replace(/^#\s+/, '').trim();
+    const withoutFlag = stripLeadingFlagEmoji(raw);
+    let cityName = withoutFlag.split('(')[0]?.trim() ?? '';
+    if (!cityName) continue;
+    if (cfg.normalizeCityName) cityName = cfg.normalizeCityName(cityName);
+    if (!cityName) continue;
+    cityStarts.push(i);
+    cityNames.push(cityName);
+    if (!cfg.cityIdMap[cityName]) unknownCities.push(cityName);
+  }
+
+  const places: ParsedPlace[] = [];
+  const issues: ParseIssue[] = [];
+  for (let idx = 0; idx < cityStarts.length; idx++) {
+    const start = cityStarts[idx]!;
+    const end = idx + 1 < cityStarts.length ? cityStarts[idx + 1]! : lines.length;
+    const cityName = cityNames[idx]!;
+    const cityId = cfg.cityIdMap[cityName];
+    if (!cityId) {
+      // Keep behavior consistent with existing exports: skip unknown cities, but visible in report.
+      continue;
+    }
+    const cityBlock = lines.slice(start + 1, end).join('\n'); // drop the "# ..." line
+    const parsed = parsePlaceMarkdown(cityBlock, {
+      cityName,
+      countryId: cfg.countryId,
+      countryCode: cfg.countryCode,
+      cityIdMap: cfg.cityIdMap,
+    });
+    places.push(...parsed.places);
+    issues.push(...parsed.issues);
+  }
+
+  return { places, cities: cityNames, unknownCities, issues };
+}
+
 function main() {
   const repoRoot = join(process.cwd(), '..', '..');
-  const contentDirPh = join(repoRoot, 'content', 'atlas', 'philippines');
-  const contentDirVn = join(repoRoot, 'content', 'atlas', 'vietnam');
-  const contentDirTh = join(repoRoot, 'content', 'atlas', 'thailand');
-  const contentDirLa = join(repoRoot, 'content', 'atlas', 'laos');
-  const contentDirMy = join(repoRoot, 'content', 'atlas', 'malaysia');
-  const contentDirId = join(repoRoot, 'content', 'atlas', 'indonesia');
-  const contentDirSg = join(repoRoot, 'content', 'atlas', 'singapore');
+  const contentRoot = join(repoRoot, 'content', 'atlas');
   const exportRoot = join(repoRoot, 'exports', 'neon');
   mkdirSync(exportRoot, { recursive: true });
-  
-  // Find all guide files
-  const allGuideFiles = [
-    '01-philippines-manila-guide.md',
-    '01-philippines-cebu-guide.md',
-    '01-philippines-palawan-guide.md',
-    '01-philippines-bohol-guide.md',
-    '01-philippines-boracay-guide.md',
-    '01-philippines-dumaguete-guide.md',
-  ];
-  
-  // --------------------------------------------------------------------------
-  // PH export (keep legacy output in exports/neon/*)
-  // --------------------------------------------------------------------------
-  const guidePaths = allGuideFiles
-    .map((fileName) => join(contentDirPh, fileName))
-    .filter((p) => existsSync(p));
 
-  const phPlaces: ParsedPlace[] = [];
-  for (const filePath of guidePaths) {
-    const fileName = filePath.split(/[/\\]/).pop() || filePath;
-    try {
-      const places = parseGuideFile(filePath);
-      phPlaces.push(...places);
-      console.log(`PH: Parsed ${places.length} places from ${fileName}`);
-    } catch (error) {
-      console.error(`PH: Error parsing ${fileName}:`, error);
+  // --------------------------------------------------------------------------
+  // v1: Scan content/atlas/** for *places*.md (no "by memory" list)
+  // --------------------------------------------------------------------------
+  const onlyCountry = (process.env.ATLAS_EXPORT_ONLY_COUNTRY ?? '').trim().toLowerCase();
+  const onlySlug = (process.env.ATLAS_EXPORT_ONLY_SLUG ?? '').trim().toLowerCase();
+
+  const countryConfigs: Record<string, CountryConfig> = {
+    vietnam: { countryId: 'vn', countryCode: 'VN', cityIdMap: CITY_ID_MAP_VN },
+    thailand: { countryId: 'th', countryCode: 'TH', cityIdMap: CITY_ID_MAP_TH },
+    laos: { countryId: 'la', countryCode: 'LA', cityIdMap: CITY_ID_MAP_LA },
+    malaysia: {
+      countryId: 'my',
+      countryCode: 'MY',
+      cityIdMap: CITY_ID_MAP_MY,
+      normalizeCityName: (name) => (name.includes('Penang') ? 'Penang' : name),
+    },
+    indonesia: { countryId: 'id', countryCode: 'ID', cityIdMap: CITY_ID_MAP_ID },
+    singapore: { countryId: 'sg', countryCode: 'SG', cityIdMap: CITY_ID_MAP_SG },
+    philippines: { countryId: 'ph', countryCode: 'PH', cityIdMap: CITY_ID_MAP_PH },
+    cambodia: {
+      countryId: 'kh',
+      countryCode: 'KH',
+      cityIdMap: {
+        'Siem Reap': 'rep',
+        'Phnom Penh': 'pnh',
+        Battambang: 'bat',
+        'Kampong Thom': 'kch',
+        'Koh Kong': 'kra',
+        Sihanoukville: 'kps',
+        Kampot: 'kmp',
+        Kep: 'kep',
+      },
+      normalizeCityName: (name) => {
+        if (name === 'Cambodia Guide' || name.toLowerCase().includes('оглавление')) return '';
+        if (name.includes('/')) return name.split('/')[0]?.trim() ?? name;
+        return name;
+      },
+    },
+  };
+
+  const allFiles = walkFiles(contentRoot).filter(isPlacesMarkdownFile).sort();
+  const inputFiles = allFiles.filter((p) => {
+    if (!onlyCountry) return true;
+    const folder = p.split(/[/\\]/).slice(-2)[0]?.toLowerCase() ?? '';
+    const cfg = countryConfigs[folder];
+    return folder === onlyCountry || cfg?.countryId === onlyCountry;
+  });
+
+  const summaryByCountry: Array<{ country: string; parsed: number; exported: number; skipped: number; issues: number }> = [];
+
+  for (const filePath of inputFiles) {
+    const parts = filePath.split(/[/\\]/);
+    const countryFolder = (parts[parts.length - 2] ?? '').toLowerCase();
+    const cfg = countryConfigs[countryFolder];
+    if (!cfg) {
+      console.warn(`SKIP_UNKNOWN_COUNTRY_FOLDER: ${countryFolder} (${filePath})`);
+      continue;
     }
+
+    const parsed = parsePlacesFileByCityHeaders(filePath, cfg);
+    let places = parsed.places;
+    let parseIssues = parsed.issues;
+
+    if (onlySlug) {
+      places = places.filter((p) => p.slug.toLowerCase() === onlySlug);
+      // Pilot mode: keep only issues relevant to selected place(s)
+      parseIssues = parseIssues.filter((i) => (i.slug ?? '').toLowerCase() === onlySlug);
+    }
+
+    const exportable = places.filter(isExportablePlace);
+    const skipped = places.filter((p) => !isExportablePlace(p));
+
+    const parseIssueCounts = parseIssues.reduce((acc, i) => {
+      acc[i.code] = (acc[i.code] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const parseIssueCountsLines =
+      Object.keys(parseIssueCounts).length > 0
+        ? Object.entries(parseIssueCounts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([code, count]) => `- ${code}: ${count}`)
+            .join('\n')
+        : '- (нет)';
+
+    const exportDir = join(exportRoot, countryFolder);
+    mkdirSync(exportDir, { recursive: true });
+
+    const placesSql = generatePlacesSQL(exportable, cfg.cityIdMap, cfg.countryId);
+    const blocksSql = generateContentBlocksSQL(exportable, cfg.cityIdMap);
+    writeFileSync(join(exportDir, 'places.sql'), placesSql.sql, 'utf-8');
+    writeFileSync(join(exportDir, 'content_blocks.sql'), blocksSql.sql, 'utf-8');
+
+    const placesCsv = generatePlacesCSV(exportable, cfg.cityIdMap, cfg.countryId);
+    const blocksCsv = generateContentBlocksCSV(exportable, cfg.cityIdMap);
+    writeFileSync(join(exportDir, 'places.csv'), placesCsv.csv, 'utf-8');
+    writeFileSync(join(exportDir, 'content_blocks.csv'), blocksCsv.csv, 'utf-8');
+
+    const missingCoords = places.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
+    const skippedPlaces = skipped.map((p) => `${p.slug} (${p.name})`);
+
+    const report = [
+      `# ${countryFolder.toUpperCase()} Export Report`,
+      ``,
+      `**Generated:** ${new Date().toISOString()}`,
+      `**Input file:** ${filePath}`,
+      `**Cities in file:** ${parsed.cities.length}`,
+      `**Places parsed:** ${places.length}`,
+      `**Places exported:** ${exportable.length}`,
+      `**Places skipped:** ${skipped.length}`,
+      ``,
+      `## Issue counts by type`,
+      ``,
+      parseIssueCountsLines,
+      ``,
+      formatParseIssues('Parse issues (A2/A3 guardrails)', parseIssues),
+      formatIssues('Skipped places (missing kind/coords/tags/description)', skippedPlaces),
+      formatIssues('SQL issues', placesSql.issues.concat(blocksSql.issues)),
+      formatIssues('CSV issues', placesCsv.issues.concat(blocksCsv.issues)),
+      formatIssues('Missing coords (blocked from export)', missingCoords),
+      parsed.unknownCities.length > 0 ? formatIssues('Unknown cities (skipped)', parsed.unknownCities) : `## Unknown cities\n\n- (нет)\n`,
+      ``,
+      `## City ID mapping used`,
+      ``,
+      Object.entries(cfg.cityIdMap)
+        .map(([name, id]) => `- ${name} -> \`${id}\``)
+        .join('\n'),
+      ``,
+    ].join('\n');
+
+    writeFileSync(join(exportDir, 'PARSE_REPORT.md'), report, 'utf-8');
+
+    const readme = generateREADME({
+      places: exportable,
+      countryId: cfg.countryId,
+      cityIdMap: cfg.cityIdMap,
+      label: countryFolder[0]?.toUpperCase() + countryFolder.slice(1),
+    });
+    writeFileSync(join(exportDir, 'README.md'), readme, 'utf-8');
+
+    console.log(`${countryFolder.toUpperCase()}: Generated: ${exportDir}/places.sql`);
+    console.log(`${countryFolder.toUpperCase()}: Generated: ${exportDir}/content_blocks.sql`);
+    console.log(`${countryFolder.toUpperCase()}: Generated: ${exportDir}/PARSE_REPORT.md`);
+
+    summaryByCountry.push({
+      country: countryFolder,
+      parsed: places.length,
+      exported: exportable.length,
+      skipped: skipped.length,
+      issues: parseIssues.length + placesSql.issues.length + blocksSql.issues.length,
+    });
   }
 
-  const phPlacesSql = generatePlacesSQL(phPlaces, CITY_ID_MAP_PH, 'ph');
-  const phBlocksSql = generateContentBlocksSQL(phPlaces, CITY_ID_MAP_PH);
-  writeFileSync(join(exportRoot, 'places.sql'), `${phPlacesSql.sql}\n\n${phBlocksSql.sql}`, 'utf-8');
-
-  const phPlacesCsv = generatePlacesCSV(phPlaces, CITY_ID_MAP_PH, 'ph');
-  const phBlocksCsv = generateContentBlocksCSV(phPlaces, CITY_ID_MAP_PH);
-  writeFileSync(join(exportRoot, 'places.csv'), phPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportRoot, 'content_blocks.csv'), phBlocksCsv.csv, 'utf-8');
-
-  const phReadme = generateREADME({
-    places: phPlaces,
-    countryId: 'ph',
-    cityIdMap: CITY_ID_MAP_PH,
-    label: 'Philippines',
-  });
-  writeFileSync(join(exportRoot, 'README.md'), phReadme, 'utf-8');
-
-  // --------------------------------------------------------------------------
-  // VN export (new output in exports/neon/vietnam/*)
-  // --------------------------------------------------------------------------
-  const vietnamPath = join(contentDirVn, 'vietnam-places.md');
-  if (!existsSync(vietnamPath)) {
-    console.warn(`VN: Missing file ${vietnamPath} (skipping VN export)`);
-    return;
+  if (summaryByCountry.length > 0) {
+    console.log('\n=== Atlas Export Summary (by country) ===');
+    for (const s of summaryByCountry) {
+      console.log(`${s.country}: parsed=${s.parsed} exported=${s.exported} skipped=${s.skipped} issues=${s.issues}`);
+    }
+  } else {
+    console.warn('No input files found for export (check content/atlas/** and filters).');
   }
-
-  const exportDirVn = join(exportRoot, 'vietnam');
-  mkdirSync(exportDirVn, { recursive: true });
-
-  const vnParsed = parseVietnamFile(vietnamPath);
-  const vnPlaces = vnParsed.places;
-
-  const vnPlacesSql = generatePlacesSQL(vnPlaces, CITY_ID_MAP_VN, 'vn');
-  const vnBlocksSql = generateContentBlocksSQL(vnPlaces, CITY_ID_MAP_VN);
-  writeFileSync(join(exportDirVn, 'places.sql'), `${vnPlacesSql.sql}\n\n${vnBlocksSql.sql}`, 'utf-8');
-
-  const vnPlacesCsv = generatePlacesCSV(vnPlaces, CITY_ID_MAP_VN, 'vn');
-  const vnBlocksCsv = generateContentBlocksCSV(vnPlaces, CITY_ID_MAP_VN);
-  writeFileSync(join(exportDirVn, 'places.csv'), vnPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirVn, 'content_blocks.csv'), vnBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const vnMissingCoords = vnPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const report = [
-    `# VN Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${vnParsed.cities.length}`,
-    `**Places parsed:** ${vnPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', vnPlacesSql.issues.concat(vnBlocksSql.issues)),
-    formatIssues('CSV issues', vnPlacesCsv.issues.concat(vnBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', vnMissingCoords),
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_VN)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirVn, 'PARSE_REPORT.md'), report, 'utf-8');
-
-  const vnReadme = generateREADME({
-    places: vnPlaces,
-    countryId: 'vn',
-    cityIdMap: CITY_ID_MAP_VN,
-    label: 'Vietnam',
-  });
-  writeFileSync(join(exportDirVn, 'README.md'), vnReadme, 'utf-8');
-
-  console.log(`VN: Generated: ${exportDirVn}/places.sql`);
-  console.log(`VN: Generated: ${exportDirVn}/places.csv`);
-  console.log(`VN: Generated: ${exportDirVn}/content_blocks.csv`);
-  console.log(`VN: Generated: ${exportDirVn}/PARSE_REPORT.md`);
-
-  // --------------------------------------------------------------------------
-  // TH export (new output in exports/neon/thailand/*)
-  // --------------------------------------------------------------------------
-  const thailandPath = join(contentDirTh, 'thailand-places.md');
-  if (!existsSync(thailandPath)) {
-    console.warn(`TH: Missing file ${thailandPath} (skipping TH export)`);
-    return;
-  }
-
-  const exportDirTh = join(exportRoot, 'thailand');
-  mkdirSync(exportDirTh, { recursive: true });
-
-  const thParsed = parseThailandFile(thailandPath);
-  const thPlaces = thParsed.places;
-
-  const thPlacesSql = generatePlacesSQL(thPlaces, CITY_ID_MAP_TH, 'th');
-  const thBlocksSql = generateContentBlocksSQL(thPlaces, CITY_ID_MAP_TH);
-  writeFileSync(join(exportDirTh, 'places.sql'), `${thPlacesSql.sql}\n\n${thBlocksSql.sql}`, 'utf-8');
-
-  const thPlacesCsv = generatePlacesCSV(thPlaces, CITY_ID_MAP_TH, 'th');
-  const thBlocksCsv = generateContentBlocksCSV(thPlaces, CITY_ID_MAP_TH);
-  writeFileSync(join(exportDirTh, 'places.csv'), thPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirTh, 'content_blocks.csv'), thBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const thMissingCoords = thPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const thReport = [
-    `# TH Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${thParsed.cities.length}`,
-    `**Places parsed:** ${thPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', thPlacesSql.issues.concat(thBlocksSql.issues)),
-    formatIssues('CSV issues', thPlacesCsv.issues.concat(thBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', thMissingCoords),
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_TH)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-    `## Places by city_id and place_kind`,
-    ``,
-    ...Array.from(
-      thPlaces.reduce((acc, p) => {
-        const cityId = CITY_ID_MAP_TH[p.cityName] ?? 'unknown';
-        const key = `${cityId}:${p.placeKind}`;
-        acc.set(key, (acc.get(key) ?? 0) + 1);
-        return acc;
-      }, new Map<string, number>())
-    )
-      .sort()
-      .map(([key, count]) => `- ${key}: ${count}`),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirTh, 'PARSE_REPORT.md'), thReport, 'utf-8');
-
-  const thReadme = generateREADME({
-    places: thPlaces,
-    countryId: 'th',
-    cityIdMap: CITY_ID_MAP_TH,
-    label: 'Thailand',
-  });
-  writeFileSync(join(exportDirTh, 'README.md'), thReadme, 'utf-8');
-
-  console.log(`TH: Generated: ${exportDirTh}/places.sql`);
-  console.log(`TH: Generated: ${exportDirTh}/places.csv`);
-  console.log(`TH: Generated: ${exportDirTh}/content_blocks.csv`);
-  console.log(`TH: Generated: ${exportDirTh}/PARSE_REPORT.md`);
-
-  // --------------------------------------------------------------------------
-  // LA export (new output in exports/neon/laos/*)
-  // --------------------------------------------------------------------------
-  const laosPath = join(contentDirLa, 'laos-places.md');
-  if (!existsSync(laosPath)) {
-    console.warn(`LA: Missing file ${laosPath} (skipping LA export)`);
-    return;
-  }
-
-  const exportDirLa = join(exportRoot, 'laos');
-  mkdirSync(exportDirLa, { recursive: true });
-
-  const laParsed = parseLaosFile(laosPath);
-  const laPlaces = laParsed.places;
-
-  const laPlacesSql = generatePlacesSQL(laPlaces, CITY_ID_MAP_LA, 'la');
-  const laBlocksSql = generateContentBlocksSQL(laPlaces, CITY_ID_MAP_LA);
-  writeFileSync(join(exportDirLa, 'places.sql'), `${laPlacesSql.sql}\n\n${laBlocksSql.sql}`, 'utf-8');
-
-  const laPlacesCsv = generatePlacesCSV(laPlaces, CITY_ID_MAP_LA, 'la');
-  const laBlocksCsv = generateContentBlocksCSV(laPlaces, CITY_ID_MAP_LA);
-  writeFileSync(join(exportDirLa, 'places.csv'), laPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirLa, 'content_blocks.csv'), laBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const laMissingCoords = laPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const laReport = [
-    `# LA Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${laParsed.cities.length}`,
-    `**Places parsed:** ${laPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', laPlacesSql.issues.concat(laBlocksSql.issues)),
-    formatIssues('CSV issues', laPlacesCsv.issues.concat(laBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', laMissingCoords),
-    laParsed.unknownCities.length > 0
-      ? formatIssues('Unknown cities (skipped)', laParsed.unknownCities)
-      : `## Unknown cities\n\n- (нет)\n`,
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_LA)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-    `## Places by city_id and place_kind`,
-    ``,
-    ...Array.from(
-      laPlaces.reduce((acc, p) => {
-        const cityId = CITY_ID_MAP_LA[p.cityName] ?? 'unknown';
-        const key = `${cityId}:${p.placeKind}`;
-        acc.set(key, (acc.get(key) ?? 0) + 1);
-        return acc;
-      }, new Map<string, number>())
-    )
-      .sort()
-      .map(([key, count]) => `- ${key}: ${count}`),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirLa, 'PARSE_REPORT.md'), laReport, 'utf-8');
-
-  const laReadme = generateREADME({
-    places: laPlaces,
-    countryId: 'la',
-    cityIdMap: CITY_ID_MAP_LA,
-    label: 'Laos',
-  });
-  writeFileSync(join(exportDirLa, 'README.md'), laReadme, 'utf-8');
-
-  console.log(`LA: Generated: ${exportDirLa}/places.sql`);
-  console.log(`LA: Generated: ${exportDirLa}/places.csv`);
-  console.log(`LA: Generated: ${exportDirLa}/content_blocks.csv`);
-  console.log(`LA: Generated: ${exportDirLa}/PARSE_REPORT.md`);
-
-  // --------------------------------------------------------------------------
-  // MY export (new output in exports/neon/malaysia/*)
-  // --------------------------------------------------------------------------
-  const malaysiaPath = join(contentDirMy, 'malaysia-places.md');
-  if (!existsSync(malaysiaPath)) {
-    console.warn(`MY: Missing file ${malaysiaPath} (skipping MY export)`);
-    return;
-  }
-
-  const exportDirMy = join(exportRoot, 'malaysia');
-  mkdirSync(exportDirMy, { recursive: true });
-
-  const myParsed = parseMalaysiaFile(malaysiaPath);
-  const myPlaces = myParsed.places;
-
-  const myPlacesSql = generatePlacesSQL(myPlaces, CITY_ID_MAP_MY, 'my');
-  const myBlocksSql = generateContentBlocksSQL(myPlaces, CITY_ID_MAP_MY);
-  writeFileSync(join(exportDirMy, 'places.sql'), `${myPlacesSql.sql}\n\n${myBlocksSql.sql}`, 'utf-8');
-
-  const myPlacesCsv = generatePlacesCSV(myPlaces, CITY_ID_MAP_MY, 'my');
-  const myBlocksCsv = generateContentBlocksCSV(myPlaces, CITY_ID_MAP_MY);
-  writeFileSync(join(exportDirMy, 'places.csv'), myPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirMy, 'content_blocks.csv'), myBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const myMissingCoords = myPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const myReport = [
-    `# MY Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${myParsed.cities.length}`,
-    `**Places parsed:** ${myPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', myPlacesSql.issues.concat(myBlocksSql.issues)),
-    formatIssues('CSV issues', myPlacesCsv.issues.concat(myBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', myMissingCoords),
-    myParsed.unknownCities.length > 0
-      ? formatIssues('Unknown cities (skipped)', myParsed.unknownCities)
-      : `## Unknown cities\n\n- (нет)\n`,
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_MY)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-    `## Places by city_id and place_kind`,
-    ``,
-    ...Array.from(
-      myPlaces.reduce((acc, p) => {
-        const cityId = CITY_ID_MAP_MY[p.cityName] ?? 'unknown';
-        const key = `${cityId}:${p.placeKind}`;
-        acc.set(key, (acc.get(key) ?? 0) + 1);
-        return acc;
-      }, new Map<string, number>())
-    )
-      .sort()
-      .map(([key, count]) => `- ${key}: ${count}`),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirMy, 'PARSE_REPORT.md'), myReport, 'utf-8');
-
-  const myReadme = generateREADME({
-    places: myPlaces,
-    countryId: 'my',
-    cityIdMap: CITY_ID_MAP_MY,
-    label: 'Malaysia',
-  });
-  writeFileSync(join(exportDirMy, 'README.md'), myReadme, 'utf-8');
-
-  console.log(`MY: Generated: ${exportDirMy}/places.sql`);
-  console.log(`MY: Generated: ${exportDirMy}/places.csv`);
-  console.log(`MY: Generated: ${exportDirMy}/content_blocks.csv`);
-  console.log(`MY: Generated: ${exportDirMy}/PARSE_REPORT.md`);
-
-  // --------------------------------------------------------------------------
-  // ID export (new output in exports/neon/indonesia/*)
-  // --------------------------------------------------------------------------
-  const indonesiaPath = join(contentDirId, 'Indonesia-Places.md');
-  if (!existsSync(indonesiaPath)) {
-    console.warn(`ID: Missing file ${indonesiaPath} (skipping ID export)`);
-    return;
-  }
-
-  const exportDirId = join(exportRoot, 'indonesia');
-  mkdirSync(exportDirId, { recursive: true });
-
-  const idParsed = parseIndonesiaFile(indonesiaPath);
-  const idPlaces = idParsed.places;
-
-  const idPlacesSql = generatePlacesSQL(idPlaces, CITY_ID_MAP_ID, 'id');
-  const idBlocksSql = generateContentBlocksSQL(idPlaces, CITY_ID_MAP_ID);
-  writeFileSync(join(exportDirId, 'places.sql'), `${idPlacesSql.sql}\n\n${idBlocksSql.sql}`, 'utf-8');
-
-  const idPlacesCsv = generatePlacesCSV(idPlaces, CITY_ID_MAP_ID, 'id');
-  const idBlocksCsv = generateContentBlocksCSV(idPlaces, CITY_ID_MAP_ID);
-  writeFileSync(join(exportDirId, 'places.csv'), idPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirId, 'content_blocks.csv'), idBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const idMissingCoords = idPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const idReport = [
-    `# ID Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${idParsed.cities.length}`,
-    `**Places parsed:** ${idPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', idPlacesSql.issues.concat(idBlocksSql.issues)),
-    formatIssues('CSV issues', idPlacesCsv.issues.concat(idBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', idMissingCoords),
-    idParsed.unknownCities.length > 0
-      ? formatIssues('Unknown cities (skipped)', idParsed.unknownCities)
-      : `## Unknown cities\n\n- (нет)\n`,
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_ID)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-    `## Places by city_id and place_kind`,
-    ``,
-    ...Array.from(
-      idPlaces.reduce((acc, p) => {
-        const cityId = CITY_ID_MAP_ID[p.cityName] ?? 'unknown';
-        const key = `${cityId}:${p.placeKind}`;
-        acc.set(key, (acc.get(key) ?? 0) + 1);
-        return acc;
-      }, new Map<string, number>())
-    )
-      .sort()
-      .map(([key, count]) => `- ${key}: ${count}`),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirId, 'PARSE_REPORT.md'), idReport, 'utf-8');
-
-  const idReadme = generateREADME({
-    places: idPlaces,
-    countryId: 'id',
-    cityIdMap: CITY_ID_MAP_ID,
-    label: 'Indonesia',
-  });
-  writeFileSync(join(exportDirId, 'README.md'), idReadme, 'utf-8');
-
-  console.log(`ID: Generated: ${exportDirId}/places.sql`);
-  console.log(`ID: Generated: ${exportDirId}/places.csv`);
-  console.log(`ID: Generated: ${exportDirId}/content_blocks.csv`);
-  console.log(`ID: Generated: ${exportDirId}/PARSE_REPORT.md`);
-
-  // --------------------------------------------------------------------------
-  // SG export (new output in exports/neon/singapore/*)
-  // --------------------------------------------------------------------------
-  const singaporePath = join(contentDirSg, 'singapore-places-sgp.md');
-  if (!existsSync(singaporePath)) {
-    console.warn(`SG: Missing file ${singaporePath} (skipping SG export)`);
-    return;
-  }
-
-  const exportDirSg = join(exportRoot, 'singapore');
-  mkdirSync(exportDirSg, { recursive: true });
-
-  const sgParsed = parseSingaporeFile(singaporePath);
-  const sgPlaces = sgParsed.places;
-
-  const sgPlacesSql = generatePlacesSQL(sgPlaces, CITY_ID_MAP_SG, 'sg');
-  const sgBlocksSql = generateContentBlocksSQL(sgPlaces, CITY_ID_MAP_SG);
-  writeFileSync(join(exportDirSg, 'places.sql'), `${sgPlacesSql.sql}\n\n${sgBlocksSql.sql}`, 'utf-8');
-
-  const sgPlacesCsv = generatePlacesCSV(sgPlaces, CITY_ID_MAP_SG, 'sg');
-  const sgBlocksCsv = generateContentBlocksCSV(sgPlaces, CITY_ID_MAP_SG);
-  writeFileSync(join(exportDirSg, 'places.csv'), sgPlacesCsv.csv, 'utf-8');
-  writeFileSync(join(exportDirSg, 'content_blocks.csv'), sgBlocksCsv.csv, 'utf-8');
-
-  // Parsing report (no silent skips)
-  const sgMissingCoords = sgPlaces.filter((p) => !p.coords).map((p) => `${p.slug} (${p.name})`);
-  const sgReport = [
-    `# SG Export Report`,
-    ``,
-    `**Generated:** ${new Date().toISOString()}`,
-    `**Cities in file:** ${sgParsed.cities.length}`,
-    `**Places parsed:** ${sgPlaces.length}`,
-    ``,
-    formatIssues('SQL issues', sgPlacesSql.issues.concat(sgBlocksSql.issues)),
-    formatIssues('CSV issues', sgPlacesCsv.issues.concat(sgBlocksCsv.issues)),
-    formatIssues('Missing coords (allowed, but needs review)', sgMissingCoords),
-    sgParsed.unknownCities.length > 0
-      ? formatIssues('Unknown cities (skipped)', sgParsed.unknownCities)
-      : `## Unknown cities\n\n- (нет)\n`,
-    ``,
-    `## City ID mapping used`,
-    ``,
-    Object.entries(CITY_ID_MAP_SG)
-      .map(([name, id]) => `- ${name} -> \`${id}\``)
-      .join('\n'),
-    ``,
-    `## Places by city_id and place_kind`,
-    ``,
-    ...Array.from(
-      sgPlaces.reduce((acc, p) => {
-        const cityId = CITY_ID_MAP_SG[p.cityName] ?? 'unknown';
-        const key = `${cityId}:${p.placeKind}`;
-        acc.set(key, (acc.get(key) ?? 0) + 1);
-        return acc;
-      }, new Map<string, number>())
-    )
-      .sort()
-      .map(([key, count]) => `- ${key}: ${count}`),
-    ``,
-  ].join('\n');
-  writeFileSync(join(exportDirSg, 'PARSE_REPORT.md'), sgReport, 'utf-8');
-
-  const sgReadme = generateREADME({
-    places: sgPlaces,
-    countryId: 'sg',
-    cityIdMap: CITY_ID_MAP_SG,
-    label: 'Singapore',
-  });
-  writeFileSync(join(exportDirSg, 'README.md'), sgReadme, 'utf-8');
-
-  console.log(`SG: Generated: ${exportDirSg}/places.sql`);
-  console.log(`SG: Generated: ${exportDirSg}/places.csv`);
-  console.log(`SG: Generated: ${exportDirSg}/content_blocks.csv`);
-  console.log(`SG: Generated: ${exportDirSg}/PARSE_REPORT.md`);
 }
 
 function generateREADME(params: {

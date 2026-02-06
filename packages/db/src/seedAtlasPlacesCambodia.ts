@@ -1,6 +1,12 @@
 /**
  * Seed Atlas places for Cambodia from markdown.
  *
+ * ⚠️ Legacy / dev-only note (Atlas import pipeline v1):
+ * - Канонический путь импорта Atlas Places v1 — экспорт артефактов через
+ *   `packages/db/src/exportPlacesToNeon.ts` (см. `docs/architecture/atlas_import_pipeline_fix_v1.md`).
+ * - Этот seed-скрипт не является источником истины для v1 и не должен использоваться
+ *   для production-данных Atlas (во избежание расхождения правил парсинга/ID/секций).
+ *
  * Rules:
  * - Idempotent: UPSERT by slug (places) and (entity_type, entity_id, tab_key, lang) (content_blocks)
  * - Refuse to run in production
@@ -567,6 +573,10 @@ async function upsertPlaceContentBlocks(
 }
 
 async function main() {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[LEGACY] seedAtlasPlacesCambodia.ts: для Atlas import pipeline v1 используйте `pnpm -C packages/db db:export:places-neon` (exportPlacesToNeon.ts).'
+  );
   const db = createDb(getDatabaseUrl());
   const repoRoot = join(process.cwd(), '..', '..');
   const baseDir = join(repoRoot, 'content', 'atlas', 'cambodia');
