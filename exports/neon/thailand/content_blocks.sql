@@ -1,5 +1,16 @@
-entity_type,entity_id,tab_key,lang,title,body_markdown,source
-place,bkk-grand-palace,overview,ru,,"## Почему это важно?
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🏛️ Grand Palace
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-grand-palace',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная достопримечательность страны и визитная карточка Бангкока  
 - 🌍 Резиденция тайских королей и центр государственной истории  
@@ -53,8 +64,26 @@ place,bkk-grand-palace,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Комплекс остаётся сакральным центром монархии и символом тайской идентичности, используемым для государственных церемоний.
-",mixed
-place,bkk-wat-arun,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Arun
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-wat-arun',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый фотогеничный храм на реке  
 - 🌍 Важный религиозный символ эпохи Тонбури  
@@ -108,8 +137,26 @@ place,bkk-wat-arun,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-wat-pho,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Pho
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-wat-pho',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Огромная статуя Будды длиной 46 метров  
 - 🌍 Центр традиционной медицины и массажа  
@@ -163,8 +210,26 @@ place,bkk-wat-pho,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-chatuchak-weekend-market,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Chatuchak Weekend Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-chatuchak-weekend-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый большой рынок Таиланда  
 - 🌍 Центр локальной торговли и культуры  
@@ -218,8 +283,26 @@ place,bkk-chatuchak-weekend-market,overview,ru,,"## Почему это важн
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-chinatown,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏮 Chinatown
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-chinatown',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшая street food-сцена Бангкока  
 - 🌍 Исторический китайский квартал  
@@ -273,8 +356,26 @@ place,bkk-chinatown,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-jay-fai,overview,ru,,"## Как добраться
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Jay Fai
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-jay-fai',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком — если вы уже в центре/рядом  
 - 🚕 Такси / Grab (самый удобный вариант)  
@@ -328,8 +429,26 @@ place,bkk-jay-fai,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,bkk-blue-elephant-bangkok,overview,ru,,"## Как добраться
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Blue Elephant Bangkok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-blue-elephant-bangkok',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком — если вы уже в центре/рядом  
 - 🚕 Такси / Grab (самый удобный вариант)  
@@ -383,8 +502,26 @@ place,bkk-blue-elephant-bangkok,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,bkk-vertigo-moon-bar,overview,ru,,"## Как добраться
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Vertigo & Moon Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-vertigo-moon-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком — если вы уже в центре/рядом  
 - 🚕 Такси / Grab (самый удобный вариант)  
@@ -438,8 +575,26 @@ place,bkk-vertigo-moon-bar,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,bkk-iconsiam,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ ICONSIAM
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-iconsiam',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый современный молл Бангкока  
 - 🌍 Сочетание традиций и люкса  
@@ -493,8 +648,26 @@ place,bkk-iconsiam,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-asiatique-the-riverfront,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Asiatique The Riverfront
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-asiatique-the-riverfront',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Атмосферный вечерний маршрут  
 - 🌍 Реконструированный портовый район  
@@ -548,8 +721,26 @@ place,bkk-asiatique-the-riverfront,overview,ru,,"## Почему это важн
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,bkk-thipsamai-pad-thai,overview,ru,,"## Как добраться
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Thipsamai Pad Thai
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-thipsamai-pad-thai',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком — если вы уже в центре/рядом  
 - 🚕 Такси / Grab (самый удобный вариант)  
@@ -603,8 +794,26 @@ place,bkk-thipsamai-pad-thai,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,bkk-sirocco-sky-bar,overview,ru,,"## Как добраться
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Sirocco Sky Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bkk-sirocco-sky-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком — если вы уже в центре/рядом  
 - 🚕 Такси / Grab (самый удобный вариант)  
@@ -658,8 +867,26 @@ place,bkk-sirocco-sky-bar,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-wat-phra-that-doi-suthep,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Phra That Doi Suthep
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-wat-phra-that-doi-suthep',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый почитаемый храм Чиангмая  
 - 🌍 Центр буддийского паломничества региона  
@@ -712,8 +939,26 @@ place,cnx-wat-phra-that-doi-suthep,overview,ru,,"## Почему это важн
 ## Локальная ценность
 
 Храм считается хранителем города и местом силы для местных жителей, связанных с историей королевства Ланна.
-",mixed
-place,cnx-wat-chedi-luang,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 Wat Chedi Luang
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-wat-chedi-luang',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из старейших храмов города  
 - 🌍 Исторический центр королевства Ланна  
@@ -767,8 +1012,26 @@ place,cnx-wat-chedi-luang,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-old-city,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏘️ Old City
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-old-city',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Атмосфера древнего Ланна  
 - 🌍 Историческое ядро города  
@@ -822,8 +1085,26 @@ place,cnx-old-city,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-doi-inthanon-national-park,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌲 Doi Inthanon National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-doi-inthanon-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая высокая гора страны  
 - 🌍 Природное богатство северного Таиланда  
@@ -877,8 +1158,26 @@ place,cnx-doi-inthanon-national-park,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-elephant-nature-park,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐘 Elephant Nature Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-elephant-nature-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Этичный туризм  
 - 🌍 Защита животных  
@@ -932,8 +1231,26 @@ place,cnx-elephant-nature-park,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-sunday-walking-street-market,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Sunday Walking Street Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-sunday-walking-street-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший рынок города  
 - 🌍 Локальная культура  
@@ -987,8 +1304,26 @@ place,cnx-sunday-walking-street-market,overview,ru,,"## Почему это ва
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-nimmanhaemin-road,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Nimmanhaemin Road
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-nimmanhaemin-road',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Креативный район  
 - 🌍 Современный Чиангмай  
@@ -1042,8 +1377,26 @@ place,cnx-nimmanhaemin-road,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место заметно в городской жизни: сюда приходят за впечатлениями и локальным контекстом. Оно поддерживает туристическую экономику и помогает сохранять культурный/природный ландшафт района.
-",mixed
-place,cnx-khao-soi-khun-yai,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Khao Soi Khun Yai
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-khao-soi-khun-yai',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1097,8 +1450,26 @@ place,cnx-khao-soi-khun-yai,overview,ru,,"## Что попробовать об�
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-graph-cafe,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Graph Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-graph-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1152,8 +1523,26 @@ place,cnx-graph-cafe,overview,ru,,"## Что попробовать обязат
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-woo-cafe-art-gallery,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🖼️ Woo Café & Art Gallery
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-woo-cafe-art-gallery',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1207,8 +1596,26 @@ place,cnx-woo-cafe-art-gallery,overview,ru,,"## Что попробовать о
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-the-riverside-bar-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍷 The Riverside Bar & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-the-riverside-bar-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1262,8 +1669,26 @@ place,cnx-the-riverside-bar-restaurant,overview,ru,,"## Что попробов�
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-dash-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍲 Dash! Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-dash-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1317,8 +1742,26 @@ place,cnx-dash-restaurant,overview,ru,,"## Что попробовать обя�
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,cnx-fern-forest-cafe,overview,ru,,"## Что попробовать обязательно
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥐 Fern Forest Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'cnx-fern-forest-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽️ Фирменное блюдо/напиток заведения  
 - 🍽️ Ещё одна популярная позиция из меню  
@@ -1372,8 +1815,26 @@ place,cnx-fern-forest-cafe,overview,ru,,"## Что попробовать обя
 - 🌐 Тайский, английский (в туристических местах)  
 - 📶 Связь/интернет: как правило, стабильные  
 - 💳 Оплата: наличные/карты (зависит от места)
-",mixed
-place,hhn-hua-hin-beach,overview,ru,,"## Почему это важно?
+',
+  'mixed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Hua Hin Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-hua-hin-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из самых спокойных курортных пляжей Таиланда  
 - 🌍 Исторический королевский курорт  
@@ -1425,8 +1886,26 @@ place,hhn-hua-hin-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пляж формирует основу туристического имиджа Хуахина и поддерживает локальный сервис и семейный бизнес.
-",editorial
-place,hhn-hua-hin-railway-station,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🚉 Hua Hin Railway Station
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-hua-hin-railway-station',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Архитектурный символ Хуахина  
 - 🌍 Историческая станция королевского курорта  
@@ -1478,8 +1957,26 @@ place,hhn-hua-hin-railway-station,overview,ru,,"## Почему это важн�
 ## Локальная ценность
 
 Станция — символ эпохи, когда Хуахин стал королевским курортом Таиланда.
-",editorial
-place,hhn-cicada-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎨 Cicada Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-cicada-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый атмосферный рынок Хуахина  
 - 🌍 Центр местного искусства  
@@ -1530,8 +2027,26 @@ place,hhn-cicada-market,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Рынок поддерживает местных художников и ремесленников Хуахина.
-",editorial
-place,hhn-khao-takiab,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐒 Khao Takiab
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-khao-takiab',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Панорамный вид на Хуахин  
 - 🌍 Буддийский храм  
@@ -1582,8 +2097,26 @@ place,hhn-khao-takiab,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место сочетает духовную и природную ценность и является популярным у местных жителей.
-",editorial
-place,hhn-phraya-nakhon-cave,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳️ Phraya Nakhon Cave
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-phraya-nakhon-cave',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Одна из самых необычных достопримечательностей Таиланда  
 - 🌍 Королевское наследие  
@@ -1634,8 +2167,26 @@ place,hhn-phraya-nakhon-cave,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пещера — часть национального парка и важный объект сохранения природного наследия региона.
-",editorial
-place,hhn-vana-nava-water-jungle,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Vana Nava Water Jungle
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-vana-nava-water-jungle',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший аквапарк региона  
 - 🌍 Семейный отдых  
@@ -1686,8 +2237,26 @@ place,hhn-vana-nava-water-jungle,overview,ru,,"## Почему это важно
 ## Локальная ценность
 
 Парк поддерживает семейный туризм и индустрию развлечений Хуахина.
-",editorial
-place,hhn-let-s-sea-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Let’s Sea Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-let-s-sea-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Khao Takiab
@@ -1737,8 +2306,26 @@ place,hhn-let-s-sea-bar,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,hhn-baan-itsara-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Baan Itsara Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hhn-baan-itsara-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Пешком из центра  
 - 🗺️ Пляж Hua Hin
@@ -1788,8 +2375,26 @@ place,hhn-baan-itsara-restaurant,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,kbi-railay-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Railay Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-railay-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый фотогеничный пляж региона  
 - 🌍 Уникальное сочетание моря и скал  
@@ -1841,8 +2446,26 @@ place,kbi-railay-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Railay поддерживает местные лодочные сообщества и туризм Краби.
-",editorial
-place,kbi-ao-nang-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Ao Nang Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-ao-nang-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Туристический центр Краби  
 - 🌍 Удобная база для экскурсий  
@@ -1896,8 +2519,26 @@ place,kbi-ao-nang-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Эта локация — важная часть туристической экономики Краби: она поддерживает местные лодочные сервисы, гидов, кафе и семейные бизнесы, а также помогает сохранять природные территории через сборы и правила посещения.
-",editorial
-place,kbi-phi-phi-islands,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Phi Phi Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-phi-phi-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Открыточные пейзажи  
 - 🌍 Национальный парк  
@@ -1951,8 +2592,26 @@ place,kbi-phi-phi-islands,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Эта локация — важная часть туристической экономики Краби: она поддерживает местные лодочные сервисы, гидов, кафе и семейные бизнесы, а также помогает сохранять природные территории через сборы и правила посещения.
-",editorial
-place,kbi-emerald-pool,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💚 Emerald Pool
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-emerald-pool',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Купание в природном бассейне  
 - 🌍 Экологическая тропа  
@@ -2005,8 +2664,26 @@ place,kbi-emerald-pool,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Emerald Pool — часть охраняемого национального парка и пример устойчивого экотуризма в регионе.
-",editorial
-place,kbi-tiger-cave-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐯 Tiger Cave Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-tiger-cave-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший вид на Краби  
 - 🌍 Духовное место  
@@ -2059,8 +2736,26 @@ place,kbi-tiger-cave-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм — важный духовный центр южного Таиланда и место паломничества буддистов.
-",editorial
-place,kbi-hong-islands,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Hong Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-hong-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Бирюзовые лагуны  
 - 🌍 Морской национальный парк  
@@ -2112,8 +2807,26 @@ place,kbi-hong-islands,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Туры поддерживают местные лодочные кооперативы и систему охраны морского парка.
-",editorial
-place,kbi-khao-khanab-nam,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏔️ Khao Khanab Nam
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-khao-khanab-nam',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Символ Краби  
 - 🌍 Природная достопримечательность  
@@ -2166,8 +2879,26 @@ place,kbi-khao-khanab-nam,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Скалы — официальный символ провинции Краби и часто изображаются на сувенирах и логотипах.
-",editorial
-place,kbi-the-grotto-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ The Grotto Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'kbi-the-grotto-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚤 Лодка long-tail до Railay West  
 - 🗺️ Пляж Railay
@@ -2219,8 +2950,26 @@ The Grotto — один из самых романтичных ресторан�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты принимаются
-",editorial
-place,phk-patong-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Patong Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-patong-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный курортный пляж Пхукета  
 - 🌍 Центр туристической и ночной жизни острова  
@@ -2274,8 +3023,26 @@ place,phk-patong-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Patong Beach является ключевым источником дохода для местного населения и основой туристической экономики Пхукета.
-",editorial
-place,phk-big-buddha-phuket,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗿 Big Buddha Phuket
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-big-buddha-phuket',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из главных символов острова  
 - 🌍 Религиозное и смотровое место  
@@ -2328,8 +3095,26 @@ place,phk-big-buddha-phuket,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место служит духовным ориентиром для жителей острова и центром благотворительных инициатив.
-",editorial
-place,phk-promthep-cape,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌅 Promthep Cape
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-promthep-cape',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший закат острова  
 - 🌍 Природная достопримечательность  
@@ -2382,8 +3167,26 @@ place,phk-promthep-cape,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Promthep Cape остаётся культовым местом встреч и символом Пхукета для местных жителей.
-",editorial
-place,phk-old-phuket-town,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏘️ Old Phuket Town
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-old-phuket-town',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый колоритный район острова  
 - 🌍 Историческое наследие Пхукета  
@@ -2437,8 +3240,26 @@ place,phk-old-phuket-town,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Old Town сохраняет историческую идентичность острова и поддерживает локальный бизнес и культуру.
-",editorial
-place,phk-phi-phi-islands,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Phi Phi Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-phi-phi-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Открыточные виды  
 - 🌍 Национальный парк  
@@ -2490,8 +3311,26 @@ place,phk-phi-phi-islands,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Экскурсии поддерживают морские сообщества и экотуризм региона.
-",editorial
-place,phk-blue-elephant-phuket,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Blue Elephant Phuket
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-blue-elephant-phuket',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Икона тайской кухни  
 - 🌍 Историческое здание  
@@ -2544,8 +3383,26 @@ place,phk-blue-elephant-phuket,overview,ru,,"## Почему стоит зайт
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,phk-raya-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Raya Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-raya-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Аутентичная кухня  
 - 🌍 Семейные традиции  
@@ -2598,8 +3455,26 @@ Raya Restaurant поддерживает традиционную гастрон
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,phk-kan-eang-pier,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Kan Eang@Pier
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-kan-eang-pier',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Свежие морепродукты  
 - 🌍 Ужин у воды  
@@ -2652,8 +3527,26 @@ place,phk-kan-eang-pier,overview,ru,,"## Почему стоит зайти?
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,phk-three-monkeys-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 Three Monkeys Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-three-monkeys-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Один из самых атмосферных ресторанов острова  
 - 🌍 Сочетание природы, дизайна и кухни  
@@ -2706,8 +3599,26 @@ place,phk-three-monkeys-restaurant,overview,ru,,"## Почему стоит за
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные, карты
-",editorial
-place,phk-cafe-phuket-viewpoint,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Café Phuket Viewpoint
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-cafe-phuket-viewpoint',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Лучшие панорамные виды на побережье  
 - 🌍 Кофе с видом на Андаманское море  
@@ -2760,8 +3671,26 @@ place,phk-cafe-phuket-viewpoint,overview,ru,,"## Почему стоит зай�
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные, карты
-",editorial
-place,phk-baan-rim-pa,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍷 Baan Rim Pa
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-baan-rim-pa',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Один из самых романтичных ресторанов Пхукета  
 - 🌍 Классическая гастрономия острова  
@@ -2814,8 +3743,26 @@ place,phk-baan-rim-pa,overview,ru,,"## Почему стоит зайти?
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,phk-no-6-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍲 No.6 Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phk-no-6-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌟 Вкусно и недорого  
 - 🌍 Популярное место среди местных  
@@ -2868,8 +3815,26 @@ place,phk-no-6-restaurant,overview,ru,,"## Почему стоит зайти?
 - 🌐 Тайский, базовый английский  
 - 📶 Интернет ограниченный  
 - 💳 Наличные
-",editorial
-place,pty-pattaya-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Pattaya Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-pattaya-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный городской пляж Паттайи  
 - 🌍 Центр курортной инфраструктуры  
@@ -2923,8 +3888,26 @@ place,pty-pattaya-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пляж является основой туристической экономики города и рабочим местом для тысяч жителей.
-",editorial
-place,pty-walking-street,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Walking Street
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-walking-street',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Сердце ночной жизни города  
 - 🌍 Знаковая туристическая улица  
@@ -2977,8 +3960,26 @@ place,pty-walking-street,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Walking Street формирует ночной образ Паттайи и привлекает международный турпоток.
-",editorial
-place,pty-sanctuary-of-truth,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Sanctuary of Truth
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-sanctuary-of-truth',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Уникальная деревянная архитектура  
 - 🌍 Философский и культурный комплекс  
@@ -3031,8 +4032,26 @@ place,pty-sanctuary-of-truth,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм поддерживает традиции тайской резьбы по дереву и ремесленные школы.
-",editorial
-place,pty-nong-nooch-tropical-garden,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌸 Nong Nooch Tropical Garden
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-nong-nooch-tropical-garden',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший ботанический сад региона  
 - 🌍 Культурные шоу  
@@ -3085,8 +4104,26 @@ place,pty-nong-nooch-tropical-garden,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Парк поддерживает экотуризм и культурные традиции Таиланда.
-",editorial
-place,pty-jomtien-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Jomtien Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-jomtien-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Спокойнее, чем центр  
 - 🌍 Подходит для семей  
@@ -3139,8 +4176,26 @@ place,pty-jomtien-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Jomtien Beach поддерживает семейный туризм и долгосрочное проживание.
-",editorial
-place,pty-big-buddha-hill,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗿 Big Buddha Hill
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-big-buddha-hill',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Панорама города  
 - 🌍 Духовное место  
@@ -3193,8 +4248,26 @@ place,pty-big-buddha-hill,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место служит духовным ориентиром и смотровой точкой города.
-",editorial
-place,pty-horizon-rooftop-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Horizon Rooftop Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-horizon-rooftop-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Северная Паттайя
@@ -3246,8 +4319,26 @@ place,pty-horizon-rooftop-bar,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,pty-the-glass-house,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥂 The Glass House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-the-glass-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Южная Паттайя
@@ -3299,8 +4390,26 @@ place,pty-the-glass-house,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,pty-mum-aroi,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦐 Mum Aroi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pty-mum-aroi',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Северная Паттайя
@@ -3352,8 +4461,26 @@ place,pty-mum-aroi,overview,ru,,"## Как добраться
 - 🌐 Тайский, базовый английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,usm-chaweng-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Chaweng Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-chaweng-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный пляж Самуи с лучшей инфраструктурой  
 - 🌍 Центр курортной жизни и ночных развлечений  
@@ -3407,8 +4534,26 @@ place,usm-chaweng-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Chaweng Beach — основной туристический и экономический центр Самуи, обеспечивающий занятость местного населения.
-",editorial
-place,usm-lamai-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Lamai Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-lamai-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Баланс отдыха и инфраструктуры  
 - 🌍 Менее шумно, чем Чавенг  
@@ -3462,8 +4607,26 @@ place,usm-lamai-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Lamai Beach поддерживает устойчивый туризм и семейный бизнес острова.
-",editorial
-place,usm-big-buddha-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Big Buddha Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-big-buddha-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный духовный символ Самуи  
 - 🌍 Религиозный центр острова  
@@ -3516,8 +4679,26 @@ place,usm-big-buddha-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм является важным местом поклонения и символом духовной жизни Самуи.
-",editorial
-place,usm-na-muang-waterfalls,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Na Muang Waterfalls
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-na-muang-waterfalls',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшие водопады Самуи  
 - 🌍 Природная зона отдыха  
@@ -3570,8 +4751,26 @@ place,usm-na-muang-waterfalls,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Водопады поддерживают экотуризм и сохраняют природное наследие Самуи.
-",editorial
-place,usm-fisherman-s-village,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Fisherman’s Village
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-fisherman-s-village',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая атмосферная набережная Самуи  
 - 🌍 Историческое поселение рыбаков  
@@ -3624,8 +4823,26 @@ place,usm-fisherman-s-village,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Район поддерживает локальный бизнес и сохраняет историческую идентичность Самуи.
-",editorial
-place,usm-ang-thong-national-marine-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Ang Thong National Marine Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-ang-thong-national-marine-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший однодневный тур с Самуи  
 - 🌍 Национальный парк  
@@ -3677,8 +4894,26 @@ place,usm-ang-thong-national-marine-park,overview,ru,,"## Почему это в
 ## Локальная ценность
 
 Парк защищает морскую экосистему и поддерживает устойчивый туризм региона.
-",editorial
-place,usm-coco-tam-s,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Coco Tam’s
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-coco-tam-s',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🛵 Байк  
@@ -3731,8 +4966,26 @@ place,usm-coco-tam-s,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные, карты
-",editorial
-place,usm-dining-on-the-rocks,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Dining on the Rocks
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'usm-dining-on-the-rocks',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Северо-восток острова
@@ -3784,4 +5037,12 @@ place,usm-dining-on-the-rocks,overview,ru,,"## Как добраться
 - 🌐 Тайский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

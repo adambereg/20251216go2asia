@@ -1,5 +1,16 @@
-entity_type,entity_id,tab_key,lang,title,body_markdown,source
-place,bali-tanah-lot-temple,overview,ru,,"## Почему это важно?
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🛕 Tanah Lot Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tanah-lot-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный визуальный символ Бали  
 - 🌍 Священное место балийского индуизма  
@@ -52,8 +63,26 @@ place,bali-tanah-lot-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм является духовной опорой региона и ключевым объектом религиозного туризма.
-",editorial
-place,bali-ubud-monkey-forest,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐒 Ubud Monkey Forest
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-ubud-monkey-forest',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Уникальное сочетание природы и культуры  
 - 🌍 Духовное пространство Убуда  
@@ -106,8 +135,26 @@ place,bali-ubud-monkey-forest,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Лес сохраняет природный баланс и финансирует локальные храмы.
-",editorial
-place,bali-tegallalang-rice-terraces,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌾 Tegallalang Rice Terraces
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tegallalang-rice-terraces',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Икона балийских пейзажей  
 - 🌍 Традиционная система орошения subak (UNESCO)  
@@ -160,8 +207,26 @@ place,bali-tegallalang-rice-terraces,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Террасы отражают устойчивое земледелие и образ жизни балийцев.
-",editorial
-place,bali-uluwatu-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏔️ Uluwatu Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-uluwatu-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый драматичный храм Бали  
 - 🌍 Священное место на краю острова  
@@ -214,8 +279,26 @@ place,bali-uluwatu-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм — важная часть духовной защиты острова в балийской космологии.
-",editorial
-place,bali-mount-batur,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Batur
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-mount-batur',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из лучших рассветов на Бали  
 - 🌍 Вулканический ландшафт  
@@ -267,8 +350,26 @@ place,bali-mount-batur,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Вулкан поддерживает экотуризм и доход горных деревень.
-",editorial
-place,bali-tirta-empul-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💧 Tirta Empul Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-tirta-empul-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный храм очищения Бали  
 - 🌍 Живые ритуалы  
@@ -321,8 +422,26 @@ place,bali-tirta-empul-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм сохраняет духовные традиции и привлекает паломников со всего острова.
-",editorial
-place,bali-potato-head-beach-club,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Potato Head Beach Club
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-potato-head-beach-club',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Seminyak
@@ -374,8 +493,26 @@ place,bali-potato-head-beach-club,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,bali-finns-beach-club,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ FINNS Beach Club
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-finns-beach-club',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Canggu
@@ -427,8 +564,26 @@ place,bali-finns-beach-club,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,bali-the-rock-bar-bali,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🪨 The Rock Bar Bali
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-the-rock-bar-bali',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Uluwatu
@@ -480,8 +635,26 @@ place,bali-the-rock-bar-bali,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,bali-clear-cafe-ubud,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Clear Café Ubud
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-clear-cafe-ubud',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра Убуда  
 - 🚕 Такси  
@@ -534,8 +707,26 @@ place,bali-clear-cafe-ubud,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,bali-locavore-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Locavore Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-locavore-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Central Ubud
@@ -587,8 +778,26 @@ place,bali-locavore-restaurant,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,bali-single-fin-bali,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Single Fin Bali
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'bali-single-fin-bali',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Uluwatu
@@ -640,8 +849,26 @@ place,bali-single-fin-bali,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,jkt-national-monument,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗼 National Monument
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-national-monument',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный символ Индонезии  
 - 🌍 Историческое и политическое сердце страны  
@@ -694,8 +921,26 @@ place,jkt-national-monument,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Monas — ключевой символ национальной идентичности и независимости Индонезии.
-",editorial
-place,jkt-kota-tua-jakarta,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛 Kota Tua Jakarta
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-kota-tua-jakarta',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Исторические корни Джакарты  
 - 🌍 Колониальное наследие  
@@ -748,8 +993,26 @@ place,jkt-kota-tua-jakarta,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Район сохраняет историческую память и культурные институции города.
-",editorial
-place,jkt-istiqlal-mosque,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕌 Istiqlal Mosque
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-istiqlal-mosque',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая большая мечеть региона  
 - 🌍 Символ межрелигиозного диалога  
@@ -802,8 +1065,26 @@ place,jkt-istiqlal-mosque,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Мечеть играет ключевую роль в религиозной и общественной жизни страны.
-",editorial
-place,jkt-jakarta-cathedral,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Jakarta Cathedral
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-jakarta-cathedral',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Символ религиозного сосуществования  
 - 🌍 Колониальная архитектура  
@@ -856,8 +1137,26 @@ place,jkt-jakarta-cathedral,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Собор подчёркивает межрелигиозную гармонию индонезийского общества.
-",editorial
-place,jkt-ancol-dreamland,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎢 Ancol Dreamland
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-ancol-dreamland',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная зона развлечений города  
 - 🌍 Море, парки и семейный отдых  
@@ -910,8 +1209,26 @@ place,jkt-ancol-dreamland,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Комплекс создаёт рабочие места и формирует досуг мегаполиса.
-",editorial
-place,jkt-taman-mini-indonesia-indah,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Taman Mini Indonesia Indah
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-taman-mini-indonesia-indah',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Вся Индонезия в одном месте  
 - 🌍 Этнографическое разнообразие  
@@ -963,8 +1280,26 @@ place,jkt-taman-mini-indonesia-indah,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Парк способствует сохранению культурного наследия страны.
-",editorial
-place,jkt-skye-bar-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Skye Bar & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-skye-bar-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Central Jakarta
@@ -1016,8 +1351,26 @@ Rooftops формируют современный городской лайфс
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,jkt-cafe-batavia,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Café Batavia
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-cafe-batavia',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком  
 - 🚕 Такси  
@@ -1070,8 +1423,26 @@ place,jkt-cafe-batavia,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,jkt-nasi-goreng-kambing-kebon-sirih,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Nasi Goreng Kambing Kebon Sirih
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-nasi-goreng-kambing-kebon-sirih',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Central Jakarta
@@ -1123,8 +1494,26 @@ place,jkt-nasi-goreng-kambing-kebon-sirih,overview,ru,,"## Как добрать
 - 🌐 Индонезийский  
 - 📶 Связь ограничена  
 - 💳 Наличные
-",editorial
-place,jkt-plataran-menteng,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Plataran Menteng
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-plataran-menteng',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси / Grab  
 - 🗺️ Menteng, Central Jakarta
@@ -1176,8 +1565,26 @@ place,jkt-plataran-menteng,overview,ru,,"## Как добраться
 - 🌐 Английский, индонезийский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,jkt-union-cafe,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Union Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-union-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Plaza Senayan
@@ -1229,8 +1636,26 @@ Union стал частью современной гастрономическ�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,jkt-social-house,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Social House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'jkt-social-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Grand Indonesia Mall
@@ -1282,8 +1707,26 @@ place,jkt-social-house,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,lbj-komodo-national-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦎 Komodo National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-komodo-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная причина приехать в Лабуан-Баджо  
 - 🌍 Уникальная экосистема UNESCO  
@@ -1336,8 +1779,26 @@ place,lbj-komodo-national-park,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Парк обеспечивает основную занятость региона и финансирует охрану уникальной природы.
-",editorial
-place,lbj-padar-island-viewpoint,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌄 Padar Island Viewpoint
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-padar-island-viewpoint',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая “открыточная” точка региона  
 - 🌍 Уникальный ландшафт национального парка  
@@ -1389,8 +1850,26 @@ place,lbj-padar-island-viewpoint,overview,ru,,"## Почему это важно
 ## Локальная ценность
 
 Площадка стала визитной карточкой региона и стимулирует устойчивый туризм.
-",editorial
-place,lbj-pink-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖 Pink Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-pink-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из немногих розовых пляжей в мире  
 - 🌍 Коралловая экосистема  
@@ -1442,8 +1921,26 @@ place,lbj-pink-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пляж поддерживает экотуризм и охрану морской природы.
-",editorial
-place,lbj-manta-point,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐋 Manta Point
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-manta-point',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Шанс увидеть мант в дикой природе  
 - 🌍 Один из лучших дайв-спотов региона  
@@ -1495,8 +1992,26 @@ place,lbj-manta-point,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Точка поддерживает дайв-экономику региона и мотивирует сохранение морской фауны.
-",editorial
-place,lbj-batu-cermin-cave,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳 Batu Cermin Cave
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-batu-cermin-cave',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лёгкая экскурсия недалеко от города  
 - 🌍 Геология острова Flores  
@@ -1549,8 +2064,26 @@ place,lbj-batu-cermin-cave,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пещера поддерживает локальные экскурсии и знакомит туристов с природой Флореса.
-",editorial
-place,lbj-labuan-bajo-sunset-harbor,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌅 Labuan Bajo Sunset Harbor
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-labuan-bajo-sunset-harbor',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшие закаты в городе  
 - 🌍 Центр морской жизни и туров  
@@ -1603,8 +2136,26 @@ place,lbj-labuan-bajo-sunset-harbor,overview,ru,,"## Почему это важ�
 ## Локальная ценность
 
 Набережная объединяет местных и туристов и поддерживает экономику лодочных туров.
-",editorial
-place,lbj-la-cucina,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ La Cucina
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-la-cucina',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ AYANA Komodo, Labuan Bajo
@@ -1656,8 +2207,26 @@ place,lbj-la-cucina,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,lbj-atlantis-on-the-rock,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Atlantis on the Rock
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-atlantis-on-the-rock',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🚕 Такси  
@@ -1710,8 +2279,26 @@ Rooftop-бары развивают городскую экономику и в�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lbj-happy-banana-komodo,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥗 Happy Banana Komodo
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-happy-banana-komodo',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Central Labuan Bajo
@@ -1763,8 +2350,26 @@ place,lbj-happy-banana-komodo,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные, карты
-",editorial
-place,lbj-taman-laut-handayani-seafood,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Taman Laut Handayani Seafood
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-taman-laut-handayani-seafood',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком от порта  
 - 🚕 Такси  
@@ -1817,8 +2422,26 @@ place,lbj-taman-laut-handayani-seafood,overview,ru,,"## Как добратьс�
 - 🌐 Индонезийский, базовый английский  
 - 📶 Интернет ограничен  
 - 💳 Наличные
-",editorial
-place,lbj-bajo-taco,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌮 Bajo Taco
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-bajo-taco',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Central Labuan Bajo
@@ -1870,8 +2493,26 @@ place,lbj-bajo-taco,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lbj-scuba-junkie-komodo,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🤿 Scuba Junkie Komodo
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lbj-scuba-junkie-komodo',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🚕 Такси  
@@ -1924,8 +2565,26 @@ place,lbj-scuba-junkie-komodo,overview,ru,,"## Как добраться
 - 🌐 Английский, индонезийский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,lom-mount-rinjani-national-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Rinjani National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-mount-rinjani-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший треккинг в Индонезии после Бали  
 - 🌍 Активный вулкан и уникальная природа  
@@ -1978,8 +2637,26 @@ place,lom-mount-rinjani-national-park,overview,ru,,"## Почему это ва�
 ## Локальная ценность
 
 Ринджани — главный природный ресурс острова и источник дохода местных общин через треккинг-туризм.
-",editorial
-place,lom-gili-islands,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Gili Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-gili-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самые популярные острова региона  
 - 🌍 Чистая вода и подводный мир  
@@ -2032,8 +2709,26 @@ place,lom-gili-islands,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Острова поддерживают экономику Ломбока через морской туризм и дайв-сервисы.
-",editorial
-place,lom-kuta-lombok,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Kuta Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-kuta-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшие пляжи юга Ломбока  
 - 🌍 Альтернатива Бали без толп  
@@ -2086,8 +2781,26 @@ place,lom-kuta-lombok,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Mandalika развивает туризм острова и создаёт новые рабочие места для местного населения.
-",editorial
-place,lom-tanjung-aan-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Tanjung Aan Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-tanjung-aan-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший “открыточный” пляж Mandalika  
 - 🌍 Чистая вода и мягкий песок  
@@ -2140,8 +2853,26 @@ place,lom-tanjung-aan-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пляж поддерживает малый локальный бизнес (парковка, напитки, прокат).
-",editorial
-place,lom-sendang-gile-waterfall,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Sendang Gile Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-sendang-gile-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Природная локация рядом с Ринджани  
 - 🌍 Тропический лес  
@@ -2194,8 +2925,26 @@ place,lom-sendang-gile-waterfall,overview,ru,,"## Почему это важно
 ## Локальная ценность
 
 Водопад поддерживает экотуризм и доход местных жителей в Senaru.
-",editorial
-place,lom-selong-belanak-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Selong Belanak Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-selong-belanak-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из лучших пляжей для новичков в серфинге  
 - 🌍 Спокойная бухта  
@@ -2248,8 +2997,26 @@ place,lom-selong-belanak-beach,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пляж развивает серф-школы и небольшие местные сервисы.
-",editorial
-place,lom-ashtari-lounge-kitchen,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Ashtari Lounge & Kitchen
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-ashtari-lounge-kitchen',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🛵 Байк  
@@ -2302,8 +3069,26 @@ place,lom-ashtari-lounge-kitchen,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные, карты
-",editorial
-place,lom-el-bazar-cafe-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥐 El Bazar Café & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-el-bazar-cafe-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком по Kuta  
 - 🚕 Такси  
@@ -2356,8 +3141,26 @@ place,lom-el-bazar-cafe-restaurant,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,lom-the-mexican-in-lombok,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌮 The Mexican in Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-the-mexican-in-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком  
 - 🚕 Такси  
@@ -2410,8 +3213,26 @@ place,lom-the-mexican-in-lombok,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lom-senggigi-seafood-market-bbq,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Senggigi Seafood Market & BBQ
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-senggigi-seafood-market-bbq',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🛵 Байк  
@@ -2464,8 +3285,26 @@ place,lom-senggigi-seafood-market-bbq,overview,ru,,"## Как добраться
 - 🌐 Индонезийский, базовый английский  
 - 📶 Интернет ограничен  
 - 💳 Наличные
-",editorial
-place,lom-lombok-coffee-house,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Lombok Coffee House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-lombok-coffee-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком по Kuta  
 - 🚕 Такси  
@@ -2518,8 +3357,26 @@ place,lom-lombok-coffee-house,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lom-surf-shack-lombok,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏄 Surf Shack Lombok
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lom-surf-shack-lombok',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком по Kuta  
 - 🚕 Такси  
@@ -2572,8 +3429,26 @@ place,lom-surf-shack-lombok,overview,ru,,"## Как добраться
 - 🌐 Английский, индонезийский  
 - 📶 Интернет  
 - 💳 Наличные
-",editorial
-place,yog-borobudur-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 Borobudur Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-borobudur-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная достопримечательность Индонезии  
 - 🌍 Шедевр древней инженерии и духовности  
@@ -2626,8 +3501,26 @@ place,yog-borobudur-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм — духовный центр буддизма в Индонезии и источник гордости для местных жителей.
-",editorial
-place,yog-prambanan-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛 Prambanan Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-prambanan-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый красивый индуистский храм страны  
 - 🌍 Архитектурный шедевр IX века  
@@ -2680,8 +3573,26 @@ place,yog-prambanan-temple,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Прамбанан символизирует культурное наследие и религиозное многообразие острова Ява.
-",editorial
-place,yog-kraton-yogyakarta,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏰 Kraton Yogyakarta
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-kraton-yogyakarta',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Сердце культурной идентичности Джокьякарты  
 - 🌍 Живая монархия в современной Индонезии  
@@ -2734,8 +3645,26 @@ place,yog-kraton-yogyakarta,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Кратон — не просто музей, а действующая резиденция, поддерживающая традиции и стабильность региона.
-",editorial
-place,yog-taman-sari-water-castle,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💧 Taman Sari Water Castle
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-taman-sari-water-castle',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Уникальная гидроинженерия прошлого  
 - 🌍 История султанского двора  
@@ -2788,8 +3717,26 @@ place,yog-taman-sari-water-castle,overview,ru,,"## Почему это важн�
 ## Локальная ценность
 
 Объект напоминает о богатстве и изощрённости султанского двора.
-",editorial
-place,yog-malioboro-street,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍 Malioboro Street
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-malioboro-street',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Сердце туристической жизни города  
 - 🌍 Аутентичный рынок и ремёсла  
@@ -2842,8 +3789,26 @@ place,yog-malioboro-street,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Улица поддерживает тысячи мелких торговцев и ремесленников.
-",editorial
-place,yog-mount-merapi,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌋 Mount Merapi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-mount-merapi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Один из самых активных вулканов мира  
 - 🌍 Драматические пейзажи после извержений  
@@ -2896,8 +3861,26 @@ place,yog-mount-merapi,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Вулкан — часть мифологии и повседневной жизни региона.
-",editorial
-place,yog-gudeg-yu-djum,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍛 Gudeg Yu Djum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-gudeg-yu-djum',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком от центра  
 - 🚕 Такси  
@@ -2950,8 +3933,26 @@ Yu Djum — символ кулинарной идентичности Джок�
 - 🌐 Индонезийский  
 - 📶 Интернет ограничен  
 - 💳 Наличные
-",editorial
-place,yog-nasi-kucing-angkringan-lik-man,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍚 Nasi Kucing Angkringan Lik Man
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-nasi-kucing-angkringan-lik-man',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком от Malioboro  
 - 🚕 Такси  
@@ -3004,8 +4005,26 @@ Angkringan — часть повседневной жизни студентов
 - 🌐 Индонезийский  
 - 📶 Интернет ограничен  
 - 💳 Наличные
-",editorial
-place,yog-via-via-cafe,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Via Via Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-via-via-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком  
 - 🚕 Такси  
@@ -3058,8 +4077,26 @@ place,yog-via-via-cafe,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,yog-milas-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Milas Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-milas-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🛵 Байк  
@@ -3112,8 +4149,26 @@ Milas продвигает устойчивую гастрономию и под
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,yog-sosro-coffee,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Sosro Coffee
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-sosro-coffee',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком от центра  
 - 🚕 Такси  
@@ -3166,8 +4221,26 @@ Sosro — живая история кофейной культуры Джокь
 - 🌐 Индонезийский  
 - 📶 Интернет ограничен  
 - 💳 Наличные
-",editorial
-place,yog-abhayagiri-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Abhayagiri Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'yog-abhayagiri-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🛵 Байк  
@@ -3220,4 +4293,12 @@ place,yog-abhayagiri-restaurant,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

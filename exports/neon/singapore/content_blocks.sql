@@ -1,5 +1,16 @@
-entity_type,entity_id,tab_key,lang,title,body_markdown,source
-place,sgp-marina-bay-sands-skypark,overview,ru,,"## Почему это важно?
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🌆 Marina Bay Sands SkyPark
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-marina-bay-sands-skypark',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный визуальный символ Сингапура  
 - 🌍 Современная архитектура мирового уровня  
@@ -52,8 +63,26 @@ place,sgp-marina-bay-sands-skypark,overview,ru,,"## Почему это важн
 ## Локальная ценность
 
 SkyPark стал иконой бренда Сингапура как глобального города будущего.
-",editorial
-place,sgp-gardens-by-the-bay,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 Gardens by the Bay
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-gardens-by-the-bay',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый необычный парк Азии  
 - 🌍 Экология и технологии  
@@ -106,8 +135,26 @@ place,sgp-gardens-by-the-bay,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Проект символизирует экологический подход Сингапура к урбанистике.
-",editorial
-place,sgp-merlion-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦁 Merlion Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-merlion-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Национальный символ  
 - 🌍 История города-государства  
@@ -160,8 +207,26 @@ place,sgp-merlion-park,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Мерлион отражает морскую историю и идентичность Сингапура.
-",editorial
-place,sgp-singapore-botanic-gardens,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌸 Singapore Botanic Gardens
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-singapore-botanic-gardens',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Единственный тропический ботсад UNESCO  
 - 🌍 Природа в мегаполисе  
@@ -214,8 +279,26 @@ place,sgp-singapore-botanic-gardens,overview,ru,,"## Почему это важ�
 ## Локальная ценность
 
 Сад отражает баланс урбанизма и природы в Сингапуре.
-",editorial
-place,sgp-sentosa-island,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝 Sentosa Island
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-sentosa-island',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная зона отдыха  
 - 🌍 Пляжи и развлечения  
@@ -268,8 +351,26 @@ place,sgp-sentosa-island,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Sentosa развивает индустрию развлечений и туризма.
-",editorial
-place,sgp-jewel-changi-airport,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💧 Jewel Changi Airport
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-jewel-changi-airport',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый красивый аэропорт мира  
 - 🌍 Архитектура и природа  
@@ -322,8 +423,26 @@ place,sgp-jewel-changi-airport,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Jewel стал визитной карточкой инновационного подхода Сингапура к инфраструктуре.
-",editorial
-place,sgp-lau-pa-sat-hawker-centre,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍢 Lau Pa Sat Hawker Centre
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-lau-pa-sat-hawker-centre',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚇 MRT Raffles Place  
 - 🚶 Пешком  
@@ -376,8 +495,26 @@ Hawker-центры — основа гастрономической культ
 - 🌐 Английский  
 - 📶 Интернет  
 - 💳 Наличные, карты
-",editorial
-place,sgp-atlas-rooftop-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍸 Atlas Rooftop Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-atlas-rooftop-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Такси  
 - 🗺️ Bugis
@@ -429,8 +566,26 @@ Atlas формирует имидж Сингапура как столицы lux
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,sgp-jumbo-seafood,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦀 Jumbo Seafood
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-jumbo-seafood',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚇 MRT Clarke Quay  
 - 🚶 Пешком  
@@ -483,8 +638,26 @@ place,sgp-jumbo-seafood,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,sgp-maxwell-food-centre,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Maxwell Food Centre
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-maxwell-food-centre',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚇 MRT Tanjong Pagar  
 - 🚶 Пешком  
@@ -537,8 +710,26 @@ Hawker-центры — ядро повседневной гастрономии
 - 🌐 Английский  
 - 📶 Интернет ограничен  
 - 💳 Наличные (часто), иногда карты/QR
-",editorial
-place,sgp-odette,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Odette
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-odette',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚇 MRT City Hall  
 - 🚶 Пешком  
@@ -591,8 +782,26 @@ Fine dining формирует международный престиж Син�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
-place,sgp-long-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Long Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgp-long-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚇 MRT City Hall / Esplanade  
 - 🚶 Пешком  
@@ -645,4 +854,12 @@ Long Bar — часть культурной истории и туристич�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты
-",editorial
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

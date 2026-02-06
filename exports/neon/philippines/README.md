@@ -4,9 +4,9 @@
 
 This directory contains exported data from Atlas Content Canon v1 markdown files for import into Neon Postgres.
 
-**Generated:** 2026-02-06T12:25:26.564Z  
-**Country:** Vietnam (`vn`)  
-**Total places:** 139
+**Generated:** 2026-02-06T12:25:26.530Z  
+**Country:** Philippines (`ph`)  
+**Total places:** 35
 
 ## Files
 
@@ -52,19 +52,18 @@ EOF
 
 ## City ID Mapping
 
-- Hue → `hue`
-- Hoi An → `hoi`
-- Da Nang → `dad`
-- Dalat → `dla`
-- Nha Trang → `ntr`
-- Phu Quoc → `phu`
-- Hanoi → `han`
-- Ho Chi Minh City → `sgn`
+- Manila → `mnl`
+- Cebu → `ceb`
+- Palawan → `pps`
+- Bohol → `tag`
+- Siargao → `srg`
+- Dumaguete → `dumaguete`
+- Boracay → `boracay`
 
 ## Validation
 
 Before import, verify:
-1. Country `vn` exists in `countries` table
+1. Country `ph` exists in `countries` table
 2. All city IDs exist in `cities` table
 3. No duplicate slugs (SQL handles this via ON CONFLICT)
 
@@ -75,8 +74,8 @@ To remove imported data:
 ```sql
 DELETE FROM content_blocks
 WHERE entity_type = 'place'
-  AND entity_id IN (SELECT id FROM places WHERE country_id = 'vn');
+  AND entity_id IN (SELECT id FROM places WHERE country_id = 'ph');
 
 DELETE FROM places
-WHERE country_id = 'vn';
+WHERE country_id = 'ph';
 ```

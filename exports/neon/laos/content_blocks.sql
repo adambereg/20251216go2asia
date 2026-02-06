@@ -1,5 +1,16 @@
-entity_type,entity_id,tab_key,lang,title,body_markdown,source
-place,vte-pha-that-luang,overview,ru,,"## Почему это важно?
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🛕 Pha That Luang
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-pha-that-luang',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая важная святыня Лаоса  
 - 🌍 Символ государственности и буддизма  
@@ -52,8 +63,26 @@ place,vte-pha-that-luang,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Pha That Luang — духовное сердце страны и место проведения национальных праздников.
-",editorial
-place,vte-patuxai,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛️ Patuxai
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-patuxai',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый узнаваемый монумент столицы  
 - 🌍 История независимости Лаоса  
@@ -106,8 +135,26 @@ place,vte-patuxai,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Памятник символизирует национальную гордость и современную историю Лаоса.
-",editorial
-place,vte-wat-si-saket,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Si Saket
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-wat-si-saket',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый древний храм столицы  
 - 🌍 Уникальная коллекция Будд  
@@ -160,8 +207,26 @@ place,vte-wat-si-saket,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм сохраняет буддийское наследие и историческую память города.
-",editorial
-place,vte-cope-visitor-centre,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏥 COPE Visitor Centre
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-cope-visitor-centre',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Важный социальный проект  
 - 🌍 Современная история Лаоса  
@@ -214,8 +279,26 @@ place,vte-cope-visitor-centre,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Центр повышает осведомлённость о гуманитарных проблемах и поддерживает пострадавших.
-",editorial
-place,vte-buddha-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗿 Buddha Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-buddha-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая необычная достопримечательность Вьентьяна  
 - 🌍 Синтез буддизма и индуизма  
@@ -268,8 +351,26 @@ place,vte-buddha-park,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Парк стал культурным феноменом и туристическим символом окрестностей Вьентьяна.
-",editorial
-place,vte-mekong-riverside-promenade,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Mekong Riverside Promenade
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-mekong-riverside-promenade',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшее место для вечерних прогулок  
 - 🌍 Связь города с рекой  
@@ -322,8 +423,26 @@ place,vte-mekong-riverside-promenade,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Набережная является общественным пространством и центром городской жизни.
-",editorial
-place,vte-kualao-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Kualao Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-kualao-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Традиционные блюда  
 - 🍚 Липкий рис  
@@ -376,8 +495,26 @@ place,vte-kualao-restaurant,overview,ru,,"## Что попробовать об�
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,vte-makphet-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Makphet Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-makphet-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Современные интерпретации  
 - 🍲 Супы и карри  
@@ -430,8 +567,26 @@ place,vte-makphet-restaurant,overview,ru,,"## Что попробовать об
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,vte-bor-pen-nyang-rooftop,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Bor Pen Nyang Rooftop
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-bor-pen-nyang-rooftop',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍹 Коктейли  
 - 🎶 Живую музыку  
@@ -484,8 +639,26 @@ place,vte-bor-pen-nyang-rooftop,overview,ru,,"## Что попробовать �
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vte-taj-mahal-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍛 Taj Mahal Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-taj-mahal-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Карри  
 - 🫓 Наан  
@@ -538,8 +711,26 @@ place,vte-taj-mahal-restaurant,overview,ru,,"## Что попробовать о
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,vte-scandinavian-bakery,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥐 Scandinavian Bakery
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-scandinavian-bakery',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🥐 Выпечку  
 - ☕ Кофе  
@@ -592,8 +783,26 @@ place,vte-scandinavian-bakery,overview,ru,,"## Что попробовать о�
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vte-ban-anou-night-market-food-court,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍢 Ban Anou Night Market Food Court
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vte-ban-anou-night-market-food-court',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍢 Уличные блюда  
 - 🍜 Лапшу  
@@ -646,8 +855,26 @@ place,vte-ban-anou-night-market-food-court,overview,ru,,"## Что попроб�
 - 🌐 Лаосский  
 - 📶 Связь ограниченная  
 - 💳 Наличные
-",editorial
-place,vvg-blue-lagoon-1,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Blue Lagoon 1
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-blue-lagoon-1',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главная природная локация Вангвьенга  
 - 🌍 Символ активного туризма региона  
@@ -700,8 +927,26 @@ place,vvg-blue-lagoon-1,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Лагуна обеспечивает доход для местных общин и поддерживает туризм Вангвьенга.
-",editorial
-place,vvg-tham-chang-cave,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳️ Tham Chang Cave
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-tham-chang-cave',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самая доступная пещера Вангвьенга  
 - 🌍 Историческое укрытие времён войн  
@@ -753,8 +998,26 @@ place,vvg-tham-chang-cave,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пещера — часть исторического и природного наследия региона.
-",editorial
-place,vvg-nam-song-river-tubing,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛟 Nam Song River Tubing
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-nam-song-river-tubing',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самое известное развлечение города  
 - 🌍 Символ backpacker-культуры  
@@ -806,8 +1069,26 @@ place,vvg-nam-song-river-tubing,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Тюбинг поддерживает экономику города и сервисы для путешественников.
-",editorial
-place,vvg-pha-ngern-viewpoint,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🔭 Pha Ngern Viewpoint
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-pha-ngern-viewpoint',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший панорамный вид региона  
 - 🌍 Активный треккинг  
@@ -860,8 +1141,26 @@ place,vvg-pha-ngern-viewpoint,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Точка способствует развитию активного туризма в регионе.
-",editorial
-place,vvg-tham-phu-kham-cave,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳️ Tham Phu Kham Cave
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-tham-phu-kham-cave',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Комбинация пещеры и лагуны  
 - 🌍 Духовное место  
@@ -914,8 +1213,26 @@ place,vvg-tham-phu-kham-cave,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пещера объединяет природную и духовную ценность региона.
-",editorial
-place,vvg-sunset-point-nam-song,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌅 Sunset Point Nam Song
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-sunset-point-nam-song',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшие закаты Вангвьенга  
 - 🌍 Природная смотровая зона  
@@ -967,8 +1284,26 @@ place,vvg-sunset-point-nam-song,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Точка стала частью городской прогулочной культуры.
-",editorial
-place,vvg-organic-mulberry-farm-cafe,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍵 Organic Mulberry Farm & Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-organic-mulberry-farm-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚕 Тук-тук  
 - 🛵 Байк  
@@ -1021,8 +1356,26 @@ place,vvg-organic-mulberry-farm-cafe,overview,ru,,"## Как добраться
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-smile-beach-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Smile Beach Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-smile-beach-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Nam Song Riverside
@@ -1074,8 +1427,26 @@ place,vvg-smile-beach-bar,overview,ru,,"## Как добраться
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-gary-s-irish-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍺 Gary’s Irish Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-gary-s-irish-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Downtown Vang Vieng
@@ -1127,8 +1498,26 @@ place,vvg-gary-s-irish-bar,overview,ru,,"## Как добраться
 - 🌐 Английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-cafe-de-vang-vieng,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Café de Vang Vieng
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-cafe-de-vang-vieng',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Downtown Vang Vieng
@@ -1180,8 +1569,26 @@ place,vvg-cafe-de-vang-vieng,overview,ru,,"## Как добраться
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-kangaroo-sunset-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Kangaroo Sunset Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-kangaroo-sunset-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Nam Song Riverside
@@ -1233,8 +1640,26 @@ place,vvg-kangaroo-sunset-bar,overview,ru,,"## Как добраться
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-peeping-som-s-bar-restaurant,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Peeping Som’s Bar & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-peeping-som-s-bar-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Nam Song Riverside
@@ -1286,8 +1711,26 @@ place,vvg-peeping-som-s-bar-restaurant,overview,ru,,"## Как добратьс�
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,vvg-sakura-bar,overview,ru,,"## Как добраться
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎶 Sakura Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'vvg-sakura-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Как добраться
 
 - 🚶 Пешком из центра  
 - 🗺️ Downtown Vang Vieng
@@ -1339,8 +1782,26 @@ place,vvg-sakura-bar,overview,ru,,"## Как добраться
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lpq-wat-xieng-thong,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Xieng Thong
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-wat-xieng-thong',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый красивый и значимый храм Луангпхабанга  
 - 🌍 Ключевой памятник королевского периода Лаоса  
@@ -1393,8 +1854,26 @@ place,lpq-wat-xieng-thong,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Храм остаётся важнейшим духовным центром города и объектом сохранения культурного наследия Лаоса.
-",editorial
-place,lpq-mount-phousi,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌄 Mount Phousi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-mount-phousi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучший вид на город  
 - 🌍 Священное место  
@@ -1446,8 +1925,26 @@ place,lpq-mount-phousi,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Место играет роль духовной и визуальной доминанты Луангпхабанга.
-",editorial
-place,lpq-kuang-si-falls,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Kuang Si Falls
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-kuang-si-falls',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самые красивые водопады страны  
 - 🌍 Природный заповедник  
@@ -1500,8 +1997,26 @@ place,lpq-kuang-si-falls,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Водопады поддерживают экотуризм и программы охраны природы в регионе.
-",editorial
-place,lpq-royal-palace-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛️ Royal Palace Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-royal-palace-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный исторический музей города  
 - 🌍 Связь с королевским прошлым Лаоса  
@@ -1554,8 +2069,26 @@ place,lpq-royal-palace-museum,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Музей сохраняет историческую память о королевском периоде и национальной идентичности Лаоса.
-",editorial
-place,lpq-alms-giving-ceremony,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🧘 Alms Giving Ceremony
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-alms-giving-ceremony',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Уникальный буддийский ритуал  
 - 🌍 Живая духовная традиция  
@@ -1607,8 +2140,26 @@ place,lpq-alms-giving-ceremony,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Церемония — основа духовной жизни города и важная часть буддийской практики.
-",editorial
-place,lpq-pak-ou-caves,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🕳️ Pak Ou Caves
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-pak-ou-caves',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Одна из самых необычных святынь Лаоса  
 - 🌍 Духовное значение для региона  
@@ -1660,8 +2211,26 @@ place,lpq-pak-ou-caves,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Пещеры веками служили местом паломничества и объединяют буддийские общины региона.
-",editorial
-place,lpq-night-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный рынок города  
 - 🌍 Локальная культура и ремёсла  
@@ -1713,8 +2282,26 @@ place,lpq-night-market,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Рынок поддерживает ремесленников и мелких торговцев Луангпхабанга.
-",editorial
-place,lpq-tamarind-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Tamarind Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-tamarind-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Дегустационный сет  
 - 🍲 Лаап и супы  
@@ -1766,8 +2353,26 @@ place,lpq-tamarind-restaurant,overview,ru,,"## Что попробовать о�
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lpq-utopia-bar,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍹 Utopia Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-utopia-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍹 Коктейли  
 - 🎶 Музыку  
@@ -1819,8 +2424,26 @@ place,lpq-utopia-bar,overview,ru,,"## Что попробовать обязат
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lpq-dyen-sabai-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Dyen Sabai Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-dyen-sabai-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Лаап  
 - 🍜 Супы  
@@ -1873,8 +2496,26 @@ place,lpq-dyen-sabai-restaurant,overview,ru,,"## Что попробовать �
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lpq-manda-de-laos,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍷 Manda de Laos
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-manda-de-laos',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Дегустационные сеты  
 - 🍷 Вино  
@@ -1927,8 +2568,26 @@ place,lpq-manda-de-laos,overview,ru,,"## Что попробовать обяз�
 - 🌐 Лаосский, английский, французский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,lpq-joma-bakery-cafe,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Joma Bakery Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-joma-bakery-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍰 Выпечку  
 - ☕ Кофе  
@@ -1980,8 +2639,26 @@ place,lpq-joma-bakery-cafe,overview,ru,,"## Что попробовать обя
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,lpq-bouang-asian-eatery,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Bouang Asian Eatery
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'lpq-bouang-asian-eatery',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Азиатские блюда  
 - 🍷 Напитки  
@@ -2033,8 +2710,26 @@ place,lpq-bouang-asian-eatery,overview,ru,,"## Что попробовать о�
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,pkz-wat-phou,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Wat Phou
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-wat-phou',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный исторический объект юга Лаоса  
 - 🌍 Наследие кхмерской цивилизации  
@@ -2087,8 +2782,26 @@ place,pkz-wat-phou,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Wat Phou — ключевой элемент культурной идентичности юга Лаоса и объект сохранения мирового наследия.
-",editorial
-place,pkz-bolaven-plateau,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌲 Bolaven Plateau
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-bolaven-plateau',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшие водопады юга Лаоса  
 - 🌍 Кофейный регион страны  
@@ -2141,8 +2854,26 @@ place,pkz-bolaven-plateau,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Плато поддерживает сельское хозяйство и устойчивый экотуризм региона.
-",editorial
-place,pkz-tad-fane-waterfall,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Tad Fane Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-tad-fane-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Самый высокий водопад региона  
 - 🌍 Природный памятник  
@@ -2195,8 +2926,26 @@ place,pkz-tad-fane-waterfall,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Водопад — ключевая природная достопримечательность региона и источник экотуризма.
-",editorial
-place,pkz-champasak-town,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏘 Champasak Town
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-champasak-town',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Аутентичная атмосфера  
 - 🌍 База для посещения Wat Phou  
@@ -2249,8 +2998,26 @@ place,pkz-champasak-town,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Город сохраняет традиционный уклад жизни южного Лаоса.
-",editorial
-place,pkz-mekong-riverside-pakse,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Mekong Riverside Pakse
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-mekong-riverside-pakse',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшее место для вечерних прогулок  
 - 🌍 Городская жизнь у реки  
@@ -2303,8 +3070,26 @@ place,pkz-mekong-riverside-pakse,overview,ru,,"## Почему это важно
 ## Локальная ценность
 
 Набережная — общественное пространство и центр городской жизни.
-",editorial
-place,pkz-tad-yuang-waterfall,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Tad Yuang Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-tad-yuang-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Купание у большого водопада  
 - 🌍 Доступная природная локация  
@@ -2357,8 +3142,26 @@ place,pkz-tad-yuang-waterfall,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Водопад — популярное место отдыха для местных жителей.
-",editorial
-place,pkz-daolin-restaurant-cafe,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Daolin Restaurant & Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-daolin-restaurant-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Лаосские блюда  
 - 🍝 Европейские позиции  
@@ -2411,8 +3214,26 @@ place,pkz-daolin-restaurant-cafe,overview,ru,,"## Что попробовать 
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,pkz-le-panorama-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍷 Le Panorama Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-le-panorama-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Французские блюда  
 - 🍷 Вино  
@@ -2465,8 +3286,26 @@ place,pkz-le-panorama-restaurant,overview,ru,,"## Что попробовать 
 - 🌐 Лаосский, французский, английский  
 - 📶 Wi-Fi  
 - 💳 Карты, наличные
-",editorial
-place,pkz-sinouk-coffee-pakse,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Sinouk Coffee Pakse
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'pkz-sinouk-coffee-pakse',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - ☕ Эспрессо  
 - 🧋 Лаосский кофе  
@@ -2519,8 +3358,26 @@ place,pkz-sinouk-coffee-pakse,overview,ru,,"## Что попробовать о�
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,svk-st-teresa-s-catholic-church,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ St. Teresa’s Catholic Church
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-st-teresa-s-catholic-church',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Главный архитектурный символ колониального Саваннакхета  
 - 🌍 Отражение французского периода истории Лаоса  
@@ -2573,8 +3430,26 @@ place,svk-st-teresa-s-catholic-church,overview,ru,,"## Почему это ва�
 ## Локальная ценность
 
 Собор — важная часть исторической памяти города и пример мультикультурного наследия.
-",editorial
-place,svk-savannakhet-old-town,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏘 Savannakhet Old Town
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-savannakhet-old-town',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшее место для прогулки по “французскому Лаосу”  
 - 🌍 Историческое ядро города  
@@ -2627,8 +3502,26 @@ place,svk-savannakhet-old-town,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Квартал сохраняет историческую идентичность Саваннакхета и поддерживает локальный туризм.
-",editorial
-place,svk-dinosaur-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦴 Dinosaur Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-dinosaur-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Необычная тема для Лаоса  
 - 🌍 Региональная история и образование  
@@ -2681,8 +3574,26 @@ place,svk-dinosaur-museum,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Музей поддерживает образовательную миссию и интерес к природной истории региона.
-",editorial
-place,svk-mekong-riverside-promenade,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Mekong Riverside Promenade
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-mekong-riverside-promenade',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Лучшее место для заката в городе  
 - 🌍 Городская жизнь у реки  
@@ -2735,8 +3646,26 @@ place,svk-mekong-riverside-promenade,overview,ru,,"## Почему это важ
 ## Локальная ценность
 
 Набережная — социальный центр города и место встреч местных жителей.
-",editorial
-place,svk-that-ing-hang-stupa,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 That Ing Hang Stupa
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-that-ing-hang-stupa',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Священное место региона  
 - 🌍 Буддийское наследие Лаоса  
@@ -2789,8 +3718,26 @@ place,svk-that-ing-hang-stupa,overview,ru,,"## Почему это важно?
 ## Локальная ценность
 
 Ступа остаётся важным центром паломничества и духовной практики для местных жителей.
-",editorial
-place,svk-savannakhet-city-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛 Savannakhet City Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-savannakhet-city-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Быстрый способ понять регион  
 - 🌍 История и культура провинции  
@@ -2843,8 +3790,26 @@ place,svk-savannakhet-city-museum,overview,ru,,"## Почему это важн�
 ## Локальная ценность
 
 Музей поддерживает сохранение локального наследия и образовательные инициативы.
-",editorial
-place,svk-cafe-inn,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Cafe Inn
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-cafe-inn',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍳 Завтраки  
 - ☕ Кофе  
@@ -2897,8 +3862,26 @@ place,svk-cafe-inn,overview,ru,,"## Что попробовать обязате
 - 🌐 Английский, лаосский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,svk-lin-s-cafe,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Lin’s Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-lin-s-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Лаосские блюда  
 - 🍜 Лапшу  
@@ -2951,8 +3934,26 @@ place,svk-lin-s-cafe,overview,ru,,"## Что попробовать обязат
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,svk-daosavanh-restaurant,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽 Daosavanh Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-daosavanh-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍽 Лаап (laap)  
 - 🍚 Липкий рис  
@@ -3005,8 +4006,26 @@ place,svk-daosavanh-restaurant,overview,ru,,"## Что попробовать о
 - 🌐 Лаосский  
 - 📶 Интернет ограниченный  
 - 💳 Наличные
-",editorial
-place,svk-sinouk-coffee-savannakhet,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ Sinouk Coffee Savannakhet
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-sinouk-coffee-savannakhet',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - ☕ Эспрессо/латте  
 - 🧁 Десерты  
@@ -3059,8 +4078,26 @@ place,svk-sinouk-coffee-savannakhet,overview,ru,,"## Что попробоват
 - 🌐 Лаосский, английский  
 - 📶 Wi-Fi  
 - 💳 Наличные
-",editorial
-place,svk-mekong-riverside-food-stalls,overview,ru,,"## Что попробовать обязательно
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍢 Mekong Riverside Food Stalls
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'svk-mekong-riverside-food-stalls',
+  'overview',
+  'ru',
+  NULL,
+  '## Что попробовать обязательно
 
 - 🍢 Шашлычки  
 - 🍜 Лапшу  
@@ -3113,4 +4150,12 @@ place,svk-mekong-riverside-food-stalls,overview,ru,,"## Что попробов�
 - 🌐 Лаосский  
 - 📶 Связь стабильная  
 - 💳 Наличные
-",editorial
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

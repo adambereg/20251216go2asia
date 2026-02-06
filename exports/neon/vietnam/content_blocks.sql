@@ -1,5 +1,16 @@
-entity_type,entity_id,tab_key,lang,title,body_markdown,source
-place,hue-imperial-city-hue,overview,ru,,"## Почему это важно?
+-- Content Blocks UPSERT (idempotent)
+-- Generated from Atlas Content Canon v1 markdown files
+
+-- Content block for: 🏛️ Imperial City Hue
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-imperial-city-hue',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌟 Единственный вьетнамский императорский город, сохранившийся в таком масштабе  
 - 🏯 Сердце политической и духовной жизни Вьетнама XIX–начала XX века  
@@ -27,8 +38,26 @@ place,hue-imperial-city-hue,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Цитадель строилась с 1804 года при императоре Зя Лонге по принципам фэншуй и с ориентацией на Запретный город Пекина. Во время войны 1968 года комплекс сильно пострадал, и восстановление продолжается до сих пор.
-",editorial
-place,hue-perfume-river,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌸 Perfume River
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-perfume-river',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌸 Символ романтического и спокойного Хюэ  
 - 🚤 Основной маршрут лодочных прогулок  
@@ -54,8 +83,26 @@ place,hue-perfume-river,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Название реки связано с ароматами трав и цветов, которые раньше смывались в воду с горных склонов. Река веками служила транспортной и ритуальной артерией императорской столицы.
-",editorial
-place,hue-thien-mu-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Thien Mu Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-thien-mu-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Один из духовных символов Центрального Вьетнама  
 - 🌊 Красивое расположение у реки  
@@ -81,8 +128,26 @@ place,hue-thien-mu-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода основана в 1601 году и связана с буддийским движением протеста 1960-х годов. Отсюда происходил монах Тхить Куанг Дык, совершивший самосожжение в Сайгоне.
-",editorial
-place,hue-truong-tien-bridge,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌉 Truong Tien Bridge
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-truong-tien-bridge',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌉 Архитектурный символ города  
 - 🌈 Эффектная ночная подсветка  
@@ -106,8 +171,26 @@ place,hue-truong-tien-bridge,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Построен в конце XIX века французами, мост пережил тайфуны, войны и реконструкции и стал неотъемлемой частью городского пейзажа.
-",editorial
-place,hue-ngu-binh-viewpoint,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏞️ Ngu Binh Viewpoint
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-ngu-binh-viewpoint',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏞️ Панорамный вид на город и реку  
 - 🌄 Популярное место рассветов и закатов  
@@ -133,8 +216,26 @@ place,hue-ngu-binh-viewpoint,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Гора играла ключевую роль в фэншуй-планировке императорского Хюэ и вместе с Парфюмной рекой формировала «идеальный» ландшафт столицы.
-",editorial
-place,hue-tu-hieu-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🧘 Tu Hieu Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-tu-hieu-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🧘 Одно из самых спокойных и медитативных мест региона  
 - 🌲 Расположена в сосновом лесу вдали от туристической суеты  
@@ -160,8 +261,26 @@ place,hue-tu-hieu-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода возникла в XIX веке как келья монаха, ухаживавшего за матерью. Позднее стала значимым центром буддийского образования и практики; здесь провёл последние годы жизни Тхить Нят Хань.
-",editorial
-place,hue-nam-giao-altar,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 Nam Giao Altar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-nam-giao-altar',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏯 Уникальный государственный культовый объект  
 - 🧭 Редкий пример императорской ритуальной архитектуры  
@@ -187,8 +306,26 @@ place,hue-nam-giao-altar,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Алтарь построен в 1806 году и использовался для важнейших императорских церемоний вплоть до 1945 года. Сегодня входит в комплекс памятников Хюэ под охраной ЮНЕСКО.
-",editorial
-place,hue-vong-canh-hill,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌄 Vong Canh Hill
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-vong-canh-hill',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌄 Одно из лучших мест для заката в Хюэ  
 - 🌲 Тихая природная атмосфера  
@@ -214,8 +351,26 @@ place,hue-vong-canh-hill,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Холм служил излюбленным местом отдыха императоров династии Нгуен, а в XX веке использовался как наблюдательный пункт.
-",editorial
-place,hue-tam-giang-lagoon,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌅 Tam Giang Lagoon
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-tam-giang-lagoon',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌅 Одни из самых красивых закатов региона  
 - 🎣 Аутентичная жизнь рыбацких деревень  
@@ -241,8 +396,26 @@ place,hue-tam-giang-lagoon,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Лагуна образована в месте слияния рек Хыонг, Бо и О-Лау и на протяжении веков была важным источником рыбы и соли для региона.
-",editorial
-place,hue-bach-ma-national-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Bach Ma National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-bach-ma-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌳 Прохлада и зелень в жарком климате  
 - 💦 Впечатляющие водопады и леса  
@@ -268,8 +441,26 @@ place,hue-bach-ma-national-park,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 В начале XX века французские колонисты использовали плато Бах Ма как горный курорт. Сегодня это одна из самых биологически разнообразных зон Центрального Вьетнама.
-",editorial
-place,hue-the-lab-coffee,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ The Lab Coffee
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-the-lab-coffee',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - ☕ Одна из лучших specialty-кофеен города  
 - 💻 Удобно для работы и встреч  
@@ -295,8 +486,26 @@ The Lab Coffee представляет «новую волну» кофейно
 
 - 💰 30 000–80 000 VND за напиток  
 - ☕ Средний чек: ~60 000 VND
-",editorial
-place,hue-ca-phe-muoi-142,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🧂 Cà Phê Muối 142
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-ca-phe-muoi-142',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🧂 Уникальный напиток, придуманный именно здесь  
 - 🏠 Аутентичная атмосфера без туристического глянца  
@@ -321,8 +530,26 @@ Salt Coffee — пример того, как локальная идея из �
 
 - 💰 15 000–30 000 VND  
 - ☕ Средний чек: ~25 000 VND
-",editorial
-place,hue-quan-hanh,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍽️ Quán Hanh
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-quan-hanh',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍽️ Лучший способ попробовать кухню Хюэ за один приём  
 - 👨‍👩‍👧 Любим местными и туристами  
@@ -348,8 +575,26 @@ Quán Hanh демократизирует императорскую кухню 
 
 - 💰 100 000–150 000 VND на человека  
 - 🍽️ Сеты — лучший выбор
-",editorial
-place,hue-madam-thu-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Madam Thu Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-madam-thu-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍜 Отличный баланс аутентичности и комфорта  
 - 🌟 Подходит для первого знакомства с кухней Хюэ  
@@ -375,8 +620,26 @@ Madam Thu показывает, как традиционная кухня Хю�
 
 - 💰 150 000–250 000 VND  
 - 🍽️ Средний чек с напитком
-",editorial
-place,hue-lien-hoa-vegetarian,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥬 Lien Hoa Vegetarian
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-lien-hoa-vegetarian',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🥬 Легендарное место буддийской кухни Хюэ  
 - 🌿 Спокойная атмосфера садового дома  
@@ -402,8 +665,26 @@ Lien Hoa отражает буддийскую философию Хюэ и по
 
 - 💰 50 000–100 000 VND  
 - 🥗 Отличное соотношение цена/качество
-",editorial
-place,hue-imperial-craft-bia-brewpub,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍺 Imperial Craft Bia Brewpub
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-imperial-craft-bia-brewpub',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍺 Единственный brewpub в городе с собственным производством  
 - 🌍 Интернациональная публика и дружелюбная атмосфера  
@@ -430,8 +711,26 @@ Imperial Craft Bia показывает современное лицо Хюэ �
 - 🍺 Пиво: 60 000–90 000 VND  
 - 🍕 Основные блюда: 150 000–220 000 VND  
 - 💰 Средний чек: 250 000–400 000 VND
-",editorial
-place,hue-brown-eyes-bar,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎉 Brown Eyes Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-brown-eyes-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🎉 Легенда ночной жизни Хюэ  
 - 🌍 Место знакомств путешественников  
@@ -458,8 +757,26 @@ Brown Eyes Bar — редкий пример того, как тихий ист�
 - 🍺 Пиво: ~25 000 VND  
 - 🍹 Коктейли: 70 000–100 000 VND  
 - 🪣 Bucket: 150 000–180 000 VND
-",editorial
-place,hue-dong-ba-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Dong Ba Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-dong-ba-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🛍️ Самый аутентичный рынок города  
 - 🍜 Лучшее место попробовать локальный стрит-фуд  
@@ -485,8 +802,26 @@ Dong Ba — не туристический аттракцион, а живое 
 
 - 🍽️ Уличная еда: 15 000–40 000 VND  
 - 🛒 Покупки и сувениры — по договорённости
-",editorial
-place,hue-hue-night-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Hue Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hue-hue-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌙 Атмосферное место для вечерней прогулки  
 - 🍢 Уличная еда и недорогие сувениры  
@@ -512,8 +847,26 @@ place,hue-hue-night-market,overview,ru,,"## Почему стоит зайти?
 
 - 🍽️ Еда: 20 000–50 000 VND  
 - 🛍️ Сувениры — по ситуации
-",editorial
-place,hoi-hoi-an-ancient-town,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏮 Hoi An Ancient Town
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-hoi-an-ancient-town',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏮 Один из самых атмосферных городов Юго-Восточной Азии  
 - 🌍 Уникальное сочетание вьетнамской, китайской и японской архитектуры  
@@ -539,8 +892,26 @@ place,hoi-hoi-an-ancient-town,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Хойан был крупнейшим портом Центрального Вьетнама, связывавшим Китай, Японию и Европу. После заиливания реки город сохранился практически без перестроек.
-",editorial
-place,hoi-japanese-covered-bridge,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌉 Japanese Covered Bridge
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-japanese-covered-bridge',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌉 Самый узнаваемый объект Хойана  
 - 🇯🇵 Редкий пример японского влияния во Вьетнаме  
@@ -566,8 +937,26 @@ place,hoi-japanese-covered-bridge,overview,ru,,"## Почему это важн�
 ## Историческая справка
 
 Мост был построен для защиты города от злых духов и служил местом молитвы для японских торговцев.
-",editorial
-place,hoi-assembly-halls-of-hoi-an,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 Assembly Halls of Hoi An
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-assembly-halls-of-hoi-an',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏯 Богатый декор и символика  
 - 🇨🇳 Следы китайской диаспоры  
@@ -593,8 +982,26 @@ place,hoi-assembly-halls-of-hoi-an,overview,ru,,"## Почему это важн
 ## Историческая справка
 
 Ассамблеи служили религиозными и социальными центрами китайских общин, игравших ключевую роль в торговле Хойана.
-",editorial
-place,hoi-old-merchant-houses,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏠 Old Merchant Houses
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-old-merchant-houses',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏠 Возможность увидеть быт старого Хойана  
 - 📜 Истории торговых семей  
@@ -620,8 +1027,26 @@ place,hoi-old-merchant-houses,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Дома строились с учётом наводнений и сочетали вьетнамские, китайские и японские элементы архитектуры.
-",editorial
-place,hoi-hoi-an-central-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Hoi An Central Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-hoi-an-central-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🍜 Лучшее место для знакомства с местной кухней  
 - 🛍️ Атмосфера настоящего рынка  
@@ -647,8 +1072,26 @@ place,hoi-hoi-an-central-market,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Рынок всегда был экономическим ядром Хойана, обслуживая порт и торговые кварталы.
-",editorial
-place,hoi-hoi-an-night-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏮 Hoi An Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-hoi-an-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏮 Самое атмосферное место Хойана вечером  
 - 🌙 Фонари, уличная еда и прогулки у реки  
@@ -674,8 +1117,26 @@ place,hoi-hoi-an-night-market,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Ночной рынок возник как продолжение торговых традиций Хойана и стал современной формой вечерней городской жизни.
-",editorial
-place,hoi-tra-que-vegetable-village,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌱 Tra Que Vegetable Village
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-tra-que-vegetable-village',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌱 Знакомство с сельской жизнью Вьетнама  
 - 🚲 Популярный маршрут для велопрогулок  
@@ -701,8 +1162,26 @@ place,hoi-tra-que-vegetable-village,overview,ru,,"## Почему это важ�
 ## Историческая справка
 
 Тра Куэ снабжала Хойан свежими травами на протяжении веков и сохранила традиционные методы земледелия.
-",editorial
-place,hoi-thanh-ha-pottery-village,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏺 Thanh Ha Pottery Village
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-thanh-ha-pottery-village',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏺 Аутентичные ремесленные традиции  
 - 👐 Возможность поработать с глиной  
@@ -728,8 +1207,26 @@ place,hoi-thanh-ha-pottery-village,overview,ru,,"## Почему это важн
 ## Историческая справка
 
 Деревня возникла для снабжения портового Хойана керамикой и строительными материалами.
-",editorial
-place,hoi-cham-islands,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐠 Cham Islands
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-cham-islands',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🐠 Лучшее место для снорклинга рядом с Хойаном  
 - 🌊 Чистая вода и кораллы  
@@ -755,8 +1252,26 @@ place,hoi-cham-islands,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Острова были важной остановкой морских путей и сегодня охраняются как биосферный резерват.
-",editorial
-place,hoi-an-bang-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ An Bang Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-an-bang-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏖️ Лучший пляж рядом со старым городом  
 - 🌅 Красивые закаты  
@@ -782,8 +1297,26 @@ place,hoi-an-bang-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Ан Бан стал альтернативой более туристическому Куа Дай и сохранил более спокойный пляжный формат.
-",editorial
-place,hoi-banh-mi-phuong,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥖 Bánh Mì Phượng
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-banh-mi-phuong',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🥖 Один из самых известных баньми во Вьетнаме  
 - 🌍 Международная гастрономическая репутация  
@@ -809,8 +1342,26 @@ Bánh Mì Phượng превратил уличный сэндвич в гаст
 
 - 💰 25 000–40 000 VND  
 - 🥪 Средний чек: ~30 000 VND
-",editorial
-place,hoi-com-ga-ba-buoi,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍗 Cơm Gà Bà Buội
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-com-ga-ba-buoi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍗 Легендарный куриный рис по-хойански  
 - 👵 Семейные рецепты нескольких поколений  
@@ -836,8 +1387,26 @@ Cơm Gà Bà Buội считается эталоном блюда, ради к�
 
 - 💰 40 000–60 000 VND  
 - 🍽️ Средний чек: ~50 000 VND
-",editorial
-place,hoi-madam-khanh-the-banh-mi-queen,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 👑 Madam Khanh – The Banh Mi Queen
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-madam-khanh-the-banh-mi-queen',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 👑 Вторая легенда баньми Хойана  
 - 😊 Персональный подход  
@@ -863,8 +1432,26 @@ Madam Khanh показывает человеческое лицо хойанс�
 
 - 💰 20 000–35 000 VND  
 - 🥪 Средний чек: ~30 000 VND
-",editorial
-place,hoi-morning-glory-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Morning Glory Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-morning-glory-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍜 Отличная витрина кухни Центрального Вьетнама  
 - 🏮 Красивый интерьер в старом доме  
@@ -890,8 +1477,26 @@ Morning Glory сделал локальные блюда доступными и
 
 - 💰 150 000–300 000 VND  
 - 🍽️ Средний чек: ~200 000 VND
-",editorial
-place,hoi-ba-le-well,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥙 Bà Lê Well
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-ba-le-well',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🥙 Интерактивный формат еды  
 - 🎉 Живая и дружелюбная атмосфера  
@@ -917,8 +1522,26 @@ Bà Lê Well превращает ужин в социальный опыт, г�
 
 - 💰 Сет: ~120 000–150 000 VND  
 - 🍽️ Цена за сет
-",editorial
-place,hoi-reaching-out-tea-house,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍵 Reaching Out Tea House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-reaching-out-tea-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍵 Редкий формат осознанного и тихого отдыха  
 - 🤍 Социальное предприятие с сильной миссией  
@@ -944,8 +1567,26 @@ Reaching Out Tea House показывает, как бизнес может бы
 
 - 💰 60 000–120 000 VND  
 - 🍵 Средний чек: ~80 000 VND
-",editorial
-place,hoi-faifo-coffee,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 📸 Faifo Coffee
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-faifo-coffee',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 📸 Одна из лучших фототочек Хойана  
 - ☕ Приятный кофе и десерты  
@@ -971,8 +1612,26 @@ Faifo Coffee стал визуальным символом Хойана в со
 
 - 💰 40 000–80 000 VND  
 - ☕ Средний чек: ~60 000 VND
-",editorial
-place,hoi-mot-hoi-an,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 Mót Hội An
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-mot-hoi-an',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌿 Уникальный напиток, который есть только здесь  
 - 🥤 Быстро и освежающе  
@@ -996,8 +1655,26 @@ Mót Hội An — пример того, как простой локальны�
 
 - 💰 ~15 000 VND  
 - 🥤 Формат take-away
-",editorial
-place,hoi-yaly-couture,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 👗 Yaly Couture
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-yaly-couture',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 👗 Высокое качество пошива  
 - ⏱️ Быстрое выполнение заказов  
@@ -1023,8 +1700,26 @@ Yaly Couture сформировал репутацию Хойана как ми�
 
 - 💰 От 80–150 USD за изделие  
 - 👔 Цена зависит от ткани и сложности
-",editorial
-place,hoi-soul-kitchen,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Soul Kitchen
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'hoi-soul-kitchen',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🏖️ Отличное место для отдыха у моря  
 - 🎶 Живая музыка и вечеринки  
@@ -1050,8 +1745,26 @@ Soul Kitchen отражает пляжную и интернациональну
 
 - 💰 120 000–300 000 VND  
 - 🍹 Средний чек: ~200 000 VND
-",editorial
-place,dad-my-khe-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ My Khe Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-my-khe-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏖️ Один из лучших городских пляжей Азии  
 - 🌅 Красивые рассветы над морем  
@@ -1077,8 +1790,26 @@ place,dad-my-khe-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 My Khe получил мировую известность после включения в рейтинги лучших пляжей мира и стал символом курортного Дананга.
-",editorial
-place,dad-son-tra-peninsula,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Son Tra Peninsula
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-son-tra-peninsula',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌳 Заповедная природа в черте города  
 - 🐒 Среда обитания красноногих дуков  
@@ -1104,8 +1835,26 @@ place,dad-son-tra-peninsula,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Полуостров долгое время был военной зоной и сохранил нетронутые леса, став природным щитом города.
-",editorial
-place,dad-linh-ung-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Linh Ứng Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-linh-ung-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Самая высокая статуя Будды во Вьетнаме  
 - 🌊 Вид на море и город  
@@ -1131,8 +1880,26 @@ place,dad-linh-ung-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода была построена в XXI веке как духовный символ защиты Дананга и его жителей.
-",editorial
-place,dad-marble-mountains,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗻 Marble Mountains
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-marble-mountains',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🗻 Уникальный природно-религиозный комплекс  
 - 🛕 Пещеры и древние храмы  
@@ -1158,8 +1925,26 @@ place,dad-marble-mountains,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Горы почитались с древних времён как священное место и использовались чамами и буддистами.
-",editorial
-place,dad-dragon-bridge,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐉 Dragon Bridge
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-dragon-bridge',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🐉 Икона современной архитектуры  
 - 🔥 Огненно-водное шоу по выходным  
@@ -1185,8 +1970,26 @@ place,dad-dragon-bridge,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Мост был открыт в 2013 году и стал символом экономического роста и модернизации Дананга.
-",editorial
-place,dad-non-nuoc-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Non Nuoc Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-non-nuoc-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌊 Менее людный, чем My Khe  
 - 🏄 Подходит для серфинга и длинных прогулок  
@@ -1212,8 +2015,26 @@ place,dad-non-nuoc-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пляж долгое время оставался в тени центра Дананга и развивался как курортная зона высокого уровня.
-",editorial
-place,dad-golden-bridge,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌉 Golden Bridge
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-golden-bridge',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌉 Одна из самых узнаваемых достопримечательностей Вьетнама  
 - 📸 Идеальное место для фото  
@@ -1239,8 +2060,26 @@ place,dad-golden-bridge,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Мост открыт в 2018 году и мгновенно стал мировой туристической иконой.
-",editorial
-place,dad-sun-world-ba-na-hills,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎢 Sun World Ba Na Hills
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-sun-world-ba-na-hills',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🚠 Одна из самых длинных канатных дорог в мире  
 - 🎢 Развлечения для всей семьи  
@@ -1266,8 +2105,26 @@ place,dad-sun-world-ba-na-hills,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Курорт был создан на месте французской горной станции начала XX века.
-",editorial
-place,dad-han-river-bridge,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌉 Han River Bridge
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-han-river-bridge',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌉 Инженерная достопримечательность  
 - 🌃 Красивые виды ночью  
@@ -1292,8 +2149,26 @@ place,dad-han-river-bridge,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Мост открыт в 2000 году и стал первым крупным инфраструктурным проектом современного Дананга.
-",editorial
-place,dad-cham-sculpture-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗿 Cham Sculpture Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-cham-sculpture-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🗿 Уникальная коллекция чамского искусства  
 - 📚 Глубокий исторический контекст региона  
@@ -1318,8 +2193,26 @@ place,dad-cham-sculpture-museum,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Музей основан в 1915 году французами и хранит наследие цивилизации, существовавшей в Центральном Вьетнаме более тысячи лет.
-",editorial
-place,dad-madame-lan,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍲 Madame Lân
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-madame-lan',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍲 Широкая витрина кухни Центрального Вьетнама  
 - 👨‍👩‍👧 Подходит для компаний и семей  
@@ -1345,8 +2238,26 @@ Madame Lân делает традиционную кухню Дананга до
 
 - 💰 120 000–250 000 VND  
 - 🍽️ Средний чек: ~180 000 VND
-",editorial
-place,dad-la-maison-1888,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⭐ La Maison 1888
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-la-maison-1888',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - ⭐ Один из самых известных fine-dining ресторанов Вьетнама  
 - 🌊 Захватывающий вид на море  
@@ -1372,8 +2283,26 @@ La Maison 1888 демонстрирует гастрономический по�
 
 - 💰 3 000 000–6 000 000 VND  
 - 🍽️ Формат: дегустационные меню
-",editorial
-place,dad-be-man-seafood,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦞 Bé Mặn Seafood
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-be-man-seafood',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🦞 Свежайшие морепродукты  
 - 🔊 Настоящая локальная атмосфера  
@@ -1399,8 +2328,26 @@ Bé Mặn — эталон «как едят местные», без турис
 
 - 💰 200 000–400 000 VND (в зависимости от выбора)  
 - 🍽️ Цена за вес
-",editorial
-place,dad-43-factory-coffee-roaster,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ 43 Factory Coffee Roaster
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-43-factory-coffee-roaster',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - ☕ Лучшее место для specialty coffee в Дананге  
 - 🏗️ Архитектурный и дизайнерский объект  
@@ -1426,8 +2373,26 @@ place,dad-43-factory-coffee-roaster,overview,ru,,"## Почему стоит з�
 
 - 💰 45 000–90 000 VND  
 - ☕ Средний чек: ~70 000 VND
-",editorial
-place,dad-cong-ca-phe,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🧱 Cộng Cà Phê
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-cong-ca-phe',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🧱 Атмосфера вьетнамского ретро  
 - 🥥 Фирменный кокосовый кофе  
@@ -1453,8 +2418,26 @@ Cộng Cà Phê популяризирует вьетнамский кофейн
 
 - 💰 40 000–70 000 VND  
 - ☕ Средний чек: ~55 000 VND
-",editorial
-place,dad-sky36,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Sky36
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-sky36',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌃 Лучший панорамный вид на Дананг  
 - 🎧 DJ-сеты и вечеринки  
@@ -1480,8 +2463,26 @@ Sky36 символизирует современный и космополит�
 
 - 💰 Коктейли: 180 000–300 000 VND  
 - 🍸 Средний чек: ~250 000–350 000 VND
-",editorial
-place,dad-waterfront-danang,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Waterfront Danang
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-waterfront-danang',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌊 Приятное расположение у воды  
 - 🍺 Западная и азиатская кухня  
@@ -1507,8 +2508,26 @@ Waterfront Danang — центр экспатской социальной жи�
 
 - 💰 120 000–300 000 VND  
 - 🍽️ Средний чек: ~200 000 VND
-",editorial
-place,dad-han-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Han Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-han-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🛍️ Удобное место для покупок  
 - 🍜 Локальные продукты и специи  
@@ -1534,8 +2553,26 @@ Han Market — туристически удобная точка знакомс
 
 - 🍽️ Еда: 20 000–50 000 VND  
 - 🛒 Сувениры — торг уместен
-",editorial
-place,dad-con-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍢 Con Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-con-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍢 Лучший стрит-фуд Дананга  
 - 👀 Повседневная жизнь местных  
@@ -1561,8 +2598,26 @@ Con Market — эталонный рынок «для своих», где мо�
 
 - 🍽️ 15 000–40 000 VND  
 - 🥢 Средний чек: минимальный
-",editorial
-place,dad-son-tra-night-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Son Tra Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dad-son-tra-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌙 Удобно совместить с посещением Dragon Bridge  
 - 🍢 Уличная еда и прогулки  
@@ -1588,8 +2643,26 @@ Son Tra Night Market стал вечерним продолжением тури
 
 - 🍽️ 30 000–70 000 VND  
 - 🛍️ Сувениры — по ситуации
-",editorial
-place,dla-ho-xuan-huong,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌸 Hồ Xuân Hương
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-ho-xuan-huong',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌸 Символ города и его спокойного ритма  
 - 🚶 Удобная набережная для прогулок  
@@ -1615,8 +2688,26 @@ place,dla-ho-xuan-huong,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Озеро было создано во французский колониальный период и с тех пор стало центральной точкой общественной жизни Далата.
-",editorial
-place,dla-dalat-flower-garden,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌷 Dalat Flower Garden
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-flower-garden',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌷 Цветочная визитная карточка Далата  
 - 🌼 Большие ухоженные территории  
@@ -1642,8 +2733,26 @@ place,dla-dalat-flower-garden,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Парк был создан как часть курортной концепции французского Далата и неоднократно реконструировался.
-",editorial
-place,dla-valley-of-love,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💕 Valley of Love
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-valley-of-love',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 💕 Самое известное романтическое место Далата  
 - 🚣 Развлечения и прогулки на целый день  
@@ -1669,8 +2778,26 @@ place,dla-valley-of-love,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Парк был основан в 1930-х годах французами как Vallée d’Amour и стал знаковым курортным местом.
-",editorial
-place,dla-datanla-waterfall,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 💦 Datanla Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-datanla-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 💦 Красивый водопад рядом с городом  
 - 🎢 Аттракционы и активный отдых  
@@ -1696,8 +2823,26 @@ place,dla-datanla-waterfall,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Название водопада связано с легендами народов Центрального нагорья и издавна привлекало путешественников.
-",editorial
-place,dla-cam-ly-waterfall,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 Cam Ly Waterfall
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-cam-ly-waterfall',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌿 Лёгкая природная прогулка  
 - 📍 Удобно совместить с осмотром города  
@@ -1723,8 +2868,26 @@ place,dla-cam-ly-waterfall,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Водопад был одним из первых мест, куда водили туристов во французском Далате.
-",editorial
-place,dla-tuyen-lam-lake,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌲 Tuyền Lâm Lake
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-tuyen-lam-lake',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌲 Тихая природная атмосфера вдали от центра  
 - 🌅 Красивые рассветы и отражения в воде  
@@ -1750,8 +2913,26 @@ place,dla-tuyen-lam-lake,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Озеро сформировалось после строительства плотины в XX веке и стало важной рекреационной зоной Далата.
-",editorial
-place,dla-truc-lam-zen-monastery,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🧘 Trúc Lâm Zen Monastery
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-truc-lam-zen-monastery',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🧘 Спокойствие и медитативная атмосфера  
 - 🌿 Прекрасное расположение над озером  
@@ -1777,8 +2958,26 @@ place,dla-truc-lam-zen-monastery,overview,ru,,"## Почему это важно
 ## Историческая справка
 
 Монастырь основан в 1994 году и является центром школы дзен Трук Лам, возрождённой во Вьетнаме.
-",editorial
-place,dla-crazy-house,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌀 Crazy House
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-crazy-house',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌀 Самая необычная архитектура Далата  
 - 🎨 Похожа на сказочный лабиринт  
@@ -1804,8 +3003,26 @@ place,dla-crazy-house,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Проект создан архитектором Данг Вьет Нга и вдохновлён природными формами и сказками.
-",editorial
-place,dla-linh-phuoc-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐉 Linh Phước Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-linh-phuoc-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🐉 Уникальная мозаичная архитектура  
 - 🛕 Дракон из бутылочного стекла  
@@ -1831,8 +3048,26 @@ place,dla-linh-phuoc-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода построена в 1949 году и стала известна благодаря уникальной технике декора из битой керамики.
-",editorial
-place,dla-domaine-de-marie,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Domaine de Marie
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-domaine-de-marie',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⛪ Яркий пример колониальной архитектуры  
 - 🌸 Уютные сады и спокойная атмосфера  
@@ -1858,8 +3093,26 @@ place,dla-domaine-de-marie,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Церковь была построена французскими монахинями в 1940-х годах и сохранила оригинальный стиль.
-",editorial
-place,dla-dalat-railway-station,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🚂 Dalat Railway Station
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-railway-station',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🚂 Архитектурная икона французского Далата  
 - 📸 Один из самых фотогеничных вокзалов страны  
@@ -1885,8 +3138,26 @@ place,dla-dalat-railway-station,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Вокзал открыт в 1932 году и был частью железной дороги Далат–Тхапчам, соединявшей горный курорт с побережьем.
-",editorial
-place,dla-dalat-cathedral,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Dalat Cathedral
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-cathedral',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⛪ Самый известный храм Далата  
 - 🐓 Необычный символ на башне  
@@ -1912,8 +3183,26 @@ place,dla-dalat-cathedral,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Собор построен в 1931–1942 годах и стал центром католической общины Центрального нагорья.
-",editorial
-place,dla-bao-dai-palace-iii,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 👑 Bao Dai Palace III
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-bao-dai-palace-iii',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 👑 Возможность увидеть быт императорской семьи  
 - 🏠 Хорошо сохранившиеся интерьеры  
@@ -1939,8 +3228,26 @@ place,dla-bao-dai-palace-iii,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Бао Дай использовал Далат как летнюю резиденцию благодаря прохладному климату и спокойной атмосфере.
-",editorial
-place,dla-lam-dong-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏺 Lam Dong Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-lam-dong-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏺 Глубокий контекст региона  
 - 🧬 Культура народов Центрального нагорья  
@@ -1966,8 +3273,26 @@ place,dla-lam-dong-museum,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Музей расположен в бывшей французской резиденции и рассказывает об истории освоения нагорья.
-",editorial
-place,dla-dalat-pine-viewpoints,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌲 Dalat Pine Viewpoints
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-pine-viewpoints',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌲 Фирменные пейзажи Далата  
 - 🌄 Отличные рассветы и туманы  
@@ -1993,8 +3318,26 @@ place,dla-dalat-pine-viewpoints,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Сосновые леса и холмы сформировали уникальный микроклимат Далата, благодаря которому город стал курортом.
-",editorial
-place,dla-dalat-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Dalat Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🛍️ Лучшее место для знакомства с повседневной жизнью города  
 - 🍓 Свежие ягоды, фрукты и локальные продукты  
@@ -2020,8 +3363,26 @@ Dalat Market — сердце городской жизни и главный и
 
 - 🍽️ Стрит-фуд: 15 000–40 000 VND  
 - 🛒 Продукты и сувениры — торг уместен
-",editorial
-place,dla-dalat-night-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Dalat Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-dalat-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌙 Атмосфера вечернего Далата  
 - 🍢 Большой выбор уличной еды  
@@ -2047,8 +3408,26 @@ place,dla-dalat-night-market,overview,ru,,"## Почему стоит зайти
 
 - 🍽️ 20 000–50 000 VND  
 - 🛍️ Сувениры — по ситуации
-",editorial
-place,dla-l-angfarm,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍬 L’angfarm
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-l-angfarm',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍬 Лучшие подарки из Далата  
 - 🌿 Чаи, сладости и снеки местного производства  
@@ -2073,8 +3452,26 @@ L’angfarm сформировал современный образ «слад�
 ## 🟢 Цены
 
 - 💰 40 000–150 000 VND (в зависимости от продукта)
-",editorial
-place,dla-lien-hoa-bakery-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🥐 Lien Hoa Bakery & Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-lien-hoa-bakery-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🥐 Одна из самых популярных пекарен города  
 - 🍽️ Большие порции и низкие цены  
@@ -2100,8 +3497,26 @@ Lien Hoa — демократичное место, где завтракают 
 
 - 💰 20 000–70 000 VND  
 - 🍽️ Средний чек: ~50 000 VND
-",editorial
-place,dla-nem-nuong-ba-hung,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍢 Nem nướng Bà Hùng
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-nem-nuong-ba-hung',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍢 Одно из культовых блюд Далата  
 - 🔥 Свежая подача с гриля  
@@ -2127,8 +3542,26 @@ Nem nướng Bà Hùng — гастрономический символ Дал�
 
 - 💰 40 000–70 000 VND  
 - 🍽️ Средний чек: ~60 000 VND
-",editorial
-place,dla-la-viet-coffee,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ☕ La Viet Coffee
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-la-viet-coffee',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - ☕ Один из лучших specialty coffee в городе  
 - 🌱 Прямое сотрудничество с локальными фермерами  
@@ -2154,8 +3587,26 @@ La Viet Coffee — один из драйверов кофейной культ�
 
 - 💰 45 000–90 000 VND  
 - ☕ Средний чек: ~70 000 VND
-",editorial
-place,dla-an-cafe,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 An Cafe
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-an-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌿 Тихая и зелёная атмосфера  
 - 📸 Фотогеничный интерьер  
@@ -2181,8 +3632,26 @@ An Cafe отражает неспешный, «европейский» ритм
 
 - 💰 40 000–90 000 VND  
 - 🍽️ Средний чек: ~70 000 VND
-",editorial
-place,dla-maze-bar,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌀 Maze Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'dla-maze-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌀 Самый необычный бар Далата  
 - 🎨 Архитектурный аттракцион  
@@ -2208,8 +3677,26 @@ Maze Bar подчёркивает творческую и слегка сюрр�
 
 - 🍺 Напитки: 50 000–120 000 VND  
 - 🍸 Средний чек: ~100 000 VND
-",editorial
-place,ntr-nha-trang-beach-promenade,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Nha Trang Beach & Promenade
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-nha-trang-beach-promenade',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏖️ Один из самых удобных городских пляжей Вьетнама  
 - 🚶 Прогулочная набережная с кафе и парками  
@@ -2235,8 +3722,26 @@ place,ntr-nha-trang-beach-promenade,overview,ru,,"## Почему это важ�
 ## Историческая справка
 
 Пляж сформировал курортную идентичность Нячанга и стал главным общественным пространством города.
-",editorial
-place,ntr-po-nagar-cham-towers,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🗿 Po Nagar Cham Towers
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-po-nagar-cham-towers',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🗿 Главный памятник чамской культуры в регионе  
 - 🛕 Действующий религиозный комплекс  
@@ -2262,8 +3767,26 @@ place,ntr-po-nagar-cham-towers,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Башни посвящены богине По Нагар — покровительнице земли и плодородия, почитаемой чамами и вьетнамцами.
-",editorial
-place,ntr-long-son-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Long Son Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-long-son-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Одна из главных буддийских святынь Нячанга  
 - 🗿 Большая статуя Будды  
@@ -2289,8 +3812,26 @@ place,ntr-long-son-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода основана в конце XIX века и стала символом буддийской общины города.
-",editorial
-place,ntr-nha-trang-cathedral,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Nha Trang Cathedral
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-nha-trang-cathedral',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⛪ Колониальная архитектура  
 - 🏛️ Исторический ориентир города  
@@ -2316,8 +3857,26 @@ place,ntr-nha-trang-cathedral,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Собор был построен в 1933 году и получил название «Каменная церковь» из-за серого камня.
-",editorial
-place,ntr-hon-chong-rocks,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🪨 Hon Chong Rocks
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-hon-chong-rocks',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌊 Контраст моря и скал  
 - 🌅 Красивые закаты  
@@ -2343,8 +3902,26 @@ place,ntr-hon-chong-rocks,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Скалы издавна служили местом отдыха и вдохновения для художников и поэтов региона.
-",editorial
-place,ntr-national-oceanographic-museum-of-vietnam,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐠 National Oceanographic Museum of Vietnam
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-national-oceanographic-museum-of-vietnam',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🐠 Лучшее место, чтобы понять морскую экосистему региона  
 - 🧪 Научный и образовательный контекст  
@@ -2370,8 +3947,26 @@ place,ntr-national-oceanographic-museum-of-vietnam,overview,ru,,"## Почему
 ## Историческая справка
 
 Музей основан в 1922 году и является важным научным центром морских исследований Вьетнама.
-",editorial
-place,ntr-vinwonders-nha-trang-cable-car,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🎢 VinWonders Nha Trang & Cable Car
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-vinwonders-nha-trang-cable-car',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🚠 Канатная дорога над заливом  
 - 🎢 Аттракционы и аквапарк  
@@ -2397,8 +3992,26 @@ place,ntr-vinwonders-nha-trang-cable-car,overview,ru,,"## Почему это в
 ## Историческая справка
 
 Парк стал частью стратегии развития островных курортов VinGroup и символом туристического роста Нячанга.
-",editorial
-place,ntr-thap-ba-hot-springs,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛁 Tháp Bà Hot Springs
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-thap-ba-hot-springs',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛁 Одна из самых известных грязелечебниц Вьетнама  
 - 💆 Расслабление после пляжа  
@@ -2424,8 +4037,26 @@ place,ntr-thap-ba-hot-springs,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Традиции грязелечения в районе Нячанга использовались местными жителями задолго до туристического освоения.
-",editorial
-place,ntr-i-resort-mud-bath,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛁 i-Resort Mud Bath
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-i-resort-mud-bath',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏨 Современный и комфортный формат  
 - 🛁 Большой выбор процедур  
@@ -2451,8 +4082,26 @@ place,ntr-i-resort-mud-bath,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 i-Resort был создан как современная альтернатива классическим грязелечебницам Нячанга.
-",editorial
-place,ntr-hon-mun-island,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🤿 Hon Mun Island
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-hon-mun-island',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🤿 Лучшие кораллы региона  
 - 🐟 Богатая морская жизнь  
@@ -2478,8 +4127,26 @@ place,ntr-hon-mun-island,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Hon Mun стал первым морским охраняемым районом Вьетнама и остаётся ключевой зоной сохранения кораллов.
-",editorial
-place,ntr-louisiane-brewhouse,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍺 Louisiane Brewhouse
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-louisiane-brewhouse',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍺 Собственная мини-пивоварня  
 - 🏖️ Терраса прямо у моря  
@@ -2505,8 +4172,26 @@ Louisiane Brewhouse стал одним из первых мест, где в Н
 
 - 💰 Пиво: 70 000–120 000 VND  
 - 🍽️ Средний чек: ~250 000 VND
-",editorial
-place,ntr-sailing-club,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌴 Sailing Club
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-sailing-club',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌴 Самый известный beach club города  
 - 🔥 Вечеринки и fire-show  
@@ -2532,8 +4217,26 @@ Sailing Club сформировал ночную жизнь Нячанга ещ�
 
 - 💰 Коктейли: 120 000–200 000 VND  
 - 🍽️ Средний чек: ~300 000 VND
-",editorial
-place,ntr-ganesh-indian-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍛 Ganesh Indian Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-ganesh-indian-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍛 Лучший индийский ресторан города  
 - 🌱 Большой выбор вегетарианских блюд  
@@ -2559,8 +4262,26 @@ Ganesh стал гастрономической альтернативой в �
 
 - 💰 120 000–250 000 VND  
 - 🍽️ Средний чек: ~200 000 VND
-",editorial
-place,ntr-alpaca-homestyle-cafe,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏡 Alpaca Homestyle Café
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-alpaca-homestyle-cafe',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🏡 Атмосфера «как дома»  
 - 🥐 Европейские завтраки  
@@ -2586,8 +4307,26 @@ Alpaca Café — пример камерного заведения, ориен�
 
 - 💰 60 000–150 000 VND  
 - 🍽️ Средний чек: ~120 000 VND
-",editorial
-place,ntr-lac-canh-bbq,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🔥 Lac Canh BBQ
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-lac-canh-bbq',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🔥 Культовое место Нячанга  
 - 🥩 Уникальный формат «жарь сам»  
@@ -2613,8 +4352,26 @@ Lac Canh BBQ — гастрономический символ старого Н
 
 - 💰 150 000–300 000 VND  
 - 🍽️ Средний чек: ~220 000 VND
-",editorial
-place,ntr-kiwami-sushi,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍣 Kiwami Sushi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-kiwami-sushi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍣 Лучший суши-ресторан Нячанга  
 - 🎌 Аутентичный японский подход  
@@ -2640,8 +4397,26 @@ Kiwami Sushi показывает, что в курортном городе в�
 
 - 💰 500 000–1 000 000 VND  
 - 🍽️ Формат: дегустационный сет
-",editorial
-place,ntr-skylight-rooftop-skydeck,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Skylight Rooftop / Skydeck
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-skylight-rooftop-skydeck',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌃 Один из самых высоких rooftop-баров Вьетнама  
 - 🎧 Клубная атмосфера  
@@ -2667,8 +4442,26 @@ Skylight закрепил образ Нячанга как города с ак�
 
 - 💰 Коктейли: 150 000–300 000 VND  
 - 🎟️ Вход: иногда платный вечером
-",editorial
-place,ntr-cho-am,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Chợ Đầm
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-cho-am',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🛍️ Центральный рынок города  
 - 🍜 Большой выбор локальной еды  
@@ -2694,8 +4487,26 @@ Chợ Đầm — торговое и гастрономическое сердц
 
 - 🍽️ 20 000–50 000 VND  
 - 🛒 Торг уместен
-",editorial
-place,ntr-nha-trang-night-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Nha Trang Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'ntr-nha-trang-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌙 Удобно совместить с прогулкой по набережной  
 - 🍢 Уличная еда и перекусы  
@@ -2721,8 +4532,26 @@ place,ntr-nha-trang-night-market,overview,ru,,"## Почему стоит зай
 
 - 🍽️ 30 000–70 000 VND  
 - 🛍️ Сувениры — по ситуации
-",editorial
-place,phu-long-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏖️ Long Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-long-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏖️ Главный туристический пляж острова  
 - 🌅 Одни из лучших закатов во Вьетнаме  
@@ -2748,8 +4577,26 @@ place,phu-long-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Long Beach стал основой туристического развития Фукуока и символом его курортной индустрии.
-",editorial
-place,phu-sao-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏝️ Sao Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-sao-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏝️ Самый красивый пляж Фукуока  
 - 💎 Белый песок и прозрачная вода  
@@ -2775,8 +4622,26 @@ place,phu-sao-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Название «Sao» означает «звёздчатый», что связано с формой морских звёзд, ранее обитавших здесь.
-",editorial
-place,phu-ong-lang-beach,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 Ong Lang Beach
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-ong-lang-beach',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌿 Альтернатива шумному Long Beach  
 - 🏖️ Чистая вода и широкая береговая линия  
@@ -2802,8 +4667,26 @@ place,phu-ong-lang-beach,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Ong Lang долгое время оставался в тени крупных курортов и сохранил более аутентичную атмосферу.
-",editorial
-place,phu-phu-quoc-national-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Phu Quoc National Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-phu-quoc-national-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌳 Нетронутая природа и биоразнообразие  
 - 🥾 Треккинг и наблюдение за дикой природой  
@@ -2829,8 +4712,26 @@ place,phu-phu-quoc-national-park,overview,ru,,"## Почему это важно
 ## Историческая справка
 
 Парк был создан для защиты уникальной экосистемы острова и является домом для многих эндемиков.
-",editorial
-place,phu-dinh-cau-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Dinh Cậu Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-dinh-cau-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Духовный центр местных жителей  
 - 🌊 Уникальное расположение на мысе  
@@ -2856,8 +4757,26 @@ place,phu-dinh-cau-temple,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Храм построен в XVIII веке и почитается как место, где духи моря защищают остров.
-",editorial
-place,phu-phu-quoc-night-market,overview,ru,,"## Локальная ценность
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Phu Quoc Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-phu-quoc-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Локальная ценность
 
 Рынок — главная торговая и гастрономическая точка для гостей и местных жителей.
 
@@ -2883,8 +4802,26 @@ place,phu-phu-quoc-night-market,overview,ru,,"## Локальная ценнос
 - 💵 Наличные  
 - 🎒 Следите за вещами  
 - 🍽️ Выбирайте точки с очередями
-",editorial
-place,phu-fish-sauce-factory,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐟 Fish Sauce Factory
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-fish-sauce-factory',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🐟 Уникальный продукт острова  
 - 🏺 Традиционная технология  
@@ -2910,8 +4847,26 @@ place,phu-fish-sauce-factory,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Фукуок славится ныок мам уже более 200 лет благодаря чистой рыбе и идеальному климату для ферментации.
-",editorial
-place,phu-phu-quoc-prison,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⚰️ Phu Quoc Prison
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-phu-quoc-prison',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⚰️ Важный исторический и образовательный объект  
 - 🕯️ Место памяти и скорби  
@@ -2937,8 +4892,26 @@ place,phu-phu-quoc-prison,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Тюрьма была построена французами, но стала печально известной во времена войны во Вьетнаме.
-",editorial
-place,phu-vinpearl-safari-grand-world,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦁 Vinpearl Safari & Grand World
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-vinpearl-safari-grand-world',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🦁 Один из лучших сафари-парков ЮВА  
 - 🎢 Grand World — иммерсивный культурный парк  
@@ -2964,8 +4937,26 @@ place,phu-vinpearl-safari-grand-world,overview,ru,,"## Почему это ва�
 ## Историческая справка
 
 Проект стал частью стратегии VinGroup по созданию всестороннего туристического направления на Фукуоке.
-",editorial
-place,phu-hon-thom-cable-car,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🚠 Hon Thom Cable Car
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-hon-thom-cable-car',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🚠 Рекордная канатная дорога  
 - 🏝️ Доступ к острову Хон Том  
@@ -2991,8 +4982,26 @@ place,phu-hon-thom-cable-car,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Канатная дорога открыта в 2018 году и занесена в Книгу рекордов Гиннесса.
-",editorial
-place,phu-banh-canh-cha-ca-ong-hai,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍜 Bánh Canh Chả Cá Ông Hai
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-banh-canh-cha-ca-ong-hai',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍜 Культовое блюдо острова  
 - 🔥 Готовят прямо у входа  
@@ -3017,8 +5026,26 @@ place,phu-banh-canh-cha-ca-ong-hai,overview,ru,,"## Почему стоит за
 
 - 💰 ~30 000–40 000 VND  
 - 🍜 Средний чек: минимальный
-",editorial
-place,phu-oc-343,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🐚 Ốc 343
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-oc-343',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🐚 Уникальное меню из морских моллюсков  
 - 🔥 Живая подача с гриля  
@@ -3044,8 +5071,26 @@ place,phu-oc-343,overview,ru,,"## Почему стоит зайти?
 
 - 💰 150 000–300 000 VND  
 - 🍽️ Средний чек: ~200 000 VND
-",editorial
-place,phu-ganh-dau-crab-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🦀 Gành Dầu Crab Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-ganh-dau-crab-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🦀 Свежайшие крабы Фукуока  
 - 🔥 Приготовление на месте  
@@ -3070,8 +5115,26 @@ place,phu-ganh-dau-crab-market,overview,ru,,"## Почему стоит зайт
 ## 🟢 Цены
 
 - 💰 Зависит от веса (обычно 200 000–400 000 VND)
-",editorial
-place,phu-rory-s-beach-bar,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌴 Rory’s Beach Bar
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-rory-s-beach-bar',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌴 Идеальное место для заката  
 - 🍹 Коктейли у моря  
@@ -3097,8 +5160,26 @@ Rory’s — неформальный символ пляжной культур
 
 - 💰 80 000–150 000 VND  
 - 🍹 Средний чек: ~120 000 VND
-",editorial
-place,phu-the-pepper-tree,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌿 The Pepper Tree
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-the-pepper-tree',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌿 Садовая атмосфера  
 - 🍽️ Европейская кухня высокого качества  
@@ -3124,8 +5205,26 @@ The Pepper Tree представляет гастрономическую эво
 
 - 💰 300 000–600 000 VND  
 - 🍽️ Средний чек: ~450 000 VND
-",editorial
-place,phu-luna-rossa,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍝 Luna Rossa
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-luna-rossa',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍕 Аутентичная итальянская пицца  
 - 🌊 Вид на закат  
@@ -3151,8 +5250,26 @@ Luna Rossa демонстрирует, что на Фукуоке возможн
 
 - 💰 250 000–500 000 VND  
 - 🍽️ Средний чек: ~350 000 VND
-",editorial
-place,phu-phuongbinh-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🍲 PhuongBinh Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-phuongbinh-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🍲 Широкая витрина вьетнамской кухни  
 - 👨‍👩‍👧 Подходит для семей  
@@ -3178,8 +5295,26 @@ PhuongBinh — надёжный выбор для знакомства с кух
 
 - 💰 100 000–200 000 VND  
 - 🍽️ Средний чек: ~150 000 VND
-",editorial
-place,phu-shimmer-restaurant,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Shimmer Restaurant
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-shimmer-restaurant',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌊 Панорамный вид на закат  
 - 🍽️ Авторская кухня  
@@ -3205,8 +5340,26 @@ Shimmer представляет современную гастрономиче
 
 - 💰 500 000–1 000 000 VND  
 - 🍽️ Формат: à la carte / сеты
-",editorial
-place,phu-uong-bang-night-market,overview,ru,,"## Почему стоит зайти?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌙 Đường Bàng Night Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'phu-uong-bang-night-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему стоит зайти?
 
 - 🌙 Менее туристический, чем Duong Dong  
 - 🍢 Аутентичная уличная еда  
@@ -3232,8 +5385,26 @@ place,phu-uong-bang-night-market,overview,ru,,"## Почему стоит зай
 
 - 💰 30 000–70 000 VND  
 - 🛍️ Сувениры — по ситуации
-",editorial
-place,han-hoan-kiem-lake-ngoc-son-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Hoan Kiem Lake & Ngoc Son Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-hoan-kiem-lake-ngoc-son-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌊 Главный символ Ханоя  
 - 🛕 Духовное и культурное сердце столицы  
@@ -3259,8 +5430,26 @@ place,han-hoan-kiem-lake-ngoc-son-temple,overview,ru,,"## Почему это в
 ## Историческая справка
 
 Озеро связано с легендой о возвращённом мече дракона, который помог императору Ле Лою изгнать захватчиков.
-",editorial
-place,han-old-quarter,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏮 Old Quarter
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-old-quarter',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 📚 Первый университет страны  
 - 🏯 Прекрасный образец конфуцианской архитектуры  
@@ -3286,8 +5475,26 @@ place,han-old-quarter,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Основан в 1070 году, храм стал центром образования и символом уважения к знаниям.
-",editorial
-place,han-hoa-lo-prison,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⚰️ Hoa Lo Prison
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-hoa-lo-prison',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⚰️ Важный исторический мемориал  
 - 🕯️ Контраст между колониальным и военным прошлым  
@@ -3313,8 +5520,26 @@ place,han-hoa-lo-prison,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Тюрьма была построена французами для политзаключённых, а позже стала местом содержания американских лётчиков.
-",editorial
-place,han-st-joseph-s-cathedral,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ St. Joseph’s Cathedral
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-st-joseph-s-cathedral',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⛪ Архитектурная доминанта Старого квартала  
 - 📸 Популярная фотолокация  
@@ -3340,8 +5565,26 @@ place,han-st-joseph-s-cathedral,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Собор построен в 1886 году на месте буддийского храма и стал символом католической общины Ханоя.
-",editorial
-place,han-one-pillar-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏯 One Pillar Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-one-pillar-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏯 Одна из самых узнаваемых пагод Вьетнама  
 - 🌸 Символ духовности и легенды  
@@ -3367,8 +5610,26 @@ place,han-one-pillar-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Пагода основана в 1049 году после сна императора Ли Тхай То, увидевшего богиню Авалокитешвару на лотосе.
-",editorial
-place,han-west-lake,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 West Lake
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-west-lake',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌊 Самое большое озеро города  
 - 🛕 Старейшая пагода Ханоя  
@@ -3394,8 +5655,26 @@ place,han-west-lake,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Tran Quoc Pagoda основана в VI веке и перенесена на берег Западного озера в XVII веке.
-",editorial
-place,han-quan-thanh-temple,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Quan Thanh Temple
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-quan-thanh-temple',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Древний храм с бронзовыми статуями  
 - 🌳 Расположен у Западного озера  
@@ -3421,8 +5700,26 @@ place,han-quan-thanh-temple,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Храм был построен в XI веке при династии Ли и считается одним из четырёх священных ворот древнего Тханг Лонга.
-",editorial
-place,han-flag-tower-of-hanoi,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏳️ Flag Tower of Hanoi
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-flag-tower-of-hanoi',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏳️ Редкий сохранившийся объект крепости Тханг Лонг  
 - 🌄 Панорамный вид на город  
@@ -3448,8 +5745,26 @@ place,han-flag-tower-of-hanoi,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Башня была частью цитадели и использовалась для подачи сигналов. Сегодня — символ столицы.
-",editorial
-place,han-ba-dinh-square-ho-chi-minh-mausoleum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛️ Ba Dinh Square & Ho Chi Minh Mausoleum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'han-ba-dinh-square-ho-chi-minh-mausoleum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏛️ Политическое сердце страны  
 - 🕯️ Место паломничества для вьетнамцев  
@@ -3475,8 +5790,26 @@ place,han-ba-dinh-square-ho-chi-minh-mausoleum,overview,ru,,"## Почему э�
 ## Историческая справка
 
 На этой площади Хо Ши Мин провозгласил независимость Вьетнама в 1945 году.
-",editorial
-place,sgn-ben-thanh-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Ben Thanh Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-ben-thanh-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛍️ Главный туристический и торговый символ Сайгона  
 - 🍜 Большой выбор уличной еды  
@@ -3502,8 +5835,26 @@ place,sgn-ben-thanh-market,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Рынок был построен французами в начале XX века и с тех пор остаётся сердцем торговли Сайгона.
-",editorial
-place,sgn-notre-dame-cathedral-basilica-of-saigon,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⛪ Notre-Dame Cathedral Basilica of Saigon
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-notre-dame-cathedral-basilica-of-saigon',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⛪ Архитектурная икона колониального Сайгона  
 - 📸 Одна из самых узнаваемых достопримечательностей Вьетнама  
@@ -3529,8 +5880,26 @@ place,sgn-notre-dame-cathedral-basilica-of-saigon,overview,ru,,"## Почему 
 ## Историческая справка
 
 Собор построен в 1880 году из кирпича, привезённого из Франции, и до сих пор не побелел.
-",editorial
-place,sgn-central-post-office,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 📮 Central Post Office
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-central-post-office',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 📮 Архитектурный шедевр колониальной эпохи  
 - 📸 Впечатляющий интерьер с картами и деревянными стойками  
@@ -3556,8 +5925,26 @@ place,sgn-central-post-office,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Здание построено в 1891 году и приписывается ученикам Эйфеля, хотя точное авторство спорно.
-",editorial
-place,sgn-independence-palace,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🏛️ Independence Palace
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-independence-palace',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🏛️ Ключевой исторический объект страны  
 - 🕰️ Сохранившиеся интерьеры 1960–70-х  
@@ -3583,8 +5970,26 @@ place,sgn-independence-palace,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Дворец стал символом воссоединения Вьетнама после падения Сайгона в 1975 году.
-",editorial
-place,sgn-war-remnants-museum,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: ⚔️ War Remnants Museum
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-war-remnants-museum',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - ⚔️ Глубокий исторический и гуманитарный контекст  
 - 📸 Фотографии и экспонаты с сильным эмоциональным воздействием  
@@ -3610,8 +6015,26 @@ place,sgn-war-remnants-museum,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Музей основан в 1975 году и изначально назывался «Музей американских преступлений».
-",editorial
-place,sgn-jade-emperor-pagoda,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛕 Jade Emperor Pagoda
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-jade-emperor-pagoda',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛕 Один из самых красивых храмов города  
 - 🐉 Богатый декор и скульптуры  
@@ -3637,8 +6060,26 @@ place,sgn-jade-emperor-pagoda,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Храм построен в 1909 году китайской общиной и посвящён Нефритовому императору.
-",editorial
-place,sgn-binh-tay-market,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🛍️ Binh Tay Market
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-binh-tay-market',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🛍️ Аутентичная атмосфера без туристического глянца  
 - 🧺 Огромный выбор товаров и продуктов  
@@ -3664,8 +6105,26 @@ place,sgn-binh-tay-market,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Рынок был построен в 1928 году и стал центром торговли китайской диаспоры.
-",editorial
-place,sgn-tao-dan-park,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌳 Tao Dan Park
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-tao-dan-park',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌳 Оазис зелени в центре мегаполиса  
 - 👨‍🦯 Место утренних занятий тайчи и йогой  
@@ -3691,8 +6150,26 @@ place,sgn-tao-dan-park,overview,ru,,"## Почему это важно?
 ## Историческая справка
 
 Парк был разбит французами в начале XX века как Botanical Garden.
-",editorial
-place,sgn-bitexco-financial-tower-skydeck,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌃 Bitexco Financial Tower & Skydeck
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-bitexco-financial-tower-skydeck',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌃 Панорамный вид на весь город  
 - 🏙️ Архитектурная доминанта  
@@ -3718,8 +6195,26 @@ place,sgn-bitexco-financial-tower-skydeck,overview,ru,,"## Почему это �
 ## Историческая справка
 
 Башня открыта в 2010 году и стала символом современного Сайгона.
-",editorial
-place,sgn-saigon-river-promenade,overview,ru,,"## Почему это важно?
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- Content block for: 🌊 Saigon River Promenade
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'place',
+  'sgn-saigon-river-promenade',
+  'overview',
+  'ru',
+  NULL,
+  '## Почему это важно?
 
 - 🌊 Спокойное место для прогулок  
 - 🌃 Вечерние виды на реку  
@@ -3745,4 +6240,12 @@ place,sgn-saigon-river-promenade,overview,ru,,"## Почему это важно
 ## Историческая справка
 
 Набережная была реконструирована в 2000-х как общественное пространство.
-",editorial
+',
+  'editorial',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();

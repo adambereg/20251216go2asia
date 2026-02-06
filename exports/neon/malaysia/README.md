@@ -4,7 +4,7 @@
 
 This directory contains exported data from Atlas Content Canon v1 markdown files for import into Neon Postgres.
 
-**Generated:** 2026-02-03T05:24:47.516Z  
+**Generated:** 2026-02-06T12:25:26.517Z  
 **Country:** Malaysia (`my`)  
 **Total places:** 47
 
