@@ -31,16 +31,17 @@ function Get-DbHost([string]$url) {
 }
 
 function Test-DbHostDns {
-  $host = Get-DbHost $env:STAGING_DATABASE_URL
-  if (-not $host) {
+  # NOTE: do NOT use $host (reserved, read-only automatic variable $Host)
+  $dbHost = Get-DbHost $env:STAGING_DATABASE_URL
+  if (-not $dbHost) {
     throw "Could not parse DB host from STAGING_DATABASE_URL. Please re-check the connection string format."
   }
-  Write-Host ("DB host: " + $host) -ForegroundColor DarkGray
+  Write-Host ("DB host: " + $dbHost) -ForegroundColor DarkGray
   try {
     # Resolve-DnsName exists in Windows PowerShell 5.1+
-    Resolve-DnsName $host | Out-Null
+    Resolve-DnsName $dbHost | Out-Null
   } catch {
-    throw "DNS resolution failed for DB host '$host'. Try Neon 'Direct connection' string or fix network/VPN/DNS."
+    throw "DNS resolution failed for DB host '$dbHost'. Try Neon 'Direct connection' string or fix network/VPN/DNS."
   }
 }
 
