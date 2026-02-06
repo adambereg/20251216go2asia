@@ -30,7 +30,11 @@ function Run-Import([string]$country, [string]$slug = $null) {
   }
 
   Write-Host ""
-  Write-Host "=== IMPORT: $country$([string]::IsNullOrEmpty($slug) ? '' : \" (slug=$slug)\") ===" -ForegroundColor Cyan
+  $label = "=== IMPORT: $country ==="
+  if ($slug -and $slug.Trim().Length -gt 0) {
+    $label = "=== IMPORT: $country (slug=$slug) ==="
+  }
+  Write-Host $label -ForegroundColor Cyan
 
   # Важно: используем pnpm exec -- tsx (Windows-friendly)
   $cmd = "pnpm -C packages/db exec -- tsx src/applyAtlasExportsToNeon.ts $country$slugArg"
