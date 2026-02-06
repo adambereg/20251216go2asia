@@ -368,6 +368,15 @@ function SectionCard({
   );
 }
 
+function LeadDescription({ text }: { text: string | null }) {
+  if (!text?.trim()) return null;
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+      <div className="text-slate-800 leading-relaxed">{text.trim()}</div>
+    </section>
+  );
+}
+
 export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData }) {
   const hasOverview = Boolean(data.overviewMarkdown?.trim());
   const sections = parseOverviewSections(data.overviewMarkdown, data.kind);
@@ -411,6 +420,7 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
+      <LeadDescription text={data.description} />
       {sections.length === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
       ) : (
@@ -484,6 +494,7 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <MetaRow data={data} />
+      <LeadDescription text={data.description} />
       {sections.length === 0 && hasOverview ? (
         <SectionCard title="Описание" tone="sky" markdown={data.overviewMarkdown} fallback={null} />
       ) : (
