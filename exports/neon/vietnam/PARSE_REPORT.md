@@ -254,3 +254,72 @@
 - Phu Quoc -> `phu`
 - Hanoi -> `han`
 - Ho Chi Minh City -> `sgn`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `vietnam`
+**Resolver mode:** `neon`
+
+- **Files processed**: 9
+- **Blocks created**: 109
+- **By entity_type**: country=13, city=96
+
+### Resolved city IDs
+- OK RESOLVE city: vn/da-nang/da-nang -> dad (strategy=title)
+- OK RESOLVE city: vn/dalat/dalat -> dla (strategy=title)
+- OK RESOLVE city: vn/hanoi/hanoi -> han (strategy=title)
+- OK RESOLVE city: vn/ho-chi-minh-city/ho-chi-minh-city -> sgn (strategy=title)
+- OK RESOLVE city: vn/hoi-an/hoi-an -> hoi (strategy=title)
+- OK RESOLVE city: vn/hue/hue -> hue (strategy=id)
+- OK RESOLVE city: vn/nha-trang/nha-trang -> ntr (strategy=title)
+
+### Unresolved city IDs
+- FALLBACK OVERRIDE city -> phu (reason=No match by id/slug/title/fuzzy): vn/phu-quoc/phu-quoc (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-phu-quoc.md)
+
+### Distribution by tab_key
+- accommodation: 8
+- budget: 8
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 8
+- food: 8
+- gallery: 1
+- geography: 1
+- guides: 8
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 8
+- overview: 9
+- phrasebook: 1
+- reviews: 9
+- shopping: 8
+- tips: 8
+- transport: 8
+- visas: 1
+- weather: 9
+
+### Skipped (missing/empty)
+- (нет)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-da-nang.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-dalat.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-hanoi.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-ho-chi-minh.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-hoi-an.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-hue.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-nha-trang.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\city-phu-quoc.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\country-vietnam.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\vietnam\country-vietnam.md)
+
+### Warnings
+- (нет)
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

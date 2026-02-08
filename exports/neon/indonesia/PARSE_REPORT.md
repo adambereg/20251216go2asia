@@ -156,3 +156,68 @@
 - Yogyakarta -> `yog`
 - Labuan Bajo -> `lbj`
 - Lombok -> `lom`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `indonesia`
+**Resolver mode:** `neon`
+
+- **Files processed**: 6
+- **Blocks created**: 71
+- **By entity_type**: country=13, city=58
+
+### Resolved city IDs
+- OK RESOLVE city: id/denpasar/denpasar -> dps (strategy=title)
+- OK RESOLVE city: id/jakarta/jakarta -> jkt (strategy=title)
+- OK RESOLVE city: id/medan/medan -> mdn (strategy=title)
+- OK RESOLVE city: id/surabaya/surabaya -> sub (strategy=title)
+- OK RESOLVE city: id/yogyakarta/yogyakarta -> yog (strategy=slug)
+
+### Unresolved city IDs
+- (нет)
+
+### Distribution by tab_key
+- accommodation: 5
+- budget: 4
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 5
+- food: 5
+- gallery: 1
+- geography: 1
+- guides: 5
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 5
+- overview: 6
+- phrasebook: 1
+- reviews: 5
+- shopping: 5
+- tips: 5
+- transport: 5
+- visas: 1
+- weather: 6
+
+### Skipped (missing/empty)
+- city/reviews: missing (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-denpasar.md)
+- city/budget: missing (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-denpasar.md)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-denpasar.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-jakarta.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-medan.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-surabaya.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\city-yogyakarta.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\country-indonesia.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\indonesia\country-indonesia.md)
+
+### Warnings
+- (нет)
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

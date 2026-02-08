@@ -1870,3 +1870,1959 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 85
+
+-- city/bat tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'overview',
+  'ru',
+  'Обзор',
+  'Баттамбанг — второй по величине город Камбоджи и один из самых аутентичных и спокойных городов страны. Он расположен на северо-западе, среди рисовых полей и сельских поселений, и известен своей колониальной архитектурой, художественной средой и размеренным ритмом жизни.
+
+Город часто называют «культурной столицей провинциальной Камбоджи». Баттамбанг подходит для неспешных путешествий, длительного проживания, волонтёрства и знакомства с повседневной жизнью кхмеров вне туристических маршрутов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр города
+    description: Исторический центр с колониальной архитектурой, рынками и набережной.
+  - id: riverside
+    title: Район у реки Сангкер
+    description: Спокойная зона с прогулочными маршрутами и кафе.
+  - id: wat-kor
+    title: Деревня Wat Kor
+    description: Традиционная кхмерская деревня с деревянными домами и сельской атмосферой.
+  - id: east-bank
+    title: Восточный берег
+    description: Более локальные жилые кварталы и транспортные узлы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Жильё в Баттамбанге одно из самых доступных в Камбодже. Варианты включают гестхаусы, небольшие отели, апартаменты и частные дома, часто с садами.
+
+Город особенно привлекателен для тех, кто ищет недорогую и спокойную жизнь без городской суеты и туристического давления.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'В Баттамбанге развито сочетание местной кхмерской кухни и небольших кафе, ориентированных на экспатов и волонтёров. Уличная еда и рынки играют ключевую роль в гастрономической жизни города.
+
+Популярны простые семейные рестораны, кофейни третьей волны и социальные проекты, поддерживающие местную молодёжь.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются пешком, на велосипеде или тук-туке. Трафик спокойный, пробки редки.
+
+Баттамбанг связан автобусным и железнодорожным сообщением с Пномпенем, Сиемреапом и пограничными районами Таиланда.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат жаркий тропический. Лучшее время для посещения — с ноября по февраль, когда температура более комфортная.
+
+В сезон дождей возможны кратковременные ливни и повышенная влажность, но город остаётся зелёным и живописным.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Баттамбанге ограничен и ориентирован на повседневные нужды. Основные покупки совершаются на Центральном рынке и локальных рынках.
+
+Город не является торговым центром, но предлагает доступные цены на продукты и бытовые товары.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь минимальна и спокойна. Работают несколько баров и кафе, где собираются экспаты и местные жители.
+
+После 21–22 часов город в основном затихает, что делает его комфортным для спокойного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - slow_travel
+  - cultural_life
+  - volunteering
+  - rural_cambodia',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Баттамбанг считается одним из самых безопасных городов Камбоджи. Уровень преступности низкий, атмосфера дружелюбная.
+
+Инфраструктура базовая, медицинские и сервисные услуги ограничены, поэтому город больше подходит для спокойной жизни, чем для активного бизнеса.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bat tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-battambang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bat',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Баттамбанг — один из самых дешёвых городов Камбоджи. Комфортный бюджет одного человека составляет 500–700 USD в месяц.
+
+Аренда жилья начинается от 150–250 USD, питание и транспорт обходятся очень недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'overview',
+  'ru',
+  'Обзор',
+  'Кампот — небольшой и уютный город на юге Камбоджи, расположенный на реке Теук Чху недалеко от побережья Сиамского залива. Город известен своей расслабленной атмосферой, колониальной архитектурой и знаменитым кампотским перцем.
+
+За последние годы Кампот стал одним из самых популярных мест для долгосрочного проживания экспатов, digital nomads и людей, ищущих спокойную жизнь на природе без отрыва от базовой инфраструктуры.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: riverside
+    title: Набережная Кампота
+    description: Центральная зона с кафе, барами, колониальной архитектурой и прогулочной набережной.
+  - id: town-center
+    title: Центр города
+    description: Район рынков, магазинов и локальной городской жизни.
+  - id: fish-island
+    title: Район Fish Island
+    description: Зеленая и более уединённая зона с домами экспатов и видом на реку.
+  - id: bokor-road
+    title: Окрестности дороги на Бокор
+    description: Район ближе к горам и национальному парку, популярный для домов с природным окружением.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Кампот предлагает разнообразные варианты жилья: гестхаусы, апартаменты, бунгало и частные дома, часто с садами и видом на реку. Цены на аренду ниже, чем в Пномпене и Сиемреапе.
+
+Город особенно привлекателен для долгосрочного проживания благодаря спокойствию, низким расходам и дружелюбному сообществу экспатов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Несмотря на небольшой размер, Кампот имеет развитую гастрономическую сцену. Здесь представлены кхмерская кухня, морепродукты, вегетарианские кафе и рестораны, ориентированные на экспатов.
+
+Особое место занимают блюда с кампотским перцем, а также кафе и бары на набережной с видом на реку.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются пешком, на велосипеде или мотобайке. Тук-туки доступны, но используются реже, чем в крупных городах.
+
+Кампот связан автобусными маршрутами с Пномпенем, Сиануквилем и Кепом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для проживания и визита — с ноября по февраль, когда погода наиболее комфортна.
+
+В сезон дождей (май–октябрь) возможны сильные ливни, но река и окружающая природа выглядят особенно живописно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг представлен рынками и небольшими магазинами. Основные покупки — свежие продукты, фрукты, специи и кампотский перец.
+
+За более широким выбором товаров жители ездят в Пномпень или Сиануквиль.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Кампоте умеренная и неагрессивная. Работают бары и кафе на набережной, периодически проходят вечеринки и живые выступления.
+
+Город ориентирован на спокойный вечерний отдых и социальное общение, а не на клубную сцену.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - expat_life
+  - slow_travel
+  - nature_routes
+  - wellness',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Кампот считается безопасным городом с дружелюбной атмосферой. Основные сложности связаны с жарким климатом и возможными перебоями электроэнергии.
+
+Интернет доступен, но скорость может уступать столичным показателям. Город хорошо подходит для удалённой работы при умеренных требованиях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kmp tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kampot.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kmp',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Кампот — один из самых доступных городов Камбоджи для проживания. Комфортный бюджет одного человека составляет 500–700 USD в месяц.
+
+Аренда жилья начинается от 150–300 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'overview',
+  'ru',
+  'Обзор',
+  'Кеп — небольшой приморский город на юге Камбоджи, расположенный на берегу Сиамского залива недалеко от границы с Вьетнамом. В прошлом он был элитным курортом для французской и кхмерской знати, а сегодня представляет собой тихое и уединённое направление для отдыха и жизни без суеты.
+
+Город известен своей спокойной атмосферой, природным окружением, заброшенными виллами колониальной эпохи и морепродуктами, в особенности крабами с кампотским перцем.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: crab-market
+    title: Район крабового рынка
+    description: Центральная зона с ресторанами морепродуктов, рынком и прогулочной набережной.
+  - id: kep-beach
+    title: Район пляжа Кеп
+    description: Курортная часть с небольшим общественным пляжем и отелями.
+  - id: national-park
+    title: Район Национального парка Кеп
+    description: Холмистая зелёная зона с тропами, смотровыми площадками и заброшенными виллами.
+  - id: outskirts
+    title: Окраины и рыбацкие деревни
+    description: Малонаселённые районы с локальной жизнью и минимальной инфраструктурой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Выбор жилья в Кепе ограничен по сравнению с другими городами Камбоджи. Основные варианты — гестхаусы, небольшие отели, бунгало и редкие виллы.
+
+Город чаще используется для краткосрочного отдыха или сезонного проживания. Для длительной жизни многие предпочитают Кампот, приезжая в Кеп на выходные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кеп считается гастрономической точкой Камбоджи благодаря свежим морепродуктам. Главная кулинарная специализация — крабы, приготовленные с зелёным кампотским перцем.
+
+Вдоль крабового рынка и побережья работают рестораны и кафе с видом на море. Выбор интернациональной кухни ограничен.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, передвижение осуществляется пешком, на велосипеде или мотобайке. Общественный транспорт отсутствует.
+
+Кеп связан дорогами с Кампотом, Пномпенем и пограничными районами Вьетнама. Также доступны лодочные рейсы на близлежащие острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический прибрежный. Лучшее время для посещения — с ноября по февраль, когда температура умеренная, а море спокойное.
+
+В сезон дождей возможны ливни и повышенная влажность, но морской бриз делает климат более мягким, чем в глубине страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг ограничен локальными рынками и небольшими магазинами. Основные покупки — морепродукты, фрукты и продукты первой необходимости.
+
+За более широким ассортиментом товаров жители и гости ездят в Кампот.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь практически отсутствует. После заката город быстро затихает, а основное времяпрепровождение — ужины у моря и спокойные прогулки.
+
+Кеп ориентирован на уединённый и расслабленный отдых, а не на развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - beach_relax
+  - slow_travel
+  - seafood_route
+  - weekend_trip',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Кеп считается безопасным и спокойным городом. Инфраструктура минимальная, медицинские и сервисные услуги ограничены.
+
+Интернет доступен, но скорость может быть нестабильной. Город подходит для отдыха и краткосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kep tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-kep.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kep',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Стоимость жизни в Кепе умеренная, но выбор жилья ограничен. Минимальный бюджет для комфортного проживания составляет 600–800 USD в месяц.
+
+Краткосрочный отдых обычно обходится недорого благодаря доступным ценам на еду и размещение.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'overview',
+  'ru',
+  'Обзор',
+  'Пномпень — столица и крупнейший город Камбоджи, расположенный у слияния рек Меконг, Тонлесап и Бассак. Город сочетает в себе колониальное наследие Французского Индокитая, буддийские пагоды и динамичное развитие последних десятилетий.
+
+Сегодня Пномпень — политический, экономический и культурный центр страны. Это самый «живой» и разнообразный город Камбоджи, предлагающий лучшие возможности для работы, бизнеса, образования и активной городской жизни, при этом оставаясь относительно доступным по стоимости.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: bkk1
+    title: BKK1 (Бёнг Кенг Кан 1)
+    description: Главный экспатский район с кафе, ресторанами, кондоминиумами и офисами.
+  - id: riverside
+    title: Риверсайд
+    description: Туристический район вдоль набережной с дворцом, барами и рынками.
+  - id: russian-market
+    title: Район Русского рынка
+    description: Молодёжный и креативный район с рынками, кафе и более доступной арендой.
+  - id: tuol-kork
+    title: Тул Кок
+    description: Спальный район, популярный у семей и долгосрочных экспатов.
+  - id: daun-penh
+    title: Даун Пен
+    description: Исторический и административный центр с колониальной архитектурой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Пномпень предлагает самый широкий выбор жилья в Камбодже: современные кондоминиумы с бассейнами и охраной, апартаменты в таунхаусах, а также виллы в спальных районах.
+
+Цены выше, чем в провинциальных городах, но всё ещё значительно ниже, чем в большинстве столиц ЮВА. Город подходит для долгосрочного проживания, особенно для экспатов, работающих удалённо или в международных компаниях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Пномпень — гастрономическая столица страны. Здесь представлены кхмерская, тайская, вьетнамская, китайская, французская и международная кухни. В городе много уличной еды, рынков и ресторанов всех ценовых категорий.
+
+Особенно популярны кофейни третьей волны, французские пекарни и бары, ориентированные на экспатское сообщество. Качество международной кухни считается одним из лучших в Камбодже.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные виды транспорта — тук-туки, мототакси и сервисы вызова через приложения (PassApp, Grab). Общественный транспорт представлен автобусами, но используется в основном местными жителями.
+
+Движение хаотичное, пробки возможны в часы пик. В городе расположен международный аэропорт, обеспечивающий связи с основными городами региона.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Сухой сезон длится с ноября по март и считается наиболее комфортным. В апреле наблюдается экстремальная жара.
+
+Сезон дождей продолжается с мая по октябрь. Ливни часто кратковременные, но возможны локальные подтопления в низинных районах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Пномпень — лучший город Камбоджи для покупок. Здесь находятся рынки (Центральный рынок, Русский рынок), современные торговые центры (AEON Mall), супермаркеты и бутики.
+
+Можно приобрести как дешёвые локальные товары, так и импортную продукцию. Торг уместен на рынках и в небольших магазинах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Пномпеня самая активная в стране. Работают бары, клубы, лаунжи и rooftop-бары. Наибольшая концентрация заведений — в районах BKK1, Bassac Lane и Riverside.
+
+Город предлагает как спокойные винные и коктейльные бары, так и шумные ночные клубы, работающие до поздней ночи.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - relocation
+  - expat_life
+  - business_start
+  - digital_nomad',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Пномпень относительно безопасен, однако распространены мелкие кражи, особенно сумок и телефонов. Рекомендуется соблюдать базовые меры осторожности и избегать тёмных улиц ночью.
+
+Наличные доллары США широко используются наряду с камбоджийским риелем. Интернет и мобильная связь доступны, но возможны перебои электричества в жаркий сезон.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pnh tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-phnom-penh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pnh',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Пномпень — самый дорогой город Камбоджи, но остаётся доступным по мировым меркам. Средняя стоимость жизни одного человека составляет 900–1200 USD в месяц.
+
+Аренда квартиры начинается от 300–400 USD, питание и транспорт обходятся недорого, а качество жизни зависит от выбранного района и стиля проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'overview',
+  'ru',
+  'Обзор',
+  'Сиемреап — туристическая столица Камбоджи и главный центр притяжения путешественников благодаря храмовому комплексу Ангкор. Город сочетает в себе курортную атмосферу, развитую туристическую инфраструктуру и спокойный ритм жизни.
+
+Несмотря на статус туристического хаба, Сиемреап остаётся компактным и уютным городом, подходящим не только для короткого визита, но и для длительного проживания, особенно для тех, кто ценит баланс между комфортом и аутентичностью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-town
+    title: Старый город
+    description: Исторический центр с колониальной застройкой, рынками и туристической инфраструктурой.
+  - id: wat-bo
+    title: Район Wat Bo
+    description: Более спокойная и жилaя зона, популярная среди экспатов и долгосрочных гостей.
+  - id: pub-street
+    title: Pub Street и окрестности
+    description: Сердце туристической и ночной жизни города.
+  - id: highway-6
+    title: Район шоссе №6
+    description: Современная зона с отелями, торговыми центрами и транспортной доступностью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Сиемреап предлагает широкий выбор жилья: гестхаусы, апартаменты, бутик-отели и частные дома с садами. Цены заметно ниже столичных, а уровень комфорта часто выше за те же деньги.
+
+Город особенно популярен среди зимовщиков, digital nomads и экспатов, предпочитающих более спокойную и зелёную среду проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Сиемреапа разнообразна и ориентирована на международную аудиторию. Здесь представлены кхмерская, тайская, вьетнамская, французская, итальянская и вегетарианская кухни.
+
+Особенно популярны кафе для завтраков, кофейни и рестораны с видом на реку. Уровень еды высок, а цены остаются доступными.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, большинство перемещений осуществляется пешком, на велосипеде или тук-туке. Также доступны мототакси и сервисы заказа поездок.
+
+В Сиемреапе расположен международный аэропорт, связывающий город с Пномпенем, Бангкоком и другими направлениями региона.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с ноября по февраль, когда температура комфортна, а осадков немного.
+
+С марта по апрель стоит сильная жара. В сезон дождей (май–октябрь) город становится особенно зелёным, но возможны ливни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные торговые зоны — Старый рынок (Phsar Chas), ночные рынки и туристические улицы. Здесь продаются сувениры, текстиль, изделия ручной работы и продукты.
+
+Также в городе есть супермаркеты и небольшие торговые центры, ориентированные на экспатов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Сиемреапа сосредоточена вокруг Pub Street. Здесь работают бары, клубы и рестораны, ориентированные на туристов.
+
+За пределами центра город вечером становится тихим и спокойным, что делает его комфортным для проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - angkor_visit
+  - long_stay
+  - slow_travel
+  - digital_nomad',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Сиемреап считается одним из самых безопасных городов Камбоджи. Туристическая полиция присутствует в центре, уровень преступности низкий.
+
+Наличные деньги предпочтительны, но в туристических заведениях принимаются карты. Интернет доступен и стабилен.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/rep tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-siem-reap.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'rep',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Сиемреап дешевле Пномпеня примерно на 20–30%. Комфортный бюджет одного человека составляет 700–900 USD в месяц.
+
+Аренда жилья начинается от 200–300 USD, питание и транспорт обходятся недорого, особенно при долгосрочном проживании.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'overview',
+  'ru',
+  'Обзор',
+  'Сиануквиль — главный портовый и курортный город Камбоджи, расположенный на побережье Сиамского залива. Исторически он развивался как пляжное направление и морские ворота страны, а в последние годы пережил резкие изменения из-за масштабных иностранных инвестиций.
+
+Сегодня Сиануквиль находится в переходном состоянии: часть города застроена современными отелями и казино, при этом сохраняется доступ к пляжам и островам. Для большинства путешественников город служит транзитной точкой на острова Ко Ронг и Ко Ронг Самлоем.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: ochheuteal
+    title: Очутель и Серендипити
+    description: Центральная туристическая зона с пляжами, пирсом и инфраструктурой.
+  - id: otres
+    title: Отрес
+    description: Более спокойный пляжный район, популярный среди экспатов и длительных гостей.
+  - id: victory-hill
+    title: Victory Hill
+    description: Район у порта с гостиницами и видом на залив.
+  - id: city-center
+    title: Центр города
+    description: Административная и жилая часть с рынками и сервисами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Жилищный фонд Сиануквиля неоднороден: от бюджетных гестхаусов и бунгало до новых кондоминиумов и отелей. Цены колеблются в зависимости от района и состояния инфраструктуры.
+
+Многие экспаты предпочитают селиться в районе Отрес или используют Сиануквиль как временную базу перед поездкой на острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'В городе представлены кхмерская, китайская и международная кухни. Особенно популярны блюда из морепродуктов: рыба, креветки, кальмары и крабы.
+
+В туристических районах работают кафе и рестораны западного формата, однако качество сервиса и стабильность заведений могут сильно различаться.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные способы передвижения — тук-туки и мотобайки. Общественный транспорт практически отсутствует.
+
+Из Сиануквиля отправляются паромы и скоростные лодки на острова Ко Ронг и Ко Ронг Самлоем. Город связан автомобильными маршрутами с Пномпенем и Кампотом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический прибрежный. Лучшее время для посещения — с ноября по февраль, когда море спокойное и погода комфортная.
+
+В сезон дождей (май–октябрь) возможны шторма и отмены морских рейсов, особенно в сентябре.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг представлен в основном рынками и небольшими магазинами. Можно приобрести свежие морепродукты, фрукты и базовые товары.
+
+Современные торговые центры присутствуют, но выбор ограничен по сравнению с Пномпенем.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Сиануквиля существенно сократилась по сравнению с прошлым. Основные активности сосредоточены в казино и отдельных барах.
+
+Более активная вечерняя жизнь доступна на островах, куда многие отправляются из города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_hopping
+  - beach_travel
+  - transit_city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Город требует повышенной осторожности: рекомендуется избегать ночных прогулок по пустынным районам и внимательно относиться к личным вещам.
+
+Инфраструктура нестабильна, возможны перебои с электричеством и водой. Сиануквиль лучше рассматривать как временную остановку, а не основное место проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kps tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/city-sihanoukville.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kps',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Стоимость жизни в Сиануквиле варьируется. Минимальный бюджет начинается от 700–900 USD в месяц, однако качество жизни сильно зависит от выбранного района и жилья.
+
+Краткосрочное пребывание чаще всего используется как транзит перед поездкой на острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'overview',
+  'ru',
+  'Обзор',
+  'Камбоджа — страна Юго-Восточной Азии с древней историей, уникальным культурным наследием и одним из самых низких уровней стоимости жизни в регионе. Она известна храмовым комплексом Ангкор, буддийской традицией и спокойным, неторопливым ритмом жизни.
+
+Сегодня Камбоджа привлекает путешественников, цифровых кочевников, экспатов и предпринимателей благодаря тёплому климату, простому визовому режиму и относительной свободе в образе жизни. Это направление подойдёт тем, кто ищет аутентичную Азию без избыточного туризма и формальностей.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+  - cambodia_angkor_wat.jpg
+  - cambodia_phnom_penh_riverside.jpg
+  - cambodia_tonle_sap.jpg
+  - cambodia_kampot_river.jpg
+  - cambodia_koh_rong.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+  center: [12.5657, 104.9910]
+  zoom: 6',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Камбоджа расположена в тропическом климатическом поясе и имеет муссонный климат с выраженной сезонностью. Температуры круглый год остаются высокими, редко опускаясь ниже +20 °C.
+
+### Сезоны
+- Сухой сезон: ноябрь — апрель (лучшее время для путешествий и проживания)
+- Сезон дождей: май — октябрь (высокая влажность, тропические ливни)
+
+Самые комфортные месяцы — декабрь и январь. В апреле может быть экстремальная жара.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'history',
+  'ru',
+  'История',
+  'История Камбоджи насчитывает более двух тысяч лет. В IX–XV веках здесь существовала могущественная Кхмерская империя Ангкор, оставившая после себя один из величайших архитектурных комплексов мира — Ангкор-Ват.
+
+В XIX веке страна стала частью Французского Индокитая, а в 1953 году обрела независимость. Самым трагическим периодом XX века стал режим «красных кхмеров» (1975–1979), приведший к гибели миллионов людей и разрушению общества.
+
+С начала 1990-х годов Камбоджа восстанавливается, сохраняя монархию и постепенно развивая экономику. Сегодня страна сочетает память о прошлом с ориентацией на будущее.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'geography',
+  'ru',
+  'География',
+  'Камбоджа расположена в южной части полуострова Индокитай. Основу рельефа составляет центральная равнина реки Меконг и озера Тонлесап — крупнейшего пресноводного озера ЮВА.
+
+На юго-западе находятся Кардамоновые горы и побережье Сиамского залива с островами. Северо-восток страны — более прохладные и малонаселённые плато с джунглями и водопадами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'culture',
+  'ru',
+  'Культура',
+  'Культура Камбоджи глубоко связана с буддизмом тхеравады, который исповедует большинство населения. Пагоды являются центрами духовной и социальной жизни.
+
+Национальное искусство включает танцы апсара, кхмерскую музыку, резьбу по дереву и ткачество шёлка. Несмотря на исторические трагедии, кхмерская культура сохранила свою целостность и продолжает активно развиваться.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'living',
+  'ru',
+  'Проживание',
+  'Камбоджа предлагает широкий выбор жилья: от бюджетных гестхаусов до современных апартаментов и вилл. В провинциальных городах аренда значительно дешевле, чем в столице.
+
+Страна популярна для долгосрочного проживания благодаря низким расходам, простоте аренды и гибкости условий. Иностранцы чаще арендуют жильё, чем покупают недвижимость.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'visas',
+  'ru',
+  'Визы',
+  'Камбоджа известна одним из самых лояльных визовых режимов в регионе.
+
+Граждане РФ и большинства стран могут получить визу по прибытии или электронную визу сроком на 30 дней. Также доступна ординарная (E-class) виза с возможностью продления на 6 или 12 месяцев, популярная среди экспатов и digital nomads.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'business',
+  'ru',
+  'Бизнес',
+  'Экономика Камбоджи развивается за счёт туризма, швейной промышленности, строительства и сельского хозяйства. Страна открыта для иностранных инвестиций, регистрация бизнеса относительно проста.
+
+Популярные направления для малого бизнеса: кафе, гостиницы, сервисы для экспатов, агротуризм. При этом следует учитывать риски, связанные с бюрократией и слабой правовой системой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '- Здравствуйте — Suosdei
+- Спасибо — Aw khun
+- Пожалуйста — Saum
+- Извините — Som toh
+- Сколько стоит? — Thlai pohnmaan?
+- Где находится …? — Nau ae na …?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+  source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/kh tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/cambodia/country-cambodia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'kh',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+  enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

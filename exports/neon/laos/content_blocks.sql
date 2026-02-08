@@ -4159,3 +4159,1665 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 73
+
+-- city/lpq tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'overview',
+  'ru',
+  'Обзор',
+  'Луангпхабанг — культурная и духовная столица Лаоса, бывшая королевская резиденция и объект Всемирного наследия ЮНЕСКО. Город расположен в живописной долине у слияния рек Меконг и Нам Кхан и известен своей гармоничной архитектурой, буддийскими храмами и спокойной атмосферой.
+
+Луангпхабанг считается одним из самых красивых и аутентичных городов Юго-Восточной Азии. Он идеально подходит для неспешных путешествий, культурного туризма, зимовки и глубокого знакомства с лаосским образом жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-town
+    title: Старый город
+    description: Исторический центр между реками Меконг и Нам Кхан с храмами, музеями и колониальной застройкой.
+  - id: nam-khan
+    title: Район Нам Кхан
+    description: Спокойный район вдоль одноимённой реки с гестхаусами и эко-отелями.
+  - id: new-town
+    title: Новый город
+    description: Более современная часть с рынками, локальной жизнью и транспортными узлами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Луангпхабанг предлагает разнообразные варианты размещения: гестхаусы, бутик-отели, эко-лоджи и небольшие гостиницы в колониальных зданиях. Большинство жилья сосредоточено в Старом городе и вдоль рек.
+
+Цены остаются доступными по меркам региона, однако в высокий сезон (ноябрь–февраль) рекомендуется бронировать заранее. Город подходит как для краткосрочного отдыха, так и для спокойного длительного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Город славится сочетанием лаосской и французской кухни. Здесь много уютных кафе, пекарен и ресторанов с видом на реку. Популярны блюда из липкого риса, лап (ляп), супы с лапшой и свежая речная рыба.
+
+Особое место занимает кофе с плато Болавен и французская выпечка. Вечером работают уличные лавки и фудкорты, особенно в районе ночного рынка.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, большинство достопримечательностей находится в пешей доступности. Основные виды транспорта — тук-туки, мототакси и сонгтэо.
+
+В Луангпхабанге расположен международный аэропорт, принимающий рейсы из Вьентьяна, Бангкока и других городов региона. Также доступны автобусные маршруты и речные поездки по Меконгу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Лучшее время для посещения — сухой сезон с ноября по февраль, когда температура комфортная и осадков минимум.
+
+С марта по апрель жарко, температура может достигать +35 °C. С мая по октябрь продолжается сезон дождей, при этом природа становится особенно зелёной и живописной.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Главные торговые точки — утренний рынок (Morning Market) и ночной рынок на улице Sisavangvong. Здесь продаются продукты, ремесленные изделия, текстиль, картины и сувениры.
+
+Также в городе есть небольшие магазины и лавки с изделиями местных мастеров, лаосским кофе и натуральной косметикой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Луангпхабанге спокойная и камерная. Популярны лаунж-бары, кафе у реки и несколько туристических баров с живой музыкой.
+
+Большинство заведений закрывается до полуночи. Город больше ориентирован на вечерние прогулки и атмосферный отдых, чем на клубные развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - first_time
+  - cultural_travel
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Луангпхабанг считается одним из самых безопасных городов Лаоса. Основные рекомендации — соблюдать дресс-код при посещении храмов и уважать местные традиции.
+
+Наличные деньги необходимы, так как банковские карты принимаются ограниченно. Интернет доступен в отелях и кафе, мобильная связь стабильна в пределах города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lpq tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-luang-prabang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lpq',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Луангпхабанг остаётся доступным направлением. Средняя стоимость обеда — 2–4 USD, ужина в ресторане — 5–8 USD.
+
+Проживание в гестхаусе начинается от 15–25 USD за ночь, в бутик-отеле — от 40–70 USD. Комфортный дневной бюджет составляет 20–30 USD.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'overview',
+  'ru',
+  'Обзор',
+  'Паксе — главный город южного Лаоса и административный центр провинции Чампасак. Город расположен у слияния рек Меконг и Се Дон и служит ключевыми «воротами» к плато Болавен, храмовому комплексу Ват Пху и региону «4000 островов».
+
+Паксе менее туристический, чем города севера, и больше ориентирован на транзит, деловые поездки и экотуризм. Он подходит для спокойного проживания, изучения юга страны и поездок по природным и историческим достопримечательностям региона.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр города
+    description: Административная часть с рынками, кафе, отелями и основными городскими сервисами.
+  - id: riverside
+    title: Район у Меконга
+    description: Прибрежная зона с ресторанами, прогулочными маршрутами и видом на реку.
+  - id: suburbs
+    title: Окраины и пригороды
+    description: Более спокойные жилые районы и отправная точка к плато Болавен.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Паксе представлен умеренный выбор жилья: гестхаусы, небольшие отели и несколько гостиниц среднего уровня. Большинство вариантов ориентировано на путешественников, направляющихся к плато Болавен или в регион 4000 островов.
+
+Цены остаются доступными, а длительное проживание возможно за счёт невысокой стоимости аренды и базовых услуг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Паксе сочетает лаосские, тайские и вьетнамские традиции. В городе много уличных кафе, рынков и небольших ресторанов с местными блюдами.
+
+Популярны блюда из риса, рыбы и овощей, а также кофе с плато Болавен. Европейская кухня представлена ограниченно и в основном в туристических заведениях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'transport',
+  'ru',
+  'Транспорт',
+  'В Паксе расположен международный аэропорт, выполняющий рейсы в Вьентьян и соседние страны. Автобусное сообщение связывает город с другими регионами Лаоса и Камбоджей.
+
+По городу передвигаются на тук-туках и мотобайках. Для поездок к водопадам и плато Болавен часто арендуют мотобайк или автомобиль.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат южного Лаоса более жаркий и влажный. Лучшее время для посещения — сухой сезон с ноября по март.
+
+В сезон дождей (июнь–сентябрь) ландшафты становятся особенно зелёными, но некоторые дороги и трекинговые маршруты могут быть труднодоступны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные торговые точки — городские рынки, где продаются продукты, специи, текстиль и изделия местных ремесленников. Также работают небольшие магазины и супермаркеты.
+
+Из региона часто привозят кофе с плато Болавен, специи и изделия из дерева.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Паксе развита слабо. Вечером открыты несколько баров и кафе, в основном ориентированных на туристов и местных жителей.
+
+Город не является клубным направлением и подходит для спокойного вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - eco_travel
+  - nature_routes
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Паксе считается безопасным городом с низким уровнем преступности. Основные сложности могут быть связаны с жарким климатом и дорожными условиями при поездках за город.
+
+Наличные деньги необходимы, банковские карты принимаются ограниченно. Интернет доступен, но скорость может снижаться за пределами центра.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pkz tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-pakse.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pkz',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Паксе остаётся бюджетным направлением. Средняя стоимость обеда — 1–3 USD, ужина — 3–6 USD.
+
+Проживание в гестхаусе начинается от 8–15 USD за ночь, в отеле среднего уровня — от 25–50 USD. Дневной бюджет составляет 15–25 USD.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'overview',
+  'ru',
+  'Обзор',
+  'Саваннакхет — крупнейший город юго-восточного Лаоса и важный приграничный центр на берегу Меконга, напротив тайского города Мукдахан. Город играет ключевую роль в торговле, логистике и трансграничном сообщении между Лаосом и Таиландом.
+
+В отличие от туристических центров страны, Саваннакхет ориентирован на повседневную жизнь, бизнес и региональное взаимодействие. Он интересен путешественникам, желающим увидеть нетуристический Лаос и почувствовать атмосферу провинциального города с колониальным наследием.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-town
+    title: Старый город
+    description: Исторический центр с французской колониальной архитектурой и административными зданиями.
+  - id: riverside
+    title: Набережная Меконга
+    description: Прибрежная зона с прогулочными маршрутами, рынками и кафе.
+  - id: residential
+    title: Жилые районы
+    description: Спокойные кварталы с локальной инфраструктурой и рынками.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Выбор жилья в Саваннакхете ограничен, но достаточен для краткосрочного пребывания. В городе есть гестхаусы, небольшие отели и несколько гостиниц среднего уровня.
+
+Цены ниже, чем в туристических городах Лаоса. Город подходит для транзитных остановок, деловых поездок и спокойного проживания без туристической суеты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Саваннакхета сочетает лаосские, тайские и китайские традиции. В городе популярны уличные рынки и небольшие семейные рестораны.
+
+На набережной и в центре можно найти кафе с блюдами тайской кухни, морепродуктами и местными специалитетами. Европейская кухня представлена минимально.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Саваннакхет связан с Таиландом мостом Дружбы через Меконг. Автобусные маршруты соединяют город с Вьентьяном, Паксе и другими регионами Лаоса.
+
+В городе передвигаются на тук-туках и мототакси. Пешие прогулки по центру удобны благодаря компактным размерам города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат жаркий и тропический. Лучшее время для посещения — сухой сезон с ноября по февраль, когда температура более комфортна.
+
+С марта по май стоит сильная жара, а в сезон дождей (июнь–сентябрь) возможны ливни и повышение уровня Меконга.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные покупки совершаются на локальных рынках и ночных базарах вдоль набережной. Здесь продаются продукты, текстиль, специи и недорогие товары из Таиланда.
+
+Благодаря близости границы, жители и гости часто ездят за покупками в Мукдахан на тайской стороне.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Саваннакхете спокойная и ориентирована на местных жителей. Работают несколько баров, кафе и караоке-заведений.
+
+Клубной сцены практически нет. Основной формат вечернего отдыха — прогулки по набережной и посещение рынков.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - border_travel
+  - local_life
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Саваннакхет считается безопасным городом. Основные особенности связаны с жарким климатом и левосторонним движением.
+
+Наличные деньги необходимы, карты принимаются ограниченно. Интернет доступен, но качество соединения может варьироваться.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/svk tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-savannakhet.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'svk',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Саваннакхет остаётся доступным по стоимости. Обед в кафе стоит 1–3 USD, ужин — 3–6 USD.
+
+Проживание в гестхаусе начинается от 8–15 USD за ночь, в отеле — от 25–50 USD. Средний дневной бюджет составляет 15–25 USD.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'overview',
+  'ru',
+  'Обзор',
+  'Ванг Вьенг — небольшой город в центральном Лаосе, расположенный среди карстовых гор и рисовых полей на реке Нам Сонг. Он известен своими природными ландшафтами, пещерами, смотровыми площадками и возможностями для активного отдыха.
+
+Ранее город ассоциировался с шумной бэкпекерской тусовкой, однако в последние годы Ванг Вьенг трансформировался в спокойное направление для экотуризма, трекинга и неспешных путешествий на природе.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: town-center
+    title: Центр города
+    description: Туристический центр с гестхаусами, кафе, прокатами байков и тур-офисами.
+  - id: riverside
+    title: Район у реки Нам Сонг
+    description: Зона отелей, бунгало и кафе с видами на реку и горы.
+  - id: outskirts
+    title: Окрестности и деревни
+    description: Сельские районы с рисовыми полями, пещерами и трекинговыми маршрутами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Ванг Вьенг предлагает большой выбор бюджетного жилья: хостелы, гестхаусы, бунгало у реки и небольшие отели. Большинство вариантов ориентировано на путешественников и любителей активного отдыха.
+
+Цены остаются низкими по сравнению с другими туристическими направлениями региона. В высокий сезон рекомендуется бронировать заранее, особенно жильё с видом на реку или горы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'В городе много недорогих кафе, ориентированных на туристов, включая вегетарианские и веганские заведения. Помимо лаосской кухни, широко представлены тайские и западные блюда.
+
+Популярны фреши, смузи, блюда из риса и лапши, а также выпечка. Многие кафе имеют открытые террасы с видом на карстовые пейзажи.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные способы передвижения — пешком, на велосипеде или арендованном мотобайке. Также доступны тук-туки и сонгтэо для поездок к пещерам и смотровым площадкам.
+
+Ванг Вьенг расположен на трассе между Вьентьяном и Луангпхабангом. Автобусы и минивэны регулярно связывают город с другими регионами страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Лучшее время для посещения — сухой сезон с ноября по март, когда дороги доступны, а трекинг наиболее комфортен.
+
+В сезон дождей (май–октябрь) часть грунтовых дорог может быть размыта, но природа становится особенно зелёной и фотогеничной.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Ванг Вьенге ограничен. В центре города работают сувенирные лавки, магазины с туристическим снаряжением и небольшие рынки.
+
+Основные покупки — изделия местных ремесленников, одежда, аксессуары для трекинга и продукты первой необходимости.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и неагрессивная. Вечером работают бары и кафе с живой музыкой, настольными играми и неформальной атмосферой.
+
+Клубов и шумных вечеринок практически нет. Основной формат — вечерние посиделки с видом на горы или реку.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - adventure_travel
+  - eco_tourism
+  - backpacker',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Ванг Вьенг считается безопасным городом, однако при активных развлечениях важно соблюдать осторожность. Трекинг и поездки в пещеры лучше совершать в хорошую погоду.
+
+Мотобайки следует арендовать только при наличии опыта. Наличные деньги необходимы, банкоматы есть в центре города, но карты принимаются ограниченно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vvg tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vang-vieng.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vvg',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Ванг Вьенг — одно из самых бюджетных направлений Лаоса. Стоимость обеда в кафе — 1–3 USD, ужина — 3–6 USD.
+
+Проживание в гестхаусе начинается от 8–15 USD за ночь, в отеле — от 25–40 USD. Средний дневной бюджет составляет 15–25 USD.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'overview',
+  'ru',
+  'Обзор',
+  'Вьентьян — столица Лаоса и один из самых спокойных столичных городов Юго-Восточной Азии. Город расположен на берегу реки Меконг и отличается неспешным ритмом жизни, невысокой застройкой и выраженным французским колониальным наследием.
+
+В отличие от шумных мегаполисов региона, Вьентьян больше похож на крупный провинциальный город. Он подходит для размеренного путешествия, длительного проживания, зимовки и знакомства с культурой Лаоса без перегрузки туристической инфраструктурой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: chanthabuly
+    title: Чантхабули
+    description: Центральный район с храмами, рынками, набережной и административными зданиями.
+  - id: xaysetha
+    title: Сайсетха
+    description: Дипломатический и деловой район, где расположены посольства и крупные отели.
+  - id: sisattanak
+    title: Сисаттанак
+    description: Жилой район с локальными рынками и более спокойной атмосферой.
+  - id: sikhottabong
+    title: Сикхоттабонг
+    description: Западная часть города с аэропортом и смешанной застройкой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Во Вьентьяне представлен широкий выбор жилья: от бюджетных гестхаусов и хостелов до отелей международных сетей и сервисных апартаментов. Большинство вариантов сосредоточено в центральных районах и вдоль набережной Меконга.
+
+Цены на жильё ниже, чем в соседних столицах региона. Город подходит для долгосрочной аренды, особенно для тех, кто ищет спокойную среду без суеты мегаполиса.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Вьентьян — гастрономический центр Лаоса. Здесь представлены как традиционные лаосские блюда, так и тайская, вьетнамская и французская кухни. Широко распространены уличные кафе и семейные рестораны.
+
+Популярные блюда: лап (острый мясной салат), кхао нияо (липкий рис), супы с лапшой и блюда из рыбы Меконга. В городе много кофеен с зерном с плато Болавен, а также пекарен с французским влиянием.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Общественный транспорт развит слабо и представлен автобусами и маршрутками. Основные способы передвижения — тук-туки, такси и мототакси. Стоимость поездок низкая, но цены часто оговариваются заранее.
+
+В городе расположен международный аэропорт Wattay, откуда выполняются рейсы в Таиланд, Вьетнам и другие страны региона. Пешие прогулки по центру города удобны благодаря компактным расстояниям.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Сухой сезон длится с ноября по апрель и считается лучшим временем для посещения города. В это время температура комфортная, а осадки минимальны.
+
+С мая по октябрь продолжается сезон дождей с высокой влажностью и кратковременными ливнями. Самые жаркие месяцы — март и апрель, когда температура может превышать +35 °C.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основное место для покупок — рынок Talat Sao (утренний рынок), где продаются сувениры, текстиль, электроника и продукты. Рядом расположен торговый центр Talat Sao Mall с супермаркетом и фудкортом.
+
+По вечерам работает ночной рынок на набережной Меконга, где можно купить уличную еду, фрукты и недорогие сувениры.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь во Вьентьяне спокойная и ненавязчивая. Большинство баров и кафе сосредоточено вдоль набережной и в центральных районах.
+
+Популярны лаунж-бары с живой музыкой, небольшие пабы и рестораны. Клубная сцена развита слабо, большинство заведений закрывается до полуночи.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - first_time
+  - slow_travel
+  - wintering',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Вьентьян считается безопасным городом с низким уровнем преступности. Основные риски связаны с дорожным движением и жарким климатом. Рекомендуется соблюдать осторожность при аренде мотобайков и следить за гидратацией.
+
+Карты принимаются не везде, поэтому наличные лаосские кипы необходимы. Интернет и мобильная связь доступны, но скорость может быть нестабильной за пределами центра.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/vte tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/city-vientiane.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'vte',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Вьентьян — один из самых недорогих столичных городов региона. Средняя стоимость обеда в кафе — 1–3 USD, ужина в ресторане среднего уровня — 4–7 USD.
+
+Аренда жилья начинается от 300–600 USD в месяц за квартиру. Дневной бюджет путешественника составляет примерно 20–30 USD без учёта экскурсий.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'overview',
+  'ru',
+  'Обзор',
+  'Лаос — спокойная и аутентичная страна Юго-Восточной Азии без выхода к морю, известная горными пейзажами, тропическими лесами и медленным ритмом жизни. Это одно из наименее урбанизированных государств региона, где традиционная культура и природа сохранились в почти первозданном виде.
+
+Страна привлекает путешественников, уставших от массового туризма: здесь ценят тишину, буддийскую философию, неспешные прогулки вдоль Меконга и близость к джунглям. Лаос подходит для осознанных путешествий, зимовки, экотуризма и культурного погружения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+
+* laos_hero_mekong.jpg
+* laos_luang_prabang_temple.jpg
+* laos_kuang_si_waterfall.jpg
+* laos_4000_islands.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+center: [18.0, 105.0]
+zoom: 6',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Климат Лаоса тропический муссонный с выраженной сезонностью. Выделяют два основных сезона: сухой и дождливый.
+
+### Сезоны
+
+* Сухой сезон: ноябрь — апрель (лучшее время для путешествий)
+* Сезон дождей: май — октябрь (обильные ливни, высокая влажность)
+
+Средние температуры колеблются от +20 °C зимой до +35–40 °C весной. В горных районах ночи могут быть прохладными.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'history',
+  'ru',
+  'История',
+  'История Лаоса как государства начинается в XIV веке с образования королевства Лансанг — «Королевства миллиона слонов», основанного королём Фа Нгумом. В течение нескольких веков Лансанг был одним из ключевых политических и культурных центров региона.
+
+В XVIII веке королевство распалось, а в конце XIX века Лаос вошёл в состав Французского Индокитая. После Второй мировой войны страна получила формальную независимость, однако длительная гражданская война завершилась приходом к власти коммунистического движения в 1975 году.
+
+С конца 1980-х годов Лаос проводит экономические реформы, сочетая социалистическую модель управления с элементами рыночной экономики. Сегодня страна является членом АСЕАН и постепенно открывается международному туризму и инвестициям.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'geography',
+  'ru',
+  'География',
+  'Лаос расположен в центре Индокитайского полуострова и не имеет выхода к морю. Большую часть территории занимают горы и плато, покрытые тропическими лесами. Долина реки Меконг — ключевая природная и экономическая ось страны.
+
+Более двух третей территории покрыто лесами. В стране множество национальных парков, водопадов, пещер и рек. География Лаоса делает его одним из самых «зелёных» государств региона.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'culture',
+  'ru',
+  'Культура',
+  'Культура Лаоса тесно связана с тхеравадинским буддизмом, который определяет образ жизни, архитектуру и повседневные ритуалы. Важное место занимают монастыри, утренние подаяния монахам и религиозные фестивали.
+
+Наряду с буддизмом сохраняются анимистические и шаманские традиции. Народные танцы, музыка с инструментом кхен, ремёсла и традиционная одежда (сину) остаются частью повседневной культуры.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'living',
+  'ru',
+  'Проживание',
+  'В Лаосе представлен широкий выбор жилья — от бюджетных гестхаусов и хостелов до бутик-отелей и эко-лоджей. В туристических городах цены остаются одними из самых низких в ЮВА.
+
+Аренда квартир доступна в основном в Вьентьяне и Луангпхабанге. Лаос подходит как для краткосрочного путешествия, так и для длительного проживания в спокойном режиме.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'visas',
+  'ru',
+  'Визы',
+  'Граждане России могут находиться в Лаосе без визы до 30 дней. Также доступна виза по прибытии и электронная виза сроком до 30 дней.
+
+Для долгосрочного пребывания предусмотрены бизнес‑ и учебные визы. Паспорт должен быть действителен не менее 6 месяцев с даты въезда.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'business',
+  'ru',
+  'Бизнес',
+  'Экономика Лаоса развивается за счёт гидроэнергетики, сельского хозяйства, туризма и добывающих отраслей. Страна экспортирует электроэнергию соседям и активно развивает инфраструктуру.
+
+Для малого бизнеса интересны сферы туризма, общепита, образования и сервисов. При этом рынок остаётся ограниченным, а иностранное участие регулируется государством.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '* Здравствуйте — Саба́йди
+* Спасибо — Кхоп чай
+* Пожалуйста — Калуна
+* Извините — Кхау тод
+* Где находится …? — … ю си?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/la tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/laos/country-laos.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'la',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

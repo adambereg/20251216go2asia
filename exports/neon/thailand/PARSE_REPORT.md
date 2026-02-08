@@ -160,3 +160,70 @@
 - Koh Samui -> `usm`
 - Hua Hin -> `hhn`
 - Ayutthaya -> `aya`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `thailand`
+**Resolver mode:** `neon`
+
+- **Files processed**: 8
+- **Blocks created**: 97
+- **By entity_type**: country=13, city=84
+
+### Resolved city IDs
+- OK RESOLVE city: th/bangkok/bangkok -> bkk (strategy=title)
+- OK RESOLVE city: th/chiang-mai/chiang-mai -> cnx (strategy=title)
+- OK RESOLVE city: th/krabi/krabi -> kbi (strategy=title)
+- OK RESOLVE city: th/pattaya/pattaya -> pty (strategy=title)
+- OK RESOLVE city: th/phuket/phuket -> phk (strategy=slug)
+
+### Unresolved city IDs
+- FALLBACK OVERRIDE city -> hhn (reason=No match by id/slug/title/fuzzy): th/hua-hin/hua-hin (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-hua-hin.md)
+- FALLBACK OVERRIDE city -> usm (reason=No match by id/slug/title/fuzzy): th/samui/samui (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-samui.md)
+
+### Distribution by tab_key
+- accommodation: 7
+- budget: 7
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 7
+- food: 7
+- gallery: 1
+- geography: 1
+- guides: 7
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 7
+- overview: 8
+- phrasebook: 1
+- reviews: 8
+- shopping: 7
+- tips: 7
+- transport: 7
+- visas: 1
+- weather: 8
+
+### Skipped (missing/empty)
+- (нет)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-bangkok.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-chiang-mai.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-hua-hin.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-krabi.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-pattaya.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-phuket.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\city-samui.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\country-thailand.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\thailand\country-thailand.md)
+
+### Warnings
+- (нет)
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

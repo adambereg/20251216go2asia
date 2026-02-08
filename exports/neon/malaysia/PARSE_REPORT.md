@@ -113,3 +113,68 @@
 - Langkawi -> `lgk`
 - Melaka -> `mkz`
 - Kota Kinabalu -> `bki`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `malaysia`
+**Resolver mode:** `neon`
+
+- **Files processed**: 7
+- **Blocks created**: 85
+- **By entity_type**: country=13, city=72
+
+### Resolved city IDs
+- OK RESOLVE city: my/kuala-lumpur/kuala-lumpur -> kll (strategy=slug)
+- OK RESOLVE city: my/langkawi/langkawi -> lgk (strategy=slug)
+- OK RESOLVE city: my/malacca/malacca -> mlk (strategy=title)
+- OK RESOLVE city: my/penang/penang -> png (strategy=slug)
+
+### Unresolved city IDs
+- WARN UNRESOLVED city (no Neon match, no override; reason=No match by id/slug/title/fuzzy): my/johor-bahru/johor-bahru (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-johor-bahru.md)
+- FALLBACK OVERRIDE city -> bki (reason=No match by id/slug/title/fuzzy): my/kota-kinabalu/kota-kinabalu (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-kota-kinabalu.md)
+
+### Distribution by tab_key
+- accommodation: 6
+- budget: 6
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 6
+- food: 6
+- gallery: 1
+- geography: 1
+- guides: 6
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 6
+- overview: 7
+- phrasebook: 1
+- reviews: 7
+- shopping: 6
+- tips: 6
+- transport: 6
+- visas: 1
+- weather: 7
+
+### Skipped (missing/empty)
+- (нет)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-johor-bahru.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-kota-kinabalu.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-kuala-lumpur.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-langkawi.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-malacca.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-penang.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\country-malaysia.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\country-malaysia.md)
+
+### Warnings
+- CITY_ID_UNRESOLVED: file=E:\projects\work_go2asia\20251216go2asia\content\atlas\malaysia\city-johor-bahru.md country_id=my md.id=johor-bahru slug=johor-bahru title="Джохор-Бару" reason=No match by id/slug/title/fuzzy
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

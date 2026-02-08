@@ -4302,3 +4302,1657 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 71
+
+-- city/dps tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'overview',
+  'ru',
+  'Обзор',
+  'Денпасар — административная столица острова Бали и крупнейший город провинции. В отличие от курортных районов, он отражает повседневную жизнь балийцев: рынки, школы, государственные учреждения и транспортные узлы.
+
+Для большинства путешественников Денпасар — это ворота на Бали (здесь расположен международный аэропорт), а для экспатов — практическая база с больницами, торговыми центрами и сервисами. Город редко выбирают ради отдыха, но он играет ключевую роль в жизни острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: renon
+    title: Ренон
+    description: Административный и культурный район с парками, музеями и правительственными зданиями.
+  - id: sanur
+    title: Санур
+    description: Спокойный прибрежный район, популярный у семей и долгосрочных экспатов.
+  - id: sesetan
+    title: Сесетан
+    description: Жилой район с локальными рынками и традиционной застройкой.
+  - id: panjer
+    title: Панжер
+    description: Центральная городская зона с магазинами, школами и медицинскими учреждениями.
+  - id: west-denpasar
+    title: Западный Денпасар
+    description: Смешанная жилая и коммерческая зона с рынками и складами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Денпасаре преобладают частные дома, гестхаусы и небольшие апартаменты. Жильё здесь дешевле, чем в курортных районах Бали, но менее ориентировано на туристический комфорт.
+
+Экспаты чаще используют Денпасар как функциональную базу, предпочитая жить в Сануре, Убуде, Чангу или Семиньяке, приезжая в город по делам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Денпасара ориентирована на местных жителей. Здесь много варунгов с балийской и индонезийской кухней, рынков с уличной едой и семейных кафе.
+
+В туристических районах (Санур) представлены кафе и рестораны с интернациональной кухней, но в целом город не считается гастрономическим центром острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Денпасар — транспортный узел Бали. Через город проходят основные дороги, соединяющие аэропорт с курортными районами острова.
+
+Основные способы передвижения — мотобайки, такси и сервисы Grab и Gojek. Общественный транспорт развит слабо.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Температуры круглый год держатся в диапазоне +26…+32 °C.
+
+Сухой сезон длится примерно с апреля по октябрь и считается наиболее комфортным. Сезон дождей — с ноября по март, с кратковременными, но интенсивными ливнями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'В Денпасаре расположены крупные рынки и торговые центры, ориентированные на повседневные покупки: продукты, одежду, бытовые товары.
+
+Популярные места — центральные рынки и торговые комплексы, где закупаются местные жители и экспаты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в самом Денпасаре ограничена и спокойна. Большинство баров и клубов сосредоточено в курортных районах острова — Куте, Семиньяке и Чангу.
+
+Город ориентирован на семейный и рабочий ритм, а не на развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - bali_practical
+  - relocation_base
+  - local_life
+  - island_hub',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dps tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-denpasar.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dps',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Денпасар считается безопасным городом, однако движение на дорогах хаотичное, особенно в часы пик. Пешая инфраструктура развита слабо.
+
+Английский язык используется ограниченн',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'overview',
+  'ru',
+  'Обзор',
+  'Джакарта — столица и крупнейший мегаполис Индонезии, политический, экономический и финансовый центр страны. Это один из самых больших городов мира, агломерация которого насчитывает около 30 миллионов человек.
+
+Город представляет собой яркий контраст ультрасовременных деловых районов, колониального наследия и плотной городской застройки. Джакарта — не туристический рай, а рабочий мегаполис, где сосредоточены карьера, бизнес, образование и основные возможности страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: central-jakarta
+    title: Центральная Джакарта
+    description: Административное и историческое ядро с площадью Мердека, Монасом и музеями.
+  - id: south-jakarta
+    title: Южная Джакарта
+    description: Современный деловой и жилой район, популярный у экспатов и международных компаний.
+  - id: west-jakarta
+    title: Западная Джакарта
+    description: Китайский квартал, торговые районы и портовые зоны.
+  - id: north-jakarta
+    title: Северная Джакарта
+    description: Порт, набережные, старые районы и зона развлечений Анчол.
+  - id: east-jakarta
+    title: Восточная Джакарта
+    description: Жилые и промышленные районы с локальной жизнью.
+  - id: cbd-sudirman
+    title: CBD Судирман
+    description: Финансовый центр с небоскрёбами, офисами и элитными апартаментами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Джакарте представлен самый широкий рынок жилья в Индонезии: современные кондоминиумы, апартаменты в небоскрёбах, таунхаусы и частные дома в закрытых комплексах.
+
+Экспаты чаще выбирают Южную Джакарту и районы вдоль делового коридора Судирман. Цены выше, чем в других городах страны, но остаются доступными по мировым меркам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Джакарты чрезвычайно разнообразна. Здесь представлены кухни всех регионов Индонезии, а также китайская, японская, корейская, индийская и западная кухни.
+
+Уличная еда соседствует с ресторанами высокого уровня. Популярны фудкорты в торговых центрах, а также гастрономические улицы и ночные рынки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Транспортная система Джакарты включает метро (MRT), скоростные автобусы TransJakarta, пригородные поезда и такси. Несмотря на развитие инфраструктуры, пробки остаются серьёзной проблемой.
+
+Широко используются сервисы Grab и Gojek, включая мототакси, которые часто являются самым быстрым способом передвижения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный и влажный. Температура круглый год держится в пределах +27…+33 °C.
+
+Сезон дождей продолжается примерно с декабря по март и может сопровождаться сильными ливнями и локальными подтоплениями. Более сухой период — с июня по август.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Джакарта — главный торговый центр страны. Здесь находятся десятки крупных торговых центров, рынки и специализированные кварталы.
+
+Ассортимент варьируется от люксовых брендов до локальных товаров и ремесленных изделий.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Джакарты активна и разнообразна, но сосредоточена в отдельных районах и при отелях высокого класса.
+
+Работают клубы, бары, rooftop-лаунжи и концертные площадки. Алкоголь дорог из-за налогов, ночные заведения подчиняются строгим правилам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - relocation
+  - business_city
+  - expat_life
+  - urban_living',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Джакарта относительно безопасна, однако характерны мелкие кражи и проблемы с трафиком. Рекомендуется избегать пеших прогулок по малолюдным районам ночью.
+
+Английский язык широко используется в бизнесе и сфере услуг. Медицинская инфраструктура развита, но для сложных случаев часто обращаются в Сингапур или Малайзию.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/jkt tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-jakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'jkt',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Джакарта — самый дорогой город Индонезии. Комфортный бюджет одного человека составляет 1200–1800 USD в месяц.
+
+Аренда современной квартиры начинается от 400–600 USD, питание и транспорт при активной городской жизни обходятся дороже, чем в провинции.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'overview',
+  'ru',
+  'Обзор',
+  'Медан — крупнейший город острова Суматра и главный торговый центр северной части Индонезии. Город служит отправной точкой к природным достопримечательностям региона, таким как озеро Тоба и джунгли национального парка Гунунг-Лёсер.
+
+Медан не является классическим туристическим направлением, но интересен своей многонациональной культурой, насыщенной гастрономической сценой и аутентичной городской жизнью вне курортных шаблонов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр Медана
+    description: Историческая часть города с колониальной архитектурой, рынками и торговыми улицами.
+  - id: polonia
+    title: Полония
+    description: Более спокойный жилой район, популярный у экспатов и деловых гостей.
+  - id: kampung-madras
+    title: Кампунг Мадрас
+    description: Индийский квартал с храмами, ресторанами и этническими рынками.
+  - id: kesawan
+    title: Кесаван
+    description: Старый торговый район с колониальными зданиями и кафе.
+  - id: outskirts
+    title: Окрестности и пригороды
+    description: Жилые районы и транспортные коридоры в сторону природы и плантаций.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Рынок жилья в Медане доступен по цене и ориентирован на долгосрочное проживание. Здесь распространены апартаменты, частные дома и небольшие кондоминиумы.
+
+Экспаты и специалисты чаще выбирают районы с охраняемыми комплексами и более современной инфраструктурой. В целом уровень комфорта ниже, чем в Джакарте, но и расходы заметно меньше.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Медан считается одним из гастрономических центров Индонезии. Здесь сочетаются малайская, батакская, китайская и индийская кухни.
+
+Фирменные блюда региона — soto Medan, mie Aceh, nasi padang и разнообразные блюда с дурианом. Уличная еда и рынки играют важную роль в повседневной жизни города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные способы передвижения — онлайн-такси и мототакси Grab и Gojek. Общественный транспорт развит слабо и используется преимущественно местными жителями.
+
+Международный аэропорт Куаланаму связывает Медан с Джакартой, Сингапуром, Малайзией и другими направлениями. Город удобен как база для поездок по Суматре.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный, жаркий и влажный круглый год. Температура обычно держится в диапазоне +27…+34 °C.
+
+Наиболее дождливый период приходится на октябрь–декабрь. Более комфортное время для посещения — июнь–август.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Медане представлен торговыми центрами среднего уровня, рынками и специализированными кварталами.
+
+Особой популярностью пользуются рынки с продуктами, специями, кофе и фруктами, а также лавки с местными сладостями и батакскими тканями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Медане умеренная и сосредоточена в барах, кафе и rooftop-заведениях при отелях.
+
+Город ориентирован больше на гастрономические и социальные форматы отдыха, чем на клубную сцену.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - sumatra_gateway
+  - food_capital
+  - jungle_trips
+  - lake_toba',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Медан требует базовой осторожности: рекомендуется избегать малолюдных улиц ночью и внимательно относиться к личным вещам.
+
+Английский язык распространён ограниченно, но в отелях и туристических сервисах проблем с коммуникацией обычно нет.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mdn tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-medan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mdn',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Медан — один из самых дешёвых крупных городов Индонезии. Комфортный бюджет одного человека составляет 600–900 USD в месяц.
+
+Аренда жилья начинается от 200–350 USD, питание и транспорт обходятся очень недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'overview',
+  'ru',
+  'Обзор',
+  'Сурабая — второй по величине город Индонезии и главный порт Восточной Явы. Город известен как «город героев» за ключевую роль в борьбе за независимость в 1945 году и сегодня остаётся крупным промышленным, логистическим и торговым центром страны.
+
+Сурабая менее туристическая, чем Джакарта или Бали, но более упорядоченная и практичная для жизни и работы. Её выбирают специалисты по контрактам, инженеры, предприниматели и те, кому важна стабильная городская инфраструктура без избыточной суеты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: central-surabaya
+    title: Центр Сурабаи
+    description: Историческое ядро с колониальной архитектурой, торговыми улицами и деловыми объектами.
+  - id: west-surabaya
+    title: Западная Сурабая
+    description: Современные жилые районы, закрытые комплексы и торговые центры.
+  - id: south-surabaya
+    title: Южная Сурабая
+    description: Жилые кварталы, парки и университетские зоны.
+  - id: north-surabaya
+    title: Северная Сурабая
+    description: Портовые и старые районы, арабский и китайский кварталы.
+  - id: east-surabaya
+    title: Восточная Сурабая
+    description: Университеты, жилые массивы и мост на остров Мадура.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Рынок жилья в Сурабае разнообразен: апартаменты, кондоминиумы, таунхаусы и частные дома в охраняемых посёлках. Стоимость аренды заметно ниже, чем в Джакарте.
+
+Экспаты часто селятся в западных районах или рядом с деловыми кластерами. Город подходит для семей и долгосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Сурабаи отражает восточно-яванские традиции и отличается насыщенными, острыми вкусами. Фирменные блюда — rawon (чёрный говяжий суп) и sate klopo (сатэ с кокосовой стружкой).
+
+В городе много уличной еды, рынков и локальных ресторанов, а также современные кафе в торговых центрах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Общественный транспорт развит умеренно: автобусы и маршрутки дополняются онлайн-такси и мототакси Grab и Gojek.
+
+Сурабая имеет крупный международный аэропорт и железнодорожные связи с Джакартой, Йогьякартой и Бали. Город удобен как база для поездок к вулканам Бромо и Иджен.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, более жаркий и сухой, чем в западной Яве. Температуры часто достигают +33…+35 °C.
+
+Сезон дождей приходится на декабрь–март, но осадков обычно меньше, чем в Джакарте. Сухой сезон — с июня по сентябрь.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Сурабая — крупный торговый центр региона. Здесь расположены одни из самых больших торговых комплексов страны, рынки и оптовые центры.
+
+Ассортимент ориентирован на местных жителей и бизнес-покупки, цены умеренные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Сурабае сдержанная. Работают бары, караоке-клубы и несколько ночных клубов, в основном для местной публики и экспатов.
+
+Город больше ориентирован на семейный и деловой ритм, чем на развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - industrial_city
+  - business_hub
+  - east_java_gateway
+  - volcano_trips',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Сурабая считается относительно безопасным и более спокойным мегаполисом по сравнению с Джакартой. Английский язык используется ограниченно, но в деловой среде и отелях проблем обычно не возникает.
+
+Из-за жары кондиционирование воздуха и грамотный режим дня играют важную роль в комфорте жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sub tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-surabaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sub',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Сурабая дешевле Джакарты. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–500 USD, питание и транспорт остаются доступными.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'overview',
+  'ru',
+  'Обзор',
+  'Йогьякарта — культурная столица острова Ява и один из самых самобытных городов Индонезии. Это город султана, студентов, художников и исследователей традиционной яванской культуры. Здесь до сих пор действует султанат, а правитель играет важную роль в общественной жизни региона.
+
+Город известен близостью к величайшим храмовым комплексам страны — Боробудуру и Прамбанану, а также своим спокойным, дружелюбным ритмом жизни. Йогьякарта часто выбирается для длительного проживания, обучения и культурного погружения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: kraton
+    title: Кратон
+    description: Исторический центр города и резиденция султана, окружённая дворцовыми кварталами.
+  - id: malioboro
+    title: Малиоборо
+    description: Главная туристическая улица с рынками, магазинами и уличной жизнью.
+  - id: prawirotaman
+    title: Правайротаман
+    description: Популярный район среди иностранцев с гестхаусами, кафе и спокойной атмосферой.
+  - id: kotabaru
+    title: Котабару
+    description: Более современный район с европейской планировкой и административными зданиями.
+  - id: sleman
+    title: Слеман
+    description: Северные районы и университетская зона с более зелёной и жилой средой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Йогьякарта предлагает один из самых доступных рынков жилья в Индонезии. Здесь распространены частные дома, комнаты в гостевых домах и небольшие апартаменты.
+
+Город особенно популярен среди студентов, исследователей, фрилансеров и пенсионеров, ищущих спокойную и недорогую жизнь с культурной насыщенностью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Йогьякарты отражает традиционную яванскую кухню. Фирменным блюдом считается гудег — тушёный джекфрут в кокосовом молоке со сладким вкусом.
+
+В городе много варунгов, уличной еды и уютных кафе, ориентированных на студентов и иностранцев. Цены на питание одни из самых низких в стране.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, большинство перемещений осуществляется на мотобайке, велосипеде или с помощью онлайн-такси. Также действует автобусная система Trans Jogja.
+
+Железнодорожное сообщение связывает Йогьякарту с Джакартой, Сурабаей и другими городами Явы. Новый международный аэропорт расположен за пределами города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Температура в течение года держится в пределах +26…+32 °C.
+
+Сезон дождей продолжается с ноября по март. Лучшее время для посещения — сухой сезон с мая по сентябрь, когда осадков меньше и комфортнее для экскурсий.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Йогьякарта известна как центр батика, ремёсел и традиционного искусства. Основные покупки совершаются на улице Малиоборо и на городских рынках.
+
+Также в городе есть современные торговые центры, но шопинг здесь скорее культурный, чем коммерческий.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и камерная. В основном это бары, живые выступления, студенческие кафе и культурные мероприятия.
+
+Город не ориентирован на клубную сцену и подходит для размеренного вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - cultural_capital
+  - unesco_temples
+  - student_city
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Йогьякарта считается одним из самых безопасных и дружелюбных городов Индонезии. Английский язык распространён среди молодёжи и в туристической сфере.
+
+Город подходит для жизни без автомобиля, однако в жаркий сезон мотобайк остаётся самым удобным средством передвижения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/yog tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/city-yogyakarta.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'yog',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Йогьякарта — один из самых недорогих городов страны. Комфортный бюджет одного человека составляет 500–800 USD в месяц.
+
+Аренда жилья начинается от 150–300 USD, питание и транспорт обходятся очень дёшево.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'overview',
+  'ru',
+  'Обзор',
+  'Индонезия — крупнейшее государство Юго-Восточной Азии и самая большая островная страна мира, раскинувшаяся более чем на 17 000 островов между Индийским и Тихим океанами. Здесь сосуществуют мегаполисы и удалённые деревни, действующие вулканы и коралловые рифы, древние храмы и современные цифровые сообщества.
+
+Страна привлекает путешественников, экспатов и инвесторов благодаря низкой стоимости жизни, тёплому климату, богатой культуре и огромному разнообразию регионов. Индонезия подходит как для кратких путешествий, так и для длительного проживания, удалённой работы и релокации.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+  - indonesia_borobudur.jpg
+  - indonesia_bali_temple.jpg
+  - indonesia_komodo_dragons.jpg
+  - indonesia_bromo_volcano.jpg
+  - indonesia_raja_ampat.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+  center: [-2.5, 118.0]
+  zoom: 4',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Климат Индонезии экваториально-муссонный: жаркий и влажный круглый год, с минимальными сезонными колебаниями температуры.
+
+### Сезоны
+- Сухой сезон: май — сентябрь
+- Сезон дождей: октябрь — апрель
+
+Средние температуры держатся в диапазоне +26…+32 °C. В горных районах климат прохладнее, особенно ночью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'history',
+  'ru',
+  'История',
+  'История Индонезии насчитывает тысячелетия — от древних австронезийских поселений и индийско-буддийских царств Шривиджая и Маджапахит до исламизации архипелага и европейской колонизации.
+
+В XVII–XX веках страна находилась под властью Нидерландов как Нидерландская Ост-Индия. После японской оккупации во Второй мировой войне Индонезия провозгласила независимость 17 августа 1945 года.
+
+Современная Индонезия — демократическая республика и крупнейшая экономика ЮВА, входящая в G20, сочетающая быстрый рост с сохранением традиционного уклада жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'geography',
+  'ru',
+  'География',
+  'Индонезия расположена между материковой Азией и Австралией и состоит из пяти крупных регионов: Суматра, Ява, Калимантан (Борнео), Сулавеси и Папуа, а также тысяч малых островов.
+
+Страна известна активным вулканизмом (более 120 активных вулканов), густыми тропическими лесами, крупнейшими в мире коралловыми рифами и уникальным биоразнообразием.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'culture',
+  'ru',
+  'Культура',
+  'Индонезийская культура — это сплав малайских, индийских, китайских, арабских и европейских влияний. В стране проживает более 300 народностей и используется сотни языков и диалектов.
+
+Основная религия — ислам, однако на Бали доминирует индуизм, а в отдельных регионах распространено христианство и буддизм. Национальный девиз страны — «Единство в многообразии».',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'living',
+  'ru',
+  'Проживание',
+  'Индонезия предлагает широкий выбор жилья: от бюджетных комнат и апартаментов до вилл с бассейнами и современных кондоминиумов.
+
+Стоимость аренды и повседневных расходов остаётся одной из самых низких в Азии, особенно за пределами Джакарты и популярных районов Бали.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'visas',
+  'ru',
+  'Визы',
+  'Гражданам многих стран доступен безвизовый въезд или виза по прибытии на 30 дней с возможностью продления.
+
+Для долгосрочного проживания предусмотрены социальные визы, рабочие и семейные KITAS, пенсионные визы, а также программы Second Home и Golden Visa для инвесторов и состоятельных заявителей.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'business',
+  'ru',
+  'Бизнес',
+  'Индонезия обладает одним из самых крупных внутренних рынков в мире и активно привлекает иностранные инвестиции.
+
+Перспективные сферы: туризм, IT и стартапы, финтех, агробизнес, добыча ресурсов, образование и креативные индустрии. При этом бизнес-среда требует понимания местной бюрократии и партнёрств.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '- Здравствуйте — Halo / Selamat pagi
+- Спасибо — Terima kasih
+- Пожалуйста — Sama-sama
+- Извините — Maaf
+- Сколько стоит? — Berapa harganya?
+- Где находится …? — Di mana …?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+  source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/id tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/indonesia/country-indonesia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'id',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+  enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

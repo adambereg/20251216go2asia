@@ -62,3 +62,59 @@
 ## City ID mapping used
 
 - Singapore -> `sgp`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `singapore`
+**Resolver mode:** `neon`
+
+- **Files processed**: 2
+- **Blocks created**: 25
+- **By entity_type**: country=13, city=12
+
+### Resolved city IDs
+- OK RESOLVE city: sg/singapore/singapore -> sgp (strategy=slug)
+
+### Unresolved city IDs
+- (нет)
+
+### Distribution by tab_key
+- accommodation: 1
+- budget: 1
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 1
+- food: 1
+- gallery: 1
+- geography: 1
+- guides: 1
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 1
+- overview: 2
+- phrasebook: 1
+- reviews: 2
+- shopping: 1
+- tips: 1
+- transport: 1
+- visas: 1
+- weather: 2
+
+### Skipped (missing/empty)
+- (нет)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\singapore\city-singapore.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\singapore\country-singapore.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\singapore\country-singapore.md)
+
+### Warnings
+- (нет)
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

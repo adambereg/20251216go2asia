@@ -25,6 +25,7 @@
     "db:seed:atlas-places-kh": "tsx src/seedAtlasPlacesCambodia.ts",
     "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
     "db:export:places-neon": "tsx src/exportPlacesToNeon.ts",
+    "db:export:atlas-country-city-tabs-neon": "tsx src/exportAtlasCountryCityTabsToNeon.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -6249,3 +6249,2538 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 109
+
+-- city/dad tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'overview',
+  'ru',
+  'Обзор',
+  'Дананг — современный прибрежный город в центральном Вьетнаме, который часто называют одним из лучших городов страны для жизни. Он сочетает развитую инфраструктуру, чистоту, удобную планировку, длинные песчаные пляжи и более спокойный ритм по сравнению с мегаполисами.
+
+Город выступает важным логистическим и IT-хабом региона, а также популярным местом для релокации экспатов, семей и digital nomads. Дананг выгодно расположен между Хюэ и Хойаном, что усиливает его культурную и туристическую привлекательность.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: my-khe
+    title: Май Кхе
+    description: Прибрежный район с популярным пляжем, кондоминиумами и кафе, любимый экспатами.
+  - id: son-tra
+    title: Сон Ча
+    description: Полуостров и район с зелёными зонами, храмами и видами на море.
+  - id: hai-chau
+    title: Хай Чау
+    description: Центральный административный и деловой район с рынками и офисами.
+  - id: thanh-khe
+    title: Тхань Кхе
+    description: Жилой район с локальной жизнью и более доступной арендой.
+  - id: ngu-hanh-son
+    title: Нгу Хань Шон
+    description: Район Мраморных гор, курорты и близость к Хойану.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Дананге представлен широкий выбор жилья: апартаменты, кондоминиумы, сервисные квартиры и частные дома. Наиболее популярны районы у пляжа Май Кхе и вблизи центра.
+
+Стоимость аренды ниже, чем в Хошимине, и сопоставима или ниже, чем в Ханое. Город хорошо подходит для долгосрочного проживания благодаря сочетанию цены, качества и инфраструктуры.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Дананга сочетает центральную вьетнамскую кухню и интернациональные форматы. Популярны морепродукты, блюда с лапшой, а также кафе с западным меню.
+
+Кофейная культура и заведения для работы активно развиваются, особенно в районах, где живут экспаты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный и удобный для передвижения на мотобайке, велосипеде и такси. Трафик заметно спокойнее, чем в Хошимине и Ханое.
+
+Международный аэропорт Дананга находится в черте города и обеспечивает связи с внутренними и зарубежными направлениями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Сухой и солнечный период длится примерно с февраля по август.
+
+С сентября по ноябрь возможны тайфуны и сильные дожди. Зима мягкая, без холода, но более облачная.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг представлен рынками, торговыми центрами и супермаркетами. Ассортимент достаточен для повседневной жизни, но уступает Хошимину.
+
+Популярны рынки с морепродуктами и свежими продуктами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Дананге умеренная. Работают бары, лаунжи и кафе у моря, но город не ориентирован на клубные развлечения.
+
+Формат досуга — вечерние прогулки, рестораны и общение.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - best_city_to_live
+  - beach_life
+  - expat_relocation
+  - central_vietnam',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Дананг считается одним из самых безопасных и чистых городов Вьетнама. Английский язык широко используется в туристических и экспатских районах.
+
+Медицинская инфраструктура достаточна для повседневных нужд, за сложным лечением обращаются в Хошимин или Ханой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dad tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-da-nang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dad',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Дананг — один из самых сбалансированных по стоимости городов страны. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда квартиры начинается от 300–500 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'overview',
+  'ru',
+  'Обзор',
+  'Далат — горный город-курорт в центральных нагорьях Вьетнама, расположенный на высоте около 1500 метров над уровнем моря. Благодаря высоте и климату Далат резко отличается от остальной части страны: здесь прохладно, зелено и гораздо менее влажно.
+
+Город был основан французами как курорт и до сих пор сохраняет элементы европейской архитектуры, сосновые леса и размеренный ритм жизни. Далат популярен среди вьетнамцев, молодёжи, творческих людей и экспатов, ищущих спокойную жизнь вдали от жары и хаоса мегаполисов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр Далата
+    description: Район озера Суан Хыонг, рынков, кафе и городской инфраструктуры.
+  - id: old-villas
+    title: Французские виллы
+    description: Холмистые кварталы со старыми виллами, соснами и тихой атмосферой.
+  - id: ward-3
+    title: Район Ward 3
+    description: Жилой район с кафе, школами и более доступной арендой.
+  - id: outskirts
+    title: Окрестности Далата
+    description: Сельские и природные зоны с фермами, водопадами и теплицами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Далате представлены апартаменты, дома, гестхаусы и небольшие отели. Современных кондоминиумов немного, рынок жилья ориентирован на долгосрочную аренду и местных жителей.
+
+Стоимость проживания ниже, чем в крупных городах и курортах у моря. Далат подходит для спокойной жизни, удалённой работы и сезонного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Далата сочетает центрально-вьетнамскую кухню, уличную еду и современные кафе. Город известен кофейной культурой, десертами и фермерскими продуктами.
+
+Популярны блюда из овощей, горячие супы и street food, особенно актуальные в прохладную погоду.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, передвижение осуществляется на мотобайках и такси. Пешие прогулки возможны в центре, но рельеф холмистый.
+
+Далат связан автобусным сообщением с Хошимином и Нячангом. Аэропорт Льенкхыонг расположен примерно в 30 км от города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат субтропический горный. Температуры в течение года обычно держатся в диапазоне +15…+25 °C.
+
+Сезон дождей — с мая по октябрь, но дожди чаще кратковременные. В зимние месяцы вечерами бывает прохладно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Далате представлен рынками и небольшими магазинами. Город известен фермерскими продуктами, цветами, кофе и сувенирами.
+
+За крупными покупками обычно ездят в Хошимин или Нячанг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная. Основные активности — вечерние рынки, кафе, живая музыка и прогулки.
+
+Далат не ориентирован на клубную культуру и подходит для тихого образа жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - mountain_city
+  - cool_climate
+  - creative_life
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Далат считается безопасным и дружелюбным городом. Английский язык используется ограниченно, но в туристической среде проблем с коммуникацией обычно нет.
+
+Из-за климата рекомендуется тёплая одежда для вечеров и хорошая защита от дождя в сезон муссонов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dla tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-dalat.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dla',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Далат — один из самых доступных городов Вьетнама. Комфортный бюджет одного человека составляет 600–1000 USD в месяц.
+
+Аренда жилья начинается от 200–400 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'overview',
+  'ru',
+  'Обзор',
+  'Ханой — столица Вьетнама и его политическое, административное и культурное сердце. Это один из самых древних городов Юго-Восточной Азии, где современная жизнь тесно переплетена с тысячелетней историей, конфуцианскими традициями и социалистическим наследием.
+
+Ханой заметно отличается от Хошимина: он более сдержанный, традиционный и консервативный по ритму и менталитету. Город подходит тем, кто интересуется историей, культурой и «глубинным» Вьетнамом, но может потребовать большего времени на адаптацию.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-quarter
+    title: Старый квартал
+    description: Исторический центр с узкими улицами, рынками, уличной едой и туристической атмосферой.
+  - id: hoan-kiem
+    title: Хоан Кьем
+    description: Центральный район вокруг одноимённого озера, символ Ханоя.
+  - id: ba-dinh
+    title: Ба Динь
+    description: Политический и административный район с мавзолеем Хо Ши Мина и посольствами.
+  - id: tay-ho
+    title: Тай Хо (Западное озеро)
+    description: Главный экспатский район с кафе, виллами и более комфортной средой.
+  - id: dong-da
+    title: Донг Да
+    description: Плотнозаселённый жилой район с локальной жизнью и университетами.
+  - id: cau-giay
+    title: Кау Зяй
+    description: Современный район с офисами, IT-компаниями и новыми жилыми комплексами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Жильё в Ханое представлено апартаментами, кондоминиумами и частными домами. Экспаты чаще всего выбирают район Тай Хо и новые жилые комплексы в западной части города.
+
+Стоимость аренды ниже, чем в Хошимине, но комфорт сильно зависит от района и качества здания. В старых кварталах инфраструктура может быть менее современной.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Ханой считается родиной многих классических блюд вьетнамской кухни. Здесь особенно популярны фо, бунча, банькуон и уличная еда.
+
+Кафе и рестораны часто небольшие и локальные. В последние годы активно развивается кофейная культура и появляются современные заведения, особенно в районах Тай Хо и Хоан Кьем.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки, автобусы и такси. В последние годы активно развивается метро, но оно пока не покрывает весь город.
+
+Трафик плотный, особенно в центральных районах. Пешие прогулки возможны в отдельных зонах, но город в целом не очень удобен для ходьбы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат субтропический с выраженной сезонностью. В Ханое есть прохладная зима — редкость для Вьетнама.
+
+- Зима (декабрь–февраль): +10…+20 °C, сыро и прохладно  
+- Лето (май–сентябрь): жарко и влажно, дожди  
+
+Самое комфортное время — весна и осень.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Ханое представлен рынками, торговыми улицами и современными моллами. Ассортимент уступает Хошимину, но полностью закрывает бытовые потребности.
+
+Особенно популярны рынки с текстилем, сувенирами и ремесленными изделиями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Ханое спокойнее, чем в Хошимине. Основные активности сосредоточены вокруг Старого квартала и районов у озёр.
+
+Формат — бары, живая музыка, кафе и вечерние прогулки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - cultural_capital
+  - historic_city
+  - traditional_vietnam
+  - expat_north',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Ханой безопасен, но может показаться хаотичным и шумным. Зимой многие иностранцы испытывают дискомфорт из-за холода и влажности в домах без отопления.
+
+Английский язык распространён меньше, чем на юге, но в туристических и экспатских районах проблем с коммуникацией обычно нет.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/han tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hanoi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'han',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Ханой немного дешевле Хошимина. Комфортный бюджет одного человека составляет 800–1300 USD в месяц.
+
+Аренда квартиры начинается от 350–600 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'overview',
+  'ru',
+  'Обзор',
+  'Хошимин (бывший Сайгон) — крупнейший город Вьетнама и главный экономический мотор страны. Это финансовый, предпринимательский и стартап-хаб, где сосредоточены международные компании, IT-бизнес, сервисные индустрии и активное экспатское сообщество.
+
+Город отличается быстрым ритмом жизни, высокой плотностью населения и выраженной космополитичностью. Хошимин часто выбирают предприниматели, фрилансеры и digital nomads, которым важны возможности для заработка, нетворкинга и развития проектов в Азии.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: district-1
+    title: Район 1
+    description: Центральный деловой и туристический район с офисами, ресторанами и ночной жизнью.
+  - id: district-3
+    title: Район 3
+    description: Более спокойный центральный район с французской архитектурой и жилой застройкой.
+  - id: thao-dien
+    title: Thao Dien (Район 2)
+    description: Главный экспатский кластер с кондоминиумами, международными школами и кафе.
+  - id: phu-my-hung
+    title: Phu My Hung (Район 7)
+    description: Современный плановый район с парками, широкими улицами и бизнес-центрами.
+  - id: binh-thanh
+    title: Бинь Тхань
+    description: Смешанный район с доступным жильём и быстрым доступом к центру.
+  - id: tan-binh
+    title: Тан Бинь
+    description: Район рядом с аэропортом, удобный для логистики и краткосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Хошимин предлагает самый широкий выбор жилья во Вьетнаме: современные кондоминиумы, сервисные апартаменты и частные дома. Экспаты чаще всего селятся в районах Thao Dien, Phu My Hung и центральных округах.
+
+Стоимость аренды выше, чем в других городах страны, но остаётся конкурентоспособной по мировым меркам. Город подходит для долгосрочного проживания при активной деловой или профессиональной занятости.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Хошимина — одна из самых насыщенных в Азии. Здесь представлены кухни всех регионов Вьетнама, а также французская, японская, корейская, китайская и западная кухни.
+
+Уличная еда, кофейни и рестораны мирового уровня сосуществуют в одном пространстве. Кофейная культура особенно развита и является важной частью городской жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки, такси и сервисы Grab и Be. Общественный транспорт развивается: введены новые линии метро, но пробки остаются частью повседневной реальности.
+
+Международный аэропорт Таншоннят обеспечивает связи с Азией и другими регионами мира. Перелёты внутри страны широко используются из-за протяжённости Вьетнама.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, жаркий и влажный круглый год. Средние температуры держатся в диапазоне +26…+34 °C.
+
+Сухой сезон длится с декабря по апрель. Сезон дождей — с мая по ноябрь, дожди обычно кратковременные и идут во второй половине дня.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Хошимин — главный торговый центр страны. Здесь расположены крупные моллы, рынки и специализированные кварталы.
+
+Ассортимент включает международные бренды, электронику, локальные товары и ремесленные изделия.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Хошимина активная и разнообразная. Работают бары, клубы, rooftop-лаунжи и музыкальные площадки, особенно в Районе 1 и Thao Dien.
+
+Город ориентирован на социальную и деловую активность, встречи и нетворкинг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - business_city
+  - startup_hub
+  - digital_nomad
+  - expat_life',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Хошимин безопасен, но шумный и хаотичный. Основные сложности связаны с трафиком, жарой и уровнем шума.
+
+Английский язык широко используется в бизнесе и сфере услуг. Медицинская инфраструктура представлена международными клиниками и госпиталями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/sgn tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-ho-chi-minh.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'sgn',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Хошимин — самый дорогой город Вьетнама. Комфортный бюджет одного человека составляет 1000–1600 USD в месяц.
+
+Аренда современной квартиры начинается от 400–700 USD, расходы на питание и транспорт умеренные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'overview',
+  'ru',
+  'Обзор',
+  'Хойан — старинный торговый город в центральном Вьетнаме, объект Всемирного наследия ЮНЕСКО и один из самых атмосферных городов страны. Он известен хорошо сохранившейся архитектурой XV–XIX веков, узкими улицами, фонарями и медленным, созерцательным ритмом жизни.
+
+Хойан не является мегаполисом и не подходит для активного бизнеса, но идеально подойдёт для творчества, спокойного проживания, удалённой работы и культурного погружения. Город часто выбирают художники, фотографы, писатели и те, кто ищет «тихий Вьетнам».',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-town
+    title: Старый город
+    description: Исторический центр ЮНЕСКО с пешеходными улицами, храмами и домами купцов.
+  - id: an-hoi
+    title: Ан Хой
+    description: Островная часть рядом со Старым городом с кафе, барами и вечерней жизнью.
+  - id: cam-pho
+    title: Кам Фо
+    description: Жилой район рядом с центром, популярный для долгосрочной аренды.
+  - id: cam-thanh
+    title: Кам Тхань
+    description: Район кокосовых рощ и водных каналов, более сельская и зелёная среда.
+  - id: an-bang
+    title: Ан Банг
+    description: Прибрежный район с пляжем, кафе и экспатским сообществом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Хойане распространены гестхаусы, небольшие отели, дома и апартаменты. Для долгосрочного проживания чаще выбирают районы Кам Фо, Кам Тхань и Ан Банг.
+
+Стоимость аренды умеренная и ниже, чем в Дананге у моря. Город подходит для спокойной жизни, но выбор современного жилья ограничен по сравнению с крупными городами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Хойан славится собственной региональной кухней. Фирменные блюда — cao lầu, mì quảng и white rose dumplings.
+
+В городе много кафе, ориентированных на иностранцев, а также уютных ресторанов с вьетнамской и интернациональной кухней. Кофейная культура развита, но в более камерном формате.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный и удобен для передвижения пешком или на велосипеде. Также используются мотобайки и такси.
+
+Хойан расположен примерно в 30 км от аэропорта Дананга, который обеспечивает международное и внутреннее авиасообщение.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с февраля по август, когда сухо и солнечно.
+
+С сентября по ноябрь возможны сильные дожди и подтопления, так как город расположен у реки. Зима мягкая, но более влажная.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Хойане ориентирован на ремёсла, одежду, сувениры и изделия ручной работы. Город известен ателье по пошиву одежды на заказ.
+
+Современные торговые центры отсутствуют; за крупными покупками обычно ездят в Дананг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Хойане спокойная и атмосферная. Основные активности — вечерние прогулки, фонари, бары у реки и небольшие музыкальные заведения.
+
+Город не ориентирован на клубную культуру и ночные вечеринки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - unesco_city
+  - creative_life
+  - slow_travel
+  - cultural_immersion',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Хойан считается безопасным и дружелюбным городом. Английский язык широко используется в туристической среде.
+
+Из-за статуса ЮНЕСКО действуют ограничения на застройку и транспорт, что сохраняет атмосферу, но снижает уровень современной инфраструктуры.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hoi tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hoi-an.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hoi',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Хойан — доступный город для жизни. Комфортный бюджет одного человека составляет 700–1100 USD в месяц.
+
+Аренда жилья начинается от 250–450 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'overview',
+  'ru',
+  'Обзор',
+  'Хюэ — бывшая имперская столица Вьетнама и один из самых исторически значимых городов страны. В течение почти полутора веков Хюэ был резиденцией династии Нгуен, что оставило после себя уникальное архитектурное и культурное наследие.
+
+Город отличается спокойным, созерцательным ритмом жизни и сильной привязкой к традициям. Хюэ подходит для культурного туризма, неспешного проживания, изучения истории и религиозных практик, но менее ориентирован на бизнес и активную экспатскую жизнь.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: citadel
+    title: Императорская цитадель
+    description: Историческое сердце города с дворцами, храмами и стенами ЮНЕСКО.
+  - id: perfumer-river
+    title: Район реки Хыонг
+    description: Живописная зона вдоль Парфюмной реки с храмами и набережными.
+  - id: an-cuu
+    title: Ан Кыу
+    description: Более современный жилой район с кафе и городской инфраструктурой.
+  - id: vinh-ninh
+    title: Винь Нинь
+    description: Центральный район с рынками, школами и локальной жизнью.
+  - id: suburbs
+    title: Пригороды Хюэ
+    description: Тихие зоны с пагодами, гробницами императоров и сельским ландшафтом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Жильё в Хюэ представлено апартаментами, домами и небольшими гестхаусами. Современных кондоминиумов немного, рынок ориентирован на местных жителей и долгосрочную аренду.
+
+Стоимость проживания ниже, чем в Дананге и Хошимине. Хюэ подходит для тех, кто ищет спокойную жизнь с минимальным уровнем суеты и низкими расходами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Хюэ считается одной из самых изысканных во Вьетнаме и уходит корнями в имперские традиции. Блюда отличаются аккуратной подачей, небольшими порциями и сложным балансом вкусов.
+
+Популярны блюда bánh bèo, bún bò Huế и различные виды рисовых закусок. Кафе и рестораны чаще локальные, ориентированные на традиционную кухню.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются на мотобайках, велосипедах и такси. Трафик спокойный по сравнению с крупными мегаполисами.
+
+Хюэ связан железнодорожным и автобусным сообщением с Данангом и Ханоем. Международный аэропорт Фубай находится примерно в 15 км от центра города.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический с выраженной сезонностью. Лето жаркое и сухое, зима более прохладная и влажная.
+
+С сентября по ноябрь возможны сильные дожди и наводнения. Лучшее время для посещения — с февраля по август.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Хюэ ограничен рынками и небольшими магазинами. Основные покупки — продукты, ремесленные изделия и сувениры.
+
+За современными торговыми центрами обычно ездят в Дананг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Хюэ спокойная и сдержанная. Основные активности — вечерние прогулки, кафе у реки и небольшие бары.
+
+Город не ориентирован на клубную культуру и подходит для тихого вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - imperial_capital
+  - unesco_heritage
+  - cultural_history
+  - slow_life',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Хюэ считается безопасным городом. Английский язык используется ограниченно, но в туристических местах проблем с коммуникацией обычно нет.
+
+В сезон дождей стоит учитывать риск подтоплений и повышенную влажность.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hue tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-hue.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hue',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Хюэ — один из самых недорогих городов Вьетнама. Комфортный бюджет одного человека составляет 600–1000 USD в месяц.
+
+Аренда жилья начинается от 200–400 USD, питание и транспорт обходятся дёшево.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'overview',
+  'ru',
+  'Обзор',
+  'Нячанг — один из самых известных пляжных курортов Вьетнама, расположенный на юге центрального побережья. Город известен протяжённой набережной, тёплым морем, развитой туристической инфраструктурой и круглогодочным курортным ритмом жизни.
+
+Нячанг популярен как место зимовки, длительного проживания и отдыха у моря. Его часто выбирают экспаты, фрилансеры и семьи, которым важны доступные цены, море в шаговой доступности и относительно развитая городская среда.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр Нячанга
+    description: Прибрежная зона с набережной, отелями, ресторанами и туристической инфраструктурой.
+  - id: loc-tho
+    title: Лок Тхо
+    description: Центральный жилой район, популярный у экспатов и долгосрочных арендаторов.
+  - id: phuoc-long
+    title: Фыок Лонг
+    description: Южный район с более доступной арендой и локальной жизнью.
+  - id: vinh-hai
+    title: Винь Хай
+    description: Северная часть города с новыми жилыми комплексами и пляжами.
+  - id: suburbs
+    title: Пригороды Нячанга
+    description: Более спокойные зоны с домами, фермами и природным окружением.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Нячанг предлагает широкий выбор жилья: апартаменты, кондоминиумы, сервисные квартиры и частные дома. Вдоль побережья преобладают высотные здания, ориентированные на аренду и туристов.
+
+Стоимость аренды ниже, чем в Хошимине и Дананге у моря. Город особенно популярен для сезонного проживания и зимовок.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Нячанга ориентирована на морепродукты и туристическую аудиторию. Здесь широко представлены вьетнамская, азиатская и международная кухни.
+
+Уличная еда, кафе и рестораны доступны в большом количестве, особенно в центральных районах и вдоль набережной.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный и удобен для передвижения на мотобайке, велосипеде и такси. Общественный транспорт развит слабо.
+
+Аэропорт Камрань расположен примерно в 35 км от города и обеспечивает международное и внутреннее авиасообщение.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический и относительно сухой по сравнению с другими регионами Вьетнама. Лучшее время для проживания и отдыха — с января по сентябрь.
+
+С октября по декабрь возможны сильные дожди и штормы, но сезон дождей короче, чем в центральном Вьетнаме.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг в Нячанге представлен торговыми центрами, рынками и туристическими магазинами. Ассортимент ориентирован на повседневные нужды и туристов.
+
+За более разнообразным выбором товаров часто ездят в Хошимин.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Нячанге умеренно активная. Работают бары, рестораны, караоке и пляжные заведения.
+
+Город не ориентирован на масштабные клубные вечеринки, но предлагает достаточное количество вечерних развлечений.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - wintering_city
+  - beach_life
+  - expat_community
+  - resort_living',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Нячанг считается безопасным городом. Английский язык используется в туристических и экспатских районах, однако за пределами центра он менее распространён.
+
+Интернет стабильный, подходит для удалённой работы. Медицинская инфраструктура представлена частными клиниками и госпиталями среднего уровня.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ntr tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-nha-trang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ntr',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Нячанг — доступный курортный город. Комфортный бюджет одного человека составляет 700–1200 USD в месяц.
+
+Аренда жилья начинается от 250–450 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'overview',
+  'ru',
+  'Обзор',
+  'Фукуок — крупнейший остров Вьетнама, расположенный в Сиамском заливе недалеко от побережья Камбоджи. Остров известен белыми пляжами, тропической природой, статусом свободной экономической зоны и активным развитием туристической и инвестиционной инфраструктуры.
+
+Фукуок сочетает курортный формат с возможностями для долгосрочного проживания. Его выбирают экспаты, зимовщики, предприниматели и инвесторы, ориентированные на недвижимость и туристические сервисы. По сравнению с материковыми городами здесь спокойнее, но уровень сервиса в ключевых зонах достаточно высок.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: duong-dong
+    title: Дуонг Донг
+    description: Административный центр острова с рынками, кафе, портом и основной городской инфраструктурой.
+  - id: long-beach
+    title: Лонг Бич
+    description: Прибрежная зона с курортами, кондоминиумами и пляжами, популярная для проживания.
+  - id: an-thoi
+    title: Ан Тхой
+    description: Южная часть острова с новыми курортными проектами, канатной дорогой и мариной.
+  - id: ong-lang
+    title: Онг Ланг
+    description: Более спокойный район с пляжами и бутик-отелями, подходящий для размеренной жизни.
+  - id: north-phu-quoc
+    title: Север Фукуока
+    description: Природные зоны, национальный парк и уединённые пляжи с низкой плотностью застройки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Фукуоке представлены апартаменты, кондоминиумы, дома и виллы, а также курортные резиденции. В последние годы активно развивается рынок недвижимости, ориентированный на иностранцев.
+
+Стоимость аренды варьируется в зависимости от района и сезона. Для долгосрочного проживания чаще выбирают Дуонг Донг, Лонг Бич и Онг Ланг.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Фукуока основана на морепродуктах, рыбе и южновьетнамской кухне. Остров известен рыбным соусом (nuoc mam), морскими ежами и крабами.
+
+В туристических районах представлены кафе и рестораны с интернациональной кухней. В локальных районах преобладают простые семейные заведения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки, такси и трансферы. Общественный транспорт развит слабо.
+
+Международный аэропорт Фукуока обеспечивает прямые рейсы по Вьетнаму и в некоторые зарубежные направления. Остров также связан морскими маршрутами с материком.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для проживания и отдыха — с ноября по апрель, когда сухо и солнечно.
+
+С мая по октябрь длится сезон дождей, возможны штормы на море, но осадки обычно кратковременные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг на Фукуоке ограничен повседневными товарами, рынками и туристическими магазинами. Основные покупки совершаются в Дуонг Донге.
+
+За крупным шопингом и специализированными товарами чаще ездят в Хошимин.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и курортная. Основные активности — бары у моря, рестораны и вечерние мероприятия при отелях.
+
+Фукуок не ориентирован на клубную культуру и подходит для тихого вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_relocation
+  - investment_property
+  - beach_living
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Фукуок считается безопасным островом. Инфраструктура активно развивается, но за пределами туристических зон возможны перебои с интернетом и сервисами.
+
+Медицина представлена частными клиниками; за сложным лечением обращаются в Хошимин.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phu tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/city-phu-quoc.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phu',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Фукуок — курорт среднего ценового уровня. Комфортный бюджет одного человека составляет 900–1500 USD в месяц.
+
+Аренда жилья начинается от 350–600 USD, цены выше в новых курортных комплексах и в высокий сезон.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'overview',
+  'ru',
+  'Обзор',
+  'Вьетнам — одна из самых динамично развивающихся стран Юго-Восточной Азии, сочетающая древнюю культуру, социалистическое прошлое и стремительную модернизацию. Страна протянулась более чем на 1600 километров с севера на юг, благодаря чему отличается большим климатическим, культурным и социальным разнообразием.
+
+Вьетнам привлекает иностранцев доступной стоимостью жизни, развитой инфраструктурой в крупных городах, насыщенной и здоровой кухней, а также дружелюбным отношением к экспатам. Он подходит как для путешествий и зимовок, так и для долгосрочного проживания, удалённой работы, бизнеса и релокации. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+
+* vietnam_halong_bay.jpg
+* vietnam_hanoi_old_quarter.jpg
+* vietnam_ho_chi_minh_skyline.jpg
+* vietnam_da_nang_beach.jpg
+* vietnam_hoi_an_old_town.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+center: [16.0, 107.8]
+zoom: 5',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Вьетнам обладает одним из самых разнообразных климатов в Юго-Восточной Азии. Из-за протяжённости страны и горного рельефа погодные условия существенно различаются по регионам.
+
+### Сезоны
+
+* Север: прохладная зима и выраженная сезонность (декабрь–февраль прохладно)
+* Центр: сухой сезон с февраля по август, тайфуны осенью
+* Юг: стабильное тепло круглый год, сезон дождей с мая по ноябрь
+
+Во Вьетнаме нет единой «погоды» — климат всегда привязан к конкретному региону. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'history',
+  'ru',
+  'История',
+  'История Вьетнама насчитывает более двух тысяч лет и включает периоды китайского влияния, собственных династий, французской колонизации и войн XX века. Страна длительное время боролась за независимость, что сформировало сильное национальное самосознание и устойчивость общества.
+
+После объединения страны в 1975 году Вьетнам выбрал социалистический путь развития. Экономические реформы конца XX века открыли страну для рынка, инвестиций и международной торговли, положив начало современному этапу роста. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'geography',
+  'ru',
+  'География',
+  'Около 70% территории Вьетнама занимают горы и холмы. Страна имеет протяжённое побережье более 3200 км и две ключевые речные системы — Красную реку на севере и Меконг на юге.
+
+География Вьетнама определяет плотность населения, экономику и региональные различия. Дельты рек — самые густонаселённые и сельскохозяйственно важные районы страны. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'culture',
+  'ru',
+  'Культура',
+  'Культура Вьетнама основана на конфуцианских ценностях, буддизме, культе предков и коллективизме. Важнейшую роль играют семья, уважение к старшим и социальная гармония.
+
+Повседневная культура строится вокруг улицы и еды как социального ритуала. Вьетнамская кухня считается одной из самых сбалансированных и полезных в мире. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'living',
+  'ru',
+  'Проживание',
+  'Вьетнам считается одной из самых доступных стран региона для проживания иностранцев. Здесь легко арендовать жильё, а повседневные расходы остаются умеренными.
+
+Популярные форматы жилья — апартаменты, кондоминиумы и частные дома. Крупные города и курорты предлагают развитую инфраструктуру, быстрый интернет и доступный сервис. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'visas',
+  'ru',
+  'Визы',
+  'Вьетнам предлагает несколько типов виз для туристов, экспатов, предпринимателей и инвесторов. Наиболее популярны туристические и электронные визы, а также бизнес- и рабочие визы.
+
+Правила визового режима периодически меняются, поэтому при долгосрочном пребывании важно ориентироваться на актуальные требования и легальные основания для проживания. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'business',
+  'ru',
+  'Бизнес',
+  'Вьетнам является одной из самых быстрорастущих экономик региона и активно привлекает иностранные инвестиции. Популярные сферы для бизнеса — IT, производство, туризм, сервис и образование.
+
+Бизнес-культура строится на личных отношениях, иерархии и долгосрочном доверии. Для успешного старта часто требуется местный партнёр или консультант. fileciteturn6file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '* Здравствуйте — Xin chào
+* Спасибо — Cảm ơn
+* Пожалуйста — Không có gì
+* Извините — Xin lỗi
+* Сколько стоит? — Bao nhiêu tiền?
+* Где находится …? — … ở đâu?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/vn tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/vietnam/country-vietnam.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'vn',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

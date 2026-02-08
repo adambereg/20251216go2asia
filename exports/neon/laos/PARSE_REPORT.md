@@ -113,3 +113,66 @@
 - Vang Vieng -> `vvg`
 - Pakse -> `pkz`
 - Savannakhet -> `svk`
+
+<!-- BEGIN ATLAS_COUNTRY_CITY_TABS_REPORT -->
+## Atlas Country/City Tabs export (content_blocks)
+
+**Generated:** 2026-02-08T16:33:10.714Z
+**Country folder:** `laos`
+**Resolver mode:** `neon`
+
+- **Files processed**: 6
+- **Blocks created**: 73
+- **By entity_type**: country=13, city=60
+
+### Resolved city IDs
+- OK RESOLVE city: la/pakse/pakse -> pkz (strategy=title)
+- OK RESOLVE city: la/savannakhet/savannakhet -> svk (strategy=slug)
+- OK RESOLVE city: la/vientiane/vientiane -> vte (strategy=title)
+
+### Unresolved city IDs
+- FALLBACK OVERRIDE city -> lpq (reason=No match by id/slug/title/fuzzy): la/luang-prabang/luang-prabang (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-luang-prabang.md)
+- FALLBACK OVERRIDE city -> vvg (reason=No match by id/slug/title/fuzzy): la/vang-vieng/vang-vieng (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-vang-vieng.md)
+
+### Distribution by tab_key
+- accommodation: 5
+- budget: 5
+- business: 1
+- calculator: 1
+- culture: 1
+- districts: 5
+- food: 5
+- gallery: 1
+- geography: 1
+- guides: 5
+- history: 1
+- living: 1
+- map: 1
+- nightlife: 5
+- overview: 6
+- phrasebook: 1
+- reviews: 6
+- shopping: 5
+- tips: 5
+- transport: 5
+- visas: 1
+- weather: 6
+
+### Skipped (missing/empty)
+- (нет)
+
+### Ignored sections (lists)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-luang-prabang.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-pakse.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-savannakhet.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-vang-vieng.md)
+- IGNORED_SECTION_LIST: city "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\city-vientiane.md)
+- IGNORED_SECTION_LIST: country "Города" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\country-laos.md)
+- IGNORED_SECTION_LIST: country "Достопримечательности" (E:\projects\work_go2asia\20251216go2asia\content\atlas\laos\country-laos.md)
+
+### Warnings
+- (нет)
+<!-- END ATLAS_COUNTRY_CITY_TABS_REPORT -->
+
+
+

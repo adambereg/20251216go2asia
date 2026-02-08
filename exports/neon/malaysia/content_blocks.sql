@@ -3366,3 +3366,1977 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 85
+
+-- city/johor-bahru tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'overview',
+  'ru',
+  'Обзор',
+  'Джохор-Бару — крупный город на юге Малайзии, расположенный прямо на границе с Сингапуром. Он является столицей штата Джохор и важным промышленным, логистическим и жилым центром агломерации Iskandar Malaysia.
+
+Город часто выбирают как более доступную альтернативу жизни в Сингапуре: многие работают или ведут бизнес в Сингапуре, а живут в Джохор-Бару. При этом сам город активно развивается и всё меньше воспринимается как просто «приграничный».',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр города
+    description: Историческая и административная часть с торговыми центрами и набережной.
+  - id: iskandar-puteri
+    title: Искандар Путери
+    description: Современный район новой застройки, офисов и жилых комплексов.
+  - id: mount-austin
+    title: Маунт Остин
+    description: Популярный жилой район с кафе, ресторанами и ночной жизнью.
+  - id: tebrau
+    title: Тебрау
+    description: Крупная жилая зона с торговыми центрами и инфраструктурой.
+  - id: nusajaya
+    title: Нусаджая
+    description: Развивающийся район в составе Iskandar Malaysia с государственными и коммерческими проектами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Рынок жилья в Джохор-Бару ориентирован на долгосрочное проживание и семьи. Здесь широко представлены кондоминиумы, таунхаусы и частные дома.
+
+Цены на аренду заметно ниже, чем в Куала-Лумпуре и тем более в Сингапуре, что делает город привлекательным для экспатов, работающих в регионе.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Джохор-Бару отражает малайскую, китайскую и сингапурскую гастрономические традиции. В городе много кафе, фудкортов и ресторанов, ориентированных на местных жителей и приезжих из Сингапура.
+
+Популярны уличная еда, морепродукты и современные кафе с западным меню.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Джохор-Бару связан с Сингапуром дамбой и вторым мостом, обеспечивающими интенсивное приграничное движение. Поездка до центра Сингапура может занимать от 30 минут до нескольких часов в часы пик.
+
+В городе используются автобусы, такси и сервисы Grab. Многие жители имеют личные автомобили.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный, жаркий и влажный круглый год. Температуры колеблются в диапазоне +26…+32 °C.
+
+Сезон дождей выражен слабее, чем на восточном побережье, но ливни возможны в межмуссонные периоды.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Джохор-Бару — крупный торговый центр региона. Здесь расположены большие моллы, а также аутлеты, привлекающие покупателей из Сингапура.
+
+Цены на многие товары ниже, чем в Сингапуре, что делает город популярным для шопинг-поездок.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь сосредоточена в районах Маунт Остин и центре города. Работают бары, кафе и караоке-заведения.
+
+Развлечения умеренные и ориентированы в основном на местных жителей и гостей из соседнего Сингапура.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - border_life
+  - singapore_alternative
+  - family_relocation
+  - business_hub',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Город безопасен, но из-за активного движения через границу возможны пробки и очереди. Планирование поездок в Сингапур требует учёта времени суток.
+
+Английский язык широко распространён. Интернет и городские сервисы развиты хорошо.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/johor-bahru tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-johor-bahru.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'johor-bahru',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Джохор-Бару — один из самых доступных крупных городов Малайзии. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–450 USD за квартиру, транспорт и питание обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'overview',
+  'ru',
+  'Обзор',
+  'Кота-Кинабалу — столица штата Сабах в Восточной Малайзии на острове Борнео. Город расположен на побережье Южно-Китайского моря и служит воротами к одной из самых богатых природных зон Юго-Восточной Азии: джунглям, островам, коралловым рифам и горе Кинабалу.
+
+Кота-Кинабалу сочетает атмосферу спокойного прибрежного города с развитой базовой инфраструктурой. Он привлекателен для путешественников, любителей природы, дайвинга и тех, кто ищет более размеренный ритм жизни вдали от мегаполисов полуостровной Малайзии.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр города
+    description: Прибрежный район с рынками, набережной, отелями и административными зданиями.
+  - id: likas
+    title: Ликас
+    description: Жилой район с парками, стадионом и более спокойной атмосферой.
+  - id: tanjung-aru
+    title: Танджунг Ару
+    description: Популярный район с пляжем, закатами и курортными отелями.
+  - id: kepayan
+    title: Кепаян
+    description: Район рядом с аэропортом, жилые кварталы и локальная инфраструктура.
+  - id: outskirts
+    title: Окрестности и пригороды
+    description: Зелёные зоны, деревни и отправные точки к национальным паркам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Кота-Кинабалу доступны апартаменты, кондоминиумы, гестхаусы и отели. Большинство экспатов выбирают квартиры в жилых районах или недалеко от побережья.
+
+Стоимость аренды ниже, чем в Куала-Лумпуре и Пенанге. Город подходит для спокойного проживания, особенно для тех, кто ценит близость природы и океана.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Кота-Кинабалу сочетает малайские, китайские и местные борнейские традиции. Особенно популярны морепродукты, ночные рынки и уличная еда.
+
+В городе есть кафе и рестораны с международной кухней, но гастрономическая сцена более локальная и простая по сравнению с западной частью страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются на такси, Grab и личном транспорте. Общественный транспорт развит слабо.
+
+В Кота-Кинабалу расположен международный аэропорт, откуда выполняются рейсы по Малайзии и в соседние страны. Также доступны лодочные маршруты к островам национального парка Тунку Абдул Рахман.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный и влажный. Температуры держатся в диапазоне +26…+32 °C круглый год.
+
+Наиболее дождливый период — ноябрь–февраль, однако ливни обычно кратковременные. Лучшее время для активного отдыха — март–октябрь.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг представлен торговыми центрами среднего размера, рынками и магазинами локальных товаров. Популярны рынки с морепродуктами и сувенирами.
+
+За крупным шопингом жители часто ездят в Куала-Лумпур или заказывают онлайн.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и сосредоточена в центре города и на набережной. Работают бары, кафе и рестораны, но клубная сцена минимальна.
+
+Город ориентирован на вечерние прогулки, закаты и расслабленный отдых.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - borneo_nature
+  - island_hopping
+  - diving
+  - eco_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Кота-Кинабалу считается безопасным городом с дружелюбной атмосферой. Основные медицинские услуги доступны, но за сложным лечением обращаются в крупные центры полуостровной Малайзии.
+
+Интернет и мобильная связь стабильны в городе, но могут быть ограничены в удалённых районах и национальных парках.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bki tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kota-kinabalu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bki',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Кота-Кинабалу — доступный по стоимости город. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–500 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'overview',
+  'ru',
+  'Обзор',
+  'Куала-Лумпур — столица и крупнейший мегаполис Малайзии, один из самых современных и развитых городов Юго-Восточной Азии. Город известен футуристическим силуэтом небоскрёбов, развитой инфраструктурой, мультикультурной средой и высоким уровнем комфорта жизни.
+
+Куала-Лумпур часто выбирают как базу для жизни, бизнеса и релокации в ЮВА. Он предлагает сочетание глобального мегаполиса и азиатской экзотики без чрезмерного хаоса, характерного для других столиц региона.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: klcc
+    title: KLCC
+    description: Центральный деловой район с башнями Петронас, парками, офисами и премиальными кондоминиумами.
+  - id: bukit-bintang
+    title: Букит Бинтанг
+    description: Туристический и торговый центр города с моллами, ресторанами и ночной жизнью.
+  - id: mont-kiara
+    title: Монт Киара
+    description: Экспатский район с международными школами, кондоминиумами и кафе.
+  - id: bangsar
+    title: Бангсар
+    description: Престижный жилой район с ресторанами, барами и активной социальной жизнью.
+  - id: chow-kit
+    title: Чоу Кит
+    description: Более локальный район с рынками и доступной арендой.
+  - id: damansara
+    title: Дамансара
+    description: Современная северная агломерация с бизнес-парками и торговыми центрами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Куала-Лумпур предлагает один из лучших рынков аренды жилья в регионе. Основной формат — кондоминиумы с охраной, бассейнами, спортзалами и парковками.
+
+Цены варьируются в зависимости от района и класса жилья, но остаются доступными по мировым меркам. Город отлично подходит для долгосрочного проживания, семей и удалённой работы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Куала-Лумпур считается гастрономической столицей Малайзии. Здесь представлены малайская, китайская, индийская и международные кухни.
+
+Уличная еда, хоукер-центры, фудкорты и рестораны высокого уровня сосуществуют на каждом шагу. Город особенно ценят за качество еды при доступных ценах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Куала-Лумпур обладает одной из самых развитых транспортных систем в регионе: метро (MRT, LRT), монорельс, автобусы и пригородные поезда.
+
+Такси и сервисы Grab широко доступны и недороги. В часы пик возможны пробки, но общественный транспорт эффективно компенсирует автомобильную нагрузку.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный: жарко и влажно круглый год. Температура обычно держится в диапазоне +27…+32 °C.
+
+Сильные ливни чаще случаются во время муссонных периодов (апрель–май и октябрь–ноябрь), но дожди, как правило, кратковременные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Куала-Лумпур — один из лучших городов Азии для шопинга. Здесь расположены десятки крупных торговых центров мирового уровня.
+
+Особенно популярны районы Букит Бинтанг и KLCC. Ассортимент варьируется от локальных брендов до люкса и электроники.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь города разнообразна, но умеренна. Работают бары, rooftop-лаунжи, клубы и концертные площадки.
+
+Алкоголь облагается высокими налогами, поэтому ночная сцена менее массовая, чем в Бангкоке, но более спокойная и безопасная.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - relocation
+  - expat_life
+  - digital_nomad
+  - business_city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Куала-Лумпур считается безопасным городом, однако в туристических районах возможны мелкие кражи. Рекомендуется соблюдать стандартные меры предосторожности.
+
+Английский язык широко распространён. Интернет быстрый и стабильный. Медицинские услуги высокого уровня и доступны по цене.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kll tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-kuala-lumpur.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kll',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Куала-Лумпур — самый дорогой город Малайзии, но остаётся доступным по сравнению с другими мегаполисами региона.
+
+Комфортный бюджет одного человека составляет 1200–1800 USD в месяц. Аренда жилья начинается от 400–600 USD за современную квартиру.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'overview',
+  'ru',
+  'Обзор',
+  'Лангкави — курортный архипелаг на северо-западе Малайзии, состоящий из более чем 90 островов в Андаманском море. Он известен своими пляжами, тропической природой, геопарком ЮНЕСКО и статусом duty-free зоны.
+
+Лангкави популярен среди путешественников, экспатов и зимовщиков, которые ищут спокойную островную жизнь с базовой инфраструктурой, природой и отсутствием городского стресса.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: pantai-cenang
+    title: Пантай Ченанг
+    description: Главный туристический район с пляжем, кафе, магазинами и ночной жизнью.
+  - id: pantai-tengah
+    title: Пантай Тенга
+    description: Более спокойный пляжный район рядом с Ченангом, популярный для проживания.
+  - id: kuah
+    title: Куах
+    description: Административный центр острова с портом, магазинами и рынками.
+  - id: datai
+    title: Датай и северо-запад острова
+    description: Природная зона с роскошными курортами, джунглями и уединёнными пляжами.
+  - id: rural
+    title: Внутренние районы острова
+    description: Сельские зоны с локальной жизнью, рисовыми полями и деревнями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Лангкави доступны гестхаусы, апартаменты, виллы и курорты разного уровня. Многие экспаты арендуют дома или квартиры на длительный срок, особенно в районах Пантай Тенга и внутренних частях острова.
+
+Стоимость жилья ниже, чем на популярных островах Таиланда, при этом качество жизни остаётся высоким за счёт природы и спокойствия.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Лангкави сочетает малайские, тайские и международные блюда. В туристических районах представлен широкий выбор кафе и ресторанов, включая европейскую кухню.
+
+Отдельное преимущество острова — низкие цены на алкоголь и импортные товары благодаря статусу duty-free.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной способ передвижения — аренда автомобиля или мотобайка. Общественный транспорт развит слабо.
+
+Лангкави имеет международный аэропорт и паромное сообщение с материковой Малайзией и Таиландом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический морской. Лучшее время для посещения — с ноября по март, когда погода наиболее стабильна и море спокойное.
+
+Сезон дождей выражен умеренно и редко полностью ограничивает отдых.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг сосредоточен в районе Куах и туристических зонах. Duty-free магазины предлагают алкоголь, шоколад, парфюмерию и электронику по сниженным ценам.
+
+Рынки предлагают свежие продукты, морепродукты и локальные товары.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь умеренная и сосредоточена в районе Пантай Ченанг. Работают бары, пляжные кафе и лаунжи.
+
+Остров ориентирован на расслабленный отдых, а не на активную клубную сцену.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_life
+  - beach_relax
+  - duty_free
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Лангкави считается безопасным и спокойным местом. Уровень преступности низкий, атмосфера расслабленная.
+
+Интернет доступен, но скорость может варьироваться вне туристических зон. Остров хорошо подходит для удалённой работы при умеренных требованиях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/lgk tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-langkawi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'lgk',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Лангкави — один из самых доступных островов региона. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–500 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'overview',
+  'ru',
+  'Обзор',
+  'Малакка — один из самых исторически значимых городов Малайзии и объект Всемирного наследия ЮНЕСКО. Город расположен на берегу Малаккского пролива и на протяжении веков был ключевым портом на торговом пути между Востоком и Западом.
+
+Сегодня Малакка — это компактный, атмосферный город с колониальной архитектурой, музеями, набережной и богатым культурным наследием. Он идеально подходит для неспешных путешествий, культурного туризма и спокойного проживания вдали от мегаполисной суеты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-town
+    title: Старый город
+    description: Исторический центр ЮНЕСКО с колониальными зданиями, музеями и туристическими улицами.
+  - id: jonker-street
+    title: Джонкер-стрит
+    description: Культурное сердце города с рынками, кафе и антикварными лавками.
+  - id: riverside
+    title: Набережная реки Малакка
+    description: Живописная зона для прогулок с кафе, музеями и вечерней подсветкой.
+  - id: suburbs
+    title: Пригороды
+    description: Более спокойные жилые районы, популярные для долгосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Малакке представлены гестхаусы, бутик-отели и апартаменты, часто размещённые в отреставрированных колониальных зданиях. Цены на жильё ниже, чем в Куала-Лумпуре и Пенанге.
+
+Город привлекателен для тех, кто ищет спокойный ритм жизни, безопасность и доступ к культурной среде.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Малакка славится кухней перанакан (нионья), сочетающей китайские и малайские традиции. Популярны блюда лакса, чикен капитан и десерты на основе кокоса.
+
+В городе много кафе, ориентированных на туристов и местных жителей, а также ночные рынки с уличной едой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, большинство достопримечательностей доступны пешком или на велосипеде. Также используются тук-туки и такси.
+
+Малакка связана автобусными маршрутами с Куала-Лумпуром и Джохор-Бару. Железнодорожного сообщения нет.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат экваториальный и влажный. Температуры круглый год держатся в диапазоне +26…+32 °C.
+
+Дожди возможны в межмуссонные периоды (апрель–май и октябрь–ноябрь), но редко мешают туристическим маршрутам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные покупки совершаются на Джонкер-стрит и в Старом городе. Здесь продаются сувениры, антиквариат, изделия ручной работы и продукты.
+
+Современные торговые центры представлены, но в меньшем количестве, чем в столице.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Малакке спокойная и культурная. Основные активности — вечерние прогулки по набережной, ночные рынки и кафе.
+
+Клубной сцены практически нет, город ориентирован на семейный и исторический туризм.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - unesco_heritage
+  - cultural_travel
+  - slow_travel
+  - weekend_trip',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Малакка считается безопасным и удобным городом для проживания и путешествий. Английский язык широко используется в туристической сфере.
+
+Интернет стабильный, медицинские услуги доступны, однако крупные госпитали находятся в Куала-Лумпуре.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mlk tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-malacca.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mlk',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Малакка — доступный по стоимости город. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–450 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'overview',
+  'ru',
+  'Обзор',
+  'Пенанг — один из самых привлекательных регионов Малайзии для жизни, работы и путешествий. Он сочетает в себе исторический город Джорджтаун (объект ЮНЕСКО), развитую городскую инфраструктуру, океан, холмы и сильное экспатское сообщество.
+
+Пенанг часто называют «культурной и гастрономической столицей Малайзии». Регион особенно популярен среди digital nomads, IT-специалистов, пенсионеров и семей, которые ищут баланс между комфортом города и спокойствием островной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: georgetown
+    title: Джорджтаун
+    description: Исторический центр ЮНЕСКО с колониальной архитектурой, кафе, музеями и стрит-артом.
+  - id: tanjung-tokong
+    title: Танджунг Токонг
+    description: Современный прибрежный район с кондоминиумами, торговыми центрами и видом на море.
+  - id: tanjung-bungah
+    title: Танджунг Бунга
+    description: Спокойный жилой район у моря, популярный у экспатов и семей.
+  - id: bayan-lepas
+    title: Баян Лепас
+    description: Южная часть острова, индустриальный и IT-кластер с офисами международных компаний.
+  - id: air-itam
+    title: Аир Итам
+    description: Холмистый район с локальной жизнью, рынками и храмами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Пенанг предлагает разнообразные варианты жилья: от исторических шопхаусов в Джорджтауне до современных кондоминиумов у моря. Большинство экспатов выбирают квартиры с инфраструктурой — бассейном, охраной и спортзалом.
+
+Стоимость аренды ниже, чем в Куала-Лумпуре, при сопоставимом уровне комфорта. Пенанг хорошо подходит для долгосрочного проживания и спокойной релокации.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Пенанг считается одним из лучших гастрономических регионов Азии. Здесь представлены малайская, китайская, индийская и нионья кухни, а также множество международных ресторанов.
+
+Уличная еда Пенанга известна во всём мире: чар-квей-тео, ассам-лакса, хокиен-ми и наси-кандар. Качество еды высокое, а цены доступны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Общественный транспорт представлен автобусами Rapid Penang. Такси и сервисы Grab широко доступны и недороги.
+
+Пенанг соединён с материком двумя мостами и международным аэропортом. В центре Джорджтауна удобно передвигаться пешком или на велосипеде.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Температура держится в пределах +27…+32 °C круглый год.
+
+Дожди чаще выпадают в межмуссонные периоды (апрель–май и октябрь–ноябрь), но обычно кратковременные и не мешают повседневной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные торговые зоны — Джорджтаун и прибрежные районы. В Пенанге есть крупные торговые центры, рынки и специализированные магазины.
+
+Особенно популярны локальные рынки, где продаются еда, специи и ремесленные товары.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Пенанга умеренная и камерная. В Джорджтауне работают бары, пабы и музыкальные площадки.
+
+Город больше ориентирован на культурный и гастрономический отдых, чем на клубную сцену.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - expat_life
+  - digital_nomad
+  - food_capital
+  - slow_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Пенанг считается безопасным регионом с развитой медициной и сервисами. Английский язык широко используется в повседневной жизни.
+
+Интернет стабильный и подходит для удалённой работы. Регион удобен для семей и пожилых людей.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/png tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/city-penang.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'png',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Пенанг немного дешевле Куала-Лумпура. Комфортный бюджет одного человека составляет 900–1400 USD в месяц.
+
+Аренда квартиры начинается от 350–500 USD, питание и транспорт обходятся недорого, особенно при использовании местной кухни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'overview',
+  'ru',
+  'Обзор',
+  'Малайзия — одна из самых комфортных и развитых стран Юго-Восточной Азии, сочетающая ультрасовременные города, тропическую природу и богатое культурное наследие. Здесь соседствуют небоскрёбы и джунгли, исламские традиции и космополитичный образ жизни, высокие технологии и уличная еда.
+
+Страна популярна среди путешественников, экспатов, цифровых кочевников и семей благодаря высокому уровню инфраструктуры, широкому распространению английского языка, безопасности и разумной стоимости жизни. Малайзия часто рассматривается как более спокойная и доступная альтернатива Сингапуру.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+
+* malaysia_kuala_lumpur_petronas.jpg
+* malaysia_penang_georgetown.jpg
+* malaysia_langkawi_beach.jpg
+* malaysia_borneo_rainforest.jpg
+* malaysia_batu_caves.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+center: [4.2105, 101.9758]
+zoom: 5',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Климат Малайзии экваториальный: жарко и влажно круглый год, без выраженной смены сезонов.
+
+### Сезоны
+
+* Относительно сухой период: март — сентябрь (на западном побережье)
+* Муссонные дожди: ноябрь — февраль (особенно на восточном побережье и Борнео)
+
+Средние температуры составляют +27…+32 °C днём. Дожди обычно кратковременные, но интенсивные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'history',
+  'ru',
+  'История',
+  'История Малайзии тесно связана с морской торговлей и культурным обменом между Индией, Китаем и Ближним Востоком. В XV веке Малаккский султанат стал ключевым центром торговли и распространения ислама в регионе.
+
+В XVI–XIX веках территория страны находилась под властью португальцев, голландцев и британцев. Колониальный период сформировал правовую систему, инфраструктуру и широкое распространение английского языка.
+
+Независимость была получена в 1957 году, а в 1963 году образована современная Федерация Малайзия. Сегодня страна представляет собой стабильную конституционную монархию с динамичной экономикой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'geography',
+  'ru',
+  'География',
+  'Малайзия состоит из двух частей, разделённых Южно-Китайским морем: полуостровной Малайзии и северной части острова Борнео. Страна имеет протяжённую береговую линию, горные районы, тропические леса и множество островов.
+
+Более 60% территории покрыто джунглями. Здесь расположены одни из древнейших тропических лесов планеты, национальные парки и уникальные экосистемы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'culture',
+  'ru',
+  'Культура',
+  'Малайзия — мультикультурная страна, где мирно сосуществуют малайская, китайская, индийская и коренные культуры. Официальной религией является ислам, однако свобода вероисповедания соблюдается.
+
+Культура страны проявляется в праздниках, кухне, архитектуре и повседневном образе жизни. Толерантность и уважение к разнообразию считаются важными общественными ценностями.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'living',
+  'ru',
+  'Проживание',
+  'В Малайзии представлен широкий выбор жилья: современные кондоминиумы, апартаменты, таунхаусы и частные дома. В городах популярны жилые комплексы с охраной, бассейнами и спортзалами.
+
+Стоимость аренды ниже, чем в большинстве развитых стран, что делает Малайзию привлекательной для долгосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'visas',
+  'ru',
+  'Визы',
+  'Граждане многих стран, включая Россию, могут въезжать в Малайзию без визы на срок до 30 дней. Для длительного пребывания доступны специальные программы.
+
+Популярные варианты: цифровая виза DE Rantau (Nomad Pass), рабочие визы, студенческие визы и программа Malaysia My Second Home (MM2H).',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'business',
+  'ru',
+  'Бизнес',
+  'Малайзия считается одной из лучших стран региона для ведения бизнеса. Английский язык, развитая инфраструктура и британская правовая система упрощают работу иностранцев.
+
+Ключевые отрасли: IT, электроника, финансы, медицина, образование, туризм и производство. Страна активно конкурирует с Сингапуром за международные компании.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '* Здравствуйте — Hello / Selamat pagi
+* Спасибо — Terima kasih
+* Пожалуйста — Sama-sama
+* Извините — Maaf
+* Сколько стоит? — Berapa harga?
+* Где находится …? — Di mana …?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/my tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/malaysia/country-malaysia.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'my',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

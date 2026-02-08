@@ -2407,3 +2407,1970 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 85
+
+-- city/tag tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'overview',
+  'ru',
+  'Обзор',
+  'Бохоль — островная провинция в центральной части Филиппин (Висайи), известная природными достопримечательностями, спокойным ритмом жизни и экологическим туризмом. Регион прославился Шоколадными холмами, белоснежными пляжами Панглао и разнообразием морской фауны.
+
+Бохоль часто выбирают путешественники, семьи и экспаты, ищущие баланс между природой, доступной инфраструктурой и отсутствием суеты мегаполисов. Это направление подходит для длительного проживания, зимовки и «медленного туризма».',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: tagbilaran
+    title: Тагбиларан
+    description: Административный центр Бохоля с портом, аэропортом, больницами и базовыми сервисами.
+  - id: panglao
+    title: Панглао
+    description: Курортный остров с пляжами Алона и Данао, популярный у туристов и экспатов.
+  - id: chocolate-hills
+    title: Центральный Бохоль
+    description: Внутренние районы острова с Шоколадными холмами, реками и сельской жизнью.
+  - id: anda
+    title: Анда
+    description: Восточное побережье с уединёнными пляжами и минимальной застройкой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Бохоле доступны гестхаусы, апартаменты, дома и небольшие резорты. В Тагбиларане можно найти жильё для долгосрочного проживания, а в Панглао — курортные варианты у моря.
+
+Стоимость аренды ниже, чем на Боракае или в Эль-Нидо. Регион популярен у семей и пенсионеров благодаря спокойствию и доступности.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Бохоля основана на морепродуктах, рисе и местных фруктах. В Тагбиларане и Панглао работают кафе с филиппинской и интернациональной кухней.
+
+Знаменитые блюда региона — морепродукты, тушёные блюда с кокосом и местные десерты. Выбор проще, чем в крупных городах, но качество продуктов высокое.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные виды транспорта — трициклы, мотобайки и арендованные автомобили. Дороги между основными точками острова находятся в хорошем состоянии.
+
+Бохоль связан с Себу паромами и авиарейсами. Аэропорт расположен на острове Панглао.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с декабря по май, когда погода сухая и комфортная.
+
+Сезон дождей выражен умеренно. Тайфуны случаются реже, чем на севере страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг ограничен повседневными товарами. В Тагбиларане есть торговые центры и рынки.
+
+За крупными покупками жители часто ездят в Себу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь минимальна и сосредоточена в курортных районах Панглао. Работают пляжные бары и рестораны.
+
+Бохоль ориентирован на спокойный отдых и семейную атмосферу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - eco_travel
+  - family_life
+  - slow_travel
+  - island_relax',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Бохоль считается безопасным и дружелюбным регионом. Медицинские услуги представлены базовыми клиниками, более сложные случаи направляют в Себу.
+
+Интернет доступен, но скорость может варьироваться вне городских зон.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/tag tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-bohol.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'tag',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Бохоль — доступное направление. Комфортный бюджет одного человека составляет 600–1000 USD в месяц.
+
+Аренда жилья начинается от 200–350 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'overview',
+  'ru',
+  'Обзор',
+  'Себу — второй по значимости город Филиппин и главный центр Висайских островов. Город считается колыбелью христианства в стране и одновременно современным региональным хабом бизнеса, образования и IT-аутсорсинга.
+
+Себу часто называют «альтернативой Маниле»: здесь развитая городская инфраструктура сочетается с более спокойным ритмом жизни и близостью к морю и островам. Город подходит как для жизни и работы, так и как база для путешествий по центральным Филиппинам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: cebu-city-center
+    title: Центр Себу
+    description: Историческое ядро города с колониальными памятниками, рынками и административными зданиями.
+  - id: it-park
+    title: Cebu IT Park
+    description: Современный деловой район с офисами BPO-компаний, кафе и кондоминиумами.
+  - id: lahug
+    title: Лахуг
+    description: Жилой и деловой район рядом с IT Park, популярный у экспатов.
+  - id: mandaue
+    title: Мандауэ
+    description: Индустриальный и жилой город-спутник, часть агломерации Metro Cebu.
+  - id: talisay
+    title: Талисай
+    description: Южный пригород с жилыми кварталами и более спокойной атмосферой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Рынок жилья в Себу разнообразен: от современных кондоминиумов до частных домов в пригородах. Экспаты чаще всего выбирают районы IT Park и Лахуг из-за удобства, безопасности и близости к офисам.
+
+Стоимость аренды ниже, чем в Маниле, при сопоставимом уровне комфорта. Себу популярен среди digital nomads, специалистов BPO и семей, ищущих баланс между городом и природой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Себу — гастрономический центр Висайских островов. Здесь представлены местная висайская кухня, филиппинские блюда и международные рестораны.
+
+Фирменные блюда региона — lechon Cebu (жареный поросёнок), морепродукты и уличная еда. В районах IT Park и Лахуг много современных кафе и кофеен.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Транспорт в Себу представлен автобусами, джипни, такси и сервисами Grab. Пробки присутствуют, но менее выражены, чем в Маниле.
+
+Международный аэропорт Мактан-Себу связывает город с Азией и внутренними направлениями. Себу — ключевой транспортный узел для поездок на Бохоль, Малапаскуа и другие острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, более мягкий, чем в Маниле. Температуры обычно держатся в диапазоне +26…+32 °C.
+
+Сезон дождей менее выражен, чем на Лусоне. Тайфуны здесь случаются реже, что делает Себу более стабильным направлением круглый год.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'В Себу расположены крупные торговые центры: Ayala Center Cebu, SM City Cebu и SM Seaside. Они являются важными социальными пространствами города.
+
+Также работают рынки и локальные торговые улицы с более доступными ценами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Себу умеренная, но разнообразная. Работают бары, караоке-заведения и клубы, особенно в районе IT Park и центре города.
+
+Город больше ориентирован на повседневную жизнь и социальные встречи, чем на масштабные вечеринки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - regional_hub
+  - island_hopping
+  - expat_life
+  - bpo_city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Себу считается более спокойным и удобным для жизни, чем Манила. Английский язык широко распространён, особенно в деловой и образовательной среде.
+
+Медицинские услуги представлены современными частными клиниками. Интернет стабилен и подходит для удалённой работы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/ceb tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-cebu.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'ceb',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Себу дешевле Манилы. Комфортный бюджет одного человека составляет 900–1400 USD в месяц.
+
+Аренда квартиры начинается от 300–500 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'overview',
+  'ru',
+  'Обзор',
+  'Думагете — компактный и дружелюбный город на острове Негрос, известный как «город нежных людей». Он сочетает университетскую атмосферу, спокойный ритм жизни и близость к морю и природе, что делает его одним из самых популярных мест для долгосрочного проживания экспатов и пенсионеров на Филиппинах.
+
+Город часто выбирают те, кто ищет размеренную жизнь без суеты мегаполисов, с базовой инфраструктурой, доступной медициной и активным международным сообществом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: downtown
+    title: Центр Думагете
+    description: Деловой и социальный центр города с набережной, кафе, рынками и офисами.
+  - id: boulevard
+    title: Набережная Рисаля
+    description: Прогулочная зона у моря с ресторанами, барами и вечерней активностью.
+  - id: sibulan
+    title: Сибулан
+    description: Пригород с аэропортом, более спокойной жилой застройкой и домами экспатов.
+  - id: valencia
+    title: Валенсия
+    description: Горный пригород с более прохладным климатом, популярный для домов и ретритов.
+  - id: bacong
+    title: Баконг
+    description: Южный пригород с локальной жизнью и доступной арендой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Думагете доступны апартаменты, дома, гестхаусы и небольшие кондоминиумы. Экспаты часто выбирают отдельные дома в пригородах или квартиры рядом с набережной.
+
+Стоимость аренды значительно ниже, чем в Маниле и Себу. Город подходит для долгосрочного проживания, особенно для пенсионеров и удалённых работников с умеренными требованиями к инфраструктуре.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Думагете ориентирована на локальную кухню и международное экспатское сообщество. В городе много недорогих кафе, пекарен и ресторанов с западным меню.
+
+Популярны морепродукты, простые филиппинские блюда и кафе на набережной. Качество еды хорошее при доступных ценах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются пешком, на трициклах и мотобайках. Трафик минимальный.
+
+Аэропорт Сибулан связывает Думагете с Манилой и Себу. Из порта ходят паромы на Себу и соседние острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, мягкий по сравнению с другими регионами. Температуры обычно держатся в диапазоне +26…+31 °C.
+
+Дожди возможны круглый год, но редко бывают затяжными. Тайфуны здесь случаются редко.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг ограничен базовыми товарами. В городе есть торговые центры, рынки и супермаркеты.
+
+За крупными покупками жители часто ездят в Себу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и социальная. Основные активности сосредоточены на набережной и в небольших барах.
+
+Город ориентирован на общение, прогулки и ранний ритм, а не на клубные развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - expat_retirement
+  - university_city
+  - slow_life
+  - island_base',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Думагете считается одним из самых безопасных и комфортных городов для жизни иностранцев. Английский язык широко используется в повседневной жизни.
+
+Медицинские услуги представлены частными клиниками и больницами среднего уровня. Для сложных случаев обращаются в Себу или Манилу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/dumaguete tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-dumaguete.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'dumaguete',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Думагете — один из самых доступных городов Филиппин. Комфортный бюджет одного человека составляет 600–900 USD в месяц.
+
+Аренда жилья начинается от 180–300 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'overview',
+  'ru',
+  'Обзор',
+  'Манила — столица Филиппин и один из крупнейших мегаполисов Юго-Восточной Азии. Город является политическим, экономическим и культурным центром страны, а также главным транспортным узлом архипелага. В широком смысле под Манилой обычно понимают агломерацию Metro Manila, включающую более 15 городов и муниципалитетов.
+
+Манила — город контрастов: современные деловые районы с небоскрёбами соседствуют с историческими кварталами испанской эпохи и плотно заселёнными жилыми районами. Это не курортное направление, а динамичный мегаполис возможностей, где сосредоточены бизнес, образование, медицина и международные связи.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: intramuros
+    title: Интрамурос
+    description: Исторический центр испанской эпохи с крепостными стенами, церквями и музеями.
+  - id: makati
+    title: Макати
+    description: Главный финансовый и деловой район страны, популярный у экспатов.
+  - id: bgc
+    title: Bonifacio Global City (BGC)
+    description: Современный плановый район с офисами, кондоминиумами и пешеходной инфраструктурой.
+  - id: quezon-city
+    title: Кесон-Сити
+    description: Крупнейший по населению город агломерации, университетский и жилой центр.
+  - id: ermita-malate
+    title: Эрмита и Малате
+    description: Туристические и исторические районы рядом с парком Рисаля и заливом.
+  - id: pasay
+    title: Пасай
+    description: Район у залива с торговыми центрами, аренами и аэропортом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Манила предлагает самый широкий выбор жилья на Филиппинах: современные кондоминиумы, апартаменты, таунхаусы и частные дома в закрытых жилых комплексах. Наиболее популярные районы для экспатов — Макати, BGC и отдельные зоны Кесон-Сити.
+
+Стоимость аренды выше, чем в других городах страны, однако уровень инфраструктуры и доступность сервисов компенсируют цену. Манила подходит для долгосрочного проживания тем, кто ориентирован на карьеру, бизнес или международную среду.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Манила — гастрономическая столица Филиппин. Здесь представлены кухни всех регионов страны, а также международная кухня: азиатская, европейская, американская и ближневосточная.
+
+Уличная еда соседствует с ресторанами высокого уровня. Популярны фудкорты в торговых центрах, рынки и современные кафе в районах Макати и BGC.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Транспортная система Манилы включает метро (LRT и MRT), автобусы, джипни и такси. Несмотря на развитие инфраструктуры, пробки остаются одной из главных проблем города.
+
+Широко используются сервисы Grab и мототакси. Манила является главным авиационным хабом страны с международным аэропортом NAIA.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический муссонный. Температуры держатся в диапазоне +26…+34 °C.
+
+Сухой сезон продолжается с ноября по апрель и считается наиболее комфортным. Сезон дождей — с мая по октябрь, возможны сильные ливни и тайфуны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Манила — крупнейший торговый центр страны. Здесь расположены одни из самых больших торговых комплексов Азии, включая Mall of Asia и сети Ayala Malls и SM.
+
+Ассортимент включает как локальные товары, так и международные бренды. Торговые центры также выполняют роль социальных пространств.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Манилы активна и разнообразна. Работают бары, клубы, rooftop-лаунжи и концертные площадки.
+
+Основные центры ночной жизни — Макати (Poblacion), BGC и отдельные районы Пасая. Алкоголь доступен, но облагается высокими налогами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - relocation
+  - expat_life
+  - business_city
+  - urban_survival',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Манила требует адаптации: высокая плотность населения, интенсивное движение и шум. Рекомендуется выбирать жильё рядом с местом работы или учебы.
+
+Английский язык широко используется во всех сферах жизни. Медицинские услуги высокого уровня доступны в частных клиниках и госпиталях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/mnl tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-manila.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'mnl',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Манила — самый дорогой город Филиппин. Комфортный бюджет одного человека составляет 1200–1800 USD в месяц.
+
+Аренда современной квартиры начинается от 400–600 USD, расходы на транспорт и питание выше, чем в провинции.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'overview',
+  'ru',
+  'Обзор',
+  'Палаван — один из самых живописных регионов Филиппин, регулярно признаваемый одним из лучших островов мира. Он известен кристально чистыми лагунами, карстовыми скалами, джунглями и богатой морской экосистемой. Палаван часто называют «последним экологическим рубежом» страны.
+
+Для путешественников Палаван — это эталон тропического рая, а для экспатов и digital nomads — место уединённой жизни рядом с природой. Основные центры региона — Пуэрто-Принсеса, Эль-Нидо и Корон.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: puerto-princesa
+    title: Пуэрто-Принсеса
+    description: Административный центр Палавана с аэропортом, сервисами и подземной рекой ЮНЕСКО.
+  - id: el-nido
+    title: Эль-Нидо
+    description: Туристический центр с лагунами, островами и развитой экотуристической инфраструктурой.
+  - id: coron
+    title: Корон
+    description: Город и архипелаг, известный дайвингом, лагунами и кораблекрушениями времён Второй мировой войны.
+  - id: rural-palawan
+    title: Сельские районы Палавана
+    description: Малонаселённые зоны с джунглями, пляжами и традиционным образом жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Палаван предлагает жильё разного уровня: от гестхаусов и бунгало до эко-лоджей и курортных отелей. В Пуэрто-Принсесе доступны апартаменты и дома для долгосрочного проживания.
+
+Стоимость жизни ниже, чем в Маниле и Себу, но в популярных местах вроде Эль-Нидо жильё дороже из-за ограниченного предложения. Регион подходит для спокойной жизни и сезонного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Кухня Палавана основана на свежих морепродуктах, рыбе, рисе и тропических фруктах. В туристических районах представлены кафе с международной кухней и вегетарианскими блюдами.
+
+В небольших поселениях преобладают простые варунги и семейные рестораны. Качество продуктов высокое, но выбор ограничен по сравнению с мегаполисами.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основные способы передвижения — мотобайки, трициклы и лодки. Дорожная сеть ограничена, между городами часто перемещаются по морю.
+
+Аэропорты есть в Пуэрто-Принсесе, Эль-Нидо и Короне. Палаван связан авиасообщением с Манилой и Себу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, относительно сухой по сравнению с другими регионами Филиппин. Лучшее время для посещения — с ноября по май.
+
+Сезон дождей мягче выражен, тайфуны здесь редки, что делает Палаван одним из самых стабильных направлений страны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг ограничен базовыми товарами. Основные покупки совершаются на рынках и в небольших магазинах.
+
+Импортные товары и электронику чаще приобретают в Маниле или Себу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и камерная. В Эль-Нидо и Короне работают бары у моря, ориентированные на туристов.
+
+Регион не предназначен для клубных развлечений и ценится за тишину и природную атмосферу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_hopping
+  - eco_travel
+  - diving
+  - nature_retreat',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Палаван считается безопасным и экологически чистым регионом. Медицинские услуги ограничены и представлены в основном в Пуэрто-Принсесе.
+
+Интернет доступен, но скорость и стабильность могут варьироваться, особенно в удалённых районах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pps tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-palawan.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pps',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Палаван — доступный регион для жизни вне туристических зон. Комфортный бюджет одного человека составляет 700–1200 USD в месяц.
+
+Аренда жилья начинается от 250–400 USD, в туристических районах цены выше.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'overview',
+  'ru',
+  'Обзор',
+  'Сиаргао — остров и муниципалитет на востоке Филиппин, мировой центр серфинга и одно из самых популярных направлений для digital nomads в стране. Остров известен волной Cloud 9, тропической природой, лагунами и атмосферой свободы.
+
+За последние годы Сиаргао превратился из удалённого серферского спота в международное комьюнити удалённых специалистов, креаторов и путешественников. Это направление выбирают за баланс между природой, социальным окружением и возможностью работать онлайн.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: general-luna
+    title: Генерал Луна
+    description: Главный туристический и социальный центр острова с кафе, серф-спотами и коворкингами.
+  - id: cloud-9
+    title: Cloud 9
+    description: Знаменитый серф-район с пирсом, пляжами и волнами мирового уровня.
+  - id: pacifico
+    title: Пасифико
+    description: Более спокойный район на севере острова с пляжами и серфингом.
+  - id: del-carmen
+    title: Дель Кармен
+    description: Район мангровых лесов и лагун, центр экотуризма.
+  - id: rural-siargao
+    title: Внутренние районы острова
+    description: Сельские зоны с пальмовыми рощами и локальной жизнью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Сиаргао доступны бунгало, гестхаусы, дома и небольшие резорты. Многие экспаты арендуют жильё на долгий срок, особенно в районе Генерал Луна.
+
+Цены выросли за последние годы, но остаются ниже, чем на популярных курортах Таиланда. Качество жилья варьируется, инфраструктура развивается постепенно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономическая сцена Сиаргао ориентирована на международную аудиторию. Здесь много кафе с западной кухней, вегетарианскими и веганскими блюдами, а также филиппинскими специалитетами.
+
+Популярны боулы, смузи, свежая рыба и морепродукты. Вечером кафе и бары становятся центрами социальной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки и трициклы. Дорожная сеть ограничена, движение спокойное.
+
+Аэропорт Сиаргао (Sayak) связывает остров с Манилой и Себу. Также доступны лодочные экскурсии и island hopping.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для серфинга — с сентября по ноябрь, когда приходят основные волны.
+
+Сухой сезон длится примерно с марта по июнь. Сезон дождей выражен сильнее, чем на западе Филиппин, возможны тайфуны.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг минимальный и ориентирован на повседневные нужды. Магазины, рынки и лавки сосредоточены в Генерал Луне.
+
+Импортные товары ограничены и стоят дороже, чем на материке.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь активная, но не клубная. Основной формат — пляжные бары, вечеринки, живая музыка и социальные мероприятия.
+
+Сиаргао известен атмосферой комьюнити и неформального общения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - surfing_capital
+  - digital_nomad
+  - island_life
+  - eco_travel',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Сиаргао требует адаптации к островным условиям: возможны перебои с электричеством, водой и интернетом.
+
+Безопасность высокая, сообщество дружелюбное. Интернет доступен, но для стабильной удалённой работы рекомендуется иметь резервные подключения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/srg tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/city-siargao.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'srg',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Сиаргао — направление средней ценовой категории. Комфортный бюджет одного человека составляет 800–1200 USD в месяц.
+
+Аренда жилья начинается от 300–500 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'overview',
+  'ru',
+  'Обзор',
+  'Филиппины — динамично развивающаяся страна Юго-Восточной Азии, представляющая собой обширный архипелаг из более чем 7 600 островов. Географически страна делится на три крупные группы: Лусон на севере, Висайи в центральной части и Минданао на юге. Такое разнообразие формирует уникальное сочетание мегаполисов, тропических островов, вулканов, джунглей и морских экосистем.
+
+Филиппины выделяются среди стран региона сочетанием азиатской культуры и западного наследия. Более трёхсот лет испанского правления и последующий американский период сформировали католическую традицию, латинские культурные черты и широкое распространение английского языка. Это делает страну особенно привлекательной для иностранцев: здесь легко адаптироваться, общаться и работать без языкового барьера.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+  - philippines_palawan_lagoon.jpg
+  - philippines_boracay_beach.jpg
+  - philippines_chocolate_hills.jpg
+  - philippines_mayor_volcano.jpg
+  - philippines_manila_skyline.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+  center: [12.0, 122.0]
+  zoom: 5',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Климат Филиппин тропический муссонный. Погода зависит от региона, но в целом круглый год тепло и влажно.
+
+### Сезоны
+- Сухой сезон: ноябрь — апрель (наиболее комфортный период)
+- Сезон дождей: май — октябрь (ливни, высокая влажность, возможны тайфуны)
+
+Средние температуры держатся в диапазоне +26…+32 °C, вода в море тёплая круглый год.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'history',
+  'ru',
+  'История',
+  'История Филиппин — это история взаимодействия местных цивилизаций, исламских султанатов, испанской колонизации и американского влияния. Испания управляла архипелагом более 300 лет, что привело к массовой христианизации и формированию колониальных городов.
+
+В 1898 году Филиппины перешли под контроль США, а в 1946 году получили полную независимость. Современное государство — демократическая республика с сильной национальной идентичностью и памятью о борьбе за свободу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'geography',
+  'ru',
+  'География',
+  'Филиппины расположены в западной части Тихого океана и входят в Тихоокеанское огненное кольцо. Страна характеризуется активным вулканизмом, горным рельефом и протяжённой береговой линией.
+
+Здесь находятся уникальные природные объекты: рисовые террасы Банауэ, подземная река Пуэрто-Принсеса, вулкан Майон, коралловые рифы Туббатаха и многочисленные островные экосистемы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'culture',
+  'ru',
+  'Культура',
+  'Культура Филиппин — редкое сочетание азиатской основы и латинского темперамента. Основные ценности — семья, религия, общинность и гостеприимство.
+
+Филиппинцы известны оптимизмом, любовью к музыке, караоке и фестивалям. Католические праздники и местные фиесты играют важную роль в общественной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'living',
+  'ru',
+  'Проживание',
+  'Филиппины предлагают широкий выбор жилья: от городских кондоминиумов до домов у моря. Стоимость жизни ниже, чем во многих странах региона, особенно за пределами Манилы.
+
+Иностранцы часто выбирают страну для зимовки, удалённой работы или пенсии благодаря тёплому климату и доступным ценам.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'visas',
+  'ru',
+  'Визы',
+  'Гражданам многих стран доступен безвизовый въезд на 30 дней с возможностью многократного продления вплоть до 36 месяцев без выезда из страны.
+
+Также действуют специальные визы для пенсионеров (SRRV), инвесторов и анонсирована виза для цифровых кочевников, рассчитанная на долгосрочное удалённое пребывание.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'business',
+  'ru',
+  'Бизнес',
+  'Экономика Филиппин активно развивается за счёт сектора услуг, BPO, IT, туризма и строительства. Англоязычная рабочая сила и большой внутренний рынок делают страну привлекательной для предпринимателей.
+
+При этом бизнес-среда требует терпения из-за бюрократии и ограничений на иностранное владение в ряде отраслей.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '- Здравствуйте — Hello / Kamusta
+- Спасибо — Salamat
+- Пожалуйста — Walang anuman
+- Извините — Paumanhin
+- Сколько стоит? — Magkano ito?
+- Где находится …? — Nasaan ang …?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+  source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/ph tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/philippines/country-philippines.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'ph',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+  enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+

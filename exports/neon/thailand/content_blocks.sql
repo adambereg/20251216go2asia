@@ -5046,3 +5046,2266 @@ ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
   body_markdown = EXCLUDED.body_markdown,
   source = EXCLUDED.source,
   updated_at = NOW();
+
+-- BEGIN ATLAS_COUNTRY_CITY_TABS
+-- Generated: 2026-02-08T16:33:10.714Z
+-- Blocks: 97
+
+-- city/bkk tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'overview',
+  'ru',
+  'Обзор',
+  'Бангкок — столица и крупнейший город Таиланда, один из самых динамичных мегаполисов Юго-Восточной Азии. Это политический, экономический, финансовый и культурный центр страны, а также главный транспортный узел региона.
+
+Город сочетает ультрасовременные деловые кварталы, исторические храмы, каналы (клонги), рынки и круглосуточную городскую жизнь. Бангкок не является курортом — это рабочий мегаполис, подходящий для карьеры, бизнеса, релокации и долгосрочного проживания в Азии.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: sukhumvit
+    title: Сукхумвит
+    description: Центральный район вдоль линии BTS с кондоминиумами, офисами, ресторанами и экспатским сообществом.
+  - id: silom-sathorn
+    title: Силом и Сатхорн
+    description: Финансовый и деловой центр с небоскрёбами, посольствами и бизнес-инфраструктурой.
+  - id: siam
+    title: Сиам
+    description: Торговое и молодежное сердце города с крупнейшими моллами и университетами.
+  - id: old-town
+    title: Старый город (Раттанакосин)
+    description: Исторический центр с Королевским дворцом, храмами и музеями.
+  - id: riverside
+    title: Район реки Чао Прайя
+    description: Живописная зона с отелями, набережными и храмами вдоль реки.
+  - id: ari
+    title: Ари
+    description: Современный жилой район с кафе, стартап-средой и спокойной атмосферой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Бангкок предлагает самый широкий рынок жилья в Таиланде: современные кондоминиумы, апартаменты, таунхаусы и частные дома. Наиболее популярны кондо вдоль линий BTS и MRT, обеспечивающие мобильность без автомобиля.
+
+Стоимость аренды выше, чем в других городах страны, но остаётся доступной по мировым меркам. Бангкок подходит для долгосрочного проживания, особенно для специалистов, предпринимателей и экспатов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Бангкок считается одной из гастрономических столиц мира. Здесь представлены тайская кухня всех регионов страны, а также китайская, японская, корейская, индийская и западная кухни.
+
+Уличная еда, ночные рынки, фудкорты и рестораны высокой кухни сосуществуют на равных. Многие заведения отмечены гидом Michelin, включая уличные киоски.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Транспортная система Бангкока включает метро BTS и MRT, речной транспорт по Чао Прайя, автобусы, такси и мототакси. Несмотря на развитие общественного транспорта, пробки остаются серьёзной проблемой.
+
+Для передвижения широко используются приложения Grab и Bolt. Город является главным авиационным хабом страны с международными аэропортами Suvarnabhumi и Don Mueang.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Самый комфортный период — с ноября по февраль, когда жарко, но относительно сухо.
+
+С марта по май стоит сильная жара, а с июня по октябрь продолжается сезон дождей с кратковременными ливнями и повышенной влажностью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Бангкок — крупнейший торговый центр Таиланда. Здесь расположены одни из самых больших торговых комплексов Азии: Siam Paragon, CentralWorld, IconSiam, MBK.
+
+Ассортимент включает люксовые бренды, электронику, местные товары и рынки, такие как Чатучак — крупнейший рынок выходного дня в мире.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Бангкока разнообразна: rooftop-бары, клубы, концертные площадки и ночные рынки. Основные зоны — Сукхумвит, Силом, RCA и районы вдоль реки.
+
+Город предлагает как активные развлечения, так и спокойные форматы вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - relocation
+  - expat_life
+  - business_city
+  - urban_survival',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Бангкок относительно безопасен, но требует адаптации к трафику, жаре и шуму. Пешая инфраструктура развита неравномерно, кондиционированные пространства играют важную роль в повседневной жизни.
+
+Английский язык широко используется в бизнесе и сфере услуг. Медицинская инфраструктура высокого уровня и доступна в частных госпиталях.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/bkk tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-bangkok.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'bkk',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Бангкок — самый дорогой город Таиланда. Комфортный бюджет одного человека составляет 1200–1800 USD в месяц.
+
+Аренда современной квартиры начинается от 400–700 USD, расходы на питание и транспорт умеренные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'overview',
+  'ru',
+  'Обзор',
+  'Чиангмай — культурная столица северного Таиланда и один из самых популярных городов страны для длительного проживания экспатов и цифровых кочевников. Город расположен в горной долине и отличается более спокойным ритмом жизни по сравнению с Бангкоком и курортными зонами.
+
+Чиангмай известен древними храмами, развитой креативной средой, сильным сообществом digital nomads и близостью к природе. Он подходит для работы, обучения, творчества и размеренной жизни с доступом к современной инфраструктуре.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: old-city
+    title: Старый город
+    description: Исторический центр с храмами, музеями и крепостными стенами.
+  - id: nimmanhaemin
+    title: Нимман (Nimmanhaemin)
+    description: Современный район с коворкингами, кафе, стартап-средой и экспатами.
+  - id: santitham
+    title: Сантихам
+    description: Более локальный и доступный жилой район рядом с Нимманом.
+  - id: riverside
+    title: Район реки Пинг
+    description: Зеленая зона с отелями, ресторанами и спокойной атмосферой.
+  - id: hang-dong
+    title: Ханг Донг
+    description: Пригород с частными домами, международными школами и природным окружением.
+  - id: doi-suthep
+    title: Склоны Дой Сутхеп
+    description: Горные районы с видом на город, популярные для домов и ретритов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Чиангмай предлагает широкий выбор жилья: кондоминиумы, апартаменты, дома и таунхаусы. Стоимость аренды заметно ниже, чем в Бангкоке и на популярных островах.
+
+Экспаты часто выбирают районы Нимман, Сантихам и пригороды у подножия гор. Город особенно привлекателен для долгосрочного проживания, семей и удалённой работы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Чиангмай славится северной тайской кухней. Фирменное блюдо региона — кхао сой (лапша в кокосовом карри-супе).
+
+В городе множество кафе, кофеен и вегетарианских заведений, ориентированных на иностранцев. Уличная еда и ночные рынки играют важную роль в гастрономической жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются на мотобайках, такси и сонгтэо (красные маршрутки).
+
+Международный аэропорт Чиангмая связывает город с Бангкоком и соседними странами. Железнодорожное сообщение и автобусы обеспечивают связь с другими регионами Таиланда.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический с выраженной сезонностью. Самый комфортный период — с ноября по февраль, когда прохладно и сухо.
+
+С марта по апрель часто наблюдается сезон смога из-за выжигания полей. С июня по октябрь — сезон дождей, но природа становится особенно зелёной.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Основные торговые зоны — ночные рынки, Weekend Market и торговый центр Maya. В Чиангмае широко представлены ремёсла, изделия ручной работы и тайский текстиль.
+
+Город не является крупным торговым хабом, но предлагает всё необходимое для повседневной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и разнообразная: бары, живые концерты, джаз-клубы и культурные мероприятия.
+
+Город ориентирован на общение и творчество, а не на массовые клубные развлечения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - digital_nomad
+  - cultural_capital
+  - slow_life
+  - mountain_trips',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Чиангмай считается безопасным и дружелюбным городом. Английский язык широко используется в туристической и сервисной среде.
+
+Основные неудобства связаны с сезоном смога весной и необходимостью личного транспорта в пригородах.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/cnx tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-chiang-mai.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'cnx',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Чиангмай — один из самых доступных городов Таиланда. Комфортный бюджет одного человека составляет 700–1200 USD в месяц.
+
+Аренда жилья начинается от 250–450 USD, питание и транспорт обходятся недорого.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'overview',
+  'ru',
+  'Обзор',
+  'Хуахин — приморский город на побережье Сиамского залива, один из старейших курортов Таиланда и традиционное место отдыха тайской королевской семьи. Город расположен примерно в 200 км к югу от Бангкока и известен спокойной атмосферой, протяжёнными пляжами и развитой инфраструктурой для длительного проживания.
+
+Хуахин часто выбирают пенсионеры, семьи и экспаты, которым важны тишина, безопасность и близость к столице без суеты мегаполиса. Это город не для вечеринок, а для размеренной и комфортной жизни у моря.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: city-center
+    title: Центр Хуахина
+    description: Историческая часть города с рынками, кафе, вокзалом и городской инфраструктурой.
+  - id: hua-hin-south
+    title: Южный Хуахин
+    description: Жилые и курортные зоны с кондоминиумами и пляжами.
+  - id: khao-takiab
+    title: Као Такиаб
+    description: Район у горы с храмом, пляжем и более спокойной атмосферой.
+  - id: khao-tao
+    title: Као Тао
+    description: Южный пригород с пляжами и домами для долгосрочного проживания.
+  - id: prachuap-side
+    title: Северные и пригородные районы
+    description: Более локальные кварталы и частные дома вдали от туристического центра.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Хуахин предлагает кондоминиумы, апартаменты, таунхаусы и частные дома. Рынок жилья ориентирован именно на долгосрочное проживание, а не краткосрочный туризм.
+
+Стоимость аренды ниже, чем на Пхукете и Самуи, и сопоставима с Паттайей, при этом уровень шума и плотность застройки значительно ниже.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Хуахина сочетает тайскую кухню, морепродукты и интернациональные рестораны, ориентированные на экспатов.
+
+В городе много кафе, рынков и ресторанов у моря. Кухня менее разнообразна, чем в Бангкоке, но полностью закрывает повседневные потребности.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Город компактный, основные перемещения осуществляются на мотобайке, автомобиле или такси. Сонгтэо используются ограниченно.
+
+Хуахин связан с Бангкоком поездами и автобусами, время в пути составляет 2,5–3,5 часа.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, более сухой по сравнению с Андаманским побережьем. Лучшее время для посещения — с ноября по март.
+
+Сезон дождей менее выражен, чем на южных курортах, осадки обычно кратковременные.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'В Хуахине есть торговые центры, рынки и ночные базары. Ассортимент ориентирован на повседневные товары и туристов.
+
+За более широким выбором товаров жители иногда ездят в Бангкок.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь спокойная и умеренная. Основные активности — рестораны, бары у моря и ночные рынки.
+
+Город не ориентирован на клубную культуру и подходит для тихого вечернего отдыха.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - retirement_city
+  - long_stay
+  - family_life
+  - quiet_beach',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Хуахин считается одним из самых безопасных и комфортных городов Таиланда. Английский язык широко используется в сфере услуг.
+
+Медицина представлена частными клиниками и госпиталями среднего и высокого уровня. Город удобен для жизни без спешки.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/hhn tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-hua-hin.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'hhn',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Хуахин — доступный курорт для длительного проживания. Комфортный бюджет одного человека составляет 800–1300 USD в месяц.
+
+Аренда жилья начинается от 350–550 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'overview',
+  'ru',
+  'Обзор',
+  'Краби — провинция и курортный регион на юге Таиланда, расположенный на побережье Андаманского моря. Он известен своими карстовыми скалами, бирюзовым морем, пляжами и островами, которые считаются одними из самых живописных в стране.
+
+В отличие от Пхукета, Краби предлагает более спокойный и природно-ориентированный образ жизни. Регион популярен среди путешественников, семей, экспатов и тех, кто ищет баланс между комфортом, тишиной и активным отдыхом.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: ao-nang
+    title: Ао Нанг
+    description: Главный туристический центр региона с пляжем, отелями, кафе и лодочными маршрутами.
+  - id: krabi-town
+    title: Краби-Таун
+    description: Административный центр с локальной жизнью, рынками и доступной арендой.
+  - id: railay
+    title: Райле
+    description: Полуостров с пляжами и скалами, доступный только по воде, центр скалолазания.
+  - id: klong-muang
+    title: Клонг Муанг
+    description: Более спокойный пляжный район с отелями и резортами.
+  - id: tubkaek
+    title: Тубкаек
+    description: Уединённая прибрежная зона с роскошными резортами и видом на острова.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'В Краби доступны апартаменты, дома, гестхаусы и курортные отели. Для долгосрочного проживания чаще выбирают Краби-Таун и районы за пределами туристических зон.
+
+Стоимость жилья ниже, чем на Пхукете, особенно вне высокого сезона. Регион подходит для длительного проживания и сезонной релокации.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Краби ориентирована на морепродукты и южную тайскую кухню, известную более острыми вкусами.
+
+В Ао Нанге и туристических районах широко представлены интернациональные кафе и рестораны, а в Краби-Тауне — аутентичные локальные заведения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — лодки, мотобайки, такси и сонгтэо. Общественный транспорт развит слабо.
+
+Международный аэропорт Краби связывает регион с Бангкоком и другими городами. Лодочные маршруты соединяют Краби с островами Пхи-Пхи, Ко Ланта и Рейлеем.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с ноября по апрель.
+
+С мая по октябрь продолжается сезон дождей, возможны шторма на море, однако цены на жильё снижаются, а природа особенно зелёная.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'Шопинг ограничен повседневными товарами. Основные покупки совершаются в Краби-Тауне и туристических зонах.
+
+За крупным шопингом жители часто ездят на Пхукет.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь в Краби умеренная и сосредоточена в Ао Нанге. Работают бары, рестораны и пляжные заведения.
+
+Регион ориентирован на спокойный отдых, а не на клубную культуру.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - nature_retreat
+  - island_hopping
+  - rock_climbing
+  - slow_life',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Краби считается безопасным регионом. Основные неудобства связаны с ограниченной инфраструктурой вне туристических зон и зависимостью от погодных условий.
+
+Английский язык используется в туристических районах. Медицина базовая, за сложными услугами обращаются в Пхукет.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/kbi tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-krabi.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'kbi',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Краби — более доступный регион по сравнению с Пхукетом. Комфортный бюджет одного человека составляет 900–1400 USD в месяц.
+
+Аренда жилья начинается от 350–600 USD, в высокий сезон цены растут.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'overview',
+  'ru',
+  'Обзор',
+  'Паттайя — крупный курортный город на восточном побережье Таиланда, расположенный примерно в 150 км от Бангкока. Город известен своей развитой туристической инфраструктурой, круглогодичным сезоном и удобной транспортной доступностью из столицы.
+
+За последние годы Паттайя значительно изменилась: помимо репутации центра ночных развлечений, город стал одним из крупнейших мест проживания экспатов и пенсионеров, а также семей, ориентированных на доступную жизнь у моря с городской инфраструктурой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: central-pattaya
+    title: Центральная Паттайя
+    description: Туристический центр с торговыми центрами, пляжем и активной городской жизнью.
+  - id: jomtien
+    title: Джомтьен
+    description: Более спокойный район с протяжённым пляжем, популярный для проживания экспатов.
+  - id: pratumnak
+    title: Пратамнак
+    description: Зелёный холм между Паттайей и Джомтьеном с кондоминиумами и тихой атмосферой.
+  - id: north-pattaya
+    title: Северная Паттайя
+    description: Район с крупными отелями, торговыми центрами и более упорядоченной застройкой.
+  - id: east-pattaya
+    title: Восточная Паттайя
+    description: Жилые кварталы, частные дома и поселки вдали от туристического шума.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'Паттайя предлагает широкий выбор жилья: кондоминиумы, апартаменты, таунхаусы и частные дома. Цены на аренду ниже, чем на Пхукете и в Бангкоке, особенно в районах Джомтьен и Восточная Паттайя.
+
+Город популярен для долгосрочного проживания благодаря доступности жилья, развитой инфраструктуре, медицинским услугам и большому международному сообществу.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'В Паттайе представлены кухни со всего мира: тайская, европейская, русская, индийская, китайская и японская. Город ориентирован на интернациональную аудиторию.
+
+Уличная еда, рестораны и кафе доступны повсеместно. В районах проживания экспатов легко найти привычную еду и продукты.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной городской транспорт — сонгтэо (маршрутные пикапы), такси и мототакси. Город компактный и удобен для передвижения.
+
+Паттайя хорошо связана с Бангкоком автобусами и поездами. Поездка до столицы занимает около 2 часов.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с ноября по февраль, когда сухо и комфортно.
+
+Сезон дождей длится с июня по октябрь, но осадки обычно кратковременные и редко мешают повседневной жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'В Паттайе расположены крупные торговые центры: Central Festival, Terminal 21, Outlet Mall. Также работают рынки и специализированные магазины.
+
+Ассортимент ориентирован как на туристов, так и на постоянных жителей.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь Паттайи остаётся одной из самых активных в Таиланде, особенно в туристических районах. Работают бары, клубы и развлекательные заведения.
+
+При этом за пределами центральных улиц город предлагает спокойную жизнь, что делает его многослойным и неоднозначным.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - expat_life
+  - beach_city
+  - long_stay
+  - bangkok_weekend',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Паттайя считается относительно безопасным городом, однако в туристических зонах рекомендуется соблюдать стандартные меры предосторожности.
+
+Английский язык широко используется, медицинская инфраструктура хорошо развита, включая международные госпитали.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/pty tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-pattaya.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'pty',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Паттайя — один из самых доступных курортных городов Таиланда. Комфортный бюджет одного человека составляет 800–1300 USD в месяц.
+
+Аренда жилья начинается от 300–500 USD, питание и транспорт обходятся умеренно.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'overview',
+  'ru',
+  'Обзор',
+  'Пхукет — крупнейший остров Таиланда и один из самых известных курортов Юго-Восточной Азии. Он сочетает развитую туристическую инфраструктуру, международное сообщество экспатов, разнообразие пляжей и активную экономическую жизнь.
+
+Сегодня Пхукет — это не только отдых, но и место для долгосрочного проживания, бизнеса и релокации. Остров привлекает цифровых кочевников, предпринимателей, семей и пенсионеров, предлагая комфорт у моря при относительно доступной стоимости жизни.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: patong
+    title: Патонг
+    description: Самый оживлённый туристический район с пляжем, ночной жизнью и отелями.
+  - id: kata-karon
+    title: Ката и Карон
+    description: Курортные районы с пляжами, более спокойные и семейные.
+  - id: rawai
+    title: Раваи
+    description: Южный район острова, популярный у экспатов для долгосрочного проживания.
+  - id: chalong
+    title: Чалонг
+    description: Жилой район и центр дайвинга и яхтинга, удобный для жизни.
+  - id: bang-tao
+    title: Банг Тао
+    description: Престижный район с пляжем, виллами и комплексом Laguna.
+  - id: phuket-town
+    title: Пхукет-Таун
+    description: Административный центр с колониальной архитектурой и локальной жизнью.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Пхукете представлены все типы жилья: апартаменты, кондоминиумы, таунхаусы и виллы с бассейнами. Экспаты чаще всего селятся в районах Раваи, Чалонг, Банг Тао и Пхукет-Тауне.
+
+Стоимость аренды выше, чем в материковых городах, и зависит от сезона. В высокий сезон цены растут, но выбор остаётся широким.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Пхукет — гастрономически разнообразный остров. Здесь представлены тайская, морская, европейская, русская и азиатская кухни.
+
+Уличная еда соседствует с ресторанами высокой кухни. В Пхукет-Тауне развита локальная гастросцена, а в туристических районах — интернациональные кафе и бары.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки, автомобили, такси и сервисы Grab/Bolt. Общественный транспорт ограничен маршрутными автобусами и сонгтэо.
+
+Международный аэропорт Пхукета связывает остров с Азией, Ближним Востоком и Европой. Также доступны морские маршруты к островам Андаманского моря.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический. Лучшее время для посещения — с ноября по апрель (сухой сезон).
+
+С мая по октябрь длится сезон дождей, возможны шторма на море, особенно на западных пляжах. В этот период цены на жильё снижаются.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'На Пхукете есть торговые центры (Central Phuket, Jungceylon), рынки и локальные магазины.
+
+Ассортимент ориентирован на туристов и экспатов: от сувениров до электроники и импортных товаров.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь наиболее активна в Патонге, где сосредоточены клубы, бары и шоу.
+
+В других районах острова преобладает спокойный вечерний формат: рестораны у моря, лаунжи и семейные заведения.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_life
+  - expat_relocation
+  - beach_resort
+  - long_stay',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Пхукет безопасен, но в туристических районах важно следить за личными вещами. Дорожное движение интенсивное, особенно в высокий сезон.
+
+Медицина представлена международными госпиталями. Английский язык широко используется.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/phk tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-phuket.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'phk',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Пхукет — один из самых дорогих регионов Таиланда. Комфортный бюджет одного человека составляет 1200–2000 USD в месяц.
+
+Аренда жилья начинается от 500–800 USD, в высокий сезон цены могут быть выше.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'overview',
+  'ru',
+  'Обзор',
+  'Самуи — один из самых известных островов Таиланда, расположенный в Сиамском заливе. Он сочетает развитую туристическую инфраструктуру, международное экспатское сообщество и относительно спокойный ритм жизни по сравнению с Пхукетом.
+
+Самуи популярен среди семей, удалённых специалистов, предпринимателей и пенсионеров, ищущих комфортную жизнь у моря с хорошей медициной, школами и сервисами. Остров подходит как для краткого отдыха, так и для долгосрочного проживания.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=districts (Районы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'districts',
+  'ru',
+  'Районы',
+  '@districts:
+  - id: chaweng
+    title: Чавенг
+    description: Самый оживлённый район острова с пляжем, торговыми центрами и ночной жизнью.
+  - id: lamai
+    title: Ламай
+    description: Более спокойный курортный район, популярный для проживания экспатов.
+  - id: bophut
+    title: Бопхут
+    description: Район Fisherman’s Village с ресторанами, набережной и семейной атмосферой.
+  - id: mae-nam
+    title: Маенам
+    description: Тихий район с пляжами и домами для долгосрочной аренды.
+  - id: bangrak
+    title: Банграк
+    description: Район рядом с аэропортом и пирсом, удобный для логистики.
+  - id: hills
+    title: Холмы Самуи
+    description: Возвышенности с виллами, видами на море и уединённой атмосферой.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=accommodation (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'accommodation',
+  'ru',
+  'Проживание',
+  'На Самуи представлены апартаменты, кондоминиумы, дома и виллы с бассейнами. Экспаты чаще выбирают Ламай, Маенам, Бопхут и холмистые районы.
+
+Стоимость аренды зависит от сезона и близости к морю. В целом цены ниже, чем на Пхукете, при сопоставимом уровне комфорта.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=food (Еда и кафе) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'food',
+  'ru',
+  'Еда и кафе',
+  'Гастрономия Самуи ориентирована на международную аудиторию. Здесь широко представлены тайская, европейская, русская, индийская и вегетарианская кухни.
+
+Уличная еда и рынки дополняют рестораны и кафе у моря. Выбор еды разнообразен круглый год.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=transport (Транспорт) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'transport',
+  'ru',
+  'Транспорт',
+  'Основной транспорт — мотобайки и автомобили. Общественный транспорт представлен сонгтэо, но используется ограниченно.
+
+Аэропорт Самуи обслуживает внутренние и международные рейсы. Также доступны паромы на материк и соседние острова (Панган, Тао).',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=weather (Погода и сезонность) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'weather',
+  'ru',
+  'Погода и сезонность',
+  'Климат тропический, отличается от Андаманского побережья. Лучшее время для проживания и отдыха — с января по сентябрь.
+
+Сезон дождей наиболее выражен в октябре–ноябре, возможны сильные ливни и штормы.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=shopping (Шопинг) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'shopping',
+  'ru',
+  'Шопинг',
+  'На Самуи есть торговые центры, рынки и магазины повседневных товаров. Ассортимент ориентирован на экспатов и туристов.
+
+За более крупным шопингом жители заказывают онлайн или ездят на материк.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=nightlife (Ночная жизнь) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'nightlife',
+  'ru',
+  'Ночная жизнь',
+  'Ночная жизнь сосредоточена в районе Чавенг. Работают бары, клубы и пляжные вечеринки.
+
+В остальных районах острова вечерний ритм спокойный и семейный.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=guides (Гайды) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'guides',
+  'ru',
+  'Гайды',
+  '@guides:
+  - island_relocation
+  - family_life
+  - long_stay
+  - beach_living',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=tips (Практическая информация) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'tips',
+  'ru',
+  'Практическая информация',
+  'Самуи считается безопасным островом. Дорожное движение интенсивное, особенно в высокий сезон, требуется осторожность при езде на мотобайке.
+
+Медицина представлена международными клиниками и госпиталями. Английский язык широко используется.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=reviews (Отзывы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'reviews',
+  'ru',
+  'Отзывы',
+  '@reviews:
+  source: city',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- city/usm tab=budget (Цены и бюджет) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/city-samui.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'city',
+  'usm',
+  'budget',
+  'ru',
+  'Цены и бюджет',
+  'Самуи — курорт среднего ценового уровня. Комфортный бюджет одного человека составляет 1000–1600 USD в месяц.
+
+Аренда жилья начинается от 400–700 USD, цены выше в высокий сезон и у моря.',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=overview (Обзор) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'overview',
+  'ru',
+  'Обзор',
+  'Таиланд — одна из самых популярных и комфортных стран Юго-Восточной Азии для путешествий и длительного проживания. Страна известна как «земля улыбок», что отражает дружелюбие местных жителей, культурный акцент на вежливости и стремление к гармонии.
+
+Таиланд сочетает древние традиции и современную инфраструктуру: мегаполисы с небоскрёбами соседствуют с тропическими островами, горными регионами и сельскими деревнями. Низкая стоимость жизни, развитый сервис, вкусная кухня и крупное экспатское сообщество делают страну особенно привлекательной для зимовок, релокации, удалённой работы и инвестиций. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=gallery (Фотогалерея) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'gallery',
+  'ru',
+  'Фотогалерея',
+  '@gallery:
+
+* thailand_bangkok_skyline.jpg
+* thailand_chiang_mai_temple.jpg
+* thailand_phuket_beach.jpg
+* thailand_krabi_cliffs.jpg
+* thailand_floating_market.jpg',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=map (Карта) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'map',
+  'ru',
+  'Карта',
+  '@map:
+center: [15.0, 101.0]
+zoom: 5',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=weather (Погода и климат) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'weather',
+  'ru',
+  'Погода и климат',
+  'Таиланд имеет тропический климат с высокой температурой и влажностью в течение всего года. Выделяют три основных сезона, однако погодные условия различаются по регионам.
+
+### Сезоны
+
+* Прохладный и сухой сезон: ноябрь — февраль (наиболее комфортное время)
+* Жаркий сезон: март — май
+* Сезон дождей: июнь — октябрь
+
+На севере страны зимой возможна прохлада ночью, на юге жарко круглый год. Благодаря региональным различиям в Таиланде всегда можно найти место с комфортной погодой. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=history (История) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'history',
+  'ru',
+  'История',
+  'Таиланд — единственная страна региона, которая никогда не была колонизирована европейскими державами. История тайской государственности начинается с королевства Сукхотай в XIII веке и продолжается через эпоху могучей Аюттхаи, сыгравшей ключевую роль в формировании культуры и идентичности страны.
+
+В XVIII веке была основана династия Чакри, правящая до сих пор, а столицей стал Бангкок. В 1932 году Таиланд превратился в конституционную монархию. Несмотря на периоды политической нестабильности, страна сохранила независимость, культурную целостность и устойчивое развитие. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=geography (География) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'geography',
+  'ru',
+  'География',
+  'Таиланд расположен в центре материковой части Юго-Восточной Азии и имеет протяжённую береговую линию около 3200 км. Рельеф страны разнообразен: горы на севере, равнины в центральной части, плато Исан на северо-востоке и тропические побережья на юге.
+
+В стране более 100 национальных парков, густые тропические леса, водопады и богатая морская экосистема. Географическое разнообразие делает Таиланд привлекательным для экотуризма и активного отдыха. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=culture (Культура) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'culture',
+  'ru',
+  'Культура',
+  'Культура Таиланда основана на буддизме школы Тхеравада, который исповедует большинство населения. Основные ценности — уважение к старшим, избегание конфликтов, гармония и концепция «санук» (умение получать удовольствие от жизни).
+
+Тайская культура проявляется в храмах, фестивалях, традиционных танцах, тайском боксе муай-тай и знаменитой кухне. Общество в целом толерантно и доброжелательно к иностранцам, особенно при уважении местных традиций. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=living (Проживание) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'living',
+  'ru',
+  'Проживание',
+  'Таиланд предлагает широкий выбор жилья: современные кондоминиумы, апартаменты, таунхаусы, частные дома и виллы. В городах популярны жилые комплексы с охраной и инфраструктурой.
+
+Стоимость аренды и повседневных расходов ниже, чем в большинстве развитых стран, что делает страну привлекательной для долгосрочного проживания экспатов, пенсионеров и семей. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=visas (Визы) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'visas',
+  'ru',
+  'Визы',
+  'Визовая политика Таиланда ориентирована на привлечение туристов и долгосрочных резидентов. Для граждан многих стран доступен безвизовый въезд на 30 дней с возможностью продления.
+
+Существуют туристические, учебные, рабочие, пенсионные и долгосрочные визы (LTR, Smart Visa), а также программы для цифровых кочевников и инвесторов. Правила регулярно обновляются и требуют актуальной проверки. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=business (Бизнес) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'business',
+  'ru',
+  'Бизнес',
+  'Таиланд — одна из крупнейших экономик Юго-Восточной Азии с развитой промышленностью, туризмом и сектором услуг. Страна активно привлекает иностранные инвестиции через программы BOI и специальные экономические зоны.
+
+Перспективные направления бизнеса: туризм и гостеприимство, IT и стартапы, производство, агробизнес, медицина и образование. При этом иностранцам необходимо учитывать ограничения на владение бизнесом и специфику местной деловой культуры. fileciteturn5file0',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=phrasebook (Разговорник) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'phrasebook',
+  'ru',
+  'Разговорник',
+  '* Здравствуйте — Sawasdee
+* Спасибо — Khop khun
+* Пожалуйста — Mai pen rai
+* Извините — Khor thot
+* Сколько стоит? — Tao rai?
+* Где находится …? — Yu tee nai?',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=reviews (Отзывы экспатов) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'reviews',
+  'ru',
+  'Отзывы экспатов',
+  '@reviews:
+source: expats',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- country/th tab=calculator (Калькулятор стоимости) from E:/projects/work_go2asia/20251216go2asia/content/atlas/thailand/country-thailand.md
+INSERT INTO content_blocks (
+  entity_type, entity_id, tab_key, lang, title, body_markdown, source, created_at, updated_at
+) VALUES (
+  'country',
+  'th',
+  'calculator',
+  'ru',
+  'Калькулятор стоимости',
+  '@cost_calculator:
+enabled: true',
+  'seed',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (entity_type, entity_id, tab_key, lang) DO UPDATE SET
+  title = EXCLUDED.title,
+  body_markdown = EXCLUDED.body_markdown,
+  source = EXCLUDED.source,
+  updated_at = NOW();
+
+-- END ATLAS_COUNTRY_CITY_TABS
+
+
