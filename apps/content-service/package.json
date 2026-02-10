@@ -13,16 +13,13 @@
     "test": "echo \"no tests\""
   },
   "dependencies": {
-    "@go2asia/logger": "workspace:*",
-    "@go2asia/db": "workspace:*"
+    "@go2asia/db": "workspace:*",
+    "@go2asia/logger": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
     "@go2asia/config": "workspace:*",
     "typescript": "^5.3.3",
-    "wrangler": "^3.19.0"
+    "wrangler": "^4.64.0"
   }
 }
-
-
-

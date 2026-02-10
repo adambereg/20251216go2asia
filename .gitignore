@@ -66,6 +66,7 @@ temp/
 
 # Build artifacts
 .turbo/
+dist-staging/
 
 # Generated files
 packages/types/src/generated.ts

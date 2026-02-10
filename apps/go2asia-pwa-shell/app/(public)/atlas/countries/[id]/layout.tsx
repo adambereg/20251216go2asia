@@ -69,7 +69,7 @@ export default function CountryLayout({
   const countryName = (dataSource === 'mock' ? mockCountry?.name : countryData?.name) || 'Загрузка...';
   const flagEmoji = (dataSource === 'mock' ? mockCountry?.flag : countryData?.flag) || '🌏';
   const heroImageUrl =
-    (dataSource === 'mock' ? mockCountry?.heroImage : undefined) ||
+    (dataSource === 'mock' ? mockCountry?.heroImage : countryData?.heroImage) ||
     'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
   const heroImageAlt = countryName || 'Страна';
   // ContentCountryDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме

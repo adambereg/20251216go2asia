@@ -1,6 +1,6 @@
-import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
+import { CountryGallery } from '@/modules/atlas/components/CountryGallery';
 
 export default function CountryGalleryPage() {
-  return <AtlasTabContent entityType="country" tabKey="gallery" title="Фотогалерея" />;
+  return <CountryGallery />;
 }
 

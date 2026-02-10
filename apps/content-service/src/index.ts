@@ -80,6 +80,18 @@ export interface ContentCountryDto {
   placesCount: number;
 }
 
+export type ContentGalleryItemDto = {
+  key: string;
+  url: string;
+  isCover: boolean;
+};
+
+export type ContentCountryGalleryDto = {
+  countryId: string;
+  prefix: string;
+  items: ContentGalleryItemDto[];
+};
+
 export interface ContentCityDto {
   id: string;
   slug: string;
@@ -266,6 +278,28 @@ type AtlasMediaKind = 'country' | 'city' | 'place';
 type CachedMedia = { urls: string[]; keys: string[]; expMs: number };
 const atlasMediaCache = new Map<string, CachedMedia>();
 
+function isImageKey(key: string): boolean {
+  return /\.(jpe?g|png|webp)$/i.test(key);
+}
+
+function filenameFromKey(key: string): string {
+  const parts = key.split('/');
+  return parts[parts.length - 1] ?? key;
+}
+
+function isCoverFilename(filename: string): boolean {
+  return /^01_/i.test(filename.trim());
+}
+
+function sortCountryGalleryKeys(aKey: string, bKey: string): number {
+  const aName = filenameFromKey(aKey);
+  const bName = filenameFromKey(bKey);
+  const aCover = isCoverFilename(aName);
+  const bCover = isCoverFilename(bName);
+  if (aCover !== bCover) return aCover ? -1 : 1;
+  return aName.localeCompare(bName, 'en');
+}
+
 async function listR2UrlsByPrefix(env: Env, prefix: string, limit: number): Promise<{ keys: string[]; urls: string[] }> {
   const bucket = env.MEDIA_BUCKET;
   const base = getMediaBaseUrl(env);
@@ -275,6 +309,7 @@ async function listR2UrlsByPrefix(env: Env, prefix: string, limit: number): Prom
   const keys = (res.objects ?? [])
     .map((o) => o.key)
     .filter((k) => typeof k === 'string' && k.length > 0)
+    .filter((k) => isImageKey(k))
     .sort();
   const urls = keys.map((k) => getPublicUrl(env, k)).filter((u): u is string => typeof u === 'string' && u.length > 0);
   return { keys, urls };
@@ -320,6 +355,20 @@ async function resolveAtlasMedia(env: Env, kind: AtlasMediaKind, opts: { code?: 
 
   atlasMediaCache.set(cacheKey, { keys: [], urls: [], expMs: now + 5 * 60 * 1000 });
   return { keys: [], urls: [] };
+}
+
+function pickCountryHeroUrl(keys: string[], urls: string[]): string | null {
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+  }
+  const imageKeys = keys.filter((k) => isImageKey(k));
+  if (imageKeys.length === 0) return null;
+  const sorted = [...imageKeys].sort(sortCountryGalleryKeys);
+  const coverKey = sorted.find((k) => isCoverFilename(filenameFromKey(k))) ?? sorted[0]!;
+  return keyToUrl.get(coverKey) ?? null;
 }
 
 function sanitizeFilename(name: string): string {
@@ -579,10 +628,21 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
   };
 }
 
+/** Detect placeholder hero URLs (stock photos used as defaults, not real editorial overrides). */
+function isPlaceholderHeroUrl(url: string | null | undefined): boolean {
+  if (!url) return true;
+  // Pexels stock photos are placeholders, not real editorial overrides
+  return /pexels\.com/i.test(url) || /unsplash\.com\/photos/i.test(url);
+}
+
 async function toContentCountryWithMedia(env: Env, row: CountryRow): Promise<ContentCountryDto> {
-  if (row.hero_url) return toContentCountry(row);
-  const resolved = await resolveAtlasMedia(env, 'country', { code: row.code, slug: row.slug, max: 1 });
-  return { ...toContentCountry(row), heroImage: resolved.urls[0] ?? null };
+  // If DB has a real (non-placeholder) hero — use it (editorial override takes priority).
+  if (row.hero_url && !isPlaceholderHeroUrl(row.hero_url)) return toContentCountry(row);
+  // R2 fallback for countries: prefer cover starting with "01_" in country/country-<country_id>/.
+  const resolved = await resolveAtlasMedia(env, 'country', { code: row.id, slug: row.slug, max: 50 });
+  const r2Hero = pickCountryHeroUrl(resolved.keys, resolved.urls);
+  // If R2 has a cover — use it; otherwise fall back to DB hero (even if placeholder).
+  return { ...toContentCountry(row), heroImage: r2Hero ?? row.hero_url ?? null };
 }
 
 async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCityDto> {
@@ -837,6 +897,54 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   } catch (error) {
     logger.error('List places error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch places' } }, 500);
+  }
+}
+
+async function handleGetCountryGallery(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
+
+  try {
+    const countryId = await getCountryIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!countryId) return json({ error: { code: 'NotFound', message: 'Country not found' } }, 404);
+
+    // R2 key convention: country/country-<country_id>/<filename>
+    const prefix = `country/country-${countryId}/`;
+    const resolved = await resolveAtlasMedia(env, 'country', { code: countryId, slug: countryId, max: limit });
+
+    const keyToUrl = new Map<string, string>();
+    for (let i = 0; i < resolved.keys.length; i++) {
+      const k = resolved.keys[i];
+      const u = resolved.urls[i];
+      if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+    }
+
+    const keys = resolved.keys
+      .filter((k) => typeof k === 'string' && k.startsWith(prefix))
+      .filter((k) => isImageKey(k))
+      .sort(sortCountryGalleryKeys);
+
+    const hasExplicitCover = keys.some((k) => isCoverFilename(filenameFromKey(k)));
+    const coverKey = hasExplicitCover ? keys.find((k) => isCoverFilename(filenameFromKey(k))) ?? null : keys[0] ?? null;
+
+    const items: ContentGalleryItemDto[] = [];
+    for (const key of keys) {
+      const url = keyToUrl.get(key);
+      if (!url) continue;
+      items.push({ key, url, isCover: coverKey ? key === coverKey : false });
+    }
+
+    return json({ countryId, prefix, items } satisfies ContentCountryGalleryDto, 200);
+  } catch (error) {
+    logger.error('Get country gallery error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch country gallery' } }, 500);
   }
 }
 
@@ -1184,6 +1292,13 @@ export default {
     }
     if (path === '/v1/content/places' && request.method === 'GET') {
       const res = await handleListPlaces(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const countryGalleryMatch = path.match(/^\/v1\/content\/countries\/([^/]+)\/gallery$/);
+    if (countryGalleryMatch && request.method === 'GET') {
+      const idOrSlug = countryGalleryMatch[1];
+      const res = await handleGetCountryGallery(env, url, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

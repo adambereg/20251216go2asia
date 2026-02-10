@@ -38,6 +38,18 @@ export interface ContentCountryDto {
   placesCount: number;
 }
 
+export interface ContentGalleryItemDto {
+  key: string;
+  url: string;
+  isCover: boolean;
+}
+
+export interface ContentCountryGalleryDto {
+  countryId: string;
+  prefix: string;
+  items: ContentGalleryItemDto[];
+}
+
 export interface ContentCityDto {
   id: string;
   slug: string;
@@ -155,6 +167,17 @@ export async function listEvents(params?: { limit?: number }): Promise<ListRespo
  */
 export async function listCountries(): Promise<ListResponse<ContentCountryDto>> {
   return customInstance<ListResponse<ContentCountryDto>>({ method: 'GET' }, `/v1/content/countries`);
+}
+
+/**
+ * Atlas: country gallery from R2 (public)
+ */
+export async function getCountryGallery(
+  idOrSlug: string,
+  params?: { limit?: number }
+): Promise<ContentCountryGalleryDto> {
+  const qs = params?.limit ? `?limit=${encodeURIComponent(String(params.limit))}` : '';
+  return customInstance<ContentCountryGalleryDto>({ method: 'GET' }, `/v1/content/countries/${idOrSlug}/gallery${qs}`);
 }
 
 /**
