@@ -25,31 +25,62 @@ export function isCdnImageResizingEnabled(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
+function getMediaBaseUrl(): string | undefined {
+  return (
+    process.env.NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL ||
+    process.env.MEDIA_PUBLIC_BASE_URL ||
+    undefined
+  );
+}
+
+function getCdnPrefixOrigin(originalUrl: string): string | null {
+  const base = getMediaBaseUrl();
+  if (base) {
+    try {
+      return new URL(base).origin;
+    } catch {
+      // ignore
+    }
+  }
+
+  // Fallback: use the image's own origin (only safe if it is our media host).
+  try {
+    return new URL(originalUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Best-effort check that URL points to our public media domain.
  *
  * If NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL (or MEDIA_PUBLIC_BASE_URL on server)
- * is not configured, we assume transforms are allowed and return true.
+ * is not configured, we fall back to a conservative heuristic (Go2Asia domains only).
  */
 export function isLikelyR2PublicUrl(url: string): boolean {
   if (!url) return false;
 
-  // Relative URLs are assumed to be served under current Cloudflare zone.
-  if (url.startsWith('/')) return true;
+  const base = getMediaBaseUrl();
 
-  const base =
-    process.env.NEXT_PUBLIC_MEDIA_PUBLIC_BASE_URL ||
-    process.env.MEDIA_PUBLIC_BASE_URL;
+  // If base is unknown, don't try to transform relative URLs (we can't know the CDN zone).
+  if (!base && url.startsWith('/')) return false;
 
-  if (!base) return true;
+  if (!base) {
+    try {
+      const host = new URL(url).host.toLowerCase();
+      // Conservative: only transform our own domains by heuristic.
+      return host.includes('go2asia') || host.endsWith('.go2asia.space');
+    } catch {
+      return false;
+    }
+  }
 
   try {
     const baseHost = new URL(base).host;
     const urlHost = new URL(url).host;
     return baseHost === urlHost;
   } catch {
-    // If parsing fails, don't block transformation by default.
-    return true;
+    return false;
   }
 }
 
@@ -65,17 +96,24 @@ export function toCdnImageUrl(originalUrl: string, opts: ToCdnImageUrlOpts): str
   // If we can confidently detect a different media host, keep the original URL.
   if (!isLikelyR2PublicUrl(originalUrl)) return originalUrl;
 
+  const cdnOrigin = getCdnPrefixOrigin(originalUrl);
+  if (!cdnOrigin) return originalUrl;
+
   const width = Math.max(1, Math.floor(opts.width));
   const quality = Math.max(1, Math.min(100, Math.floor(opts.quality ?? 80)));
   const format: CdnImageFormat = opts.format ?? 'auto';
 
   // Cloudflare Image Resizing accepts absolute URLs as the "origin" part.
-  // For relative paths we should avoid `//` after the params section.
-  const normalizedOriginal = originalUrl.startsWith('/')
-    ? originalUrl.slice(1)
-    : originalUrl;
+  // Important: the `/cdn-cgi/image/...` prefix must be served by a Cloudflare zone.
+  // In our case that's the media domain (not the Netlify app domain).
+  let absoluteOriginal = originalUrl;
+  try {
+    absoluteOriginal = new URL(originalUrl, cdnOrigin).toString();
+  } catch {
+    // keep as-is
+  }
 
-  return `/cdn-cgi/image/width=${width},quality=${quality},format=${format}/${normalizedOriginal}`;
+  return `${cdnOrigin}/cdn-cgi/image/width=${width},quality=${quality},format=${format}/${absoluteOriginal}`;
 }
 
 export function buildSrcSet(originalUrl: string, widths: number[], quality: number): string {
