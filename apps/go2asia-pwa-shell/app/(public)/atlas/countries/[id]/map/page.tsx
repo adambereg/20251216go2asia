@@ -1,6 +1,6 @@
-import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
+import { CountryMapTab } from '@/modules/atlas/components/CountryMapTab';
 
 export default function CountryMapPage() {
-  return <AtlasTabContent entityType="country" tabKey="map" title="Карта" />;
+  return <CountryMapTab />;
 }
 

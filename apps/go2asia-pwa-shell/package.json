@@ -12,10 +12,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.0.0",
+    "@clerk/nextjs": "^6.36.8",
     "@go2asia/atlas-taxonomy": "workspace:*",
     "@go2asia/sdk": "workspace:*",
     "@go2asia/ui": "workspace:*",
+    "@react-leaflet/core": "^2.1.0",
     "@tanstack/react-query": "^5.14.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
@@ -25,7 +26,8 @@
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "4.2.1",
     "react-markdown": "^9.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "supercluster": "^8.0.1"
   },
   "devDependencies": {
     "@go2asia/config": "workspace:*",
