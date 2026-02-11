@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Badge } from '@go2asia/ui';
 import { Clock, Eye, Globe } from 'lucide-react';
 import { ModuleHero } from '@/components/modules';
+import { buildSrcSet, toCdnImageUrl } from '@/lib/imageCdn';
 
 export interface AtlasCountryTab {
   id: string;
@@ -80,12 +81,21 @@ export const AtlasCountryLayout: FC<AtlasCountryLayoutProps> = ({
                 h-36 sm:h-44 md:h-56 lg:h-64
                 xl:h-96
               "
+              style={{ aspectRatio: '16 / 9' }}
             >
               <img
-                src={heroImageUrl}
+                src={toCdnImageUrl(heroImageUrl, {
+                  width: 1600,
+                  quality: 80,
+                  format: 'auto',
+                })}
+                srcSet={buildSrcSet(heroImageUrl, [768, 1024, 1280, 1600, 1920], 80)}
+                sizes="100vw"
                 alt={heroImageAlt || countryName}
                 className="absolute inset-0 w-full h-full object-cover object-center"
-                sizes="(min-width: 1280px) 1200px, 100vw"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
               />
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />

@@ -5,6 +5,7 @@ import { ModuleHero } from '@/components/modules';
 import { Globe, MapPin } from 'lucide-react';
 import { AtlasMainNav } from './AtlasMainNav';
 import { AtlasSearchBar } from './AtlasSearchBar';
+import { buildSrcSet, toCdnImageUrl } from '@/lib/imageCdn';
 
 export interface AtlasHomeCountry {
   id: string;
@@ -65,11 +66,23 @@ export const AtlasHomeView: FC<AtlasHomeViewProps> = ({
             <Link key={country.id} href={`/atlas/countries/${country.id}`}>
               <Card hover className="h-full overflow-hidden">
                 {country.heroImage && (
-                  <div className="relative w-full h-48 overflow-hidden">
+                  <div
+                    className="relative w-full h-48 overflow-hidden"
+                    style={{ aspectRatio: '16 / 9' }}
+                  >
                     <img
-                      src={country.heroImage}
+                      src={toCdnImageUrl(country.heroImage, {
+                        width: 640,
+                        quality: 75,
+                        format: 'auto',
+                      })}
+                      srcSet={buildSrcSet(country.heroImage, [320, 480, 640], 75)}
+                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 360px"
                       alt={country.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     {country.flag && (

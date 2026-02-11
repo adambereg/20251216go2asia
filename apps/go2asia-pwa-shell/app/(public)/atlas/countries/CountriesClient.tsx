@@ -10,6 +10,7 @@ import { useGetCountries } from '@go2asia/sdk/atlas';
 import { useMemo } from 'react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
+import { buildSrcSet, toCdnImageUrl } from '@/lib/imageCdn';
 
 export function CountriesClient() {
   const dataSource = getDataSource();
@@ -128,11 +129,23 @@ export function CountriesClient() {
                 <Link key={country.id} href={`/atlas/countries/${country.id}`}>
                   <Card hover className="h-full overflow-hidden p-0 !border-0">
                     {country.heroImage && (
-                      <div className="relative w-full h-48 overflow-hidden">
+                      <div
+                        className="relative w-full h-48 overflow-hidden"
+                        style={{ aspectRatio: '16 / 9' }}
+                      >
                         <img
-                          src={country.heroImage}
+                          src={toCdnImageUrl(country.heroImage, {
+                            width: 640,
+                            quality: 75,
+                            format: 'auto',
+                          })}
+                          srcSet={buildSrcSet(country.heroImage, [320, 480, 640], 75)}
+                          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 360px"
                           alt={country.name}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         {country.flag && (
