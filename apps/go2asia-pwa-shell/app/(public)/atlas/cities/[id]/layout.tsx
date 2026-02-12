@@ -65,10 +65,9 @@ export default function CityLayout({
   const cityName = (dataSource === 'mock' ? mockCity?.name : cityData?.name) || 'Загрузка...';
   const cityNameNative = ''; // TODO: Get nameNative when API supports it
   const countryName =
-    dataSource === 'mock' ? mockCountry?.name : ''; // TODO(api): derive from countryId
-  const heroImageUrl =
-    (dataSource === 'mock' ? mockCity?.heroImage : undefined) ||
-    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+    dataSource === 'mock' ? mockCountry?.name : (cityData?.countryName ?? ''); // API уже отдаёт countryName
+  // Hero for cities must come from API (which resolves via R2); no Pexels runtime fallback.
+  const heroImageUrl = dataSource === 'mock' ? mockCity?.heroImage : (cityData?.heroImage ?? undefined);
   const heroImageAlt = cityName || 'Город';
   // ContentCityDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
   const updatedAt = dataSource === 'mock' ? mockCity?.updatedAt : undefined;

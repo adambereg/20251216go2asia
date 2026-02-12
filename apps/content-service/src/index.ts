@@ -19,6 +19,7 @@ import {
   createSqlClient,
   getArticleBySlug,
   getEventByIdOrSlug,
+  getCityByIdOrSlug,
   getCityIdByIdOrSlug,
   getCountryIdByIdOrSlug,
   getPlaceByIdOrSlug,
@@ -371,6 +372,27 @@ function pickCountryHeroUrl(keys: string[], urls: string[]): string | null {
   return keyToUrl.get(coverKey) ?? null;
 }
 
+function pickCityHeroUrl(keys: string[], urls: string[]): string | null {
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+  }
+
+  // Prefer explicit hero.jpg override
+  const heroKey = keys.find((k) => /\/hero\.jpg$/i.test(k)) ?? null;
+  if (heroKey) return keyToUrl.get(heroKey) ?? null;
+
+  // Default cover: 01.(jpg|jpeg|png|webp)
+  const coverKey =
+    keys.find((k) => /\/01\.(jpe?g|png|webp)$/i.test(k)) ??
+    keys.find((k) => isImageKey(k)) ??
+    null;
+
+  return coverKey ? keyToUrl.get(coverKey) ?? null : null;
+}
+
 function sanitizeFilename(name: string): string {
   const cleaned = name.trim().replace(/[^a-zA-Z0-9._-]+/g, '_');
   return cleaned.length > 0 ? cleaned.slice(0, 120) : 'file';
@@ -646,9 +668,11 @@ async function toContentCountryWithMedia(env: Env, row: CountryRow): Promise<Con
 }
 
 async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCityDto> {
-  if (row.hero_url) return toContentCity(row);
-  const resolved = await resolveAtlasMedia(env, 'city', { slug: row.slug, max: 1 });
-  return { ...toContentCity(row), heroImage: resolved.urls[0] ?? null };
+  // Cities: SSOT for hero image is R2 under city/<seo-slug>/hero.jpg or city/<seo-slug>/01.jpg.
+  // Do NOT fall back to media_files.public_url (often contains Pexels demo URLs).
+  const resolved = await resolveAtlasMedia(env, 'city', { slug: row.slug, max: 50 });
+  const hero = pickCityHeroUrl(resolved.keys, resolved.urls);
+  return { ...toContentCity(row), heroImage: hero ?? null };
 }
 
 function pickPlaceHeroAndPhotos(keys: string[], urls: string[]): { heroImage: string | null; photos: string[] } {
@@ -959,6 +983,22 @@ async function handleGetPlaceById(env: Env, idOrSlug: string, logger: ReturnType
   } catch (error) {
     logger.error('Get place error', error, { idOrSlug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch place' } }, 500);
+  }
+}
+
+async function handleGetCityById(env: Env, idOrSlug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const row = await getCityByIdOrSlug(sqlClient, cityId);
+    if (!row) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const dto = await toContentCityWithMedia(env, row);
+    return json(dto, 200);
+  } catch (error) {
+    logger.error('Get city error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city' } }, 500);
   }
 }
 
@@ -1287,6 +1327,13 @@ export default {
     }
     if (path === '/v1/content/cities' && request.method === 'GET') {
       const res = await handleListCities(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const cityGetMatch = path.match(/^\/v1\/content\/cities\/([^/]+)$/);
+    if (cityGetMatch && request.method === 'GET') {
+      const idOrSlug = cityGetMatch[1];
+      const res = await handleGetCityById(env, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

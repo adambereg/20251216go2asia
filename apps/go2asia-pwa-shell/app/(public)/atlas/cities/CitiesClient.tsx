@@ -36,20 +36,9 @@ export function CitiesClient() {
         heroImage: city.heroImage || undefined,
       }));
     }
-    
-    // Fallback на моки при пустом API ответе (но не во время загрузки)
-    if (dataSource === 'api' && !isLoading) {
-      console.warn('[CitiesClient] API returned empty, falling back to mocks');
-      return mockRepo.atlas.listCities().map((city) => ({
-        id: city.id,
-        name: city.name,
-        countryId: city.countryId,
-        description: city.description || '',
-        placesCount: city.placesCount || 0,
-        heroImage: undefined,
-      }));
-    }
-    
+
+    // Без fallback на моки в API-режиме: пустой ответ должен быть видимым сигналом
+    // (чтобы не маскировать проблемы Neon/content-service и не тянуть demo Pexels).
     return [];
   }, [citiesData, dataSource, isLoading]);
 

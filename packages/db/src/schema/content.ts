@@ -78,6 +78,13 @@ export const cities = pgTable(
     countryId: text('country_id').notNull().references(() => countries.id),
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
+    /**
+     * Multilingual names (Phase 2.2 hardening).
+     * Expected shape:
+     * - names.ru: display name in Russian (SSOT for current UI)
+     * - names.en: English name (for future UI, search/aliases)
+     */
+    names: jsonb('names'),
     descriptionShort: text('description_short'),
     // Legacy geo columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
@@ -92,6 +99,32 @@ export const cities = pgTable(
   },
   (table) => ({
     idxCitiesCountryId: index('idx_cities_country_id').on(table.countryId),
+  })
+);
+
+/**
+ * City aliases for backward-compatible routing.
+ * Allows resolving /atlas/cities/:idOrSlug where :idOrSlug may be:
+ * - old short slugs (e.g. "sin")
+ * - previously used SEO slugs (e.g. "singapore")
+ * - alternative spellings/transliterations (future)
+ *
+ * Uniqueness: (country_id, alias_slug).
+ */
+export const cityAliases = pgTable(
+  'city_aliases',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    countryId: text('country_id').notNull().references(() => countries.id),
+    aliasSlug: varchar('alias_slug', { length: 255 }).notNull(),
+    cityId: text('city_id').notNull().references(() => cities.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueCountryAlias: unique('city_aliases_country_alias_unique').on(table.countryId, table.aliasSlug),
+    idxAliasSlug: index('idx_city_aliases_alias_slug').on(table.aliasSlug),
+    idxCityId: index('idx_city_aliases_city_id').on(table.cityId),
   })
 );
 

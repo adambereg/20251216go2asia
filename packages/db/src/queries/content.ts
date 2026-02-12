@@ -459,9 +459,22 @@ export async function getCountryIdByIdOrSlug(sql: SqlClient, idOrSlug: string): 
 
 export async function getCityIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
   const rows = await sql`
-    SELECT id::text AS id
-    FROM cities
-    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    WITH direct AS (
+      SELECT id::text AS id
+      FROM cities
+      WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+      LIMIT 1
+    ),
+    ali AS (
+      SELECT ca.city_id::text AS id
+      FROM city_aliases ca
+      WHERE ca.alias_slug = ${idOrSlug}
+      ORDER BY ca.updated_at DESC, ca.created_at DESC, ca.city_id ASC
+      LIMIT 1
+    )
+    SELECT id FROM direct
+    UNION ALL
+    SELECT id FROM ali
     LIMIT 1
   `;
   return (rows[0] as { id: string } | undefined)?.id ?? null;

@@ -83,8 +83,15 @@ export const useGetCityById = (idOrSlug: string) => {
     queryKey: ['content', 'city', { idOrSlug }],
     enabled: Boolean(idOrSlug),
     queryFn: async () => {
-      const res = await customInstance<ListResponse<ContentCityDto>>({ method: 'GET' }, `/v1/content/cities`);
-      return res.items.find((c) => c.id === idOrSlug || c.slug === idOrSlug) ?? null;
+      // Use dedicated endpoint to support alias/redirect resolution via city_aliases.
+      try {
+        return await customInstance<ContentCityDto>({ method: 'GET' }, `/v1/content/cities/${encodeURIComponent(idOrSlug)}`);
+      } catch (err) {
+        // Preserve previous behavior: return null on 404-like failures
+        // eslint-disable-next-line no-console
+        console.warn(`useGetCityById: failed for ${idOrSlug}`, err instanceof Error ? err.message : err);
+        return null;
+      }
     },
     staleTime: 60_000,
   });
