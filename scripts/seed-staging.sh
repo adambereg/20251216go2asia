@@ -65,6 +65,9 @@ fi
 echo "Running content seed..."
 pnpm -C packages/db db:seed
 
+echo "Cleaning up demo places (Bangkok/Chiang Mai/Test/Demo/Sample)..."
+pnpm -C packages/db db:cleanup:demo-places
+
 echo "Done."
 
 

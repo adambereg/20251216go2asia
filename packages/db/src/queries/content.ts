@@ -72,9 +72,19 @@ export interface PlaceRow {
   slug: string;
   name: string;
   type: string;
+  place_kind: string;
+  category: string | null;
+  tags: string | null; // JSON
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  google_maps_url: string | null;
+  price_level: string | null;
   description_short: string | null;
   country_name: string | null;
   city_name: string | null;
+  country_id: string | null;
+  city_id: string | null;
   address: string | null;
   lat: string | null;
   lng: string | null;
@@ -93,6 +103,17 @@ export interface ArticleRow {
   cover_url: string | null;
   published_at: string | null;
   status: string;
+}
+
+export interface ContentBlockRow {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  tab_key: string;
+  lang: string;
+  title: string | null;
+  body_markdown: string;
+  updated_at: string;
 }
 
 // ============================================================================
@@ -218,10 +239,34 @@ export async function getCountryByIdOrSlug(sql: SqlClient, idOrSlug: string): Pr
 /**
  * List cities with counts
  */
-export async function listCities(sql: SqlClient, countryId?: string): Promise<CityRow[]> {
-  if (countryId) {
+export async function listCities(
+  sql: SqlClient,
+  params?: {
+    countryId?: string;
+    q?: string;
+    type?: string;
+    size?: string;
+    sea?: boolean;
+    price?: string;
+    nightlife?: string;
+    sort?: 'size_desc' | 'name_asc' | 'name_desc';
+    limit?: number;
+  }
+): Promise<CityRow[]> {
+  const countryId = params?.countryId ?? null;
+  const qRaw = typeof params?.q === 'string' ? params.q.trim() : '';
+  const q = qRaw.length > 0 ? qRaw : null;
+  const type = params?.type ?? null;
+  const size = params?.size ?? null;
+  const sea = typeof params?.sea === 'boolean' ? params.sea : null;
+  const price = params?.price ?? null;
+  const nightlife = params?.nightlife ?? null;
+  const sort = params?.sort ?? 'size_desc';
+  const limit = Math.min(500, Math.max(1, params?.limit ?? 200));
+
+  if (sort === 'name_desc') {
     const rows = await sql`
-      SELECT 
+      SELECT
         ci.id,
         ci.slug,
         ci.name,
@@ -235,14 +280,63 @@ export async function listCities(sql: SqlClient, countryId?: string): Promise<Ci
       FROM cities ci
       LEFT JOIN countries co ON ci.country_id = co.id
       LEFT JOIN media_files m ON ci.hero_media_id = m.id
-      WHERE ci.country_id = ${countryId}
-      ORDER BY ci.name
+      WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+        AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+        AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+        AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+        AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+        AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+        AND (
+          ${q}::text IS NULL
+          OR (
+            COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+            OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+          )
+        )
+      ORDER BY COALESCE(ci.names->>'ru', ci.name) DESC
+      LIMIT ${limit}
     `;
     return rows as CityRow[];
   }
-  
+
+  if (sort === 'name_asc') {
+    const rows = await sql`
+      SELECT
+        ci.id,
+        ci.slug,
+        ci.name,
+        ci.country_id,
+        co.name AS country_name,
+        ci.description_short,
+        COALESCE(ci.lat, ci.latitude) AS lat,
+        COALESCE(ci.lng, ci.longitude) AS lng,
+        m.public_url AS hero_url,
+        (SELECT COUNT(*)::int FROM places WHERE city_id = ci.id) AS places_count
+      FROM cities ci
+      LEFT JOIN countries co ON ci.country_id = co.id
+      LEFT JOIN media_files m ON ci.hero_media_id = m.id
+      WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+        AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+        AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+        AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+        AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+        AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+        AND (
+          ${q}::text IS NULL
+          OR (
+            COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+            OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+          )
+        )
+      ORDER BY COALESCE(ci.names->>'ru', ci.name) ASC
+      LIMIT ${limit}
+    `;
+    return rows as CityRow[];
+  }
+
+  // Default: size_desc (сначала крупные)
   const rows = await sql`
-    SELECT 
+    SELECT
       ci.id,
       ci.slug,
       ci.name,
@@ -256,7 +350,29 @@ export async function listCities(sql: SqlClient, countryId?: string): Promise<Ci
     FROM cities ci
     LEFT JOIN countries co ON ci.country_id = co.id
     LEFT JOIN media_files m ON ci.hero_media_id = m.id
-    ORDER BY ci.name
+    WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+      AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+      AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+      AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+      AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+      AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+      AND (
+        ${q}::text IS NULL
+        OR (
+          COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+          OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+        )
+      )
+    ORDER BY
+      CASE ci.city_size::text
+        WHEN 'capital' THEN 4
+        WHEN 'large' THEN 3
+        WHEN 'medium' THEN 2
+        WHEN 'small' THEN 1
+        ELSE 0
+      END DESC,
+      COALESCE(ci.names->>'ru', ci.name) ASC
+    LIMIT ${limit}
   `;
   return rows as CityRow[];
 }
@@ -289,42 +405,34 @@ export async function getCityByIdOrSlug(sql: SqlClient, idOrSlug: string): Promi
 /**
  * List places
  */
-export async function listPlaces(sql: SqlClient, cityId?: string, limit = 100): Promise<PlaceRow[]> {
-  if (cityId) {
-    const rows = await sql`
-      SELECT 
-        p.id,
-        p.slug,
-        p.name,
-        p.type,
-        p.description_short,
-        co.name AS country_name,
-        ci.name AS city_name,
-        p.address,
-        COALESCE(p.lat, p.latitude) AS lat,
-        COALESCE(p.lng, p.longitude) AS lng,
-        m.public_url AS hero_url,
-        p.images::text AS images
-      FROM places p
-      LEFT JOIN countries co ON p.country_id = co.id
-      LEFT JOIN cities ci ON p.city_id = ci.id
-      LEFT JOIN media_files m ON p.hero_media_id = m.id
-      WHERE p.city_id = ${cityId}
-      ORDER BY p.name
-      LIMIT ${limit}
-    `;
-    return rows as PlaceRow[];
-  }
-  
+export async function listPlaces(
+  sql: SqlClient,
+  params?: { cityId?: string; countryId?: string; kind?: string; limit?: number }
+): Promise<PlaceRow[]> {
+  const cityId = params?.cityId ?? null;
+  const countryId = params?.countryId ?? null;
+  const kind = params?.kind ?? null;
+  const limit = Math.min(500, Math.max(1, params?.limit ?? 100));
+
   const rows = await sql`
     SELECT 
       p.id,
       p.slug,
       p.name,
       p.type,
+      p.place_kind,
+      p.category,
+      p.tags::text AS tags,
+      p.website,
+      p.phone,
+      p.instagram,
+      p.google_maps_url,
+      p.price_level,
       p.description_short,
       co.name AS country_name,
       ci.name AS city_name,
+      p.country_id,
+      p.city_id,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -334,6 +442,9 @@ export async function listPlaces(sql: SqlClient, cityId?: string, limit = 100): 
     LEFT JOIN countries co ON p.country_id = co.id
     LEFT JOIN cities ci ON p.city_id = ci.id
     LEFT JOIN media_files m ON p.hero_media_id = m.id
+    WHERE (${cityId}::text IS NULL OR p.city_id = ${cityId})
+      AND (${countryId}::text IS NULL OR p.country_id = ${countryId})
+      AND (${kind}::text IS NULL OR p.place_kind = ${kind})
     ORDER BY p.name
     LIMIT ${limit}
   `;
@@ -350,9 +461,19 @@ export async function getPlaceByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       p.slug,
       p.name,
       p.type,
+      p.place_kind,
+      p.category,
+      p.tags::text AS tags,
+      p.website,
+      p.phone,
+      p.instagram,
+      p.google_maps_url,
+      p.price_level,
       p.description_short,
       co.name AS country_name,
       ci.name AS city_name,
+      p.country_id,
+      p.city_id,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -415,6 +536,104 @@ export async function getArticleBySlug(sql: SqlClient, slug: string): Promise<Ar
     LIMIT 1
   `;
   return (rows[0] as ArticleRow) ?? null;
+}
+
+// ============================================================================
+// Atlas tabs (content_blocks)
+// ============================================================================
+
+export async function getCountryIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT id::text AS id
+    FROM countries
+    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function getCityIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    WITH direct AS (
+      SELECT id::text AS id
+      FROM cities
+      WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+      LIMIT 1
+    ),
+    ali AS (
+      SELECT ca.city_id::text AS id
+      FROM city_aliases ca
+      WHERE ca.alias_slug = ${idOrSlug}
+      ORDER BY ca.updated_at DESC, ca.created_at DESC, ca.city_id ASC
+      LIMIT 1
+    )
+    SELECT id FROM direct
+    UNION ALL
+    SELECT id FROM ali
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function getPlaceIdByIdOrSlug(sql: SqlClient, idOrSlug: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT id::text AS id
+    FROM places
+    WHERE id::text = ${idOrSlug} OR slug = ${idOrSlug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function listContentBlocks(
+  sql: SqlClient,
+  entityType: string,
+  entityId: string,
+  filters?: { tabKey?: string; lang?: string }
+): Promise<ContentBlockRow[]> {
+  const tabKey = filters?.tabKey ?? null;
+  const lang = filters?.lang ?? null;
+
+  if (tabKey && lang) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
+        AND tab_key = ${tabKey} AND lang = ${lang}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  if (tabKey) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
+        AND tab_key = ${tabKey}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  if (lang) {
+    const rows = await sql`
+      SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+      FROM content_blocks
+      WHERE entity_type = ${entityType} AND entity_id = ${entityId}
+        AND lang = ${lang}
+      ORDER BY tab_key ASC
+    `;
+    return rows as ContentBlockRow[];
+  }
+
+  const rows = await sql`
+    SELECT id::text AS id, entity_type, entity_id::text AS entity_id, tab_key, lang, title, body_markdown, updated_at::text AS updated_at
+    FROM content_blocks
+    WHERE entity_type = ${entityType} AND entity_id = ${entityId}
+    ORDER BY tab_key ASC
+  `;
+  return rows as ContentBlockRow[];
 }
 
 

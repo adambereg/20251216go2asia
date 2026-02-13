@@ -6,12 +6,25 @@
  * - Integration with Points Service (event_registration)
  */
 
-import type { ArticleRow, CityRow, CountryRow, EventRow, PlaceRow, SqlClient } from '@go2asia/db/queries/content';
+import type {
+  ArticleRow,
+  CityRow,
+  ContentBlockRow,
+  CountryRow,
+  EventRow,
+  PlaceRow,
+  SqlClient,
+} from '@go2asia/db/queries/content';
 import {
   createSqlClient,
   getArticleBySlug,
   getEventByIdOrSlug,
+  getCityByIdOrSlug,
+  getCityIdByIdOrSlug,
+  getCountryIdByIdOrSlug,
   getPlaceByIdOrSlug,
+  getPlaceIdByIdOrSlug,
+  listContentBlocks,
   listArticles,
   listCities,
   listCountries,
@@ -29,6 +42,12 @@ export interface Env {
   SERVICE_JWT_SECRET?: string;
   // Database
   DATABASE_URL?: string;
+  // Media / Storage (Milestone 2.2)
+  MEDIA_UPLOAD_SIGNING_SECRET?: string;
+  MEDIA_PUBLIC_BASE_URL?: string; // e.g. https://pub-<id>.r2.dev/go2asia-media (optional)
+  MEDIA_MAX_BYTES?: string; // default: 10MB
+  MEDIA_BUCKET?: R2Bucket;
+  SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
 type ListResponse<T> = { items: T[] };
@@ -62,6 +81,18 @@ export interface ContentCountryDto {
   placesCount: number;
 }
 
+export type ContentGalleryItemDto = {
+  key: string;
+  url: string;
+  isCover: boolean;
+};
+
+export type ContentCountryGalleryDto = {
+  countryId: string;
+  prefix: string;
+  items: ContentGalleryItemDto[];
+};
+
 export interface ContentCityDto {
   id: string;
   slug: string;
@@ -80,6 +111,16 @@ export interface ContentPlaceDto {
   slug: string;
   name: string;
   type: string;
+  kind: string;
+  category: string | null;
+  tags: string[] | null;
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  googleMapsUrl: string | null;
+  priceLevel: string | null;
+  countryId: string | null;
+  cityId: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -103,6 +144,14 @@ export interface ContentArticleDto {
   status: string;
 }
 
+export interface ContentTabDto {
+  tabKey: string;
+  lang: string;
+  title: string | null;
+  bodyMarkdown: string;
+  updatedAt: string | null;
+}
+
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -110,6 +159,363 @@ function json(data: unknown, status = 200): Response {
       'Content-Type': 'application/json',
     },
   });
+}
+
+function parseIntOrDefault(raw: unknown, fallback: number): number {
+  const n = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = btoa(bin);
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(input: string): Uint8Array {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  const b64 = normalized + pad;
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) out |= a[i] ^ b[i];
+  return out === 0;
+}
+
+async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return new Uint8Array(sig);
+}
+
+type MediaScope = 'content' | 'space' | 'rf' | 'rielt' | 'quest' | 'avatar';
+const MEDIA_SCOPES: ReadonlySet<MediaScope> = new Set(['content', 'space', 'rf', 'rielt', 'quest', 'avatar']);
+
+type UploadTokenPayload = {
+  v: 1;
+  key: string;
+  userId: string;
+  scope: MediaScope;
+  contentType: string;
+  maxBytes: number;
+  exp: number; // unix seconds
+};
+
+async function signUploadToken(secret: string, payload: UploadTokenPayload): Promise<string> {
+  const payloadB64 = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const sig = await hmacSha256(secret, payloadB64);
+  const sigB64 = bytesToBase64Url(sig);
+  return `${payloadB64}.${sigB64}`;
+}
+
+async function verifyUploadToken(secret: string, token: string): Promise<
+  | { ok: true; payload: UploadTokenPayload }
+  | { ok: false; error: string }
+> {
+  const parts = token.split('.');
+  if (parts.length !== 2) return { ok: false, error: 'TOKEN_FORMAT' };
+  const [payloadB64, sigB64] = parts;
+  let payloadJson: unknown;
+  try {
+    payloadJson = JSON.parse(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
+  } catch {
+    return { ok: false, error: 'TOKEN_PAYLOAD' };
+  }
+  if (!payloadJson || typeof payloadJson !== 'object' || Array.isArray(payloadJson)) {
+    return { ok: false, error: 'TOKEN_PAYLOAD' };
+  }
+
+  const p = payloadJson as Partial<UploadTokenPayload>;
+  if (p.v !== 1) return { ok: false, error: 'TOKEN_VERSION' };
+  if (typeof p.key !== 'string' || p.key.length < 3) return { ok: false, error: 'TOKEN_KEY' };
+  if (typeof p.userId !== 'string' || p.userId.length < 3) return { ok: false, error: 'TOKEN_USER' };
+  if (typeof p.scope !== 'string' || !MEDIA_SCOPES.has(p.scope as MediaScope)) return { ok: false, error: 'TOKEN_SCOPE' };
+  if (typeof p.contentType !== 'string' || p.contentType.length < 3) return { ok: false, error: 'TOKEN_CONTENT_TYPE' };
+  if (typeof p.maxBytes !== 'number' || !Number.isFinite(p.maxBytes) || p.maxBytes < 1) return { ok: false, error: 'TOKEN_MAX_BYTES' };
+  if (typeof p.exp !== 'number' || !Number.isFinite(p.exp)) return { ok: false, error: 'TOKEN_EXP' };
+
+  const expectedSig = await hmacSha256(secret, payloadB64);
+  const gotSig = base64UrlToBytes(sigB64);
+  if (!timingSafeEqual(expectedSig, gotSig)) return { ok: false, error: 'TOKEN_SIG' };
+
+  const now = Math.floor(Date.now() / 1000);
+  if (p.exp < now) return { ok: false, error: 'TOKEN_EXPIRED' };
+
+  return { ok: true, payload: p as UploadTokenPayload };
+}
+
+function pickMediaBucket(env: Env, scope: MediaScope): R2Bucket | null {
+  if (scope === 'space') return env.SPACE_MEDIA_BUCKET ?? env.MEDIA_BUCKET ?? null;
+  return env.MEDIA_BUCKET ?? null;
+}
+
+function getMediaBaseUrl(env: Env): string {
+  const base = (env.MEDIA_PUBLIC_BASE_URL ?? 'https://media.go2asia.space').trim();
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
+function getPublicUrl(env: Env, key: string): string | null {
+  const base = getMediaBaseUrl(env);
+  if (!base) return null;
+  return `${base}/${key}`;
+}
+
+type AtlasMediaKind = 'country' | 'city' | 'place';
+
+type CachedMedia = { urls: string[]; keys: string[]; expMs: number };
+const atlasMediaCache = new Map<string, CachedMedia>();
+
+function isImageKey(key: string): boolean {
+  return /\.(jpe?g|png|webp)$/i.test(key);
+}
+
+function filenameFromKey(key: string): string {
+  const parts = key.split('/');
+  return parts[parts.length - 1] ?? key;
+}
+
+function isCoverFilename(filename: string): boolean {
+  return /^01_/i.test(filename.trim());
+}
+
+function sortCountryGalleryKeys(aKey: string, bKey: string): number {
+  const aName = filenameFromKey(aKey);
+  const bName = filenameFromKey(bKey);
+  const aCover = isCoverFilename(aName);
+  const bCover = isCoverFilename(bName);
+  if (aCover !== bCover) return aCover ? -1 : 1;
+  return aName.localeCompare(bName, 'en');
+}
+
+async function listR2UrlsByPrefix(env: Env, prefix: string, limit: number): Promise<{ keys: string[]; urls: string[] }> {
+  const bucket = env.MEDIA_BUCKET;
+  const base = getMediaBaseUrl(env);
+  if (!bucket || !base) return { keys: [], urls: [] };
+
+  const res = await bucket.list({ prefix, limit });
+  const keys = (res.objects ?? [])
+    .map((o) => o.key)
+    .filter((k) => typeof k === 'string' && k.length > 0)
+    .filter((k) => isImageKey(k))
+    .sort();
+  const urls = keys.map((k) => getPublicUrl(env, k)).filter((u): u is string => typeof u === 'string' && u.length > 0);
+  return { keys, urls };
+}
+
+async function resolveAtlasMedia(env: Env, kind: AtlasMediaKind, opts: { code?: string; slug: string; max: number }): Promise<{
+  keys: string[];
+  urls: string[];
+}> {
+  const base = getMediaBaseUrl(env);
+  if (!base) return { keys: [], urls: [] };
+
+  const cacheKey = `${kind}:${opts.code ?? ''}:${opts.slug}:${opts.max}`;
+  const now = Date.now();
+  const cached = atlasMediaCache.get(cacheKey);
+  if (cached && cached.expMs > now) return { keys: cached.keys, urls: cached.urls };
+
+  const slug = opts.slug.trim();
+  const code = (opts.code ?? '').trim().toLowerCase();
+
+  // Heuristics aligned with existing bucket structure:
+  // - country/: observed prefix looks like country/country-vn/
+  // - city/: unknown; try both city/<slug>/ and city/city-<slug>/
+  // - place/: unknown; try both place/<slug>/ and place/place-<slug>/
+  const prefixes: string[] =
+    kind === 'country'
+      ? [
+          code ? `country/country-${code}/` : '',
+          slug ? `country/${slug}/` : '',
+          slug ? `country/country-${slug}/` : '',
+        ].filter(Boolean)
+      : kind === 'city'
+        ? [slug ? `city/${slug}/` : '', slug ? `city/city-${slug}/` : ''].filter(Boolean)
+        : [slug ? `place/${slug}/` : '', slug ? `place/place-${slug}/` : ''].filter(Boolean);
+
+  for (const prefix of prefixes) {
+    const found = await listR2UrlsByPrefix(env, prefix, opts.max);
+    if (found.urls.length > 0) {
+      atlasMediaCache.set(cacheKey, { keys: found.keys, urls: found.urls, expMs: now + 10 * 60 * 1000 });
+      return found;
+    }
+  }
+
+  atlasMediaCache.set(cacheKey, { keys: [], urls: [], expMs: now + 5 * 60 * 1000 });
+  return { keys: [], urls: [] };
+}
+
+function pickCountryHeroUrl(keys: string[], urls: string[]): string | null {
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+  }
+  const imageKeys = keys.filter((k) => isImageKey(k));
+  if (imageKeys.length === 0) return null;
+  const sorted = [...imageKeys].sort(sortCountryGalleryKeys);
+  const coverKey = sorted.find((k) => isCoverFilename(filenameFromKey(k))) ?? sorted[0]!;
+  return keyToUrl.get(coverKey) ?? null;
+}
+
+function pickCityHeroUrl(keys: string[], urls: string[]): string | null {
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+  }
+
+  // Prefer explicit hero.jpg override
+  const heroKey = keys.find((k) => /\/hero\.jpg$/i.test(k)) ?? null;
+  if (heroKey) return keyToUrl.get(heroKey) ?? null;
+
+  // Default cover: 01.(jpg|jpeg|png|webp)
+  const coverKey =
+    keys.find((k) => /\/01\.(jpe?g|png|webp)$/i.test(k)) ??
+    keys.find((k) => isImageKey(k)) ??
+    null;
+
+  return coverKey ? keyToUrl.get(coverKey) ?? null : null;
+}
+
+function sanitizeFilename(name: string): string {
+  const cleaned = name.trim().replace(/[^a-zA-Z0-9._-]+/g, '_');
+  return cleaned.length > 0 ? cleaned.slice(0, 120) : 'file';
+}
+
+async function handleCreateMediaUploadToken(
+  request: Request,
+  env: Env,
+  requestId: string
+): Promise<Response> {
+  const userId = request.headers.get('X-User-ID');
+  if (!userId) return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+  const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
+  if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
+
+  const maxBytesDefault = parseIntOrDefault(env.MEDIA_MAX_BYTES, 10 * 1024 * 1024);
+
+  const bodyUnknown: unknown = await request.json().catch(() => null);
+  const body =
+    bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+      ? (bodyUnknown as Record<string, unknown>)
+      : null;
+
+  const scopeRaw = body?.scope;
+  const filenameRaw = body?.filename;
+  const contentTypeRaw = body?.contentType;
+  const sizeBytesRaw = body?.sizeBytes;
+
+  const scope = (typeof scopeRaw === 'string' ? scopeRaw : 'content') as MediaScope;
+  if (!MEDIA_SCOPES.has(scope)) return json({ error: { code: 'BadRequest', message: 'Invalid scope' } }, 400);
+  const filename = sanitizeFilename(typeof filenameRaw === 'string' ? filenameRaw : 'file');
+  const contentType = typeof contentTypeRaw === 'string' ? contentTypeRaw : 'application/octet-stream';
+  const sizeBytes = typeof sizeBytesRaw === 'number' && Number.isFinite(sizeBytesRaw) ? sizeBytesRaw : null;
+  if (sizeBytes !== null && (sizeBytes < 1 || sizeBytes > maxBytesDefault)) {
+    return json({ error: { code: 'BadRequest', message: 'Invalid sizeBytes' } }, 400);
+  }
+
+  // Only allow images for Phase 2.2 (safe baseline).
+  if (!contentType.startsWith('image/')) {
+    return json({ error: { code: 'BadRequest', message: 'Only image/* uploads are allowed' } }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + 10 * 60; // 10 minutes
+
+  const ext = filename.includes('.') ? filename.split('.').pop() ?? 'bin' : 'bin';
+  const objectKey = `uploads/${scope}/${userId}/${now}/${crypto.randomUUID()}.${ext}`;
+
+  const payload: UploadTokenPayload = {
+    v: 1,
+    key: objectKey,
+    userId,
+    scope,
+    contentType,
+    maxBytes: maxBytesDefault,
+    exp,
+  };
+  const token = await signUploadToken(secret, payload);
+
+  return json(
+    {
+      uploadUrl: `/v1/content/media/upload/${token}`,
+      key: objectKey,
+      publicUrl: getPublicUrl(env, objectKey),
+      expiresAt: new Date(exp * 1000).toISOString(),
+      requestId,
+    },
+    200
+  );
+}
+
+async function handleMediaUpload(
+  request: Request,
+  env: Env,
+  token: string,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
+  if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
+
+  const verified = await verifyUploadToken(secret, token);
+  if (!verified.ok) return json({ error: { code: 'Unauthorized', message: 'Invalid or expired upload token' } }, 401);
+
+  const { payload } = verified;
+  const bucket = pickMediaBucket(env, payload.scope);
+  if (!bucket) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_BUCKET binding is missing' } }, 503);
+
+  const contentType = request.headers.get('Content-Type') ?? payload.contentType;
+  if (!contentType.startsWith('image/')) {
+    return json({ error: { code: 'BadRequest', message: 'Only image/* uploads are allowed' } }, 400);
+  }
+
+  // Read body and enforce size.
+  const buf = await request.arrayBuffer().catch(() => null);
+  if (!buf) return json({ error: { code: 'BadRequest', message: 'Missing body' } }, 400);
+  const bytes = new Uint8Array(buf);
+  if (bytes.byteLength < 1 || bytes.byteLength > payload.maxBytes) {
+    return json({ error: { code: 'BadRequest', message: 'File too large' } }, 400);
+  }
+
+  try {
+    await bucket.put(payload.key, bytes, {
+      httpMetadata: { contentType },
+      customMetadata: {
+        userId: payload.userId,
+        scope: payload.scope,
+      },
+    });
+    logger.info('Media uploaded', { key: payload.key, scope: payload.scope, userId: payload.userId });
+    return json(
+      {
+        ok: true,
+        key: payload.key,
+        publicUrl: getPublicUrl(env, payload.key),
+        requestId,
+      },
+      201
+    );
+  } catch (error) {
+    logger.error('R2 put failed', error, { key: payload.key });
+    return json({ error: { code: 'InternalError', message: 'Upload failed' }, requestId }, 500);
+  }
 }
 
 function handleHealth(env: Env): Response {
@@ -199,12 +605,21 @@ function toContentCity(row: CityRow): ContentCityDto {
 
 function toContentPlace(row: PlaceRow): ContentPlaceDto {
   let photos: string[] = [];
+  let tags: string[] | null = null;
   if (row.images) {
     try {
       const parsed = JSON.parse(row.images);
       if (Array.isArray(parsed)) photos = parsed.filter((x) => typeof x === 'string');
     } catch {
       // ignore
+    }
+  }
+  if (row.tags) {
+    try {
+      const parsed = JSON.parse(row.tags);
+      if (Array.isArray(parsed)) tags = parsed.filter((x) => typeof x === 'string');
+    } catch {
+      tags = null;
     }
   }
   if (photos.length === 0 && row.hero_url) photos = [row.hero_url];
@@ -214,6 +629,16 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
     slug: row.slug,
     name: row.name,
     type: row.type,
+    kind: row.place_kind,
+    category: row.category,
+    tags,
+    website: row.website,
+    phone: row.phone,
+    instagram: row.instagram,
+    googleMapsUrl: row.google_maps_url,
+    priceLevel: row.price_level,
+    countryId: row.country_id,
+    cityId: row.city_id,
     description: row.description_short,
     country: row.country_name,
     city: row.city_name,
@@ -223,6 +648,95 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
     heroImage: row.hero_url,
     photos,
   };
+}
+
+/** Detect placeholder hero URLs (stock photos used as defaults, not real editorial overrides). */
+function isPlaceholderHeroUrl(url: string | null | undefined): boolean {
+  if (!url) return true;
+  // Pexels stock photos are placeholders, not real editorial overrides
+  return /pexels\.com/i.test(url) || /unsplash\.com\/photos/i.test(url);
+}
+
+async function toContentCountryWithMedia(env: Env, row: CountryRow): Promise<ContentCountryDto> {
+  // If DB has a real (non-placeholder) hero — use it (editorial override takes priority).
+  if (row.hero_url && !isPlaceholderHeroUrl(row.hero_url)) return toContentCountry(row);
+  // R2 fallback for countries: prefer cover starting with "01_" in country/country-<country_id>/.
+  const resolved = await resolveAtlasMedia(env, 'country', { code: row.id, slug: row.slug, max: 50 });
+  const r2Hero = pickCountryHeroUrl(resolved.keys, resolved.urls);
+  // If R2 has a cover — use it; otherwise do NOT fall back to placeholder stock URLs (Pexels/Unsplash).
+  // Better to return null and let UI show an empty placeholder.
+  const dbHero = row.hero_url && !isPlaceholderHeroUrl(row.hero_url) ? row.hero_url : null;
+  return { ...toContentCountry(row), heroImage: r2Hero ?? dbHero ?? null };
+}
+
+async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCityDto> {
+  // Cities: SSOT for hero image is R2 under city/<seo-slug>/hero.jpg or city/<seo-slug>/01.jpg.
+  // Do NOT fall back to media_files.public_url (often contains Pexels demo URLs).
+  const resolved = await resolveAtlasMedia(env, 'city', { slug: row.slug, max: 50 });
+  const hero = pickCityHeroUrl(resolved.keys, resolved.urls);
+  return { ...toContentCity(row), heroImage: hero ?? null };
+}
+
+function pickPlaceHeroAndPhotos(keys: string[], urls: string[]): { heroImage: string | null; photos: string[] } {
+  // R2 structure (current contract):
+  // place/{place_id}/hero.jpg OR place/{place_id}/01.jpg ... 05.jpg
+  const keyToUrl = new Map<string, string>();
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const u = urls[i];
+    if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) {
+      keyToUrl.set(k, u);
+    }
+  }
+
+  // Prefer hero.jpg if present
+  const heroKey = keys.find((k) => /\/hero\.jpg$/i.test(k)) ?? null;
+  const heroImage = heroKey ? keyToUrl.get(heroKey) ?? null : null;
+
+  // Photos: 01..05 in order (only those that exist)
+  const photos: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const num = String(i).padStart(2, '0');
+    const k = keys.find((x) => new RegExp(`/${num}\\.jpg$`, 'i').test(x));
+    if (k) {
+      const u = keyToUrl.get(k);
+      if (u) photos.push(u);
+    }
+  }
+
+  // If none found by 01..05, fall back to all jpg urls (sorted by key)
+  if (photos.length === 0) {
+    for (const k of keys) {
+      if (/\.jpg$/i.test(k)) {
+        const u = keyToUrl.get(k);
+        if (u) photos.push(u);
+      }
+    }
+  }
+
+  // If no explicit hero.jpg, hero falls back to 01.jpg (or first photo)
+  const heroFallback = photos[0] ?? null;
+  return { heroImage: heroImage ?? heroFallback, photos };
+}
+
+async function toContentPlaceWithMedia(env: Env, row: PlaceRow): Promise<ContentPlaceDto> {
+  const base = toContentPlace(row);
+  // If DB has explicit gallery urls (images json), trust DB (no R2 listing).
+  // If DB only has hero_url (and no images), we still want R2 gallery photos.
+  if (row.images) return base;
+
+  // R2 fallback for places (works for all countries: PH, KH, VN, TH, LA, MY, ID, SG, ...):
+  // prefix: place/{place_id}/ where place_id == places.id
+  // Example: place/hue-imperial-city-hue/01.jpg (VN), place/rep-angkor-wat/01.jpg (KH), place/bkk-grand-palace/01.jpg (TH), place/vte-pha-that-luang/01.jpg (LA), place/kll-petronas-twin-towers/01.jpg (MY), place/bali-tanah-lot-temple/01.jpg (ID), place/sgp-marina-bay-sands-skypark/01.jpg (SG)
+  const resolved = await resolveAtlasMedia(env, 'place', { slug: row.id, max: 50 });
+  const picked = pickPlaceHeroAndPhotos(resolved.keys, resolved.urls);
+
+  // heroImage: DB wins if present; else R2 (hero.jpg > 01.jpg)
+  const heroImage = base.heroImage ?? picked.heroImage ?? null;
+  // photos: if DB didn't provide images, use R2 (01..05)
+  const photos = picked.photos.length > 0 ? picked.photos : base.photos;
+
+  return { ...base, heroImage, photos };
 }
 
 function toContentArticle(row: ArticleRow): ContentArticleDto {
@@ -246,6 +760,16 @@ function toContentArticle(row: ArticleRow): ContentArticleDto {
     coverImage: row.cover_url,
     publishedAt: row.published_at,
     status: row.status,
+  };
+}
+
+function toContentTab(row: ContentBlockRow): ContentTabDto {
+  return {
+    tabKey: row.tab_key,
+    lang: row.lang,
+    title: row.title,
+    bodyMarkdown: row.body_markdown,
+    updatedAt: row.updated_at ?? null,
   };
 }
 
@@ -363,7 +887,8 @@ async function handleListCountries(env: Env, logger: ReturnType<typeof createLog
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   try {
     const rows = await listCountries(sqlClient);
-    return json({ items: rows.map(toContentCountry) } satisfies ListResponse<ContentCountryDto>, 200);
+    const items = await Promise.all(rows.map((r) => toContentCountryWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentCountryDto>, 200);
   } catch (error) {
     logger.error('List countries error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch countries' } }, 500);
@@ -373,10 +898,36 @@ async function handleListCountries(env: Env, logger: ReturnType<typeof createLog
 async function handleListCities(env: Env, url: URL, logger: ReturnType<typeof createLogger>): Promise<Response> {
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  // Query params (server-side filtering/sort)
   const countryId = url.searchParams.get('countryId') ?? undefined;
+  const q = url.searchParams.get('q') ?? undefined;
+  const type = url.searchParams.get('type') ?? undefined;
+  const size = url.searchParams.get('size') ?? undefined;
+  const price = url.searchParams.get('price') ?? undefined;
+  const nightlife = url.searchParams.get('nightlife') ?? undefined;
+  const sortRaw = (url.searchParams.get('sort') ?? '').trim();
+  const sort =
+    sortRaw === 'name_asc' || sortRaw === 'name_desc' || sortRaw === 'size_desc' ? sortRaw : 'size_desc';
+
+  const seaRaw = (url.searchParams.get('sea') ?? '').trim().toLowerCase();
+  const sea = seaRaw === 'true' ? true : seaRaw === 'false' ? false : undefined;
+
+  const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '200') || 200));
   try {
-    const rows = await listCities(sqlClient, countryId);
-    return json({ items: rows.map(toContentCity) } satisfies ListResponse<ContentCityDto>, 200);
+    const rows = await listCities(sqlClient, {
+      countryId,
+      q,
+      type,
+      size,
+      sea,
+      price,
+      nightlife,
+      sort,
+      limit,
+    });
+    const items = await Promise.all(rows.map((r) => toContentCityWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentCityDto>, 200);
   } catch (error) {
     logger.error('List cities error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch cities' } }, 500);
@@ -387,13 +938,64 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   const cityId = url.searchParams.get('cityId') ?? undefined;
+  const countryId = url.searchParams.get('countryId') ?? undefined;
+  const kind = url.searchParams.get('kind') ?? undefined;
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
   try {
-    const rows = await listPlaces(sqlClient, cityId, limit);
-    return json({ items: rows.map(toContentPlace) } satisfies ListResponse<ContentPlaceDto>, 200);
+    const rows = await listPlaces(sqlClient, { cityId, countryId, kind, limit });
+    const items = await Promise.all(rows.map((r) => toContentPlaceWithMedia(env, r)));
+    return json({ items } satisfies ListResponse<ContentPlaceDto>, 200);
   } catch (error) {
     logger.error('List places error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch places' } }, 500);
+  }
+}
+
+async function handleGetCountryGallery(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
+
+  try {
+    const countryId = await getCountryIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!countryId) return json({ error: { code: 'NotFound', message: 'Country not found' } }, 404);
+
+    // R2 key convention: country/country-<country_id>/<filename>
+    const prefix = `country/country-${countryId}/`;
+    const resolved = await resolveAtlasMedia(env, 'country', { code: countryId, slug: countryId, max: limit });
+
+    const keyToUrl = new Map<string, string>();
+    for (let i = 0; i < resolved.keys.length; i++) {
+      const k = resolved.keys[i];
+      const u = resolved.urls[i];
+      if (typeof k === 'string' && k.length > 0 && typeof u === 'string' && u.length > 0) keyToUrl.set(k, u);
+    }
+
+    const keys = resolved.keys
+      .filter((k) => typeof k === 'string' && k.startsWith(prefix))
+      .filter((k) => isImageKey(k))
+      .sort(sortCountryGalleryKeys);
+
+    const hasExplicitCover = keys.some((k) => isCoverFilename(filenameFromKey(k)));
+    const coverKey = hasExplicitCover ? keys.find((k) => isCoverFilename(filenameFromKey(k))) ?? null : keys[0] ?? null;
+
+    const items: ContentGalleryItemDto[] = [];
+    for (const key of keys) {
+      const url = keyToUrl.get(key);
+      if (!url) continue;
+      items.push({ key, url, isCover: coverKey ? key === coverKey : false });
+    }
+
+    return json({ countryId, prefix, items } satisfies ContentCountryGalleryDto, 200);
+  } catch (error) {
+    logger.error('Get country gallery error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch country gallery' } }, 500);
   }
 }
 
@@ -403,10 +1005,90 @@ async function handleGetPlaceById(env: Env, idOrSlug: string, logger: ReturnType
   try {
     const row = await getPlaceByIdOrSlug(sqlClient, idOrSlug);
     if (!row) return json({ error: { code: 'NotFound', message: 'Place not found' } }, 404);
-    return json(toContentPlace(row), 200);
+    const dto = await toContentPlaceWithMedia(env, row);
+    return json(dto, 200);
   } catch (error) {
     logger.error('Get place error', error, { idOrSlug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch place' } }, 500);
+  }
+}
+
+async function handleGetCityById(env: Env, idOrSlug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const row = await getCityByIdOrSlug(sqlClient, cityId);
+    if (!row) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const dto = await toContentCityWithMedia(env, row);
+    return json(dto, 200);
+  } catch (error) {
+    logger.error('Get city error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city' } }, 500);
+  }
+}
+
+async function handleListCountryTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const countryId = await getCountryIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!countryId) return json({ error: { code: 'NotFound', message: 'Country not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'country', countryId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List country tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch country tabs' } }, 500);
+  }
+}
+
+async function handleListCityTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'city', cityId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List city tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city tabs' } }, 500);
+  }
+}
+
+async function handleListPlaceTabs(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const tabKey = url.searchParams.get('tabKey') ?? undefined;
+  const lang = url.searchParams.get('lang') ?? undefined;
+  try {
+    const placeId = await getPlaceIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!placeId) return json({ error: { code: 'NotFound', message: 'Place not found' } }, 404);
+    const rows = await listContentBlocks(sqlClient, 'place', placeId, { tabKey, lang });
+    return json({ items: rows.map(toContentTab) } satisfies ListResponse<ContentTabDto>, 200);
+  } catch (error) {
+    logger.error('List place tabs error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch place tabs' } }, 500);
   }
 }
 
@@ -437,13 +1119,6 @@ async function handleGetArticleBySlug(env: Env, slug: string, logger: ReturnType
 }
 
 // JWT utilities (for service-to-service auth)
-
-function bytesToBase64Url(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  const b64 = btoa(bin);
-  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
 
 function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
@@ -641,6 +1316,20 @@ export default {
       return res;
     }
 
+    // Media / Storage (Milestone 2.2)
+    if (path === '/v1/content/media/upload-token' && request.method === 'POST') {
+      const res = await handleCreateMediaUploadToken(request, env, requestId);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const mediaUploadMatch = path.match(/^\/v1\/content\/media\/upload\/(.+)$/);
+    if (mediaUploadMatch && request.method === 'PUT') {
+      const token = mediaUploadMatch[1];
+      const res = await handleMediaUpload(request, env, token, requestId, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
     // Public: list events
     if (path === '/v1/content/events' && request.method === 'GET') {
       const res = await handleListEvents(env, url, logger);
@@ -668,8 +1357,43 @@ export default {
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
+    const cityGetMatch = path.match(/^\/v1\/content\/cities\/([^/]+)$/);
+    if (cityGetMatch && request.method === 'GET') {
+      const idOrSlug = cityGetMatch[1];
+      const res = await handleGetCityById(env, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
     if (path === '/v1/content/places' && request.method === 'GET') {
       const res = await handleListPlaces(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const countryGalleryMatch = path.match(/^\/v1\/content\/countries\/([^/]+)\/gallery$/);
+    if (countryGalleryMatch && request.method === 'GET') {
+      const idOrSlug = countryGalleryMatch[1];
+      const res = await handleGetCountryGallery(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const countryTabsMatch = path.match(/^\/v1\/content\/countries\/([^/]+)\/tabs$/);
+    if (countryTabsMatch && request.method === 'GET') {
+      const idOrSlug = countryTabsMatch[1];
+      const res = await handleListCountryTabs(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const cityTabsMatch = path.match(/^\/v1\/content\/cities\/([^/]+)\/tabs$/);
+    if (cityTabsMatch && request.method === 'GET') {
+      const idOrSlug = cityTabsMatch[1];
+      const res = await handleListCityTabs(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const placeTabsMatch = path.match(/^\/v1\/content\/places\/([^/]+)\/tabs$/);
+    if (placeTabsMatch && request.method === 'GET') {
+      const idOrSlug = placeTabsMatch[1];
+      const res = await handleListPlaceTabs(env, url, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

@@ -22,6 +22,7 @@ import {
   index,
   check,
   pgEnum,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -58,6 +59,29 @@ export const eventRegistrationStatusEnum = pgEnum('event_registration_status', [
   'cancelled',
 ]);
 
+/**
+ * Atlas City editorial filters (Phase: Cities filters/sort)
+ *
+ * Notes:
+ * - Keep values stable & editor-friendly (dropdowns).
+ * - Columns are nullable: NULL means "Все".
+ */
+export const atlasCityTypeEnum = pgEnum('atlas_city_type', [
+  'resort',
+  'cultural',
+  'business',
+  'nature',
+  'island',
+  'mountain',
+  'historic',
+  'mixed',
+  'other',
+]);
+
+export const atlasCitySizeEnum = pgEnum('atlas_city_size', ['small', 'medium', 'large', 'capital']);
+export const atlasCityPriceLevelEnum = pgEnum('atlas_city_price_level', ['budget', 'mid', 'expensive']);
+export const atlasCityNightlifeLevelEnum = pgEnum('atlas_city_nightlife_level', ['active', 'moderate', 'calm']);
+
 export const countries = pgTable('countries', {
   id: text('id').primaryKey(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
@@ -77,7 +101,20 @@ export const cities = pgTable(
     countryId: text('country_id').notNull().references(() => countries.id),
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
+    /**
+     * Multilingual names (Phase 2.2 hardening).
+     * Expected shape:
+     * - names.ru: display name in Russian (SSOT for current UI)
+     * - names.en: English name (for future UI, search/aliases)
+     */
+    names: jsonb('names'),
     descriptionShort: text('description_short'),
+    // Editorial filters (nullable => "Все")
+    cityType: atlasCityTypeEnum('city_type'),
+    citySize: atlasCitySizeEnum('city_size'),
+    hasSea: boolean('has_sea'),
+    priceLevel: atlasCityPriceLevelEnum('price_level'),
+    nightlifeLevel: atlasCityNightlifeLevelEnum('nightlife_level'),
     // Legacy geo columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     latitude: numeric('latitude', { precision: 9, scale: 6 }),
@@ -91,6 +128,37 @@ export const cities = pgTable(
   },
   (table) => ({
     idxCitiesCountryId: index('idx_cities_country_id').on(table.countryId),
+    idxCitiesType: index('idx_cities_city_type').on(table.cityType),
+    idxCitiesSize: index('idx_cities_city_size').on(table.citySize),
+    idxCitiesHasSea: index('idx_cities_has_sea').on(table.hasSea),
+    idxCitiesPriceLevel: index('idx_cities_price_level').on(table.priceLevel),
+    idxCitiesNightlifeLevel: index('idx_cities_nightlife_level').on(table.nightlifeLevel),
+  })
+);
+
+/**
+ * City aliases for backward-compatible routing.
+ * Allows resolving /atlas/cities/:idOrSlug where :idOrSlug may be:
+ * - old short slugs (e.g. "sin")
+ * - previously used SEO slugs (e.g. "singapore")
+ * - alternative spellings/transliterations (future)
+ *
+ * Uniqueness: (country_id, alias_slug).
+ */
+export const cityAliases = pgTable(
+  'city_aliases',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    countryId: text('country_id').notNull().references(() => countries.id),
+    aliasSlug: varchar('alias_slug', { length: 255 }).notNull(),
+    cityId: text('city_id').notNull().references(() => cities.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueCountryAlias: unique('city_aliases_country_alias_unique').on(table.countryId, table.aliasSlug),
+    idxAliasSlug: index('idx_city_aliases_alias_slug').on(table.aliasSlug),
+    idxCityId: index('idx_city_aliases_city_id').on(table.cityId),
   })
 );
 
@@ -103,6 +171,9 @@ export const places = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
     type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
+    placeKind: text('place_kind').notNull().default('showplace'), // showplace | business
+    category: text('category'),
+    tags: jsonb('tags'),
     descriptionShort: text('description_short'),
     // Legacy geo columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
@@ -112,6 +183,11 @@ export const places = pgTable(
     lat: numeric('lat', { precision: 9, scale: 6 }),
     lng: numeric('lng', { precision: 9, scale: 6 }),
     address: text('address'),
+    website: text('website'),
+    phone: text('phone'),
+    instagram: text('instagram'),
+    googleMapsUrl: text('google_maps_url'),
+    priceLevel: text('price_level'),
     heroMediaId: text('hero_media_id').references(() => mediaFiles.id),
     // Temporary compatibility for UI-first stage: keep optional list of public URLs.
     // In API integration (PR#3+), UI should read via media_files.
@@ -193,6 +269,32 @@ export const articles = pgTable('articles', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+export const contentBlocks = pgTable(
+  'content_blocks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    entityType: text('entity_type').notNull(), // country | city | place
+    entityId: text('entity_id').notNull(), // FK to countries/cities/places.id (text)
+    tabKey: text('tab_key').notNull(),
+    lang: text('lang').notNull(),
+    title: text('title'),
+    bodyMarkdown: text('body_markdown').notNull(),
+    source: text('source').notNull().default('seed'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueEntityTabLang: unique('content_blocks_unique').on(
+      table.entityType,
+      table.entityId,
+      table.tabKey,
+      table.lang
+    ),
+    idxEntity: index('idx_content_blocks_entity').on(table.entityType, table.entityId),
+    idxTabLang: index('idx_content_blocks_tab_lang').on(table.tabKey, table.lang),
+  })
+);
 
 export const eventRegistrations = pgTable('event_registrations', {
   id: text('id').primaryKey(),

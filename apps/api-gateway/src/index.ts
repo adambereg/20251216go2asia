@@ -13,6 +13,12 @@ export interface Env {
   CONTENT_SERVICE_URL?: string;
   POINTS_SERVICE_URL?: string;
   REFERRAL_SERVICE_URL?: string;
+  // Phase 2 services (not all exist yet; keep optional and only route when configured)
+  SPACE_SERVICE_URL?: string;
+  QUEST_SERVICE_URL?: string;
+  RIELT_SERVICE_URL?: string;
+  GURU_SERVICE_URL?: string;
+  RF_SERVICE_URL?: string;
   
   // Secrets (Cloudflare Secrets)
   CLERK_JWT_SECRET?: string;
@@ -21,6 +27,13 @@ export interface Env {
   // Runtime vars (Cloudflare Vars)
   ENVIRONMENT?: string;
   VERSION?: string;
+
+  /**
+   * Security: debug routes must be explicitly enabled.
+   * - Default: disabled (including in production).
+   * - Enable by setting DEBUG_ROUTES_ENABLED="true".
+   */
+  DEBUG_ROUTES_ENABLED?: string;
 }
 
 function base64UrlToBytes(input: string): Uint8Array {
@@ -226,6 +239,21 @@ async function routeRequest(
 
   // Debug (safe): show which service URLs are configured (host only)
   if (path === '/v1/_debug/routes' && request.method === 'GET') {
+    // SECURITY: do not expose debug surfaces unless explicitly enabled.
+    // This endpoint reveals routing structure and configured upstream hosts.
+    const debugEnabled = (env.DEBUG_ROUTES_ENABLED ?? '').toLowerCase() === 'true';
+    if (!debugEnabled) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'No route for path: /v1/_debug/routes',
+          },
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -237,6 +265,12 @@ async function routeRequest(
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
+          // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
+          { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
+          { prefix: '/v1/quest/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
+          { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
+          { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
+          { prefix: '/v1/rf/', var: 'RF_SERVICE_URL', host: safeHostFromUrl(env.RF_SERVICE_URL) },
         ],
         rewrites: [{ from: '/v1/api/content/*', to: '/v1/content/*' }],
       }),
@@ -264,6 +298,18 @@ async function routeRequest(
   } else if (path.startsWith('/v1/referral/')) {
     serviceUrl = env.REFERRAL_SERVICE_URL;
     if (!serviceUrl) missingVar = 'REFERRAL_SERVICE_URL';
+  } else if (path.startsWith('/v1/space/')) {
+    // Phase 2 (planned): do not fail with 502 if the service is not configured yet.
+    // Keep behavior consistent with "unknown route" until SPACE_SERVICE_URL is provided.
+    if (env.SPACE_SERVICE_URL) serviceUrl = env.SPACE_SERVICE_URL;
+  } else if (path.startsWith('/v1/quest/')) {
+    if (env.QUEST_SERVICE_URL) serviceUrl = env.QUEST_SERVICE_URL;
+  } else if (path.startsWith('/v1/rielt/')) {
+    if (env.RIELT_SERVICE_URL) serviceUrl = env.RIELT_SERVICE_URL;
+  } else if (path.startsWith('/v1/guru/')) {
+    if (env.GURU_SERVICE_URL) serviceUrl = env.GURU_SERVICE_URL;
+  } else if (path.startsWith('/v1/rf/')) {
+    if (env.RF_SERVICE_URL) serviceUrl = env.RF_SERVICE_URL;
   }
 
   if (!serviceUrl) {
@@ -336,8 +382,17 @@ async function routeRequest(
   // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
   const isContentRegister =
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
+  // Media (Phase 2.2): token issuance requires auth, upload itself is authorized by a signed token.
+  const isMediaUploadToken =
+    request.method === 'POST' && downstreamPath === '/v1/content/media/upload-token';
 
-  if (path.startsWith('/v1/points/') || path.startsWith('/v1/referral/') || path.startsWith('/v1/users/') || isContentRegister) {
+  if (
+    path.startsWith('/v1/points/') ||
+    path.startsWith('/v1/referral/') ||
+    path.startsWith('/v1/users/') ||
+    isContentRegister ||
+    isMediaUploadToken
+  ) {
     const token = getBearerToken(request);
     let userId: string | null = null;
 

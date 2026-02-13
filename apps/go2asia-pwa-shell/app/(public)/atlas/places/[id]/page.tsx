@@ -1,21 +1,18 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useGetPlaceById } from '@go2asia/sdk/atlas';
+import { useGetPlaceById, useGetPlaceTabs } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
-import { getDataSource } from '@/mocks/dto';
-import { mockRepo } from '@/mocks/repo';
+import { formatNumber } from '@/modules/atlas/utils/number';
+import { PlaceLandingLayoutBusiness, PlaceLandingLayoutShowplace } from '@/modules/atlas/components/PlaceLandingLayouts';
+import { getPlaceHeroImage, getPlacePhotos } from '@/modules/atlas/utils/placeMedia';
 
 export default function PlaceOverviewPage() {
   const params = useParams();
   const placeId = params?.id as string;
 
-  const dataSource = getDataSource();
-
-  // Всегда вызываем хук (правило React Hooks), но отключаем запрос в mock-режиме
-  const { data: placeData, isLoading } = useGetPlaceById(dataSource === 'api' ? (placeId || '') : '');
-
-  const mockPlace = mockRepo.atlas.getPlaceById(placeId || '');
+  const { data: placeData, isLoading } = useGetPlaceById(placeId || '');
+  const { data: tabsData } = useGetPlaceTabs(placeId || '', { lang: 'ru', tabKey: 'overview' });
 
   if (isLoading) {
     return (
@@ -26,10 +23,7 @@ export default function PlaceOverviewPage() {
     );
   }
 
-  const resolved = dataSource === 'mock' ? mockPlace : placeData ?? mockPlace;
-  const isFallback = dataSource === 'api' && !placeData && Boolean(mockPlace);
-
-  if (!resolved) {
+  if (!placeData) {
     return (
       <div className="text-center py-12 text-slate-600">
         Данные о месте не найдены.
@@ -37,83 +31,50 @@ export default function PlaceOverviewPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {isFallback ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          DEMO MODE / fallback: показаны мок-данные (API недоступен).
-        </div>
-      ) : null}
-      <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
+  // Extract markdown from tabs - ONLY source of content sections
+  const overviewTab = tabsData?.items?.find((t) => t.tabKey === 'overview');
+  const overviewMarkdown = overviewTab?.bodyMarkdown ?? null;
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {/* Описание */}
-        <div className="px-4 py-4 text-sm text-slate-700 space-y-2">
-          <p>
-            {(resolved as any).description || 'Нет описания.'}
-          </p>
-        </div>
+  // Generate R2 photo URLs for place gallery
+  const r2Photos = getPlacePhotos(placeData.id);
+  // Merge API photos (if any) with R2 photos, prioritizing API
+  const allPhotos = placeData.photos && placeData.photos.length > 0 
+    ? [...placeData.photos, ...r2Photos.filter(p => !placeData.photos?.includes(p))]
+    : r2Photos;
 
-        {/* Ключевая информация */}
-        <div className="border-t border-slate-100 px-4 py-4">
-          <h3 className="font-semibold text-slate-900 mb-3">Ключевая информация</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(resolved as any).type && (
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                  Тип
-                </div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {(resolved as any).type}
-                </div>
-              </div>
-            )}
-            {(resolved as any).latitude && (resolved as any).longitude && (
-              <>
-                <div className="rounded-xl bg-slate-50 px-4 py-3">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                    Широта
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {Number.parseFloat(String((resolved as any).latitude)).toFixed(4)}
-                  </div>
-                </div>
-                <div className="rounded-xl bg-slate-50 px-4 py-3">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                    Долгота
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {Number.parseFloat(String((resolved as any).longitude)).toFixed(4)}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+  // API maps lat/lng → latitude/longitude in DTO for backward compatibility
+  // Use latitude/longitude (which come from DB lat/lng) and also expose as lat/lng for future migration
+  const formattedLat = placeData.latitude ? formatNumber(placeData.latitude, 4) : null;
+  const formattedLng = placeData.longitude ? formatNumber(placeData.longitude, 4) : null;
 
-        {/* Категории */}
-        {(resolved as any).categories && (resolved as any).categories.length > 0 && (
-          <div className="border-t border-slate-100 px-4 py-4">
-            <h3 className="font-semibold text-slate-900 mb-3">Категории</h3>
-            <div className="flex flex-wrap gap-2">
-              {(resolved as any).categories.map((category: string) => (
-                <span
-                  key={category}
-                  className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm"
-                >
-                  {category}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+  const detailData = {
+    id: placeData.id,
+    slug: placeData.slug,
+    name: placeData.name,
+    kind: (placeData.kind as 'showplace' | 'business') ?? 'showplace',
+    description: placeData.description ?? null, // Short teaser only
+    heroImage: getPlaceHeroImage(placeData.id, placeData.heroImage ?? placeData.photos?.[0]),
+    photos: allPhotos,
+    cityName: placeData.city ?? null,
+    countryName: placeData.country ?? null,
+    category: placeData.category ?? null,
+    tags: placeData.tags ?? [],
+    address: placeData.address ?? null,
+    priceLevel: placeData.priceLevel ?? null,
+    instagram: placeData.instagram ?? null,
+    website: placeData.website ?? null,
+    phone: placeData.phone ?? null,
+    googleMapsUrl: placeData.googleMapsUrl ?? null,
+    lat: formattedLat, // Preferred: from DB lat (via API latitude field)
+    lng: formattedLng, // Preferred: from DB lng (via API longitude field)
+    latitude: formattedLat, // Legacy: kept for backward compatibility
+    longitude: formattedLng, // Legacy: kept for backward compatibility
+    overviewMarkdown, // ONLY source for content sections
+  };
 
-        {/* Метаданные */}
-        <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-          Последнее обновление:{' '}
-          {(resolved as any).updatedAt ? new Date((resolved as any).updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
-        </div>
-      </section>
-    </div>
+  return detailData.kind === 'business' ? (
+    <PlaceLandingLayoutBusiness data={detailData} />
+  ) : (
+    <PlaceLandingLayoutShowplace data={detailData} />
   );
 }

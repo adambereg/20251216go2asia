@@ -68,9 +68,12 @@ export default function CountryLayout({
   // Определяем данные страны из API
   const countryName = (dataSource === 'mock' ? mockCountry?.name : countryData?.name) || 'Загрузка...';
   const flagEmoji = (dataSource === 'mock' ? mockCountry?.flag : countryData?.flag) || '🌏';
+  // ВАЖНО: в API-режиме не используем Pexels fallback, чтобы не было "вспышки"
+  // демо-обложки на первом рендере/гидрации до прихода данных из API (R2).
   const heroImageUrl =
-    (dataSource === 'mock' ? mockCountry?.heroImage : undefined) ||
-    'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
+    dataSource === 'mock'
+      ? (mockCountry?.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg')
+      : (countryData?.heroImage || undefined);
   const heroImageAlt = countryName || 'Страна';
   // ContentCountryDto не содержит updatedAt в текущем контракте → показываем дату только в mock-режиме
   const updatedAt = dataSource === 'mock' ? mockCountry?.updatedAt : undefined;

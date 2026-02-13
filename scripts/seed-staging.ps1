@@ -62,7 +62,15 @@ if ($Reset) {
 }
 
 Write-Host "Running content seed..."
+if ($env:SEED_DEMO_PLACES) {
+  Write-Host "SEED_DEMO_PLACES is set; demo places may be inserted."
+} else {
+  Write-Host "SEED_DEMO_PLACES is not set; demo places seed is disabled by default."
+}
 pnpm -C packages/db db:seed
+
+Write-Host "Cleaning up demo places (Bangkok/Chiang Mai/Test/Demo/Sample)..."
+pnpm -C packages/db db:cleanup:demo-places
 
 Write-Host "Done."
 

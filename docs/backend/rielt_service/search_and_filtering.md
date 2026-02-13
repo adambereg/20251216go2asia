@@ -1,5 +1,9 @@
 # Rielt Service — Search & Filtering
 
+> **Статус документа**: **REQUIREMENTS / DESIRED BEHAVIOR**  
+> Этот документ описывает целевое поведение поиска и фильтрации. **Реализация в коде может отсутствовать** (полностью или частично).  
+> См. также: `docs/decisions/search_strategy.md`, `docs/standards/search_conventions_v1.md`.
+
 ## Каталог (поиск объявлений)
 
 Основная точка входа — `/api/rielt/v1/catalog`.

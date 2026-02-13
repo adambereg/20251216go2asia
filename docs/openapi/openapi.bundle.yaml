@@ -349,6 +349,47 @@ components:
         - type
         - photos
       type: object
+    CreateUploadTokenRequest:
+      properties:
+        contentType:
+          description: Only image/* is allowed in Phase 2.2 baseline
+          type: string
+        filename:
+          type: string
+        scope:
+          $ref: "#/components/schemas/MediaScope"
+        sizeBytes:
+          description: Optional client hint for size validation
+          nullable: true
+          type: integer
+      required:
+        - scope
+        - filename
+        - contentType
+      type: object
+    CreateUploadTokenResponse:
+      properties:
+        expiresAt:
+          format: date-time
+          type: string
+        key:
+          description: R2 object key
+          type: string
+        publicUrl:
+          description: Public URL if MEDIA_PUBLIC_BASE_URL is configured
+          nullable: true
+          type: string
+        requestId:
+          nullable: true
+          type: string
+        uploadUrl:
+          description: Relative URL to upload endpoint (via API Gateway)
+          type: string
+      required:
+        - uploadUrl
+        - key
+        - expiresAt
+      type: object
     DebugDbResponse:
       properties:
         counts:
@@ -543,15 +584,33 @@ components:
         - ok
         - userId
       type: object
+    MediaScope:
+      description: Logical scope for object key prefixing (Phase 2).
+      enum:
+        - content
+        - space
+        - rf
+        - rielt
+        - quest
+        - avatar
+      type: string
     PointsAction:
       description: |
-        Minimal action set for Milestone 3. This enum may be extended post-M3. Note: `event_registration` is optional in M3 and may be enabled only when Content → Points integration is delivered.
+        Phase 2 action contract (Points-only). This enum may be extended in Phase 2 **only** by explicit decision. IMPORTANT: Phase 3 tokenomics (G2A/NFT/on-chain) actions are intentionally excluded.
       enum:
         - registration
         - first_login
         - referral_bonus_referee
         - referral_bonus_referrer
         - event_registration
+        - space_post_created
+        - space_repost_created
+        - space_reaction_created
+        - quest_completed
+        - rielt_listing_created
+        - rf_partner_verified
+        - rf_voucher_claimed
+        - rf_voucher_redeemed
       type: string
     PointsTransaction:
       properties:
@@ -659,6 +718,22 @@ components:
           type: string
       required:
         - items
+      type: object
+    UploadResult:
+      properties:
+        key:
+          type: string
+        ok:
+          type: boolean
+        publicUrl:
+          nullable: true
+          type: string
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - ok
+        - key
       type: object
     UserBalance:
       properties:
@@ -1021,6 +1096,73 @@ paths:
       summary: Register current user for event (authorized)
       tags:
         - content
+  /v1/content/media/upload-token:
+    post:
+      description: |
+        Creates a short-lived signed token for uploading media to R2 via Content Service. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+      operationId: createMediaUploadToken
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadTokenResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Create signed upload token (authorized)
+      tags:
+        - media
+  /v1/content/media/upload/{token}:
+    put:
+      description: |
+        Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
+      operationId: uploadMediaByToken
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              format: binary
+              type: string
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Upload media by signed token (no user auth)
+      tags:
+        - media
   /v1/content/places:
     get:
       operationId: listPlaces
@@ -1293,6 +1435,8 @@ tags:
     name: tokenomics
   - description: Service health checks
     name: health
+  - description: Media/Storage (R2) endpoints (Phase 2.2)
+    name: media
   - description: Debug endpoints (no secrets)
     name: debug
   - description: Points balance and ledger operations

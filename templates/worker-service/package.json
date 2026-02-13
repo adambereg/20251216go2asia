@@ -1,0 +1,22 @@
+{
+  "name": "@go2asia/_template-worker-service",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Template for Go2Asia Cloudflare Worker services (Phase 2 Milestone 2.0). Do not publish/deploy.",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "echo \"Template only. Copy to apps/<service-name>.\"",
+    "build": "echo \"Template only. Copy to apps/<service-name>.\""
+  },
+  "dependencies": {
+    "@go2asia/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "@go2asia/config": "workspace:*",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.19.0"
+  }
+}
+
+

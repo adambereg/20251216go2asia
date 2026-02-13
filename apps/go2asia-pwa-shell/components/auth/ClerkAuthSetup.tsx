@@ -89,6 +89,17 @@ export function ClerkAuthSetup() {
           // ignore
         }
       } catch (error) {
+        // Hardening (Phase 2 / M2.1):
+        // - If the code is invalid or cannot be claimed (409/404), do not retry forever on every login.
+        // - For transient/network errors keep it to retry later.
+        const status = (error as any)?.status as number | undefined;
+        if (status === 404 || status === 409) {
+          try {
+            localStorage.removeItem(referralStorageKey);
+          } catch {
+            // ignore
+          }
+        }
         if (process.env.NODE_ENV === 'development') {
           console.warn('referral/claim failed', error);
         }

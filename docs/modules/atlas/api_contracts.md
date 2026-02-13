@@ -203,6 +203,12 @@ Backend-спецификация представлена отдельно в:
 
 ### GET `/api/atlas/v1/search`
 
+> **Статус**: **PLANNED / NOT IMPLEMENTED**  
+> Этот endpoint описан как целевое поведение, но **в текущем коде репозитория реализация не обнаружена**.  
+> Конвенции и стратегия:
+> - `docs/decisions/search_strategy.md`
+> - `docs/standards/search_conventions_v1.md`
+
 **Query parameters:**
 
 | Параметр | Тип | Описание |

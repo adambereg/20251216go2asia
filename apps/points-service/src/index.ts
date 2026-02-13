@@ -42,12 +42,32 @@ type DbExecResult<T> = { rows: T[] };
 
 const SERVICE_NAME = 'points-service';
 
-const ACTIONS_M3_MIN = new Set([
+/**
+ * Phase 2 action contract (Points-only).
+ * Important:
+ * - Keep this list stable during Phase 2 to avoid "action sprawl".
+ * - Do NOT add Phase 3 tokenomics actions here (G2A/NFT/on-chain).
+ */
+const ACTIONS_PHASE2 = new Set([
+  // MVP (Phase 1 / M3)
   'registration',
   'first_login',
   'referral_bonus_referee',
   'referral_bonus_referrer',
   'event_registration',
+
+  // Phase 2 (planned modules)
+  'space_post_created',
+  'space_repost_created',
+  'space_reaction_created',
+
+  'quest_completed',
+
+  'rielt_listing_created',
+
+  'rf_partner_verified',
+  'rf_voucher_claimed',
+  'rf_voucher_redeemed',
 ]);
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
@@ -459,7 +479,7 @@ export default {
           return res;
         }
 
-        if (typeof action !== 'string' || !ACTIONS_M3_MIN.has(action)) {
+        if (typeof action !== 'string' || !ACTIONS_PHASE2.has(action)) {
           const res = errorResponse('BadRequest', 'Invalid action', requestId, 400);
           res.headers.set('X-Request-Id', requestId);
           return res;

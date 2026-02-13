@@ -106,6 +106,7 @@ type MockRepo = {
 
 const DEFAULT_MEDIA_PROVIDER = 'r2';
 const DEFAULT_MEDIA_BUCKET = 'go2asia-media';
+const ENVIRONMENT = (process.env.ENVIRONMENT ?? 'dev').toLowerCase();
 
 function getDatabaseUrl(): string {
   const url = process.env.STAGING_DATABASE_URL || process.env.DATABASE_URL;
@@ -113,8 +114,7 @@ function getDatabaseUrl(): string {
     throw new Error('Missing STAGING_DATABASE_URL or DATABASE_URL');
   }
 
-  const env = (process.env.ENVIRONMENT ?? 'dev').toLowerCase();
-  if (env === 'production') {
+  if (ENVIRONMENT === 'production') {
     throw new Error('Refusing to run seed with ENVIRONMENT=production');
   }
 
@@ -360,46 +360,57 @@ async function seedAtlas(
       },
     });
 
-  // Places (from generic 20 demo places)
-  const placesRows: Array<typeof places.$inferInsert> = repo.atlas.listPlaces().map((p) => {
-    const countryId = p.country ? countryNameToId[p.country] ?? null : null;
-    const cityId = p.city ? cityNameToId[p.city] ?? null : null;
-    const heroUrl = p.photos?.[0];
-    return {
-      id: p.id,
-      countryId,
-      cityId,
-      name: p.name,
-      slug: p.slug ?? p.id,
-      type: p.type,
-      descriptionShort: p.description ?? null,
-      lat: toNumeric6(p.latitude),
-      lng: toNumeric6(p.longitude),
-      address: p.address ?? null,
-      heroMediaId: heroUrl ? getMediaId('place', p.id, heroUrl) : null,
-      images: p.photos ?? null,
-    };
-  });
-
-  await db
-    .insert(places)
-    .values(placesRows)
-    .onConflictDoUpdate({
-      target: [places.slug],
-      set: {
-        countryId: sql`excluded.country_id`,
-        cityId: sql`excluded.city_id`,
-        name: sql`excluded.name`,
-        type: sql`excluded.type`,
-        descriptionShort: sql`excluded.description_short`,
-        lat: sql`excluded.lat`,
-        lng: sql`excluded.lng`,
-        address: sql`excluded.address`,
-        heroMediaId: sql`excluded.hero_media_id`,
-        images: sql`excluded.images`,
-        updatedAt: sql`now()`,
-      },
+  // Places (from generic demo places in UI mocks)
+  //
+  // IMPORTANT:
+  // - These demo places include names like "Bangkok Place N" / "Chiang Mai Place N".
+  // - They should NOT be inserted into staging DB (Atlas Places SSOT is Neon real data).
+  // - Allow demo place seeding only in dev, OR if explicitly forced.
+  const allowDemoPlaces = ENVIRONMENT === 'dev' || process.env.SEED_DEMO_PLACES === '1';
+  if (!allowDemoPlaces) {
+    // eslint-disable-next-line no-console
+    console.log('ℹ️ Skipping demo places seed (set SEED_DEMO_PLACES=1 to force).');
+  } else {
+    const placesRows: Array<typeof places.$inferInsert> = repo.atlas.listPlaces().map((p) => {
+      const countryId = p.country ? countryNameToId[p.country] ?? null : null;
+      const cityId = p.city ? cityNameToId[p.city] ?? null : null;
+      const heroUrl = p.photos?.[0];
+      return {
+        id: p.id,
+        countryId,
+        cityId,
+        name: p.name,
+        slug: p.slug ?? p.id,
+        type: p.type,
+        descriptionShort: p.description ?? null,
+        lat: toNumeric6(p.latitude),
+        lng: toNumeric6(p.longitude),
+        address: p.address ?? null,
+        heroMediaId: heroUrl ? getMediaId('place', p.id, heroUrl) : null,
+        images: p.photos ?? null,
+      };
     });
+
+    await db
+      .insert(places)
+      .values(placesRows)
+      .onConflictDoUpdate({
+        target: [places.slug],
+        set: {
+          countryId: sql`excluded.country_id`,
+          cityId: sql`excluded.city_id`,
+          name: sql`excluded.name`,
+          type: sql`excluded.type`,
+          descriptionShort: sql`excluded.description_short`,
+          lat: sql`excluded.lat`,
+          lng: sql`excluded.lng`,
+          address: sql`excluded.address`,
+          heroMediaId: sql`excluded.hero_media_id`,
+          images: sql`excluded.images`,
+          updatedAt: sql`now()`,
+        },
+      });
+  }
 }
 
 function mapEventStatus(_raw: unknown): 'draft' | 'active' | 'cancelled' | 'archived' {
@@ -572,18 +583,22 @@ async function sanityReport(db: ReturnType<typeof createDb>) {
     `- countries: ${row.countries ?? 0}, cities: ${row.cities ?? 0}, places: ${row.places ?? 0}, events: ${row.events ?? 0}, articles: ${row.articles ?? 0}, media_files: ${row.media_files ?? 0}`
   );
 
-  const repo = await loadMockRepo();
-  const demoEventIds = repo.pulse.listEvents().slice(0, 3).map((e) => e.id);
-  const demoArticleSlugs = repo.blog.listPosts().slice(0, 3).map((p) => p.slug);
-  const demoPlaceIds = repo.atlas.listPlaces().slice(0, 3).map((p) => p.id);
+  // Only show demo URLs if demo places are allowed
+  const allowDemoPlaces = ENVIRONMENT === 'dev' || process.env.SEED_DEMO_PLACES === '1';
+  if (allowDemoPlaces) {
+    const repo = await loadMockRepo();
+    const demoEventIds = repo.pulse.listEvents().slice(0, 3).map((e) => e.id);
+    const demoArticleSlugs = repo.blog.listPosts().slice(0, 3).map((p) => p.slug);
+    const demoPlaceIds = repo.atlas.listPlaces().slice(0, 3).map((p) => p.id);
 
-  // eslint-disable-next-line no-console
-  console.log('🔎 Demo URLs to verify in UI (NEXT_PUBLIC_DATA_SOURCE=api):');
-  for (const id of demoEventIds) console.log(`- /pulse/${id}`);
-  for (const slug of demoArticleSlugs) console.log(`- /blog/${slug}`);
-  for (const id of demoPlaceIds) console.log(`- /atlas/places/${id}`);
-  console.log(`- /atlas (countries)`);
-  console.log(`- /atlas/cities`);
+    // eslint-disable-next-line no-console
+    console.log('🔎 Demo URLs to verify in UI (NEXT_PUBLIC_DATA_SOURCE=api):');
+    for (const id of demoEventIds) console.log(`- /pulse/${id}`);
+    for (const slug of demoArticleSlugs) console.log(`- /blog/${slug}`);
+    for (const id of demoPlaceIds) console.log(`- /atlas/places/${id}`);
+    console.log(`- /atlas (countries)`);
+    console.log(`- /atlas/cities`);
+  }
 }
 
 async function main() {

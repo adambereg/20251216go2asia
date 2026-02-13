@@ -23,7 +23,7 @@ interface FetchConfig {
  * Get base URL from environment variable
  * Defaults to staging gateway URL
  */
-function getBaseUrl(): string {
+export function getBaseUrl(): string {
   // Client-side: use window.__NEXT_PUBLIC_API_URL__ or process.env
   if (typeof window !== 'undefined') {
     const windowApiUrl = (window as any).__NEXT_PUBLIC_API_URL__;
@@ -112,6 +112,21 @@ export const customInstance = async <T>(
         status: response.status,
         requestId,
       };
+    }
+
+    // Normalize backend error shapes.
+    // Some downstream services respond as:
+    //   { error: "BadRequest", message: "...", requestId: "..." }
+    // while UI expects:
+    //   { error: { code, message }, requestId }
+    //
+    // Keep backward-compatible fields, but ensure error is an object.
+    if (errorData && typeof errorData === 'object') {
+      if (typeof (errorData as any).error === 'string') {
+        const code = (errorData as any).error;
+        const message = (errorData as any).message || response.statusText;
+        (errorData as any).error = { code, message };
+      }
     }
     
     // Add status and requestId to error for better error handling in UI

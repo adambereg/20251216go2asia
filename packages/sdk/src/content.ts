@@ -38,6 +38,18 @@ export interface ContentCountryDto {
   placesCount: number;
 }
 
+export interface ContentGalleryItemDto {
+  key: string;
+  url: string;
+  isCover: boolean;
+}
+
+export interface ContentCountryGalleryDto {
+  countryId: string;
+  prefix: string;
+  items: ContentGalleryItemDto[];
+}
+
 export interface ContentCityDto {
   id: string;
   slug: string;
@@ -56,6 +68,16 @@ export interface ContentPlaceDto {
   slug: string;
   name: string;
   type: string;
+  kind: string;
+  category: string | null;
+  tags: string[] | null;
+  website: string | null;
+  phone: string | null;
+  instagram: string | null;
+  googleMapsUrl: string | null;
+  priceLevel: string | null;
+  countryId: string | null;
+  cityId: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -78,6 +100,51 @@ export interface ContentArticleDto {
   publishedAt: string | null;
   status: string;
 }
+
+export interface ContentTabDto {
+  tabKey: string;
+  lang: string;
+  title: string | null;
+  bodyMarkdown: string;
+  updatedAt: string | null;
+}
+
+export const COUNTRY_TAB_KEYS = [
+  'overview',
+  'gallery',
+  'map',
+  'cities',
+  'weather',
+  'history',
+  'geography',
+  'culture',
+  'living',
+  'visas',
+  'business',
+  'places',
+  'phrasebook',
+  'reviews',
+  'calculator',
+] as const;
+
+export const CITY_TAB_KEYS = [
+  'overview',
+  'districts',
+  'accommodation',
+  'food',
+  'places',
+  'transport',
+  'weather',
+  'shopping',
+  'nightlife',
+  'guides',
+  'tips',
+  'reviews',
+  'budget',
+] as const;
+
+export type CountryTabKey = typeof COUNTRY_TAB_KEYS[number];
+export type CityTabKey = typeof CITY_TAB_KEYS[number];
 
 /**
  * Fetch single event by ID.
@@ -103,6 +170,17 @@ export async function listCountries(): Promise<ListResponse<ContentCountryDto>> 
 }
 
 /**
+ * Atlas: country gallery from R2 (public)
+ */
+export async function getCountryGallery(
+  idOrSlug: string,
+  params?: { limit?: number }
+): Promise<ContentCountryGalleryDto> {
+  const qs = params?.limit ? `?limit=${encodeURIComponent(String(params.limit))}` : '';
+  return customInstance<ContentCountryGalleryDto>({ method: 'GET' }, `/v1/content/countries/${idOrSlug}/gallery${qs}`);
+}
+
+/**
  * Atlas: list cities (public)
  */
 export async function listCities(params?: { countryId?: string }): Promise<ListResponse<ContentCityDto>> {
@@ -113,9 +191,16 @@ export async function listCities(params?: { countryId?: string }): Promise<ListR
 /**
  * Atlas: list places (public)
  */
-export async function listPlaces(params?: { cityId?: string; limit?: number }): Promise<ListResponse<ContentPlaceDto>> {
+export async function listPlaces(params?: {
+  cityId?: string;
+  countryId?: string;
+  kind?: 'showplace' | 'business';
+  limit?: number;
+}): Promise<ListResponse<ContentPlaceDto>> {
   const sp = new URLSearchParams();
   if (params?.cityId) sp.set('cityId', params.cityId);
+  if (params?.countryId) sp.set('countryId', params.countryId);
+  if (params?.kind) sp.set('kind', params.kind);
   if (params?.limit) sp.set('limit', String(params.limit));
   const qs = sp.toString() ? `?${sp.toString()}` : '';
   return customInstance<ListResponse<ContentPlaceDto>>({ method: 'GET' }, `/v1/content/places${qs}`);
@@ -126,6 +211,48 @@ export async function listPlaces(params?: { cityId?: string; limit?: number }): 
  */
 export async function getPlaceByIdOrSlug(idOrSlug: string): Promise<ContentPlaceDto> {
   return customInstance<ContentPlaceDto>({ method: 'GET' }, `/v1/content/places/${idOrSlug}`);
+}
+
+/**
+ * Atlas: list country tabs (public)
+ */
+export async function listCountryTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: CountryTabKey }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/countries/${idOrSlug}/tabs${qs}`);
+}
+
+/**
+ * Atlas: list city tabs (public)
+ */
+export async function listCityTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: CityTabKey }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/cities/${idOrSlug}/tabs${qs}`);
+}
+
+/**
+ * Atlas: list place tabs (public)
+ */
+export async function listPlaceTabs(
+  idOrSlug: string,
+  params?: { lang?: string; tabKey?: string }
+): Promise<ListResponse<ContentTabDto>> {
+  const sp = new URLSearchParams();
+  if (params?.lang) sp.set('lang', params.lang);
+  if (params?.tabKey) sp.set('tabKey', params.tabKey);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/places/${idOrSlug}/tabs${qs}`);
 }
 
 /**

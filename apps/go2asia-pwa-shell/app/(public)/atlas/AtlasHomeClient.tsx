@@ -49,23 +49,12 @@ export function AtlasHomeClient() {
         flag: country.flag || '🌏',
         placesCount: country.placesCount || 0,
         description: country.description || '',
-        heroImage: 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
+        // Берём реальное медиа из API (R2 public URL), без подмены моковыми URL
+        heroImage: country.heroImage || undefined,
       }));
     }
-    
-    // Fallback на моки при пустом API ответе
-    if (!countriesLoading) {
-      console.warn('[AtlasHomeClient] Countries API returned empty, falling back to mocks');
-      return mockRepo.atlas.listCountries().map((country) => ({
-        id: country.id,
-        name: country.name,
-        flag: country.flag || '🌏',
-        placesCount: country.placesCount || 0,
-        description: country.description || '',
-        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      }));
-    }
-    
+    // Важно: в API-режиме НЕ подмешиваем моки при пустом ответе,
+    // чтобы не маскировать проблемы контента/БД и не показывать demo Pexels.
     return [];
   }, [countriesData, dataSource, countriesLoading]);
 
@@ -95,23 +84,7 @@ export function AtlasHomeClient() {
         reviewsCount: 0,
       }));
     }
-    
-    // Fallback на моки при пустом API ответе
-    if (!placesLoading) {
-      console.warn('[AtlasHomeClient] Places API returned empty, falling back to mocks');
-      return mockRepo.atlas
-        .listPlaces()
-        .slice(0, 3)
-        .map((place) => ({
-          id: place.id,
-          title: place.name,
-          city: place.city,
-          country: place.country,
-          rating: place.rating || 0,
-          reviewsCount: 0,
-        }));
-    }
-    
+    // Важно: в API-режиме НЕ подмешиваем моки при пустом ответе.
     return [];
   }, [placesData, dataSource, placesLoading]);
 
