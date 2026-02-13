@@ -264,23 +264,6 @@ export async function listCities(
   const sort = params?.sort ?? 'size_desc';
   const limit = Math.min(500, Math.max(1, params?.limit ?? 200));
 
-  // Shared WHERE clause (optional filters)
-  const whereSql = sql`
-    WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
-      AND (${type}::text IS NULL OR ci.city_type::text = ${type})
-      AND (${size}::text IS NULL OR ci.city_size::text = ${size})
-      AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
-      AND (${price}::text IS NULL OR ci.price_level::text = ${price})
-      AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
-      AND (
-        ${q}::text IS NULL
-        OR (
-          COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
-          OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
-        )
-      )
-  `;
-
   if (sort === 'name_desc') {
     const rows = await sql`
       SELECT
@@ -297,7 +280,19 @@ export async function listCities(
       FROM cities ci
       LEFT JOIN countries co ON ci.country_id = co.id
       LEFT JOIN media_files m ON ci.hero_media_id = m.id
-      ${whereSql}
+      WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+        AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+        AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+        AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+        AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+        AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+        AND (
+          ${q}::text IS NULL
+          OR (
+            COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+            OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+          )
+        )
       ORDER BY COALESCE(ci.names->>'ru', ci.name) DESC
       LIMIT ${limit}
     `;
@@ -320,7 +315,19 @@ export async function listCities(
       FROM cities ci
       LEFT JOIN countries co ON ci.country_id = co.id
       LEFT JOIN media_files m ON ci.hero_media_id = m.id
-      ${whereSql}
+      WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+        AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+        AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+        AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+        AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+        AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+        AND (
+          ${q}::text IS NULL
+          OR (
+            COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+            OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+          )
+        )
       ORDER BY COALESCE(ci.names->>'ru', ci.name) ASC
       LIMIT ${limit}
     `;
@@ -343,7 +350,19 @@ export async function listCities(
     FROM cities ci
     LEFT JOIN countries co ON ci.country_id = co.id
     LEFT JOIN media_files m ON ci.hero_media_id = m.id
-    ${whereSql}
+    WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+      AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+      AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+      AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+      AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+      AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+      AND (
+        ${q}::text IS NULL
+        OR (
+          COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+          OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+        )
+      )
     ORDER BY
       CASE ci.city_size::text
         WHEN 'capital' THEN 4
