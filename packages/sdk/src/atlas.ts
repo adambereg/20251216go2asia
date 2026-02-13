@@ -49,12 +49,52 @@ export const useGetCountryById = (idOrSlug: string) => {
   });
 };
 
-export const useGetCities = (_params?: { countryId?: string; limit?: number; cursor?: string; enabled?: boolean }) => {
-  const countryId = _params?.countryId;
+export const useGetCities = (_params?: {
+  countryId?: string;
+  q?: string;
+  type?: string;
+  size?: string;
+  sea?: boolean;
+  price?: string;
+  nightlife?: string;
+  sort?: 'size_desc' | 'name_asc' | 'name_desc';
+  limit?: number;
+  cursor?: string; // reserved for future pagination
+  enabled?: boolean;
+}) => {
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
-  const qs = countryId ? `?countryId=${encodeURIComponent(countryId)}` : '';
+
+  const sp = new URLSearchParams();
+  if (_params?.countryId) sp.set('countryId', _params.countryId);
+  if (_params?.q) sp.set('q', _params.q);
+  if (_params?.type) sp.set('type', _params.type);
+  if (_params?.size) sp.set('size', _params.size);
+  if (typeof _params?.sea === 'boolean') sp.set('sea', String(_params.sea));
+  if (_params?.price) sp.set('price', _params.price);
+  if (_params?.nightlife) sp.set('nightlife', _params.nightlife);
+  if (_params?.sort) sp.set('sort', _params.sort);
+  if (_params?.limit) sp.set('limit', String(_params.limit));
+  // cursor is reserved; accepted but not used by API yet
+  if (_params?.cursor) sp.set('cursor', _params.cursor);
+
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+
   return useQuery<ListResponse<ContentCityDto>, Error>({
-    queryKey: ['content', 'cities', { countryId: countryId ?? null }],
+    queryKey: [
+      'content',
+      'cities',
+      {
+        countryId: _params?.countryId ?? null,
+        q: _params?.q ?? null,
+        type: _params?.type ?? null,
+        size: _params?.size ?? null,
+        sea: typeof _params?.sea === 'boolean' ? _params.sea : null,
+        price: _params?.price ?? null,
+        nightlife: _params?.nightlife ?? null,
+        sort: _params?.sort ?? 'size_desc',
+        limit: _params?.limit ?? null,
+      },
+    ],
     enabled,
     queryFn: async () => {
       const endpoint = `/v1/content/cities`;

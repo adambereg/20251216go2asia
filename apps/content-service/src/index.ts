@@ -896,9 +896,34 @@ async function handleListCountries(env: Env, logger: ReturnType<typeof createLog
 async function handleListCities(env: Env, url: URL, logger: ReturnType<typeof createLogger>): Promise<Response> {
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  // Query params (server-side filtering/sort)
   const countryId = url.searchParams.get('countryId') ?? undefined;
+  const q = url.searchParams.get('q') ?? undefined;
+  const type = url.searchParams.get('type') ?? undefined;
+  const size = url.searchParams.get('size') ?? undefined;
+  const price = url.searchParams.get('price') ?? undefined;
+  const nightlife = url.searchParams.get('nightlife') ?? undefined;
+  const sortRaw = (url.searchParams.get('sort') ?? '').trim();
+  const sort =
+    sortRaw === 'name_asc' || sortRaw === 'name_desc' || sortRaw === 'size_desc' ? sortRaw : 'size_desc';
+
+  const seaRaw = (url.searchParams.get('sea') ?? '').trim().toLowerCase();
+  const sea = seaRaw === 'true' ? true : seaRaw === 'false' ? false : undefined;
+
+  const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '200') || 200));
   try {
-    const rows = await listCities(sqlClient, countryId);
+    const rows = await listCities(sqlClient, {
+      countryId,
+      q,
+      type,
+      size,
+      sea,
+      price,
+      nightlife,
+      sort,
+      limit,
+    });
     const items = await Promise.all(rows.map((r) => toContentCityWithMedia(env, r)));
     return json({ items } satisfies ListResponse<ContentCityDto>, 200);
   } catch (error) {

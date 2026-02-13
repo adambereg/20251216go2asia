@@ -59,6 +59,29 @@ export const eventRegistrationStatusEnum = pgEnum('event_registration_status', [
   'cancelled',
 ]);
 
+/**
+ * Atlas City editorial filters (Phase: Cities filters/sort)
+ *
+ * Notes:
+ * - Keep values stable & editor-friendly (dropdowns).
+ * - Columns are nullable: NULL means "Все".
+ */
+export const atlasCityTypeEnum = pgEnum('atlas_city_type', [
+  'resort',
+  'cultural',
+  'business',
+  'nature',
+  'island',
+  'mountain',
+  'historic',
+  'mixed',
+  'other',
+]);
+
+export const atlasCitySizeEnum = pgEnum('atlas_city_size', ['small', 'medium', 'large', 'capital']);
+export const atlasCityPriceLevelEnum = pgEnum('atlas_city_price_level', ['budget', 'mid', 'expensive']);
+export const atlasCityNightlifeLevelEnum = pgEnum('atlas_city_nightlife_level', ['active', 'moderate', 'calm']);
+
 export const countries = pgTable('countries', {
   id: text('id').primaryKey(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
@@ -86,6 +109,12 @@ export const cities = pgTable(
      */
     names: jsonb('names'),
     descriptionShort: text('description_short'),
+    // Editorial filters (nullable => "Все")
+    cityType: atlasCityTypeEnum('city_type'),
+    citySize: atlasCitySizeEnum('city_size'),
+    hasSea: boolean('has_sea'),
+    priceLevel: atlasCityPriceLevelEnum('price_level'),
+    nightlifeLevel: atlasCityNightlifeLevelEnum('nightlife_level'),
     // Legacy geo columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is lat/lng. Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     latitude: numeric('latitude', { precision: 9, scale: 6 }),
@@ -99,6 +128,11 @@ export const cities = pgTable(
   },
   (table) => ({
     idxCitiesCountryId: index('idx_cities_country_id').on(table.countryId),
+    idxCitiesType: index('idx_cities_city_type').on(table.cityType),
+    idxCitiesSize: index('idx_cities_city_size').on(table.citySize),
+    idxCitiesHasSea: index('idx_cities_has_sea').on(table.hasSea),
+    idxCitiesPriceLevel: index('idx_cities_price_level').on(table.priceLevel),
+    idxCitiesNightlifeLevel: index('idx_cities_nightlife_level').on(table.nightlifeLevel),
   })
 );
 

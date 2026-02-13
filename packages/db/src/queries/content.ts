@@ -239,10 +239,51 @@ export async function getCountryByIdOrSlug(sql: SqlClient, idOrSlug: string): Pr
 /**
  * List cities with counts
  */
-export async function listCities(sql: SqlClient, countryId?: string): Promise<CityRow[]> {
-  if (countryId) {
+export async function listCities(
+  sql: SqlClient,
+  params?: {
+    countryId?: string;
+    q?: string;
+    type?: string;
+    size?: string;
+    sea?: boolean;
+    price?: string;
+    nightlife?: string;
+    sort?: 'size_desc' | 'name_asc' | 'name_desc';
+    limit?: number;
+  }
+): Promise<CityRow[]> {
+  const countryId = params?.countryId ?? null;
+  const qRaw = typeof params?.q === 'string' ? params.q.trim() : '';
+  const q = qRaw.length > 0 ? qRaw : null;
+  const type = params?.type ?? null;
+  const size = params?.size ?? null;
+  const sea = typeof params?.sea === 'boolean' ? params.sea : null;
+  const price = params?.price ?? null;
+  const nightlife = params?.nightlife ?? null;
+  const sort = params?.sort ?? 'size_desc';
+  const limit = Math.min(500, Math.max(1, params?.limit ?? 200));
+
+  // Shared WHERE clause (optional filters)
+  const whereSql = sql`
+    WHERE (${countryId}::text IS NULL OR ci.country_id = ${countryId})
+      AND (${type}::text IS NULL OR ci.city_type::text = ${type})
+      AND (${size}::text IS NULL OR ci.city_size::text = ${size})
+      AND (${sea}::boolean IS NULL OR ci.has_sea = ${sea})
+      AND (${price}::text IS NULL OR ci.price_level::text = ${price})
+      AND (${nightlife}::text IS NULL OR ci.nightlife_level::text = ${nightlife})
+      AND (
+        ${q}::text IS NULL
+        OR (
+          COALESCE(ci.names->>'ru', ci.name) ILIKE ('%' || ${q} || '%')
+          OR COALESCE(ci.names->>'en', '') ILIKE ('%' || ${q} || '%')
+        )
+      )
+  `;
+
+  if (sort === 'name_desc') {
     const rows = await sql`
-      SELECT 
+      SELECT
         ci.id,
         ci.slug,
         ci.name,
@@ -256,14 +297,39 @@ export async function listCities(sql: SqlClient, countryId?: string): Promise<Ci
       FROM cities ci
       LEFT JOIN countries co ON ci.country_id = co.id
       LEFT JOIN media_files m ON ci.hero_media_id = m.id
-      WHERE ci.country_id = ${countryId}
-      ORDER BY ci.name
+      ${whereSql}
+      ORDER BY COALESCE(ci.names->>'ru', ci.name) DESC
+      LIMIT ${limit}
     `;
     return rows as CityRow[];
   }
-  
+
+  if (sort === 'name_asc') {
+    const rows = await sql`
+      SELECT
+        ci.id,
+        ci.slug,
+        ci.name,
+        ci.country_id,
+        co.name AS country_name,
+        ci.description_short,
+        COALESCE(ci.lat, ci.latitude) AS lat,
+        COALESCE(ci.lng, ci.longitude) AS lng,
+        m.public_url AS hero_url,
+        (SELECT COUNT(*)::int FROM places WHERE city_id = ci.id) AS places_count
+      FROM cities ci
+      LEFT JOIN countries co ON ci.country_id = co.id
+      LEFT JOIN media_files m ON ci.hero_media_id = m.id
+      ${whereSql}
+      ORDER BY COALESCE(ci.names->>'ru', ci.name) ASC
+      LIMIT ${limit}
+    `;
+    return rows as CityRow[];
+  }
+
+  // Default: size_desc (сначала крупные)
   const rows = await sql`
-    SELECT 
+    SELECT
       ci.id,
       ci.slug,
       ci.name,
@@ -277,7 +343,17 @@ export async function listCities(sql: SqlClient, countryId?: string): Promise<Ci
     FROM cities ci
     LEFT JOIN countries co ON ci.country_id = co.id
     LEFT JOIN media_files m ON ci.hero_media_id = m.id
-    ORDER BY ci.name
+    ${whereSql}
+    ORDER BY
+      CASE ci.city_size::text
+        WHEN 'capital' THEN 4
+        WHEN 'large' THEN 3
+        WHEN 'medium' THEN 2
+        WHEN 'small' THEN 1
+        ELSE 0
+      END DESC,
+      COALESCE(ci.names->>'ru', ci.name) ASC
+    LIMIT ${limit}
   `;
   return rows as CityRow[];
 }
