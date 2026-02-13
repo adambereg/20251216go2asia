@@ -663,8 +663,10 @@ async function toContentCountryWithMedia(env: Env, row: CountryRow): Promise<Con
   // R2 fallback for countries: prefer cover starting with "01_" in country/country-<country_id>/.
   const resolved = await resolveAtlasMedia(env, 'country', { code: row.id, slug: row.slug, max: 50 });
   const r2Hero = pickCountryHeroUrl(resolved.keys, resolved.urls);
-  // If R2 has a cover — use it; otherwise fall back to DB hero (even if placeholder).
-  return { ...toContentCountry(row), heroImage: r2Hero ?? row.hero_url ?? null };
+  // If R2 has a cover — use it; otherwise do NOT fall back to placeholder stock URLs (Pexels/Unsplash).
+  // Better to return null and let UI show an empty placeholder.
+  const dbHero = row.hero_url && !isPlaceholderHeroUrl(row.hero_url) ? row.hero_url : null;
+  return { ...toContentCountry(row), heroImage: r2Hero ?? dbHero ?? null };
 }
 
 async function toContentCityWithMedia(env: Env, row: CityRow): Promise<ContentCityDto> {

@@ -40,7 +40,7 @@ export function CountriesClient() {
       }));
     }
     
-    // API mode — используем данные из API, fallback на моки при пустом ответе
+    // API mode — используем данные из API
     if (countriesData?.items?.length) {
       return countriesData.items.map((country) => ({
         id: country.id,
@@ -53,21 +53,8 @@ export function CountriesClient() {
         heroImage: country.heroImage || undefined,
       }));
     }
-    
-    // Fallback на моки при пустом API ответе (но не во время загрузки)
-    if (!isLoading) {
-      console.warn('[CountriesClient] API returned empty, falling back to mocks');
-      return mockRepo.atlas.listCountries().map((country) => ({
-        id: country.id,
-        name: country.name,
-        flag: country.flag || '🌏',
-        placesCount: country.placesCount || 0,
-        citiesCount: country.citiesCount || 0,
-        description: country.description || '',
-        heroImage: country.heroImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      }));
-    }
-    
+    // Важно: в API-режиме НЕ подмешиваем моки при пустом ответе,
+    // чтобы не маскировать проблемы контента/БД и не показывать demo Pexels.
     return [];
   }, [countriesData, dataSource, isLoading]);
 
