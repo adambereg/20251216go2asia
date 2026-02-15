@@ -110,7 +110,8 @@ export const useGetGuides = (_params?: {
   enabled?: boolean;
 }) => {
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
-  const limit = typeof _params?.limit === 'number' ? _params.limit : 20;
+  // v1: guide list is small; fetch up to 100 by default
+  const limit = typeof _params?.limit === 'number' ? _params.limit : 100;
 
   const sp = new URLSearchParams();
   sp.set('limit', String(limit));

@@ -693,6 +693,18 @@ function toGuideCard(row: GuideRow): ContentGuideCardDto {
   };
 }
 
+function resolveGuideHeroUrl(env: Env, row: Pick<GuideRow, 'hero_url' | 'hero_r2_key'>): string | null {
+  // Prefer SSOT for guide media: R2 key from guide frontmatter/import.
+  const r2Key = typeof row.hero_r2_key === 'string' && row.hero_r2_key.trim().length > 0 ? row.hero_r2_key.trim() : null;
+  const fromR2 = r2Key ? getPublicUrl(env, r2Key) : null;
+  if (fromR2) return fromR2;
+
+  const url = typeof row.hero_url === 'string' && row.hero_url.trim().length > 0 ? row.hero_url.trim() : null;
+  if (!url) return null;
+  // Do not surface stock placeholders as "real" media.
+  return isPlaceholderHeroUrl(url) ? null : url;
+}
+
 function toGuideBlock(row: GuideBlockRow): ContentGuideBlockDto {
   const payload =
     row.payload && typeof row.payload === 'object' && !Array.isArray(row.payload)
@@ -1292,7 +1304,7 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
 
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '20') || 20));
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
   const countryId = url.searchParams.get('country_id') ?? undefined;
   const cityId = url.searchParams.get('city_id') ?? undefined;
   const guideType = url.searchParams.get('guide_type') ?? undefined;
@@ -1301,7 +1313,15 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
 
   try {
     const rows = await listGuides(sqlClient, { limit, countryId, cityId, guideType, tag, status });
-    return json({ items: rows.map(toGuideCard) } satisfies ListResponse<ContentGuideCardDto>, 200);
+    return json(
+      {
+        items: rows.map((r) => {
+          const dto = toGuideCard(r);
+          return { ...dto, heroUrl: resolveGuideHeroUrl(env, r) };
+        }),
+      } satisfies ListResponse<ContentGuideCardDto>,
+      200
+    );
   } catch (error) {
     logger.error('List guides error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch guides' } }, 500);
@@ -1712,7 +1732,7 @@ async function handleGetGuideBySlug(
       slug: guide.slug,
       title: guide.title,
       summary: guide.summary,
-      heroUrl: guide.hero_url,
+      heroUrl: resolveGuideHeroUrl(env, guide),
       guideType: guide.guide_type,
       status: guide.status,
       tags: Array.isArray(guide.tags) ? guide.tags : [],

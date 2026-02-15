@@ -20,6 +20,7 @@ export interface GuideRow {
   tags: string[]; // text[]
   country_ids: string[]; // text[]
   city_ids: string[]; // text[]
+  hero_r2_key: string | null;
   hero_url: string | null;
   published_at: string | null;
   created_at: string;
@@ -85,6 +86,7 @@ export async function listGuides(sql: SqlClient, params?: ListGuidesParams): Pro
       g.tags,
       g.country_ids,
       g.city_ids,
+      g.hero_r2_key,
       COALESCE(g.hero_url, m.public_url) AS hero_url,
       g.published_at::text AS published_at,
       g.created_at::text AS created_at,
@@ -120,6 +122,7 @@ export async function getGuideBySlug(sql: SqlClient, slug: string): Promise<Guid
       g.tags,
       g.country_ids,
       g.city_ids,
+      g.hero_r2_key,
       COALESCE(g.hero_url, m.public_url) AS hero_url,
       g.published_at::text AS published_at,
       g.created_at::text AS created_at,

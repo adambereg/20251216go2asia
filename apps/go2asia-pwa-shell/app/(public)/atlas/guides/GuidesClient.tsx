@@ -20,7 +20,8 @@ export function GuidesClient() {
     data: guidesData, 
     isLoading
   } = useGetGuides({
-    limit: 20,
+    // v1: show all published/verified guides (current total ~42)
+    limit: 100,
     enabled: dataSource === 'api',
   });
 
