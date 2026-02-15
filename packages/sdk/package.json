@@ -18,6 +18,10 @@
       "types": "./src/blog.ts",
       "default": "./src/blog.ts"
     },
+    "./guides": {
+      "types": "./src/guides.ts",
+      "default": "./src/guides.ts"
+    },
     "./pulse": {
       "types": "./src/pulse.ts",
       "default": "./src/pulse.ts"

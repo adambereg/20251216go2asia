@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+export * from './guides';
 
 /**
  * Common validation schemas

@@ -17,6 +17,11 @@ export function createSqlClient(databaseUrl: string): SqlClient {
 }
 
 // ============================================================================
+// Guide Engine v1 queries are in ./guides.ts
+// (kept separate to avoid bloating this file and to keep content vs guides distinct)
+// ============================================================================
+
+// ============================================================================
 // Types (matching frontend DTOs)
 // ============================================================================
 

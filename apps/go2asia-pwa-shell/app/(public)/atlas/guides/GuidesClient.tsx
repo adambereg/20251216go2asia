@@ -6,7 +6,7 @@ import { ModuleHero } from '@/components/modules';
 import { Globe, Clock } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
-import { useGetArticles } from '@go2asia/sdk/blog';
+import { useGetGuides } from '@go2asia/sdk/guides';
 import { useMemo } from 'react';
 import { getDataSource } from '@/mocks/dto';
 import { mockRepo } from '@/mocks/repo';
@@ -15,15 +15,13 @@ export function GuidesClient() {
   const dataSource = getDataSource();
   const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
   
-  // Загружаем гайды из API (статьи с типом guide)
-  // Примечание: если API поддерживает фильтрацию по типу, добавить category: 'guide'
+  // Загружаем гайды из Guide Engine API
   const { 
     data: guidesData, 
     isLoading
-  } = useGetArticles({
+  } = useGetGuides({
     limit: 20,
     enabled: dataSource === 'api',
-    // category: 'guide', // TODO: Add when API supports guide category filter
   });
 
   // Преобразуем данные из API
@@ -57,23 +55,15 @@ export function GuidesClient() {
       }
       return [];
     }
-    return guidesData.items.map((article) => ({
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      coverImage: article.coverImage,
-      category: article.category,
-      tags: article.tags ?? [],
-      publishedAt: article.publishedAt || '',
-      // TODO: Get city name when API supports it
-      // TODO: Get country name when API supports it
-      // TODO: Get readingTime when API supports it
-      // TODO: Get duration when API supports it
-      // TODO: Get difficulty when API supports it
-      // TODO: Get audience when API supports it
-      // TODO: Get rating when API supports it
-      // TODO: Get reviews count when API supports it
+    return guidesData.items.map((g) => ({
+      id: g.id,
+      slug: g.slug,
+      title: g.title,
+      excerpt: g.summary || '',
+      coverImage: g.heroUrl,
+      category: g.guideType,
+      tags: g.tags ?? [],
+      publishedAt: g.publishedAt || g.updatedAt || '',
     }));
   }, [guidesData, dataSource, isLoading]);
 

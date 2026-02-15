@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./queries/content": "./src/queries/content.ts"
+    "./queries/content": "./src/queries/content.ts",
+    "./queries/guides": "./src/queries/guides.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate:pg",
@@ -26,6 +27,7 @@
     "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
     "db:export:places-neon": "tsx src/exportPlacesToNeon.ts",
     "db:export:atlas-country-city-tabs-neon": "tsx src/exportAtlasCountryCityTabsToNeon.ts",
+    "db:import:guides-md": "cross-env ENVIRONMENT=staging tsx src/importGuidesFromMarkdown.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
