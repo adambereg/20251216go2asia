@@ -2245,6 +2245,30 @@ export default {
     // -----------------------------------------------------------------
     // Guide Engine v1 (public)
     // -----------------------------------------------------------------
+    // Gateway-friendly aliases (/v1/content/*)
+    if (path === '/v1/content/guides' && request.method === 'GET') {
+      const res = await handleListGuides(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const contentGuideGetMatch = path.match(/^\/v1\/content\/guides\/([^/]+)$/);
+    if (contentGuideGetMatch && request.method === 'GET') {
+      const slug = contentGuideGetMatch[1] ?? '';
+      const includeEmptyRaw = url.searchParams.get('include_empty');
+      const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
+      if (includeEmpty) {
+        const userId = request.headers.get('X-User-ID');
+        if (!userId) {
+          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+          res.headers.set('X-Request-ID', requestId);
+          return res;
+        }
+      }
+      const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
     if (path === '/v1/guides' && request.method === 'GET') {
       const res = await handleListGuides(env, url, logger);
       res.headers.set('X-Request-ID', requestId);

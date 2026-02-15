@@ -133,7 +133,9 @@ export const useGetGuides = (_params?: {
     queryKey: ['guides', 'list', queryObj],
     enabled,
     queryFn: async () => {
-      const endpoint = `/v1/guides`;
+      // NOTE: API gateway reliably exposes /v1/content/* routes.
+      // We keep /v1/guides in backend for future, but use the gateway-friendly path here.
+      const endpoint = `/v1/content/guides`;
       return await customInstance<ListResponse<GuideCardDto>>({ method: 'GET' }, `${endpoint}${qs}`);
     },
     staleTime: 60_000,
@@ -150,7 +152,7 @@ export const useGetGuideBySlug = (slug: string, params?: { includeEmpty?: boolea
     queryKey: ['guides', 'detail', { slug, include_empty: params?.includeEmpty ?? false }],
     enabled: enabled && Boolean(slug),
     queryFn: async () => {
-      const endpoint = `/v1/guides/${encodeURIComponent(slug)}`;
+      const endpoint = `/v1/content/guides/${encodeURIComponent(slug)}`;
       return await customInstance<GuideDetailDto>({ method: 'GET' }, `${endpoint}${qs}`);
     },
     staleTime: 60_000,

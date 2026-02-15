@@ -115,7 +115,8 @@ CREATE TABLE IF NOT EXISTS "guides" (
   "country_ids" text[] NOT NULL DEFAULT '{}',
   "city_ids" text[] NOT NULL DEFAULT '{}',
   -- Media: allow either referencing media_files, or storing R2 key directly.
-  "hero_media_id" uuid REFERENCES "media_files"("id"),
+  -- media_files.id is text in current schema, so keep hero_media_id as text.
+  "hero_media_id" text REFERENCES "media_files"("id"),
   "hero_r2_key" text,
   "hero_url" text,
   "published_at" timestamptz,
