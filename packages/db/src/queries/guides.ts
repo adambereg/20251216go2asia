@@ -60,20 +60,38 @@ export interface GuideFeedRow {
 export type ListGuidesParams = {
   countryId?: string;
   cityId?: string;
-  guideType?: string;
-  tag?: string;
+  guideType?: string; // single (back-compat)
+  guideTypes?: string[]; // multi
+  tag?: string; // single (back-compat)
+  tags?: string[]; // multi (any-of)
+  editorialOnly?: boolean; // status=verified only
   status?: string; // if not set -> published|verified
+  sort?: 'new' | 'updated' | 'popular';
   limit?: number;
+  offset?: number;
 };
 
 export async function listGuides(sql: SqlClient, params?: ListGuidesParams): Promise<GuideRow[]> {
-  const limit = typeof params?.limit === 'number' && Number.isFinite(params.limit) ? Math.min(Math.max(params.limit, 1), 100) : 20;
+  const limit =
+    typeof params?.limit === 'number' && Number.isFinite(params.limit) ? Math.min(Math.max(params.limit, 1), 500) : 20;
+  const offset =
+    typeof params?.offset === 'number' && Number.isFinite(params.offset) ? Math.max(Math.trunc(params.offset), 0) : 0;
 
   const countryId = typeof params?.countryId === 'string' && params.countryId.length > 0 ? params.countryId : null;
   const cityId = typeof params?.cityId === 'string' && params.cityId.length > 0 ? params.cityId : null;
   const guideType = typeof params?.guideType === 'string' && params.guideType.length > 0 ? params.guideType : null;
+  const guideTypes =
+    Array.isArray(params?.guideTypes) && params?.guideTypes.length > 0
+      ? params.guideTypes.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim())
+      : null;
   const tag = typeof params?.tag === 'string' && params.tag.length > 0 ? params.tag : null;
+  const tags =
+    Array.isArray(params?.tags) && params?.tags.length > 0
+      ? params.tags.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim())
+      : null;
   const status = typeof params?.status === 'string' && params.status.length > 0 ? params.status : null;
+  const editorialOnly = Boolean(params?.editorialOnly);
+  const sort = params?.sort === 'updated' || params?.sort === 'popular' ? 'updated' : 'new';
 
   const rows = await sql`
     SELECT
@@ -97,17 +115,60 @@ export async function listGuides(sql: SqlClient, params?: ListGuidesParams): Pro
       (${countryId}::text IS NULL OR g.country_ids @> ARRAY[${countryId}]::text[])
       AND (${cityId}::text IS NULL OR g.city_ids @> ARRAY[${cityId}]::text[])
       AND (${guideType}::text IS NULL OR g.guide_type::text = ${guideType})
-      AND (${tag}::text IS NULL OR g.tags @> ARRAY[${tag}]::text[])
+      AND (${guideTypes}::text[] IS NULL OR g.guide_type::text = ANY(${guideTypes}::text[]))
+      AND (${tag}::text IS NULL OR g.tags && ARRAY[${tag}]::text[])
+      AND (${tags}::text[] IS NULL OR g.tags && ${tags}::text[])
+      AND (${editorialOnly}::boolean = false OR g.status = 'verified')
       AND (
         ${status}::text IS NOT NULL
         OR g.status IN ('published','verified')
       )
       AND (${status}::text IS NULL OR g.status::text = ${status})
-    ORDER BY COALESCE(g.published_at, g.updated_at) DESC, g.updated_at DESC
+    ORDER BY
+      CASE WHEN ${sort}::text = 'updated' THEN g.updated_at ELSE COALESCE(g.published_at, g.updated_at) END DESC,
+      g.updated_at DESC
+    OFFSET ${offset}
     LIMIT ${limit}
   `;
 
   return rows as GuideRow[];
+}
+
+export async function countGuides(sql: SqlClient, params?: Omit<ListGuidesParams, 'limit' | 'offset' | 'sort'>): Promise<number> {
+  const countryId = typeof params?.countryId === 'string' && params.countryId.length > 0 ? params.countryId : null;
+  const cityId = typeof params?.cityId === 'string' && params.cityId.length > 0 ? params.cityId : null;
+  const guideType = typeof params?.guideType === 'string' && params.guideType.length > 0 ? params.guideType : null;
+  const guideTypes =
+    Array.isArray(params?.guideTypes) && params?.guideTypes.length > 0
+      ? params.guideTypes.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim())
+      : null;
+  const tag = typeof params?.tag === 'string' && params.tag.length > 0 ? params.tag : null;
+  const tags =
+    Array.isArray(params?.tags) && params?.tags.length > 0
+      ? params.tags.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim())
+      : null;
+  const status = typeof params?.status === 'string' && params.status.length > 0 ? params.status : null;
+  const editorialOnly = Boolean(params?.editorialOnly);
+
+  const rows = await sql`
+    SELECT COUNT(*)::int AS cnt
+    FROM guides g
+    WHERE
+      (${countryId}::text IS NULL OR g.country_ids @> ARRAY[${countryId}]::text[])
+      AND (${cityId}::text IS NULL OR g.city_ids @> ARRAY[${cityId}]::text[])
+      AND (${guideType}::text IS NULL OR g.guide_type::text = ${guideType})
+      AND (${guideTypes}::text[] IS NULL OR g.guide_type::text = ANY(${guideTypes}::text[]))
+      AND (${tag}::text IS NULL OR g.tags && ARRAY[${tag}]::text[])
+      AND (${tags}::text[] IS NULL OR g.tags && ${tags}::text[])
+      AND (${editorialOnly}::boolean = false OR g.status = 'verified')
+      AND (
+        ${status}::text IS NOT NULL
+        OR g.status IN ('published','verified')
+      )
+      AND (${status}::text IS NULL OR g.status::text = ${status})
+  `;
+  const cnt = (rows[0] as { cnt?: number } | undefined)?.cnt;
+  return typeof cnt === 'number' && Number.isFinite(cnt) ? cnt : 0;
 }
 
 export async function getGuideBySlug(sql: SqlClient, slug: string): Promise<GuideRow | null> {

@@ -11,6 +11,7 @@ import { customInstance } from './mutator';
 
 export interface ListResponse<T> {
   items: T[];
+  total?: number;
 }
 
 export type GuideTabKey =
@@ -102,31 +103,54 @@ export interface GuideDetailDto {
 
 export const useGetGuides = (_params?: {
   limit?: number;
+  offset?: number;
   countryId?: string;
   cityId?: string;
   guideType?: string;
+  guideTypes?: string[];
   tag?: string;
+  tags?: string[];
+  editorialOnly?: boolean;
+  sort?: 'new' | 'updated' | 'popular';
   status?: string;
   enabled?: boolean;
 }) => {
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
-  // v1: guide list is small; fetch up to 100 by default
-  const limit = typeof _params?.limit === 'number' ? _params.limit : 100;
+  const limit = typeof _params?.limit === 'number' ? _params.limit : 24;
+  const offset = typeof _params?.offset === 'number' ? _params.offset : 0;
 
   const sp = new URLSearchParams();
   sp.set('limit', String(limit));
+  if (offset > 0) sp.set('offset', String(offset));
   if (_params?.countryId) sp.set('country_id', _params.countryId);
   if (_params?.cityId) sp.set('city_id', _params.cityId);
   if (_params?.guideType) sp.set('guide_type', _params.guideType);
+  if (Array.isArray(_params?.guideTypes)) {
+    for (const gt of _params.guideTypes) {
+      if (typeof gt === 'string' && gt.trim().length > 0) sp.append('guide_type', gt.trim());
+    }
+  }
   if (_params?.tag) sp.set('tag', _params.tag);
+  if (Array.isArray(_params?.tags)) {
+    for (const t of _params.tags) {
+      if (typeof t === 'string' && t.trim().length > 0) sp.append('tag', t.trim());
+    }
+  }
+  if (_params?.editorialOnly) sp.set('editorial_only', '1');
+  if (_params?.sort) sp.set('sort', _params.sort);
   if (_params?.status) sp.set('status', _params.status);
   const qs = sp.toString() ? `?${sp.toString()}` : '';
   const queryObj = {
     limit,
+    offset,
     countryId: _params?.countryId ?? null,
     cityId: _params?.cityId ?? null,
     guideType: _params?.guideType ?? null,
+    guideTypes: Array.isArray(_params?.guideTypes) ? _params?.guideTypes : null,
     tag: _params?.tag ?? null,
+    tags: Array.isArray(_params?.tags) ? _params?.tags : null,
+    editorialOnly: Boolean(_params?.editorialOnly),
+    sort: _params?.sort ?? 'new',
     status: _params?.status ?? null,
   };
 

@@ -33,6 +33,7 @@ import {
 } from '@go2asia/db/queries/content';
 import type { GuideBlockRow, GuideFeedRow, GuideRow, GuideSectionRow } from '@go2asia/db/queries/guides';
 import {
+  countGuides,
   getGuideBySlug,
   listArticlesForGuideFeed,
   listEventsForGuideFeed,
@@ -61,7 +62,7 @@ export interface Env {
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
-type ListResponse<T> = { items: T[] };
+type ListResponse<T> = { items: T[]; total?: number };
 
 // Public DTOs (minimal & stable for PWA shell)
 // Keep aligned with packages/sdk/src/content.ts where possible.
@@ -1304,17 +1305,55 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
 
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
+  const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '24') || 24));
+  const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0);
   const countryId = url.searchParams.get('country_id') ?? undefined;
   const cityId = url.searchParams.get('city_id') ?? undefined;
   const guideType = url.searchParams.get('guide_type') ?? undefined;
+  const guideTypes = url.searchParams.getAll('guide_type').filter(Boolean);
   const tag = url.searchParams.get('tag') ?? undefined;
+  const tagsCsv = (url.searchParams.get('tags') ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const tags = [...new Set([...url.searchParams.getAll('tag').filter(Boolean), ...tagsCsv])];
   const status = url.searchParams.get('status') ?? undefined;
+  const editorialOnlyRaw = url.searchParams.get('editorial_only');
+  const editorialOnly = editorialOnlyRaw === 'true' || editorialOnlyRaw === '1';
+  const sortRaw = (url.searchParams.get('sort') ?? '').trim().toLowerCase();
+  const sort = sortRaw === 'updated' || sortRaw === 'popular' || sortRaw === 'new' ? (sortRaw as any) : undefined;
 
   try {
-    const rows = await listGuides(sqlClient, { limit, countryId, cityId, guideType, tag, status });
+    const params = {
+      limit,
+      offset,
+      countryId,
+      cityId,
+      guideType,
+      guideTypes: guideTypes.length > 1 ? guideTypes : undefined,
+      tag,
+      tags: tags.length > 0 ? tags : undefined,
+      editorialOnly,
+      status,
+      sort,
+    };
+
+    const countParams = {
+      countryId,
+      cityId,
+      guideType,
+      guideTypes: guideTypes.length > 1 ? guideTypes : undefined,
+      tag,
+      tags: tags.length > 0 ? tags : undefined,
+      editorialOnly,
+      status,
+    };
+
+    const [total, rows] = await Promise.all([countGuides(sqlClient, countParams), listGuides(sqlClient, params)]);
+
     return json(
       {
+        total,
         items: rows.map((r) => {
           const dto = toGuideCard(r);
           return { ...dto, heroUrl: resolveGuideHeroUrl(env, r) };
