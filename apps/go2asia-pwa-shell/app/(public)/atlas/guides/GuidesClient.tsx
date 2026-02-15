@@ -86,6 +86,10 @@ function normalizeSort(raw: string | null): SortOption {
   return 'new';
 }
 
+function looksLikeUuid(v: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v.trim());
+}
+
 function formatGuideType(raw: string): string {
   switch ((raw ?? '').trim()) {
     case 'route':
@@ -120,7 +124,10 @@ export function GuidesClient() {
   const parseFiltersFromURL = useCallback(() => {
     const chip = normalizeChipKey(searchParams.get('type'));
     const countryId = searchParams.get('countryId') || '';
-    const cityId = searchParams.get('cityId') || '';
+    const cityIdRaw = searchParams.get('cityId') || '';
+    // guides.city_ids stores city slugs from markdown frontmatter (e.g. "bangkok").
+    // If old URLs contain a city UUID from /v1/content/cities — ignore it to avoid "0 results".
+    const cityId = looksLikeUuid(cityIdRaw) ? '' : cityIdRaw;
     const tagsParam = searchParams.get('tags') || '';
     const editorialOnly = searchParams.get('editorialOnly') === '1';
     const sort = normalizeSort(searchParams.get('sort'));
@@ -465,7 +472,7 @@ export function GuidesClient() {
                   >
                     <option value="">{draftCountryId ? 'Все города' : 'Сначала выберите страну'}</option>
                     {(citiesData?.items ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
+                      <option key={c.id} value={c.slug}>
                         {c.name}
                       </option>
                     ))}
