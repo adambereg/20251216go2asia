@@ -588,7 +588,11 @@ async function main() {
     return;
   }
 
-  const client = new Client({ connectionString: getDatabaseUrl() });
+  const client = new Client({
+    connectionString: getDatabaseUrl(),
+    // Neon requires SSL; keep consistent with ddlApply.ts (safe for staging/dev).
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
   try {
     await client.query('BEGIN');
