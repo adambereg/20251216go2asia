@@ -50,9 +50,9 @@ export function ThemesClient() {
   const dataSource = getDataSource();
   const badgeText = dataSource === 'mock' ? 'MOCK DATA' : undefined;
 
-  // Hard gate: never show draft themes in production builds.
-  const showDraftThemes =
-    process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_SHOW_DRAFT_THEMES === 'true';
+  // Draft themes are allowed only when explicitly enabled.
+  // NOTE: Production safety is enforced on backend: content-service rejects status=draft when ENVIRONMENT=production.
+  const showDraftThemes = process.env.NEXT_PUBLIC_SHOW_DRAFT_THEMES === 'true';
   const allowUnclustered = process.env.NODE_ENV !== 'production';
 
   const [activeCluster, setActiveCluster] = useState<ClusterKey | 'all'>('all');
