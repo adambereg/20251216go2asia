@@ -8,6 +8,11 @@ export type GuideTabKey =
   | 'events'
   | 'places'
   | 'audience'
+  | 'scenarios'
+  | 'costs'
+  | 'risks'
+  | 'checklists'
+  | 'links'
   | 'faq'
   | 'experience';
 

@@ -31,7 +31,8 @@ type GuideType =
   | 'housing'
   | 'visa'
   | 'work_infra'
-  | 'climate';
+  | 'climate'
+  | 'theme';
 
 type GuideStatus = 'draft' | 'published' | 'verified' | 'archived';
 
@@ -45,6 +46,11 @@ type TabKey =
   | 'events'
   | 'places'
   | 'audience'
+  | 'scenarios'
+  | 'costs'
+  | 'risks'
+  | 'checklists'
+  | 'links'
   | 'faq'
   | 'experience';
 
@@ -58,6 +64,11 @@ const TAB_LABELS: Record<TabKey, string> = {
   events: 'События',
   places: 'Места',
   audience: 'Для кого',
+  scenarios: 'Сценарии',
+  costs: 'Стоимость и бюджеты',
+  risks: 'Риски и подводные камни',
+  checklists: 'Чек-листы',
+  links: 'Ссылки',
   faq: 'FAQ',
   experience: 'Опыт',
 };
@@ -72,6 +83,7 @@ const DEFAULT_TABS_BY_TYPE: Partial<Record<GuideType, TabKey[]>> = {
   work_infra: ['overview', 'compare', 'locations', 'places', 'practice', 'events', 'faq', 'experience'],
   strategic: ['overview', 'compare', 'locations', 'practice', 'events', 'places', 'faq', 'experience'],
   climate: ['overview', 'compare', 'locations', 'practice', 'faq', 'experience'],
+  theme: ['overview', 'compare', 'practice', 'scenarios', 'costs', 'risks', 'checklists', 'links', 'faq'],
 };
 
 function getDatabaseUrl(): string {
@@ -122,17 +134,52 @@ function parseInlineArray(value: string): string[] | null {
     });
 }
 
+function stripInlineYamlComment(raw: string): string {
+  const v = raw.trim();
+  if (!v) return v;
+  // Keep quoted strings intact (allow # inside quotes).
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) return v;
+  return v.replace(/\s+#.*$/, '').trim();
+}
+
+function unquoteYamlScalar(raw: string): string {
+  let v = stripInlineYamlComment(raw);
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+  return v.trim();
+}
+
 function parseYamlGuideMeta(yaml: string): Record<string, string | string[]> {
   const out: Record<string, string | string[]> = {};
-  for (const raw of yaml.split(/\r?\n/)) {
+  const lines = yaml.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] ?? '';
     const line = raw.replace(/\t/g, '  ');
     if (!line.trim() || line.trim().startsWith('#')) continue;
-    if (/^\s+/.test(line)) continue; // top-level only
+    if (/^\s+/.test(line)) continue; // top-level keys only
+
     const m = line.match(/^([A-Za-z0-9_]+)\s*:\s*(.*)\s*$/);
     if (!m) continue;
     const key = m[1]!;
-    let val = (m[2] ?? '').trim();
-    if (!val) continue;
+    const tail = (m[2] ?? '').trim();
+
+    // YAML list (e.g. tags:\n  - a\n  - b)
+    if (!tail) {
+      const items: string[] = [];
+      for (let j = i + 1; j < lines.length; j++) {
+        const l = (lines[j] ?? '').replace(/\t/g, '  ');
+        if (!l.trim() || l.trim().startsWith('#')) continue;
+        if (/^[A-Za-z0-9_]+\s*:/.test(l)) {
+          i = j - 1;
+          break;
+        }
+        const li = l.match(/^\s*-\s*(.+?)\s*$/);
+        if (li) items.push(unquoteYamlScalar(li[1] ?? ''));
+      }
+      if (items.length > 0) out[key] = items.filter(Boolean);
+      continue;
+    }
+
+    const val = unquoteYamlScalar(tail);
 
     const arr = parseInlineArray(val);
     if (arr) {
@@ -140,7 +187,6 @@ function parseYamlGuideMeta(yaml: string): Record<string, string | string[]> {
       continue;
     }
 
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
     out[key] = val;
   }
   return out;
@@ -211,12 +257,25 @@ type ImportGuide = {
   countryIds: string[];
   cityIds: string[];
   heroR2Key: string | null;
+  updatedAt: string | null;
+  summary: string | null;
   tabs: Map<TabKey, string>;
 };
 
 function asGuideType(v: unknown): GuideType {
   const s = typeof v === 'string' ? v : '';
-  const ok: GuideType[] = ['strategic', 'comparative', 'route', 'niche', 'event', 'housing', 'visa', 'work_infra', 'climate'];
+  const ok: GuideType[] = [
+    'strategic',
+    'comparative',
+    'route',
+    'niche',
+    'event',
+    'housing',
+    'visa',
+    'work_infra',
+    'climate',
+    'theme',
+  ];
   return (ok.includes(s as GuideType) ? (s as GuideType) : 'strategic');
 }
 
@@ -237,6 +296,39 @@ function pickString(meta: Record<string, string | string[]>, key: string): strin
   return typeof v === 'string' && v.trim().length > 0 ? v.trim() : null;
 }
 
+function parseUpdatedAt(metaValue: string | null): string | null {
+  const v = (metaValue ?? '').trim();
+  if (!v) return null;
+  // Accept YYYY-MM-DD or ISO; store as ISO string for pg driver.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${v}T00:00:00.000Z`;
+  const d = new Date(v);
+  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+}
+
+function markdownToPlainText(md: string): string {
+  let s = md ?? '';
+  s = s.replace(/<!--[\s\S]*?-->/g, ' ');
+  s = s.replace(/```[\s\S]*?```/g, ' ');
+  s = s.replace(/`([^`]+)`/g, '$1');
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  s = s.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
+  s = s.replace(/[#>*_~=-]+/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+
+function computeSummaryFromOverview(tabs: Map<TabKey, string>): string | null {
+  const md = (tabs.get('overview') ?? '').trim();
+  if (!md) return null;
+  const text = markdownToPlainText(md);
+  if (!text) return null;
+  const max = 180;
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const safe = cut.replace(/\s+\S*$/, '').trim();
+  return safe.length >= 80 ? safe : cut.trim();
+}
+
 function loadGuideFromFile(path: string): ImportGuide | null {
   const raw = readFileSync(path, 'utf8');
   const { yaml, body } = extractFrontmatter(raw);
@@ -251,10 +343,15 @@ function loadGuideFromFile(path: string): ImportGuide | null {
   const cityIds = pickStringArray(meta, 'city_ids');
   const tags = pickStringArray(meta, 'tags');
   const heroR2Key = pickString(meta, 'hero_r2_key');
+  const updatedAt = parseUpdatedAt(pickString(meta, 'updated_at'));
 
   if (!title || !slug) return null;
 
   const tabs = parseTabs(body);
+
+  // Editorial summary should be preferred (SEO/CTR), with markdown overview as fallback.
+  const summaryFromMeta = pickString(meta, 'summary');
+  const summary = summaryFromMeta || computeSummaryFromOverview(tabs);
   return {
     sourcePath: path,
     title,
@@ -265,6 +362,8 @@ function loadGuideFromFile(path: string): ImportGuide | null {
     countryIds,
     cityIds,
     heroR2Key,
+    updatedAt,
+    summary,
     tabs,
   };
 }
@@ -302,24 +401,25 @@ async function upsertGuide(client: Client, g: ImportGuide): Promise<string> {
       hero_r2_key, hero_url,
       published_at, created_at, updated_at
     ) VALUES (
-      $1, $2, $3, NULL, $4::atlas_guide_type, $5::atlas_guide_status,
-      $6::text[], $7::text[], $8::text[],
-      $9, NULL,
-      CASE WHEN $5 IN ('published','verified') THEN now() ELSE NULL END,
-      now(), now()
+      $1, $2, $3, $4, $5::atlas_guide_type, $6::atlas_guide_status,
+      $7::text[], $8::text[], $9::text[],
+      $10, NULL,
+      CASE WHEN $6 IN ('published','verified') THEN now() ELSE NULL END,
+      now(), COALESCE($11::timestamptz, now())
     )
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title,
       guide_type = EXCLUDED.guide_type,
       status = EXCLUDED.status,
+      summary = COALESCE(EXCLUDED.summary, guides.summary),
       tags = EXCLUDED.tags,
       country_ids = EXCLUDED.country_ids,
       city_ids = EXCLUDED.city_ids,
       hero_r2_key = EXCLUDED.hero_r2_key,
-      updated_at = now()
+      updated_at = EXCLUDED.updated_at
     RETURNING id
     `,
-    [id, g.slug, g.title, g.guideType, g.status, g.tags, g.countryIds, g.cityIds, g.heroR2Key]
+    [id, g.slug, g.title, g.summary, g.guideType, g.status, g.tags, g.countryIds, g.cityIds, g.heroR2Key, g.updatedAt]
   );
   return res.rows[0]!.id;
 }
@@ -384,6 +484,8 @@ function parseArgs(argv: string[]) {
     dryRun: flags.has('--dry-run'),
     apply: flags.has('--apply'),
     onlySlug: get('--only-slug'),
+    themesOnly: flags.has('--themes-only'),
+    includeThemes: flags.has('--include-themes'),
   };
 }
 
@@ -394,9 +496,11 @@ async function main() {
   const repoRoot = resolve(__dirname, '..', '..', '..');
   const canonicalDir = join(repoRoot, 'content', 'atlas', 'guides');
   const legacyDir = join(repoRoot, 'content', 'atlas', 'guide');
+  const themesDir = join(repoRoot, 'content', 'atlas', 'themes');
 
-  const canonicalFiles = listMdFiles(canonicalDir);
-  const legacyFiles = listMdFiles(legacyDir);
+  const canonicalFiles = args.themesOnly ? [] : listMdFiles(canonicalDir);
+  const legacyFiles = args.themesOnly ? [] : listMdFiles(legacyDir);
+  const themesFiles = args.themesOnly || args.includeThemes ? listMdFiles(themesDir) : [];
 
   // Load canonical first, then legacy (alias) excluding duplicates by slug.
   const loaded: ImportGuide[] = [];
@@ -414,6 +518,34 @@ async function main() {
 
   loadAll(canonicalFiles);
   loadAll(legacyFiles);
+  loadAll(themesFiles);
+
+  // Validate cluster:* tags for themes (MVP: stored in tags for flexibility).
+  const knownClusters = new Set([
+    'cluster:legalization',
+    'cluster:finance',
+    'cluster:family',
+    'cluster:lifestyle',
+    'cluster:mobility',
+  ]);
+  const invalidClusters = loaded
+    .filter((g) => g.guideType === 'theme')
+    .map((g) => {
+      const clusterTags = (g.tags ?? []).filter((t) => typeof t === 'string' && t.startsWith('cluster:'));
+      const unique = Array.from(new Set(clusterTags));
+      const ok = unique.length === 1 && knownClusters.has(unique[0] ?? '');
+      return ok ? null : { slug: g.slug, clusterTags: unique, tags: g.tags ?? [] };
+    })
+    .filter(Boolean) as Array<{ slug: string; clusterTags: string[]; tags: string[] }>;
+
+  if (invalidClusters.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[md-import] WARN: theme cluster tag invalid (expected exactly 1 of ${Array.from(knownClusters).join(', ')}).`
+    );
+    // eslint-disable-next-line no-console
+    for (const it of invalidClusters.slice(0, 30)) console.warn('[md-import] invalid theme cluster:', it);
+  }
 
   const planGuides = loaded.length;
   const planSections = loaded.reduce((acc, g) => acc + computeSectionPlan(g).length, 0);
@@ -445,6 +577,8 @@ async function main() {
   console.log('[md-import] source canonical:', canonicalDir, 'files:', canonicalFiles.length);
   // eslint-disable-next-line no-console
   console.log('[md-import] source legacy (deprecated):', legacyDir, 'files:', legacyFiles.length);
+  // eslint-disable-next-line no-console
+  console.log('[md-import] source themes:', themesDir, 'files:', themesFiles.length);
   // eslint-disable-next-line no-console
   console.log('[md-import] selected guides:', planGuides, 'sections(upsert):', planSections, 'blocks(upsert):', planBlocks);
 

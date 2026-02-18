@@ -1324,6 +1324,14 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
   const sort = sortRaw === 'updated' || sortRaw === 'popular' || sortRaw === 'new' ? (sortRaw as any) : undefined;
 
   try {
+    // Security hardening: never expose draft content in production (public API).
+    if ((env.ENVIRONMENT ?? '').toLowerCase() === 'production' && (status ?? '').toLowerCase() === 'draft') {
+      return json(
+        { error: { code: 'BadRequest', message: 'status=draft is not available in production' } },
+        400
+      );
+    }
+
     const params = {
       limit,
       offset,

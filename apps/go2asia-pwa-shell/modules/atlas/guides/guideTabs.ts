@@ -8,6 +8,11 @@ import {
   Calendar,
   Building2,
   Users,
+  Layers,
+  Wallet,
+  AlertTriangle,
+  ListChecks,
+  Link2,
   HelpCircle,
   MessageCircle,
 } from 'lucide-react';
@@ -22,6 +27,11 @@ export type GuideTabKey =
   | 'events'
   | 'places'
   | 'audience'
+  | 'scenarios'
+  | 'costs'
+  | 'risks'
+  | 'checklists'
+  | 'links'
   | 'faq'
   | 'experience';
 
@@ -38,6 +48,11 @@ export const GUIDE_TAB_META: Record<
   events: { label: 'События', icon: Calendar },
   places: { label: 'Места', icon: Building2 },
   audience: { label: 'Для кого', icon: Users },
+  scenarios: { label: 'Сценарии', icon: Layers },
+  costs: { label: 'Стоимость и бюджеты', icon: Wallet },
+  risks: { label: 'Риски', icon: AlertTriangle },
+  checklists: { label: 'Чек-листы', icon: ListChecks },
+  links: { label: 'Ссылки', icon: Link2 },
   faq: { label: 'FAQ', icon: HelpCircle },
   experience: { label: 'Опыт', icon: MessageCircle },
 };
