@@ -62,7 +62,7 @@ export interface Env {
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
-type ListResponse<T> = { items: T[]; total?: number };
+type ListResponse<T> = { items: T[]; total?: number; limit?: number; offset?: number };
 
 // Public DTOs (minimal & stable for PWA shell)
 // Keep aligned with packages/sdk/src/content.ts where possible.
@@ -70,15 +70,28 @@ export interface ContentEventDto {
   id: string;
   title: string;
   slug: string;
-  description: string | null;
+  shortDescription: string | null;
+  bodyMarkdown: string | null;
   category: string | null;
   startDate: string; // ISO string
   endDate: string | null; // ISO string
   location: string | null;
   latitude: string | null;
   longitude: string | null;
-  imageUrl: string | null;
-  isActive: boolean;
+  countrySlug: string | null;
+  citySlug: string | null;
+  countryName: string | null;
+  cityName: string | null;
+  year: number | null;
+  heroMediaKey: string | null; // R2 object key (relative path)
+  galleryMediaKeys: string[] | null; // R2 object keys
+  isFree: boolean;
+  priceAmount: string | null;
+  priceCurrency: string | null;
+  isVerified: boolean;
+  officialUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }
 
 export interface ContentCountryDto {
@@ -657,23 +670,62 @@ function getSqlClient(env: Env, logger: ReturnType<typeof createLogger>): SqlCli
   return createSqlClient(env.DATABASE_URL);
 }
 
+function deriveEventMediaBase(row: EventRow, startIso: string): { base: string | null; year: number | null } {
+  const country = typeof row.country_slug === 'string' && row.country_slug.trim() ? row.country_slug.trim() : null;
+  const yearFromRow = typeof row.year === 'number' && Number.isFinite(row.year) ? Math.trunc(row.year) : null;
+  const yearFromStart = (() => {
+    const d = new Date(startIso);
+    const y = d.getUTCFullYear();
+    return Number.isFinite(y) ? y : null;
+  })();
+  const year = yearFromRow ?? yearFromStart;
+  if (!country || !year) return { base: null, year };
+  return { base: `events/${country}/${year}/${row.slug}`, year };
+}
+
 function toContentEvent(row: EventRow): ContentEventDto {
   const start = row.start_at ?? row.start_date;
   const end = row.end_at ?? row.end_date;
   const locationParts = [row.city_name, row.country_name].filter(Boolean).join(', ');
+
+  const mediaBase = deriveEventMediaBase(row, start);
+  const defaultHero = mediaBase.base ? `${mediaBase.base}/01.jpg` : null;
+  const defaultGallery = mediaBase.base
+    ? ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${mediaBase.base}/${f}`)
+    : [];
+
+  const heroMediaKeyRaw = typeof row.hero_media_key === 'string' ? row.hero_media_key.trim() : '';
+  const heroMediaKey = heroMediaKeyRaw.length > 0 ? heroMediaKeyRaw : defaultHero;
+
+  const galleryFromDb = pickStringArray(row.gallery_media_keys);
+  const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : defaultGallery.length > 0 ? defaultGallery : null;
+
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
-    description: row.description,
+    shortDescription: row.short_description ?? null,
+    bodyMarkdown: row.description ?? null,
     category: row.category,
     startDate: start,
     endDate: end,
     location: row.location ?? (locationParts.length > 0 ? locationParts : null),
     latitude: row.lat,
     longitude: row.lng,
-    imageUrl: row.image_url,
-    isActive: row.status === 'active',
+    countrySlug: row.country_slug ?? null,
+    citySlug: row.city_slug ?? null,
+    countryName: row.country_name ?? null,
+    cityName: row.city_name ?? null,
+    year: mediaBase.year,
+    heroMediaKey,
+    galleryMediaKeys,
+    isFree: Boolean(row.is_free),
+    priceAmount: row.price_amount ?? null,
+    priceCurrency: row.price_currency ?? null,
+    isVerified: Boolean(row.is_verified),
+    officialUrl: row.official_url ?? null,
+    seoTitle: row.seo_title ?? null,
+    seoDescription: row.seo_description ?? null,
   };
 }
 
@@ -960,10 +1012,42 @@ async function handleListEvents(
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
 
-  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
   try {
-    const rows = await listEvents(sqlClient, limit);
-    return json({ items: rows.map(toContentEvent) } satisfies ListResponse<ContentEventDto>, 200);
+    const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
+    const offsetRaw = url.searchParams.get('offset');
+    const pageRaw = url.searchParams.get('page');
+    const page = pageRaw ? Math.max(1, Number(pageRaw) || 1) : null;
+    const offset =
+      offsetRaw !== null
+        ? Math.max(0, Number(offsetRaw) || 0)
+        : page !== null
+          ? (page - 1) * limit
+          : 0;
+
+    // Filters (accept both *_id and non-suffixed aliases for MVP compatibility)
+    const country = (url.searchParams.get('country') ?? url.searchParams.get('country_id')) ?? undefined;
+    const city = (url.searchParams.get('city') ?? url.searchParams.get('city_id')) ?? undefined;
+    const category = url.searchParams.get('category') ?? undefined;
+    const date_from = url.searchParams.get('date_from') ?? undefined;
+    const date_to = url.searchParams.get('date_to') ?? undefined;
+    const price = (url.searchParams.get('price') ?? 'any') as any;
+    const verified = (url.searchParams.get('verified') ?? 'any') as any;
+    const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
+
+    const { items, total } = await listEvents(sqlClient, {
+      limit,
+      offset,
+      country,
+      city,
+      category,
+      date_from,
+      date_to,
+      price,
+      verified,
+      q,
+    });
+
+    return json({ items: items.map(toContentEvent), total, limit, offset } satisfies ListResponse<ContentEventDto>, 200);
   } catch (error) {
     logger.error('List events error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch events' } }, 500);
