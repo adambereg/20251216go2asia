@@ -1,3 +1,53 @@
+/**
+ * Media URL resolver (R2 object keys → public URLs).
+ *
+ * Contract:
+ * - Backend returns media keys (relative object keys), e.g. "events/thailand/2026/songkran-festival/01.jpg"
+ * - Frontend builds URL as `${NEXT_PUBLIC_MEDIA_URL}/${media_key}`.
+ */
+
+function trimTrailingSlash(input: string): string {
+  return input.endsWith('/') ? input.slice(0, -1) : input;
+}
+
+/**
+ * Returns base URL for public media (no trailing slash), or null if not configured.
+ *
+ * Expected env var:
+ * - NEXT_PUBLIC_MEDIA_URL
+ */
+export function getMediaBaseUrl(): string | null {
+  if (typeof window !== 'undefined') {
+    const windowMediaUrl = (window as any).__NEXT_PUBLIC_MEDIA_URL__;
+    if (typeof windowMediaUrl === 'string' && windowMediaUrl.trim().length > 0) {
+      return trimTrailingSlash(windowMediaUrl.trim());
+    }
+
+    const envMediaUrl = (globalThis as any).process?.env?.NEXT_PUBLIC_MEDIA_URL;
+    if (typeof envMediaUrl === 'string' && envMediaUrl.trim().length > 0) {
+      return trimTrailingSlash(envMediaUrl.trim());
+    }
+  }
+
+  const envMediaUrl = (globalThis as any).process?.env?.NEXT_PUBLIC_MEDIA_URL;
+  if (typeof envMediaUrl === 'string' && envMediaUrl.trim().length > 0) {
+    return trimTrailingSlash(envMediaUrl.trim());
+  }
+
+  return null;
+}
+
+/**
+ * Resolve a media key into a full public URL, or null if not resolvable.
+ */
+export function resolveMediaUrl(mediaKey: string | null | undefined): string | null {
+  const key = typeof mediaKey === 'string' ? mediaKey.trim() : '';
+  if (!key) return null;
+  const base = getMediaBaseUrl();
+  if (!base) return null;
+  return `${base}/${key.replace(/^\/+/, '')}`;
+}
+
 import { customInstance, getBaseUrl } from './mutator';
 
 export type MediaScope = 'content' | 'space' | 'rf' | 'rielt' | 'quest' | 'avatar';

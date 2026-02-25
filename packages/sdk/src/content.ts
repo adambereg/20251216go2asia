@@ -11,19 +11,35 @@ export interface ContentEventDto {
   id: string;
   title: string;
   slug: string;
-  description: string | null;
+  shortDescription: string | null;
+  bodyMarkdown: string | null;
   category: string | null;
   startDate: string; // ISO string
   endDate: string | null; // ISO string
   location: string | null;
   latitude: string | null;
   longitude: string | null;
-  imageUrl: string | null;
-  isActive: boolean;
+  countrySlug: string | null;
+  citySlug: string | null;
+  countryName: string | null;
+  cityName: string | null;
+  year: number | null;
+  heroMediaKey: string | null;
+  galleryMediaKeys: string[] | null;
+  isFree: boolean;
+  priceAmount: string | null;
+  priceCurrency: string | null;
+  isVerified: boolean;
+  officialUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }
 
 export interface ListResponse<T> {
   items: T[];
+  total?: number;
+  limit?: number;
+  offset?: number;
 }
 
 export interface ContentCountryDto {
@@ -157,8 +173,35 @@ export async function getEventById(eventId: string): Promise<ContentEventDto> {
 /**
  * List events (public)
  */
-export async function listEvents(params?: { limit?: number }): Promise<ListResponse<ContentEventDto>> {
-  const qs = params?.limit ? `?limit=${encodeURIComponent(String(params.limit))}` : '';
+export type ListEventsParams = {
+  limit?: number;
+  offset?: number;
+  page?: number;
+  country?: string;
+  city?: string;
+  category?: string;
+  dateFrom?: string; // ISO date/datetime
+  dateTo?: string; // ISO date/datetime
+  price?: 'free' | 'paid' | 'any';
+  verified?: 'true' | 'false' | 'any';
+  q?: string;
+};
+
+export async function listEvents(params?: ListEventsParams): Promise<ListResponse<ContentEventDto>> {
+  const sp = new URLSearchParams();
+  if (params?.limit) sp.set('limit', String(params.limit));
+  if (params?.offset !== undefined) sp.set('offset', String(params.offset));
+  if (params?.page) sp.set('page', String(params.page));
+  if (params?.country) sp.set('country', params.country);
+  if (params?.city) sp.set('city', params.city);
+  if (params?.category) sp.set('category', params.category);
+  if (params?.dateFrom) sp.set('date_from', params.dateFrom);
+  if (params?.dateTo) sp.set('date_to', params.dateTo);
+  if (params?.price) sp.set('price', params.price);
+  if (params?.verified) sp.set('verified', params.verified);
+  if (params?.q) sp.set('q', params.q);
+
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
   return customInstance<ListResponse<ContentEventDto>>({ method: 'GET' }, `/v1/content/events${qs}`);
 }
 
