@@ -79,10 +79,33 @@ jobs:
             exit 1
           fi
 
-          pnpm --dir "${{ matrix.path }}" exec wrangler deploy --env staging \
-            --var ENVIRONMENT:staging \
-            --var VERSION:${{ github.sha }} \
-            ${{ matrix.extra_vars }}
+          # Use repo-root Wrangler (v4) for reliability, but point to the service config explicitly.
+          # Also retry on transient Cloudflare API 5xx (e.g. 502).
+          CONFIG="${{ matrix.path }}/wrangler.toml"
+          if [ ! -f "$CONFIG" ]; then
+            echo "Wrangler config not found: $CONFIG"
+            exit 1
+          fi
+
+          attempt=1
+          max_attempts=3
+          while [ $attempt -le $max_attempts ]; do
+            echo "Deploy attempt $attempt/$max_attempts for ${{ matrix.service }}"
+            if pnpm exec wrangler deploy --env staging \
+              --config "$CONFIG" \
+              --var ENVIRONMENT:staging \
+              --var VERSION:${{ github.sha }} \
+              ${{ matrix.extra_vars }}; then
+              exit 0
+            fi
+            echo "Deploy failed (attempt $attempt)."
+            if [ $attempt -lt $max_attempts ]; then
+              sleep $((attempt * 10))
+            fi
+            attempt=$((attempt + 1))
+          done
+          echo "Deploy failed after $max_attempts attempts."
+          exit 1
 
       - name: Smoke check (HTTP 200)
         run: |

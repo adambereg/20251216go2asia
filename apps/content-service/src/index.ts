@@ -31,6 +31,18 @@ import {
   listEvents,
   listPlaces,
 } from '@go2asia/db/queries/content';
+import type { GuideBlockRow, GuideFeedRow, GuideRow, GuideSectionRow } from '@go2asia/db/queries/guides';
+import {
+  countGuides,
+  getGuideBySlug,
+  listArticlesForGuideFeed,
+  listEventsForGuideFeed,
+  listGuideBlocks,
+  listGuideFeeds,
+  listGuideSections,
+  listGuides,
+  listPlacesForGuideFeed,
+} from '@go2asia/db/queries/guides';
 import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
 
 export interface Env {
@@ -50,7 +62,7 @@ export interface Env {
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
-type ListResponse<T> = { items: T[] };
+type ListResponse<T> = { items: T[]; total?: number };
 
 // Public DTOs (minimal & stable for PWA shell)
 // Keep aligned with packages/sdk/src/content.ts where possible.
@@ -150,6 +162,97 @@ export interface ContentTabDto {
   title: string | null;
   bodyMarkdown: string;
   updatedAt: string | null;
+}
+
+// ---------------------------------------------------------------------
+// Guide Engine v1 DTOs (public)
+// ---------------------------------------------------------------------
+
+export type GuideTabKey =
+  | 'overview'
+  | 'compare'
+  | 'locations'
+  | 'route'
+  | 'map'
+  | 'practice'
+  | 'events'
+  | 'places'
+  | 'audience'
+  | 'faq'
+  | 'experience';
+
+export type GuideFeedSource = 'pulse' | 'atlas_places' | 'blog';
+
+export interface ContentGuideCardDto {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  heroUrl: string | null;
+  guideType: string;
+  status: string;
+  tags: string[];
+  countryIds: string[];
+  cityIds: string[];
+  publishedAt: string | null;
+  updatedAt: string;
+}
+
+export interface ContentGuideBlockDto {
+  id: string;
+  blockType: string;
+  orderIndex: number;
+  payload: Record<string, unknown>;
+  isEmpty: boolean;
+}
+
+export interface ContentGuideFeedDto {
+  id: string;
+  source: GuideFeedSource;
+  filter: Record<string, unknown>;
+  limitCount: number;
+  sort: string;
+  orderIndex: number;
+}
+
+export interface ContentGuideSectionDto {
+  id: string;
+  tabKey: GuideTabKey;
+  title: string | null;
+  orderIndex: number;
+  blocks: ContentGuideBlockDto[];
+  feeds: ContentGuideFeedDto[];
+  feedsResolved: ContentGuideFeedResolvedItemDto[];
+}
+
+export type ContentGuideFeedResolvedKind = 'event' | 'place' | 'article';
+
+export interface ContentGuideFeedResolvedItemDto {
+  kind: ContentGuideFeedResolvedKind;
+  id: string;
+  slug: string | null;
+  title: string;
+  excerpt: string | null;
+  imageUrl: string | null;
+  href: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface ContentGuideDetailDto {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  heroUrl: string | null;
+  guideType: string;
+  status: string;
+  tags: string[];
+  countryIds: string[];
+  cityIds: string[];
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sections: ContentGuideSectionDto[];
 }
 
 function json(data: unknown, status = 200): Response {
@@ -571,6 +674,82 @@ function toContentEvent(row: EventRow): ContentEventDto {
     longitude: row.lng,
     imageUrl: row.image_url,
     isActive: row.status === 'active',
+  };
+}
+
+function toGuideCard(row: GuideRow): ContentGuideCardDto {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary,
+    heroUrl: row.hero_url,
+    guideType: row.guide_type,
+    status: row.status,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    countryIds: Array.isArray(row.country_ids) ? row.country_ids : [],
+    cityIds: Array.isArray(row.city_ids) ? row.city_ids : [],
+    publishedAt: row.published_at ?? null,
+    updatedAt: row.updated_at,
+  };
+}
+
+function resolveGuideHeroUrl(env: Env, row: Pick<GuideRow, 'hero_url' | 'hero_r2_key'>): string | null {
+  // Prefer SSOT for guide media: R2 key from guide frontmatter/import.
+  const r2Key = typeof row.hero_r2_key === 'string' && row.hero_r2_key.trim().length > 0 ? row.hero_r2_key.trim() : null;
+  const fromR2 = r2Key ? getPublicUrl(env, r2Key) : null;
+  if (fromR2) return fromR2;
+
+  const url = typeof row.hero_url === 'string' && row.hero_url.trim().length > 0 ? row.hero_url.trim() : null;
+  if (!url) return null;
+  // Do not surface stock placeholders as "real" media.
+  return isPlaceholderHeroUrl(url) ? null : url;
+}
+
+function toGuideBlock(row: GuideBlockRow): ContentGuideBlockDto {
+  const payload =
+    row.payload && typeof row.payload === 'object' && !Array.isArray(row.payload)
+      ? (row.payload as Record<string, unknown>)
+      : {};
+  return {
+    id: row.id,
+    blockType: row.block_type,
+    orderIndex: row.order_index,
+    payload,
+    isEmpty: Boolean(row.is_empty),
+  };
+}
+
+function toGuideFeed(row: GuideFeedRow): ContentGuideFeedDto {
+  const filter =
+    row.filter && typeof row.filter === 'object' && !Array.isArray(row.filter)
+      ? (row.filter as Record<string, unknown>)
+      : {};
+  return {
+    id: row.id,
+    source: row.source as GuideFeedSource,
+    filter,
+    limitCount: row.limit_count,
+    sort: row.sort,
+    orderIndex: row.order_index,
+  };
+}
+
+function toGuideSection(
+  row: GuideSectionRow,
+  blocksBySectionId: Map<string, ContentGuideBlockDto[]>,
+  feedsByTabKey: Map<string, ContentGuideFeedDto[]>,
+  feedsResolvedByTabKey: Map<string, ContentGuideFeedResolvedItemDto[]>
+): ContentGuideSectionDto {
+  const tabKey = row.tab_key as GuideTabKey;
+  return {
+    id: row.id,
+    tabKey,
+    title: row.title,
+    orderIndex: row.order_index,
+    blocks: blocksBySectionId.get(row.id) ?? [],
+    feeds: feedsByTabKey.get(tabKey) ?? [],
+    feedsResolved: feedsResolvedByTabKey.get(tabKey) ?? [],
   };
 }
 
@@ -1118,6 +1297,717 @@ async function handleGetArticleBySlug(env: Env, slug: string, logger: ReturnType
   }
 }
 
+// ---------------------------------------------------------------------
+// Guide Engine v1 (public read API)
+// ---------------------------------------------------------------------
+
+async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '24') || 24));
+  const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') || 0);
+  const countryId = url.searchParams.get('country_id') ?? undefined;
+  const cityId = url.searchParams.get('city_id') ?? undefined;
+  const guideType = url.searchParams.get('guide_type') ?? undefined;
+  const guideTypes = url.searchParams.getAll('guide_type').filter(Boolean);
+  const tag = url.searchParams.get('tag') ?? undefined;
+  const tagsCsv = (url.searchParams.get('tags') ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const tags = [...new Set([...url.searchParams.getAll('tag').filter(Boolean), ...tagsCsv])];
+  const status = url.searchParams.get('status') ?? undefined;
+  const editorialOnlyRaw = url.searchParams.get('editorial_only');
+  const editorialOnly = editorialOnlyRaw === 'true' || editorialOnlyRaw === '1';
+  const sortRaw = (url.searchParams.get('sort') ?? '').trim().toLowerCase();
+  const sort = sortRaw === 'updated' || sortRaw === 'popular' || sortRaw === 'new' ? (sortRaw as any) : undefined;
+
+  try {
+    // Security hardening: never expose draft content in production (public API).
+    if ((env.ENVIRONMENT ?? '').toLowerCase() === 'production' && (status ?? '').toLowerCase() === 'draft') {
+      return json(
+        { error: { code: 'BadRequest', message: 'status=draft is not available in production' } },
+        400
+      );
+    }
+
+    const params = {
+      limit,
+      offset,
+      countryId,
+      cityId,
+      guideType,
+      guideTypes: guideTypes.length > 1 ? guideTypes : undefined,
+      tag,
+      tags: tags.length > 0 ? tags : undefined,
+      editorialOnly,
+      status,
+      sort,
+    };
+
+    const countParams = {
+      countryId,
+      cityId,
+      guideType,
+      guideTypes: guideTypes.length > 1 ? guideTypes : undefined,
+      tag,
+      tags: tags.length > 0 ? tags : undefined,
+      editorialOnly,
+      status,
+    };
+
+    const [total, rows] = await Promise.all([countGuides(sqlClient, countParams), listGuides(sqlClient, params)]);
+
+    return json(
+      {
+        total,
+        items: rows.map((r) => {
+          const dto = toGuideCard(r);
+          return { ...dto, heroUrl: resolveGuideHeroUrl(env, r) };
+        }),
+      } satisfies ListResponse<ContentGuideCardDto>,
+      200
+    );
+  } catch (error) {
+    logger.error('List guides error', error);
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch guides' } }, 500);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Mini-admin (v1): write operations for Guide Engine
+// Security v1: X-User-ID header required on /v1/admin/*
+// ---------------------------------------------------------------------
+
+function requireAdmin(request: Request): { ok: true; userId: string } | { ok: false; res: Response } {
+  const userId = request.headers.get('X-User-ID');
+  if (!userId) {
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401) };
+  }
+  return { ok: true, userId };
+}
+
+async function getGuideIdBySlugSql(sqlClient: SqlClient, slug: string): Promise<string | null> {
+  const rows = await sqlClient`
+    SELECT id::text AS id
+    FROM guides
+    WHERE slug = ${slug}
+    LIMIT 1
+  `;
+  return (rows[0] as { id?: string } | undefined)?.id ?? null;
+}
+
+function computeIsEmpty(blockType: string, payload: Record<string, unknown>): boolean {
+  if (blockType === 'divider') return true;
+  if (blockType === 'rich_text') {
+    const md = typeof payload.markdown === 'string' ? payload.markdown : '';
+    return md.trim().length < 20;
+  }
+  const arrLen = (key: string) => (Array.isArray((payload as any)[key]) ? ((payload as any)[key] as any[]).length : 0);
+  if (blockType === 'bullets' || blockType === 'checklist' || blockType === 'steps' || blockType === 'timeline') {
+    return arrLen('items') < 1 && arrLen('steps') < 1;
+  }
+  if (blockType === 'faq') return arrLen('items') < 1 && arrLen('qa') < 1;
+  if (blockType === 'table') return arrLen('rows') < 1;
+  if (blockType === 'poi_refs') return arrLen('place_ids') < 1 && arrLen('ids') < 1;
+  if (blockType === 'city_refs') return arrLen('city_ids') < 1 && arrLen('ids') < 1;
+  if (blockType === 'related_guides') return arrLen('guide_ids') < 1 && arrLen('guide_slugs') < 1 && arrLen('ids') < 1;
+  if (blockType === 'map_config') {
+    const c = (payload as any).center;
+    return !(c && typeof c === 'object' && typeof c.lat === 'number' && typeof c.lng === 'number');
+  }
+  // default conservative: empty if payload has no keys
+  return !payload || Object.keys(payload).length === 0;
+}
+
+async function handleAdminUpsertGuide(request: Request, env: Env, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const body = (await request.json().catch(() => null)) as any;
+  const slug = typeof body?.slug === 'string' ? body.slug.trim() : '';
+  const title = typeof body?.title === 'string' ? body.title.trim() : '';
+  const guideType = typeof body?.guideType === 'string' ? body.guideType.trim() : 'strategic';
+  const status = typeof body?.status === 'string' ? body.status.trim() : 'draft';
+  const tags = Array.isArray(body?.tags) ? body.tags.filter((x: any) => typeof x === 'string') : [];
+  const countryIds = Array.isArray(body?.countryIds) ? body.countryIds.filter((x: any) => typeof x === 'string') : [];
+  const cityIds = Array.isArray(body?.cityIds) ? body.cityIds.filter((x: any) => typeof x === 'string') : [];
+  const heroR2Key = typeof body?.heroR2Key === 'string' ? body.heroR2Key.trim() : null;
+
+  if (!slug || !title) return json({ error: { code: 'BadRequest', message: 'slug and title are required' } }, 400);
+
+  const id = `guide_${slug}`;
+  const rows = await sqlClient`
+    INSERT INTO guides (
+      id, slug, title, summary, guide_type, status,
+      tags, country_ids, city_ids, hero_r2_key, updated_at
+    ) VALUES (
+      ${id}, ${slug}, ${title}, NULL, ${guideType}::atlas_guide_type, ${status}::atlas_guide_status,
+      ${tags}::text[], ${countryIds}::text[], ${cityIds}::text[], ${heroR2Key}, now()
+    )
+    ON CONFLICT (slug) DO UPDATE SET
+      title = EXCLUDED.title,
+      guide_type = EXCLUDED.guide_type,
+      status = EXCLUDED.status,
+      tags = EXCLUDED.tags,
+      country_ids = EXCLUDED.country_ids,
+      city_ids = EXCLUDED.city_ids,
+      hero_r2_key = EXCLUDED.hero_r2_key,
+      updated_at = now()
+    RETURNING id::text AS id
+  `;
+  const guideId = (rows[0] as any)?.id as string | undefined;
+  return json({ ok: true, guideId: guideId ?? id, slug }, 200);
+}
+
+async function handleAdminDeleteGuide(env: Env, slug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const guideId = await getGuideIdBySlugSql(sqlClient, slug);
+  if (!guideId) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
+  await sqlClient`DELETE FROM guides WHERE id = ${guideId}`;
+  return json({ ok: true }, 200);
+}
+
+async function handleAdminUpdateSection(
+  request: Request,
+  env: Env,
+  slug: string,
+  tabKey: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const guideId = await getGuideIdBySlugSql(sqlClient, slug);
+  if (!guideId) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
+
+  const body = (await request.json().catch(() => null)) as any;
+  const title = typeof body?.title === 'string' ? body.title.trim() : null;
+  const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
+  const isEnabled = typeof body?.isEnabled === 'boolean' ? body.isEnabled : null;
+
+  const rows = await sqlClient`
+    INSERT INTO guide_sections (guide_id, tab_key, title, order_index, is_enabled, updated_at)
+    VALUES (
+      ${guideId}, ${tabKey}::atlas_guide_tab_key, ${title}, COALESCE(${orderIndex}, 0), COALESCE(${isEnabled}, true), now()
+    )
+    ON CONFLICT (guide_id, tab_key) DO UPDATE SET
+      title = COALESCE(${title}, guide_sections.title),
+      order_index = COALESCE(${orderIndex}, guide_sections.order_index),
+      is_enabled = COALESCE(${isEnabled}, guide_sections.is_enabled),
+      updated_at = now()
+    RETURNING id::text AS id
+  `;
+  const id = (rows[0] as any)?.id ?? null;
+  return json({ ok: true, id }, 200);
+}
+
+async function handleAdminCreateBlock(
+  request: Request,
+  env: Env,
+  sectionId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const body = (await request.json().catch(() => null)) as any;
+  const blockType = typeof body?.blockType === 'string' ? body.blockType.trim() : '';
+  const orderIndexRaw =
+    typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
+  const insertAfterBlockId = typeof body?.insertAfterBlockId === 'string' ? body.insertAfterBlockId.trim() : null;
+  const payload = body?.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? (body.payload as Record<string, unknown>) : {};
+  if (!blockType) return json({ error: { code: 'BadRequest', message: 'blockType is required' } }, 400);
+  const id = crypto.randomUUID();
+
+  // Mark as admin-created (do not set mdPath).
+  const payloadWithSource: Record<string, unknown> = { ...payload, source: 'admin' };
+  const isEmpty = computeIsEmpty(blockType, payloadWithSource);
+
+  // Pick insertion index.
+  let desiredIndex: number | null = orderIndexRaw;
+  if (insertAfterBlockId) {
+    const rows = await sqlClient`
+      SELECT section_id::text AS section_id, order_index::int AS order_index
+      FROM guide_blocks
+      WHERE id = ${insertAfterBlockId}::uuid
+      LIMIT 1
+    `;
+    const row = rows[0] as { section_id?: string; order_index?: number } | undefined;
+    if (!row?.section_id) {
+      return json({ error: { code: 'BadRequest', message: 'insertAfterBlockId not found' } }, 400);
+    }
+    if (row.section_id !== sectionId) {
+      return json({ error: { code: 'BadRequest', message: 'insertAfterBlockId belongs to another section' } }, 400);
+    }
+    desiredIndex = (typeof row.order_index === 'number' ? row.order_index : 0) + 1;
+  }
+  if (desiredIndex === null) {
+    const rows = await sqlClient`
+      SELECT COALESCE(MAX(order_index), -1)::int AS max_order
+      FROM guide_blocks
+      WHERE section_id = ${sectionId}::uuid
+    `;
+    const maxOrder = (rows[0] as { max_order?: number } | undefined)?.max_order;
+    desiredIndex = (typeof maxOrder === 'number' ? maxOrder : -1) + 1;
+  }
+
+  // Stable reindex: shift next blocks.
+  // (Keep in a transaction to avoid transient duplicates.)
+  await sqlClient`BEGIN`;
+  try {
+    await sqlClient`
+      UPDATE guide_blocks
+      SET order_index = order_index + 1
+      WHERE section_id = ${sectionId}::uuid
+        AND order_index >= ${desiredIndex}
+    `;
+    await sqlClient`
+      INSERT INTO guide_blocks (id, section_id, block_type, order_index, payload, is_empty, created_at, updated_at)
+      VALUES (${id}::uuid, ${sectionId}::uuid, ${blockType}::atlas_guide_block_type, ${desiredIndex}, ${payloadWithSource}::jsonb, ${isEmpty}, now(), now())
+    `;
+    await sqlClient`COMMIT`;
+  } catch (e) {
+    await sqlClient`ROLLBACK`;
+    throw e;
+  }
+
+  return json({ ok: true, id, isEmpty, orderIndex: desiredIndex }, 201);
+}
+
+async function handleAdminUpdateBlock(
+  request: Request,
+  env: Env,
+  blockId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  // Read-only policy for md-import blocks (v1): edit the markdown source, then re-import.
+  const existingRows = await sqlClient`
+    SELECT payload
+    FROM guide_blocks
+    WHERE id = ${blockId}::uuid
+    LIMIT 1
+  `;
+  const existingPayload =
+    (existingRows[0] as { payload?: unknown } | undefined)?.payload &&
+    typeof (existingRows[0] as any).payload === 'object' &&
+    !(Array.isArray((existingRows[0] as any).payload))
+      ? ((existingRows[0] as any).payload as Record<string, unknown>)
+      : null;
+  const isMdImport =
+    existingPayload &&
+    ((existingPayload.source === 'md-import') ||
+      typeof existingPayload.mdPath === 'string');
+  if (isMdImport) {
+    return json(
+      { error: { code: 'Forbidden', message: 'This block is read-only (md-import). Edit the markdown file and re-import.' } },
+      403
+    );
+  }
+
+  const body = (await request.json().catch(() => null)) as any;
+  const blockType = typeof body?.blockType === 'string' ? body.blockType.trim() : null;
+  const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
+  const payload = body?.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? (body.payload as Record<string, unknown>) : null;
+
+  // If blockType/payload provided, recompute isEmpty; otherwise keep.
+  let isEmpty: boolean | null = null;
+  if (blockType && payload) isEmpty = computeIsEmpty(blockType, payload);
+
+  await sqlClient`
+    UPDATE guide_blocks
+    SET
+      block_type = COALESCE(${blockType}::atlas_guide_block_type, block_type),
+      order_index = COALESCE(${orderIndex}, order_index),
+      payload = COALESCE(${payload}::jsonb, payload),
+      is_empty = COALESCE(${isEmpty}, is_empty),
+      updated_at = now()
+    WHERE id = ${blockId}::uuid
+  `;
+  return json({ ok: true }, 200);
+}
+
+async function handleAdminDeleteBlock(env: Env, blockId: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  // Read-only policy for md-import blocks (v1)
+  const existingRows = await sqlClient`
+    SELECT payload
+    FROM guide_blocks
+    WHERE id = ${blockId}::uuid
+    LIMIT 1
+  `;
+  const existingPayload =
+    (existingRows[0] as { payload?: unknown } | undefined)?.payload &&
+    typeof (existingRows[0] as any).payload === 'object' &&
+    !(Array.isArray((existingRows[0] as any).payload))
+      ? ((existingRows[0] as any).payload as Record<string, unknown>)
+      : null;
+  const isMdImport =
+    existingPayload &&
+    ((existingPayload.source === 'md-import') ||
+      typeof existingPayload.mdPath === 'string');
+  if (isMdImport) {
+    return json(
+      { error: { code: 'Forbidden', message: 'This block is read-only (md-import). Edit the markdown file and re-import.' } },
+      403
+    );
+  }
+
+  await sqlClient`DELETE FROM guide_blocks WHERE id = ${blockId}::uuid`;
+  return json({ ok: true }, 200);
+}
+
+async function handleAdminUpsertFeed(
+  request: Request,
+  env: Env,
+  slug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const guideId = await getGuideIdBySlugSql(sqlClient, slug);
+  if (!guideId) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
+  const body = (await request.json().catch(() => null)) as any;
+  const tabKey = typeof body?.tabKey === 'string' ? body.tabKey.trim() : '';
+  const source = typeof body?.source === 'string' ? body.source.trim() : '';
+  const filter = body?.filter && typeof body.filter === 'object' && !Array.isArray(body.filter) ? (body.filter as Record<string, unknown>) : {};
+  const limitCount = typeof body?.limitCount === 'number' && Number.isFinite(body.limitCount) ? Math.trunc(body.limitCount) : 20;
+  const sort = typeof body?.sort === 'string' ? body.sort.trim() : 'relevance';
+  const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : 0;
+  const isEnabled = typeof body?.isEnabled === 'boolean' ? body.isEnabled : true;
+  if (!tabKey || !source) return json({ error: { code: 'BadRequest', message: 'tabKey and source are required' } }, 400);
+
+  const id = crypto.randomUUID();
+  await sqlClient`
+    INSERT INTO guide_feeds (id, guide_id, tab_key, source, filter, limit_count, sort, order_index, is_enabled, created_at, updated_at)
+    VALUES (
+      ${id}::uuid, ${guideId}, ${tabKey}::atlas_guide_tab_key, ${source}::atlas_guide_feed_source,
+      ${filter}::jsonb, ${limitCount}, ${sort}::atlas_guide_feed_sort, ${orderIndex}, ${isEnabled}, now(), now()
+    )
+    ON CONFLICT (guide_id, tab_key, source) DO UPDATE SET
+      filter = EXCLUDED.filter,
+      limit_count = EXCLUDED.limit_count,
+      sort = EXCLUDED.sort,
+      order_index = EXCLUDED.order_index,
+      is_enabled = EXCLUDED.is_enabled,
+      updated_at = now()
+  `;
+  return json({ ok: true }, 201);
+}
+
+async function handleAdminDeleteFeed(env: Env, feedId: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  await sqlClient`DELETE FROM guide_feeds WHERE id = ${feedId}::uuid`;
+  return json({ ok: true }, 200);
+}
+
+async function handleGetGuideBySlug(
+  env: Env,
+  slug: string,
+  logger: ReturnType<typeof createLogger>,
+  params?: { includeEmpty?: boolean }
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const includeEmpty = Boolean(params?.includeEmpty);
+
+  try {
+    // Short cache (30–60s) for public guide detail.
+    if (!includeEmpty) {
+      const cached = guideDetailCache.get(slug);
+      if (cached && cached.exp > nowMs()) {
+        return json(cached.value, 200);
+      }
+    }
+
+    const guide = await getGuideBySlug(sqlClient, slug);
+    if (!guide) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
+
+    // Fetch candidate sections. We will apply the final visibility rule AFTER resolving feeds:
+    // show if (has non-empty blocks) OR (feedsResolved not empty), and section is enabled.
+    // For admin includeEmpty=true, we return everything.
+    const sections = await listGuideSections(sqlClient, guide.id, { includeEmpty: true });
+    const sectionIds = sections.map((s) => s.id);
+    const tabKeys = sections.map((s) => s.tab_key);
+
+    const [blocksRows, feedsRows] = await Promise.all([
+      listGuideBlocks(sqlClient, sectionIds),
+      listGuideFeeds(sqlClient, guide.id, tabKeys),
+    ]);
+
+    const blocksBySectionId = new Map<string, ContentGuideBlockDto[]>();
+    for (const br of blocksRows) {
+      const list = blocksBySectionId.get(br.section_id) ?? [];
+      list.push(toGuideBlock(br));
+      blocksBySectionId.set(br.section_id, list);
+    }
+
+    const feedsByTabKey = new Map<string, ContentGuideFeedDto[]>();
+    for (const fr of feedsRows) {
+      const list = feedsByTabKey.get(fr.tab_key) ?? [];
+      list.push(toGuideFeed(fr));
+      feedsByTabKey.set(fr.tab_key, list);
+    }
+
+    // Resolve feeds (aggregated, batched by source).
+    const feedsResolvedByTabKey = await resolveFeedsForGuide({
+      guideId: guide.id,
+      feeds: feedsRows,
+      logger,
+      sqlClient,
+    });
+
+    const isSectionEnabled = (s: GuideSectionRow) => Boolean(s.is_enabled);
+    const hasNonEmptyBlocks = (sectionId: string) => {
+      const blocks = blocksBySectionId.get(sectionId) ?? [];
+      // blocks in DB include isEmpty already; if not present for some reason, treat as empty
+      return blocks.some((b) => b.isEmpty === false);
+    };
+    const hasResolvedFeeds = (tabKey: string) => (feedsResolvedByTabKey.get(tabKey) ?? []).length > 0;
+
+    const visibleSections = includeEmpty
+      ? sections
+      : sections.filter((s) => isSectionEnabled(s) && (hasNonEmptyBlocks(s.id) || hasResolvedFeeds(s.tab_key)));
+
+    const detail: ContentGuideDetailDto = {
+      id: guide.id,
+      slug: guide.slug,
+      title: guide.title,
+      summary: guide.summary,
+      heroUrl: resolveGuideHeroUrl(env, guide),
+      guideType: guide.guide_type,
+      status: guide.status,
+      tags: Array.isArray(guide.tags) ? guide.tags : [],
+      countryIds: Array.isArray(guide.country_ids) ? guide.country_ids : [],
+      cityIds: Array.isArray(guide.city_ids) ? guide.city_ids : [],
+      publishedAt: guide.published_at ?? null,
+      createdAt: guide.created_at,
+      updatedAt: guide.updated_at,
+      sections: visibleSections.map((s) => toGuideSection(s, blocksBySectionId, feedsByTabKey, feedsResolvedByTabKey)),
+    };
+
+    if (!includeEmpty) {
+      guideDetailCache.set(slug, { exp: nowMs() + 45_000, value: detail });
+    }
+
+    return json(detail, 200);
+  } catch (error) {
+    logger.error('Get guide error', error, { slug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch guide' } }, 500);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Feeds resolution (batched, timeout, cache)
+// ---------------------------------------------------------------------
+
+type GuideCacheEntry = { exp: number; value: ContentGuideDetailDto };
+const guideDetailCache = new Map<string, GuideCacheEntry>();
+
+function nowMs(): number {
+  return Date.now();
+}
+
+async function withTimeout<T>(
+  p: Promise<T>,
+  ms: number,
+  onTimeout: () => T,
+  logger: ReturnType<typeof createLogger>,
+  meta: Record<string, unknown>
+): Promise<T> {
+  let t: any;
+  try {
+    const timeout = new Promise<T>((resolve) => {
+      t = setTimeout(() => resolve(onTimeout()), ms);
+    });
+    return await Promise.race([p, timeout]);
+  } finally {
+    if (t) clearTimeout(t);
+    // keep logger/meta for future observability; minimal v1: do not spam logs
+    void logger;
+    void meta;
+  }
+}
+
+function pickStringArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
+}
+
+function pickString(v: unknown): string | null {
+  return typeof v === 'string' && v.trim().length > 0 ? v.trim() : null;
+}
+
+function normalizeFeedFilter(filter: unknown): Record<string, unknown> {
+  if (!filter || typeof filter !== 'object' || Array.isArray(filter)) return {};
+  return filter as Record<string, unknown>;
+}
+
+function mergeIds(filter: Record<string, unknown>, keyOne: string, keyMany: string): string[] {
+  const one = pickString(filter[keyOne]);
+  const many = pickStringArray(filter[keyMany]);
+  const out = new Set<string>();
+  for (const x of many) out.add(x);
+  if (one) out.add(one);
+  return [...out];
+}
+
+function mergeTags(filter: Record<string, unknown>): string[] {
+  return mergeIds(filter, 'tag', 'tags');
+}
+
+function dedupResolved(items: ContentGuideFeedResolvedItemDto[]): ContentGuideFeedResolvedItemDto[] {
+  const seen = new Set<string>();
+  const out: ContentGuideFeedResolvedItemDto[] = [];
+  for (const it of items) {
+    const k = `${it.kind}:${it.id}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(it);
+  }
+  return out;
+}
+
+async function resolveFeedsForGuide(args: {
+  guideId: string;
+  feeds: GuideFeedRow[];
+  sqlClient: SqlClient;
+  logger: ReturnType<typeof createLogger>;
+}): Promise<Map<string, ContentGuideFeedResolvedItemDto[]>> {
+  const { feeds, sqlClient, logger } = args;
+
+  // Group by tabKey + source (merge filters & limits)
+  type GroupKey = `${string}:${string}`;
+  const groups = new Map<GroupKey, { tabKey: string; source: string; limit: number; sort: string; filters: Record<string, unknown>[] }>();
+
+  for (const f of feeds) {
+    const key = `${f.tab_key}:${f.source}` as GroupKey;
+    const g = groups.get(key) ?? { tabKey: f.tab_key, source: f.source, limit: 0, sort: f.sort, filters: [] };
+    g.limit = Math.max(g.limit, f.limit_count || 0);
+    // take sort from lowest order_index feed (feeds are already sorted, but keep first)
+    g.sort = g.sort || f.sort;
+    g.filters.push(normalizeFeedFilter(f.filter));
+    groups.set(key, g);
+  }
+
+  const byTabKey = new Map<string, ContentGuideFeedResolvedItemDto[]>();
+  const timeoutMs = 1500;
+
+  // Resolve per group (1 query per tabKey+source)
+  await Promise.all(
+    [...groups.values()].map(async (g) => {
+      const limit = Math.min(100, Math.max(1, g.limit || 20));
+
+      // merge filters (v1: union arrays/scalars into arrays)
+      const all = g.filters;
+      const cityIds = [...new Set(all.flatMap((f) => mergeIds(f, 'city_id', 'city_ids')))];
+      const countryIds = [...new Set(all.flatMap((f) => mergeIds(f, 'country_id', 'country_ids')))];
+      const tags = [...new Set(all.flatMap((f) => mergeTags(f)))];
+      const kind = pickString(all.find((f) => typeof f.kind === 'string')?.kind) ?? pickString(all.find((f) => typeof f.place_kind === 'string')?.place_kind);
+      const startAfter = pickString(all.find((f) => typeof f.start_after === 'string')?.start_after) ?? pickString(all.find((f) => typeof f.startAfter === 'string')?.startAfter);
+
+      let resolved: ContentGuideFeedResolvedItemDto[] = [];
+
+      if (g.source === 'pulse') {
+        resolved = await withTimeout(
+          (async () => {
+            const rows = await listEventsForGuideFeed(sqlClient, {
+              cityIds: cityIds.length ? cityIds : undefined,
+              countryIds: countryIds.length ? countryIds : undefined,
+              startAfter: startAfter ?? undefined,
+              limit,
+              sort: (g.sort as any) ?? 'date_asc',
+            });
+            return rows.map((r) => ({
+              kind: 'event',
+              id: r.id,
+              slug: r.slug,
+              title: r.title,
+              excerpt: r.description,
+              imageUrl: r.image_url,
+              href: `/pulse/${r.id}`,
+              meta: {
+                startDate: r.start_at ?? r.start_date,
+                location: [r.city_name, r.country_name].filter(Boolean).join(', ') || null,
+              },
+            }));
+          })(),
+          timeoutMs,
+          () => [],
+          logger,
+          { source: g.source, tabKey: g.tabKey }
+        );
+      } else if (g.source === 'atlas_places') {
+        resolved = await withTimeout(
+          (async () => {
+            const rows = await listPlacesForGuideFeed(sqlClient, {
+              cityIds: cityIds.length ? cityIds : undefined,
+              countryIds: countryIds.length ? countryIds : undefined,
+              kind: kind ?? undefined,
+              tags: tags.length ? tags : undefined,
+              limit,
+              sort: (g.sort as any) ?? 'relevance',
+            });
+            return rows.map((r) => ({
+              kind: 'place',
+              id: r.id,
+              slug: r.slug,
+              title: r.name,
+              excerpt: r.description_short,
+              imageUrl: r.hero_url,
+              href: `/atlas/places/${r.slug || r.id}`,
+              meta: {
+                city: r.city_name,
+                country: r.country_name,
+                kind: r.place_kind,
+              },
+            }));
+          })(),
+          timeoutMs,
+          () => [],
+          logger,
+          { source: g.source, tabKey: g.tabKey }
+        );
+      } else if (g.source === 'blog') {
+        resolved = await withTimeout(
+          (async () => {
+            const rows = await listArticlesForGuideFeed(sqlClient, {
+              tags: tags.length ? tags : undefined,
+              limit,
+              sort: (g.sort as any) ?? 'newest',
+            });
+            return rows.map((r) => ({
+              kind: 'article',
+              id: r.id,
+              slug: r.slug,
+              title: r.title,
+              excerpt: r.excerpt,
+              imageUrl: r.cover_url,
+              href: `/blog/${r.slug}`,
+              meta: { publishedAt: r.published_at },
+            }));
+          })(),
+          timeoutMs,
+          () => [],
+          logger,
+          { source: g.source, tabKey: g.tabKey }
+        );
+      }
+
+      if (resolved.length === 0) return;
+      const existing = byTabKey.get(g.tabKey) ?? [];
+      byTabKey.set(g.tabKey, dedupResolved(existing.concat(resolved)));
+    })
+  );
+
+  return byTabKey;
+}
+
 // JWT utilities (for service-to-service auth)
 
 function utf8ToBytes(input: string): Uint8Array {
@@ -1417,6 +2307,124 @@ export default {
       const res = await handleGetArticleBySlug(env, slug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
+    }
+
+    // -----------------------------------------------------------------
+    // Guide Engine v1 (public)
+    // -----------------------------------------------------------------
+    // Gateway-friendly aliases (/v1/content/*)
+    if (path === '/v1/content/guides' && request.method === 'GET') {
+      const res = await handleListGuides(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const contentGuideGetMatch = path.match(/^\/v1\/content\/guides\/([^/]+)$/);
+    if (contentGuideGetMatch && request.method === 'GET') {
+      const slug = contentGuideGetMatch[1] ?? '';
+      const includeEmptyRaw = url.searchParams.get('include_empty');
+      const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
+      if (includeEmpty) {
+        const userId = request.headers.get('X-User-ID');
+        if (!userId) {
+          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+          res.headers.set('X-Request-ID', requestId);
+          return res;
+        }
+      }
+      const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    if (path === '/v1/guides' && request.method === 'GET') {
+      const res = await handleListGuides(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const guideGetMatch = path.match(/^\/v1\/guides\/([^/]+)$/);
+    if (guideGetMatch && request.method === 'GET') {
+      const slug = guideGetMatch[1] ?? '';
+      const includeEmptyRaw = url.searchParams.get('include_empty');
+      const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
+      if (includeEmpty) {
+        const userId = request.headers.get('X-User-ID');
+        if (!userId) {
+          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+          res.headers.set('X-Request-ID', requestId);
+          return res;
+        }
+      }
+      const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // -----------------------------------------------------------------
+    // Mini-admin v1 (write) — Guide Engine
+    // -----------------------------------------------------------------
+    if (path.startsWith('/v1/admin/')) {
+      const admin = requireAdmin(request);
+      if (!admin.ok) {
+        admin.res.headers.set('X-Request-ID', requestId);
+        return admin.res;
+      }
+      // keep userId for future auditing
+      void admin.userId;
+
+      if (path === '/v1/admin/guides' && (request.method === 'POST' || request.method === 'PUT')) {
+        const res = await handleAdminUpsertGuide(request, env, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminGuideMatch = path.match(/^\/v1\/admin\/guides\/([^/]+)$/);
+      if (adminGuideMatch && request.method === 'DELETE') {
+        const slug = adminGuideMatch[1] ?? '';
+        const res = await handleAdminDeleteGuide(env, slug, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminSectionMatch = path.match(/^\/v1\/admin\/guides\/([^/]+)\/sections\/([^/]+)$/);
+      if (adminSectionMatch && (request.method === 'POST' || request.method === 'PUT')) {
+        const slug = adminSectionMatch[1] ?? '';
+        const tabKey = adminSectionMatch[2] ?? '';
+        const res = await handleAdminUpdateSection(request, env, slug, tabKey, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminBlocksCreateMatch = path.match(/^\/v1\/admin\/sections\/([^/]+)\/blocks$/);
+      if (adminBlocksCreateMatch && request.method === 'POST') {
+        const sectionId = adminBlocksCreateMatch[1] ?? '';
+        const res = await handleAdminCreateBlock(request, env, sectionId, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminBlockMatch = path.match(/^\/v1\/admin\/blocks\/([^/]+)$/);
+      if (adminBlockMatch && request.method === 'PUT') {
+        const blockId = adminBlockMatch[1] ?? '';
+        const res = await handleAdminUpdateBlock(request, env, blockId, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      if (adminBlockMatch && request.method === 'DELETE') {
+        const blockId = adminBlockMatch[1] ?? '';
+        const res = await handleAdminDeleteBlock(env, blockId, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminFeedUpsertMatch = path.match(/^\/v1\/admin\/guides\/([^/]+)\/feeds$/);
+      if (adminFeedUpsertMatch && (request.method === 'POST' || request.method === 'PUT')) {
+        const slug = adminFeedUpsertMatch[1] ?? '';
+        const res = await handleAdminUpsertFeed(request, env, slug, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+      const adminFeedMatch = path.match(/^\/v1\/admin\/feeds\/([^/]+)$/);
+      if (adminFeedMatch && request.method === 'DELETE') {
+        const feedId = adminFeedMatch[1] ?? '';
+        const res = await handleAdminDeleteFeed(env, feedId, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
     }
 
     // Event registration endpoint
