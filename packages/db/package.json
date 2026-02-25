@@ -29,6 +29,7 @@
     "db:export:atlas-country-city-tabs-neon": "tsx src/exportAtlasCountryCityTabsToNeon.ts",
     "db:import:guides-md": "cross-env ENVIRONMENT=staging tsx src/importGuidesFromMarkdown.ts",
     "db:import:themes-md": "cross-env ENVIRONMENT=staging NODE_OPTIONS=--max-old-space-size=4096 tsx src/importGuidesFromMarkdown.ts --themes-only",
+    "db:import:pulse-md": "cross-env ENVIRONMENT=staging tsx src/importPulseEventsFromMarkdown.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
