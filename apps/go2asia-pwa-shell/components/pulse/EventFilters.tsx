@@ -12,34 +12,26 @@ export interface EventFiltersProps {
 
 // Категории событий
 const categories = [
-  { value: 'Еда', label: 'Еда' },
-  { value: 'Культура', label: 'Культура' },
-  { value: 'Музыка', label: 'Музыка' },
-  { value: 'Спорт', label: 'Спорт' },
-  { value: 'IT', label: 'IT' },
-  { value: 'Сообщество', label: 'Сообщество' },
-  { value: 'Семья', label: 'Семья' },
-  { value: 'Ночная жизнь', label: 'Ночная жизнь' },
+  { value: 'food', label: 'Еда' },
+  { value: 'cultural', label: 'Культура' },
+  { value: 'music', label: 'Музыка' },
+  { value: 'sport', label: 'Спорт' },
+  { value: 'lifestyle', label: 'Lifestyle' },
+  { value: 'seasonal', label: 'Сезонное' },
+  { value: 'national', label: 'Национальное' },
+  { value: 'religious', label: 'Религия' },
 ];
 
-// Страны (демо-данные)
+// Страны (Pulse Canon v1)
 const countries = [
-  { value: 'Таиланд', label: 'Таиланд' },
-  { value: 'Вьетнам', label: 'Вьетнам' },
-  { value: 'Индонезия', label: 'Индонезия' },
-  { value: 'Сингапур', label: 'Сингапур' },
-  { value: 'Малайзия', label: 'Малайзия' },
-];
-
-// Города (демо-данные)
-const cities = [
-  { value: 'Бангкок', label: 'Бангкок', country: 'Таиланд' },
-  { value: 'Пхукет', label: 'Пхукет', country: 'Таиланд' },
-  { value: 'Чиангмай', label: 'Чиангмай', country: 'Таиланд' },
-  { value: 'Ханой', label: 'Ханой', country: 'Вьетнам' },
-  { value: 'Хошимин', label: 'Хошимин', country: 'Вьетнам' },
-  { value: 'Бали', label: 'Бали', country: 'Индонезия' },
-  { value: 'Сингапур', label: 'Сингапур', country: 'Сингапур' },
+  { value: 'thailand', label: 'Таиланд' },
+  { value: 'vietnam', label: 'Вьетнам' },
+  { value: 'indonesia', label: 'Индонезия' },
+  { value: 'singapore', label: 'Сингапур' },
+  { value: 'malaysia', label: 'Малайзия' },
+  { value: 'cambodia', label: 'Камбоджа' },
+  { value: 'laos', label: 'Лаос' },
+  { value: 'philippines', label: 'Филиппины' },
 ];
 
 // Масштаб
@@ -77,22 +69,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
   onFiltersChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.search || '');
-  const [availableCities, setAvailableCities] = useState(cities);
   const [isExpanded, setIsExpanded] = useState(false); // По умолчанию скрыто на мобильных
-
-  // Обновляем доступные города при изменении страны
-  useEffect(() => {
-    if (filters.country) {
-      setAvailableCities(cities.filter(city => city.country === filters.country));
-      // Сбрасываем город, если он не относится к выбранной стране
-      if (filters.city && !cities.find(c => c.value === filters.city && c.country === filters.country)) {
-        onFiltersChange({ ...filters, city: undefined });
-      }
-    } else {
-      setAvailableCities(cities);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.country]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -160,14 +137,19 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
     filters.price ||
     filters.language ||
     filters.timeFilter ||
-    filters.search
+    filters.search ||
+    filters.verified !== undefined
   );
 
   // Компактное отображение активных фильтров
   const activeFiltersList: string[] = [];
-  if (filters.country) activeFiltersList.push(filters.country);
+  if (filters.country) {
+    activeFiltersList.push(countries.find((c) => c.value === filters.country)?.label ?? filters.country);
+  }
   if (filters.city) activeFiltersList.push(filters.city);
-  if (filters.category) activeFiltersList.push(filters.category);
+  if (filters.category) {
+    activeFiltersList.push(categories.find((c) => c.value === filters.category)?.label ?? filters.category);
+  }
   if (filters.scale) {
     const scaleLabel = scales.find(s => s.value === filters.scale)?.label;
     if (scaleLabel) activeFiltersList.push(scaleLabel);
@@ -183,6 +165,9 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
   if (filters.timeFilter && filters.timeFilter !== 'all') {
     const timeLabel = timeFilters.find(t => t.value === filters.timeFilter)?.label;
     if (timeLabel) activeFiltersList.push(timeLabel);
+  }
+  if (filters.verified !== undefined) {
+    activeFiltersList.push(filters.verified ? 'Проверено' : 'Не проверено');
   }
 
   return (
@@ -278,23 +263,15 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
           </div>
 
           {/* Гео: Город */}
-          {filters.country && (
-            <div className="relative">
-              <select
-                value={filters.city || ''}
-                onChange={(e) => handleCityChange(e.target.value || undefined)}
-                className="appearance-none bg-white border border-slate-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none cursor-pointer"
-              >
-                <option value="">Все города</option>
-                {availableCities.map((city) => (
-                  <option key={city.value} value={city.value}>
-                    {city.label}
-                  </option>
-                ))}
-              </select>
-              <MapPin className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
-          )}
+          <div className="relative">
+            <input
+              value={filters.city || ''}
+              onChange={(e) => handleCityChange(e.target.value || undefined)}
+              placeholder="Город (slug), напр. bangkok"
+              className="bg-white border border-slate-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+            />
+            <MapPin className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
 
           {/* Масштаб */}
           <div className="flex items-center gap-2">
@@ -328,6 +305,18 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
             </select>
             <DollarSign className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
+
+          {/* Проверено */}
+          <Chip
+            onClick={() => onFiltersChange({ ...filters, verified: filters.verified ? undefined : true })}
+            className={
+              filters.verified
+                ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
+                : 'cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }
+          >
+            ✓ Проверено
+          </Chip>
 
           {/* Язык */}
           <div className="relative">

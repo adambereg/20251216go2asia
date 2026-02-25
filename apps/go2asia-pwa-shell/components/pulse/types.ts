@@ -8,9 +8,13 @@ export interface Event {
   id: string;
   title: string;
   description?: string;
+  bodyMarkdown?: string;
   startDate: Date;
   endDate: Date;
   timezone?: string;
+  // Canonical media keys (R2 object keys, relative paths)
+  heroMediaKey?: string | null;
+  galleryMediaKeys?: string[] | null;
   location?: {
     name: string;
     address?: string;
@@ -18,6 +22,8 @@ export interface Event {
     country?: string;
     placeId?: string; // ID места из Atlas
   };
+  countrySlug?: string;
+  citySlug?: string;
   organizer?: {
     id: string;
     name: string;
@@ -60,13 +66,14 @@ export type EventBadge =
   | 'featured';
 
 export interface EventFilters {
-  country?: string;
-  city?: string;
+  country?: string; // slug (e.g. "thailand")
+  city?: string; // slug (e.g. "bangkok")
   place?: string;
   category?: string;
   scale?: 'country' | 'city' | 'place';
   price?: 'free' | 'paid' | 'all';
   language?: 'ru' | 'en' | 'local' | 'all';
+  verified?: boolean;
   dateRange?: {
     start?: Date;
     end?: Date;

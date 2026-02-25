@@ -22,12 +22,14 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
 
   // Фильтр по стране
   if (filters.country) {
-    filtered = filtered.filter((event) => event.location?.country === filters.country);
+    filtered = filtered.filter(
+      (event) => event.countrySlug === filters.country || event.location?.country === filters.country
+    );
   }
 
   // Фильтр по городу
   if (filters.city) {
-    filtered = filtered.filter((event) => event.location?.city === filters.city);
+    filtered = filtered.filter((event) => event.citySlug === filters.city || event.location?.city === filters.city);
   }
 
   // Фильтр по категории
@@ -52,6 +54,11 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
   // Фильтр по языку
   if (filters.language) {
     filtered = filtered.filter((event) => event.language === filters.language);
+  }
+
+  // Фильтр по "проверено"
+  if (filters.verified !== undefined) {
+    filtered = filtered.filter((event) => Boolean(event.verified) === filters.verified);
   }
 
   // Фильтр по времени

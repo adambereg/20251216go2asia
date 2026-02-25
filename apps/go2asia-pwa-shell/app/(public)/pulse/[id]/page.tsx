@@ -7,32 +7,48 @@ import { getEventById } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
 
 function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
-  const locationStr = dto.location ?? '';
-  const parts = locationStr.split(',').map((p) => p.trim()).filter(Boolean);
-  const city = parts.length >= 2 ? parts[0] : undefined;
-  const country = parts.length >= 2 ? parts.slice(1).join(', ') : undefined;
-
   const startDate = new Date(dto.startDate);
   const endDate = dto.endDate ? new Date(dto.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+  const isFree = Boolean(dto.isFree);
+  const isVerified = Boolean(dto.isVerified);
+
+  const badges: any[] = [];
+  if (isVerified) badges.push('verified');
+  badges.push(isFree ? 'free' : 'paid');
+
+  const countryName = (dto.countryName ?? dto.countrySlug ?? '') as string;
+  const cityName = (dto.cityName ?? dto.citySlug ?? '') as string;
+  const locationStr: string = (dto.location ?? [cityName, countryName].filter(Boolean).join(', ')) as any;
 
   return {
     id: dto.id,
     title: dto.title,
-    description: dto.description ?? undefined,
+    description: dto.shortDescription ?? undefined,
+    bodyMarkdown: dto.bodyMarkdown ?? undefined,
     startDate,
     endDate,
     category: dto.category ?? undefined,
-    cover: dto.imageUrl ?? undefined,
+    heroMediaKey: dto.heroMediaKey ?? null,
+    galleryMediaKeys: Array.isArray(dto.galleryMediaKeys) ? dto.galleryMediaKeys : null,
+    countrySlug: dto.countrySlug ?? undefined,
+    citySlug: dto.citySlug ?? undefined,
     location: locationStr
       ? {
           name: locationStr,
-          city,
-          country,
+          city: cityName || undefined,
+          country: countryName || undefined,
         }
       : undefined,
-    badges: ['verified'],
-    price: { type: 'free' },
-    verified: true,
+    badges,
+    price: isFree
+      ? { type: 'free' }
+      : {
+          type: 'paid',
+          amount: typeof dto.priceAmount === 'string' ? Number(dto.priceAmount) : undefined,
+          currency: typeof dto.priceCurrency === 'string' ? dto.priceCurrency : undefined,
+        },
+    verified: isVerified,
   };
 }
 
@@ -88,10 +104,7 @@ export default async function EventDetailPage({
   const { id } = await params;
   const dataSource = getDataSource();
   let event: Event | undefined;
-  let demoMode:
-    | { reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR' }
-    | { reason: 'NOT_FOUND'; title?: string }
-    | undefined;
+  let demoMode: { reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR'; title?: string } | undefined;
 
   if (dataSource === 'mock') {
     event = mockEventsById[id];
@@ -101,15 +114,10 @@ export default async function EventDetailPage({
       const dto = await getEventById(id);
       event = toPulseEvent(dto);
     } catch (err) {
-      // API mode: fallback to mocks (feature-flagged by NEXT_PUBLIC_DATA_SOURCE=api)
       const reason = classifyFallbackReason(err) ?? 'NETWORK_ERROR';
-      const fallback = mockEventsById[id];
-      if (fallback) {
-        event = fallback;
-        demoMode = { reason, title: 'DEMO MODE / fallback' };
-      } else {
-        notFound();
-      }
+      if (reason === 'NOT_FOUND') notFound();
+      // No mock fallback in API mode (staging/prod behavior)
+      throw err;
     }
   }
 
