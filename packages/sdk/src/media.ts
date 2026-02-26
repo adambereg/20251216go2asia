@@ -6,6 +6,11 @@
  * - Frontend builds URL as `${NEXT_PUBLIC_MEDIA_URL}/${media_key}`.
  */
 
+// `@go2asia/sdk` is built with `tsc` without Node typings in some environments (e.g. Netlify CI).
+// We still want `process.env.NEXT_PUBLIC_MEDIA_URL` to be visible for Next.js env inlining,
+// so we declare a minimal `process` shape for TypeScript.
+declare const process: any;
+
 function trimTrailingSlash(input: string): string {
   return input.endsWith('/') ? input.slice(0, -1) : input;
 }
