@@ -38,9 +38,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   useEffect(() => {
     if (initialView) {
       setViewMode(initialView);
-      onViewChange?.(initialView);
     }
-  }, [initialView, onViewChange]);
+  }, [initialView]);
 
   // Дефолтные no-op обработчики для безопасной передачи в дочерние компоненты
   const handleEventClick = onEventClick ?? (() => {});
