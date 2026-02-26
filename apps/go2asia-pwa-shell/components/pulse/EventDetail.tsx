@@ -166,11 +166,11 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
       )}
       {/* Hero Section с обложкой */}
       <div className="relative bg-white border-b border-slate-200">
-        <div className="relative h-72 md:h-[420px] overflow-hidden bg-slate-900">
+        <div className="relative h-72 md:h-[420px] overflow-hidden bg-gradient-to-r from-sky-600 via-indigo-600 to-slate-900">
           {heroUrl ? (
             <img src={heroUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
           ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-sky-950/10" />
           <div className="absolute inset-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8">
               <div className="flex flex-wrap gap-2 mb-3">
@@ -213,6 +213,29 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
           </div>
         </div>
 
+        {/* Gallery прямо под hero (3–5 фото) */}
+        {galleryUrls.length > 0 ? (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 pb-4">
+            <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-sm p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {galleryUrls.map((src, idx) => (
+                  <div
+                    key={`${src}-${idx}`}
+                    className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                  >
+                    <img
+                      src={src}
+                      alt={`${event.title} — фото ${idx + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-sm text-slate-600 mb-4">
@@ -253,30 +276,6 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Основная информация */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Фотогалерея */}
-            {galleryUrls.length > 0 ? (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">Фотогалерея</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {galleryUrls.map((src, idx) => (
-                      <div
-                        key={`${src}-${idx}`}
-                        className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-                      >
-                        <img
-                          src={src}
-                          alt={`${event.title} — фото ${idx + 1}`}
-                          className="absolute inset-0 w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-
             {/* Описание / контент */}
             {(event.bodyMarkdown || event.description) && (
               <Card>

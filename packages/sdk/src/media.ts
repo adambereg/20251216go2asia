@@ -23,15 +23,19 @@ export function getMediaBaseUrl(): string | null {
       return trimTrailingSlash(windowMediaUrl.trim());
     }
 
-    const envMediaUrl = (globalThis as any).process?.env?.NEXT_PUBLIC_MEDIA_URL;
-    if (typeof envMediaUrl === 'string' && envMediaUrl.trim().length > 0) {
-      return trimTrailingSlash(envMediaUrl.trim());
+    // Next.js inlines ONLY direct `process.env.NEXT_PUBLIC_*` accesses at build time.
+    // So we must reference `process.env.NEXT_PUBLIC_MEDIA_URL` explicitly (not via globalThis).
+    const inlinedEnvMediaUrl =
+      typeof process !== 'undefined' ? (process.env as any).NEXT_PUBLIC_MEDIA_URL : undefined;
+    if (typeof inlinedEnvMediaUrl === 'string' && inlinedEnvMediaUrl.trim().length > 0) {
+      return trimTrailingSlash(inlinedEnvMediaUrl.trim());
     }
   }
 
-  const envMediaUrl = (globalThis as any).process?.env?.NEXT_PUBLIC_MEDIA_URL;
-  if (typeof envMediaUrl === 'string' && envMediaUrl.trim().length > 0) {
-    return trimTrailingSlash(envMediaUrl.trim());
+  const inlinedEnvMediaUrl =
+    typeof process !== 'undefined' ? (process.env as any).NEXT_PUBLIC_MEDIA_URL : undefined;
+  if (typeof inlinedEnvMediaUrl === 'string' && inlinedEnvMediaUrl.trim().length > 0) {
+    return trimTrailingSlash(inlinedEnvMediaUrl.trim());
   }
 
   return null;
