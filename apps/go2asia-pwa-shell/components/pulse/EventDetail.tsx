@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -24,6 +24,7 @@ import { EventRegisterButton } from './EventRegisterButton';
 import { resolveMediaUrl } from '@go2asia/sdk/media';
 import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
 import { getCategoryLabel } from './category';
+import { ImageLightbox } from '@/modules/atlas/components/ImageLightbox';
 
 interface EventDetailProps {
   event: Event;
@@ -78,6 +79,8 @@ function downloadICS(event: Event) {
 
 export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
   const [isSaved, setIsSaved] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const galleryKeys = (event.galleryMediaKeys ?? []).filter(
     (k): k is string => typeof k === 'string' && k.trim().length > 0,
@@ -98,6 +101,18 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
   const galleryUrls = galleryKeys
     .map((k) => resolveMediaUrl(k))
     .filter((u): u is string => typeof u === 'string' && u.length > 0);
+
+  const allImages = useMemo(() => {
+    const out: string[] = [];
+    const add = (u: string | null | undefined) => {
+      if (!u) return;
+      if (!out.includes(u)) out.push(u);
+    };
+    add(heroUrl);
+    for (const u of galleryUrls) add(u);
+    return out;
+  }, [galleryUrls, heroUrl]);
+  const stripImages = allImages.slice(0, 5);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ru-RU', {
@@ -213,26 +228,39 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
           </div>
         </div>
 
-        {/* Gallery прямо под hero (3–5 фото) */}
-        {galleryUrls.length > 0 ? (
+        {/* Фотогалерея (как в Atlas): горизонтальная лента + lightbox */}
+        {stripImages.length > 0 ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 pb-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-sm p-3">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {galleryUrls.map((src, idx) => (
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 snap-x snap-mandatory">
+                {stripImages.map((src, idx) => (
                   <div
                     key={`${src}-${idx}`}
-                    className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                    className="flex-shrink-0 w-[271px] snap-start cursor-pointer"
+                    onClick={() => {
+                      setLightboxIndex(idx);
+                      setIsLightboxOpen(true);
+                    }}
                   >
+                    <div className="aspect-video rounded-lg overflow-hidden bg-slate-100 hover:opacity-90 transition-opacity">
                     <img
                       src={src}
                       alt={`${event.title} — фото ${idx + 1}`}
-                      className="absolute inset-0 w-full h-full object-cover"
+                        className="w-full h-full object-cover"
                       loading="lazy"
                     />
+                  </div>
                   </div>
                 ))}
               </div>
             </div>
+            <ImageLightbox
+              images={allImages}
+              currentIndex={lightboxIndex}
+              isOpen={isLightboxOpen}
+              onClose={() => setIsLightboxOpen(false)}
+              onNavigate={(idx) => setLightboxIndex(idx)}
+            />
           </div>
         ) : null}
 
