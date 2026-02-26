@@ -60,8 +60,15 @@ export const useRegisterEvent = () => {
  */
 export const useGetEvents = (_params?: (ListEventsParams & { enabled?: boolean })) => {
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
-  const params: ListEventsParams = { ...(_params ?? {}) };
+  const anyParams = (_params ?? {}) as any;
+  const params: ListEventsParams = {
+    ...anyParams,
+    dateFrom: anyParams?.dateFrom ?? anyParams?.date_from,
+    dateTo: anyParams?.dateTo ?? anyParams?.date_to,
+  };
   delete (params as any).enabled;
+  delete (params as any).date_from;
+  delete (params as any).date_to;
 
   return useQuery<ListResponse<ContentEventDto>, Error>({
     queryKey: ['content', 'events', params],

@@ -14,6 +14,7 @@ export function PulseClientWrapper() {
   const dataSource = getDataSource();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dataSourceBadge = dataSource === 'mock' ? 'MOCK' : 'API';
 
   const [viewMode, setViewMode] = useState<CalendarViewMode>('week');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -206,10 +207,33 @@ export function PulseClientWrapper() {
           description="События и мероприятия в Юго-Восточной Азии"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+          badgeText={dataSourceBadge}
         />
         <div className="flex items-center justify-center py-12">
           <div className="text-slate-600">Загрузка событий...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataSource === 'api' && (!eventsData?.items || eventsData.items.length === 0) && !error) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <ModuleHero
+          icon={Globe}
+          title="Pulse Asia"
+          description="События и мероприятия в Юго-Восточной Азии"
+          gradientFrom="from-sky-500"
+          gradientTo="to-sky-600"
+          badgeText={dataSourceBadge}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
+            <div className="text-lg font-bold text-slate-900 mb-2">Пока нет событий</div>
+            <div className="text-sm text-slate-600">
+              Похоже, Neon ещё не заполнен или фильтры/диапазон дат не возвращают результатов.
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -224,6 +248,7 @@ export function PulseClientWrapper() {
           description="События и мероприятия в Юго-Восточной Азии"
           gradientFrom="from-sky-500"
           gradientTo="to-sky-600"
+          badgeText={dataSourceBadge}
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
@@ -245,7 +270,7 @@ export function PulseClientWrapper() {
         description="События и мероприятия в Юго-Восточной Азии"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
+        badgeText={dataSourceBadge}
       />
       <CalendarView
         events={events}
