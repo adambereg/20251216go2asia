@@ -6,6 +6,8 @@ export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';
 
 export interface Event {
   id: string;
+  slug?: string;
+  year?: number;
   title: string;
   description?: string;
   bodyMarkdown?: string;

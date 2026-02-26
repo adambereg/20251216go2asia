@@ -23,6 +23,8 @@ function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
 
   return {
     id: dto.id,
+    slug: dto.slug ?? undefined,
+    year: typeof dto.year === 'number' ? dto.year : undefined,
     title: dto.title,
     description: dto.shortDescription ?? undefined,
     bodyMarkdown: dto.bodyMarkdown ?? undefined,

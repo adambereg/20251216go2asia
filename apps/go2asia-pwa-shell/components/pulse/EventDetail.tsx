@@ -79,11 +79,25 @@ function downloadICS(event: Event) {
 export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
   const [isSaved, setIsSaved] = useState(false);
 
-  const heroUrl = resolveMediaUrl(event.heroMediaKey ?? null) ?? (event.cover ?? null);
-  const galleryUrls = (event.galleryMediaKeys ?? [])
+  const galleryKeys = (event.galleryMediaKeys ?? []).filter(
+    (k): k is string => typeof k === 'string' && k.trim().length > 0,
+  );
+  const firstGalleryKey = galleryKeys[0] ?? null;
+  const deterministicFallbackKey =
+    event.countrySlug && event.slug
+      ? `events/${event.countrySlug}/${event.year ?? event.startDate.getFullYear()}/${event.slug}/01.jpg`
+      : null;
+  const heroKey =
+    (typeof event.heroMediaKey === 'string' && event.heroMediaKey.trim().length > 0
+      ? event.heroMediaKey.trim()
+      : null) ??
+    firstGalleryKey ??
+    deterministicFallbackKey;
+
+  const heroUrl = resolveMediaUrl(heroKey) ?? (event.cover ?? null);
+  const galleryUrls = galleryKeys
     .map((k) => resolveMediaUrl(k))
     .filter((u): u is string => typeof u === 'string' && u.length > 0);
-  const previewImages = galleryUrls.length > 0 ? galleryUrls : heroUrl ? [heroUrl] : [];
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ru-RU', {
@@ -152,70 +166,14 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
       )}
       {/* Hero Section с обложкой */}
       <div className="relative bg-white border-b border-slate-200">
-        {heroUrl ? (
-          <div className="relative h-64 md:h-96 overflow-hidden">
-            <img
-              src={heroUrl}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            {/* Module header (как на /pulse) */}
-            <div className="absolute top-0 left-0 right-0">
-              <section className="text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Globe className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
-                    <h1 className="text-h1 md:text-4xl lg:text-5xl font-bold text-white">
-                      Pulse Asia
-                    </h1>
-                  </div>
-                  <p className="text-body text-white/90">
-                    События и мероприятия в Юго-Восточной Азии
-                  </p>
-                </div>
-              </section>
-            </div>
-          </div>
-        ) : (
-          <div className="h-32 md:h-48 bg-gradient-to-r from-sky-500 to-sky-600">
-            <section className="text-white h-full">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Globe className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
-                    <h1 className="text-h1 md:text-4xl lg:text-5xl font-bold text-white">
-                      Pulse Asia
-                    </h1>
-                  </div>
-                  <p className="text-body text-white/90">
-                    События и мероприятия в Юго-Восточной Азии
-                  </p>
-                </div>
-              </div>
-            </section>
-          </div>
-        )}
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-            <Link href="/pulse" className="hover:text-sky-600">
-              Pulse Asia
-            </Link>
-            <span>/</span>
-            <span className="text-slate-900 line-clamp-1">{event.title}</span>
-          </nav>
-
-          {/* Заголовок и бейджи */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
-                {event.title}
-              </h1>
-
-              {/* Бейджи */}
-              <div className="flex flex-wrap gap-2 mb-4">
+        <div className="relative h-72 md:h-[420px] overflow-hidden bg-slate-900">
+          {heroUrl ? (
+            <img src={heroUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
+          <div className="absolute inset-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {event.badges?.map((badge) => (
                   <Badge
                     key={badge}
@@ -240,38 +198,52 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
                       </>
                     )}
                     {badge === 'free' && 'Бесплатно'}
+                    {badge === 'paid' && 'Платно'}
                     {badge === 'repeating' && 'Повторяется'}
                     {badge === 'virtual-event' && 'Онлайн'}
                   </Badge>
                 ))}
-                {event.category && (
-                  <Badge variant="info">{getCategoryLabel(event.category)}</Badge>
-                )}
+                {event.category && <Badge variant="info">{getCategoryLabel(event.category)}</Badge>}
+              </div>
+              <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">{event.title}</h1>
+              <div className="mt-2 text-sm md:text-base text-white/90">
+                {[event.location?.city, event.location?.country].filter(Boolean).join(', ')}
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Действия */}
-            <div className="flex flex-wrap gap-2">
-              <EventRegisterButton
-                eventId={event.id}
-                eventTitle={event.title}
-                isRegistered={false}
-                size="sm"
-                className="flex items-center justify-center gap-2"
-              />
-              <Button variant="secondary" size="sm" onClick={handleSave}>
-                <Heart className={`w-4 h-4 mr-1 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
-                {isSaved ? 'Сохранено' : 'Сохранить'}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={handleShare}>
-                <Share2 className="w-4 h-4 mr-1" />
-                Поделиться
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => downloadICS(event)}>
-                <Download className="w-4 h-4 mr-1" />
-                В календарь
-              </Button>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+            <Link href="/pulse" className="hover:text-sky-600">
+              Pulse Asia
+            </Link>
+            <span>/</span>
+            <span className="text-slate-900 line-clamp-1">{event.title}</span>
+          </nav>
+
+          {/* Действия */}
+          <div className="flex flex-wrap gap-2">
+            <EventRegisterButton
+              eventId={event.id}
+              eventTitle={event.title}
+              isRegistered={false}
+              size="sm"
+              className="flex items-center justify-center gap-2"
+            />
+            <Button variant="secondary" size="sm" onClick={handleSave}>
+              <Heart className={`w-4 h-4 mr-1 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+              {isSaved ? 'Сохранено' : 'Сохранить'}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-1" />
+              Поделиться
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => downloadICS(event)}>
+              <Download className="w-4 h-4 mr-1" />
+              В календарь
+            </Button>
           </div>
         </div>
       </div>
@@ -281,22 +253,29 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Основная информация */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Превью-фото (3) */}
-            <div className="flex gap-3 overflow-x-auto">
-        {previewImages.map((src, idx) => (
-                <div
-                  key={`${src}-${idx}`}
-                  className="relative h-24 sm:h-28 md:h-32 w-44 sm:w-52 md:w-56 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-                >
-                  <img
-                    src={src}
-                    alt={`${event.title} — фото ${idx + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
+            {/* Фотогалерея */}
+            {galleryUrls.length > 0 ? (
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold text-slate-900 mb-4">Фотогалерея</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {galleryUrls.map((src, idx) => (
+                      <div
+                        key={`${src}-${idx}`}
+                        className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                      >
+                        <img
+                          src={src}
+                          alt={`${event.title} — фото ${idx + 1}`}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {/* Описание / контент */}
             {(event.bodyMarkdown || event.description) && (

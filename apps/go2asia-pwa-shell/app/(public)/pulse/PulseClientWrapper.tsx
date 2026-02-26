@@ -168,6 +168,8 @@ export function PulseClientWrapper() {
   // Хелпер для преобразования моков в Event
   const mapMockToEvent = (dto: ReturnType<typeof mockRepo.pulse.listEvents>[0]): Event => ({
     id: dto.id,
+    slug: undefined,
+    year: undefined,
     title: dto.title,
     description: dto.description,
     startDate: new Date(dto.startTime),
@@ -222,6 +224,8 @@ export function PulseClientWrapper() {
 
         return {
           id: dto.id,
+          slug: dto.slug ?? undefined,
+          year: typeof dto.year === 'number' ? dto.year : undefined,
           title: dto.title,
           description: dto.shortDescription ?? undefined,
           startDate,
