@@ -274,7 +274,7 @@ export function PulseClientWrapper() {
       />
       <CalendarView
         events={events}
-        initialView="week"
+        initialView={viewMode}
         initialDate={currentDate}
         filters={filters}
         onFiltersChange={(f) => updateURLWithFilters(f)}

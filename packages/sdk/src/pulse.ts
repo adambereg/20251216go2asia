@@ -5,7 +5,7 @@
  * This file provides React Query hooks for events operations.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customInstance } from './mutator';
 import { listEvents } from './content';
 import type { ContentEventDto, ListEventsParams, ListResponse } from './content';
@@ -76,6 +76,7 @@ export const useGetEvents = (_params?: (ListEventsParams & { enabled?: boolean }
     queryFn: async () => {
       return await listEvents(params);
     },
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 };

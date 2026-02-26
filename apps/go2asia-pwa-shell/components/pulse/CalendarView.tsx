@@ -91,6 +91,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onDateClick={(date) => {
               setCurrentDate(date);
               setViewMode('week');
+              onViewChange?.('week');
               handleDateChange(date);
             }}
           />
