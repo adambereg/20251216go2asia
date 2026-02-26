@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, X, MapPin, Calendar, DollarSign, Globe, Tag, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { Search, X, MapPin, Calendar, DollarSign, Tag, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { EventFilters as EventFiltersType } from './types';
 import { Chip, Button } from '@go2asia/ui';
+
+export type SelectOption = { value: string; label: string };
 
 export interface EventFiltersProps {
   filters: EventFiltersType;
   onFiltersChange: (filters: EventFiltersType) => void;
+  cityOptions?: SelectOption[];
 }
 
 // Категории событий
@@ -34,26 +37,11 @@ const countries = [
   { value: 'philippines', label: 'Филиппины' },
 ];
 
-// Масштаб
-const scales = [
-  { value: 'country', label: 'Страна' },
-  { value: 'city', label: 'Город' },
-  { value: 'place', label: 'Место' },
-];
-
 // Цена
 const priceOptions = [
   { value: 'all', label: 'Все' },
   { value: 'free', label: 'Бесплатно' },
   { value: 'paid', label: 'Платно' },
-];
-
-// Язык
-const languages = [
-  { value: 'all', label: 'Все' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-  { value: 'local', label: 'Местный' },
 ];
 
 // Время
@@ -67,9 +55,20 @@ const timeFilters = [
 export const EventFilters: React.FC<EventFiltersProps> = ({
   filters,
   onFiltersChange,
+  cityOptions,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.search || '');
   const [isExpanded, setIsExpanded] = useState(false); // По умолчанию скрыто на мобильных
+
+  // Если выбранный город больше недоступен для выбранной страны — сбросим
+  useEffect(() => {
+    if (!filters.city) return;
+    if (!filters.country) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const exists = cityOptions.some((c) => c.value === filters.city);
+    if (!exists) onFiltersChange({ ...filters, city: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.country, cityOptions]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -95,24 +94,10 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
     onFiltersChange({ ...filters, city });
   };
 
-  const handleScaleToggle = (scale: 'country' | 'city' | 'place') => {
-    onFiltersChange({
-      ...filters,
-      scale: filters.scale === scale ? undefined : scale,
-    });
-  };
-
   const handlePriceChange = (price: 'free' | 'paid' | 'all') => {
     onFiltersChange({
       ...filters,
       price: price === 'all' ? undefined : price,
-    });
-  };
-
-  const handleLanguageChange = (language: 'ru' | 'en' | 'local' | 'all') => {
-    onFiltersChange({
-      ...filters,
-      language: language === 'all' ? undefined : language,
     });
   };
 
@@ -133,9 +118,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
     filters.country ||
     filters.city ||
     filters.category ||
-    filters.scale ||
     filters.price ||
-    filters.language ||
     filters.timeFilter ||
     filters.search ||
     filters.verified !== undefined
@@ -146,21 +129,16 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
   if (filters.country) {
     activeFiltersList.push(countries.find((c) => c.value === filters.country)?.label ?? filters.country);
   }
-  if (filters.city) activeFiltersList.push(filters.city);
+  if (filters.city) {
+    const label = (cityOptions ?? []).find((c) => c.value === filters.city)?.label;
+    activeFiltersList.push(label ?? filters.city);
+  }
   if (filters.category) {
     activeFiltersList.push(categories.find((c) => c.value === filters.category)?.label ?? filters.category);
-  }
-  if (filters.scale) {
-    const scaleLabel = scales.find(s => s.value === filters.scale)?.label;
-    if (scaleLabel) activeFiltersList.push(scaleLabel);
   }
   if (filters.price && filters.price !== 'all') {
     const priceLabel = priceOptions.find(p => p.value === filters.price)?.label;
     if (priceLabel) activeFiltersList.push(priceLabel);
-  }
-  if (filters.language && filters.language !== 'all') {
-    const langLabel = languages.find(l => l.value === filters.language)?.label;
-    if (langLabel) activeFiltersList.push(langLabel);
   }
   if (filters.timeFilter && filters.timeFilter !== 'all') {
     const timeLabel = timeFilters.find(t => t.value === filters.timeFilter)?.label;
@@ -264,30 +242,20 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
 
           {/* Гео: Город */}
           <div className="relative">
-            <input
+            <select
               value={filters.city || ''}
               onChange={(e) => handleCityChange(e.target.value || undefined)}
-              placeholder="Город (slug), напр. bangkok"
-              className="bg-white border border-slate-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
-            />
+              disabled={!filters.country}
+              className="appearance-none bg-white border border-slate-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none cursor-pointer disabled:opacity-60"
+            >
+              <option value="">{filters.country ? 'Все города' : 'Сначала выберите страну'}</option>
+              {(cityOptions ?? []).map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
             <MapPin className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Масштаб */}
-          <div className="flex items-center gap-2">
-            {scales.map((scale) => (
-              <Chip
-                key={scale.value}
-                onClick={() => handleScaleToggle(scale.value as 'country' | 'city' | 'place')}
-                className={
-                  filters.scale === scale.value
-                    ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
-                    : 'cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }
-              >
-                {scale.label}
-              </Chip>
-            ))}
           </div>
 
           {/* Цена */}
@@ -317,22 +285,6 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
           >
             ✓ Проверено
           </Chip>
-
-          {/* Язык */}
-          <div className="relative">
-            <select
-              value={filters.language || 'all'}
-              onChange={(e) => handleLanguageChange(e.target.value as 'ru' | 'en' | 'local' | 'all')}
-              className="appearance-none bg-white border border-slate-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none cursor-pointer"
-            >
-              {languages.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
-            <Globe className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
 
           {/* Время */}
           <div className="relative">

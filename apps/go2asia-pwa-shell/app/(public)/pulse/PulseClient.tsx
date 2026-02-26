@@ -22,19 +22,9 @@ function parseFiltersFromURL(searchParams: URLSearchParams): EventFilters {
   const category = searchParams.get('category');
   if (category) filters.category = category;
 
-  const scale = searchParams.get('scale');
-  if (scale && ['country', 'city', 'place'].includes(scale)) {
-    filters.scale = scale as 'country' | 'city' | 'place';
-  }
-
   const price = searchParams.get('price');
   if (price && ['free', 'paid'].includes(price)) {
     filters.price = price as 'free' | 'paid';
-  }
-
-  const language = searchParams.get('language');
-  if (language && ['ru', 'en', 'local'].includes(language)) {
-    filters.language = language as 'ru' | 'en' | 'local';
   }
 
   const timeFilter = searchParams.get('time');
@@ -42,7 +32,7 @@ function parseFiltersFromURL(searchParams: URLSearchParams): EventFilters {
     filters.timeFilter = timeFilter as 'today' | 'tomorrow' | 'weekend';
   }
 
-  const search = searchParams.get('search');
+  const search = searchParams.get('q') ?? searchParams.get('search');
   if (search) filters.search = search;
 
   return filters;
@@ -55,11 +45,9 @@ function updateURLWithFilters(router: ReturnType<typeof useRouter>, filters: Eve
   if (filters.country) params.set('country', filters.country);
   if (filters.city) params.set('city', filters.city);
   if (filters.category) params.set('category', filters.category);
-  if (filters.scale) params.set('scale', filters.scale);
   if (filters.price) params.set('price', filters.price);
-  if (filters.language) params.set('language', filters.language);
   if (filters.timeFilter) params.set('time', filters.timeFilter);
-  if (filters.search) params.set('search', filters.search);
+  if (filters.search) params.set('q', filters.search);
 
   const queryString = params.toString();
   const newUrl = queryString ? `/pulse?${queryString}` : '/pulse';

@@ -41,6 +41,9 @@ export function PulseClientWrapper() {
     const search = sp.get('q') ?? sp.get('search');
     if (search) filters.search = search;
 
+    const time = sp.get('time');
+    if (time && ['today', 'tomorrow', 'weekend'].includes(time)) filters.timeFilter = time as any;
+
     return filters;
   }
 
@@ -52,6 +55,7 @@ export function PulseClientWrapper() {
     if (filters.price && filters.price !== 'all') params.set('price', filters.price);
     if (filters.verified !== undefined) params.set('verified', filters.verified ? 'true' : 'false');
     if (filters.search) params.set('q', filters.search);
+    if (filters.timeFilter && filters.timeFilter !== 'all') params.set('time', filters.timeFilter);
 
     const queryString = params.toString();
     const newUrl = queryString ? `/pulse?${queryString}` : '/pulse';
@@ -61,6 +65,34 @@ export function PulseClientWrapper() {
   const filters = useMemo(() => parseFiltersFromURL(searchParams), [searchParams]);
 
   const apiDateRange = useMemo(() => {
+    const utcStartOfDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+    const utcEndOfDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+
+    const quickRange = (() => {
+      const now = new Date();
+      const today = utcStartOfDay(now);
+      if (filters.timeFilter === 'today') return { from: today, to: utcEndOfDay(today) };
+      if (filters.timeFilter === 'tomorrow') {
+        const t = new Date(today);
+        t.setUTCDate(t.getUTCDate() + 1);
+        return { from: t, to: utcEndOfDay(t) };
+      }
+      if (filters.timeFilter === 'weekend') {
+        const dow = today.getUTCDay(); // 0=Sun..6=Sat
+        const daysUntilSat = (6 - dow + 7) % 7; // include today if Saturday
+        const sat = new Date(today);
+        sat.setUTCDate(sat.getUTCDate() + daysUntilSat);
+        const sun = new Date(sat);
+        sun.setUTCDate(sun.getUTCDate() + 1);
+        return { from: sat, to: utcEndOfDay(sun) };
+      }
+      return null;
+    })();
+
+    if (quickRange) {
+      return { dateFrom: quickRange.from.toISOString(), dateTo: quickRange.to.toISOString() };
+    }
+
     const d = new Date(currentDate);
     const start = new Date(d);
     const end = new Date(d);
@@ -93,7 +125,7 @@ export function PulseClientWrapper() {
     end.setDate(end.getDate() + 90);
     end.setHours(23, 59, 59, 999);
     return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
-  }, [currentDate, viewMode]);
+  }, [currentDate, viewMode, filters.timeFilter]);
 
   // Всегда вызываем хук (правило React Hooks)
   const { data: eventsData, isLoading, isFetching, error } = useGetEvents({
@@ -108,6 +140,30 @@ export function PulseClientWrapper() {
     dateTo: apiDateRange.dateTo,
     enabled: dataSource === 'api',
   });
+
+  // Отдельный запрос для списка городов выбранной страны (без city-фильтра),
+  // чтобы селект не "схлопывался" до одного города после выбора.
+  const { data: citiesData } = useGetEvents({
+    limit: 200,
+    country: filters.country,
+    dateFrom: apiDateRange.dateFrom,
+    dateTo: apiDateRange.dateTo,
+    enabled: dataSource === 'api' && Boolean(filters.country),
+  });
+
+  const cityOptions = useMemo(() => {
+    const items = citiesData?.items ?? [];
+    const map = new Map<string, string>();
+    for (const e of items as any[]) {
+      const slug = typeof e.citySlug === 'string' ? e.citySlug.trim() : '';
+      if (!slug) continue;
+      const name = typeof e.cityName === 'string' && e.cityName.trim().length > 0 ? e.cityName.trim() : slug;
+      if (!map.has(slug)) map.set(slug, name);
+    }
+    return [...map.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'ru'));
+  }, [citiesData]);
 
   // Хелпер для преобразования моков в Event
   const mapMockToEvent = (dto: ReturnType<typeof mockRepo.pulse.listEvents>[0]): Event => ({
@@ -250,6 +306,7 @@ export function PulseClientWrapper() {
         initialView={viewMode}
         initialDate={currentDate}
         filters={filters}
+        cityOptions={cityOptions}
         onFiltersChange={(f) => updateURLWithFilters(f)}
         onEventClick={(event) => router.push(`/pulse/${event.id}`)}
         onDateChange={(d) => setCurrentDate(d)}

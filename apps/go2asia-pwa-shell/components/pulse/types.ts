@@ -68,11 +68,8 @@ export type EventBadge =
 export interface EventFilters {
   country?: string; // slug (e.g. "thailand")
   city?: string; // slug (e.g. "bangkok")
-  place?: string;
   category?: string;
-  scale?: 'country' | 'city' | 'place';
   price?: 'free' | 'paid' | 'all';
-  language?: 'ru' | 'en' | 'local' | 'all';
   verified?: boolean;
   dateRange?: {
     start?: Date;

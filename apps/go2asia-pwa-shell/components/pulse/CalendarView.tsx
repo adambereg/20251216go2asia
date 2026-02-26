@@ -19,6 +19,7 @@ export interface CalendarViewProps {
   onEventClick?: (event: Event) => void;
   onDateChange?: (date: Date) => void;
   onViewChange?: (mode: CalendarViewMode) => void;
+  cityOptions?: { value: string; label: string }[];
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
@@ -30,6 +31,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onEventClick,
   onDateChange,
   onViewChange,
+  cityOptions,
 }) => {
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView);
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -195,6 +197,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <EventFiltersComponent
         filters={filters || {}}
         onFiltersChange={onFiltersChange || (() => {})}
+        cityOptions={cityOptions}
       />
 
       {/* Calendar view */}

@@ -37,11 +37,6 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
     filtered = filtered.filter((event) => event.category === filters.category);
   }
 
-  // Фильтр по масштабу
-  if (filters.scale) {
-    filtered = filtered.filter((event) => event.scale === filters.scale);
-  }
-
   // Фильтр по цене
   if (filters.price) {
     if (filters.price === 'free') {
@@ -49,11 +44,6 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
     } else if (filters.price === 'paid') {
       filtered = filtered.filter((event) => event.price?.type === 'paid');
     }
-  }
-
-  // Фильтр по языку
-  if (filters.language) {
-    filtered = filtered.filter((event) => event.language === filters.language);
   }
 
   // Фильтр по "проверено"
