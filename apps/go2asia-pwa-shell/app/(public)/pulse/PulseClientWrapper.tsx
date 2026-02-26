@@ -96,7 +96,7 @@ export function PulseClientWrapper() {
   }, [currentDate, viewMode]);
 
   // Всегда вызываем хук (правило React Hooks)
-  const { data: eventsData, isLoading, error } = useGetEvents({
+  const { data: eventsData, isLoading, isFetching, error } = useGetEvents({
     limit: 200,
     country: filters.country,
     city: filters.city,
@@ -216,52 +216,6 @@ export function PulseClientWrapper() {
     );
   }
 
-  if (dataSource === 'api' && (!eventsData?.items || eventsData.items.length === 0) && !error) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <ModuleHero
-          icon={Globe}
-          title="Pulse Asia"
-          description="События и мероприятия в Юго-Восточной Азии"
-          gradientFrom="from-sky-500"
-          gradientTo="to-sky-600"
-          badgeText={dataSourceBadge}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-            <div className="text-lg font-bold text-slate-900 mb-2">Пока нет событий</div>
-            <div className="text-sm text-slate-600">
-              Похоже, Neon ещё не заполнен или фильтры/диапазон дат не возвращают результатов.
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (dataSource === 'api' && error) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <ModuleHero
-          icon={Globe}
-          title="Pulse Asia"
-          description="События и мероприятия в Юго-Восточной Азии"
-          gradientFrom="from-sky-500"
-          gradientTo="to-sky-600"
-          badgeText={dataSourceBadge}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-            <div className="text-lg font-bold text-slate-900 mb-2">Не удалось загрузить события</div>
-            <div className="text-sm text-slate-600">
-              Проверьте подключение или попробуйте позже. (API error)
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       <ModuleHero
@@ -270,8 +224,27 @@ export function PulseClientWrapper() {
         description="События и мероприятия в Юго-Восточной Азии"
         gradientFrom="from-sky-500"
         gradientTo="to-sky-600"
-        badgeText={dataSourceBadge}
+        badgeText={isFetching && dataSource === 'api' ? `${dataSourceBadge} · обновление` : dataSourceBadge}
       />
+
+      {dataSource === 'api' && error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="bg-white rounded-xl border border-rose-200 shadow-sm p-4">
+            <div className="font-semibold text-slate-900">Не удалось обновить события</div>
+            <div className="text-sm text-slate-600">Проверьте API gateway и попробуйте ещё раз.</div>
+          </div>
+        </div>
+      )}
+
+      {dataSource === 'api' && !error && eventsData && eventsData.items.length === 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="font-semibold text-slate-900">Нет событий по выбранным фильтрам</div>
+            <div className="text-sm text-slate-600">Попробуйте снять часть фильтров или изменить период.</div>
+          </div>
+        </div>
+      )}
+
       <CalendarView
         events={events}
         initialView={viewMode}
