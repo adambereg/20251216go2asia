@@ -191,7 +191,7 @@ export async function listEvents(
       AND (${category}::text IS NULL OR e.category = ${category})
       AND (
         ${dateFrom}::timestamptz IS NULL
-        OR COALESCE(e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
+        OR COALESCE(e.end_at, e.end_date::timestamptz, e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
       )
       AND (
         ${dateTo}::timestamptz IS NULL
@@ -261,7 +261,7 @@ export async function listEvents(
       AND (${category}::text IS NULL OR e.category = ${category})
       AND (
         ${dateFrom}::timestamptz IS NULL
-        OR COALESCE(e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
+        OR COALESCE(e.end_at, e.end_date::timestamptz, e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
       )
       AND (
         ${dateTo}::timestamptz IS NULL

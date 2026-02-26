@@ -54,40 +54,40 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
   // Фильтр по времени
   if (filters.timeFilter) {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+    const today = startOfDay(now);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Находим следующую субботу для фильтра "выходные"
-    const nextSaturday = new Date(today);
-    const daysUntilSaturday = (6 - today.getDay() + 7) % 7 || 7;
-    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
-    const nextSunday = new Date(nextSaturday);
-    nextSunday.setDate(nextSaturday.getDate() + 1);
 
-    switch (filters.timeFilter) {
-      case 'today':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate.getTime() === today.getTime();
-        });
-        break;
-      case 'tomorrow':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate.getTime() === tomorrow.getTime();
-        });
-        break;
-      case 'weekend':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          const dayOfWeek = eventDate.getDay();
-          return dayOfWeek === 0 || dayOfWeek === 6; // Суббота или воскресенье
-        });
-        break;
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+
+    if (filters.timeFilter === 'today') {
+      rangeStart = today;
+      rangeEnd = endOfDay(today);
+    } else if (filters.timeFilter === 'tomorrow') {
+      rangeStart = tomorrow;
+      rangeEnd = endOfDay(tomorrow);
+    } else if (filters.timeFilter === 'weekend') {
+      // Upcoming weekend: Saturday+Sunday (include today if already Saturday)
+      const dow = today.getDay(); // 0=Sun..6=Sat
+      const daysUntilSat = (6 - dow + 7) % 7;
+      const sat = new Date(today);
+      sat.setDate(sat.getDate() + daysUntilSat);
+      const sun = new Date(sat);
+      sun.setDate(sun.getDate() + 1);
+      rangeStart = sat;
+      rangeEnd = endOfDay(sun);
+    }
+
+    if (rangeStart && rangeEnd) {
+      filtered = filtered.filter((event) => {
+        const s = new Date(event.startDate);
+        const e = new Date(event.endDate ?? event.startDate);
+        return s <= rangeEnd! && e >= rangeStart!;
+      });
     }
   }
 
