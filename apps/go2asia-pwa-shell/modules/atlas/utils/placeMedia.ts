@@ -8,7 +8,7 @@
  * - Это временное исключение из канона новых модулей (Pulse/Quest/Rielt):
  *   они обязаны хранить media_key и строить URL через `resolveMediaUrl()` + `NEXT_PUBLIC_MEDIA_URL`.
  *
- * ADR: docs/adr/0001-atlas-place-legacy-hardcoded-media-url.md
+ * ADR: docs/decisions/adr_0024_atlas_place_legacy_hardcoded_media_url.md
  */
 
 const R2_BASE_URL = 'https://media.go2asia.space';
