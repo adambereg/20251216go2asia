@@ -1,7 +1,14 @@
 /**
  * Generate R2 media URLs for places
- * 
+ *
  * Structure: https://media.go2asia.space/place/{place_id}/01.jpg
+ *
+ * LEGACY (Atlas Place only):
+ * - Здесь намеренно используется hardcoded public origin `https://media.go2asia.space`.
+ * - Это временное исключение из канона новых модулей (Pulse/Quest/Rielt):
+ *   они обязаны хранить media_key и строить URL через `resolveMediaUrl()` + `NEXT_PUBLIC_MEDIA_URL`.
+ *
+ * ADR: docs/adr/0001-atlas-place-legacy-hardcoded-media-url.md
  */
 
 const R2_BASE_URL = 'https://media.go2asia.space';
