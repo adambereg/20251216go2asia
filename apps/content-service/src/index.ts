@@ -689,7 +689,11 @@ function toContentEvent(row: EventRow): ContentEventDto {
   const end = row.end_at ?? row.end_date;
   const locationParts = [row.city_name, row.country_name].filter(Boolean).join(', ');
   const heroMediaKey = pickString(row.hero_media_key);
-  const galleryMediaKeys = pickStringArray(row.gallery_media_keys);
+  const galleryFromDb = pickStringArray(row.gallery_media_keys);
+  const prefixRaw = pickString((row as any).media_prefix);
+  const prefix = prefixRaw ? (prefixRaw.endsWith('/') ? prefixRaw : `${prefixRaw}/`) : null;
+  const fallbackGallery = prefix ? ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '05.jpg'].map((f) => `${prefix}${f}`) : [];
+  const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : fallbackGallery;
 
   return {
     id: row.id,
