@@ -75,7 +75,7 @@ export function PulseClient({ events }: PulseClientProps) {
   };
 
   const handleEventClick = (event: Event) => {
-    router.push(`/pulse/${event.id}`);
+    router.push(`/pulse/events/${event.slug ?? event.id}`);
   };
 
   return (

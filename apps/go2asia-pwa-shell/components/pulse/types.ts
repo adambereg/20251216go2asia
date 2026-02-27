@@ -6,6 +6,7 @@ export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';
 
 export interface Event {
   id: string;
+  slug?: string;
   title: string;
   description?: string;
   bodyMarkdown?: string;
@@ -14,7 +15,7 @@ export interface Event {
   timezone?: string;
   // Canonical media keys (R2 object keys, relative paths)
   heroMediaKey?: string | null;
-  galleryMediaKeys?: string[] | null;
+  galleryMediaKeys?: string[];
   location?: {
     name: string;
     address?: string;

@@ -168,13 +168,14 @@ export function PulseClientWrapper() {
   // Хелпер для преобразования моков в Event
   const mapMockToEvent = (dto: ReturnType<typeof mockRepo.pulse.listEvents>[0]): Event => ({
     id: dto.id,
+    slug: dto.id,
     title: dto.title,
     description: dto.description,
     startDate: new Date(dto.startTime),
     endDate: new Date(dto.endTime ?? dto.startTime),
     timezone: dto.timezone,
     heroMediaKey: null,
-    galleryMediaKeys: null,
+    galleryMediaKeys: [],
     location: dto.location
       ? {
           name: dto.location.name,
@@ -222,13 +223,14 @@ export function PulseClientWrapper() {
 
         return {
           id: dto.id,
+          slug: dto.slug ?? dto.id,
           title: dto.title,
           description: dto.shortDescription ?? undefined,
           startDate,
           endDate,
           category: dto.category ?? undefined,
           heroMediaKey: dto.heroMediaKey ?? null,
-          galleryMediaKeys: Array.isArray(dto.galleryMediaKeys) ? dto.galleryMediaKeys : null,
+          galleryMediaKeys: Array.isArray(dto.galleryMediaKeys) ? dto.galleryMediaKeys : [],
           countrySlug: dto.countrySlug ?? undefined,
           citySlug: dto.citySlug ?? undefined,
           location: locationStr
@@ -308,7 +310,7 @@ export function PulseClientWrapper() {
         filters={filters}
         cityOptions={cityOptions}
         onFiltersChange={(f) => updateURLWithFilters(f)}
-        onEventClick={(event) => router.push(`/pulse/${event.id}`)}
+        onEventClick={(event) => router.push(`/pulse/events/${event.slug ?? event.id}`)}
         onDateChange={(d) => setCurrentDate(d)}
         onViewChange={(m) => setViewMode(m)}
       />

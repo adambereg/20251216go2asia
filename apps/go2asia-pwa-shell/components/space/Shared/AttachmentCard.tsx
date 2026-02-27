@@ -55,7 +55,7 @@ function getAttachmentLink(attachments: Attachments): string {
     case 'place':
       return `/atlas/places/${attachments.place?.id}`;
     case 'event':
-      return `/pulse/${attachments.event?.id}`;
+      return `/pulse/events/${attachments.event?.id}`;
     case 'quest':
       return `/quest/${attachments.quest?.id}`;
     case 'guide':

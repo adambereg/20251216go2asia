@@ -325,7 +325,7 @@ export default async function ArticlePage({
                     {resolved.relatedEvents.map((event: any) => (
                       <Link
                         key={event.id}
-                        href={`/pulse/${event.id}`}
+                        href={`/pulse/events/${event.slug ?? event.id}`}
                         className="block text-sm text-slate-600 hover:text-sky-600"
                       >
                         <div>{event.title}</div>
