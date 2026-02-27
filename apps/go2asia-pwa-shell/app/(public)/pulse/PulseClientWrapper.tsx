@@ -165,6 +165,34 @@ export function PulseClientWrapper() {
       .sort((a, b) => a.label.localeCompare(b.label, 'ru'));
   }, [citiesData]);
 
+  const normalizeStringArray = (input: unknown): string[] | null => {
+    if (Array.isArray(input)) {
+      const arr = input
+        .filter((x): x is string => typeof x === 'string')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      return arr.length > 0 ? arr : null;
+    }
+
+    if (typeof input === 'string' && input.trim().length > 0) {
+      const s = input.trim();
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (Array.isArray(parsed)) return normalizeStringArray(parsed);
+      } catch {
+        // ignore
+      }
+
+      const parts = s
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      return parts.length > 0 ? parts : null;
+    }
+
+    return null;
+  };
+
   // Хелпер для преобразования моков в Event
   const mapMockToEvent = (dto: ReturnType<typeof mockRepo.pulse.listEvents>[0]): Event => ({
     id: dto.id,
@@ -232,7 +260,7 @@ export function PulseClientWrapper() {
           endDate,
           category: dto.category ?? undefined,
           heroMediaKey: dto.heroMediaKey ?? null,
-          galleryMediaKeys: Array.isArray(dto.galleryMediaKeys) ? dto.galleryMediaKeys : null,
+          galleryMediaKeys: normalizeStringArray((dto as any).galleryMediaKeys),
           countrySlug: dto.countrySlug ?? undefined,
           citySlug: dto.citySlug ?? undefined,
           location: locationStr

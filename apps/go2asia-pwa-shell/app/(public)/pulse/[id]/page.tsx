@@ -6,6 +6,34 @@ import type { Event } from '@/components/pulse/types';
 import { getEventById } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
 
+function normalizeStringArray(input: unknown): string[] | null {
+  if (Array.isArray(input)) {
+    const arr = input
+      .filter((x): x is string => typeof x === 'string')
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return arr.length > 0 ? arr : null;
+  }
+
+  if (typeof input === 'string' && input.trim().length > 0) {
+    const s = input.trim();
+    try {
+      const parsed = JSON.parse(s) as unknown;
+      if (Array.isArray(parsed)) return normalizeStringArray(parsed);
+    } catch {
+      // ignore
+    }
+
+    const parts = s
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return parts.length > 0 ? parts : null;
+  }
+
+  return null;
+}
+
 function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
   const startDate = new Date(dto.startDate);
   const endDate = dto.endDate ? new Date(dto.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
@@ -33,7 +61,7 @@ function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
     endDate,
     category: dto.category ?? undefined,
     heroMediaKey: dto.heroMediaKey ?? null,
-    galleryMediaKeys: Array.isArray(dto.galleryMediaKeys) ? dto.galleryMediaKeys : null,
+    galleryMediaKeys: normalizeStringArray((dto as any).galleryMediaKeys),
     countrySlug: dto.countrySlug ?? undefined,
     citySlug: dto.citySlug ?? undefined,
     location: locationStr
