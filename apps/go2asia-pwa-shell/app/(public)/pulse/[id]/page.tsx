@@ -26,7 +26,8 @@ function toPulseEvent(dto: Awaited<ReturnType<typeof getEventById>>): Event {
     slug: dto.slug ?? undefined,
     year: typeof dto.year === 'number' ? dto.year : undefined,
     title: dto.title,
-    description: dto.shortDescription ?? undefined,
+    // Canon: description == bodyMarkdown (sections live in markdown)
+    description: dto.bodyMarkdown ?? undefined,
     bodyMarkdown: dto.bodyMarkdown ?? undefined,
     startDate,
     endDate,
@@ -106,11 +107,9 @@ export default async function EventDetailPage({
   const { id } = await params;
   const dataSource = getDataSource();
   let event: Event | undefined;
-  let demoMode: { reason: 'NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR'; title?: string } | undefined;
 
   if (dataSource === 'mock') {
     event = mockEventsById[id];
-    if (event) demoMode = { reason: 'NOT_FOUND', title: 'MOCK DATA' };
   } else {
     try {
       const dto = await getEventById(id);
@@ -127,6 +126,6 @@ export default async function EventDetailPage({
     notFound();
   }
 
-  return <EventDetail event={event} demoMode={demoMode} />;
+  return <EventDetail event={event} />;
 }
 
