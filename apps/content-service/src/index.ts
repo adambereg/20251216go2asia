@@ -48,6 +48,8 @@ import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
 export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
+  // Optional: protect debug endpoints on staging/dev
+  DEBUG_ENDPOINTS_TOKEN?: string;
   // Service URLs
   POINTS_SERVICE_URL?: string;
   // Secrets
@@ -63,6 +65,18 @@ export interface Env {
 }
 
 type ListResponse<T> = { items: T[]; total?: number; limit?: number; offset?: number };
+
+function isDebugAllowed(request: Request, env: Env): boolean {
+  const envName = (env.ENVIRONMENT ?? '').toLowerCase();
+  // Never expose debug endpoints in production.
+  if (envName === 'production') return false;
+
+  const token = typeof env.DEBUG_ENDPOINTS_TOKEN === 'string' ? env.DEBUG_ENDPOINTS_TOKEN.trim() : '';
+  if (!token) return true; // staging/dev open unless token configured
+
+  const provided = request.headers.get('x-go2asia-debug-token')?.trim() ?? '';
+  return provided.length > 0 && provided === token;
+}
 
 // Public DTOs (minimal & stable for PWA shell)
 // Keep aligned with packages/sdk/src/content.ts where possible.
@@ -2324,8 +2338,9 @@ export default {
       return res;
     }
 
-    // Debug: DB connectivity and counts (no secrets)
+    // Debug endpoints (guarded; never in production)
     if (path === '/v1/content/_debug/db' && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
       const res = await handleDebugDb(env, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
@@ -2333,12 +2348,14 @@ export default {
 
     // Canon debug endpoints (no secrets)
     if (path === '/v1/content/_debug/version' && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
       const res = handleDebugVersion(env);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
     const debugEntityMatch = path.match(/^\/v1\/content\/_debug\/entity\/([^/]+)$/);
     if (debugEntityMatch && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
       const idOrSlug = debugEntityMatch[1];
       const res = await handleDebugEntity(env, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
@@ -2346,6 +2363,7 @@ export default {
     }
     const debugEventMatch = path.match(/^\/v1\/content\/_debug\/event\/([^/]+)$/);
     if (debugEventMatch && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
       const idOrSlug = debugEventMatch[1];
       const res = await handleDebugEntity(env, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getEventById } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
 import { mockEventsById } from '@/components/pulse/mockEvents';
@@ -91,6 +91,11 @@ export default async function PulseEventDetailsPage({
         });
 
   if (!entity) notFound();
+
+  // Canon: URL must use slug. If user came by ID (or old slug), redirect permanently-ish (308) to canonical slug.
+  if (dataSource === 'api' && entity.slug && entity.slug !== slug) {
+    redirect(`/pulse/events/${entity.slug}`);
+  }
   return <EventDetailsCanon entity={entity} />;
 }
 

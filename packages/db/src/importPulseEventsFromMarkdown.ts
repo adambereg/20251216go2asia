@@ -134,12 +134,14 @@ function titleCaseFromSlug(slug: string): string {
 }
 
 function buildDefaultGalleryKeys(countrySlug: string, year: number, slug: string): string[] {
-  const base = `events/${countrySlug}/${year}/${slug}`;
-  return ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${base}/${f}`);
+  const prefix = buildMediaPrefix(countrySlug, year, slug);
+  return ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${prefix}${f}`);
 }
 
 function buildMediaPrefix(countrySlug: string, year: number, slug: string): string {
-  return `events/${countrySlug}/${year}/${slug}`;
+  // Canon: prefix is used for deterministic list-by-prefix in R2.
+  // Keep trailing slash to avoid surprises when listing objects.
+  return `events/${countrySlug}/${year}/${slug}/`;
 }
 
 function extractShortDescription(bodyMarkdown: string): string | null {
