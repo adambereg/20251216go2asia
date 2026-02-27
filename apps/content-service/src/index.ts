@@ -54,6 +54,8 @@ export interface Env {
   SERVICE_JWT_SECRET?: string;
   // Database
   DATABASE_URL?: string;
+  // Debug (temporary)
+  DEBUG_EVENT_MEDIA?: string; // "true" to log event media mapping
   // Media / Storage (Milestone 2.2)
   MEDIA_UPLOAD_SIGNING_SECRET?: string;
   MEDIA_PUBLIC_BASE_URL?: string; // e.g. https://pub-<id>.r2.dev/go2asia-media (optional)
@@ -691,7 +693,7 @@ function toContentEvent(row: EventRow): ContentEventDto {
   const mediaBase = deriveEventMediaBase(row, start);
   const defaultHero = mediaBase.base ? `${mediaBase.base}/01.jpg` : null;
   const defaultGallery = mediaBase.base
-    ? ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${mediaBase.base}/${f}`)
+    ? ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '05.jpg'].map((f) => `${mediaBase.base}/${f}`)
     : [];
 
   const heroMediaKeyRaw = typeof row.hero_media_key === 'string' ? row.hero_media_key.trim() : '';
@@ -1138,6 +1140,29 @@ async function handleGetEventById(
   try {
     const row = await getEventByIdOrSlug(sqlClient, eventId);
     if (!row) return json({ error: { code: 'NotFound', message: 'Event not found' } }, 404);
+    if (
+      (env.DEBUG_EVENT_MEDIA ?? '').trim().toLowerCase() === 'true' &&
+      (eventId === 'motogp-thailand' || row.slug === 'motogp-thailand')
+    ) {
+      const raw = (row as any).gallery_media_keys;
+      const rawType = Array.isArray(raw) ? 'array' : typeof raw;
+      const rawLen = Array.isArray(raw) ? raw.length : typeof raw === 'string' ? raw.length : null;
+      const start = (row.start_at ?? row.start_date) as string;
+      const mediaBase = deriveEventMediaBase(row, start);
+      const normalized = pickStringArray(raw);
+      logger.info('Event media debug', {
+        eventId,
+        slug: row.slug,
+        country_slug: row.country_slug,
+        year: row.year,
+        start,
+        mediaBase: mediaBase.base,
+        rawType,
+        rawLen,
+        normalizedLen: normalized.length,
+        firstKey: normalized[0] ?? null,
+      });
+    }
     return json(toContentEvent(row), 200);
   } catch (error) {
     logger.error('Get event by id error', error, { eventId });
@@ -1919,8 +1944,24 @@ async function withTimeout<T>(
 }
 
 function pickStringArray(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
+  // Neon/Workers DB drivers may return jsonb as:
+  // - native array (string[])
+  // - JSON string (e.g. '["a","b"]')
+  // We normalize both.
+  const asArray = (() => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string' && v.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(v) as unknown;
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  })();
+  if (!asArray) return [];
+  return asArray.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
 }
 
 function pickString(v: unknown): string | null {
