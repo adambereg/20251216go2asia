@@ -71,7 +71,7 @@ export interface ContentEventDto {
   title: string;
   slug: string;
   shortDescription: string | null;
-  bodyMarkdown: string | null;
+  bodyMarkdown: string;
   category: string | null;
   startDate: string; // ISO string
   endDate: string | null; // ISO string
@@ -84,7 +84,7 @@ export interface ContentEventDto {
   cityName: string | null;
   year: number | null;
   heroMediaKey: string | null; // R2 object key (relative path)
-  galleryMediaKeys: string[] | null; // R2 object keys
+  galleryMediaKeys: string[]; // R2 object keys (never JSON string)
   isFree: boolean;
   priceAmount: string | null;
   priceCurrency: string | null;
@@ -670,42 +670,19 @@ function getSqlClient(env: Env, logger: ReturnType<typeof createLogger>): SqlCli
   return createSqlClient(env.DATABASE_URL);
 }
 
-function deriveEventMediaBase(row: EventRow, startIso: string): { base: string | null; year: number | null } {
-  const country = typeof row.country_slug === 'string' && row.country_slug.trim() ? row.country_slug.trim() : null;
-  const yearFromRow = typeof row.year === 'number' && Number.isFinite(row.year) ? Math.trunc(row.year) : null;
-  const yearFromStart = (() => {
-    const d = new Date(startIso);
-    const y = d.getUTCFullYear();
-    return Number.isFinite(y) ? y : null;
-  })();
-  const year = yearFromRow ?? yearFromStart;
-  if (!country || !year) return { base: null, year };
-  return { base: `events/${country}/${year}/${row.slug}`, year };
-}
-
 function toContentEvent(row: EventRow): ContentEventDto {
   const start = row.start_at ?? row.start_date;
   const end = row.end_at ?? row.end_date;
   const locationParts = [row.city_name, row.country_name].filter(Boolean).join(', ');
-
-  const mediaBase = deriveEventMediaBase(row, start);
-  const defaultHero = mediaBase.base ? `${mediaBase.base}/01.jpg` : null;
-  const defaultGallery = mediaBase.base
-    ? ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${mediaBase.base}/${f}`)
-    : [];
-
-  const heroMediaKeyRaw = typeof row.hero_media_key === 'string' ? row.hero_media_key.trim() : '';
-  const heroMediaKey = heroMediaKeyRaw.length > 0 ? heroMediaKeyRaw : defaultHero;
-
-  const galleryFromDb = pickStringArray(row.gallery_media_keys);
-  const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : defaultGallery.length > 0 ? defaultGallery : null;
+  const heroMediaKey = pickString(row.hero_media_key);
+  const galleryMediaKeys = pickStringArray(row.gallery_media_keys);
 
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
     shortDescription: row.short_description ?? null,
-    bodyMarkdown: row.description ?? null,
+    bodyMarkdown: row.description ?? '',
     category: row.category,
     startDate: start,
     endDate: end,
@@ -716,7 +693,7 @@ function toContentEvent(row: EventRow): ContentEventDto {
     citySlug: row.city_slug ?? null,
     countryName: row.country_name ?? null,
     cityName: row.city_name ?? null,
-    year: mediaBase.year,
+    year: row.year ?? null,
     heroMediaKey,
     galleryMediaKeys,
     isFree: Boolean(row.is_free),
@@ -1122,6 +1099,54 @@ async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>):
   } catch (error) {
     logger.error('Debug DB error', error);
     return json({ ok: false, error: { code: 'InternalError', message: 'Failed to query database' } }, 500);
+  }
+}
+
+function handleDebugVersion(env: Env): Response {
+  return json(
+    {
+      ok: true,
+      environment: env.ENVIRONMENT ?? null,
+      version: env.VERSION ?? null,
+      now: new Date().toISOString(),
+    },
+    200
+  );
+}
+
+async function handleDebugEntity(env: Env, idOrSlug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) {
+    return json({ ok: false, error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  }
+
+  try {
+    const row = await getEventByIdOrSlug(sqlClient, idOrSlug);
+    if (!row) return json({ ok: false, error: { code: 'NotFound', message: 'Entity not found' } }, 404);
+
+    return json(
+      {
+        ok: true,
+        kind: 'event',
+        idOrSlug,
+        raw: {
+          id: row.id,
+          slug: row.slug,
+          country_slug: row.country_slug,
+          city_slug: row.city_slug,
+          year: row.year,
+          media_prefix: row.media_prefix ?? null,
+          hero_media_key: row.hero_media_key,
+          gallery_media_keys: row.gallery_media_keys,
+          gallery_media_keys_normalized: pickStringArray(row.gallery_media_keys),
+          source_md_path: row.source_md_path,
+        },
+      },
+      200
+    );
+  } catch (error) {
+    logger.error('Debug entity error', error, { idOrSlug });
+    return json({ ok: false, error: { code: 'InternalError', message: 'Debug entity failed' } }, 500);
   }
 }
 
@@ -1919,8 +1944,24 @@ async function withTimeout<T>(
 }
 
 function pickStringArray(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
+  // Neon/Workers DB drivers may return jsonb as:
+  // - native array (string[])
+  // - JSON string (e.g. '["a","b"]')
+  // We normalize both and always return string[].
+  const asArray = (() => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string' && v.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(v) as unknown;
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  })();
+  if (!asArray) return [];
+  return asArray.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
 }
 
 function pickString(v: unknown): string | null {
@@ -2286,6 +2327,27 @@ export default {
     // Debug: DB connectivity and counts (no secrets)
     if (path === '/v1/content/_debug/db' && request.method === 'GET') {
       const res = await handleDebugDb(env, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Canon debug endpoints (no secrets)
+    if (path === '/v1/content/_debug/version' && request.method === 'GET') {
+      const res = handleDebugVersion(env);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const debugEntityMatch = path.match(/^\/v1\/content\/_debug\/entity\/([^/]+)$/);
+    if (debugEntityMatch && request.method === 'GET') {
+      const idOrSlug = debugEntityMatch[1];
+      const res = await handleDebugEntity(env, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const debugEventMatch = path.match(/^\/v1\/content\/_debug\/event\/([^/]+)$/);
+    if (debugEventMatch && request.method === 'GET') {
+      const idOrSlug = debugEventMatch[1];
+      const res = await handleDebugEntity(env, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

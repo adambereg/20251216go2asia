@@ -12,7 +12,7 @@ export interface ContentEventDto {
   title: string;
   slug: string;
   shortDescription: string | null;
-  bodyMarkdown: string | null;
+  bodyMarkdown: string;
   category: string | null;
   startDate: string; // ISO string
   endDate: string | null; // ISO string
@@ -25,7 +25,7 @@ export interface ContentEventDto {
   cityName: string | null;
   year: number | null;
   heroMediaKey: string | null;
-  galleryMediaKeys: string[] | null;
+  galleryMediaKeys: string[];
   isFree: boolean;
   priceAmount: string | null;
   priceCurrency: string | null;
