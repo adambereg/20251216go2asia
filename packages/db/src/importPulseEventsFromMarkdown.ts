@@ -138,6 +138,10 @@ function buildDefaultGalleryKeys(countrySlug: string, year: number, slug: string
   return ['01.jpg', '02.jpg', '03.jpg'].map((f) => `${base}/${f}`);
 }
 
+function buildMediaPrefix(countrySlug: string, year: number, slug: string): string {
+  return `events/${countrySlug}/${year}/${slug}`;
+}
+
 function extractShortDescription(bodyMarkdown: string): string | null {
   const lines = bodyMarkdown.split(/\r?\n/).map((l) => l.trim());
   const candidates = lines.filter((l) => l && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('---'));
@@ -239,6 +243,7 @@ async function main() {
 
       const galleryKeys = buildDefaultGalleryKeys(countrySlug, year, slug);
       const galleryJson = JSON.stringify(galleryKeys);
+      const mediaPrefix = buildMediaPrefix(countrySlug, year, slug);
 
       const isVerified = (meta.status ?? '').trim().toLowerCase() === 'confirmed';
 
@@ -272,6 +277,7 @@ async function main() {
           price_currency,
           status,
           is_active,
+          media_prefix,
           hero_media_key,
           gallery_media_keys,
           is_verified,
@@ -291,9 +297,10 @@ async function main() {
           $12,$13,$14,$15,
           $16,$17,
           $18,$19,$20,$21,$22,
-          $23,$24::jsonb,$25,
-          $26,$27,$28,$29,$30,$31,
-          $32,
+          $23,$24,
+          $25,$26::jsonb,$27,
+          $28,$29,$30,$31,$32,$33,
+          $34,
           now(), now()
         )
         ON CONFLICT (id) DO UPDATE SET
@@ -318,6 +325,7 @@ async function main() {
           price_currency = EXCLUDED.price_currency,
           status = EXCLUDED.status,
           is_active = EXCLUDED.is_active,
+          media_prefix = EXCLUDED.media_prefix,
           hero_media_key = EXCLUDED.hero_media_key,
           gallery_media_keys = EXCLUDED.gallery_media_keys,
           is_verified = EXCLUDED.is_verified,
@@ -353,6 +361,7 @@ async function main() {
           null,
           'active',
           true,
+          mediaPrefix,
           null, // hero_media_key: optional, keep null to force client/server default 01.jpg
           galleryJson,
           isVerified,

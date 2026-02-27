@@ -44,6 +44,7 @@ export interface EventRow {
   location: string | null;
   lat: string | null;
   lng: string | null;
+  media_prefix: string | null;
   hero_media_key: string | null;
   gallery_media_keys: unknown | null; // jsonb (string[])
   // Legacy/compat: some internal resolvers (e.g. guide feeds) still select a public image URL.
@@ -238,6 +239,7 @@ export async function listEvents(
       e.location,
       COALESCE(e.lat, e.latitude) AS lat,
       COALESCE(e.lng, e.longitude) AS lng,
+      e.media_prefix,
       e.hero_media_key,
       e.gallery_media_keys,
       e.is_free,
@@ -315,6 +317,7 @@ export async function getEventByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       e.location,
       COALESCE(e.lat, e.latitude) AS lat,
       COALESCE(e.lng, e.longitude) AS lng,
+      e.media_prefix,
       e.hero_media_key,
       e.gallery_media_keys,
       e.is_free,

@@ -246,6 +246,8 @@ export const events = pgTable(
     // Keep existing column for current content-service compatibility.
     imageUrl: text('image_url'),
     imageMediaId: text('image_media_id').references(() => mediaFiles.id),
+    // Canon v1.0: deterministic R2 prefix (required)
+    mediaPrefix: text('media_prefix').notNull(),
     // SSOT for Pulse media in R2: store object keys, and build URLs via resolver (NEXT_PUBLIC_MEDIA_URL).
     heroMediaKey: text('hero_media_key'),
     galleryMediaKeys: jsonb('gallery_media_keys'),
