@@ -673,16 +673,38 @@ function getSqlClient(env: Env, logger: ReturnType<typeof createLogger>): SqlCli
 }
 
 function deriveEventMediaBase(row: EventRow, startIso: string): { base: string | null; year: number | null } {
-  const country = typeof row.country_slug === 'string' && row.country_slug.trim() ? row.country_slug.trim() : null;
+  const fromSourceMdPath = (() => {
+    const raw = typeof row.source_md_path === 'string' ? row.source_md_path.trim() : '';
+    if (!raw) return null;
+    const normalized = raw.replace(/\\/g, '/');
+    // Expected import format: content/pulse/<country>/<year>/<slug>.md
+    const m = normalized.match(/(?:^|\/)content\/pulse\/([^/]+)\/(\d{4})\/([^/]+)\.md$/i);
+    if (!m) return null;
+    const country = m[1]?.trim() || null;
+    const year = (() => {
+      const y = Number.parseInt(m[2] ?? '', 10);
+      return Number.isFinite(y) ? y : null;
+    })();
+    const slug = m[3]?.trim() || null;
+    return country && year && slug ? { country, year, slug } : null;
+  })();
+
+  const country =
+    (typeof row.country_slug === 'string' && row.country_slug.trim() ? row.country_slug.trim() : null) ??
+    fromSourceMdPath?.country ??
+    null;
+
   const yearFromRow = typeof row.year === 'number' && Number.isFinite(row.year) ? Math.trunc(row.year) : null;
   const yearFromStart = (() => {
     const d = new Date(startIso);
     const y = d.getUTCFullYear();
     return Number.isFinite(y) ? y : null;
   })();
-  const year = yearFromRow ?? yearFromStart;
-  if (!country || !year) return { base: null, year };
-  return { base: `events/${country}/${year}/${row.slug}`, year };
+  const year = yearFromRow ?? fromSourceMdPath?.year ?? yearFromStart;
+
+  const slug = (typeof row.slug === 'string' && row.slug.trim() ? row.slug.trim() : null) ?? fromSourceMdPath?.slug ?? null;
+  if (!country || !year || !slug) return { base: null, year };
+  return { base: `events/${country}/${year}/${slug}`, year };
 }
 
 function toContentEvent(row: EventRow): ContentEventDto {
@@ -697,10 +719,31 @@ function toContentEvent(row: EventRow): ContentEventDto {
     : [];
 
   const heroMediaKeyRaw = typeof row.hero_media_key === 'string' ? row.hero_media_key.trim() : '';
-  const heroMediaKey = heroMediaKeyRaw.length > 0 ? heroMediaKeyRaw : defaultHero;
+  const heroMediaKey = (() => {
+    if (heroMediaKeyRaw.length === 0) return defaultHero;
+    // A media_key is a path-like string (e.g. "events/.../01.jpg").
+    // Some legacy/incorrect data may contain UUIDs; ignore those and fall back deterministically.
+    if (heroMediaKeyRaw.includes('/')) return heroMediaKeyRaw;
+    if (mediaBase.base && /\.(jpe?g|png|webp|gif)$/i.test(heroMediaKeyRaw)) return `${mediaBase.base}/${heroMediaKeyRaw}`;
+    return defaultHero;
+  })();
 
   const galleryFromDb = pickStringArray(row.gallery_media_keys);
-  const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : defaultGallery.length > 0 ? defaultGallery : null;
+  const normalizedGalleryFromDb = (() => {
+    if (galleryFromDb.length === 0) return [];
+    return galleryFromDb
+      .map((k) => k.trim())
+      .filter(Boolean)
+      .map((k) => {
+        if (k.includes('/')) return k;
+        if (mediaBase.base && /\.(jpe?g|png|webp|gif)$/i.test(k)) return `${mediaBase.base}/${k}`;
+        return null;
+      })
+      .filter((k): k is string => typeof k === 'string' && k.length > 0);
+  })();
+
+  const galleryMediaKeys =
+    normalizedGalleryFromDb.length > 0 ? normalizedGalleryFromDb : defaultGallery.length > 0 ? defaultGallery : null;
 
   return {
     id: row.id,
