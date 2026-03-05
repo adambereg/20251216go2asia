@@ -60,7 +60,7 @@ jobs:
           set -euo pipefail
           cd packages/db
           node -e "const u=new URL(process.env.STAGING_DATABASE_URL); console.log('DB host:', u.hostname); console.log('DB name:', u.pathname.replace(/^\\//,''));"
-          node -e 'const { Client } = require("pg"); const url = process.env.STAGING_DATABASE_URL; if (!url) throw new Error("Missing STAGING_DATABASE_URL"); (async () => { const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await client.connect(); const { rows } = await client.query("SELECT to_regclass('public.blog_posts') AS blog_posts, to_regclass('public.blog_authors') AS blog_authors, to_regclass('public.blog_tags') AS blog_tags, to_regclass('public.blog_post_tags') AS blog_post_tags, to_regclass('public.media_files') AS media_files"); console.log(rows[0]); await client.end(); })().catch((e) => { console.error(e); process.exit(1); });'
+          node -e "const { Client } = require('pg'); const url = process.env.STAGING_DATABASE_URL; if (!url) throw new Error('Missing STAGING_DATABASE_URL'); (async () => { const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await client.connect(); const { rows } = await client.query(\"SELECT to_regclass('public.blog_posts') AS blog_posts, to_regclass('public.blog_authors') AS blog_authors, to_regclass('public.blog_tags') AS blog_tags, to_regclass('public.blog_post_tags') AS blog_post_tags, to_regclass('public.media_files') AS media_files\"); console.log(rows[0]); await client.end(); })().catch((e) => { console.error(e); process.exit(1); });"
 
       - name: Seed content (staging)
         if: ${{ inputs.skip_seed != true }}
