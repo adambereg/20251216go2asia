@@ -100,7 +100,7 @@ export function Location({ listing }: LocationProps) {
               {nearbyEvents.map((event) => (
                 <Link
                   key={event.id}
-                  href={`/pulse/${event.id}`}
+                  href={`/pulse/events/${event.id}`}
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
                 >
                   <div>

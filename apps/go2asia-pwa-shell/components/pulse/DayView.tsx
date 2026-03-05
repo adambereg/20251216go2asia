@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Clock, MapPin, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Event, EventFilters } from './types';
 import { Card, CardContent, Badge } from '@go2asia/ui';
+import { getEventCategoryColor } from './category';
 
 export interface DayViewProps {
   date: Date;
@@ -20,70 +21,7 @@ export const DayView: React.FC<DayViewProps> = ({
   onEventClick,
   onDateChange,
 }) => {
-  // Цветовая схема по категориям событий (та же, что в WeekView)
-  const categoryColorMap: Record<string, { dot: string; card: string; border: string }> = {
-    'Культура': {
-      dot: 'bg-cyan-400',
-      card: 'bg-cyan-50',
-      border: 'border-cyan-200',
-    },
-    'Музыка': {
-      dot: 'bg-purple-400',
-      card: 'bg-purple-50',
-      border: 'border-purple-200',
-    },
-    'Еда': {
-      dot: 'bg-green-400',
-      card: 'bg-green-50',
-      border: 'border-green-200',
-    },
-    'Спорт': {
-      dot: 'bg-orange-400',
-      card: 'bg-orange-50',
-      border: 'border-orange-200',
-    },
-    'Образование': {
-      dot: 'bg-blue-400',
-      card: 'bg-blue-50',
-      border: 'border-blue-200',
-    },
-    'IT': {
-      dot: 'bg-indigo-400',
-      card: 'bg-indigo-50',
-      border: 'border-indigo-200',
-    },
-    'Сообщество': {
-      dot: 'bg-indigo-400',
-      card: 'bg-indigo-50',
-      border: 'border-indigo-200',
-    },
-    'Семья': {
-      dot: 'bg-pink-400',
-      card: 'bg-pink-50',
-      border: 'border-pink-200',
-    },
-    'Ночная жизнь': {
-      dot: 'bg-amber-600',
-      card: 'bg-amber-50',
-      border: 'border-amber-200',
-    },
-  };
-
-  // Получить цвет для события на основе категории
-  const getEventColor = (category?: string) => {
-    if (!category) {
-      return {
-        dot: 'bg-slate-400',
-        card: 'bg-slate-50',
-        border: 'border-slate-200',
-      };
-    }
-    return categoryColorMap[category] || {
-      dot: 'bg-slate-400',
-      card: 'bg-slate-50',
-      border: 'border-slate-200',
-    };
-  };
+  const getEventColor = (category?: string) => getEventCategoryColor(category);
 
   // Фильтруем события для выбранного дня
   const dayEvents = useMemo(() => {

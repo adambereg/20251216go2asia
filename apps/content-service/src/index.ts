@@ -48,6 +48,8 @@ import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
 export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
+  // Optional: protect debug endpoints on staging/dev
+  DEBUG_ENDPOINTS_TOKEN?: string;
   // Service URLs
   POINTS_SERVICE_URL?: string;
   // Secrets
@@ -62,7 +64,19 @@ export interface Env {
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
-type ListResponse<T> = { items: T[]; total?: number };
+type ListResponse<T> = { items: T[]; total?: number; limit?: number; offset?: number };
+
+function isDebugAllowed(request: Request, env: Env): boolean {
+  const envName = (env.ENVIRONMENT ?? '').toLowerCase();
+  // Never expose debug endpoints in production.
+  if (envName === 'production') return false;
+
+  const token = typeof env.DEBUG_ENDPOINTS_TOKEN === 'string' ? env.DEBUG_ENDPOINTS_TOKEN.trim() : '';
+  if (!token) return true; // staging/dev open unless token configured
+
+  const provided = request.headers.get('x-go2asia-debug-token')?.trim() ?? '';
+  return provided.length > 0 && provided === token;
+}
 
 // Public DTOs (minimal & stable for PWA shell)
 // Keep aligned with packages/sdk/src/content.ts where possible.
@@ -70,15 +84,28 @@ export interface ContentEventDto {
   id: string;
   title: string;
   slug: string;
-  description: string | null;
+  shortDescription: string | null;
+  bodyMarkdown: string;
   category: string | null;
   startDate: string; // ISO string
   endDate: string | null; // ISO string
   location: string | null;
   latitude: string | null;
   longitude: string | null;
-  imageUrl: string | null;
-  isActive: boolean;
+  countrySlug: string | null;
+  citySlug: string | null;
+  countryName: string | null;
+  cityName: string | null;
+  year: number | null;
+  heroMediaKey: string | null; // R2 object key (relative path)
+  galleryMediaKeys: string[]; // R2 object keys (never JSON string)
+  isFree: boolean;
+  priceAmount: string | null;
+  priceCurrency: string | null;
+  isVerified: boolean;
+  officialUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }
 
 export interface ContentCountryDto {
@@ -661,19 +688,39 @@ function toContentEvent(row: EventRow): ContentEventDto {
   const start = row.start_at ?? row.start_date;
   const end = row.end_at ?? row.end_date;
   const locationParts = [row.city_name, row.country_name].filter(Boolean).join(', ');
+  const heroMediaKey = pickString(row.hero_media_key);
+  const galleryFromDb = pickStringArray(row.gallery_media_keys);
+  const prefixRaw = pickString((row as any).media_prefix);
+  const prefix = prefixRaw ? (prefixRaw.endsWith('/') ? prefixRaw : `${prefixRaw}/`) : null;
+  const fallbackGallery = prefix ? ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '05.jpg'].map((f) => `${prefix}${f}`) : [];
+  const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : fallbackGallery;
+
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
-    description: row.description,
+    shortDescription: row.short_description ?? null,
+    bodyMarkdown: row.description ?? '',
     category: row.category,
     startDate: start,
     endDate: end,
     location: row.location ?? (locationParts.length > 0 ? locationParts : null),
     latitude: row.lat,
     longitude: row.lng,
-    imageUrl: row.image_url,
-    isActive: row.status === 'active',
+    countrySlug: row.country_slug ?? null,
+    citySlug: row.city_slug ?? null,
+    countryName: row.country_name ?? null,
+    cityName: row.city_name ?? null,
+    year: row.year ?? null,
+    heroMediaKey,
+    galleryMediaKeys,
+    isFree: Boolean(row.is_free),
+    priceAmount: row.price_amount ?? null,
+    priceCurrency: row.price_currency ?? null,
+    isVerified: Boolean(row.is_verified),
+    officialUrl: row.official_url ?? null,
+    seoTitle: row.seo_title ?? null,
+    seoDescription: row.seo_description ?? null,
   };
 }
 
@@ -960,10 +1007,42 @@ async function handleListEvents(
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
 
-  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
   try {
-    const rows = await listEvents(sqlClient, limit);
-    return json({ items: rows.map(toContentEvent) } satisfies ListResponse<ContentEventDto>, 200);
+    const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '50') || 50));
+    const offsetRaw = url.searchParams.get('offset');
+    const pageRaw = url.searchParams.get('page');
+    const page = pageRaw ? Math.max(1, Number(pageRaw) || 1) : null;
+    const offset =
+      offsetRaw !== null
+        ? Math.max(0, Number(offsetRaw) || 0)
+        : page !== null
+          ? (page - 1) * limit
+          : 0;
+
+    // Filters (accept both *_id and non-suffixed aliases for MVP compatibility)
+    const country = (url.searchParams.get('country') ?? url.searchParams.get('country_id')) ?? undefined;
+    const city = (url.searchParams.get('city') ?? url.searchParams.get('city_id')) ?? undefined;
+    const category = url.searchParams.get('category') ?? undefined;
+    const date_from = url.searchParams.get('date_from') ?? undefined;
+    const date_to = url.searchParams.get('date_to') ?? undefined;
+    const price = (url.searchParams.get('price') ?? 'any') as any;
+    const verified = (url.searchParams.get('verified') ?? 'any') as any;
+    const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
+
+    const { items, total } = await listEvents(sqlClient, {
+      limit,
+      offset,
+      country,
+      city,
+      category,
+      date_from,
+      date_to,
+      price,
+      verified,
+      q,
+    });
+
+    return json({ items: items.map(toContentEvent), total, limit, offset } satisfies ListResponse<ContentEventDto>, 200);
   } catch (error) {
     logger.error('List events error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch events' } }, 500);
@@ -1038,6 +1117,54 @@ async function handleDebugDb(env: Env, logger: ReturnType<typeof createLogger>):
   } catch (error) {
     logger.error('Debug DB error', error);
     return json({ ok: false, error: { code: 'InternalError', message: 'Failed to query database' } }, 500);
+  }
+}
+
+function handleDebugVersion(env: Env): Response {
+  return json(
+    {
+      ok: true,
+      environment: env.ENVIRONMENT ?? null,
+      version: env.VERSION ?? null,
+      now: new Date().toISOString(),
+    },
+    200
+  );
+}
+
+async function handleDebugEntity(env: Env, idOrSlug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) {
+    return json({ ok: false, error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  }
+
+  try {
+    const row = await getEventByIdOrSlug(sqlClient, idOrSlug);
+    if (!row) return json({ ok: false, error: { code: 'NotFound', message: 'Entity not found' } }, 404);
+
+    return json(
+      {
+        ok: true,
+        kind: 'event',
+        idOrSlug,
+        raw: {
+          id: row.id,
+          slug: row.slug,
+          country_slug: row.country_slug,
+          city_slug: row.city_slug,
+          year: row.year,
+          media_prefix: row.media_prefix ?? null,
+          hero_media_key: row.hero_media_key,
+          gallery_media_keys: row.gallery_media_keys,
+          gallery_media_keys_normalized: pickStringArray(row.gallery_media_keys),
+          source_md_path: row.source_md_path,
+        },
+      },
+      200
+    );
+  } catch (error) {
+    logger.error('Debug entity error', error, { idOrSlug });
+    return json({ ok: false, error: { code: 'InternalError', message: 'Debug entity failed' } }, 500);
   }
 }
 
@@ -1835,8 +1962,24 @@ async function withTimeout<T>(
 }
 
 function pickStringArray(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
+  // Neon/Workers DB drivers may return jsonb as:
+  // - native array (string[])
+  // - JSON string (e.g. '["a","b"]')
+  // We normalize both and always return string[].
+  const asArray = (() => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string' && v.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(v) as unknown;
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  })();
+  if (!asArray) return [];
+  return asArray.filter((x) => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim());
 }
 
 function pickString(v: unknown): string | null {
@@ -2199,9 +2342,34 @@ export default {
       return res;
     }
 
-    // Debug: DB connectivity and counts (no secrets)
+    // Debug endpoints (guarded; never in production)
     if (path === '/v1/content/_debug/db' && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
       const res = await handleDebugDb(env, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Canon debug endpoints (no secrets)
+    if (path === '/v1/content/_debug/version' && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
+      const res = handleDebugVersion(env);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const debugEntityMatch = path.match(/^\/v1\/content\/_debug\/entity\/([^/]+)$/);
+    if (debugEntityMatch && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
+      const idOrSlug = debugEntityMatch[1];
+      const res = await handleDebugEntity(env, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const debugEventMatch = path.match(/^\/v1\/content\/_debug\/event\/([^/]+)$/);
+    if (debugEventMatch && request.method === 'GET') {
+      if (!isDebugAllowed(request, env)) return handleNotFound(path);
+      const idOrSlug = debugEventMatch[1];
+      const res = await handleDebugEntity(env, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

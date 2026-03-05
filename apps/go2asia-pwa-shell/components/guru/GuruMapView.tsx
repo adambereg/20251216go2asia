@@ -115,7 +115,7 @@ function getObjectLink(object: GuruObjectWithDistance): string {
     case 'place':
       return `/atlas/places/${object.id}`;
     case 'event':
-      return `/pulse/${object.id}`;
+      return `/pulse/events/${object.id}`;
     case 'housing':
       return `/housing/${object.id}`;
     case 'person':

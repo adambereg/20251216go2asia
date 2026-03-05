@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Clock, MapPin, Calendar } from 'lucide-react';
 import { Event, EventFilters, CalendarDay } from './types';
 import { Card, CardContent, Badge } from '@go2asia/ui';
+import { getCategoryLabel, getEventCategoryColor } from './category';
 
 export interface MonthViewProps {
   date: Date;
@@ -22,70 +23,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
 }) => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Цветовая схема по категориям событий (та же, что в WeekView/DayView)
-  const categoryColorMap: Record<string, { dot: string; card: string; border: string }> = {
-    'Культура': {
-      dot: 'bg-cyan-400',
-      card: 'bg-cyan-50',
-      border: 'border-cyan-200',
-    },
-    'Музыка': {
-      dot: 'bg-purple-400',
-      card: 'bg-purple-50',
-      border: 'border-purple-200',
-    },
-    'Еда': {
-      dot: 'bg-green-400',
-      card: 'bg-green-50',
-      border: 'border-green-200',
-    },
-    'Спорт': {
-      dot: 'bg-orange-400',
-      card: 'bg-orange-50',
-      border: 'border-orange-200',
-    },
-    'Образование': {
-      dot: 'bg-blue-400',
-      card: 'bg-blue-50',
-      border: 'border-blue-200',
-    },
-    'IT': {
-      dot: 'bg-indigo-400',
-      card: 'bg-indigo-50',
-      border: 'border-indigo-200',
-    },
-    'Сообщество': {
-      dot: 'bg-indigo-400',
-      card: 'bg-indigo-50',
-      border: 'border-indigo-200',
-    },
-    'Семья': {
-      dot: 'bg-pink-400',
-      card: 'bg-pink-50',
-      border: 'border-pink-200',
-    },
-    'Ночная жизнь': {
-      dot: 'bg-amber-600',
-      card: 'bg-amber-50',
-      border: 'border-amber-200',
-    },
-  };
-
-  // Получить цвет для события на основе категории
-  const getEventColor = (category?: string) => {
-    if (!category) {
-      return {
-        dot: 'bg-slate-400',
-        card: 'bg-slate-50',
-        border: 'border-slate-200',
-      };
-    }
-    return categoryColorMap[category] || {
-      dot: 'bg-slate-400',
-      card: 'bg-slate-50',
-      border: 'border-slate-200',
-    };
-  };
+  const getEventColor = (category?: string) => getEventCategoryColor(category);
 
   const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -241,7 +179,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                       <div
                         key={event.id}
                         className={`w-2 h-2 rounded-full ${color.dot}`}
-                        title={`${event.title}${event.category ? ` (${event.category})` : ''}`}
+                        title={`${event.title}${event.category ? ` (${getCategoryLabel(event.category)})` : ''}`}
                       />
                     );
                   })}

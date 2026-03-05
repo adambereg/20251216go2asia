@@ -18,6 +18,8 @@ export interface CalendarViewProps {
   onFiltersChange?: (filters: EventFilters) => void;
   onEventClick?: (event: Event) => void;
   onDateChange?: (date: Date) => void;
+  onViewChange?: (mode: CalendarViewMode) => void;
+  cityOptions?: { value: string; label: string }[];
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
@@ -28,6 +30,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onFiltersChange,
   onEventClick,
   onDateChange,
+  onViewChange,
+  cityOptions,
 }) => {
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView);
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -89,6 +93,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onDateClick={(date) => {
               setCurrentDate(date);
               setViewMode('week');
+              onViewChange?.('week');
               handleDateChange(date);
             }}
           />
@@ -170,7 +175,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               {viewModes.map(({ mode, label }) => (
                 <Chip
                   key={mode}
-                  onClick={() => setViewMode(mode)}
+                  onClick={() => {
+                    setViewMode(mode);
+                    onViewChange?.(mode);
+                  }}
                   className={
                     viewMode === mode
                       ? 'cursor-pointer bg-sky-100 text-slate-900 ring-1 ring-sky-200 hover:bg-sky-200'
@@ -189,6 +197,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <EventFiltersComponent
         filters={filters || {}}
         onFiltersChange={onFiltersChange || (() => {})}
+        cityOptions={cityOptions}
       />
 
       {/* Calendar view */}

@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import { Clock, MapPin, Calendar } from 'lucide-react';
 import { Event, EventFilters } from './types';
 import { Card, CardContent } from '@go2asia/ui';
+import { resolveMediaUrl } from '@go2asia/sdk/media';
+import { getCategoryLabel } from './category';
 
 export interface AgendaViewProps {
   events: Event[];
@@ -130,6 +132,18 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                       )}
                     </div>
 
+                    {/* Обложка */}
+                    {resolveMediaUrl(event.heroMediaKey ?? null) && (
+                      <div className="flex-shrink-0 w-28 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                        <img
+                          src={resolveMediaUrl(event.heroMediaKey ?? null) as string}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+
                     {/* Информация о событии */}
                     <div className="flex-1 min-w-0">
                       <h4 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">
@@ -154,7 +168,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
 
                         {event.category && (
                           <span className="px-2 py-1 bg-slate-100 rounded text-xs font-medium">
-                            {event.category}
+                            {getCategoryLabel(event.category)}
                           </span>
                         )}
 

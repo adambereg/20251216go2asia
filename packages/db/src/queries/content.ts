@@ -29,21 +29,37 @@ export interface EventRow {
   id: string;
   title: string;
   slug: string;
-  description: string | null;
+  description: string | null; // markdown body for imported Pulse events
+  short_description: string | null;
   category: string | null;
+  country_slug: string | null;
+  city_slug: string | null;
+  country_name: string | null;
+  city_name: string | null;
+  year: number | null;
   start_at: string | null;
   start_date: string;
   end_at: string | null;
   end_date: string | null;
   location: string | null;
-  country_name: string | null;
-  city_name: string | null;
   lat: string | null;
   lng: string | null;
+  media_prefix: string | null;
+  hero_media_key: string | null;
+  gallery_media_keys: unknown | null; // jsonb (string[])
+  // Legacy/compat: some internal resolvers (e.g. guide feeds) still select a public image URL.
   image_url: string | null;
   is_free: boolean;
   price_amount: string | null;
   price_currency: string | null;
+  is_verified: boolean;
+  official_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  geo_scope: string | null;
+  primary_type: string | null;
+  secondary_type: string | null;
+  source_md_path: string | null;
   status: string;
 }
 
@@ -125,40 +141,156 @@ export interface ContentBlockRow {
 // Queries
 // ============================================================================
 
+export type ListEventsParams = {
+  limit?: number;
+  offset?: number;
+  country?: string; // slug or legacy id
+  city?: string; // slug or legacy id
+  category?: string;
+  date_from?: string; // ISO date/datetime
+  date_to?: string; // ISO date/datetime
+  price?: 'free' | 'paid' | 'any';
+  verified?: 'true' | 'false' | 'any';
+  q?: string;
+};
+
 /**
- * List events (active only, ordered by start date)
+ * List events (active only, ordered by start date) with basic filters + pagination.
  */
-export async function listEvents(sql: SqlClient, limit = 50): Promise<EventRow[]> {
+export async function listEvents(
+  sql: SqlClient,
+  params?: ListEventsParams
+): Promise<{ items: EventRow[]; total: number }> {
+  const limit = Math.min(200, Math.max(1, Number(params?.limit ?? 50) || 50));
+  const offset = Math.max(0, Number(params?.offset ?? 0) || 0);
+
+  const country = typeof params?.country === 'string' && params.country.trim() ? params.country.trim() : null;
+  const city = typeof params?.city === 'string' && params.city.trim() ? params.city.trim() : null;
+  const category = typeof params?.category === 'string' && params.category.trim() ? params.category.trim() : null;
+
+  const dateFrom = typeof params?.date_from === 'string' && params.date_from.trim() ? params.date_from.trim() : null;
+  const dateTo = typeof params?.date_to === 'string' && params.date_to.trim() ? params.date_to.trim() : null;
+
+  const qRaw = typeof params?.q === 'string' ? params.q.trim() : '';
+  const q = qRaw.length > 0 ? qRaw : null;
+
+  const priceRaw = (params?.price ?? 'any').toLowerCase();
+  const price: 'free' | 'paid' | 'any' = priceRaw === 'free' || priceRaw === 'paid' ? (priceRaw as any) : 'any';
+
+  const verifiedRaw = (params?.verified ?? 'any').toLowerCase();
+  const verified: 'true' | 'false' | 'any' =
+    verifiedRaw === 'true' || verifiedRaw === 'false' ? (verifiedRaw as any) : 'any';
+
+  const whereStatus = 'active';
+
+  const totalRows = await sql`
+    SELECT COUNT(*)::int AS total
+    FROM events e
+    WHERE e.status = ${whereStatus}::event_status
+      AND (${country}::text IS NULL OR e.country_slug = ${country} OR e.country_id = ${country})
+      AND (${city}::text IS NULL OR e.city_slug = ${city} OR e.city_id = ${city})
+      AND (${category}::text IS NULL OR e.category = ${category})
+      AND (
+        ${dateFrom}::timestamptz IS NULL
+        OR COALESCE(e.end_at, e.end_date::timestamptz, e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
+      )
+      AND (
+        ${dateTo}::timestamptz IS NULL
+        OR COALESCE(e.start_at, e.start_date::timestamptz) <= ${dateTo}::timestamptz
+      )
+      AND (
+        ${price}::text = 'any'
+        OR (${price}::text = 'free' AND e.is_free = true)
+        OR (${price}::text = 'paid' AND e.is_free = false)
+      )
+      AND (
+        ${verified}::text = 'any'
+        OR (${verified}::text = 'true' AND e.is_verified = true)
+        OR (${verified}::text = 'false' AND e.is_verified = false)
+      )
+      AND (
+        ${q}::text IS NULL
+        OR (
+          e.title ILIKE ('%' || ${q} || '%')
+          OR COALESCE(e.short_description, e.description, '') ILIKE ('%' || ${q} || '%')
+        )
+      )
+  `;
+
+  const total = (totalRows[0] as { total?: number } | undefined)?.total ?? 0;
+
   const rows = await sql`
     SELECT 
       e.id,
       e.title,
       e.slug,
       e.description,
+      e.short_description,
       e.category,
+      e.country_slug,
+      e.city_slug,
+      COALESCE(e.country_name, co.name) AS country_name,
+      COALESCE(e.city_name, ci.name) AS city_name,
+      e.year,
       COALESCE(e.start_at, e.start_date::timestamptz) AS start_at,
       e.start_date,
       COALESCE(e.end_at, e.end_date::timestamptz) AS end_at,
       e.end_date,
       e.location,
-      co.name AS country_name,
-      ci.name AS city_name,
       COALESCE(e.lat, e.latitude) AS lat,
       COALESCE(e.lng, e.longitude) AS lng,
-      COALESCE(m.public_url, e.image_url) AS image_url,
+      e.media_prefix,
+      e.hero_media_key,
+      e.gallery_media_keys,
       e.is_free,
       e.price_amount,
       e.price_currency,
+      e.is_verified,
+      e.official_url,
+      e.seo_title,
+      e.seo_description,
+      e.geo_scope,
+      e.primary_type,
+      e.secondary_type,
+      e.source_md_path,
       e.status::text AS status
     FROM events e
     LEFT JOIN countries co ON e.country_id = co.id
     LEFT JOIN cities ci ON e.city_id = ci.id
-    LEFT JOIN media_files m ON e.image_media_id = m.id
-    WHERE e.status = 'active'
+    WHERE e.status = ${whereStatus}::event_status
+      AND (${country}::text IS NULL OR e.country_slug = ${country} OR e.country_id = ${country})
+      AND (${city}::text IS NULL OR e.city_slug = ${city} OR e.city_id = ${city})
+      AND (${category}::text IS NULL OR e.category = ${category})
+      AND (
+        ${dateFrom}::timestamptz IS NULL
+        OR COALESCE(e.end_at, e.end_date::timestamptz, e.start_at, e.start_date::timestamptz) >= ${dateFrom}::timestamptz
+      )
+      AND (
+        ${dateTo}::timestamptz IS NULL
+        OR COALESCE(e.start_at, e.start_date::timestamptz) <= ${dateTo}::timestamptz
+      )
+      AND (
+        ${price}::text = 'any'
+        OR (${price}::text = 'free' AND e.is_free = true)
+        OR (${price}::text = 'paid' AND e.is_free = false)
+      )
+      AND (
+        ${verified}::text = 'any'
+        OR (${verified}::text = 'true' AND e.is_verified = true)
+        OR (${verified}::text = 'false' AND e.is_verified = false)
+      )
+      AND (
+        ${q}::text IS NULL
+        OR (
+          e.title ILIKE ('%' || ${q} || '%')
+          OR COALESCE(e.short_description, e.description, '') ILIKE ('%' || ${q} || '%')
+        )
+      )
     ORDER BY COALESCE(e.start_at, e.start_date) ASC
     LIMIT ${limit}
+    OFFSET ${offset}
   `;
-  return rows as EventRow[];
+  return { items: rows as EventRow[], total };
 }
 
 /**
@@ -171,25 +303,38 @@ export async function getEventByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       e.title,
       e.slug,
       e.description,
+      e.short_description,
       e.category,
+      e.country_slug,
+      e.city_slug,
+      COALESCE(e.country_name, co.name) AS country_name,
+      COALESCE(e.city_name, ci.name) AS city_name,
+      e.year,
       COALESCE(e.start_at, e.start_date::timestamptz) AS start_at,
       e.start_date,
       COALESCE(e.end_at, e.end_date::timestamptz) AS end_at,
       e.end_date,
       e.location,
-      co.name AS country_name,
-      ci.name AS city_name,
       COALESCE(e.lat, e.latitude) AS lat,
       COALESCE(e.lng, e.longitude) AS lng,
-      COALESCE(m.public_url, e.image_url) AS image_url,
+      e.media_prefix,
+      e.hero_media_key,
+      e.gallery_media_keys,
       e.is_free,
       e.price_amount,
       e.price_currency,
+      e.is_verified,
+      e.official_url,
+      e.seo_title,
+      e.seo_description,
+      e.geo_scope,
+      e.primary_type,
+      e.secondary_type,
+      e.source_md_path,
       e.status::text AS status
     FROM events e
     LEFT JOIN countries co ON e.country_id = co.id
     LEFT JOIN cities ci ON e.city_id = ci.id
-    LEFT JOIN media_files m ON e.image_media_id = m.id
     WHERE e.id = ${idOrSlug} OR e.slug = ${idOrSlug}
     LIMIT 1
   `;

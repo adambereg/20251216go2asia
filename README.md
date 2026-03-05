@@ -110,3 +110,8 @@ pnpm format
 ## Лицензия
 
 Private
+
+# Design Source of Truth
+
+Все UI-решения фиксируются через `.pen` файлы (Pencil).
+Frontend Dev обязан обновлять `.pen` перед изменением layout.

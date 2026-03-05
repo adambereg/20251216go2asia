@@ -5,9 +5,10 @@
  * This file provides React Query hooks for events operations.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customInstance } from './mutator';
-import type { ContentEventDto, ListResponse } from './content';
+import { listEvents } from './content';
+import type { ContentEventDto, ListEventsParams, ListResponse } from './content';
 
 /**
  * Register event request parameters
@@ -52,36 +53,30 @@ export const useRegisterEvent = () => {
 };
 
 /**
- * Get events (placeholder for future use)
- * 
- * @param _params - Query parameters (placeholder)
- * @returns React Query hook (placeholder)
+ * Get events (public)
+ *
+ * @param _params - Query parameters (filters + pagination)
+ * @returns React Query hook for events list
  */
-export const useGetEvents = (_params?: { limit?: number; enabled?: boolean }) => {
-  const limit = typeof _params?.limit === 'number' ? _params.limit : 50;
+export const useGetEvents = (_params?: (ListEventsParams & { enabled?: boolean })) => {
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
+  const anyParams = (_params ?? {}) as any;
+  const params: ListEventsParams = {
+    ...anyParams,
+    dateFrom: anyParams?.dateFrom ?? anyParams?.date_from,
+    dateTo: anyParams?.dateTo ?? anyParams?.date_to,
+  };
+  delete (params as any).enabled;
+  delete (params as any).date_from;
+  delete (params as any).date_to;
+
   return useQuery<ListResponse<ContentEventDto>, Error>({
-    queryKey: ['content', 'events', { limit }],
+    queryKey: ['content', 'events', params],
     enabled,
     queryFn: async () => {
-      const endpoint = `/v1/content/events`;
-      const qs = `?limit=${encodeURIComponent(String(limit))}`;
-      try {
-        const data = await customInstance<ListResponse<ContentEventDto>>({ method: 'GET' }, `${endpoint}${qs}`);
-        if (!data?.items || data.items.length === 0) {
-          // eslint-disable-next-line no-console
-          console.warn(`FALLBACK_TO_MOCKS: reason=EMPTY endpoint=${endpoint}`);
-        }
-        return data;
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `FALLBACK_TO_MOCKS: reason=ERROR endpoint=${endpoint}`,
-          err instanceof Error ? err.message : err
-        );
-        throw err as Error;
-      }
+      return await listEvents(params);
     },
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 };

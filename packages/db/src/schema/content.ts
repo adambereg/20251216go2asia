@@ -207,8 +207,17 @@ export const events = pgTable(
     id: text('id').primaryKey(),
     title: varchar('title', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull(),
+    // For Pulse events imported from markdown, this field stores markdown body (SSOT for detail page).
+    // For legacy/demo events it may contain a short plain-text description.
     description: text('description'),
+    shortDescription: text('short_description'),
     category: varchar('category', { length: 100 }),
+    // Pulse-specific geo identifiers (do NOT require Atlas IDs)
+    countrySlug: text('country_slug'),
+    citySlug: text('city_slug'),
+    countryName: text('country_name'),
+    cityName: text('city_name'),
+    year: integer('year'),
     // Legacy columns (created in 0000 migration).
     // Deprecated/read-only: SSOT is start_at/end_at (timestamptz). Legacy will be removed after seed+API migration (post PR#2/PR#3) / Milestone 5.
     startDate: timestamp('start_date').notNull(),
@@ -217,6 +226,14 @@ export const events = pgTable(
     startAt: timestamp('start_at', { withTimezone: true }),
     endAt: timestamp('end_at', { withTimezone: true }),
     location: text('location'),
+    isVerified: boolean('is_verified').notNull().default(false),
+    officialUrl: text('official_url'),
+    seoTitle: text('seo_title'),
+    seoDescription: text('seo_description'),
+    geoScope: text('geo_scope'),
+    primaryType: text('primary_type'),
+    secondaryType: text('secondary_type'),
+    sourceMdPath: text('source_md_path'),
     countryId: text('country_id').references(() => countries.id),
     cityId: text('city_id').references(() => cities.id),
     // Legacy geo columns (created in 0000 migration).
@@ -229,6 +246,11 @@ export const events = pgTable(
     // Keep existing column for current content-service compatibility.
     imageUrl: text('image_url'),
     imageMediaId: text('image_media_id').references(() => mediaFiles.id),
+    // Canon v1.0: deterministic R2 prefix (required)
+    mediaPrefix: text('media_prefix').notNull(),
+    // SSOT for Pulse media in R2: store object keys, and build URLs via resolver (NEXT_PUBLIC_MEDIA_URL).
+    heroMediaKey: text('hero_media_key'),
+    galleryMediaKeys: jsonb('gallery_media_keys'),
     isFree: boolean('is_free').notNull().default(true),
     // MVP money: numeric(12,2) + ISO currency (char(3))
     priceAmount: numeric('price_amount', { precision: 12, scale: 2 }).notNull().default('0'),

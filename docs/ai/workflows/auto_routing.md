@@ -28,15 +28,22 @@
 
 ## 3. “Дополнение существующего модуля”
 Если изменяется:
-- только UI → фронтенд → QA → tech_writer  
-- только API → бэкенд → QA → security → tech_writer  
-- API + UI → фронтенд + бэкенд параллельно → QA → security → tech_writer  
+
+### 3.1 Только UI
+- только UI → frontend_dev (UX/UI sub-mode) → frontend_dev (implementation) → QA → tech_writer
+
+### 3.2 Только API
+- только API → backend_dev → QA → security → tech_writer
+
+### 3.3 API + UI
+- API + UI → frontend_dev (UX/UI sub-mode) → frontend_dev (implementation) + backend_dev (параллельно) → QA → security → tech_writer
 
 Архитектор вызывается только если:
-
 - меняется структура данных,
 - требуется новый сервис,
 - API ломает старую совместимость.
+
+> Примечание: UX/UI sub-mode является внутренним режимом роли frontend_dev и обязателен при задачах, затрагивающих layout/структуру/компоненты UI (см. roles/frontend_dev.md).
 
 ---
 

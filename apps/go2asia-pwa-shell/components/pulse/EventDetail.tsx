@@ -21,6 +21,9 @@ import { Event } from './types';
 import { Card, CardContent, Badge, Button } from '@go2asia/ui';
 import { EventUGCBlock } from './EventUGCBlock';
 import { EventRegisterButton } from './EventRegisterButton';
+import { resolveMediaUrl } from '@go2asia/sdk/media';
+import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
+import { getCategoryLabel } from './category';
 
 interface EventDetailProps {
   event: Event;
@@ -76,14 +79,11 @@ function downloadICS(event: Event) {
 export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
   const [isSaved, setIsSaved] = useState(false);
 
-  const previewImages = (() => {
-    const base = event.cover ?? 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg';
-    // Простые плейсхолдеры, чтобы всегда было 3 превью даже без API.
-    // Подборка нейтральных travel-изображений.
-    const alt1 = 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg';
-    const alt2 = 'https://images.pexels.com/photos/2491286/pexels-photo-2491286.jpeg';
-    return [base, alt1, alt2];
-  })();
+  const heroUrl = resolveMediaUrl(event.heroMediaKey ?? null) ?? (event.cover ?? null);
+  const galleryUrls = (event.galleryMediaKeys ?? [])
+    .map((k) => resolveMediaUrl(k))
+    .filter((u): u is string => typeof u === 'string' && u.length > 0);
+  const previewImages = galleryUrls.length > 0 ? galleryUrls : heroUrl ? [heroUrl] : [];
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ru-RU', {
@@ -152,10 +152,10 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
       )}
       {/* Hero Section с обложкой */}
       <div className="relative bg-white border-b border-slate-200">
-        {event.cover ? (
+        {heroUrl ? (
           <div className="relative h-64 md:h-96 overflow-hidden">
             <img
-              src={event.cover}
+              src={heroUrl}
               alt={event.title}
               className="w-full h-full object-cover"
             />
@@ -245,7 +245,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
                   </Badge>
                 ))}
                 {event.category && (
-                  <Badge variant="info">{event.category}</Badge>
+                  <Badge variant="info">{getCategoryLabel(event.category)}</Badge>
                 )}
               </div>
             </div>
@@ -283,7 +283,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
           <div className="lg:col-span-2 space-y-6">
             {/* Превью-фото (3) */}
             <div className="flex gap-3 overflow-x-auto">
-              {previewImages.map((src, idx) => (
+        {previewImages.map((src, idx) => (
                 <div
                   key={`${src}-${idx}`}
                   className="relative h-24 sm:h-28 md:h-32 w-44 sm:w-52 md:w-56 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
@@ -298,12 +298,19 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
               ))}
             </div>
 
-            {/* Описание */}
-            {event.description && (
+            {/* Описание / контент */}
+            {(event.bodyMarkdown || event.description) && (
               <Card>
                 <CardContent className="p-6">
                   <h2 className="text-xl font-bold text-slate-900 mb-4">О событии</h2>
-                  <p className="text-slate-700 whitespace-pre-line">{event.description}</p>
+                  {event.bodyMarkdown ? (
+                    <MarkdownRenderer
+                      markdown={event.bodyMarkdown}
+                      className="prose prose-slate max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-p:my-3"
+                    />
+                  ) : (
+                    <p className="text-slate-700 whitespace-pre-line">{event.description}</p>
+                  )}
                 </CardContent>
               </Card>
             )}

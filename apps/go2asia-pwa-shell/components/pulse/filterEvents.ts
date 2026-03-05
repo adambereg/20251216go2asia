@@ -22,22 +22,19 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
 
   // Фильтр по стране
   if (filters.country) {
-    filtered = filtered.filter((event) => event.location?.country === filters.country);
+    filtered = filtered.filter(
+      (event) => event.countrySlug === filters.country || event.location?.country === filters.country
+    );
   }
 
   // Фильтр по городу
   if (filters.city) {
-    filtered = filtered.filter((event) => event.location?.city === filters.city);
+    filtered = filtered.filter((event) => event.citySlug === filters.city || event.location?.city === filters.city);
   }
 
   // Фильтр по категории
   if (filters.category) {
     filtered = filtered.filter((event) => event.category === filters.category);
-  }
-
-  // Фильтр по масштабу
-  if (filters.scale) {
-    filtered = filtered.filter((event) => event.scale === filters.scale);
   }
 
   // Фильтр по цене
@@ -49,48 +46,48 @@ export function filterEvents(events: Event[], filters: EventFilters): Event[] {
     }
   }
 
-  // Фильтр по языку
-  if (filters.language) {
-    filtered = filtered.filter((event) => event.language === filters.language);
+  // Фильтр по "проверено"
+  if (filters.verified !== undefined) {
+    filtered = filtered.filter((event) => Boolean(event.verified) === filters.verified);
   }
 
   // Фильтр по времени
   if (filters.timeFilter) {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+    const today = startOfDay(now);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Находим следующую субботу для фильтра "выходные"
-    const nextSaturday = new Date(today);
-    const daysUntilSaturday = (6 - today.getDay() + 7) % 7 || 7;
-    nextSaturday.setDate(today.getDate() + daysUntilSaturday);
-    const nextSunday = new Date(nextSaturday);
-    nextSunday.setDate(nextSaturday.getDate() + 1);
 
-    switch (filters.timeFilter) {
-      case 'today':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate.getTime() === today.getTime();
-        });
-        break;
-      case 'tomorrow':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate.getTime() === tomorrow.getTime();
-        });
-        break;
-      case 'weekend':
-        filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.startDate);
-          eventDate.setHours(0, 0, 0, 0);
-          const dayOfWeek = eventDate.getDay();
-          return dayOfWeek === 0 || dayOfWeek === 6; // Суббота или воскресенье
-        });
-        break;
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+
+    if (filters.timeFilter === 'today') {
+      rangeStart = today;
+      rangeEnd = endOfDay(today);
+    } else if (filters.timeFilter === 'tomorrow') {
+      rangeStart = tomorrow;
+      rangeEnd = endOfDay(tomorrow);
+    } else if (filters.timeFilter === 'weekend') {
+      // Upcoming weekend: Saturday+Sunday (include today if already Saturday)
+      const dow = today.getDay(); // 0=Sun..6=Sat
+      const daysUntilSat = (6 - dow + 7) % 7;
+      const sat = new Date(today);
+      sat.setDate(sat.getDate() + daysUntilSat);
+      const sun = new Date(sat);
+      sun.setDate(sun.getDate() + 1);
+      rangeStart = sat;
+      rangeEnd = endOfDay(sun);
+    }
+
+    if (rangeStart && rangeEnd) {
+      filtered = filtered.filter((event) => {
+        const s = new Date(event.startDate);
+        const e = new Date(event.endDate ?? event.startDate);
+        return s <= rangeEnd! && e >= rangeStart!;
+      });
     }
   }
 
