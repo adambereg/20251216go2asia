@@ -1,0 +1,76 @@
+name: Import Blog Posts (staging)
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_ddl:
+        description: "Apply DDL migrations before import (recommended after schema changes)"
+        required: false
+        type: boolean
+        default: true
+      only_slug:
+        description: "Import only one post by slug (optional)"
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "Dry-run (no DB writes)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: import-blog-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    name: Import blog markdown → Neon (Blog Asia)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply DDL (staging)
+        if: ${{ inputs.apply_ddl == true }}
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+        run: pnpm -C packages/db db:ddl:apply:staging
+
+      - name: Import blog posts (staging)
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+          MEDIA_PUBLIC_BASE_URL: "${{ vars.MEDIA_PUBLIC_BASE_URL }}"
+        run: |
+          set -euo pipefail
+
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --apply"
+          fi
+
+          if [ -n "${{ inputs.only_slug }}" ]; then
+            ARGS="$ARGS --only-slug ${{ inputs.only_slug }}"
+          fi
+
+          pnpm -C packages/db db:import:blog-md -- $ARGS
+
