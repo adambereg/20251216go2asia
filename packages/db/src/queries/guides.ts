@@ -410,24 +410,30 @@ export async function listArticlesForGuideFeed(
 
   const rows = await sql`
     SELECT 
-      a.id,
-      a.slug,
-      a.title,
-      a.excerpt,
-      a.content,
-      a.category,
-      a.tags::text AS tags,
-      COALESCE(m.public_url, a.image_url) AS cover_url,
-      a.published_at,
-      a.status::text AS status
-    FROM articles a
-    LEFT JOIN media_files m ON a.cover_media_id = m.id
-    WHERE a.status = 'published'
+      p.id,
+      p.slug,
+      p.title,
+      p.excerpt,
+      p.content_markdown AS content,
+      p.category,
+      NULL::text AS tags,
+      COALESCE(m.public_url, NULL) AS cover_url,
+      p.published_at,
+      p.status::text AS status
+    FROM blog_posts p
+    LEFT JOIN media_files m ON p.hero_media_id = m.id
+    WHERE p.status = 'published'::blog_post_status
       AND (
         ${tags}::text[] IS NULL
-        OR (a.tags IS NOT NULL AND a.tags ?| ${tags}::text[])
+        OR EXISTS (
+          SELECT 1
+          FROM blog_post_tags pt
+          JOIN blog_tags t ON t.id = pt.tag_id
+          WHERE pt.post_id = p.id
+            AND t.slug = ANY(${tags}::text[])
+        )
       )
-    ORDER BY a.published_at DESC NULLS LAST
+    ORDER BY p.published_at DESC NULLS LAST
     LIMIT ${limit}
   `;
   return rows as ArticleRow[];

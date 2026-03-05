@@ -7,6 +7,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./queries/blog": "./src/queries/blog.ts",
     "./queries/content": "./src/queries/content.ts",
     "./queries/guides": "./src/queries/guides.ts"
   },
@@ -30,6 +31,7 @@
     "db:import:guides-md": "cross-env ENVIRONMENT=staging tsx src/importGuidesFromMarkdown.ts",
     "db:import:themes-md": "cross-env ENVIRONMENT=staging NODE_OPTIONS=--max-old-space-size=4096 tsx src/importGuidesFromMarkdown.ts --themes-only",
     "db:import:pulse-md": "cross-env ENVIRONMENT=staging tsx src/importPulseEventsFromMarkdown.ts",
+    "db:import:blog-md": "cross-env ENVIRONMENT=staging tsx src/importBlogFromMarkdown.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
