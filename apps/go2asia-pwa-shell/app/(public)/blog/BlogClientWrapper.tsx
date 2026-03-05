@@ -1,428 +1,209 @@
 'use client';
 
-import { ModuleHero } from '@/components/modules';
-import { Globe, Clock, User } from 'lucide-react';
-import { Card, CardContent, Chip, Badge } from '@go2asia/ui';
-import Link from 'next/link';
-import { useGetArticles } from '@go2asia/sdk/blog';
-import { useMemo } from 'react';
-import { getDataSource } from '@/mocks/dto';
-import { mockRepo } from '@/mocks/repo';
+import { Search, SlidersHorizontal, BookOpen, TrendingUp, Sparkles } from 'lucide-react';
+import { Chip } from '@go2asia/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { useListBlogPosts } from '@go2asia/sdk/blog';
+import { PostCard } from '@/components/blog/PostCard';
 
 function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  const today = new Date();
-  const diffTime = Math.abs(today.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const d = new Date(dateString);
+  if (!Number.isFinite(d.getTime())) return dateString;
+  const now = new Date();
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return 'Сегодня';
   if (diffDays === 1) return 'Вчера';
-  if (diffDays < 7) return `${diffDays} дня назад`;
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-  });
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} дня назад`;
+
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 
 export function BlogClientWrapper() {
-  const dataSource = getDataSource();
+  const [qInput, setQInput] = useState('');
+  const [q, setQ] = useState('');
 
-  // Всегда вызываем хук (правило React Hooks)
-  const { data: articlesData, isLoading, error } = useGetArticles({
-    limit: 20,
-    enabled: dataSource === 'api',
-  });
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [qInput]);
 
-  // Преобразуем данные
-  const featuredArticle = useMemo(() => {
-    if (dataSource === 'mock') {
-      const post = mockRepo.blog.listPosts()[0];
-      if (!post) return null;
-      return {
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        subtitle: post.excerpt || '',
-        cover: post.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-        readingTime: post.readingTimeMin ?? 8,
-        insights: (post.tags ?? []).slice(0, 3),
-        badges: post.badges ?? [],
-        relatedThemes: (post.tags ?? []).slice(0, 3),
-      };
-    }
+  const newest = useListBlogPosts({ sort: 'newest', limit: 24, q });
+  const popular = useListBlogPosts({ sort: 'popular', limit: 12, q });
 
-    if (!articlesData?.items || articlesData.items.length === 0 || error) {
-      const post = mockRepo.blog.listPosts()[0];
-      if (!post) return null;
-      return {
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        subtitle: post.excerpt || '',
-        cover: post.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-        readingTime: post.readingTimeMin ?? 8,
-        insights: (post.tags ?? []).slice(0, 3),
-        badges: post.badges ?? [],
-        relatedThemes: (post.tags ?? []).slice(0, 3),
-      };
-    }
-    const article = articlesData.items[0]; // TODO(api): featured
-    return {
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      subtitle: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      readingTime: 10,
-      insights: article.tags?.slice(0, 3) || [],
-      badges: ['API'],
-      relatedThemes: article.tags?.slice(0, 3) || [],
-    };
-  }, [articlesData, dataSource, error]);
+  const isLoading = newest.isLoading || popular.isLoading;
+  const hasError = Boolean(newest.error || popular.error);
 
-  const editorialArticles = useMemo(() => {
-    if (dataSource === 'mock') {
-      return mockRepo.blog
-        .listPosts()
-        .slice(0, 4)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-          author: {
-            name: p.author?.name ?? 'Автор',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 5,
-          type: p.category || 'Гайд',
-          badges: p.badges?.includes('EDITORIAL') ? ['EDITORIAL'] : [],
-        }));
-    }
+  const editorialPicks = useMemo(() => {
+    const items = newest.data?.items ?? [];
+    return items.filter((x) => x.isEditorPick).slice(0, 4);
+  }, [newest.data?.items]);
 
-    if (!articlesData?.items || error) {
-      return mockRepo.blog
-        .listPosts()
-        .slice(0, 4)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-          author: {
-            name: p.author?.name ?? 'Автор',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 5,
-          type: p.category || 'Гайд',
-          badges: p.badges?.includes('EDITORIAL') ? ['EDITORIAL'] : [],
-        }));
-    }
-    return articlesData.items.slice(0, 4).map((article) => ({
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      author: {
-        name: 'Редакция Go2Asia',
-        avatar: null,
-      },
-      publishedAt: article.publishedAt || '',
-      readingTime: 5,
-      type: article.category || 'Гайд',
-      badges: ['API'],
-    }));
-  }, [articlesData, dataSource, error]);
-
-  const ugcArticles = useMemo(() => {
-    if (dataSource === 'mock') {
-      return mockRepo.blog
-        .listPosts()
-        .slice(4, 6)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-          author: {
-            name: p.author?.name ?? 'Пользователь',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 7,
-          type: p.category || 'Колонка',
-          badges: p.badges ?? ['UGC'],
-        }));
-    }
-
-    if (!articlesData?.items || error) {
-      return mockRepo.blog
-        .listPosts()
-        .slice(4, 6)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-          author: {
-            name: p.author?.name ?? 'Пользователь',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 7,
-          type: p.category || 'Колонка',
-          badges: p.badges ?? ['UGC'],
-        }));
-    }
-    return articlesData.items.slice(4, 6).map((article) => ({
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-      author: {
-        name: 'Пользователь',
-        avatar: null,
-      },
-      publishedAt: article.publishedAt || '',
-      readingTime: 7,
-      type: 'Колонка',
-      badges: ['API'],
-    }));
-  }, [articlesData, dataSource, error]);
-
-  const rubricFilters = ['Путешествия', 'Городская жизнь', 'Культура', 'Работа', 'Финансы', 'Образование', 'Outdoor', 'Технологии/AI'];
-  const formatFilters = ['Гайд', 'Лонгрид', 'Интервью', 'Репортаж', 'Подборка', 'Колонка'];
-  const readingTimeFilters = ['5 мин', '10 мин', '20 мин'];
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <ModuleHero
-          icon={Globe}
-          title="Blog Asia"
-          description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
-          gradientFrom="from-sky-500"
-          gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
-        />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-slate-600">Загрузка статей...</div>
-        </div>
-      </div>
-    );
-  }
+  const fresh = useMemo(() => {
+    const items = newest.data?.items ?? [];
+    return items.slice(0, 12);
+  }, [newest.data?.items]);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ModuleHero
-        icon={Globe}
-        title="Blog Asia"
-        description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
-        gradientFrom="from-sky-500"
-        gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
-      />
-
-      {/* Hero-блок "Тема номера" */}
-      {featuredArticle && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href={`/blog/${featuredArticle.slug}`}>
-            <Card hover className="overflow-hidden">
-              {featuredArticle.cover && (
-                <div className="relative w-full h-96 overflow-hidden">
-                  <img
-                    src={featuredArticle.cover}
-                    alt={featuredArticle.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {featuredArticle.badges.map((badge, index) => (
-                        <Badge key={index} variant={badge === 'EDITORIAL' ? 'editor' : 'popular'}>
-                          {badge}
-                        </Badge>
-                      ))}
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">{featuredArticle.title}</h2>
-                    <p className="text-lg text-white/90 mb-4">{featuredArticle.subtitle}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {featuredArticle.insights.map((insight, index) => (
-                        <Chip key={index} size="sm" className="bg-white/20 text-white border-white/30">
-                          {insight}
-                        </Chip>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-4 text-white/80">
-                      <div className="flex items-center gap-1">
-                        <Clock size={16} />
-                        <span>{featuredArticle.readingTime} мин чтения</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {featuredArticle.relatedThemes.map((theme, index) => (
-                          <span key={index} className="text-sm">#{theme}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </Link>
-        </section>
-      )}
-
-      {/* Чип-фильтры */}
-      <section className="bg-white border-b border-slate-200 sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="space-y-4">
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Рубрики</div>
-              <div className="flex flex-wrap gap-2">
-                {rubricFilters.map((rubric) => (
-                  <Chip key={rubric}>{rubric}</Chip>
-                ))}
+      <header className="pt-6 pb-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+          <div
+            className="rounded-2xl overflow-hidden shadow-[0_14px_40px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/10"
+            style={{
+              background:
+                'radial-gradient(700px 220px at 70% 0%, rgba(56,189,248,0.18), transparent 60%), radial-gradient(500px 220px at 20% 20%, rgba(167,139,250,0.18), transparent 60%), #0b1220',
+            }}
+          >
+            <div className="px-6 sm:px-8 py-7 sm:py-8 text-center">
+              <div className="inline-flex items-center gap-2 text-white/95 font-semibold tracking-tight">
+                <BookOpen size={18} />
+                <span className="text-lg">Blog Asia</span>
               </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Формат</div>
-              <div className="flex flex-wrap gap-2">
-                {formatFilters.map((format) => (
-                  <Chip key={format}>{format}</Chip>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Время чтения</div>
-              <div className="flex flex-wrap gap-2">
-                {readingTimeFilters.map((time) => (
-                  <Chip key={time}>{time}</Chip>
-                ))}
+              <div className="mt-1 text-xs text-white/60">
+                Живой опыт и медиа о жизни в Юго-Восточной Азии
               </div>
             </div>
           </div>
         </div>
+      </header>
+
+      {/* Search + tags */}
+      <section>
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                placeholder="Поиск по названию, автору, тегам..."
+                className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-200/60 focus:border-sky-200"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            className="w-full h-11 rounded-xl border border-slate-200 bg-white shadow-sm px-3 flex items-center justify-between text-sm text-slate-600 hover:border-slate-300 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal size={16} className="text-slate-400" />
+              Фильтры
+            </span>
+            <span className="text-slate-400">▾</span>
+          </button>
+        </div>
       </section>
 
-      {/* Главные сегодня */}
-      {editorialArticles.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Главные сегодня</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {editorialArticles.map((article) => (
-              <Link key={article.id} href={`/blog/${article.slug}`}>
-                <Card hover className="h-full flex flex-col overflow-hidden p-0 !border-0">
-                  {article.cover && (
-                    <div className="relative w-full h-48 overflow-hidden">
-                      <img
-                        src={article.cover}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {article.badges.map((badge, index) => (
-                          <Badge key={index} variant={badge === 'EDITORIAL' ? 'editor' : 'ugc'} className="text-xs mb-1">
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <CardContent className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="info" className="text-xs">{article.type}</Badge>
-                      <span className="flex items-center gap-1 text-xs text-slate-500">
-                        <Clock size={12} />
-                        {article.readingTime} мин
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-2">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-1">
-                      {article.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="text-xs text-slate-500">
-                        {formatDate(article.publishedAt)}
-                      </div>
-                      <span className="text-sky-600 hover:text-sky-700 font-medium text-sm">
-                        Читать →
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+      {hasError && (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div className="bg-white border border-red-200 rounded-xl p-5 text-sm text-red-700">
+            Не удалось загрузить публикации. Проверьте доступность API Gateway / Content Service.
+          </div>
+        </section>
+      )}
+
+      {/* Fresh */}
+      {fresh.length > 0 && (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-slate-900 inline-flex items-center gap-2">
+              <Sparkles size={16} className="text-sky-600" />
+              Свежие публикации
+            </h2>
+            <div className="text-xs text-slate-400">{fresh.length} материалов</div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+            {fresh.map((p) => (
+              <PostCard
+                key={p.id}
+                post={{
+                  id: p.id,
+                  slug: p.slug,
+                  title: p.title,
+                  excerpt: p.excerpt,
+                  heroUrl: p.heroUrl,
+                  postType: p.postType,
+                  countrySlug: p.countrySlug,
+                  publishedAt: p.publishedAt,
+                  readingTimeMinutes: p.readingTimeMinutes,
+                  author: p.author,
+                  isEditorPick: p.isEditorPick,
+                }}
+              />
             ))}
           </div>
         </section>
       )}
 
-      {/* Выбор сообщества */}
-      {ugcArticles.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Выбор сообщества</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ugcArticles.map((article) => (
-              <Link key={article.id} href={`/blog/${article.slug}`}>
-                <Card hover className="h-full flex flex-col overflow-hidden p-0 !border-0">
-                  {article.cover && (
-                    <div className="relative w-full h-64 overflow-hidden">
-                      <img
-                        src={article.cover}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {article.badges.map((badge, index) => (
-                          <Badge key={index} variant={badge === 'UGC' ? 'ugc' : 'verified'} className="text-xs mb-1">
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <CardContent className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="info" className="text-xs">{article.type}</Badge>
-                      <span className="flex items-center gap-1 text-xs text-slate-500">
-                        <Clock size={12} />
-                        {article.readingTime} мин
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 line-clamp-2 mb-2">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-1">
-                      {article.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                          <User size={14} className="text-slate-600" />
-                        </div>
-                        <div className="text-xs">
-                          <div className="font-medium text-slate-900">{article.author.name}</div>
-                          <div className="text-slate-500">{formatDate(article.publishedAt)}</div>
-                        </div>
-                      </div>
-                      <span className="text-sky-600 hover:text-sky-700 font-medium text-sm">
-                        Читать →
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+      {/* Popular */}
+      {(popular.data?.items?.length ?? 0) > 0 && (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
+          <h2 className="text-base font-semibold text-slate-900 mb-4 inline-flex items-center gap-2">
+            <TrendingUp size={16} className="text-amber-500" />
+            Популярное
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+            {(popular.data?.items ?? []).slice(0, 12).map((p) => (
+              <PostCard
+                key={p.id}
+                variant="small"
+                className="min-w-[220px] sm:min-w-[240px] lg:min-w-[260px] snap-start"
+                hideMeta
+                post={{
+                  id: p.id,
+                  slug: p.slug,
+                  title: p.title,
+                  excerpt: p.excerpt,
+                  heroUrl: p.heroUrl,
+                  postType: p.postType,
+                  countrySlug: p.countrySlug,
+                  publishedAt: p.publishedAt,
+                  readingTimeMinutes: p.readingTimeMinutes,
+                  author: p.author,
+                  isEditorPick: p.isEditorPick,
+                }}
+              />
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Recommended */}
+      {editorialPicks.length > 0 && (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
+          <h2 className="text-base font-semibold text-slate-900 mb-4 inline-flex items-center gap-2">
+            <Sparkles size={16} className="text-emerald-500" />
+            Рекомендуем к прочтению
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            {editorialPicks.slice(0, 6).map((p) => (
+              <PostCard
+                key={p.id}
+                variant="mini"
+                post={{
+                  id: p.id,
+                  slug: p.slug,
+                  title: p.title,
+                  excerpt: p.excerpt,
+                  heroUrl: p.heroUrl,
+                  postType: p.postType,
+                  countrySlug: p.countrySlug,
+                  publishedAt: p.publishedAt,
+                  readingTimeMinutes: p.readingTimeMinutes,
+                  author: p.author,
+                  isEditorPick: p.isEditorPick,
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {isLoading && (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div className="text-sm text-slate-500">Загрузка…</div>
         </section>
       )}
     </div>
