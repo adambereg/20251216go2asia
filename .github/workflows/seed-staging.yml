@@ -71,12 +71,19 @@ jobs:
         run: pnpm -C packages/db db:seed
 
       - name: Import blog markdown (staging)
-        if: ${{ inputs.skip_ddl != true }}
+        if: ${{ always() && inputs.skip_ddl != true }}
         env:
           ENVIRONMENT: staging
           STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
           MEDIA_PUBLIC_BASE_URL: "${{ vars.MEDIA_PUBLIC_BASE_URL }}"
         run: pnpm -C packages/db db:import:blog-md -- --apply
+
+      - name: Verify Blog API returns items (staging)
+        if: ${{ always() && inputs.skip_ddl != true }}
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://go2asia-api-gateway-staging.fred89059599296.workers.dev/v1/content/blog/posts?limit=1" \
+            | node -e 'let d=""; process.stdin.on("data",(c)=>d+=c); process.stdin.on("end",()=>{ const j=JSON.parse(d||"{}"); const n=Array.isArray(j.items)?j.items.length:0; if(n<1){ console.error("Blog API returned no items"); process.exit(1);} console.log("Blog API OK, items=", n); });'
 
 
 
