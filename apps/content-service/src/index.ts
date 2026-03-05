@@ -15,6 +15,7 @@ import type {
   PlaceRow,
   SqlClient,
 } from '@go2asia/db/queries/content';
+import type { BlogPostListRow, BlogPostSort, ListBlogPostsParams } from '@go2asia/db/queries/blog';
 import {
   createSqlClient,
   getArticleBySlug,
@@ -31,6 +32,7 @@ import {
   listEvents,
   listPlaces,
 } from '@go2asia/db/queries/content';
+import { getBlogPostBySlug as getBlogPostBySlugSql, listBlogPosts as listBlogPostsSql } from '@go2asia/db/queries/blog';
 import type { GuideBlockRow, GuideFeedRow, GuideRow, GuideSectionRow } from '@go2asia/db/queries/guides';
 import {
   countGuides,
@@ -183,6 +185,44 @@ export interface ContentArticleDto {
   status: string;
 }
 
+// ---------------------------------------------------------------------
+// Blog Asia DTOs (public)
+// ---------------------------------------------------------------------
+
+export interface ContentBlogAuthorDto {
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface ContentBlogPostCardDto {
+  id: string;
+  slug: string;
+  lang: string;
+  title: string;
+  subtitle: string | null;
+  excerpt: string | null;
+  postType: string | null;
+  category: string | null;
+  countrySlug: string | null;
+  citySlug: string | null;
+  tags: string[];
+  heroUrl: string | null;
+  publishedAt: string | null;
+  updatedAt: string | null;
+  readingTimeMinutes: number | null;
+  isPromoted: boolean;
+  isFeatured: boolean;
+  isEditorPick: boolean;
+  author: ContentBlogAuthorDto | null;
+}
+
+export interface ContentBlogPostDetailDto extends ContentBlogPostCardDto {
+  contentMarkdown: string;
+}
+
+export type CursorListResponse<T> = { items: T[]; nextCursor: string | null };
+
 export interface ContentTabDto {
   tabKey: string;
   lang: string;
@@ -311,6 +351,37 @@ function base64UrlToBytes(input: string): Uint8Array {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+type BlogPostsCursorV1 = {
+  v: 1;
+  sort: BlogPostSort;
+  publishedAt: string;
+  id: string;
+  popularityScore?: string;
+  featuredRank?: number;
+};
+
+function encodeBlogCursor(cursor: BlogPostsCursorV1): string {
+  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(cursor)));
+}
+
+function decodeBlogCursor(raw: string | null): BlogPostsCursorV1 | null {
+  const v = (raw ?? '').trim();
+  if (!v) return null;
+  try {
+    const json = JSON.parse(new TextDecoder().decode(base64UrlToBytes(v))) as any;
+    if (!json || typeof json !== 'object') return null;
+    if (json.v !== 1) return null;
+    if (json.sort !== 'newest' && json.sort !== 'popular' && json.sort !== 'featured') return null;
+    if (typeof json.publishedAt !== 'string' || json.publishedAt.length < 10) return null;
+    if (typeof json.id !== 'string' || json.id.length < 3) return null;
+    if (json.popularityScore !== undefined && typeof json.popularityScore !== 'string') return null;
+    if (json.featuredRank !== undefined && typeof json.featuredRank !== 'number') return null;
+    return json as BlogPostsCursorV1;
+  } catch {
+    return null;
+  }
 }
 
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -989,6 +1060,52 @@ function toContentArticle(row: ArticleRow): ContentArticleDto {
   };
 }
 
+function resolveBlogMediaUrl(env: Env, key: string | null, publicUrl: string | null): string | null {
+  const k = typeof key === 'string' && key.trim().length > 0 ? key.trim() : null;
+  const fromKey = k ? getPublicUrl(env, k) : null;
+  if (fromKey) return fromKey;
+  const url = typeof publicUrl === 'string' && publicUrl.trim().length > 0 ? publicUrl.trim() : null;
+  if (!url) return null;
+  return isPlaceholderHeroUrl(url) ? null : url;
+}
+
+function toContentBlogPostCard(env: Env, row: BlogPostListRow): ContentBlogPostCardDto {
+  const heroUrl = resolveBlogMediaUrl(env, row.hero_media_key, row.hero_public_url);
+  const tags = pickStringArray(row.tags_json);
+  const authorSlug = typeof row.author_slug === 'string' && row.author_slug.trim().length > 0 ? row.author_slug.trim() : null;
+  const authorName =
+    typeof row.author_display_name === 'string' && row.author_display_name.trim().length > 0
+      ? row.author_display_name.trim()
+      : null;
+  const authorAvatarUrl = resolveBlogMediaUrl(env, row.author_avatar_media_key, row.author_avatar_public_url);
+  const author: ContentBlogAuthorDto | null =
+    authorSlug && authorName
+      ? { slug: authorSlug, displayName: authorName, avatarUrl: authorAvatarUrl }
+      : null;
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    lang: row.lang,
+    title: row.title,
+    subtitle: row.subtitle ?? null,
+    excerpt: row.excerpt ?? null,
+    postType: row.post_type ?? null,
+    category: row.category ?? null,
+    countrySlug: row.country_slug ?? null,
+    citySlug: row.city_slug ?? null,
+    tags,
+    heroUrl,
+    publishedAt: row.published_at ?? null,
+    updatedAt: row.updated_at ?? null,
+    readingTimeMinutes: row.reading_time_minutes ?? null,
+    isPromoted: Boolean(row.is_promoted),
+    isFeatured: Boolean(row.is_featured),
+    isEditorPick: Boolean(row.is_editor_pick),
+    author,
+  };
+}
+
 function toContentTab(row: ContentBlockRow): ContentTabDto {
   return {
     tabKey: row.tab_key,
@@ -1421,6 +1538,86 @@ async function handleGetArticleBySlug(env: Env, slug: string, logger: ReturnType
   } catch (error) {
     logger.error('Get article error', error, { slug });
     return json({ error: { code: 'InternalError', message: 'Failed to fetch article' } }, 500);
+  }
+}
+
+async function handleListBlogPosts(env: Env, url: URL, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '24') || 24));
+  const sortRaw = (url.searchParams.get('sort') ?? 'newest').trim().toLowerCase();
+  const sort: BlogPostSort = sortRaw === 'popular' || sortRaw === 'featured' ? (sortRaw as BlogPostSort) : 'newest';
+
+  const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
+  const tag = url.searchParams.get('tag') ?? undefined;
+  const author = url.searchParams.get('author') ?? undefined;
+  const country = url.searchParams.get('country') ?? undefined;
+  const city = url.searchParams.get('city') ?? undefined;
+  const excludeSlug = url.searchParams.get('exclude_slug') ?? url.searchParams.get('excludeSlug') ?? undefined;
+
+  const cursorRaw = url.searchParams.get('cursor');
+  const cursor = decodeBlogCursor(cursorRaw);
+  if (cursor && cursor.sort !== sort) {
+    return json({ error: { code: 'BadRequest', message: 'cursor.sort does not match sort' } }, 400);
+  }
+
+  try {
+    const { items: rows, hasMore } = await listBlogPostsSql(sqlClient, {
+      limit,
+      sort,
+      q,
+      tag,
+      author,
+      country,
+      city,
+      excludeSlug,
+      cursor: cursor
+        ? {
+            sort: cursor.sort,
+            publishedAt: cursor.publishedAt,
+            id: cursor.id,
+            popularityScore: cursor.popularityScore,
+            featuredRank: cursor.featuredRank,
+          }
+        : null,
+    } satisfies ListBlogPostsParams);
+
+    const items = rows.map((r) => toContentBlogPostCard(env, r));
+
+    let nextCursor: string | null = null;
+    if (hasMore && items.length > 0) {
+      const last = rows[rows.length - 1]!;
+      if (last.published_at) {
+        nextCursor = encodeBlogCursor({
+          v: 1,
+          sort,
+          publishedAt: last.published_at,
+          id: last.id,
+          popularityScore: last.popularity_score ?? undefined,
+          featuredRank: typeof last.featured_rank === 'number' ? last.featured_rank : undefined,
+        });
+      }
+    }
+
+    return json({ items, nextCursor } satisfies CursorListResponse<ContentBlogPostCardDto>, 200);
+  } catch (error) {
+    logger.error('List blog posts error', error);
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch blog posts' } }, 500);
+  }
+}
+
+async function handleGetBlogPostBySlug(env: Env, slug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  try {
+    const row = await getBlogPostBySlugSql(sqlClient, slug);
+    if (!row) return json({ error: { code: 'NotFound', message: 'Post not found' } }, 404);
+    const dto: ContentBlogPostDetailDto = { ...toContentBlogPostCard(env, row), contentMarkdown: row.content_markdown };
+    return json(dto, 200);
+  } catch (error) {
+    logger.error('Get blog post error', error, { slug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch blog post' } }, 500);
   }
 }
 
@@ -2459,6 +2656,20 @@ export default {
     if (placeGetMatch && request.method === 'GET') {
       const placeId = placeGetMatch[1];
       const res = await handleGetPlaceById(env, placeId, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Public: Blog Asia posts (SSOT: blog_posts)
+    if (path === '/v1/content/blog/posts' && request.method === 'GET') {
+      const res = await handleListBlogPosts(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const blogPostGetMatch = path.match(/^\/v1\/content\/blog\/posts\/([^/]+)$/);
+    if (blogPostGetMatch && request.method === 'GET') {
+      const slug = blogPostGetMatch[1];
+      const res = await handleGetBlogPostBySlug(env, slug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
