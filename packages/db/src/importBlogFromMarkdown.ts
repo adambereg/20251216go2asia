@@ -260,9 +260,19 @@ function markdownToPlainText(md: string): string {
   return s;
 }
 
+function extractLiveExcerpt(body: string): string | null {
+  const matches = [...body.matchAll(/^\s*text:\s*["'](.+?)["']\s*$/gm)].map((m) => (m[1] ?? '').trim()).filter(Boolean);
+  if (matches.length === 0) return null;
+  return matches.join(' ').trim();
+}
+
 function computeExcerpt(meta: BlogMeta, body: string): string | null {
   const fromMeta = (meta.excerpt ?? meta.lead ?? '').trim();
   if (fromMeta.length > 0) return fromMeta;
+  if ((meta.post_type ?? '').trim().toLowerCase() === 'live') {
+    const liveText = extractLiveExcerpt(body);
+    if (liveText) return liveText;
+  }
   const text = markdownToPlainText(body);
   if (!text) return null;
   const max = 220;
