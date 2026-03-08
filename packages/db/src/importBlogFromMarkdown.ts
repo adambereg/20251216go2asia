@@ -402,10 +402,12 @@ async function main() {
 
       // Validation
       const problems: string[] = [];
+      const shortFormTypes = new Set(['note', 'essay', 'live']);
+      const isShortForm = shortFormTypes.has((postType ?? '').toLowerCase());
       if (!slug) problems.push('missing slug');
       if (!title || title.length < 6) problems.push('missing/short title');
       if (!body || body.length < 50) problems.push('missing/short body');
-      if (!excerpt || excerpt.length < 30) problems.push('missing/short excerpt/lead');
+      if (!excerpt || (!isShortForm && excerpt.length < 30)) problems.push('missing/short excerpt/lead');
       if (!heroKey) problems.push('missing hero media key');
       if (problems.length > 0) {
         errors++;
