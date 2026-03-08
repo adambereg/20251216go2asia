@@ -70,6 +70,13 @@ jobs:
           SEED_RESET: ${{ inputs.reset && '1' || '' }}
         run: pnpm -C packages/db db:seed
 
+      - name: Cleanup old Blog canon data (staging)
+        if: ${{ always() && inputs.skip_ddl != true }}
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+        run: pnpm -C packages/db db:cleanup:blog
+
       - name: Import blog markdown (staging)
         if: ${{ always() && inputs.skip_ddl != true }}
         env:
@@ -77,6 +84,13 @@ jobs:
           STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
           MEDIA_PUBLIC_BASE_URL: "${{ vars.MEDIA_PUBLIC_BASE_URL }}"
         run: pnpm -C packages/db db:import:blog-md -- --apply
+
+      - name: Verify Blog canon matches DB (staging)
+        if: ${{ always() && inputs.skip_ddl != true }}
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+        run: pnpm -C packages/db db:verify:blog-canon
 
       - name: Verify Blog API returns items (staging)
         if: ${{ always() && inputs.skip_ddl != true }}

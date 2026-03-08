@@ -349,7 +349,8 @@ async function main() {
       const { yaml, body } = extractFrontmatter(raw);
       const meta = yaml ? parseYamlBlogMeta(yaml) : {};
 
-      const slug = (meta.slug ?? fileSlug).trim();
+      const frontmatterSlug = (meta.slug ?? '').trim();
+      const slug = fileSlug.trim();
       const title = (meta.title ?? '').trim();
       const status = asStatus(meta.status);
       const lang = (meta.lang ?? 'ru').trim() || 'ru';
@@ -373,6 +374,13 @@ async function main() {
         status === 'published'
           ? (publishedAtIso ?? new Date().toISOString())
           : (publishedAtIso ?? null);
+
+      if (frontmatterSlug && frontmatterSlug !== slug) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[md-import:blog] WARN slug mismatch; using file slug. file=${rel} frontmatter=${frontmatterSlug} fileSlug=${slug}`
+        );
+      }
 
       const canonHeroKey = `blog/2026/${slug}/hero.jpg`;
       const fmHeroKey = (meta.hero_image_media_key ?? '').trim();
