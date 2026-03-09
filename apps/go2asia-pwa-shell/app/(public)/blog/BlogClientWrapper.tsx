@@ -1,20 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, Rows3, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Chip } from '@go2asia/ui';
 import { useListBlogPosts, type ContentBlogPostCardDto } from '@go2asia/sdk/blog';
 import { PostCard } from '@/components/blog/PostCard';
+import { getCategoryOrderIndex, slugifyCategory } from './categoryConfig';
 
 type BlogViewMode = 'sections' | 'feed';
 
 const ALL_FILTER = '__all__';
-const CATEGORY_ORDER = ['Путешествия', 'Впечатления', 'Финансы', 'Советы', 'Релокация', 'Размышления'] as const;
-
-function getCategoryOrderIndex(category: string): number {
-  const idx = CATEGORY_ORDER.indexOf(category as (typeof CATEGORY_ORDER)[number]);
-  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
-}
 
 function humanizeSlug(raw: string | null | undefined): string {
   const value = (raw ?? '').trim();
@@ -315,7 +311,15 @@ export function BlogClientWrapper() {
             <div key={section.title}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-slate-900">{section.title}</h2>
-                <div className="text-xs text-slate-400">{section.items.length} материалов</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-slate-400">{section.items.length} материалов</div>
+                  <Link
+                    href={`/blog/category/${slugifyCategory(section.title)}`}
+                    className="text-xs font-medium text-sky-700 hover:text-sky-800"
+                  >
+                    Читать все
+                  </Link>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
                 {section.items.slice(0, 6).map((post) => (
