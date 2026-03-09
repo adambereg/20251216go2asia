@@ -19,6 +19,7 @@ export type ListBlogPostsParams = {
     featuredRank?: number;
   } | null;
   q?: string;
+  category?: string;
   tag?: string; // tag slug
   author?: string; // author slug
   country?: string; // country slug
@@ -82,6 +83,7 @@ export async function listBlogPosts(
   const sort: BlogPostSort = params?.sort ?? 'newest';
 
   const q = normalizeQuery(params?.q);
+  const category = normalizeQuery(params?.category);
   const tag = normalizeQuery(params?.tag);
   const author = normalizeQuery(params?.author);
   const country = normalizeQuery(params?.country);
@@ -118,6 +120,10 @@ export async function listBlogPosts(
             OR COALESCE(p.excerpt, '') ILIKE ('%' || ${q} || '%')
             OR p.content_markdown ILIKE ('%' || ${q} || '%')
           )
+        )
+        AND (
+          ${category}::text IS NULL
+          OR p.category = ${category}
         )
         AND (
           ${author}::text IS NULL

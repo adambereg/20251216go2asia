@@ -1550,6 +1550,7 @@ async function handleListBlogPosts(env: Env, url: URL, logger: ReturnType<typeof
   const sort: BlogPostSort = sortRaw === 'popular' || sortRaw === 'featured' ? (sortRaw as BlogPostSort) : 'newest';
 
   const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
+  const category = url.searchParams.get('category') ?? undefined;
   const tag = url.searchParams.get('tag') ?? undefined;
   const author = url.searchParams.get('author') ?? undefined;
   const country = url.searchParams.get('country') ?? undefined;
@@ -1567,6 +1568,7 @@ async function handleListBlogPosts(env: Env, url: URL, logger: ReturnType<typeof
       limit,
       sort,
       q,
+      category,
       tag,
       author,
       country,

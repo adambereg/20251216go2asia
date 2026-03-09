@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BookOpen } from 'lucide-react';
 import { listBlogPosts } from '@go2asia/sdk/blog';
-import { PostCard } from '@/components/blog/PostCard';
-import { getCategoryBySlug, slugifyCategory } from '../../categoryConfig';
+import { getCategoryBySlug } from '../../categoryConfig';
+import { CategoryFeedClient } from './CategoryFeedClient';
 
 export async function generateMetadata({
   params,
@@ -33,8 +32,9 @@ export default async function CategoryPage({
   const category = getCategoryBySlug(id);
   if (!category) notFound();
 
-  const data = await listBlogPosts({ sort: 'newest', limit: 200 }).catch(() => null);
-  const items = (data?.items ?? []).filter((post) => (post.category ?? '').trim() === category);
+  const data = await listBlogPosts({ sort: 'newest', limit: 12, category }).catch(() => null);
+  const items = data?.items ?? [];
+  const nextCursor = data?.nextCursor ?? null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -58,55 +58,7 @@ export default async function CategoryPage({
         </div>
       </header>
 
-      <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
-        <div className="flex items-center justify-between mb-6 gap-4">
-          <div>
-            <nav className="text-sm text-slate-500 mb-2">
-              <Link href="/blog" className="hover:text-sky-700">
-                Blog Asia
-              </Link>{' '}
-              / <span className="text-slate-900">{category}</span>
-            </nav>
-            <h1 className="text-2xl font-bold text-slate-900">{category}</h1>
-          </div>
-          <div className="text-sm text-slate-500 whitespace-nowrap">{items.length} материалов</div>
-        </div>
-
-        {items.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
-            {items.map((post) => (
-              <PostCard
-                key={post.id}
-                post={{
-                  id: post.id,
-                  slug: post.slug,
-                  title: post.title,
-                  excerpt: post.excerpt,
-                  heroUrl: post.heroUrl,
-                  postType: post.postType,
-                  countrySlug: post.countrySlug,
-                  publishedAt: post.publishedAt,
-                  readingTimeMinutes: post.readingTimeMinutes,
-                  author: post.author,
-                  isEditorPick: post.isEditorPick,
-                  isFeatured: post.isFeatured,
-                  isPromoted: post.isPromoted,
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-slate-500 py-8">
-            В рубрике пока нет публикаций.
-          </div>
-        )}
-
-        <div className="mt-8">
-          <Link href="/blog" className="text-sm font-medium text-sky-700 hover:text-sky-800">
-            ← Вернуться ко всем рубрикам
-          </Link>
-        </div>
-      </section>
+      <CategoryFeedClient category={category} initialItems={items} initialCursor={nextCursor} />
     </div>
   );
 }

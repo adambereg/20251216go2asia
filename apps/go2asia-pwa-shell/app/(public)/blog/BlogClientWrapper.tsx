@@ -1,16 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, Rows3, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Chip } from '@go2asia/ui';
-import { useListBlogPosts, type ContentBlogPostCardDto } from '@go2asia/sdk/blog';
+import { listBlogPosts, useListBlogPosts, type ContentBlogPostCardDto } from '@go2asia/sdk/blog';
 import { PostCard } from '@/components/blog/PostCard';
 import { getCategoryOrderIndex, slugifyCategory } from './categoryConfig';
 
 type BlogViewMode = 'sections' | 'feed';
 
 const ALL_FILTER = '__all__';
+const FEED_PAGE_SIZE = 12;
+const SECTIONS_PAGE_SIZE = 96;
 
 function humanizeSlug(raw: string | null | undefined): string {
   const value = (raw ?? '').trim();
@@ -62,19 +64,32 @@ export function BlogClientWrapper() {
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_FILTER);
   const [selectedPostType, setSelectedPostType] = useState<string>(ALL_FILTER);
   const [selectedCountry, setSelectedCountry] = useState<string>(ALL_FILTER);
+  const [feedItems, setFeedItems] = useState<ContentBlogPostCardDto[]>([]);
+  const [feedCursor, setFeedCursor] = useState<string | null>(null);
+  const [feedHasMore, setFeedHasMore] = useState(false);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setQ(qInput.trim()), 250);
     return () => clearTimeout(t);
   }, [qInput]);
 
-  const newest = useListBlogPosts({ sort: 'newest', limit: 96, q });
-  const popular = useListBlogPosts({ sort: 'popular', limit: 16, q });
+  const newest = useListBlogPosts({ sort: 'newest', limit: SECTIONS_PAGE_SIZE, q });
+  const feedInitial = useListBlogPosts({ sort: 'newest', limit: FEED_PAGE_SIZE, q });
 
-  const isLoading = newest.isLoading || popular.isLoading;
-  const hasError = Boolean(newest.error || popular.error);
+  const isLoading = newest.isLoading || feedInitial.isLoading;
+  const hasError = Boolean(newest.error || feedInitial.error);
 
   const newestItems = newest.data?.items ?? [];
+
+  useEffect(() => {
+    if (!feedInitial.data) return;
+    setFeedItems(feedInitial.data.items ?? []);
+    setFeedCursor(feedInitial.data.nextCursor ?? null);
+    setFeedHasMore(Boolean(feedInitial.data.nextCursor));
+    setFeedLoadingMore(false);
+  }, [feedInitial.data]);
 
   const availableCategories = useMemo(() => {
     const map = new Map<string, number>();
@@ -125,6 +140,15 @@ export function BlogClientWrapper() {
     });
   }, [newestItems, selectedCategory, selectedCountry, selectedPostType]);
 
+  const filteredFeedItems = useMemo(() => {
+    return feedItems.filter((post) => {
+      const matchesCategory = selectedCategory === ALL_FILTER || (post.category ?? '').trim() === selectedCategory;
+      const matchesPostType = selectedPostType === ALL_FILTER || (post.postType ?? '').trim() === selectedPostType;
+      const matchesCountry = selectedCountry === ALL_FILTER || (post.countrySlug ?? '').trim() === selectedCountry;
+      return matchesCategory && matchesPostType && matchesCountry;
+    });
+  }, [feedItems, selectedCategory, selectedCountry, selectedPostType]);
+
   const sectionEntries = useMemo(() => {
     const groups = new Map<string, ContentBlogPostCardDto[]>();
     for (const post of filteredNewest) {
@@ -152,6 +176,61 @@ export function BlogClientWrapper() {
     setSelectedPostType(ALL_FILTER);
     setSelectedCountry(ALL_FILTER);
   };
+
+  const loadMoreFeed = useCallback(async () => {
+    if (!feedHasMore || !feedCursor || feedLoadingMore) return;
+
+    setFeedLoadingMore(true);
+    try {
+      const nextPage = await listBlogPosts({
+        sort: 'newest',
+        limit: FEED_PAGE_SIZE,
+        q,
+        cursor: feedCursor,
+      });
+
+      setFeedItems((prev) => {
+        const seen = new Set(prev.map((item) => item.id));
+        const merged = [...prev];
+        for (const item of nextPage.items) {
+          if (!seen.has(item.id)) {
+            merged.push(item);
+            seen.add(item.id);
+          }
+        }
+        return merged;
+      });
+      setFeedCursor(nextPage.nextCursor ?? null);
+      setFeedHasMore(Boolean(nextPage.nextCursor));
+    } finally {
+      setFeedLoadingMore(false);
+    }
+  }, [feedCursor, feedHasMore, feedLoadingMore, q]);
+
+  useEffect(() => {
+    if (viewMode !== 'feed') return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    if (!feedHasMore || feedLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMoreFeed();
+      },
+      { rootMargin: '300px 0px' }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [feedHasMore, feedLoadingMore, loadMoreFeed, viewMode, filteredFeedItems.length]);
+
+  const viewToggleClass = (active: boolean) =>
+    [
+      'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+      active
+        ? 'border-sky-200 bg-sky-100 text-slate-900'
+        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900',
+    ].join(' ');
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -190,18 +269,14 @@ export function BlogClientWrapper() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Chip selected={viewMode === 'sections'} onClick={() => setViewMode('sections')} className="cursor-pointer">
-              <span className="inline-flex items-center gap-2">
-                <LayoutGrid size={14} />
-                Рубрики
-              </span>
-            </Chip>
-            <Chip selected={viewMode === 'feed'} onClick={() => setViewMode('feed')} className="cursor-pointer">
-              <span className="inline-flex items-center gap-2">
-                <Rows3 size={14} />
-                Лента
-              </span>
-            </Chip>
+            <button type="button" onClick={() => setViewMode('sections')} className={viewToggleClass(viewMode === 'sections')}>
+              <LayoutGrid size={14} />
+              Рубрики
+            </button>
+            <button type="button" onClick={() => setViewMode('feed')} className={viewToggleClass(viewMode === 'feed')}>
+              <Rows3 size={14} />
+              Лента
+            </button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -331,10 +406,10 @@ export function BlogClientWrapper() {
         </section>
       ) : null}
 
-      {!hasError && viewMode === 'feed' && filteredNewest.length > 0 ? (
+      {!hasError && viewMode === 'feed' && filteredFeedItems.length > 0 ? (
         <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
           <div className="space-y-4">
-            {filteredNewest.map((post) => (
+            {filteredFeedItems.map((post) => (
               <div key={post.id}>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   {post.category ? (
@@ -352,10 +427,21 @@ export function BlogClientWrapper() {
               </div>
             ))}
           </div>
+          <div ref={loadMoreRef} className="py-6 text-center text-sm text-slate-500">
+            {feedLoadingMore ? 'Загружаем ещё публикации…' : feedHasMore ? 'Прокрутите вниз, чтобы загрузить ещё' : 'Больше публикаций нет'}
+          </div>
         </section>
       ) : null}
 
-      {!hasError && !isLoading && filteredNewest.length === 0 ? (
+      {!hasError && !isLoading && viewMode === 'feed' && filteredFeedItems.length === 0 ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div ref={loadMoreRef} className="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
+            {feedLoadingMore || feedHasMore ? 'Подбираем публикации по вашим фильтрам…' : 'По выбранным фильтрам публикации не найдены.'}
+          </div>
+        </section>
+      ) : null}
+
+      {!hasError && !isLoading && viewMode === 'sections' && filteredNewest.length === 0 ? (
         <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
           <div className="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
             По выбранным фильтрам публикации не найдены.

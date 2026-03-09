@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Badge } from '@go2asia/ui';
 import { Heart, Bookmark, Share2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getBlogPostBySlug, listBlogPosts } from '@go2asia/sdk/blog';
 import { ArticleMarkdown } from '@/components/blog/ArticleMarkdown';
+import { ArticleHeroBlock } from '@/components/blog/ArticleHeroBlock';
 import { PostCard } from '@/components/blog/PostCard';
 import { PostMeta } from '@/components/blog/PostMeta';
 
@@ -74,38 +74,12 @@ export default async function ArticlePage({
             <span className="text-slate-900 line-clamp-1">{post.title}</span>
           </nav>
 
-          {post.heroUrl ? (
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 mb-8 shadow-sm ring-1 ring-slate-200">
-              <Image src={post.heroUrl} alt={post.title} fill className="object-cover" sizes="760px" unoptimized />
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                {post.postType ? (
-                  <Badge variant="info" className="text-[11px] shadow-sm">
-                    {post.postType}
-                  </Badge>
-                ) : null}
-                {post.isEditorPick ? (
-                  <Badge variant="popular" className="text-[11px] shadow-sm">
-                    Выбор редакции
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          {!post.heroUrl ? (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {post.postType ? (
-                <Badge variant="info" className="text-[11px] shadow-sm">
-                  {post.postType}
-                </Badge>
-              ) : null}
-              {post.isEditorPick ? (
-                <Badge variant="popular" className="text-[11px] shadow-sm">
-                  Выбор редакции
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
+          <ArticleHeroBlock
+            title={post.title}
+            heroUrl={post.heroUrl}
+            postType={post.postType}
+            isEditorPick={post.isEditorPick}
+          />
 
           <h1 className="text-[28px] sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">{post.title}</h1>
           {post.subtitle ? <p className="mt-3 text-[18px] text-slate-600 leading-7">{post.subtitle}</p> : null}

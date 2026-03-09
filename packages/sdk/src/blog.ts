@@ -49,6 +49,7 @@ export async function listBlogPosts(params?: {
   cursor?: string;
   sort?: BlogPostSort;
   q?: string;
+  category?: string;
   tag?: string;
   author?: string;
   country?: string;
@@ -60,6 +61,7 @@ export async function listBlogPosts(params?: {
   if (params?.cursor) sp.set('cursor', params.cursor);
   if (params?.sort) sp.set('sort', params.sort);
   if (params?.q) sp.set('q', params.q);
+  if (params?.category) sp.set('category', params.category);
   if (params?.tag) sp.set('tag', params.tag);
   if (params?.author) sp.set('author', params.author);
   if (params?.country) sp.set('country', params.country);
@@ -78,6 +80,7 @@ export const useListBlogPosts = (params?: {
   cursor?: string;
   sort?: BlogPostSort;
   q?: string;
+  category?: string;
   tag?: string;
   author?: string;
   country?: string;

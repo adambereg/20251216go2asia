@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { Badge } from '@go2asia/ui';
 import { PostMeta } from './PostMeta';
 
@@ -36,11 +39,17 @@ export function PostCard({
   hideMeta?: boolean;
 }) {
   const href = `/blog/${post.slug}`;
+  const [mediaFailed, setMediaFailed] = useState(false);
+  const showMedia = Boolean(post.heroUrl) && !mediaFailed;
 
-  const badges = [
-    post.postType ? { label: post.postType, tone: 'info' as const } : null,
-    post.isEditorPick ? { label: 'Выбор редакции', tone: 'popular' as const } : null,
-  ].filter(Boolean) as Array<{ label: string; tone: 'info' | 'popular' }>;
+  const badges = useMemo(
+    () =>
+      [
+        post.postType ? { label: post.postType, tone: 'info' as const } : null,
+        post.isEditorPick ? { label: 'Выбор редакции', tone: 'popular' as const } : null,
+      ].filter(Boolean) as Array<{ label: string; tone: 'info' | 'popular' }>,
+    [post.isEditorPick, post.postType]
+  );
 
   if (variant === 'horizontal') {
     return (
@@ -51,20 +60,21 @@ export function PostCard({
           className ?? '',
         ].join(' ')}
       >
-        <div className="flex">
-          <div className="relative aspect-video w-[160px] sm:w-[180px] shrink-0 bg-slate-100">
-            {post.heroUrl ? (
+        <div className={showMedia ? 'flex' : 'block'}>
+          {showMedia ? (
+            <div className="relative aspect-video w-[160px] sm:w-[180px] shrink-0 bg-slate-100">
               <Image
-                src={post.heroUrl}
+                src={post.heroUrl!}
                 alt={post.title}
                 fill
                 className="object-cover"
                 sizes="180px"
                 unoptimized
+                onError={() => setMediaFailed(true)}
               />
-            ) : null}
-          </div>
-          <div className="p-3 flex-1 min-w-0">
+            </div>
+          ) : null}
+          <div className={showMedia ? 'p-3 flex-1 min-w-0' : 'p-4 min-w-0'}>
             <div className="flex flex-wrap gap-2 mb-2">
               {badges.map((b) => (
                 <Badge key={b.label} variant={b.tone} className="text-[11px]">
@@ -102,12 +112,20 @@ export function PostCard({
           className ?? '',
         ].join(' ')}
       >
-        <div className="p-4 flex gap-4">
-          <div className="relative w-[92px] shrink-0 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 ring-1 ring-slate-200/60">
-            {post.heroUrl ? (
-              <Image src={post.heroUrl} alt={post.title} fill className="object-cover" sizes="92px" unoptimized />
-            ) : null}
-          </div>
+        <div className={showMedia ? 'p-4 flex gap-4' : 'p-4'}>
+          {showMedia ? (
+            <div className="relative w-[92px] shrink-0 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 ring-1 ring-slate-200/60">
+              <Image
+                src={post.heroUrl!}
+                alt={post.title}
+                fill
+                className="object-cover"
+                sizes="92px"
+                unoptimized
+                onError={() => setMediaFailed(true)}
+              />
+            </div>
+          ) : null}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap gap-2 mb-1.5">
               {badges.slice(0, 1).map((b) => (
@@ -142,18 +160,19 @@ export function PostCard({
           className ?? '',
         ].join(' ')}
       >
-        <div className="relative aspect-video w-full bg-slate-100">
-          {post.heroUrl ? (
+        {showMedia ? (
+          <div className="relative aspect-video w-full bg-slate-100">
             <Image
-              src={post.heroUrl}
+              src={post.heroUrl!}
               alt={post.title}
               fill
               className="object-cover"
               sizes="(min-width: 1024px) 240px, 100vw"
               unoptimized
+              onError={() => setMediaFailed(true)}
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <div className="p-4">
           <div className="flex flex-wrap gap-1.5 mb-2">
             {badges.slice(0, 1).map((b) => (
@@ -190,20 +209,38 @@ export function PostCard({
         className ?? '',
       ].join(' ')}
     >
-      <div className="relative aspect-video w-full bg-slate-100">
-        {post.heroUrl ? (
+      {showMedia ? (
+        <div className="relative aspect-video w-full bg-slate-100">
           <Image
-            src={post.heroUrl}
+            src={post.heroUrl!}
             alt={post.title}
             fill
             className="object-cover"
             sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
             unoptimized
+            onError={() => setMediaFailed(true)}
           />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-950/10 to-transparent" />
-        {badges.length > 0 ? (
-          <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-950/10 to-transparent" />
+          {badges.length > 0 ? (
+            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <Badge key={b.label} variant={b.tone} className="text-[11px] shadow-sm">
+                  {b.label}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="text-white text-[15px] font-semibold leading-snug line-clamp-2 drop-shadow-sm">
+              {post.title}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className={showMedia ? 'p-4' : 'p-5'}>
+        {!showMedia && badges.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mb-3">
             {badges.map((b) => (
               <Badge key={b.label} variant={b.tone} className="text-[11px] shadow-sm">
                 {b.label}
@@ -211,14 +248,7 @@ export function PostCard({
             ))}
           </div>
         ) : null}
-        <div className="absolute bottom-3 left-3 right-3">
-          <div className="text-white text-[15px] font-semibold leading-snug line-clamp-2 drop-shadow-sm">
-            {post.title}
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4">
+        {!showMedia ? <div className="text-[18px] font-semibold text-slate-900 leading-snug mb-3">{post.title}</div> : null}
         {post.excerpt ? <div className="text-xs text-slate-600 leading-relaxed line-clamp-3">{post.excerpt}</div> : null}
         <div className="mt-3">
           <PostMeta
