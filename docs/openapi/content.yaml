@@ -354,6 +354,79 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/content/blog/posts:
+    get:
+      tags: [content]
+      operationId: listBlogPosts
+      summary: List blog posts (public)
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Opaque pagination cursor (base64url)
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [newest, popular, featured]
+            default: newest
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Full-text-ish search over title/excerpt/content
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by tag slug
+        - name: author
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by author slug
+        - name: exclude_slug
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Exclude one post (for related lists)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CursorListBlogPostsResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/content/blog/posts/{slug}:
+    get:
+      tags: [content]
+      operationId: getBlogPostBySlug
+      summary: Get blog post by slug (public)
+      parameters:
+        - $ref: "#/components/parameters/ArticleSlug"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBlogPostDetailDto"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
 components:
   securitySchemes:
     GatewayAuth:
@@ -574,6 +647,108 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContentArticleDto"
+
+    CursorListBlogPostsResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentBlogPostCardDto"
+        nextCursor:
+          type: string
+          nullable: true
+
+    ContentBlogAuthorDto:
+      type: object
+      required: [slug, displayName, avatarUrl]
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+
+    ContentBlogPostCardDto:
+      type: object
+      required:
+        [
+          id,
+          slug,
+          lang,
+          title,
+          subtitle,
+          excerpt,
+          postType,
+          category,
+          tags,
+          heroUrl,
+          publishedAt,
+          updatedAt,
+          readingTimeMinutes,
+          isPromoted,
+          isFeatured,
+          isEditorPick,
+          author,
+        ]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        lang:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        excerpt:
+          type: string
+          nullable: true
+        postType:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        heroUrl:
+          type: string
+          nullable: true
+        publishedAt:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          nullable: true
+        readingTimeMinutes:
+          type: integer
+          nullable: true
+        isPromoted:
+          type: boolean
+        isFeatured:
+          type: boolean
+        isEditorPick:
+          type: boolean
+        author:
+          $ref: "#/components/schemas/ContentBlogAuthorDto"
+          nullable: true
+
+    ContentBlogPostDetailDto:
+      allOf:
+        - $ref: "#/components/schemas/ContentBlogPostCardDto"
+        - type: object
+          required: [contentMarkdown]
+          properties:
+            contentMarkdown:
+              type: string
 
     ListContentTabsResponse:
       type: object

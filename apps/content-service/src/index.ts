@@ -6,6 +6,8 @@
  * - Integration with Points Service (event_registration)
  */
 
+import type { BlogPostListRow, BlogPostSort, ListBlogPostsParams } from '@go2asia/db/queries/blog';
+import { getBlogPostBySlug as getBlogPostBySlugSql, listBlogPosts as listBlogPostsSql } from '@go2asia/db/queries/blog';
 import type {
   ArticleRow,
   CityRow,
@@ -183,6 +185,44 @@ export interface ContentArticleDto {
   status: string;
 }
 
+// ---------------------------------------------------------------------
+// Blog Asia DTOs (public)
+// ---------------------------------------------------------------------
+
+export interface ContentBlogAuthorDto {
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface ContentBlogPostCardDto {
+  id: string;
+  slug: string;
+  lang: string;
+  title: string;
+  subtitle: string | null;
+  excerpt: string | null;
+  postType: string | null;
+  category: string | null;
+  countrySlug: string | null;
+  citySlug: string | null;
+  tags: string[];
+  heroUrl: string | null;
+  publishedAt: string | null;
+  updatedAt: string | null;
+  readingTimeMinutes: number | null;
+  isPromoted: boolean;
+  isFeatured: boolean;
+  isEditorPick: boolean;
+  author: ContentBlogAuthorDto | null;
+}
+
+export interface ContentBlogPostDetailDto extends ContentBlogPostCardDto {
+  contentMarkdown: string;
+}
+
+export type CursorListResponse<T> = { items: T[]; nextCursor: string | null };
+
 export interface ContentTabDto {
   tabKey: string;
   lang: string;
@@ -311,6 +351,38 @@ function base64UrlToBytes(input: string): Uint8Array {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+type BlogPostsCursorV1 = {
+  v: 1;
+  sort: BlogPostSort;
+  publishedAt: string;
+  id: string;
+  popularityScore?: string;
+  featuredRank?: number;
+};
+
+function encodeBlogCursor(cursor: BlogPostsCursorV1): string {
+  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(cursor)));
+}
+
+function decodeBlogCursor(raw: string | null): BlogPostsCursorV1 | null {
+  const v = (raw ?? '').trim();
+  if (!v) return null;
+  try {
+    const parsed = JSON.parse(new TextDecoder().decode(base64UrlToBytes(v))) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const json = parsed as Record<string, unknown>;
+    if (json.v !== 1) return null;
+    if (json.sort !== 'newest' && json.sort !== 'popular' && json.sort !== 'featured') return null;
+    if (typeof json.publishedAt !== 'string' || json.publishedAt.length < 10) return null;
+    if (typeof json.id !== 'string' || json.id.length < 3) return null;
+    if (json.popularityScore !== undefined && typeof json.popularityScore !== 'string') return null;
+    if (json.featuredRank !== undefined && typeof json.featuredRank !== 'number') return null;
+    return json as BlogPostsCursorV1;
+  } catch {
+    return null;
+  }
 }
 
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -690,7 +762,7 @@ function toContentEvent(row: EventRow): ContentEventDto {
   const locationParts = [row.city_name, row.country_name].filter(Boolean).join(', ');
   const heroMediaKey = pickString(row.hero_media_key);
   const galleryFromDb = pickStringArray(row.gallery_media_keys);
-  const prefixRaw = pickString((row as any).media_prefix);
+  const prefixRaw = pickString(row.media_prefix);
   const prefix = prefixRaw ? (prefixRaw.endsWith('/') ? prefixRaw : `${prefixRaw}/`) : null;
   const fallbackGallery = prefix ? ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '05.jpg'].map((f) => `${prefix}${f}`) : [];
   const galleryMediaKeys = galleryFromDb.length > 0 ? galleryFromDb : fallbackGallery;
@@ -989,6 +1061,52 @@ function toContentArticle(row: ArticleRow): ContentArticleDto {
   };
 }
 
+function resolveBlogMediaUrl(env: Env, key: string | null, publicUrl: string | null): string | null {
+  const k = typeof key === 'string' && key.trim().length > 0 ? key.trim() : null;
+  const fromKey = k ? getPublicUrl(env, k) : null;
+  if (fromKey) return fromKey;
+  const url = typeof publicUrl === 'string' && publicUrl.trim().length > 0 ? publicUrl.trim() : null;
+  if (!url) return null;
+  return isPlaceholderHeroUrl(url) ? null : url;
+}
+
+function toContentBlogPostCard(env: Env, row: BlogPostListRow): ContentBlogPostCardDto {
+  const heroUrl = resolveBlogMediaUrl(env, row.hero_media_key, row.hero_public_url);
+  const tags = pickStringArray(row.tags_json);
+  const authorSlug = typeof row.author_slug === 'string' && row.author_slug.trim().length > 0 ? row.author_slug.trim() : null;
+  const authorName =
+    typeof row.author_display_name === 'string' && row.author_display_name.trim().length > 0
+      ? row.author_display_name.trim()
+      : null;
+  const authorAvatarUrl = resolveBlogMediaUrl(env, row.author_avatar_media_key, row.author_avatar_public_url);
+  const author: ContentBlogAuthorDto | null =
+    authorSlug && authorName
+      ? { slug: authorSlug, displayName: authorName, avatarUrl: authorAvatarUrl }
+      : null;
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    lang: row.lang,
+    title: row.title,
+    subtitle: row.subtitle ?? null,
+    excerpt: row.excerpt ?? null,
+    postType: row.post_type ?? null,
+    category: row.category ?? null,
+    countrySlug: row.country_slug ?? null,
+    citySlug: row.city_slug ?? null,
+    tags,
+    heroUrl,
+    publishedAt: row.published_at ?? null,
+    updatedAt: row.updated_at ?? null,
+    readingTimeMinutes: row.reading_time_minutes ?? null,
+    isPromoted: Boolean(row.is_promoted),
+    isFeatured: Boolean(row.is_featured),
+    isEditorPick: Boolean(row.is_editor_pick),
+    author,
+  };
+}
+
 function toContentTab(row: ContentBlockRow): ContentTabDto {
   return {
     tabKey: row.tab_key,
@@ -1025,8 +1143,12 @@ async function handleListEvents(
     const category = url.searchParams.get('category') ?? undefined;
     const date_from = url.searchParams.get('date_from') ?? undefined;
     const date_to = url.searchParams.get('date_to') ?? undefined;
-    const price = (url.searchParams.get('price') ?? 'any') as any;
-    const verified = (url.searchParams.get('verified') ?? 'any') as any;
+    const priceParam = url.searchParams.get('price') ?? 'any';
+    const price: 'free' | 'paid' | 'any' =
+      priceParam === 'free' || priceParam === 'paid' ? priceParam : 'any';
+    const verifiedParam = url.searchParams.get('verified') ?? 'any';
+    const verified: 'true' | 'false' | 'any' =
+      verifiedParam === 'true' || verifiedParam === 'false' ? verifiedParam : 'any';
     const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
 
     const { items, total } = await listEvents(sqlClient, {
@@ -1424,6 +1546,88 @@ async function handleGetArticleBySlug(env: Env, slug: string, logger: ReturnType
   }
 }
 
+async function handleListBlogPosts(env: Env, url: URL, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+
+  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') ?? '24') || 24));
+  const sortRaw = (url.searchParams.get('sort') ?? 'newest').trim().toLowerCase();
+  const sort: BlogPostSort = sortRaw === 'popular' || sortRaw === 'featured' ? (sortRaw as BlogPostSort) : 'newest';
+
+  const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? undefined;
+  const category = url.searchParams.get('category') ?? undefined;
+  const tag = url.searchParams.get('tag') ?? undefined;
+  const author = url.searchParams.get('author') ?? undefined;
+  const country = url.searchParams.get('country') ?? undefined;
+  const city = url.searchParams.get('city') ?? undefined;
+  const excludeSlug = url.searchParams.get('exclude_slug') ?? url.searchParams.get('excludeSlug') ?? undefined;
+
+  const cursorRaw = url.searchParams.get('cursor');
+  const cursor = decodeBlogCursor(cursorRaw);
+  if (cursor && cursor.sort !== sort) {
+    return json({ error: { code: 'BadRequest', message: 'cursor.sort does not match sort' } }, 400);
+  }
+
+  try {
+    const { items: rows, hasMore } = await listBlogPostsSql(sqlClient, {
+      limit,
+      sort,
+      q,
+      category,
+      tag,
+      author,
+      country,
+      city,
+      excludeSlug,
+      cursor: cursor
+        ? {
+            sort: cursor.sort,
+            publishedAt: cursor.publishedAt,
+            id: cursor.id,
+            popularityScore: cursor.popularityScore,
+            featuredRank: cursor.featuredRank,
+          }
+        : null,
+    } satisfies ListBlogPostsParams);
+
+    const items = rows.map((r) => toContentBlogPostCard(env, r));
+
+    let nextCursor: string | null = null;
+    if (hasMore && items.length > 0) {
+      const last = rows[rows.length - 1]!;
+      if (last.published_at) {
+        nextCursor = encodeBlogCursor({
+          v: 1,
+          sort,
+          publishedAt: last.published_at,
+          id: last.id,
+          popularityScore: last.popularity_score ?? undefined,
+          featuredRank: typeof last.featured_rank === 'number' ? last.featured_rank : undefined,
+        });
+      }
+    }
+
+    return json({ items, nextCursor } satisfies CursorListResponse<ContentBlogPostCardDto>, 200);
+  } catch (error) {
+    logger.error('List blog posts error', error);
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch blog posts' } }, 500);
+  }
+}
+
+async function handleGetBlogPostBySlug(env: Env, slug: string, logger: ReturnType<typeof createLogger>): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  try {
+    const row = await getBlogPostBySlugSql(sqlClient, slug);
+    if (!row) return json({ error: { code: 'NotFound', message: 'Post not found' } }, 404);
+    const dto: ContentBlogPostDetailDto = { ...toContentBlogPostCard(env, row), contentMarkdown: row.content_markdown };
+    return json(dto, 200);
+  } catch (error) {
+    logger.error('Get blog post error', error, { slug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch blog post' } }, 500);
+  }
+}
+
 // ---------------------------------------------------------------------
 // Guide Engine v1 (public read API)
 // ---------------------------------------------------------------------
@@ -1448,7 +1652,8 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
   const editorialOnlyRaw = url.searchParams.get('editorial_only');
   const editorialOnly = editorialOnlyRaw === 'true' || editorialOnlyRaw === '1';
   const sortRaw = (url.searchParams.get('sort') ?? '').trim().toLowerCase();
-  const sort = sortRaw === 'updated' || sortRaw === 'popular' || sortRaw === 'new' ? (sortRaw as any) : undefined;
+  const sort: 'new' | 'updated' | 'popular' | undefined =
+    sortRaw === 'updated' || sortRaw === 'popular' || sortRaw === 'new' ? sortRaw : undefined;
 
   try {
     // Security hardening: never expose draft content in production (public API).
@@ -1531,7 +1736,10 @@ function computeIsEmpty(blockType: string, payload: Record<string, unknown>): bo
     const md = typeof payload.markdown === 'string' ? payload.markdown : '';
     return md.trim().length < 20;
   }
-  const arrLen = (key: string) => (Array.isArray((payload as any)[key]) ? ((payload as any)[key] as any[]).length : 0);
+  const arrLen = (key: string) => {
+    const v = payload[key];
+    return Array.isArray(v) ? v.length : 0;
+  };
   if (blockType === 'bullets' || blockType === 'checklist' || blockType === 'steps' || blockType === 'timeline') {
     return arrLen('items') < 1 && arrLen('steps') < 1;
   }
@@ -1541,8 +1749,9 @@ function computeIsEmpty(blockType: string, payload: Record<string, unknown>): bo
   if (blockType === 'city_refs') return arrLen('city_ids') < 1 && arrLen('ids') < 1;
   if (blockType === 'related_guides') return arrLen('guide_ids') < 1 && arrLen('guide_slugs') < 1 && arrLen('ids') < 1;
   if (blockType === 'map_config') {
-    const c = (payload as any).center;
-    return !(c && typeof c === 'object' && typeof c.lat === 'number' && typeof c.lng === 'number');
+    const c = payload.center;
+    const center = c && typeof c === 'object' && 'lat' in c && 'lng' in c ? (c as { lat: number; lng: number }) : null;
+    return !(center && typeof center.lat === 'number' && typeof center.lng === 'number');
   }
   // default conservative: empty if payload has no keys
   return !payload || Object.keys(payload).length === 0;
@@ -1551,15 +1760,16 @@ function computeIsEmpty(blockType: string, payload: Record<string, unknown>): bo
 async function handleAdminUpsertGuide(request: Request, env: Env, logger: ReturnType<typeof createLogger>): Promise<Response> {
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
-  const body = (await request.json().catch(() => null)) as any;
-  const slug = typeof body?.slug === 'string' ? body.slug.trim() : '';
-  const title = typeof body?.title === 'string' ? body.title.trim() : '';
-  const guideType = typeof body?.guideType === 'string' ? body.guideType.trim() : 'strategic';
-  const status = typeof body?.status === 'string' ? body.status.trim() : 'draft';
-  const tags = Array.isArray(body?.tags) ? body.tags.filter((x: any) => typeof x === 'string') : [];
-  const countryIds = Array.isArray(body?.countryIds) ? body.countryIds.filter((x: any) => typeof x === 'string') : [];
-  const cityIds = Array.isArray(body?.cityIds) ? body.cityIds.filter((x: any) => typeof x === 'string') : [];
-  const heroR2Key = typeof body?.heroR2Key === 'string' ? body.heroR2Key.trim() : null;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const b = body ?? {};
+  const slug = typeof b.slug === 'string' ? (b.slug as string).trim() : '';
+  const title = typeof b.title === 'string' ? (b.title as string).trim() : '';
+  const guideType = typeof b.guideType === 'string' ? (b.guideType as string).trim() : 'strategic';
+  const status = typeof b.status === 'string' ? (b.status as string).trim() : 'draft';
+  const tags = Array.isArray(b.tags) ? (b.tags as unknown[]).filter((x: unknown) => typeof x === 'string') : [];
+  const countryIds = Array.isArray(b.countryIds) ? (b.countryIds as unknown[]).filter((x: unknown) => typeof x === 'string') : [];
+  const cityIds = Array.isArray(b.cityIds) ? (b.cityIds as unknown[]).filter((x: unknown) => typeof x === 'string') : [];
+  const heroR2Key = typeof b.heroR2Key === 'string' ? (b.heroR2Key as string).trim() : null;
 
   if (!slug || !title) return json({ error: { code: 'BadRequest', message: 'slug and title are required' } }, 400);
 
@@ -1583,7 +1793,7 @@ async function handleAdminUpsertGuide(request: Request, env: Env, logger: Return
       updated_at = now()
     RETURNING id::text AS id
   `;
-  const guideId = (rows[0] as any)?.id as string | undefined;
+  const guideId = (rows[0] as { id?: string } | undefined)?.id;
   return json({ ok: true, guideId: guideId ?? id, slug }, 200);
 }
 
@@ -1608,10 +1818,11 @@ async function handleAdminUpdateSection(
   const guideId = await getGuideIdBySlugSql(sqlClient, slug);
   if (!guideId) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
 
-  const body = (await request.json().catch(() => null)) as any;
-  const title = typeof body?.title === 'string' ? body.title.trim() : null;
-  const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
-  const isEnabled = typeof body?.isEnabled === 'boolean' ? body.isEnabled : null;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const b = body ?? {};
+  const title = typeof b.title === 'string' ? (b.title as string).trim() : null;
+  const orderIndex = typeof b.orderIndex === 'number' && Number.isFinite(b.orderIndex) ? Math.trunc(b.orderIndex) : null;
+  const isEnabled = typeof b.isEnabled === 'boolean' ? b.isEnabled : null;
 
   const rows = await sqlClient`
     INSERT INTO guide_sections (guide_id, tab_key, title, order_index, is_enabled, updated_at)
@@ -1625,7 +1836,7 @@ async function handleAdminUpdateSection(
       updated_at = now()
     RETURNING id::text AS id
   `;
-  const id = (rows[0] as any)?.id ?? null;
+  const id = (rows[0] as { id?: string } | undefined)?.id ?? null;
   return json({ ok: true, id }, 200);
 }
 
@@ -1637,12 +1848,13 @@ async function handleAdminCreateBlock(
 ): Promise<Response> {
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
-  const body = (await request.json().catch(() => null)) as any;
-  const blockType = typeof body?.blockType === 'string' ? body.blockType.trim() : '';
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const b = body ?? {};
+  const blockType = typeof b.blockType === 'string' ? (b.blockType as string).trim() : '';
   const orderIndexRaw =
-    typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
-  const insertAfterBlockId = typeof body?.insertAfterBlockId === 'string' ? body.insertAfterBlockId.trim() : null;
-  const payload = body?.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? (body.payload as Record<string, unknown>) : {};
+    typeof b.orderIndex === 'number' && Number.isFinite(b.orderIndex) ? Math.trunc(b.orderIndex) : null;
+  const insertAfterBlockId = typeof b.insertAfterBlockId === 'string' ? (b.insertAfterBlockId as string).trim() : null;
+  const payload = b.payload && typeof b.payload === 'object' && !Array.isArray(b.payload) ? (b.payload as Record<string, unknown>) : {};
   if (!blockType) return json({ error: { code: 'BadRequest', message: 'blockType is required' } }, 400);
   const id = crypto.randomUUID();
 
@@ -1717,11 +1929,10 @@ async function handleAdminUpdateBlock(
     WHERE id = ${blockId}::uuid
     LIMIT 1
   `;
+  const row0 = existingRows[0] as { payload?: unknown } | undefined;
   const existingPayload =
-    (existingRows[0] as { payload?: unknown } | undefined)?.payload &&
-    typeof (existingRows[0] as any).payload === 'object' &&
-    !(Array.isArray((existingRows[0] as any).payload))
-      ? ((existingRows[0] as any).payload as Record<string, unknown>)
+    row0?.payload && typeof row0.payload === 'object' && !Array.isArray(row0.payload)
+      ? (row0.payload as Record<string, unknown>)
       : null;
   const isMdImport =
     existingPayload &&
@@ -1734,7 +1945,7 @@ async function handleAdminUpdateBlock(
     );
   }
 
-  const body = (await request.json().catch(() => null)) as any;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const blockType = typeof body?.blockType === 'string' ? body.blockType.trim() : null;
   const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : null;
   const payload = body?.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? (body.payload as Record<string, unknown>) : null;
@@ -1767,11 +1978,10 @@ async function handleAdminDeleteBlock(env: Env, blockId: string, logger: ReturnT
     WHERE id = ${blockId}::uuid
     LIMIT 1
   `;
+  const row0 = existingRows[0] as { payload?: unknown } | undefined;
   const existingPayload =
-    (existingRows[0] as { payload?: unknown } | undefined)?.payload &&
-    typeof (existingRows[0] as any).payload === 'object' &&
-    !(Array.isArray((existingRows[0] as any).payload))
-      ? ((existingRows[0] as any).payload as Record<string, unknown>)
+    row0?.payload && typeof row0.payload === 'object' && !Array.isArray(row0.payload)
+      ? (row0.payload as Record<string, unknown>)
       : null;
   const isMdImport =
     existingPayload &&
@@ -1798,14 +2008,15 @@ async function handleAdminUpsertFeed(
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   const guideId = await getGuideIdBySlugSql(sqlClient, slug);
   if (!guideId) return json({ error: { code: 'NotFound', message: 'Guide not found' } }, 404);
-  const body = (await request.json().catch(() => null)) as any;
-  const tabKey = typeof body?.tabKey === 'string' ? body.tabKey.trim() : '';
-  const source = typeof body?.source === 'string' ? body.source.trim() : '';
-  const filter = body?.filter && typeof body.filter === 'object' && !Array.isArray(body.filter) ? (body.filter as Record<string, unknown>) : {};
-  const limitCount = typeof body?.limitCount === 'number' && Number.isFinite(body.limitCount) ? Math.trunc(body.limitCount) : 20;
-  const sort = typeof body?.sort === 'string' ? body.sort.trim() : 'relevance';
-  const orderIndex = typeof body?.orderIndex === 'number' && Number.isFinite(body.orderIndex) ? Math.trunc(body.orderIndex) : 0;
-  const isEnabled = typeof body?.isEnabled === 'boolean' ? body.isEnabled : true;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const b = body ?? {};
+  const tabKey = typeof b.tabKey === 'string' ? (b.tabKey as string).trim() : '';
+  const source = typeof b.source === 'string' ? (b.source as string).trim() : '';
+  const filter = b.filter && typeof b.filter === 'object' && !Array.isArray(b.filter) ? (b.filter as Record<string, unknown>) : {};
+  const limitCount = typeof b.limitCount === 'number' && Number.isFinite(b.limitCount) ? Math.trunc(b.limitCount) : 20;
+  const sort = typeof b.sort === 'string' ? (b.sort as string).trim() : 'relevance';
+  const orderIndex = typeof b.orderIndex === 'number' && Number.isFinite(b.orderIndex) ? Math.trunc(b.orderIndex) : 0;
+  const isEnabled = typeof b.isEnabled === 'boolean' ? b.isEnabled : true;
   if (!tabKey || !source) return json({ error: { code: 'BadRequest', message: 'tabKey and source are required' } }, 400);
 
   const id = crypto.randomUUID();
@@ -1947,7 +2158,7 @@ async function withTimeout<T>(
   logger: ReturnType<typeof createLogger>,
   meta: Record<string, unknown>
 ): Promise<T> {
-  let t: any;
+  let t: ReturnType<typeof setTimeout> | undefined;
   try {
     const timeout = new Promise<T>((resolve) => {
       t = setTimeout(() => resolve(onTimeout()), ms);
@@ -2064,7 +2275,7 @@ async function resolveFeedsForGuide(args: {
               countryIds: countryIds.length ? countryIds : undefined,
               startAfter: startAfter ?? undefined,
               limit,
-              sort: (g.sort as any) ?? 'date_asc',
+              sort: (typeof g.sort === 'string' ? g.sort : 'date_asc') as 'date_asc' | 'date_desc',
             });
             return rows.map((r) => ({
               kind: 'event',
@@ -2094,7 +2305,7 @@ async function resolveFeedsForGuide(args: {
               kind: kind ?? undefined,
               tags: tags.length ? tags : undefined,
               limit,
-              sort: (g.sort as any) ?? 'relevance',
+              sort: (typeof g.sort === 'string' ? g.sort : 'relevance') as 'relevance' | 'popular' | 'newest',
             });
             return rows.map((r) => ({
               kind: 'place',
@@ -2122,7 +2333,7 @@ async function resolveFeedsForGuide(args: {
             const rows = await listArticlesForGuideFeed(sqlClient, {
               tags: tags.length ? tags : undefined,
               limit,
-              sort: (g.sort as any) ?? 'newest',
+              sort: (typeof g.sort === 'string' ? g.sort : 'newest') as 'newest' | 'popular',
             });
             return rows.map((r) => ({
               kind: 'article',
@@ -2459,6 +2670,20 @@ export default {
     if (placeGetMatch && request.method === 'GET') {
       const placeId = placeGetMatch[1];
       const res = await handleGetPlaceById(env, placeId, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+
+    // Public: Blog Asia posts (SSOT: blog_posts)
+    if (path === '/v1/content/blog/posts' && request.method === 'GET') {
+      const res = await handleListBlogPosts(env, url, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const blogPostGetMatch = path.match(/^\/v1\/content\/blog\/posts\/([^/]+)$/);
+    if (blogPostGetMatch && request.method === 'GET') {
+      const slug = blogPostGetMatch[1];
+      const res = await handleGetBlogPostBySlug(env, slug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

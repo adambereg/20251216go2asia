@@ -14,7 +14,6 @@ import { createHash } from 'node:crypto';
 import { createDb } from './client';
 import { sql } from 'drizzle-orm';
 import {
-  articles,
   cities,
   countries,
   events,
@@ -69,39 +68,13 @@ type CityDTO = {
   heroImage?: string;
 };
 
-type PostDTO = {
-  id: ID;
-  slug: string;
-  title: string;
-  excerpt?: string;
-  contentMarkdown: string;
-  coverImage?: string;
-  category?: string;
-  tags?: string[];
-  publishedAt?: string;
-};
-
-type GuideDTO = {
-  id: ID;
-  slug: string;
-  title: string;
-  excerpt?: string;
-  contentMarkdown: string;
-  coverImage?: string;
-  category?: string;
-  tags?: string[];
-  publishedAt?: string;
-};
-
 type MockRepo = {
   pulse: { listEvents(): EventDTO[] };
   atlas: {
     listCountries(): CountryDTO[];
     listCities(): CityDTO[];
     listPlaces(): PlaceDTO[];
-    listGuides(): GuideDTO[];
   };
-  blog: { listPosts(): PostDTO[] };
 };
 
 const DEFAULT_MEDIA_PROVIDER = 'r2';
@@ -252,15 +225,6 @@ async function seedMedia(db: ReturnType<typeof createDb>) {
   // Pulse
   for (const e of repo.pulse.listEvents()) {
     if (e.coverImage) pushMedia('event', e.id, e.coverImage);
-  }
-
-  // Blog
-  for (const p of repo.blog.listPosts()) {
-    if (p.coverImage) pushMedia('article', p.slug, p.coverImage);
-  }
-  // Atlas guides are stored in articles table for MVP read-only feed (same schema)
-  for (const g of repo.atlas.listGuides()) {
-    if (g.coverImage) pushMedia('article', g.slug, g.coverImage);
   }
 
   if (media.length === 0) return new Map<string, string>();
@@ -441,6 +405,8 @@ async function seedPulse(db: ReturnType<typeof createDb>, mediaKeyToId: Map<stri
 
     const cover = e.coverImage;
     const slug = `${slugify(e.title)}-${e.id}`.slice(0, 255);
+    const countrySlug = (countryId ?? slugify(e.location?.country ?? 'unknown')).slice(0, 120);
+    const year = startAt.getUTCFullYear();
 
     return {
       id: e.id,
@@ -461,6 +427,7 @@ async function seedPulse(db: ReturnType<typeof createDb>, mediaKeyToId: Map<stri
       lng: null,
       imageUrl: cover ?? null,
       imageMediaId: cover ? getMediaId('event', e.id, cover) : null,
+      mediaPrefix: `events/${countrySlug}/${year}/${slug}/`,
       isFree,
       priceAmount: amount,
       priceCurrency: currency,
@@ -498,71 +465,6 @@ async function seedPulse(db: ReturnType<typeof createDb>, mediaKeyToId: Map<stri
     });
 }
 
-async function seedBlog(db: ReturnType<typeof createDb>, mediaKeyToId: Map<string, string>) {
-  const getMediaId = (kind: string, ownerId: string, url: string | undefined) => {
-    if (!url) return null;
-    const bucket = DEFAULT_MEDIA_BUCKET;
-    const provider = DEFAULT_MEDIA_PROVIDER;
-    const key = `${kind}/${ownerId}/${basenameFromUrl(url)}`;
-    return mediaKeyToId.get(`${provider}|${bucket}|${key}`) ?? null;
-  };
-
-  const repo = await loadMockRepo();
-  const posts = repo.blog.listPosts();
-  const guides = repo.atlas.listGuides();
-
-  const rows: Array<typeof articles.$inferInsert> = [
-    ...posts.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      title: p.title,
-      excerpt: p.excerpt ?? null,
-      content: p.contentMarkdown,
-      category: p.category ?? null,
-      tags: p.tags ?? null,
-      coverMediaId: getMediaId('article', p.slug, p.coverImage),
-      imageUrl: p.coverImage ?? null,
-      publishedAt: p.publishedAt ? new Date(p.publishedAt) : null,
-      status: 'published' as const,
-      isPublished: true,
-    })),
-    ...guides.map((g) => ({
-      id: g.id,
-      slug: g.slug,
-      title: g.title,
-      excerpt: g.excerpt ?? null,
-      content: g.contentMarkdown,
-      category: g.category ?? null,
-      tags: g.tags ?? null,
-      coverMediaId: getMediaId('article', g.slug, g.coverImage),
-      imageUrl: g.coverImage ?? null,
-      publishedAt: g.publishedAt ? new Date(g.publishedAt) : null,
-      status: 'published' as const,
-      isPublished: true,
-    })),
-  ];
-
-  await db
-    .insert(articles)
-    .values(rows)
-    .onConflictDoUpdate({
-      target: [articles.slug],
-      set: {
-        title: sql`excluded.title`,
-        excerpt: sql`excluded.excerpt`,
-        content: sql`excluded.content`,
-        category: sql`excluded.category`,
-        tags: sql`excluded.tags`,
-        coverMediaId: sql`excluded.cover_media_id`,
-        imageUrl: sql`excluded.image_url`,
-        publishedAt: sql`excluded.published_at`,
-        status: sql`excluded.status`,
-        isPublished: sql`excluded.is_published`,
-        updatedAt: sql`now()`,
-      },
-    });
-}
-
 async function sanityReport(db: ReturnType<typeof createDb>) {
   const counts = await db.execute(sql`
     SELECT
@@ -588,13 +490,11 @@ async function sanityReport(db: ReturnType<typeof createDb>) {
   if (allowDemoPlaces) {
     const repo = await loadMockRepo();
     const demoEventIds = repo.pulse.listEvents().slice(0, 3).map((e) => e.id);
-    const demoArticleSlugs = repo.blog.listPosts().slice(0, 3).map((p) => p.slug);
     const demoPlaceIds = repo.atlas.listPlaces().slice(0, 3).map((p) => p.id);
 
     // eslint-disable-next-line no-console
     console.log('🔎 Demo URLs to verify in UI (NEXT_PUBLIC_DATA_SOURCE=api):');
     for (const id of demoEventIds) console.log(`- /pulse/${id}`);
-    for (const slug of demoArticleSlugs) console.log(`- /blog/${slug}`);
     for (const id of demoPlaceIds) console.log(`- /atlas/places/${id}`);
     console.log(`- /atlas (countries)`);
     console.log(`- /atlas/cities`);
@@ -611,7 +511,6 @@ async function main() {
   const mediaKeyToId = await seedMedia(db);
   await seedAtlas(db, mediaKeyToId, repo);
   await seedPulse(db, mediaKeyToId);
-  await seedBlog(db, mediaKeyToId);
   await sanityReport(db);
 }
 

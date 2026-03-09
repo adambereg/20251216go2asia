@@ -1,430 +1,459 @@
 'use client';
 
-import { ModuleHero } from '@/components/modules';
-import { Globe, Clock, User } from 'lucide-react';
-import { Card, CardContent, Chip, Badge } from '@go2asia/ui';
 import Link from 'next/link';
-import { useGetArticles } from '@go2asia/sdk/blog';
-import { useMemo } from 'react';
-import { getDataSource } from '@/mocks/dto';
-import { mockRepo } from '@/mocks/repo';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, Rows3, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Chip } from '@go2asia/ui';
+import { listBlogPosts, useListBlogPosts, type ContentBlogPostCardDto } from '@go2asia/sdk/blog';
+import { PostCard } from '@/components/blog/PostCard';
+import { getCategoryOrderIndex, slugifyCategory } from './categoryConfig';
 
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  const today = new Date();
-  const diffTime = Math.abs(today.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+type BlogViewMode = 'sections' | 'feed';
 
-  if (diffDays === 0) return 'Сегодня';
-  if (diffDays === 1) return 'Вчера';
-  if (diffDays < 7) return `${diffDays} дня назад`;
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-  });
+const ALL_FILTER = '__all__';
+const FEED_PAGE_SIZE = 12;
+const SECTIONS_PAGE_SIZE = 96;
+
+function humanizeSlug(raw: string | null | undefined): string {
+  const value = (raw ?? '').trim();
+  if (!value) return '';
+  return value
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function humanizePostType(raw: string | null | undefined): string {
+  switch ((raw ?? '').trim().toLowerCase()) {
+    case 'longread':
+      return 'Лонгрид';
+    case 'note':
+      return 'Заметка';
+    case 'essay':
+      return 'Эссе';
+    case 'live':
+      return 'Live';
+    default:
+      return raw?.trim() || 'Без формата';
+  }
+}
+
+function mapPost(post: ContentBlogPostCardDto) {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    heroUrl: post.heroUrl,
+    postType: post.postType ? humanizePostType(post.postType) : null,
+    countrySlug: post.countrySlug,
+    publishedAt: post.publishedAt,
+    readingTimeMinutes: post.readingTimeMinutes,
+    author: post.author,
+    isEditorPick: post.isEditorPick,
+    isFeatured: post.isFeatured,
+    isPromoted: post.isPromoted,
+  };
 }
 
 export function BlogClientWrapper() {
-  const dataSource = getDataSource();
+  const [qInput, setQInput] = useState('');
+  const [q, setQ] = useState('');
+  const [viewMode, setViewMode] = useState<BlogViewMode>('sections');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_FILTER);
+  const [selectedPostType, setSelectedPostType] = useState<string>(ALL_FILTER);
+  const [selectedCountry, setSelectedCountry] = useState<string>(ALL_FILTER);
+  const [feedItems, setFeedItems] = useState<ContentBlogPostCardDto[]>([]);
+  const [feedCursor, setFeedCursor] = useState<string | null>(null);
+  const [feedHasMore, setFeedHasMore] = useState(false);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // Всегда вызываем хук (правило React Hooks)
-  const { data: articlesData, isLoading, error } = useGetArticles({
-    limit: 20,
-    enabled: dataSource === 'api',
-  });
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [qInput]);
 
-  // Преобразуем данные
-  const featuredArticle = useMemo(() => {
-    if (dataSource === 'mock') {
-      const post = mockRepo.blog.listPosts()[0];
-      if (!post) return null;
-      return {
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        subtitle: post.excerpt || '',
-        cover: post.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-        readingTime: post.readingTimeMin ?? 8,
-        insights: (post.tags ?? []).slice(0, 3),
-        badges: post.badges ?? [],
-        relatedThemes: (post.tags ?? []).slice(0, 3),
-      };
+  const newest = useListBlogPosts({ sort: 'newest', limit: SECTIONS_PAGE_SIZE, q });
+  const feedInitial = useListBlogPosts({ sort: 'newest', limit: FEED_PAGE_SIZE, q });
+
+  const isLoading = newest.isLoading || feedInitial.isLoading;
+  const hasError = Boolean(newest.error || feedInitial.error);
+
+  const newestItems = newest.data?.items ?? [];
+
+  useEffect(() => {
+    if (!feedInitial.data) return;
+    setFeedItems(feedInitial.data.items ?? []);
+    setFeedCursor(feedInitial.data.nextCursor ?? null);
+    setFeedHasMore(Boolean(feedInitial.data.nextCursor));
+    setFeedLoadingMore(false);
+  }, [feedInitial.data]);
+
+  const availableCategories = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const post of newestItems) {
+      const key = (post.category ?? '').trim();
+      if (!key) continue;
+      map.set(key, (map.get(key) ?? 0) + 1);
     }
+    return [...map.entries()]
+      .sort((a, b) => {
+        const rankDiff = getCategoryOrderIndex(a[0]) - getCategoryOrderIndex(b[0]);
+        if (rankDiff !== 0) return rankDiff;
+        return b[1] - a[1] || a[0].localeCompare(b[0], 'ru');
+      })
+      .map(([value]) => value);
+  }, [newestItems]);
 
-    if (!articlesData?.items || articlesData.items.length === 0 || error) {
-      const post = mockRepo.blog.listPosts()[0];
-      if (!post) return null;
-      return {
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        subtitle: post.excerpt || '',
-        cover: post.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-        readingTime: post.readingTimeMin ?? 8,
-        insights: (post.tags ?? []).slice(0, 3),
-        badges: post.badges ?? [],
-        relatedThemes: (post.tags ?? []).slice(0, 3),
-      };
+  const availablePostTypes = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const post of newestItems) {
+      const key = (post.postType ?? '').trim();
+      if (!key) continue;
+      map.set(key, (map.get(key) ?? 0) + 1);
     }
-    const article = articlesData.items[0]; // TODO(api): featured
-    return {
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      subtitle: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      readingTime: 10,
-      insights: article.tags?.slice(0, 3) || [],
-      badges: ['API'],
-      relatedThemes: article.tags?.slice(0, 3) || [],
-    };
-  }, [articlesData, dataSource, error]);
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
+      .map(([value]) => value);
+  }, [newestItems]);
 
-  const editorialArticles = useMemo(() => {
-    if (dataSource === 'mock') {
-      return mockRepo.blog
-        .listPosts()
-        .slice(0, 4)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-          author: {
-            name: p.author?.name ?? 'Автор',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 5,
-          type: p.category || 'Гайд',
-          badges: p.badges?.includes('EDITORIAL') ? ['EDITORIAL'] : [],
-        }));
+  const availableCountries = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const post of newestItems) {
+      const key = (post.countrySlug ?? '').trim();
+      if (!key) continue;
+      map.set(key, (map.get(key) ?? 0) + 1);
     }
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
+      .map(([value]) => value);
+  }, [newestItems]);
 
-    if (!articlesData?.items || error) {
-      return mockRepo.blog
-        .listPosts()
-        .slice(0, 4)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-          author: {
-            name: p.author?.name ?? 'Автор',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 5,
-          type: p.category || 'Гайд',
-          badges: p.badges?.includes('EDITORIAL') ? ['EDITORIAL'] : [],
-        }));
+  const filteredNewest = useMemo(() => {
+    return newestItems.filter((post) => {
+      const matchesCategory = selectedCategory === ALL_FILTER || (post.category ?? '').trim() === selectedCategory;
+      const matchesPostType = selectedPostType === ALL_FILTER || (post.postType ?? '').trim() === selectedPostType;
+      const matchesCountry = selectedCountry === ALL_FILTER || (post.countrySlug ?? '').trim() === selectedCountry;
+      return matchesCategory && matchesPostType && matchesCountry;
+    });
+  }, [newestItems, selectedCategory, selectedCountry, selectedPostType]);
+
+  const filteredFeedItems = useMemo(() => {
+    return feedItems.filter((post) => {
+      const matchesCategory = selectedCategory === ALL_FILTER || (post.category ?? '').trim() === selectedCategory;
+      const matchesPostType = selectedPostType === ALL_FILTER || (post.postType ?? '').trim() === selectedPostType;
+      const matchesCountry = selectedCountry === ALL_FILTER || (post.countrySlug ?? '').trim() === selectedCountry;
+      return matchesCategory && matchesPostType && matchesCountry;
+    });
+  }, [feedItems, selectedCategory, selectedCountry, selectedPostType]);
+
+  const sectionEntries = useMemo(() => {
+    const groups = new Map<string, ContentBlogPostCardDto[]>();
+    for (const post of filteredNewest) {
+      const section = (post.category ?? '').trim();
+      if (!section) continue;
+      const items = groups.get(section) ?? [];
+      items.push(post);
+      groups.set(section, items);
     }
-    return articlesData.items.slice(0, 4).map((article) => ({
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1007657/pexels-photo-1007657.jpeg',
-      author: {
-        name: 'Редакция Go2Asia',
-        avatar: null,
+    return [...groups.entries()]
+      .map(([title, items]) => ({ title, items }))
+      .sort((a, b) => {
+        const rankDiff = getCategoryOrderIndex(a.title) - getCategoryOrderIndex(b.title);
+        if (rankDiff !== 0) return rankDiff;
+        const aDate = new Date(a.items[0]?.publishedAt ?? 0).getTime();
+        const bDate = new Date(b.items[0]?.publishedAt ?? 0).getTime();
+        return bDate - aDate || b.items.length - a.items.length || a.title.localeCompare(b.title, 'ru');
+      });
+  }, [filteredNewest]);
+
+  const activeFilterCount = [selectedCategory, selectedPostType, selectedCountry].filter((x) => x !== ALL_FILTER).length;
+
+  const resetFilters = () => {
+    setSelectedCategory(ALL_FILTER);
+    setSelectedPostType(ALL_FILTER);
+    setSelectedCountry(ALL_FILTER);
+  };
+
+  const loadMoreFeed = useCallback(async () => {
+    if (!feedHasMore || !feedCursor || feedLoadingMore) return;
+
+    setFeedLoadingMore(true);
+    try {
+      const nextPage = await listBlogPosts({
+        sort: 'newest',
+        limit: FEED_PAGE_SIZE,
+        q,
+        cursor: feedCursor,
+      });
+
+      setFeedItems((prev) => {
+        const seen = new Set(prev.map((item) => item.id));
+        const merged = [...prev];
+        for (const item of nextPage.items) {
+          if (!seen.has(item.id)) {
+            merged.push(item);
+            seen.add(item.id);
+          }
+        }
+        return merged;
+      });
+      setFeedCursor(nextPage.nextCursor ?? null);
+      setFeedHasMore(Boolean(nextPage.nextCursor));
+    } finally {
+      setFeedLoadingMore(false);
+    }
+  }, [feedCursor, feedHasMore, feedLoadingMore, q]);
+
+  useEffect(() => {
+    if (viewMode !== 'feed') return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    if (!feedHasMore || feedLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMoreFeed();
       },
-      publishedAt: article.publishedAt || '',
-      readingTime: 5,
-      type: article.category || 'Гайд',
-      badges: ['API'],
-    }));
-  }, [articlesData, dataSource, error]);
-
-  const ugcArticles = useMemo(() => {
-    if (dataSource === 'mock') {
-      return mockRepo.blog
-        .listPosts()
-        .slice(4, 6)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-          author: {
-            name: p.author?.name ?? 'Пользователь',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 7,
-          type: p.category || 'Колонка',
-          badges: p.badges ?? ['UGC'],
-        }));
-    }
-
-    if (!articlesData?.items || error) {
-      return mockRepo.blog
-        .listPosts()
-        .slice(4, 6)
-        .map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          title: p.title,
-          excerpt: p.excerpt || '',
-          cover: p.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-          author: {
-            name: p.author?.name ?? 'Пользователь',
-            avatar: null,
-          },
-          publishedAt: p.publishedAt || '',
-          readingTime: p.readingTimeMin ?? 7,
-          type: p.category || 'Колонка',
-          badges: p.badges ?? ['UGC'],
-        }));
-    }
-    return articlesData.items.slice(4, 6).map((article) => ({
-      id: article.id,
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      cover: article.coverImage || 'https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg',
-      author: {
-        name: 'Пользователь',
-        avatar: null,
-      },
-      publishedAt: article.publishedAt || '',
-      readingTime: 7,
-      type: 'Колонка',
-      badges: ['API'],
-    }));
-  }, [articlesData, dataSource, error]);
-
-  const rubricFilters = ['Путешествия', 'Городская жизнь', 'Культура', 'Работа', 'Финансы', 'Образование', 'Outdoor', 'Технологии/AI'];
-  const formatFilters = ['Гайд', 'Лонгрид', 'Интервью', 'Репортаж', 'Подборка', 'Колонка'];
-  const readingTimeFilters = ['5 мин', '10 мин', '20 мин'];
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <ModuleHero
-          icon={Globe}
-          title="Blog Asia"
-          description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
-          gradientFrom="from-sky-500"
-          gradientTo="to-sky-600"
-          badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
-        />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-slate-600">Загрузка статей...</div>
-        </div>
-      </div>
+      { rootMargin: '300px 0px' }
     );
-  }
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [feedHasMore, feedLoadingMore, loadMoreFeed, viewMode, filteredFeedItems.length]);
+
+  const viewToggleClass = (active: boolean) =>
+    [
+      'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+      active
+        ? 'border-sky-200 bg-sky-100 text-slate-900'
+        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900',
+    ].join(' ');
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ModuleHero
-        icon={Globe}
-        title="Blog Asia"
-        description="Медиа-площадка Go2Asia: редакционные материалы, UGC-статьи, тематические подборки и спецпроекты"
-        gradientFrom="from-sky-500"
-        gradientTo="to-sky-600"
-        badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined}
-      />
+      <header className="pt-6 pb-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+          <div
+            className="rounded-2xl overflow-hidden shadow-[0_14px_40px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/10"
+            style={{
+              background:
+                'radial-gradient(700px 220px at 70% 0%, rgba(56,189,248,0.18), transparent 60%), radial-gradient(500px 220px at 20% 20%, rgba(167,139,250,0.18), transparent 60%), #0b1220',
+            }}
+          >
+            <div className="px-6 sm:px-8 py-7 sm:py-8 text-center">
+              <div className="inline-flex items-center gap-2 text-white/95 font-semibold tracking-tight">
+                <BookOpen size={18} />
+                <span className="text-lg">Blog Asia</span>
+              </div>
+              <div className="mt-1 text-xs text-white/60">Живой опыт и медиа о жизни в Юго-Восточной Азии</div>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {/* Hero-блок "Тема номера" */}
-      {featuredArticle && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href={`/blog/${featuredArticle.slug}`}>
-            <Card hover className="overflow-hidden">
-              {featuredArticle.cover && (
-                <div className="relative w-full h-96 overflow-hidden">
-                  <img
-                    src={featuredArticle.cover}
-                    alt={featuredArticle.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {featuredArticle.badges.map((badge, index) => (
-                        <Badge key={index} variant={badge === 'EDITORIAL' ? 'editor' : 'popular'}>
-                          {badge}
-                        </Badge>
-                      ))}
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">{featuredArticle.title}</h2>
-                    <p className="text-lg text-white/90 mb-4">{featuredArticle.subtitle}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {featuredArticle.insights.map((insight, index) => (
-                        <Chip key={index} size="sm" className="bg-white/20 text-white border-white/30">
-                          {insight}
-                        </Chip>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-4 text-white/80">
-                      <div className="flex items-center gap-1">
-                        <Clock size={16} />
-                        <span>{featuredArticle.readingTime} мин чтения</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {featuredArticle.relatedThemes.map((theme, index) => (
-                          <span key={index} className="text-sm">#{theme}</span>
-                        ))}
-                      </div>
-                    </div>
+      <section>
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                placeholder="Поиск по названию, содержанию, тегам..."
+                className="w-full h-11 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-200/60 focus:border-sky-200"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setViewMode('sections')} className={viewToggleClass(viewMode === 'sections')}>
+              <LayoutGrid size={14} />
+              Рубрики
+            </button>
+            <button type="button" onClick={() => setViewMode('feed')} className={viewToggleClass(viewMode === 'feed')}>
+              <Rows3 size={14} />
+              Лента
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((value) => !value)}
+              className="w-full px-4 py-3 flex items-center justify-between text-sm text-slate-700"
+            >
+              <span className="inline-flex items-center gap-2">
+                <SlidersHorizontal size={16} className="text-slate-400" />
+                Фильтры
+                {activeFilterCount > 0 ? (
+                  <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-sky-100 text-sky-700 text-[11px] font-medium">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </span>
+              {filtersExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+            </button>
+
+            {filtersExpanded ? (
+              <div className="px-4 pb-4 pt-1 space-y-4 border-t border-slate-100">
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-2">Рубрика</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip selected={selectedCategory === ALL_FILTER} onClick={() => setSelectedCategory(ALL_FILTER)} className="cursor-pointer">
+                      Все
+                    </Chip>
+                    {availableCategories.map((category) => (
+                      <Chip
+                        key={category}
+                        selected={selectedCategory === category}
+                        onClick={() => setSelectedCategory(category)}
+                        className="cursor-pointer"
+                      >
+                        {category}
+                      </Chip>
+                    ))}
                   </div>
                 </div>
-              )}
-            </Card>
-          </Link>
-        </section>
-      )}
 
-      {/* Чип-фильтры */}
-      <section className="bg-white border-b border-slate-200 sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="space-y-4">
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Рубрики</div>
-              <div className="flex flex-wrap gap-2">
-                {rubricFilters.map((rubric) => (
-                  <Chip key={rubric}>{rubric}</Chip>
-                ))}
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-2">Формат</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip selected={selectedPostType === ALL_FILTER} onClick={() => setSelectedPostType(ALL_FILTER)} className="cursor-pointer">
+                      Все форматы
+                    </Chip>
+                    {availablePostTypes.map((postType) => (
+                      <Chip
+                        key={postType}
+                        selected={selectedPostType === postType}
+                        onClick={() => setSelectedPostType(postType)}
+                        className="cursor-pointer"
+                      >
+                        {humanizePostType(postType)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-medium text-slate-500 mb-2">География</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip selected={selectedCountry === ALL_FILTER} onClick={() => setSelectedCountry(ALL_FILTER)} className="cursor-pointer">
+                      Все страны
+                    </Chip>
+                    {availableCountries.map((country) => (
+                      <Chip
+                        key={country}
+                        selected={selectedCountry === country}
+                        onClick={() => setSelectedCountry(country)}
+                        className="cursor-pointer"
+                      >
+                        {humanizeSlug(country)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+
+                {activeFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+                  >
+                    <X size={14} />
+                    Сбросить фильтры
+                  </button>
+                ) : null}
               </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Формат</div>
-              <div className="flex flex-wrap gap-2">
-                {formatFilters.map((format) => (
-                  <Chip key={format}>{format}</Chip>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-slate-500 mb-2">Время чтения</div>
-              <div className="flex flex-wrap gap-2">
-                {readingTimeFilters.map((time) => (
-                  <Chip key={time}>{time}</Chip>
-                ))}
-              </div>
-            </div>
+            ) : null}
           </div>
         </div>
       </section>
 
-      {/* Главные сегодня */}
-      {editorialArticles.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Главные сегодня</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {editorialArticles.map((article) => (
-              <Link key={article.id} href={`/blog/${article.slug}`}>
-                <Card hover className="h-full flex flex-col overflow-hidden p-0 !border-0">
-                  {article.cover && (
-                    <div className="relative w-full h-48 overflow-hidden">
-                      <img
-                        src={article.cover}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {article.badges.map((badge, index) => (
-                          <Badge key={index} variant={badge === 'EDITORIAL' ? 'editor' : 'ugc'} className="text-xs mb-1">
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <CardContent className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="info" className="text-xs">{article.type}</Badge>
-                      <span className="flex items-center gap-1 text-xs text-slate-500">
-                        <Clock size={12} />
-                        {article.readingTime} мин
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-2">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-1">
-                      {article.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="text-xs text-slate-500">
-                        {formatDate(article.publishedAt)}
-                      </div>
-                      <span className="text-sky-600 hover:text-sky-700 font-medium text-sm">
-                        Читать →
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+      {hasError ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div className="bg-white border border-red-200 rounded-xl p-5 text-sm text-red-700">
+            Не удалось загрузить публикации. Проверьте доступность API Gateway / Content Service.
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Выбор сообщества */}
-      {ugcArticles.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Выбор сообщества</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ugcArticles.map((article) => (
-              <Link key={article.id} href={`/blog/${article.slug}`}>
-                <Card hover className="h-full flex flex-col overflow-hidden p-0 !border-0">
-                  {article.cover && (
-                    <div className="relative w-full h-64 overflow-hidden">
-                      <img
-                        src={article.cover}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {article.badges.map((badge, index) => (
-                          <Badge key={index} variant={badge === 'UGC' ? 'ugc' : 'verified'} className="text-xs mb-1">
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <CardContent className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="info" className="text-xs">{article.type}</Badge>
-                      <span className="flex items-center gap-1 text-xs text-slate-500">
-                        <Clock size={12} />
-                        {article.readingTime} мин
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 line-clamp-2 mb-2">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-1">
-                      {article.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                          <User size={14} className="text-slate-600" />
-                        </div>
-                        <div className="text-xs">
-                          <div className="font-medium text-slate-900">{article.author.name}</div>
-                          <div className="text-slate-500">{formatDate(article.publishedAt)}</div>
-                        </div>
-                      </div>
-                      <span className="text-sky-600 hover:text-sky-700 font-medium text-sm">
-                        Читать →
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+      {!hasError && viewMode === 'sections' && sectionEntries.length > 0 ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 space-y-8">
+          {sectionEntries.map((section) => (
+            <div key={section.title}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-slate-900">{section.title}</h2>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-slate-400">{section.items.length} материалов</div>
+                  <Link
+                    href={`/blog/category/${slugifyCategory(section.title)}`}
+                    className="text-xs font-medium text-sky-700 hover:text-sky-800"
+                  >
+                    Читать все
+                  </Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+                {section.items.slice(0, 6).map((post) => (
+                  <PostCard key={post.id} post={mapPost(post)} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {!hasError && viewMode === 'feed' && filteredFeedItems.length > 0 ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
+          <div className="space-y-4">
+            {filteredFeedItems.map((post) => (
+              <div key={post.id}>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  {post.category ? (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
+                      {post.category}
+                    </span>
+                  ) : null}
+                  {post.countrySlug ? (
+                    <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                      {humanizeSlug(post.countrySlug)}
+                    </span>
+                  ) : null}
+                </div>
+                <PostCard variant="horizontal" post={mapPost(post)} />
+              </div>
             ))}
           </div>
+          <div ref={loadMoreRef} className="py-6 text-center text-sm text-slate-500">
+            {feedLoadingMore ? 'Загружаем ещё публикации…' : feedHasMore ? 'Прокрутите вниз, чтобы загрузить ещё' : 'Больше публикаций нет'}
+          </div>
         </section>
-      )}
+      ) : null}
+
+      {!hasError && !isLoading && viewMode === 'feed' && filteredFeedItems.length === 0 ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div ref={loadMoreRef} className="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
+            {feedLoadingMore || feedHasMore ? 'Подбираем публикации по вашим фильтрам…' : 'По выбранным фильтрам публикации не найдены.'}
+          </div>
+        </section>
+      ) : null}
+
+      {!hasError && !isLoading && viewMode === 'sections' && filteredNewest.length === 0 ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
+            По выбранным фильтрам публикации не найдены.
+          </div>
+        </section>
+      ) : null}
+
+      {isLoading ? (
+        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
+          <div className="text-sm text-slate-500">Загрузка…</div>
+        </section>
+      ) : null}
     </div>
   );
 }

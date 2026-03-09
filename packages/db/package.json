@@ -7,6 +7,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./queries/blog": "./src/queries/blog.ts",
     "./queries/content": "./src/queries/content.ts",
     "./queries/guides": "./src/queries/guides.ts"
   },
@@ -24,12 +25,15 @@
     "db:seed:atlas-tabs": "tsx src/seedAtlasTabs.ts",
     "db:seed:atlas-places-ph": "tsx src/seedAtlasPlacesPhilippines.ts",
     "db:seed:atlas-places-kh": "tsx src/seedAtlasPlacesCambodia.ts",
+    "db:cleanup:blog": "cross-env ENVIRONMENT=staging tsx src/cleanupBlogCanon.ts",
     "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
     "db:export:places-neon": "tsx src/exportPlacesToNeon.ts",
     "db:export:atlas-country-city-tabs-neon": "tsx src/exportAtlasCountryCityTabsToNeon.ts",
     "db:import:guides-md": "cross-env ENVIRONMENT=staging tsx src/importGuidesFromMarkdown.ts",
     "db:import:themes-md": "cross-env ENVIRONMENT=staging NODE_OPTIONS=--max-old-space-size=4096 tsx src/importGuidesFromMarkdown.ts --themes-only",
     "db:import:pulse-md": "cross-env ENVIRONMENT=staging tsx src/importPulseEventsFromMarkdown.ts",
+    "db:import:blog-md": "cross-env ENVIRONMENT=staging tsx src/importBlogFromMarkdown.ts",
+    "db:verify:blog-canon": "cross-env ENVIRONMENT=staging tsx src/verifyBlogCanon.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

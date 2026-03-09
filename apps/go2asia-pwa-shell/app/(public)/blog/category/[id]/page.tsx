@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { ModuleHero } from '@/components/modules';
-import { Globe } from 'lucide-react';
-import { Card, CardContent, Chip, Badge } from '@go2asia/ui';
-import { Clock, User } from 'lucide-react';
-import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { BookOpen } from 'lucide-react';
+import { listBlogPosts } from '@go2asia/sdk/blog';
+import { getCategoryBySlug } from '../../categoryConfig';
+import { CategoryFeedClient } from './CategoryFeedClient';
 
 export async function generateMetadata({
   params,
@@ -11,19 +11,17 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const categoryName = id.charAt(0).toUpperCase() + id.slice(1);
+  const categoryName = getCategoryBySlug(id);
+  if (!categoryName) {
+    return {
+      title: 'Рубрика - Blog Asia | Go2Asia',
+    };
+  }
   return {
     title: `${categoryName} - Blog Asia | Go2Asia`,
     description: `Статьи рубрики ${categoryName} в Blog Asia`,
   };
 }
-
-const categories: Record<string, { title: string; description: string }> = {
-  travel: { title: 'Путешествия', description: 'Маршруты, советы, впечатления' },
-  work: { title: 'Работа в ЮВА', description: 'Фриланс, удалёнка, бизнес' },
-  culture: { title: 'Культура / Еда', description: 'Традиции, кухня, праздники' },
-  lifestyle: { title: 'Городская жизнь', description: 'Районы, жильё, быт' },
-};
 
 export default async function CategoryPage({
   params,
@@ -31,56 +29,36 @@ export default async function CategoryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const category = categories[id] || { title: 'Рубрика', description: '' };
+  const category = getCategoryBySlug(id);
+  if (!category) notFound();
+
+  const data = await listBlogPosts({ sort: 'newest', limit: 12, category }).catch(() => null);
+  const items = data?.items ?? [];
+  const nextCursor = data?.nextCursor ?? null;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ModuleHero
-        icon={Globe}
-        title={`${category.title} - Blog Asia`}
-        description={category.description}
-        gradientFrom="from-sky-500"
-        gradientTo="to-sky-600"
-      />
-
-      {/* Filters */}
-      <section className="bg-white border-b border-slate-200 sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-wrap gap-2">
-            <Chip selected>Все</Chip>
-            <Chip>Гайд</Chip>
-            <Chip>Лонгрид</Chip>
-            <Chip>Подборка</Chip>
+      <header className="pt-6 pb-4">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+          <div
+            className="rounded-2xl overflow-hidden shadow-[0_14px_40px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/10"
+            style={{
+              background:
+                'radial-gradient(700px 220px at 70% 0%, rgba(56,189,248,0.18), transparent 60%), radial-gradient(500px 220px at 20% 20%, rgba(167,139,250,0.18), transparent 60%), #0b1220',
+            }}
+          >
+            <div className="px-6 sm:px-8 py-7 sm:py-8 text-center">
+              <div className="inline-flex items-center gap-2 text-white/95 font-semibold tracking-tight">
+                <BookOpen size={18} />
+                <span className="text-lg">Blog Asia</span>
+              </div>
+              <div className="mt-1 text-xs text-white/60">{category}</div>
+            </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Content */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">Главные в рубрике</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Placeholder for articles */}
-          <div className="text-center text-slate-500 py-12">
-            Статьи рубрики "{category.title}" будут здесь
-          </div>
-        </div>
-
-        {/* Atlas Integration */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Места этой рубрики</h2>
-          <div className="text-center text-slate-500 py-8">
-            Интеграция с Atlas: места, связанные с рубрикой "{category.title}"
-          </div>
-        </div>
-
-        {/* Pulse Integration */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">События по теме</h2>
-          <div className="text-center text-slate-500 py-8">
-            Интеграция с Pulse: события, связанные с рубрикой "{category.title}"
-          </div>
-        </div>
-      </section>
+      <CategoryFeedClient category={category} initialItems={items} initialCursor={nextCursor} />
     </div>
   );
 }
