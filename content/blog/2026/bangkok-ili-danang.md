@@ -10,6 +10,8 @@ post_type: note
 
 title: "Бангкок или Дананг — где бы вы зимовали?"
 
+category: "Релокация"
+
 tags:
   - thailand
   - vietnam

@@ -10,6 +10,8 @@ post_type: essay
 
 title: "Почему я больше не сравниваю Бангкок с Европой"
 
+category: "Путешествия"
+
 tags:
   - thailand
   - bangkok

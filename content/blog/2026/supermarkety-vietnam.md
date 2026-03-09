@@ -10,6 +10,8 @@ post_type: note
 
 title: "3 вещи, которые удивляют в вьетнамских супермаркетах"
 
+category: "Впечатления"
+
 tags:
   - vietnam
   - food

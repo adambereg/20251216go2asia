@@ -10,6 +10,8 @@ post_type: note
 
 title: "Почему в Дананге лучше жить не на первой линии"
 
+category: "Советы"
+
 tags:
   - vietnam
   - danang

@@ -1,15 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, TrendingUp, X } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, Rows3, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Chip } from '@go2asia/ui';
 import { useListBlogPosts, type ContentBlogPostCardDto } from '@go2asia/sdk/blog';
 import { PostCard } from '@/components/blog/PostCard';
 
 type BlogViewMode = 'sections' | 'feed';
 
-const NONE_CATEGORY = '__none__';
 const ALL_FILTER = '__all__';
+const CATEGORY_ORDER = ['Путешествия', 'Впечатления', 'Финансы', 'Советы', 'Релокация', 'Размышления'] as const;
+
+function getCategoryOrderIndex(category: string): number {
+  const idx = CATEGORY_ORDER.indexOf(category as (typeof CATEGORY_ORDER)[number]);
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+}
 
 function humanizeSlug(raw: string | null | undefined): string {
   const value = (raw ?? '').trim();
@@ -33,13 +38,6 @@ function humanizePostType(raw: string | null | undefined): string {
     default:
       return raw?.trim() || 'Без формата';
   }
-}
-
-function getFallbackSection(post: ContentBlogPostCardDto): string {
-  const postType = (post.postType ?? '').trim().toLowerCase();
-  if (postType === 'essay') return 'Эссе';
-  if (postType === 'note' || postType === 'live') return 'Короткие форматы';
-  return 'Без рубрики';
 }
 
 function mapPost(post: ContentBlogPostCardDto) {
@@ -85,11 +83,16 @@ export function BlogClientWrapper() {
   const availableCategories = useMemo(() => {
     const map = new Map<string, number>();
     for (const post of newestItems) {
-      const key = (post.category ?? '').trim() || NONE_CATEGORY;
+      const key = (post.category ?? '').trim();
+      if (!key) continue;
       map.set(key, (map.get(key) ?? 0) + 1);
     }
     return [...map.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
+      .sort((a, b) => {
+        const rankDiff = getCategoryOrderIndex(a[0]) - getCategoryOrderIndex(b[0]);
+        if (rankDiff !== 0) return rankDiff;
+        return b[1] - a[1] || a[0].localeCompare(b[0], 'ru');
+      })
       .map(([value]) => value);
   }, [newestItems]);
 
@@ -119,36 +122,18 @@ export function BlogClientWrapper() {
 
   const filteredNewest = useMemo(() => {
     return newestItems.filter((post) => {
-      const matchesCategory =
-        selectedCategory === ALL_FILTER ||
-        (selectedCategory === NONE_CATEGORY ? !(post.category ?? '').trim() : (post.category ?? '').trim() === selectedCategory);
+      const matchesCategory = selectedCategory === ALL_FILTER || (post.category ?? '').trim() === selectedCategory;
       const matchesPostType = selectedPostType === ALL_FILTER || (post.postType ?? '').trim() === selectedPostType;
       const matchesCountry = selectedCountry === ALL_FILTER || (post.countrySlug ?? '').trim() === selectedCountry;
       return matchesCategory && matchesPostType && matchesCountry;
     });
   }, [newestItems, selectedCategory, selectedCountry, selectedPostType]);
 
-  const filteredPopular = useMemo(() => {
-    return (popular.data?.items ?? []).filter((post) => {
-      const matchesCategory =
-        selectedCategory === ALL_FILTER ||
-        (selectedCategory === NONE_CATEGORY ? !(post.category ?? '').trim() : (post.category ?? '').trim() === selectedCategory);
-      const matchesPostType = selectedPostType === ALL_FILTER || (post.postType ?? '').trim() === selectedPostType;
-      const matchesCountry = selectedCountry === ALL_FILTER || (post.countrySlug ?? '').trim() === selectedCountry;
-      return matchesCategory && matchesPostType && matchesCountry;
-    });
-  }, [popular.data?.items, selectedCategory, selectedCountry, selectedPostType]);
-
-  const featuredNow = useMemo(() => {
-    const editorial = filteredNewest.filter((post) => post.isEditorPick);
-    if (editorial.length >= 3) return editorial.slice(0, 3);
-    return filteredNewest.slice(0, 3);
-  }, [filteredNewest]);
-
   const sectionEntries = useMemo(() => {
     const groups = new Map<string, ContentBlogPostCardDto[]>();
     for (const post of filteredNewest) {
-      const section = (post.category ?? '').trim() || getFallbackSection(post);
+      const section = (post.category ?? '').trim();
+      if (!section) continue;
       const items = groups.get(section) ?? [];
       items.push(post);
       groups.set(section, items);
@@ -156,6 +141,8 @@ export function BlogClientWrapper() {
     return [...groups.entries()]
       .map(([title, items]) => ({ title, items }))
       .sort((a, b) => {
+        const rankDiff = getCategoryOrderIndex(a.title) - getCategoryOrderIndex(b.title);
+        if (rankDiff !== 0) return rankDiff;
         const aDate = new Date(a.items[0]?.publishedAt ?? 0).getTime();
         const bDate = new Date(b.items[0]?.publishedAt ?? 0).getTime();
         return bDate - aDate || b.items.length - a.items.length || a.title.localeCompare(b.title, 'ru');
@@ -254,7 +241,7 @@ export function BlogClientWrapper() {
                         onClick={() => setSelectedCategory(category)}
                         className="cursor-pointer"
                       >
-                        {category === NONE_CATEGORY ? 'Без рубрики' : category}
+                        {category}
                       </Chip>
                     ))}
                   </div>
@@ -318,43 +305,6 @@ export function BlogClientWrapper() {
         <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
           <div className="bg-white border border-red-200 rounded-xl p-5 text-sm text-red-700">
             Не удалось загрузить публикации. Проверьте доступность API Gateway / Content Service.
-          </div>
-        </section>
-      ) : null}
-
-      {!hasError && featuredNow.length > 0 ? (
-        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-slate-900 inline-flex items-center gap-2">
-              <Sparkles size={16} className="text-sky-600" />
-              Главное сейчас
-            </h2>
-            <div className="text-xs text-slate-400">{filteredNewest.length} публикаций</div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {featuredNow.map((post) => (
-              <PostCard key={post.id} post={mapPost(post)} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {!hasError && filteredPopular.length > 0 ? (
-        <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
-          <h2 className="text-base font-semibold text-slate-900 mb-4 inline-flex items-center gap-2">
-            <TrendingUp size={16} className="text-amber-500" />
-            Популярное сейчас
-          </h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
-            {filteredPopular.slice(0, 10).map((post) => (
-              <PostCard
-                key={post.id}
-                variant="small"
-                className="min-w-[220px] sm:min-w-[240px] lg:min-w-[260px] snap-start"
-                hideMeta
-                post={mapPost(post)}
-              />
-            ))}
           </div>
         </section>
       ) : null}

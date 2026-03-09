@@ -10,6 +10,8 @@ post_type: live
 
 title: "Вечер на My Khe Beach"
 
+category: "Впечатления"
+
 tags:
   - vietnam
   - danang
