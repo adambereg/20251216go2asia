@@ -370,8 +370,9 @@ function decodeBlogCursor(raw: string | null): BlogPostsCursorV1 | null {
   const v = (raw ?? '').trim();
   if (!v) return null;
   try {
-    const json = JSON.parse(new TextDecoder().decode(base64UrlToBytes(v))) as unknown;
-    if (!json || typeof json !== 'object') return null;
+    const parsed = JSON.parse(new TextDecoder().decode(base64UrlToBytes(v))) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const json = parsed as Record<string, unknown>;
     if (json.v !== 1) return null;
     if (json.sort !== 'newest' && json.sort !== 'popular' && json.sort !== 'featured') return null;
     if (typeof json.publishedAt !== 'string' || json.publishedAt.length < 10) return null;
