@@ -11,20 +11,39 @@ export interface ContentPlaceDto {
   /** @nullable */
   address?: string | null;
   /** @nullable */
+  category?: string | null;
+  /** @nullable */
   city?: string | null;
+  /** @nullable */
+  cityId?: string | null;
   /** @nullable */
   country?: string | null;
   /** @nullable */
+  countryId?: string | null;
+  /** @nullable */
   description?: string | null;
+  /** @nullable */
+  googleMapsUrl?: string | null;
   /** @nullable */
   heroImage?: string | null;
   id: string;
+  /** @nullable */
+  instagram?: string | null;
+  kind: string;
   /** @nullable */
   latitude?: string | null;
   /** @nullable */
   longitude?: string | null;
   name: string;
+  /** @nullable */
+  phone?: string | null;
   photos: string[];
+  /** @nullable */
+  priceLevel?: string | null;
   slug: string;
+  /** @nullable */
+  tags?: string[] | null;
   type: string;
+  /** @nullable */
+  website?: string | null;
 }

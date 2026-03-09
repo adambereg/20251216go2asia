@@ -16,10 +16,12 @@ import type {
   ClerkWebhookBody,
   ConflictResponse,
   ContentArticleDto,
+  ContentBlogPostDetailDto,
   ContentEventDto,
   ContentPlaceDto,
   CreateUploadTokenRequest,
   CreateUploadTokenResponse,
+  CursorListBlogPostsResponse,
   DebugDbResponse,
   EnsureUserRequest,
   EnsureUserResponse,
@@ -32,9 +34,13 @@ import type {
   LinkReferralResponse,
   ListArticlesParams,
   ListArticlesResponse,
+  ListBlogPostsParams,
   ListCitiesParams,
   ListCitiesResponse,
+  ListCityTabsParams,
+  ListContentTabsResponse,
   ListCountriesResponse,
+  ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
   ListPlacesParams,
@@ -448,6 +454,100 @@ export const getArticleBySlug = async (
 };
 
 /**
+ * @summary List blog posts (public)
+ */
+export type listBlogPostsResponse200 = {
+  data: CursorListBlogPostsResponse;
+  status: 200;
+};
+
+export type listBlogPostsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listBlogPostsResponseSuccess = listBlogPostsResponse200 & {
+  headers: Headers;
+};
+export type listBlogPostsResponseError = listBlogPostsResponse500 & {
+  headers: Headers;
+};
+
+export type listBlogPostsResponse = listBlogPostsResponseSuccess | listBlogPostsResponseError;
+
+export const getListBlogPostsUrl = (params?: ListBlogPostsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/blog/posts?${stringifiedParams}`
+    : `/v1/content/blog/posts`;
+};
+
+export const listBlogPosts = async (
+  params?: ListBlogPostsParams,
+  options?: RequestInit
+): Promise<listBlogPostsResponse> => {
+  return customInstance<listBlogPostsResponse>(getListBlogPostsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get blog post by slug (public)
+ */
+export type getBlogPostBySlugResponse200 = {
+  data: ContentBlogPostDetailDto;
+  status: 200;
+};
+
+export type getBlogPostBySlugResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getBlogPostBySlugResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getBlogPostBySlugResponseSuccess = getBlogPostBySlugResponse200 & {
+  headers: Headers;
+};
+export type getBlogPostBySlugResponseError = (
+  | getBlogPostBySlugResponse404
+  | getBlogPostBySlugResponse500
+) & {
+  headers: Headers;
+};
+
+export type getBlogPostBySlugResponse =
+  | getBlogPostBySlugResponseSuccess
+  | getBlogPostBySlugResponseError;
+
+export const getGetBlogPostBySlugUrl = (slug: string) => {
+  return `/v1/content/blog/posts/${slug}`;
+};
+
+export const getBlogPostBySlug = async (
+  slug: string,
+  options?: RequestInit
+): Promise<getBlogPostBySlugResponse> => {
+  return customInstance<getBlogPostBySlugResponse>(getGetBlogPostBySlugUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * @summary List cities (public)
  */
 export type listCitiesResponse200 = {
@@ -496,6 +596,60 @@ export const listCities = async (
 };
 
 /**
+ * @summary List city tabs (public)
+ */
+export type listCityTabsResponse200 = {
+  data: ListContentTabsResponse;
+  status: 200;
+};
+
+export type listCityTabsResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type listCityTabsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCityTabsResponseSuccess = listCityTabsResponse200 & {
+  headers: Headers;
+};
+export type listCityTabsResponseError = (listCityTabsResponse404 | listCityTabsResponse500) & {
+  headers: Headers;
+};
+
+export type listCityTabsResponse = listCityTabsResponseSuccess | listCityTabsResponseError;
+
+export const getListCityTabsUrl = (idOrSlug: string, params?: ListCityTabsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/cities/${idOrSlug}/tabs?${stringifiedParams}`
+    : `/v1/content/cities/${idOrSlug}/tabs`;
+};
+
+export const listCityTabs = async (
+  idOrSlug: string,
+  params?: ListCityTabsParams,
+  options?: RequestInit
+): Promise<listCityTabsResponse> => {
+  return customInstance<listCityTabsResponse>(getListCityTabsUrl(idOrSlug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * @summary List countries (public)
  */
 export type listCountriesResponse200 = {
@@ -523,6 +677,63 @@ export const getListCountriesUrl = () => {
 
 export const listCountries = async (options?: RequestInit): Promise<listCountriesResponse> => {
   return customInstance<listCountriesResponse>(getListCountriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List country tabs (public)
+ */
+export type listCountryTabsResponse200 = {
+  data: ListContentTabsResponse;
+  status: 200;
+};
+
+export type listCountryTabsResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type listCountryTabsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCountryTabsResponseSuccess = listCountryTabsResponse200 & {
+  headers: Headers;
+};
+export type listCountryTabsResponseError = (
+  | listCountryTabsResponse404
+  | listCountryTabsResponse500
+) & {
+  headers: Headers;
+};
+
+export type listCountryTabsResponse = listCountryTabsResponseSuccess | listCountryTabsResponseError;
+
+export const getListCountryTabsUrl = (idOrSlug: string, params?: ListCountryTabsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/countries/${idOrSlug}/tabs?${stringifiedParams}`
+    : `/v1/content/countries/${idOrSlug}/tabs`;
+};
+
+export const listCountryTabs = async (
+  idOrSlug: string,
+  params?: ListCountryTabsParams,
+  options?: RequestInit
+): Promise<listCountryTabsResponse> => {
+  return customInstance<listCountryTabsResponse>(getListCountryTabsUrl(idOrSlug, params), {
     ...options,
     method: "GET",
   });

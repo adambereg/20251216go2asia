@@ -15,16 +15,34 @@ components:
       required: false
       schema:
         type: string
+    CityIdOrSlug:
+      in: path
+      name: idOrSlug
+      required: true
+      schema:
+        type: string
     CountryId:
       in: query
       name: countryId
       required: false
       schema:
         type: string
+    CountryIdOrSlug:
+      in: path
+      name: idOrSlug
+      required: true
+      schema:
+        type: string
     EventId:
       in: path
       name: id
       required: true
+      schema:
+        type: string
+    Lang:
+      in: query
+      name: lang
+      required: false
       schema:
         type: string
     Limit:
@@ -39,6 +57,21 @@ components:
       in: path
       name: idOrSlug
       required: true
+      schema:
+        type: string
+    PlaceKind:
+      in: query
+      name: kind
+      required: false
+      schema:
+        enum:
+          - showplace
+          - business
+        type: string
+    TabKey:
+      in: query
+      name: tabKey
+      required: false
       schema:
         type: string
     XGatewayAuth:
@@ -200,6 +233,95 @@ components:
         - content
         - status
       type: object
+    ContentBlogAuthorDto:
+      properties:
+        avatarUrl:
+          nullable: true
+          type: string
+        displayName:
+          type: string
+        slug:
+          type: string
+      required:
+        - slug
+        - displayName
+        - avatarUrl
+      type: object
+    ContentBlogPostCardDto:
+      properties:
+        author:
+          $ref: "#/components/schemas/ContentBlogAuthorDto"
+          nullable: true
+        category:
+          nullable: true
+          type: string
+        excerpt:
+          nullable: true
+          type: string
+        heroUrl:
+          nullable: true
+          type: string
+        id:
+          type: string
+        isEditorPick:
+          type: boolean
+        isFeatured:
+          type: boolean
+        isPromoted:
+          type: boolean
+        lang:
+          type: string
+        postType:
+          nullable: true
+          type: string
+        publishedAt:
+          nullable: true
+          type: string
+        readingTimeMinutes:
+          nullable: true
+          type: integer
+        slug:
+          type: string
+        subtitle:
+          nullable: true
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        updatedAt:
+          nullable: true
+          type: string
+      required:
+        - id
+        - slug
+        - lang
+        - title
+        - subtitle
+        - excerpt
+        - postType
+        - category
+        - tags
+        - heroUrl
+        - publishedAt
+        - updatedAt
+        - readingTimeMinutes
+        - isPromoted
+        - isFeatured
+        - isEditorPick
+        - author
+      type: object
+    ContentBlogPostDetailDto:
+      allOf:
+        - $ref: "#/components/schemas/ContentBlogPostCardDto"
+        - properties:
+            contentMarkdown:
+              type: string
+          required:
+            - contentMarkdown
+          type: object
     ContentCityDto:
       properties:
         countryId:
@@ -312,19 +434,36 @@ components:
         address:
           nullable: true
           type: string
+        category:
+          nullable: true
+          type: string
         city:
+          nullable: true
+          type: string
+        cityId:
           nullable: true
           type: string
         country:
           nullable: true
           type: string
+        countryId:
+          nullable: true
+          type: string
         description:
+          nullable: true
+          type: string
+        googleMapsUrl:
           nullable: true
           type: string
         heroImage:
           nullable: true
           type: string
         id:
+          type: string
+        instagram:
+          nullable: true
+          type: string
+        kind:
           type: string
         latitude:
           nullable: true
@@ -334,20 +473,54 @@ components:
           type: string
         name:
           type: string
+        phone:
+          nullable: true
+          type: string
         photos:
           items:
             type: string
           type: array
+        priceLevel:
+          nullable: true
+          type: string
         slug:
           type: string
+        tags:
+          items:
+            type: string
+          nullable: true
+          type: array
         type:
+          type: string
+        website:
+          nullable: true
           type: string
       required:
         - id
         - slug
         - name
         - type
+        - kind
         - photos
+      type: object
+    ContentTabDto:
+      properties:
+        bodyMarkdown:
+          type: string
+        lang:
+          type: string
+        tabKey:
+          type: string
+        title:
+          nullable: true
+          type: string
+        updatedAt:
+          nullable: true
+          type: string
+      required:
+        - tabKey
+        - lang
+        - bodyMarkdown
       type: object
     CreateUploadTokenRequest:
       properties:
@@ -389,6 +562,19 @@ components:
         - uploadUrl
         - key
         - expiresAt
+      type: object
+    CursorListBlogPostsResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentBlogPostCardDto"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
       type: object
     DebugDbResponse:
       properties:
@@ -533,6 +719,15 @@ components:
         items:
           items:
             $ref: "#/components/schemas/ContentCityDto"
+          type: array
+      required:
+        - items
+      type: object
+    ListContentTabsResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ContentTabDto"
           type: array
       required:
         - items
@@ -1001,6 +1196,82 @@ paths:
       summary: Get article by slug (public)
       tags:
         - content
+  /v1/content/blog/posts:
+    get:
+      operationId: listBlogPosts
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - description: Opaque pagination cursor (base64url)
+          in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sort
+          required: false
+          schema:
+            default: newest
+            enum:
+              - newest
+              - popular
+              - featured
+            type: string
+        - description: Full-text-ish search over title/excerpt/content
+          in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - description: Filter by tag slug
+          in: query
+          name: tag
+          required: false
+          schema:
+            type: string
+        - description: Filter by author slug
+          in: query
+          name: author
+          required: false
+          schema:
+            type: string
+        - description: Exclude one post (for related lists)
+          in: query
+          name: exclude_slug
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CursorListBlogPostsResponse"
+          description: OK
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List blog posts (public)
+      tags:
+        - content
+  /v1/content/blog/posts/{slug}:
+    get:
+      operationId: getBlogPostBySlug
+      parameters:
+        - $ref: "#/components/parameters/ArticleSlug"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBlogPostDetailDto"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Get blog post by slug (public)
+      tags:
+        - content
   /v1/content/cities:
     get:
       operationId: listCities
@@ -1018,6 +1289,27 @@ paths:
       summary: List cities (public)
       tags:
         - content
+  /v1/content/cities/{idOrSlug}/tabs:
+    get:
+      operationId: listCityTabs
+      parameters:
+        - $ref: "#/components/parameters/CityIdOrSlug"
+        - $ref: "#/components/parameters/TabKey"
+        - $ref: "#/components/parameters/Lang"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListContentTabsResponse"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List city tabs (public)
+      tags:
+        - content
   /v1/content/countries:
     get:
       operationId: listCountries
@@ -1031,6 +1323,27 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
       summary: List countries (public)
+      tags:
+        - content
+  /v1/content/countries/{idOrSlug}/tabs:
+    get:
+      operationId: listCountryTabs
+      parameters:
+        - $ref: "#/components/parameters/CountryIdOrSlug"
+        - $ref: "#/components/parameters/TabKey"
+        - $ref: "#/components/parameters/Lang"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListContentTabsResponse"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: List country tabs (public)
       tags:
         - content
   /v1/content/events:
@@ -1168,6 +1481,8 @@ paths:
       operationId: listPlaces
       parameters:
         - $ref: "#/components/parameters/CityId"
+        - $ref: "#/components/parameters/CountryId"
+        - $ref: "#/components/parameters/PlaceKind"
         - $ref: "#/components/parameters/Limit"
       responses:
         "200":

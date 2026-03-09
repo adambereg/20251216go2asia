@@ -7,10 +7,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CityIdParameter } from "./cityIdParameter";
+import type { CountryIdParameter } from "./countryIdParameter";
+import type { PlaceKindParameter } from "./placeKindParameter";
 import type { LimitParameter } from "./limitParameter";
 
 export type ListPlacesParams = {
   cityId?: CityIdParameter;
+  countryId?: CountryIdParameter;
+  kind?: PlaceKindParameter;
   /**
    * @minimum 1
    * @maximum 200
