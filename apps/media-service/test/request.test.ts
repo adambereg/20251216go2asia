@@ -60,7 +60,12 @@ describe('media-service v1', () => {
   });
 
   it('creates upload token and uploads image with metadata persistence', async () => {
-    executeMock.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] });
+    executeMock
+      .mockResolvedValueOnce({ rows: [] }) // consumed check
+      .mockResolvedValueOnce({ rows: [] }) // media_files upsert
+      .mockResolvedValueOnce({ rows: [] }) // media_assets upsert
+      .mockResolvedValueOnce({ rows: [{ id: 'asset_1' }] }) // media_assets select
+      .mockResolvedValueOnce({ rows: [] }); // media_variants upsert
 
     const putMock = vi.fn().mockResolvedValue(undefined);
     const env: Env = {
@@ -113,11 +118,17 @@ describe('media-service v1', () => {
     expect(uploadBody.key).toBe(tokenBody.key);
     expect(putMock).toHaveBeenCalledTimes(1);
     expect(createDbMock).toHaveBeenCalledTimes(1);
-    expect(executeMock).toHaveBeenCalledTimes(2);
+    expect(executeMock).toHaveBeenCalledTimes(5);
   });
 
   it('invalidates upload token after first successful use', async () => {
-    executeMock.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ id: 'media_1' }] });
+    executeMock
+      .mockResolvedValueOnce({ rows: [] }) // first consumed check
+      .mockResolvedValueOnce({ rows: [] }) // media_files upsert
+      .mockResolvedValueOnce({ rows: [] }) // media_assets upsert
+      .mockResolvedValueOnce({ rows: [{ id: 'asset_1' }] }) // media_assets select
+      .mockResolvedValueOnce({ rows: [] }) // media_variants upsert
+      .mockResolvedValueOnce({ rows: [{ id: 'media_1' }] }); // second consumed check
 
     const putMock = vi.fn().mockResolvedValue(undefined);
     const env: Env = {
@@ -175,7 +186,7 @@ describe('media-service v1', () => {
     expect(secondBody.error.code).toBe('UNAUTHORIZED');
     expect(secondBody.error.message).toContain('already used');
     expect(putMock).toHaveBeenCalledTimes(1);
-    expect(executeMock).toHaveBeenCalledTimes(3);
+    expect(executeMock).toHaveBeenCalledTimes(6);
   });
 
   it('rejects expired upload token by TTL', async () => {

@@ -29,6 +29,7 @@ jobs:
             extra_vars: >-
               --var AUTH_SERVICE_URL:https://go2asia-auth-service-staging.fred89059599296.workers.dev
               --var CONTENT_SERVICE_URL:https://go2asia-content-service-staging.fred89059599296.workers.dev
+              --var MEDIA_SERVICE_URL:https://go2asia-media-service-staging.fred89059599296.workers.dev
               --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
               --var REFERRAL_SERVICE_URL:https://go2asia-referral-service-staging.fred89059599296.workers.dev
           - service: auth-service
@@ -40,6 +41,10 @@ jobs:
             url: https://go2asia-content-service-staging.fred89059599296.workers.dev
             extra_vars: >-
               --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
+          - service: media-service
+            path: apps/media-service
+            url: https://go2asia-media-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
           - service: points-service
             path: apps/points-service
             url: https://go2asia-points-service-staging.fred89059599296.workers.dev
@@ -198,6 +203,36 @@ jobs:
             echo "| Gateway smoke artifact | gateway-smoke-${{ github.run_id }} |"
             echo "| Content contract artifact | content-contract-${{ github.run_id }} |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  media-cutover-smoke:
+    name: Media cutover smoke
+    runs-on: ubuntu-latest
+    needs: gateway-smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Run media cutover smoke
+        env:
+          STAGING_GATEWAY_URL: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
+          STAGING_TEST_JWT: ${{ secrets['STAGING_TEST_JWT'] }}
+          TEST_ARTIFACT_PATH: test-results/staging/media-cutover-smoke.json
+          RELEASE_SHA: ${{ github.sha }}
+        run: node scripts/media_gateway_cutover_smoke.mjs
+      - name: Upload media cutover artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-cutover-smoke-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: test-results/staging/media-cutover-smoke.json
 
 
 

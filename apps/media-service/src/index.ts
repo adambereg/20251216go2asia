@@ -382,6 +382,7 @@ async function persistMediaMetadata(
   db: ReturnType<typeof createDb>,
   env: Env,
   input: {
+    ownerUserId: string;
     scope: MediaScope;
     key: string;
     contentType: string;
@@ -402,6 +403,51 @@ async function persistMediaMetadata(
         width = EXCLUDED.width,
         height = EXCLUDED.height
   `);
+
+  const assetId = `asset_${crypto.randomUUID()}`;
+  await db.execute(sql`
+    INSERT INTO media_assets (
+      id, owner_user_id, scope, provider, bucket, key, mime_type, size, width, height, status, created_at, updated_at
+    )
+    VALUES (
+      ${assetId}, ${input.ownerUserId}, ${input.scope}, 'r2', ${bucket}, ${input.key}, ${input.contentType}, ${input.size}, null, null, 'draft', now(), now()
+    )
+    ON CONFLICT (provider, bucket, key) DO UPDATE
+    SET owner_user_id = EXCLUDED.owner_user_id,
+        scope = EXCLUDED.scope,
+        mime_type = EXCLUDED.mime_type,
+        size = EXCLUDED.size,
+        updated_at = now()
+    RETURNING id
+  `);
+
+  type AssetRow = { id: string };
+  const assetRowResult = await db.execute(sql`
+    SELECT id
+    FROM media_assets
+    WHERE provider = 'r2'
+      AND bucket = ${bucket}
+      AND key = ${input.key}
+    LIMIT 1
+  `);
+  const rows = (assetRowResult as unknown as { rows?: AssetRow[] }).rows ?? [];
+  const persistedAssetId = rows[0]?.id;
+  if (persistedAssetId) {
+    const variantId = `variant_${crypto.randomUUID()}`;
+    await db.execute(sql`
+      INSERT INTO media_variants (
+        id, asset_id, kind, status, provider, bucket, key, mime_type, size, width, height, created_at, updated_at
+      )
+      VALUES (
+        ${variantId}, ${persistedAssetId}, 'original', 'ready', 'r2', ${bucket}, ${input.key}, ${input.contentType}, ${input.size}, null, null, now(), now()
+      )
+      ON CONFLICT (asset_id, kind) DO UPDATE
+      SET status = EXCLUDED.status,
+          mime_type = EXCLUDED.mime_type,
+          size = EXCLUDED.size,
+          updated_at = now()
+    `);
+  }
 
   return { ok: true };
 }
@@ -560,6 +606,7 @@ async function handleUploadByToken(
 
   try {
     const persisted = await persistMediaMetadata(db, env, {
+      ownerUserId: payload.userId,
       scope: payload.scope,
       key: payload.key,
       contentType,
