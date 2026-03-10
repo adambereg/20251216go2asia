@@ -120,19 +120,8 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Generate types
-        run: pnpm gen:types
-      - name: Generate SDK
-        run: pnpm gen:sdk
-      - name: Check for changes (including untracked files)
-        run: |
-          CHANGES="$(git status --porcelain -- packages/types/src/generated packages/sdk/src/generated docs/openapi/openapi.bundle.yaml || true)"
-          if [ -n "$CHANGES" ]; then
-            echo "$CHANGES"
-            echo "Generated bundle/types/SDK differ from committed versions."
-            echo "Run 'pnpm openapi:bundle', 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes."
-            exit 1
-          fi
+      - name: OpenAPI drift check (bundle + types + SDK must match specs)
+        run: pnpm openapi:check
 
 
 
