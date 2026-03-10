@@ -18,6 +18,6 @@ export interface CreateUploadTokenResponse {
   publicUrl?: string | null;
   /** @nullable */
   requestId?: string | null;
-  /** Relative URL to upload endpoint (via API Gateway) */
+  /** Relative URL to the canonical media upload endpoint (via API Gateway) */
   uploadUrl: string;
 }

@@ -274,16 +274,16 @@ async function requireGatewayOrigin(
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
-    return { ok: false, res: errorResponse('Unauthorized', 'Service auth is not configured', requestId, 401) };
+    return { ok: false, res: errorResponse('SERVICE_AUTH_NOT_CONFIGURED', 'Service auth is not configured', requestId, 503) };
   }
 
   const token = request.headers.get('X-Gateway-Auth');
-  if (!token) return { ok: false, res: errorResponse('Unauthorized', 'Missing X-Gateway-Auth header', requestId, 401) };
+  if (!token) return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing X-Gateway-Auth header', requestId, 401) };
 
   const verified = await verifyHs256Jwt(token, secret);
   if (!verified.ok) {
     logger.warn('Invalid gateway-origin token', { reason: verified.error });
-    return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token', requestId, 401) };
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid X-Gateway-Auth token', requestId, 401) };
   }
 
   const claims = validateServiceJwtClaims(verified.payload, {
@@ -292,13 +292,13 @@ async function requireGatewayOrigin(
   });
   if (!claims.ok) {
     logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
-    return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token claims', requestId, 401) };
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid X-Gateway-Auth token claims', requestId, 401) };
   }
 
   const userId = getStringClaim(verified.payload, 'sub');
   if (!userId) {
     logger.warn('Gateway-origin token missing subject claim');
-    return { ok: false, res: errorResponse('Unauthorized', 'Missing user subject in X-Gateway-Auth', requestId, 401) };
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing user subject in X-Gateway-Auth', requestId, 401) };
   }
 
   return {
@@ -319,17 +319,17 @@ async function requireServiceAuth(
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
-    return { ok: false, res: errorResponse('Unauthorized', 'Service auth is not configured', requestId, 401) };
+    return { ok: false, res: errorResponse('SERVICE_AUTH_NOT_CONFIGURED', 'Service auth is not configured', requestId, 503) };
   }
 
   const auth = request.headers.get('Authorization') ?? '';
   const match = auth.match(/^Bearer\s+(.+)$/i);
-  if (!match) return { ok: false, res: errorResponse('Unauthorized', 'Missing Authorization: Bearer token', requestId, 401) };
+  if (!match) return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing Authorization: Bearer token', requestId, 401) };
 
   const verified = await verifyHs256Jwt(match[1], secret);
   if (!verified.ok) {
     logger.warn('Invalid service token', { reason: verified.error });
-    return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token', requestId, 401) };
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid service token', requestId, 401) };
   }
 
   const claims = validateServiceJwtClaims(verified.payload, {
@@ -338,7 +338,7 @@ async function requireServiceAuth(
   });
   if (!claims.ok) {
     logger.warn('Service token claims rejected', { reason: claims.error });
-    return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token claims', requestId, 401) };
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid service token claims', requestId, 401) };
   }
 
   return { ok: true };

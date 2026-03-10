@@ -85,6 +85,11 @@ function handleNotFound(path: string): Response {
 
 type JwtVerifyResult = { ok: true; payload: Record<string, unknown> } | { ok: false; error: string };
 
+type GatewayPrincipal = {
+  userId: string;
+  roles: string[];
+};
+
 function base64UrlToBytes(input: string): Uint8Array {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
@@ -163,6 +168,17 @@ function getStringClaim(payload: Record<string, unknown>, key: string): string |
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
 function validateServiceJwtClaims(
   payload: Record<string, unknown>,
   expected: {
@@ -233,7 +249,7 @@ async function requireGatewayOrigin(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>
-): Promise<{ ok: true } | { ok: false; res: Response }> {
+): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
@@ -248,26 +264,46 @@ async function requireGatewayOrigin(
 
   const token = request.headers.get('X-Gateway-Auth');
   if (!token) {
-    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Missing X-Gateway-Auth' }, requestId }, 401) };
+    return {
+      ok: false,
+      res: json({ error: { code: 'UNAUTHORIZED', message: 'Missing X-Gateway-Auth header' }, requestId }, 401),
+    };
   }
 
   const verified = await verifyHs256Jwt(token, secret);
   if (!verified.ok) {
     logger.warn('Invalid gateway-origin token', { reason: verified.error });
-    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth' }, requestId }, 401) };
+    return {
+      ok: false,
+      res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth token' }, requestId }, 401),
+    };
   }
 
   const claims = validateServiceJwtClaims(verified.payload, {
     iss: 'api-gateway',
-    aud: 'downstream',
-    sub: 'api-gateway',
+    aud: 'internal',
   });
   if (!claims.ok) {
     logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
-    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
+    return {
+      ok: false,
+      res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth token claims' }, requestId }, 401),
+    };
   }
 
-  return { ok: true };
+  const userId = getStringClaim(verified.payload, 'sub');
+  if (!userId) {
+    logger.warn('Gateway-origin token missing subject claim');
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Missing user subject in X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  return {
+    ok: true,
+    principal: {
+      userId,
+      roles: getStringArrayClaim(verified.payload, 'roles'),
+    },
+  };
 }
 
 async function handleEnsureUser(
@@ -278,9 +314,6 @@ async function handleEnsureUser(
 ): Promise<Response> {
   const auth = await requireGatewayOrigin(request, env, requestId, logger);
   if (!auth.ok) return auth.res;
-
-  const clerkId = request.headers.get('X-User-ID');
-  if (!clerkId) return json({ error: { code: 'UNAUTHORIZED', message: 'Missing X-User-ID' }, requestId }, 401);
 
   const bodyUnknown: unknown = await request.json().catch(() => null);
   const body =
@@ -303,8 +336,9 @@ async function handleEnsureUser(
 
   const db = createDb(requireDatabase(env));
 
-  // MVP mapping: use Clerk userId as both users.id and users.clerk_id (SSOT in other tables already).
-  const userId = clerkId;
+  // Gateway token subject is the single trust source for the current user identity.
+  const userId = auth.principal.userId;
+  const clerkId = userId;
 
   const result = await db.execute(sql`
     INSERT INTO users (id, clerk_id, email, role, created_at, updated_at)

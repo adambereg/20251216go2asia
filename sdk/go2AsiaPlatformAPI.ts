@@ -53,6 +53,8 @@ import type {
   ReferralCodeResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
+  ServiceAuthNotConfiguredResponse,
+  ServiceNotConfiguredResponse,
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
@@ -92,6 +94,11 @@ export type addPointsResponse500 = {
   status: 500;
 };
 
+export type addPointsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type addPointsResponseSuccess = addPointsResponse200 & {
   headers: Headers;
 };
@@ -100,6 +107,7 @@ export type addPointsResponseError = (
   | addPointsResponse409
   | addPointsResponse429
   | addPointsResponse500
+  | addPointsResponse503
 ) & {
   headers: Headers;
 };
@@ -141,12 +149,18 @@ export type generateReferralCodeResponse500 = {
   status: 500;
 };
 
+export type generateReferralCodeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type generateReferralCodeResponseSuccess = generateReferralCodeResponse200 & {
   headers: Headers;
 };
 export type generateReferralCodeResponseError = (
   | generateReferralCodeResponse401
   | generateReferralCodeResponse500
+  | generateReferralCodeResponse503
 ) & {
   headers: Headers;
 };
@@ -201,6 +215,11 @@ export type linkReferralResponse500 = {
   status: 500;
 };
 
+export type linkReferralResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type linkReferralResponseSuccess = linkReferralResponse200 & {
   headers: Headers;
 };
@@ -209,6 +228,7 @@ export type linkReferralResponseError = (
   | linkReferralResponse404
   | linkReferralResponse409
   | linkReferralResponse500
+  | linkReferralResponse503
 ) & {
   headers: Headers;
 };
@@ -251,12 +271,18 @@ export type markReferralFirstLoginResponse500 = {
   status: 500;
 };
 
+export type markReferralFirstLoginResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type markReferralFirstLoginResponseSuccess = markReferralFirstLoginResponse200 & {
   headers: Headers;
 };
 export type markReferralFirstLoginResponseError = (
   | markReferralFirstLoginResponse401
   | markReferralFirstLoginResponse500
+  | markReferralFirstLoginResponse503
 ) & {
   headers: Headers;
 };
@@ -296,15 +322,30 @@ export type clerkWebhookResponse400 = {
   status: 400;
 };
 
+export type clerkWebhookResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
 export type clerkWebhookResponse500 = {
   data: InternalErrorResponse;
   status: 500;
 };
 
+export type clerkWebhookResponse503 = {
+  data: ServiceNotConfiguredResponse;
+  status: 503;
+};
+
 export type clerkWebhookResponseSuccess = clerkWebhookResponse200 & {
   headers: Headers;
 };
-export type clerkWebhookResponseError = (clerkWebhookResponse400 | clerkWebhookResponse500) & {
+export type clerkWebhookResponseError = (
+  | clerkWebhookResponse400
+  | clerkWebhookResponse401
+  | clerkWebhookResponse500
+  | clerkWebhookResponse503
+) & {
   headers: Headers;
 };
 
@@ -852,6 +893,11 @@ export type registerForEventResponse500 = {
   status: 500;
 };
 
+export type registerForEventResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type registerForEventResponseSuccess = registerForEventResponse201 & {
   headers: Headers;
 };
@@ -859,6 +905,7 @@ export type registerForEventResponseError = (
   | registerForEventResponse401
   | registerForEventResponse409
   | registerForEventResponse500
+  | registerForEventResponse503
 ) & {
   headers: Headers;
 };
@@ -878,119 +925,6 @@ export const registerForEvent = async (
   return customInstance<registerForEventResponse>(getRegisterForEventUrl(id), {
     ...options,
     method: "POST",
-  });
-};
-
-/**
- * Creates a short-lived signed token for uploading media to R2 via Content Service. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
-
- * @summary Create signed upload token (authorized)
- */
-export type createMediaUploadTokenResponse200 = {
-  data: CreateUploadTokenResponse;
-  status: 200;
-};
-
-export type createMediaUploadTokenResponse400 = {
-  data: BadRequestResponse;
-  status: 400;
-};
-
-export type createMediaUploadTokenResponse401 = {
-  data: UnauthorizedResponse;
-  status: 401;
-};
-
-export type createMediaUploadTokenResponse500 = {
-  data: InternalErrorResponse;
-  status: 500;
-};
-
-export type createMediaUploadTokenResponseSuccess = createMediaUploadTokenResponse200 & {
-  headers: Headers;
-};
-export type createMediaUploadTokenResponseError = (
-  | createMediaUploadTokenResponse400
-  | createMediaUploadTokenResponse401
-  | createMediaUploadTokenResponse500
-) & {
-  headers: Headers;
-};
-
-export type createMediaUploadTokenResponse =
-  | createMediaUploadTokenResponseSuccess
-  | createMediaUploadTokenResponseError;
-
-export const getCreateMediaUploadTokenUrl = () => {
-  return `/v1/content/media/upload-token`;
-};
-
-export const createMediaUploadToken = async (
-  createUploadTokenRequest: CreateUploadTokenRequest,
-  options?: RequestInit
-): Promise<createMediaUploadTokenResponse> => {
-  return customInstance<createMediaUploadTokenResponse>(getCreateMediaUploadTokenUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createUploadTokenRequest),
-  });
-};
-
-/**
- * Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
-
- * @summary Upload media by signed token (no user auth)
- */
-export type uploadMediaByTokenResponse201 = {
-  data: UploadResult;
-  status: 201;
-};
-
-export type uploadMediaByTokenResponse400 = {
-  data: BadRequestResponse;
-  status: 400;
-};
-
-export type uploadMediaByTokenResponse401 = {
-  data: UnauthorizedResponse;
-  status: 401;
-};
-
-export type uploadMediaByTokenResponse500 = {
-  data: InternalErrorResponse;
-  status: 500;
-};
-
-export type uploadMediaByTokenResponseSuccess = uploadMediaByTokenResponse201 & {
-  headers: Headers;
-};
-export type uploadMediaByTokenResponseError = (
-  | uploadMediaByTokenResponse400
-  | uploadMediaByTokenResponse401
-  | uploadMediaByTokenResponse500
-) & {
-  headers: Headers;
-};
-
-export type uploadMediaByTokenResponse =
-  | uploadMediaByTokenResponseSuccess
-  | uploadMediaByTokenResponseError;
-
-export const getUploadMediaByTokenUrl = (token: string) => {
-  return `/v1/content/media/upload/${token}`;
-};
-
-export const uploadMediaByToken = async (
-  token: string,
-  uploadMediaByTokenBody: Blob,
-  options?: RequestInit
-): Promise<uploadMediaByTokenResponse> => {
-  return customInstance<uploadMediaByTokenResponse>(getUploadMediaByTokenUrl(token), {
-    ...options,
-    method: "PUT",
-    headers: { "Content-Type": "application/octet-stream", ...options?.headers },
-    body: JSON.stringify(uploadMediaByTokenBody),
   });
 };
 
@@ -1089,6 +1023,125 @@ export const getPlaceByIdOrSlug = async (
 };
 
 /**
+ * Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+
+ * @summary Create signed upload token (authorized)
+ */
+export type createMediaUploadTokenResponse200 = {
+  data: CreateUploadTokenResponse;
+  status: 200;
+};
+
+export type createMediaUploadTokenResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type createMediaUploadTokenResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type createMediaUploadTokenResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type createMediaUploadTokenResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type createMediaUploadTokenResponseSuccess = createMediaUploadTokenResponse200 & {
+  headers: Headers;
+};
+export type createMediaUploadTokenResponseError = (
+  | createMediaUploadTokenResponse400
+  | createMediaUploadTokenResponse401
+  | createMediaUploadTokenResponse500
+  | createMediaUploadTokenResponse503
+) & {
+  headers: Headers;
+};
+
+export type createMediaUploadTokenResponse =
+  | createMediaUploadTokenResponseSuccess
+  | createMediaUploadTokenResponseError;
+
+export const getCreateMediaUploadTokenUrl = () => {
+  return `/v1/media/upload-token`;
+};
+
+export const createMediaUploadToken = async (
+  createUploadTokenRequest: CreateUploadTokenRequest,
+  options?: RequestInit
+): Promise<createMediaUploadTokenResponse> => {
+  return customInstance<createMediaUploadTokenResponse>(getCreateMediaUploadTokenUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createUploadTokenRequest),
+  });
+};
+
+/**
+ * Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
+
+ * @summary Upload media by signed token (no user auth)
+ */
+export type uploadMediaByTokenResponse201 = {
+  data: UploadResult;
+  status: 201;
+};
+
+export type uploadMediaByTokenResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type uploadMediaByTokenResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type uploadMediaByTokenResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type uploadMediaByTokenResponseSuccess = uploadMediaByTokenResponse201 & {
+  headers: Headers;
+};
+export type uploadMediaByTokenResponseError = (
+  | uploadMediaByTokenResponse400
+  | uploadMediaByTokenResponse401
+  | uploadMediaByTokenResponse500
+) & {
+  headers: Headers;
+};
+
+export type uploadMediaByTokenResponse =
+  | uploadMediaByTokenResponseSuccess
+  | uploadMediaByTokenResponseError;
+
+export const getUploadMediaByTokenUrl = (token: string) => {
+  return `/v1/media/upload/${token}`;
+};
+
+export const uploadMediaByToken = async (
+  token: string,
+  uploadMediaByTokenBody: Blob,
+  options?: RequestInit
+): Promise<uploadMediaByTokenResponse> => {
+  return customInstance<uploadMediaByTokenResponse>(getUploadMediaByTokenUrl(token), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/octet-stream", ...options?.headers },
+    body: JSON.stringify(uploadMediaByTokenBody),
+  });
+};
+
+/**
  * User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
  * @summary Get current user points balance
  */
@@ -1107,12 +1160,18 @@ export type getPointsBalanceResponse500 = {
   status: 500;
 };
 
+export type getPointsBalanceResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getPointsBalanceResponseSuccess = getPointsBalanceResponse200 & {
   headers: Headers;
 };
 export type getPointsBalanceResponseError = (
   | getPointsBalanceResponse401
   | getPointsBalanceResponse500
+  | getPointsBalanceResponse503
 ) & {
   headers: Headers;
 };
@@ -1153,12 +1212,18 @@ export type listPointsTransactionsResponse500 = {
   status: 500;
 };
 
+export type listPointsTransactionsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type listPointsTransactionsResponseSuccess = listPointsTransactionsResponse200 & {
   headers: Headers;
 };
 export type listPointsTransactionsResponseError = (
   | listPointsTransactionsResponse401
   | listPointsTransactionsResponse500
+  | listPointsTransactionsResponse503
 ) & {
   headers: Headers;
 };
@@ -1223,6 +1288,11 @@ export type claimReferralResponse500 = {
   status: 500;
 };
 
+export type claimReferralResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type claimReferralResponseSuccess = claimReferralResponse200 & {
   headers: Headers;
 };
@@ -1231,6 +1301,7 @@ export type claimReferralResponseError = (
   | claimReferralResponse404
   | claimReferralResponse409
   | claimReferralResponse500
+  | claimReferralResponse503
 ) & {
   headers: Headers;
 };
@@ -1273,12 +1344,18 @@ export type getReferralCodeResponse500 = {
   status: 500;
 };
 
+export type getReferralCodeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralCodeResponseSuccess = getReferralCodeResponse200 & {
   headers: Headers;
 };
 export type getReferralCodeResponseError = (
   | getReferralCodeResponse401
   | getReferralCodeResponse500
+  | getReferralCodeResponse503
 ) & {
   headers: Headers;
 };
@@ -1315,12 +1392,18 @@ export type getReferralStatsResponse500 = {
   status: 500;
 };
 
+export type getReferralStatsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralStatsResponseSuccess = getReferralStatsResponse200 & {
   headers: Headers;
 };
 export type getReferralStatsResponseError = (
   | getReferralStatsResponse401
   | getReferralStatsResponse500
+  | getReferralStatsResponse503
 ) & {
   headers: Headers;
 };
@@ -1362,12 +1445,18 @@ export type getReferralTreeResponse500 = {
   status: 500;
 };
 
+export type getReferralTreeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralTreeResponseSuccess = getReferralTreeResponse200 & {
   headers: Headers;
 };
 export type getReferralTreeResponseError = (
   | getReferralTreeResponse401
   | getReferralTreeResponse500
+  | getReferralTreeResponse503
 ) & {
   headers: Headers;
 };
@@ -1401,7 +1490,7 @@ export const getReferralTree = async (
 };
 
 /**
- * Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+ * Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity from the gateway token subject (`X-Gateway-Auth`) and provided email.
 
  * @summary Ensure current user exists in Neon (idempotent upsert)
  */
@@ -1425,6 +1514,11 @@ export type ensureUserResponse500 = {
   status: 500;
 };
 
+export type ensureUserResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type ensureUserResponseSuccess = ensureUserResponse200 & {
   headers: Headers;
 };
@@ -1432,6 +1526,7 @@ export type ensureUserResponseError = (
   | ensureUserResponse400
   | ensureUserResponse401
   | ensureUserResponse500
+  | ensureUserResponse503
 ) & {
   headers: Headers;
 };

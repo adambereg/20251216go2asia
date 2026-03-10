@@ -36,7 +36,7 @@ describe('content-service request hardening', () => {
     const body = await readJson<{ error: { code: string; message: string } }>(response);
 
     expect(response.status).toBe(503);
-    expect(body.error.code).toBe('ServiceAuthNotConfigured');
+    expect(body.error.code).toBe('SERVICE_AUTH_NOT_CONFIGURED');
   });
 
   it('returns isActive in public event responses', async () => {
@@ -113,7 +113,7 @@ describe('content-service request hardening', () => {
     const body = await readJson<{ error: { code: string; message: string } }>(response);
 
     expect(response.status).toBe(401);
-    expect(body.error.code).toBe('Unauthorized');
+    expect(body.error.code).toBe('UNAUTHORIZED');
     expect(body.error.message).toContain('X-Gateway-Auth');
   });
 
@@ -137,7 +137,7 @@ describe('content-service request hardening', () => {
     const body = await readJson<{ error: { code: string; message: string } }>(response);
 
     expect(response.status).toBe(401);
-    expect(body.error.code).toBe('Unauthorized');
+    expect(body.error.code).toBe('UNAUTHORIZED');
     expect(body.error.message).toContain('subject');
   });
 
@@ -353,7 +353,7 @@ describe('content-service request hardening', () => {
     const body = await readJson<{ error: { code: string; message: string } }>(response);
 
     expect(response.status).toBe(401);
-    expect(body.error.code).toBe('Unauthorized');
+    expect(body.error.code).toBe('UNAUTHORIZED');
     expect(body.error.message).toContain('X-Gateway-Auth');
   });
 });

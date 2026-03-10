@@ -12,6 +12,7 @@ export interface Env {
   // Service URLs (internal)
   AUTH_SERVICE_URL?: string;
   CONTENT_SERVICE_URL?: string;
+  MEDIA_SERVICE_URL?: string;
   POINTS_SERVICE_URL?: string;
   REFERRAL_SERVICE_URL?: string;
   // Phase 2 services (not all exist yet; keep optional and only route when configured)
@@ -42,6 +43,46 @@ type GatewayUserContext = {
   roles: string[];
 };
 
+export type RouteGroup =
+  | 'platform'
+  | 'auth'
+  | 'identity'
+  | 'content-read'
+  | 'content-engagement'
+  | 'media'
+  | 'points'
+  | 'referral'
+  | 'space'
+  | 'quest'
+  | 'rielt'
+  | 'guru'
+  | 'rf'
+  | 'debug'
+  | 'internal'
+  | 'unknown';
+
+export type RouteClassification = {
+  routeKey: string;
+  routeGroup: RouteGroup;
+};
+
+export type RequestContext = {
+  requestId: string;
+  actorType: 'anonymous' | 'user' | 'internal';
+  actorId: string | null;
+  roles: string[];
+  authLevel: 'anonymous' | 'user' | 'internal';
+  clientIpHash: string | null;
+  userAgentHash: string | null;
+  routeKey: string;
+  routeGroup: RouteGroup;
+};
+
+export type EnforcementKeys = {
+  quotaKey: string;
+  abuseKey: string;
+};
+
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -51,6 +92,177 @@ function bytesToBase64Url(bytes: Uint8Array): string {
 
 function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
+}
+
+async function sha256Base64Url(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', utf8ToBytes(input));
+  return bytesToBase64Url(new Uint8Array(digest).slice(0, 12));
+}
+
+function normalizeRoutePath(path: string): string {
+  if (path.startsWith('/v1/api/content/')) {
+    return path.replace('/v1/api/content/', '/v1/content/');
+  }
+  return path;
+}
+
+export function classifyRoute(method: string, path: string): RouteClassification {
+  const normalizedMethod = method.toUpperCase();
+  const normalizedPath = normalizeRoutePath(path);
+
+  if (normalizedPath === '/health' || normalizedPath === '/ready' || normalizedPath === '/version') {
+    return { routeKey: `platform.${normalizedPath.slice(1)}.${normalizedMethod.toLowerCase()}`, routeGroup: 'platform' };
+  }
+
+  if (normalizedPath === '/v1/_debug/routes') {
+    return { routeKey: `debug.routes.${normalizedMethod.toLowerCase()}`, routeGroup: 'debug' };
+  }
+
+  if (normalizedPath.startsWith('/internal/')) {
+    return { routeKey: `internal.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'internal' };
+  }
+
+  if (normalizedPath.startsWith('/v1/auth/')) {
+    return { routeKey: `auth.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'auth' };
+  }
+
+  if (normalizedPath === '/v1/users/ensure' && normalizedMethod === 'POST') {
+    return { routeKey: 'identity.users.ensure.post', routeGroup: 'identity' };
+  }
+  if (normalizedPath.startsWith('/v1/users/')) {
+    return { routeKey: `identity.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'identity' };
+  }
+
+  if (normalizedPath === '/v1/points/balance' && normalizedMethod === 'GET') {
+    return { routeKey: 'points.balance.get', routeGroup: 'points' };
+  }
+  if (normalizedPath === '/v1/points/transactions' && normalizedMethod === 'GET') {
+    return { routeKey: 'points.transactions.get', routeGroup: 'points' };
+  }
+  if (normalizedPath.startsWith('/v1/points/')) {
+    return { routeKey: `points.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'points' };
+  }
+
+  if (normalizedPath === '/v1/referral/code' && normalizedMethod === 'GET') {
+    return { routeKey: 'referral.code.get', routeGroup: 'referral' };
+  }
+  if (normalizedPath === '/v1/referral/stats' && normalizedMethod === 'GET') {
+    return { routeKey: 'referral.stats.get', routeGroup: 'referral' };
+  }
+  if (normalizedPath === '/v1/referral/tree' && normalizedMethod === 'GET') {
+    return { routeKey: 'referral.tree.get', routeGroup: 'referral' };
+  }
+  if (normalizedPath === '/v1/referral/claim' && normalizedMethod === 'POST') {
+    return { routeKey: 'referral.claim.post', routeGroup: 'referral' };
+  }
+  if (normalizedPath.startsWith('/v1/referral/')) {
+    return { routeKey: `referral.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'referral' };
+  }
+
+  if (normalizedPath === '/v1/media/upload-token' && normalizedMethod === 'POST') {
+    return { routeKey: 'media.upload-token.post', routeGroup: 'media' };
+  }
+  if (/^\/v1\/media\/upload\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PUT') {
+    return { routeKey: 'media.upload.put', routeGroup: 'media' };
+  }
+  if (normalizedPath.startsWith('/v1/media/')) {
+    return { routeKey: `media.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'media' };
+  }
+
+  if (normalizedPath === '/v1/content/events' && normalizedMethod === 'GET') {
+    return { routeKey: 'content.events.list.get', routeGroup: 'content-read' };
+  }
+  if (/^\/v1\/content\/events\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'content.events.detail.get', routeGroup: 'content-read' };
+  }
+  if (/^\/v1\/content\/events\/[^/]+\/register$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'content.events.register.post', routeGroup: 'content-engagement' };
+  }
+  if (normalizedPath.startsWith('/v1/content/_debug/')) {
+    return { routeKey: `debug.content.${normalizedMethod.toLowerCase()}`, routeGroup: 'debug' };
+  }
+  if (normalizedPath.startsWith('/v1/content/media/')) {
+    return { routeKey: `media.legacy-content.${normalizedMethod.toLowerCase()}`, routeGroup: 'media' };
+  }
+  if (normalizedPath.startsWith('/v1/content/')) {
+    return { routeKey: `content.read.${normalizedMethod.toLowerCase()}`, routeGroup: 'content-read' };
+  }
+
+  if (normalizedPath.startsWith('/v1/space/')) {
+    return { routeKey: `space.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'space' };
+  }
+  if (normalizedPath.startsWith('/v1/quest/')) {
+    return { routeKey: `quest.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'quest' };
+  }
+  if (normalizedPath.startsWith('/v1/rielt/')) {
+    return { routeKey: `rielt.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'rielt' };
+  }
+  if (normalizedPath.startsWith('/v1/guru/')) {
+    return { routeKey: `guru.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'guru' };
+  }
+  if (normalizedPath.startsWith('/v1/rf/')) {
+    return { routeKey: `rf.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'rf' };
+  }
+
+  return { routeKey: `unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'unknown' };
+}
+
+function getClientIp(request: Request): string | null {
+  const cfConnectingIp = request.headers.get('CF-Connecting-IP');
+  if (cfConnectingIp && cfConnectingIp.trim().length > 0) return cfConnectingIp.trim();
+
+  const xForwardedFor = request.headers.get('X-Forwarded-For');
+  if (!xForwardedFor) return null;
+  const firstIp = xForwardedFor.split(',')[0]?.trim();
+  return firstIp && firstIp.length > 0 ? firstIp : null;
+}
+
+export async function buildRequestContext(
+  request: Request,
+  verifiedUser: GatewayUserContext | null,
+  requestId: string
+): Promise<RequestContext> {
+  const { routeKey, routeGroup } = classifyRoute(request.method, new URL(request.url).pathname);
+  const clientIp = getClientIp(request);
+  const userAgent = request.headers.get('User-Agent')?.trim() ?? '';
+
+  const actorType: RequestContext['actorType'] =
+    routeGroup === 'internal' ? 'internal' : verifiedUser ? 'user' : 'anonymous';
+  const authLevel: RequestContext['authLevel'] =
+    routeGroup === 'internal' ? 'internal' : verifiedUser ? 'user' : 'anonymous';
+
+  return {
+    requestId,
+    actorType,
+    actorId: verifiedUser?.userId ?? null,
+    roles: verifiedUser?.roles ?? [],
+    authLevel,
+    clientIpHash: clientIp ? await sha256Base64Url(clientIp) : null,
+    userAgentHash: userAgent ? await sha256Base64Url(userAgent) : null,
+    routeKey,
+    routeGroup,
+  };
+}
+
+export function deriveEnforcementKeys(context: RequestContext): EnforcementKeys {
+  const quotaActor =
+    context.actorType === 'user'
+      ? `user:${context.actorId ?? 'unknown'}`
+      : context.actorType === 'internal'
+        ? 'internal'
+        : `anon:${context.clientIpHash ?? 'unknown-ip'}`;
+
+  const abuseFingerprint =
+    context.actorType === 'user'
+      ? `user:${context.actorId ?? 'unknown'}:ip:${context.clientIpHash ?? 'unknown-ip'}`
+      : context.actorType === 'internal'
+        ? `internal:${context.routeKey}`
+        : `ip:${context.clientIpHash ?? 'unknown-ip'}:ua:${context.userAgentHash ?? 'unknown-ua'}`;
+
+  return {
+    quotaKey: `${quotaActor}:route-group:${context.routeGroup}`,
+    abuseKey: `${abuseFingerprint}:route-key:${context.routeKey}`,
+  };
 }
 
 function getBearerToken(request: Request): string | null {
@@ -75,6 +287,32 @@ function applyCors(res: Response, origin: string | null): Response {
   out.headers.set('Access-Control-Allow-Origin', origin);
   out.headers.set('Vary', 'Origin');
   out.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+  return out;
+}
+
+async function maybeNormalizeGatewayResponse(path: string, response: Response): Promise<Response> {
+  // Keep `/v1/media/*` as the canonical public contract even while the runtime
+  // implementation still falls back to content-service.
+  if (path !== '/v1/media/upload-token') return response;
+
+  const contentType = response.headers.get('Content-Type') ?? '';
+  if (!contentType.includes('application/json')) return response;
+
+  const text = await response.text();
+  let body = text;
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.uploadUrl === 'string' && parsed.uploadUrl.startsWith('/v1/content/media/upload/')) {
+      parsed.uploadUrl = parsed.uploadUrl.replace('/v1/content/media/upload/', '/v1/media/upload/');
+      body = JSON.stringify(parsed);
+    }
+  } catch {
+    body = text;
+  }
+
+  const out = new Response(body, response);
+  out.headers.set('Content-Type', 'application/json');
   return out;
 }
 
@@ -210,6 +448,15 @@ function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
   }
 }
 
+function getReservedPhase2ServiceVar(path: string): keyof Env | null {
+  if (path.startsWith('/v1/space/')) return 'SPACE_SERVICE_URL';
+  if (path.startsWith('/v1/quest/')) return 'QUEST_SERVICE_URL';
+  if (path.startsWith('/v1/rielt/')) return 'RIELT_SERVICE_URL';
+  if (path.startsWith('/v1/guru/')) return 'GURU_SERVICE_URL';
+  if (path.startsWith('/v1/rf/')) return 'RF_SERVICE_URL';
+  return null;
+}
+
 /**
  * Ready check endpoint
  */
@@ -256,11 +503,10 @@ async function routeRequest(
   const url = new URL(request.url);
   const path = url.pathname;
   // Support legacy alias /v1/api/content/* by rewriting to /v1/content/*
-  const downstreamPath = path.startsWith('/v1/api/content/')
-    ? path.replace('/v1/api/content/', '/v1/content/')
-    : path;
+  let downstreamPath = path.startsWith('/v1/api/content/') ? path.replace('/v1/api/content/', '/v1/content/') : path;
   const requestId = getRequestId(request) || generateRequestId();
   const origin = request.headers.get('Origin');
+  const route = classifyRoute(request.method, path);
 
   // Minimal CORS support for browser clients (PWA / localhost).
   // - Echo Origin (no wildcard) to support Authorization headers.
@@ -313,6 +559,11 @@ async function routeRequest(
           { prefix: '/v1/auth/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/users/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
+          {
+            prefix: '/v1/media/',
+            var: 'MEDIA_SERVICE_URL (fallback CONTENT_SERVICE_URL)',
+            host: safeHostFromUrl(env.MEDIA_SERVICE_URL ?? env.CONTENT_SERVICE_URL),
+          },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
           // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
@@ -331,6 +582,8 @@ async function routeRequest(
   // Route to services based on path prefix
   let serviceUrl: string | undefined;
   let missingVar: string | null = null;
+  let verifiedUser: GatewayUserContext | null = null;
+  const reservedVar = getReservedPhase2ServiceVar(path);
   
   if (path.startsWith('/v1/auth/')) {
     serviceUrl = env.AUTH_SERVICE_URL;
@@ -342,6 +595,16 @@ async function routeRequest(
   } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
     serviceUrl = env.CONTENT_SERVICE_URL;
     if (!serviceUrl) missingVar = 'CONTENT_SERVICE_URL';
+  } else if (path.startsWith('/v1/media/')) {
+    // `/v1/media/*` is a canonical public contract.
+    // The content-service fallback below is transitional only until media-service exists.
+    // Do not generalize this aliasing pattern to other future domains without an explicit decision.
+    serviceUrl = env.MEDIA_SERVICE_URL ?? env.CONTENT_SERVICE_URL;
+    if (!serviceUrl) {
+      missingVar = 'CONTENT_SERVICE_URL';
+    } else if (!env.MEDIA_SERVICE_URL) {
+      downstreamPath = path.replace('/v1/media/', '/v1/content/media/');
+    }
   } else if (path.startsWith('/v1/points/')) {
     serviceUrl = env.POINTS_SERVICE_URL;
     if (!serviceUrl) missingVar = 'POINTS_SERVICE_URL';
@@ -363,6 +626,21 @@ async function routeRequest(
   }
 
   if (!serviceUrl) {
+    if (reservedVar) {
+      logger.info('Reserved phase-2 route is not enabled yet', { path, reservedVar });
+      const res = new Response(
+        JSON.stringify({
+          error: {
+            code: 'ROUTE_RESERVED_NOT_ENABLED',
+            message: `${reservedVar} is not configured yet`,
+          },
+          requestId,
+        }),
+        { status: 501, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
+      );
+      return applyCors(res, origin);
+    }
+
     if (missingVar) {
       logger.error('Service not configured', { path, missingVar });
       const res = new Response(
@@ -417,7 +695,8 @@ async function routeRequest(
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
   // Media (Phase 2.2): token issuance requires auth, upload itself is authorized by a signed token.
   const isMediaUploadToken =
-    request.method === 'POST' && downstreamPath === '/v1/content/media/upload-token';
+    request.method === 'POST' &&
+    (downstreamPath === '/v1/content/media/upload-token' || downstreamPath === '/v1/media/upload-token');
 
   if (
     path.startsWith('/v1/points/') ||
@@ -427,27 +706,26 @@ async function routeRequest(
     isMediaUploadToken
   ) {
     const token = getBearerToken(request);
-    let user: GatewayUserContext | null = null;
     let authMisconfigured = false;
 
     if (token && env.CLERK_SECRET_KEY) {
       const verified = await verifyClerkJwt(token, env, origin);
       if (!verified.ok) {
         logger.warn('Invalid user token', { reason: verified.error });
-        user = null;
+        verifiedUser = null;
       } else {
-        user = extractGatewayUserContext(verified.payload);
+        verifiedUser = extractGatewayUserContext(verified.payload);
       }
     } else if (token) {
       logger.error('CLERK_SECRET_KEY not set; refusing to trust user token');
       authMisconfigured = true;
     }
 
-    if (!user && token && !authMisconfigured) {
+    if (!verifiedUser && token && !authMisconfigured) {
       logger.warn('Verified user token is missing usable subject claim');
     }
 
-    if (!user) {
+    if (!verifiedUser) {
       const status = authMisconfigured ? 503 : 401;
       const code = authMisconfigured ? 'SERVICE_AUTH_NOT_CONFIGURED' : 'UNAUTHORIZED';
       const message = authMisconfigured
@@ -474,7 +752,7 @@ async function routeRequest(
       return applyCors(res, origin);
     }
 
-    const gatewayToken = await mintInternalGatewayToken(env, requestId, user);
+    const gatewayToken = await mintInternalGatewayToken(env, requestId, verifiedUser);
     if (!gatewayToken) {
       logger.error('SERVICE_JWT_SECRET not set; cannot mint internal gateway token');
       const res = new Response(
@@ -498,8 +776,13 @@ async function routeRequest(
 
     headers.set('X-Gateway-Auth', gatewayToken);
     // Temporary derived/debug header for compatibility during migration.
-    headers.set('X-User-ID', user.userId);
+    headers.set('X-User-ID', verifiedUser.userId);
   }
+
+  // Reserved for future rate-limit / abuse / AI quota hooks.
+  // Intentionally internal-only: no downstream headers and no product behavior changes.
+  const requestContext = await buildRequestContext(request, verifiedUser, requestId);
+  const enforcementKeys = deriveEnforcementKeys(requestContext);
 
   // Forward request to service
   const baseUrl = serviceUrl.endsWith('/') ? serviceUrl.slice(0, -1) : serviceUrl;
@@ -508,27 +791,42 @@ async function routeRequest(
     path,
     downstreamPath,
     targetHost: safeHostFromUrl(serviceUrl),
+    routeKey: route.routeKey,
+    routeGroup: route.routeGroup,
+    actorType: requestContext.actorType,
+    authLevel: requestContext.authLevel,
+  });
+  logger.debug('Derived request enforcement keys', {
+    routeKey: requestContext.routeKey,
+    routeGroup: requestContext.routeGroup,
+    quotaKey: enforcementKeys.quotaKey,
+    abuseKey: enforcementKeys.abuseKey,
   });
 
   // Only pass a body for methods that can have one.
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
-  const serviceRequest = new Request(targetUrl, {
+  const serviceRequestInit: RequestInit & { duplex?: 'half' } = {
     method: request.method,
     headers,
     body: hasBody ? request.body : undefined,
-  });
+  };
+  if (hasBody) {
+    serviceRequestInit.duplex = 'half';
+  }
+  const serviceRequest = new Request(targetUrl, serviceRequestInit);
 
   try {
     const response = await fetch(serviceRequest);
+    const normalizedResponse = await maybeNormalizeGatewayResponse(path, response);
 
     // Cloudflare may return a Response with immutable headers.
     // Always clone before adding/overriding headers.
-    const out = new Response(response.body, response);
+    const out = new Response(normalizedResponse.body, normalizedResponse);
     // Diagnostic headers (no secrets). Helps debug proxy-chain issues.
     out.headers.set('X-Proxy-Target-Host', safeHostFromUrl(baseUrl) ?? '');
     out.headers.set('X-Proxy-Target-Path', downstreamPath);
-    out.headers.set('X-Proxy-Downstream-Status', String(response.status));
-    out.headers.set('X-Proxy-Downstream-Content-Type', response.headers.get('Content-Type') ?? '');
+    out.headers.set('X-Proxy-Downstream-Status', String(normalizedResponse.status));
+    out.headers.set('X-Proxy-Downstream-Content-Type', normalizedResponse.headers.get('Content-Type') ?? '');
     return applyCors(out, origin);
   } catch (error) {
     logger.error('Error forwarding request to service', error, {
@@ -571,6 +869,7 @@ export default {
     logger.info('Incoming request', {
       method: request.method,
       path,
+      ...classifyRoute(request.method, path),
     });
 
     try {

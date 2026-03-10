@@ -19,8 +19,10 @@
 
 - `/v1/auth/*` → `AUTH_SERVICE_URL`
 - `/v1/content/*` → `CONTENT_SERVICE_URL`
+- `/v1/media/*` → `MEDIA_SERVICE_URL` (fallback: `CONTENT_SERVICE_URL`)
 - `/v1/referral/*` → `REFERRAL_SERVICE_URL`
 - `/v1/points/*` → `POINTS_SERVICE_URL`
+- Phase 2 reserved: `/v1/space/*`, `/v1/quest/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` — `501` until `*_SERVICE_URL` configured
 
 ### Smoke check policy (GitHub Actions)
 

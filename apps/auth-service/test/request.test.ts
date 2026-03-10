@@ -27,16 +27,11 @@ describe('auth-service request hardening', () => {
     expect(body.error.message).toContain('X-Gateway-Auth');
   });
 
-  it('rejects users.ensure when X-User-ID is missing', async () => {
+  it('rejects users.ensure when gateway token has no user subject', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    // auth-service still validates legacy gateway-claims contract for this route.
-    // Keep explicit claims here so test reaches "Missing X-User-ID" branch.
-    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, {
-      aud: 'downstream',
-      sub: 'api-gateway',
-    });
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: '' });
 
     const response = await worker.fetch(
       new Request('https://auth.example/v1/users/ensure', {
@@ -54,7 +49,7 @@ describe('auth-service request hardening', () => {
 
     expect(response.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
-    expect(body.error.message).toContain('X-User-ID');
+    expect(body.error.message).toContain('subject');
   });
 
   it('returns 503 for Clerk webhook when secret is missing', async () => {

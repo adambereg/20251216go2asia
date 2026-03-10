@@ -43,11 +43,15 @@ components:
         - error
       properties:
         error:
-          type: string
-          example: "Unauthorized"
-        message:
-          type: string
-          example: "Invalid or missing token"
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "UNAUTHORIZED"
+            message:
+              type: string
+              example: "Invalid or missing token"
         requestId:
           type: string
 

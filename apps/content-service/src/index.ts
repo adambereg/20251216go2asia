@@ -2572,19 +2572,19 @@ async function requireGatewayOrigin(
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
     return {
       ok: false,
-      res: json({ error: { code: 'ServiceAuthNotConfigured', message: 'Service auth is not configured' }, requestId }, 503),
+      res: json({ error: { code: 'SERVICE_AUTH_NOT_CONFIGURED', message: 'Service auth is not configured' }, requestId }, 503),
     };
   }
 
   const token = request.headers.get('X-Gateway-Auth');
   if (!token) {
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-Gateway-Auth' }, requestId }, 401) };
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Missing X-Gateway-Auth header' }, requestId }, 401) };
   }
 
   const verified = await verifyHs256Jwt(token, secret);
   if (!verified.ok) {
     logger.warn('Invalid gateway-origin token', { reason: verified.error });
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth' }, requestId }, 401) };
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth token' }, requestId }, 401) };
   }
 
   const claims = validateServiceJwtClaims(verified.payload, {
@@ -2593,13 +2593,13 @@ async function requireGatewayOrigin(
   });
   if (!claims.ok) {
     logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth token claims' }, requestId }, 401) };
   }
 
   const userId = getStringClaim(verified.payload, 'sub');
   if (!userId) {
     logger.warn('Gateway-origin token missing subject claim');
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing user subject in X-Gateway-Auth' }, requestId }, 401) };
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Missing user subject in X-Gateway-Auth' }, requestId }, 401) };
   }
 
   return {

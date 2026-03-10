@@ -86,13 +86,6 @@ components:
       required: false
       schema:
         type: string
-    XUserId:
-      description: User identifier asserted by API Gateway
-      in: header
-      name: X-User-ID
-      required: true
-      schema:
-        type: string
   responses:
     BadRequest:
       content:
@@ -124,6 +117,18 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Rate limited
+    ServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Service auth is not configured (missing secret/env)
+    ServiceNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Service-specific integration is not configured
     Unauthorized:
       content:
         application/json:
@@ -556,7 +561,7 @@ components:
           nullable: true
           type: string
         uploadUrl:
-          description: Relative URL to upload endpoint (via API Gateway)
+          description: Relative URL to the canonical media upload endpoint (via API Gateway)
           type: string
       required:
         - uploadUrl
@@ -616,11 +621,17 @@ components:
     ErrorResponse:
       properties:
         error:
-          example: Unauthorized
-          type: string
-        message:
-          example: Invalid or missing token
-          type: string
+          properties:
+            code:
+              example: UNAUTHORIZED
+              type: string
+            message:
+              example: Invalid or missing token
+              type: string
+          required:
+            - code
+            - message
+          type: object
         requestId:
           type: string
       required:
@@ -1023,6 +1034,8 @@ paths:
           $ref: "#/components/responses/RateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Add points to a user (idempotent)
@@ -1051,6 +1064,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Ensure referral code exists for user (idempotent)
@@ -1084,6 +1099,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Link referee to referrer by referral code
@@ -1113,6 +1130,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Mark referee first login (idempotent)
@@ -1140,8 +1159,12 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceNotConfigured"
       summary: Clerk webhook receiver (staging)
       tags:
         - auth
@@ -1388,7 +1411,6 @@ paths:
       operationId: registerForEvent
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - $ref: "#/components/parameters/EventId"
       responses:
@@ -1404,78 +1426,13 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Register current user for event (authorized)
       tags:
         - content
-  /v1/content/media/upload-token:
-    post:
-      description: |
-        Creates a short-lived signed token for uploading media to R2 via Content Service. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
-      operationId: createMediaUploadToken
-      parameters:
-        - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
-        - $ref: "#/components/parameters/XRequestId"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateUploadTokenRequest"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreateUploadTokenResponse"
-          description: OK
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - GatewayAuth: []
-      summary: Create signed upload token (authorized)
-      tags:
-        - media
-  /v1/content/media/upload/{token}:
-    put:
-      description: |
-        Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
-      operationId: uploadMediaByToken
-      parameters:
-        - in: path
-          name: token
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              format: binary
-              type: string
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UploadResult"
-          description: Created
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      summary: Upload media by signed token (no user auth)
-      tags:
-        - media
   /v1/content/places:
     get:
       operationId: listPlaces
@@ -1515,13 +1472,80 @@ paths:
       summary: Get place by id or slug (public)
       tags:
         - content
+  /v1/media/upload-token:
+    post:
+      description: |
+        Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+      operationId: createMediaUploadToken
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadTokenResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create signed upload token (authorized)
+      tags:
+        - media
+  /v1/media/upload/{token}:
+    put:
+      description: |
+        Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
+      operationId: uploadMediaByToken
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              format: binary
+              type: string
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Upload media by signed token (no user auth)
+      tags:
+        - media
   /v1/points/balance:
     get:
       description: User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
       operationId: getPointsBalance
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1534,6 +1558,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user points balance
@@ -1545,7 +1571,6 @@ paths:
       operationId: listPointsTransactions
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - in: query
           name: limit
@@ -1571,6 +1596,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: List current user points transactions
@@ -1583,7 +1610,6 @@ paths:
       operationId: claimReferral
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         content:
@@ -1606,6 +1632,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Claim referral code for current user (idempotent)
@@ -1618,7 +1646,6 @@ paths:
       operationId: getReferralCode
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1631,6 +1658,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral code
@@ -1642,7 +1671,6 @@ paths:
       operationId: getReferralStats
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1655,6 +1683,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral stats
@@ -1667,7 +1697,6 @@ paths:
       operationId: getReferralTree
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - description: Tree depth to return (1 = direct only, 2 = include sub-referrals)
           in: query
@@ -1690,6 +1719,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral tree (depth 1..2)
@@ -1698,11 +1729,10 @@ paths:
   /v1/users/ensure:
     post:
       description: |
-        Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+        Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity from the gateway token subject (`X-Gateway-Auth`) and provided email.
       operationId: ensureUser
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         content:
@@ -1723,6 +1753,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Ensure current user exists in Neon (idempotent upsert)
