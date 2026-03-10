@@ -63,12 +63,11 @@ paths:
       summary: Ensure current user exists in Neon (idempotent upsert)
       description: >
         Called via API Gateway after successful sign-in/sign-up.
-        Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+        Upserts into `users` table using asserted user identity from the gateway token subject (`X-Gateway-Auth`) and provided email.
       security:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true

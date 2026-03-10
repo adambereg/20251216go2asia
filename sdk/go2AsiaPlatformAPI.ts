@@ -1401,7 +1401,7 @@ export const getReferralTree = async (
 };
 
 /**
- * Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity (`X-User-ID`) and provided email.
+ * Called via API Gateway after successful sign-in/sign-up. Upserts into `users` table using asserted user identity from the gateway token subject (`X-Gateway-Auth`) and provided email.
 
  * @summary Ensure current user exists in Neon (idempotent upsert)
  */

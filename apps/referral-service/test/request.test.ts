@@ -39,8 +39,23 @@ describe('referral-service request hardening', () => {
     const body = await readJson<{ error: string; message: string }>(response);
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe('Unauthorized');
+    expect(body.error).toBe('UNAUTHORIZED');
     expect(body.message).toContain('X-Gateway-Auth');
+  });
+
+  it('returns 503 when service auth is not configured on user route', async () => {
+    const response = await worker.fetch(
+      new Request('https://referral.example/v1/referral/code'),
+      {
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+
+    const body = await readJson<{ error: string; message: string }>(response);
+
+    expect(response.status).toBe(503);
+    expect(body.error).toBe('SERVICE_AUTH_NOT_CONFIGURED');
+    expect(body.message).toContain('not configured');
   });
 
   it('rejects invalid gateway token claims on user route', async () => {
@@ -62,8 +77,29 @@ describe('referral-service request hardening', () => {
     const body = await readJson<{ error: string; message: string }>(response);
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe('Unauthorized');
+    expect(body.error).toBe('UNAUTHORIZED');
     expect(body.message).toContain('claims');
+  });
+
+  it('returns 503 when service auth is not configured on internal route', async () => {
+    const response = await worker.fetch(
+      new Request('https://referral.example/internal/referral/mark-first-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: 'user_1' }),
+      }),
+      {
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+
+    const body = await readJson<{ error: string; message: string }>(response);
+
+    expect(response.status).toBe(503);
+    expect(body.error).toBe('SERVICE_AUTH_NOT_CONFIGURED');
+    expect(body.message).toContain('not configured');
   });
 
   it('returns relationFound=false when first-login is marked for a user without referral relation', async () => {
