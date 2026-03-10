@@ -26,6 +26,7 @@ export interface ContentEventDto {
   year: number | null;
   heroMediaKey: string | null;
   galleryMediaKeys: string[];
+  isActive: boolean;
   isFree: boolean;
   priceAmount: string | null;
   priceCurrency: string | null;

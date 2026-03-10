@@ -101,6 +101,7 @@ export interface ContentEventDto {
   year: number | null;
   heroMediaKey: string | null; // R2 object key (relative path)
   galleryMediaKeys: string[]; // R2 object keys (never JSON string)
+  isActive: boolean;
   isFree: boolean;
   priceAmount: string | null;
   priceCurrency: string | null;
@@ -827,6 +828,7 @@ function toContentEvent(row: EventRow): ContentEventDto {
     year: row.year ?? null,
     heroMediaKey,
     galleryMediaKeys,
+    isActive: Boolean(row.is_active),
     isFree: Boolean(row.is_free),
     priceAmount: row.price_amount ?? null,
     priceCurrency: row.price_currency ?? null,

@@ -49,6 +49,7 @@ export interface EventRow {
   gallery_media_keys: unknown | null; // jsonb (string[])
   // Legacy/compat: some internal resolvers (e.g. guide feeds) still select a public image URL.
   image_url: string | null;
+  is_active: boolean;
   is_free: boolean;
   price_amount: string | null;
   price_currency: string | null;
@@ -242,6 +243,7 @@ export async function listEvents(
       e.media_prefix,
       e.hero_media_key,
       e.gallery_media_keys,
+      e.is_active,
       e.is_free,
       e.price_amount,
       e.price_currency,
@@ -320,6 +322,7 @@ export async function getEventByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       e.media_prefix,
       e.hero_media_key,
       e.gallery_media_keys,
+      e.is_active,
       e.is_free,
       e.price_amount,
       e.price_currency,

@@ -39,6 +39,65 @@ describe('content-service request hardening', () => {
     expect(body.error.code).toBe('ServiceAuthNotConfigured');
   });
 
+  it('returns isActive in public event responses', async () => {
+    const sqlClientMock = vi
+      .fn()
+      .mockResolvedValueOnce([{ total: 1 }])
+      .mockResolvedValueOnce([
+        {
+          id: 'event_1',
+          title: 'Event One',
+          slug: 'event-one',
+          description: 'Body',
+          short_description: 'Short',
+          category: 'festival',
+          country_slug: 'singapore',
+          city_slug: 'singapore',
+          country_name: 'Singapore',
+          city_name: 'Singapore',
+          year: 2026,
+          start_at: '2026-12-24T10:00:00.000Z',
+          start_date: '2026-12-24T10:00:00.000Z',
+          end_at: null,
+          end_date: null,
+          location: null,
+          lat: '1.29027',
+          lng: '103.851959',
+          media_prefix: 'events/event-one',
+          hero_media_key: 'events/event-one/hero.jpg',
+          gallery_media_keys: ['events/event-one/01.jpg'],
+          is_active: true,
+          is_free: true,
+          price_amount: '0',
+          price_currency: 'SGD',
+          is_verified: true,
+          official_url: 'https://example.com/event-one',
+          seo_title: null,
+          seo_description: null,
+          geo_scope: null,
+          primary_type: null,
+          secondary_type: null,
+          source_md_path: null,
+          status: 'active',
+        },
+      ]);
+    createSqlClientMock.mockReturnValue(sqlClientMock);
+
+    const response = await worker.fetch(
+      new Request('https://content.example/v1/content/events?limit=1'),
+      {
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+
+    const body = await readJson<{ items: Array<{ id: string; isActive: boolean }> }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.id).toBe('event_1');
+    expect(body.items[0]?.isActive).toBe(true);
+  });
+
   it('rejects event registration without X-User-ID', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
