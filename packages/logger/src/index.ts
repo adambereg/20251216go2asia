@@ -10,6 +10,8 @@ export interface LogContext {
   requestId?: string;
   userId?: string;
   service?: string;
+  env?: string;
+  version?: string;
   [key: string]: unknown;
 }
 
@@ -22,13 +24,35 @@ export interface Logger {
   error(message: string, error?: Error | unknown, context?: LogContext): void;
 }
 
+export interface LoggerRuntimeContext {
+  env?: string;
+  version?: string;
+}
+
+export interface RequestCompletionContext extends LogContext {
+  method: string;
+  path: string;
+  status: number;
+  durationMs: number;
+}
+
+function isPlainObject(value: unknown): value is LogContext {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Creates a logger instance with requestId support
  */
-export function createLogger(requestId?: string, service?: string): Logger {
+export function createLogger(
+  requestId?: string,
+  service?: string,
+  runtime?: LoggerRuntimeContext
+): Logger {
   const baseContext: LogContext = {
     requestId,
     service,
+    env: runtime?.env,
+    version: runtime?.version,
   };
 
   const formatMessage = (
@@ -52,11 +76,28 @@ export function createLogger(requestId?: string, service?: string): Logger {
       console.warn(formatMessage('warn', message, context));
     },
     error: (message: string, error?: Error | unknown, context?: LogContext) => {
-      const errorContext: LogContext = {
-        ...context,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      };
+      let errorContext: LogContext = { ...(context ?? {}) };
+      if (error instanceof Error) {
+        errorContext = {
+          ...errorContext,
+          error: error.message,
+          stack: error.stack,
+        };
+      } else if (typeof context !== 'undefined') {
+        errorContext = {
+          ...errorContext,
+          error: String(error),
+        };
+      } else if (isPlainObject(error)) {
+        errorContext = {
+          ...error,
+        };
+      } else if (typeof error !== 'undefined') {
+        errorContext = {
+          ...errorContext,
+          error: String(error),
+        };
+      }
       console.error(formatMessage('error', message, errorContext));
     },
   };
@@ -74,6 +115,15 @@ export function getRequestId(request: Request): string | undefined {
  */
 export function generateRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+export function logRequestCompleted(logger: Logger, context: RequestCompletionContext): void {
+  const outcome =
+    context.status >= 500 ? 'error' : context.status >= 400 ? 'client_error' : 'success';
+  logger.info('Request completed', {
+    ...context,
+    outcome,
+  });
 }
 
 

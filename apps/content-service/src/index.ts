@@ -45,7 +45,7 @@ import {
   listGuides,
   listPlacesForGuideFeed,
 } from '@go2asia/db/queries/guides';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -737,6 +737,37 @@ function handleHealth(env: Env): Response {
     status: 'ok',
     version: env.VERSION ?? 'unknown',
   });
+}
+
+function getCheck(value: unknown): 'ok' | 'missing' {
+  if (typeof value === 'string') return value.trim().length > 0 ? 'ok' : 'missing';
+  return value ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getCheck(env.DATABASE_URL),
+    serviceJwtSecret: getCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: 'content-service',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
+      optional: {
+        mediaUploadSigningSecret: getCheck(env.MEDIA_UPLOAD_SIGNING_SECRET),
+        mediaBucket: getCheck(env.MEDIA_BUCKET ?? env.SPACE_MEDIA_BUCKET),
+      },
+    },
+    status
+  );
 }
 
 function handleNotFound(path: string): Response {
@@ -2702,24 +2733,37 @@ async function handleEventRegistration(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'content-service');
+    const logger = createLogger(requestId, 'content-service', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
-    if (path === '/health' || path === '/version') {
-      const res = handleHealth(env);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
+    try {
+      response = await (async (): Promise<Response> => {
+      if (path === '/health' || path === '/version') {
+        const res = handleHealth(env);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
 
-    // Debug endpoints (guarded; never in production)
-    if (path === '/v1/content/_debug/db' && request.method === 'GET') {
-      if (!isDebugAllowed(request, env)) return handleNotFound(path);
-      const res = await handleDebugDb(env, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
+      if (path === '/ready') {
+        const res = handleReady(env);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+
+      // Debug endpoints (guarded; never in production)
+      if (path === '/v1/content/_debug/db' && request.method === 'GET') {
+        if (!isDebugAllowed(request, env)) return handleNotFound(path);
+        const res = await handleDebugDb(env, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
 
     // Canon debug endpoints (no secrets)
     if (path === '/v1/content/_debug/version' && request.method === 'GET') {
@@ -3009,10 +3053,34 @@ export default {
       return res;
     }
 
-    logger.warn('Unhandled route', { method: request.method, path });
-    const res = handleNotFound(path);
-    res.headers.set('X-Request-ID', requestId);
-    return res;
+      logger.warn('Unhandled route', { method: request.method, path });
+      const res = handleNotFound(path);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+      })();
+      return response;
+    } catch (error) {
+      logger.error('Unhandled error', error, { method: request.method, path });
+      response = json(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Unexpected error',
+          },
+          requestId,
+        },
+        500
+      );
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
+    }
   },
 };
 

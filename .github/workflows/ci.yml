@@ -76,8 +76,20 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Test
-        run: pnpm test
+      - name: Test (CI contract)
+        run: pnpm test:ci
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            apps/*/coverage/**
+            apps/*/test-results/**
+            packages/*/coverage/**
+            packages/*/test-results/**
 
   build:
     name: Build
@@ -114,11 +126,11 @@ jobs:
         run: pnpm gen:sdk
       - name: Check for changes (including untracked files)
         run: |
-          CHANGES="$(git status --porcelain -- packages/types/src/generated packages/sdk/src/generated || true)"
+          CHANGES="$(git status --porcelain -- packages/types/src/generated packages/sdk/src/generated docs/openapi/openapi.bundle.yaml || true)"
           if [ -n "$CHANGES" ]; then
             echo "$CHANGES"
-            echo "Generated types/SDK differ from committed versions."
-            echo "Run 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes."
+            echo "Generated bundle/types/SDK differ from committed versions."
+            echo "Run 'pnpm openapi:bundle', 'pnpm gen:types' and 'pnpm gen:sdk' and commit the changes."
             exit 1
           fi
 

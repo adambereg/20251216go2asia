@@ -43,20 +43,38 @@
 - технические ошибки (исключения, таймауты, проблемы с БД);
 - результаты фоновых задач.
 
+Минимальный operational contract для Workers:
+
+- каждый запрос должен иметь `requestId`;
+- базовый runtime context должен включать:
+  - `service`
+  - `env`
+  - `version`
+- на завершение каждого запроса должен писаться единый summary log:
+  - `method`
+  - `path`
+  - `status`
+  - `durationMs`
+  - `outcome`
+
 Структура лог-сообщения (пример):
 
 ```json
 {
   "timestamp": "2025-01-01T12:00:00Z",
   "level": "INFO",
-  "service": "atlas_service",
-  "request_id": "uuid",
-  "message": "Place fetched",
-  "meta": {
-    "place_id": "123",
-    "user_id": "456"
-  }
+  "service": "content-service",
+  "env": "staging",
+  "version": "git-sha",
+  "requestId": "uuid",
+  "message": "Request completed",
+  "method": "GET",
+  "path": "/v1/content/events",
+  "status": 200,
+  "durationMs": 48,
+  "outcome": "success"
 }
+```
 
 ---
 
@@ -79,6 +97,7 @@
 ## 6. Связанные документы
 
 - ops/monitoring.md
+- ops/runbooks.md
 - architecture/system_architecture.md
 - backend/logging_service/ (когда будет реализован)
 

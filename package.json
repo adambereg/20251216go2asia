@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:ci": "turbo run test:ci",
     "clean": "turbo run clean && rm -rf .turbo",
     "openapi:bundle": "node scripts/openapi_bundle.mjs",
     "gen:types": "pnpm openapi:bundle && orval --config orval.config.ts --output types",

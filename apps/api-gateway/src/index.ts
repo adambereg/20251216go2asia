@@ -5,7 +5,7 @@
  * Handles JWT validation, requestId propagation, and basic routing.
  */
 
-import { createLogger, getRequestId, generateRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
   // Service URLs (internal)
@@ -175,19 +175,50 @@ async function handleHealth(env: Env): Promise<Response> {
   );
 }
 
+function getSecretCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
+  if (typeof value !== 'string' || value.trim().length === 0) return 'missing';
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? 'ok' : 'invalid';
+  } catch {
+    return 'invalid';
+  }
+}
+
 /**
  * Ready check endpoint
  */
-async function handleReady(): Promise<Response> {
+async function handleReady(env: Env): Promise<Response> {
+  const checks = {
+    authServiceUrl: getUrlCheck(env.AUTH_SERVICE_URL),
+    contentServiceUrl: getUrlCheck(env.CONTENT_SERVICE_URL),
+    pointsServiceUrl: getUrlCheck(env.POINTS_SERVICE_URL),
+    referralServiceUrl: getUrlCheck(env.REFERRAL_SERVICE_URL),
+    clerkJwtSecret: getSecretCheck(env.CLERK_JWT_SECRET),
+    serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
   return new Response(
     JSON.stringify({
-      status: 'ready',
       service: 'api-gateway',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
     }),
     {
-      status: 200,
+      status,
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
       },
     }
   );
@@ -232,7 +263,7 @@ async function routeRequest(
     return handleHealth(env);
   }
   if (path === '/ready') {
-    return handleReady();
+    return handleReady(env);
   }
 
   // Debug (safe): show which service URLs are configured (host only)
@@ -500,23 +531,30 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     // Extract or generate requestId
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'api-gateway');
+    const logger = createLogger(requestId, 'api-gateway', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
+    const path = new URL(request.url).pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
     logger.info('Incoming request', {
       method: request.method,
-      path: new URL(request.url).pathname,
+      path,
     });
 
     try {
-      const response = await routeRequest(request, env, logger);
+      response = await routeRequest(request, env, logger);
 
       // Ensure headers are mutable before setting X-Request-ID
       const out = new Response(response.body, response);
       out.headers.set('X-Request-ID', requestId);
+      response = out;
       return out;
     } catch (error) {
-      logger.error('Unhandled error in API Gateway', error);
-      return new Response(
+      logger.error('Unhandled error in API Gateway', error, { method: request.method, path });
+      response = new Response(
         JSON.stringify({
           error: {
             code: 'INTERNAL_ERROR',
@@ -532,6 +570,16 @@ export default {
           },
         }
       );
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+        targetHost: response?.headers.get('X-Proxy-Target-Host') ?? undefined,
+        downstreamStatus: response?.headers.get('X-Proxy-Downstream-Status') ?? undefined,
+      });
     }
   },
 };

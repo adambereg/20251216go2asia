@@ -107,15 +107,15 @@ jobs:
           echo "Deploy failed after $max_attempts attempts."
           exit 1
 
-      - name: Smoke check (HTTP 200)
+      - name: Smoke check (ready first)
         run: |
           set -euo pipefail
 
           URL="${{ matrix.url }}"
           echo "Smoke checking: $URL"
 
-          # Try /health then /version then / (some legacy workers may not have health endpoints yet)
-          for path in "/health" "/version" "/"; do
+          # Prefer readiness. Keep health/version fallback while older environments converge.
+          for path in "/ready" "/health" "/version" "/"; do
             code="$(curl -sS -o /dev/null -w "%{http_code}" "${URL}${path}" || true)"
             echo "GET ${URL}${path} -> ${code}"
             if [ "${code}" = "200" ]; then
@@ -123,8 +123,81 @@ jobs:
             fi
           done
 
-          echo "Smoke check failed: expected HTTP 200 on ${URL} (/health|/version|/)"
+          echo "Smoke check failed: expected HTTP 200 on ${URL} (/ready|/health|/version|/)"
           exit 1
+
+  gateway-smoke:
+    name: Gateway smoke
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Run gateway smoke
+        env:
+          STAGING_GATEWAY_URL: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
+          STAGING_TEST_JWT: ${{ secrets['STAGING_TEST_JWT'] }}
+          TEST_ARTIFACT_PATH: test-results/staging/gateway-smoke.json
+          RELEASE_SHA: ${{ github.sha }}
+        run: node scripts/content_gateway_smoke.mjs
+      - name: Upload gateway smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateway-smoke-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: test-results/staging/gateway-smoke.json
+
+  contract-tests:
+    name: Content contract tests
+    runs-on: ubuntu-latest
+    needs: gateway-smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Run content public contract
+        env:
+          STAGING_GATEWAY_URL: https://go2asia-api-gateway-staging.fred89059599296.workers.dev
+          OPENAPI_BUNDLE_PATH: docs/openapi/openapi.bundle.yaml
+          TEST_ARTIFACT_PATH: test-results/staging/content-public-contract.json
+          RELEASE_SHA: ${{ github.sha }}
+        run: node scripts/contract/content_public_contract.mjs
+      - name: Upload contract artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-contract-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: test-results/staging/content-public-contract.json
+      - name: Write staging summary
+        if: always()
+        run: |
+          {
+            echo "## Staging Deploy Summary"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| SHA | ${{ github.sha }} |"
+            echo "| Gateway URL | https://go2asia-api-gateway-staging.fred89059599296.workers.dev |"
+            echo "| Gateway smoke artifact | gateway-smoke-${{ github.run_id }} |"
+            echo "| Content contract artifact | content-contract-${{ github.run_id }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
 
 

@@ -10,7 +10,7 @@
  */
 
 import { createDb, sql } from '@go2asia/db';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { decideExternalIdIdempotency } from './idempotency';
 
@@ -109,6 +109,35 @@ function handleHealth(env: Env): Response {
       version: getVersion(env),
     },
     200,
+    {
+      'Cache-Control': 'no-store',
+    }
+  );
+}
+
+function getCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getCheck(env.DATABASE_URL),
+    serviceJwtSecret: getCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: SERVICE_NAME,
+      env: getEnvName(env),
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: getVersion(env),
+      checks,
+      missing,
+    },
+    status,
     {
       'Cache-Control': 'no-store',
     }
@@ -389,14 +418,26 @@ async function enforceVelocityCap(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, SERVICE_NAME);
+    const logger = createLogger(requestId, SERVICE_NAME, {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
     try {
+      response = await (async (): Promise<Response> => {
       if (path === '/health' || path === '/version') {
         const res = handleHealth(env);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (path === '/ready') {
+        const res = handleReady(env);
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -692,11 +733,20 @@ export default {
       const res = errorResponse('NotFound', `No route for path: ${path}`, requestId, 404);
       res.headers.set('X-Request-Id', requestId);
       return res;
+      })();
+      return response;
     } catch (err) {
-      logger.error('Unhandled error', { err: String(err) });
-      const res = errorResponse('InternalError', 'Unexpected error', requestId, 500);
-      res.headers.set('X-Request-Id', requestId);
-      return res;
+      logger.error('Unhandled error', err, { method: request.method, path });
+      response = errorResponse('InternalError', 'Unexpected error', requestId, 500);
+      response.headers.set('X-Request-Id', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
     }
   },
 };

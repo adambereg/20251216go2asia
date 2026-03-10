@@ -8,7 +8,7 @@
  */
 
 import { createDb, sql } from '@go2asia/db';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 import { Webhook } from 'svix';
 
 export interface Env {
@@ -40,6 +40,33 @@ function handleHealth(env: Env): Response {
     status: 'ok',
     version: env.VERSION ?? 'unknown',
   });
+}
+
+function getSecretCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getSecretCheck(env.DATABASE_URL),
+    serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
+    clerkWebhookSecret: getSecretCheck(env.CLERK_WEBHOOK_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: 'auth-service',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
+    },
+    status
+  );
 }
 
 function handleNotFound(path: string): Response {
@@ -614,36 +641,70 @@ async function handleClerkWebhook(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'auth-service');
+    const logger = createLogger(requestId, 'auth-service', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
-    if (path === '/health' || path === '/version') {
-      const res = handleHealth(env);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
+    try {
+      if (path === '/health' || path === '/version') {
+        response = handleHealth(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      if (path === '/ready') {
+        response = handleReady(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      // Clerk webhook handler
+      if (path === '/v1/auth/webhook/clerk' && request.method === 'POST') {
+        response = await handleClerkWebhook(request, env, requestId, logger);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      // Users (MVP): ensure current user exists in Neon.
+      // Called via API Gateway after successful sign-in/sign-up.
+      if (path === '/v1/users/ensure' && request.method === 'POST') {
+        response = await handleEnsureUser(request, env, requestId, logger);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      logger.warn('Unhandled route', { method: request.method, path });
+      response = handleNotFound(path);
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } catch (error) {
+      logger.error('Unhandled error', error, { method: request.method, path });
+      response = json(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Unexpected error',
+          },
+          requestId,
+        },
+        500
+      );
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
     }
-
-    // Clerk webhook handler
-    if (path === '/v1/auth/webhook/clerk' && request.method === 'POST') {
-      const res = await handleClerkWebhook(request, env, requestId, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
-
-    // Users (MVP): ensure current user exists in Neon.
-    // Called via API Gateway after successful sign-in/sign-up.
-    if (path === '/v1/users/ensure' && request.method === 'POST') {
-      const res = await handleEnsureUser(request, env, requestId, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
-
-    logger.warn('Unhandled route', { method: request.method, path });
-    const res = handleNotFound(path);
-    res.headers.set('X-Request-ID', requestId);
-    return res;
   },
 };
 
