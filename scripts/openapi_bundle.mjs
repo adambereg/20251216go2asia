@@ -33,6 +33,10 @@ const SERVICE_SPECS = [
   path.join(REPO_ROOT, 'docs', 'openapi', 'referral.yaml'),
 ];
 
+function toPosixRelative(filePath) {
+  return path.relative(REPO_ROOT, filePath).split(path.sep).join('/');
+}
+
 function readYaml(filePath) {
   return parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -166,8 +170,8 @@ function main() {
   const sorted = sortObjectKeys(out);
   const body = stringify(sorted, { lineWidth: 0 });
   const header = `# GENERATED FILE — DO NOT EDIT\n# Source: ${[
-    path.relative(REPO_ROOT, BASE_PATH),
-    ...SERVICE_SPECS.map((p) => path.relative(REPO_ROOT, p)),
+    toPosixRelative(BASE_PATH),
+    ...SERVICE_SPECS.map((p) => toPosixRelative(p)),
   ].join(', ')}\n\n`;
 
   fs.writeFileSync(OUT_PATH, header + body, 'utf8');
