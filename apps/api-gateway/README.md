@@ -39,6 +39,13 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `/v1/points/*` - Routes to Points Service
 - `/v1/referral/*` - Routes to Referral Service
 
+## Trust Contract
+
+- `api-gateway` is the only service that verifies Clerk user JWTs.
+- For protected user routes, gateway mints an internal HS256 token signed with `SERVICE_JWT_SECRET`.
+- Downstream services trust only `X-Gateway-Auth`.
+- `X-User-ID` may still be forwarded as a derived/debug header during migration, but it is not a trust source.
+
 
 
 

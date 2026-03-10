@@ -42,8 +42,9 @@
 
 1. Проверить `GET /ready` проблемного worker.
 2. Сверить `SERVICE_JWT_SECRET`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`, `DATABASE_URL` и service URLs.
-3. Проверить, не был ли задеплоен новый SHA без соответствующих env/secrets.
-4. Если релиз только что был выполнен, откатить worker на предыдущий deploy.
+3. Для user-facing downstream routes проверить, что `X-Gateway-Auth` присутствует и содержит claims `iss=api-gateway`, `aud=internal`, `sub=<userId>`.
+4. Проверить, не был ли задеплоен новый SHA без соответствующих env/secrets.
+5. Если релиз только что был выполнен, откатить worker на предыдущий deploy.
 
 ### Что не делать
 

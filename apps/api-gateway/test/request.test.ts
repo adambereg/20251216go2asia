@@ -6,7 +6,7 @@ vi.mock('@clerk/backend', () => ({
 
 import { verifyToken } from '@clerk/backend';
 import worker, { type Env } from '../src/index';
-import { readJson } from '../../../tests/helpers/worker-test';
+import { decodeJwtPayload, readJson } from '../../../tests/helpers/worker-test';
 
 describe('api-gateway request hardening', () => {
   afterEach(() => {
@@ -101,10 +101,13 @@ describe('api-gateway request hardening', () => {
   });
 
   it('forwards authenticated user context and overwrites spoofed X-User-ID', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.headers.get('X-User-ID')).toBe('user_from_jwt');
-      expect(request.headers.get('X-Gateway-Auth')).toBeTruthy();
+      const gatewayToken = request.headers.get('X-Gateway-Auth');
+      expect(gatewayToken).toBeTruthy();
       expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(gatewayToken!);
 
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -116,6 +119,7 @@ describe('api-gateway request hardening', () => {
     vi.stubGlobal('fetch', fetchMock);
     vi.mocked(verifyToken).mockResolvedValue({
       sub: 'user_from_jwt',
+      roles: ['member', 'beta'],
     } as never);
 
     const env: Env = {
@@ -140,6 +144,16 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'user_from_jwt',
+      rid: expect.any(String),
+      roles: ['member', 'beta'],
+    });
+    expect(typeof gatewayClaims?.iat).toBe('number');
+    expect(typeof gatewayClaims?.exp).toBe('number');
+    expect((gatewayClaims?.exp as number) - (gatewayClaims?.iat as number)).toBe(300);
     expect(vi.mocked(verifyToken)).toHaveBeenCalledWith(
       'clerk-session-token',
       expect.objectContaining({

@@ -37,6 +37,11 @@ export interface Env {
   DEBUG_ROUTES_ENABLED?: string;
 }
 
+type GatewayUserContext = {
+  userId: string;
+  roles: string[];
+};
+
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -95,6 +100,22 @@ function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
 function getAuthorizedParties(origin: string | null): string[] | undefined {
   if (!origin) return undefined;
   try {
@@ -125,6 +146,34 @@ async function verifyClerkJwt(token: string, env: Env, origin: string | null): P
   } catch (error) {
     return { ok: false, error: toErrorMessage(error) };
   }
+}
+
+function extractGatewayUserContext(payload: Record<string, unknown>): GatewayUserContext | null {
+  const userId = getStringClaim(payload, 'sub');
+  if (!userId) return null;
+  const roles = getStringArrayClaim(payload, 'roles');
+  return { userId, roles };
+}
+
+async function mintInternalGatewayToken(
+  env: Env,
+  requestId: string,
+  user: GatewayUserContext
+): Promise<string | null> {
+  if (!env.SERVICE_JWT_SECRET) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const payload: Record<string, unknown> = {
+    iss: 'api-gateway',
+    aud: 'internal',
+    sub: user.userId,
+    iat: now,
+    exp: now + 300,
+    rid: requestId,
+  };
+  if (user.roles.length > 0) {
+    payload.roles = user.roles;
+  }
+  return signHs256Jwt(payload, env.SERVICE_JWT_SECRET);
 }
 
 /**
@@ -360,26 +409,8 @@ async function routeRequest(
   if (contentType) headers.set('Content-Type', contentType);
   headers.set('X-Request-Id', requestId);
 
-  // M3 trust model: downstream accepts user-context only if request is authenticated as gateway-origin.
-  if (env.SERVICE_JWT_SECRET) {
-    const now = Math.floor(Date.now() / 1000);
-    const gatewayToken = await signHs256Jwt(
-      {
-        iss: 'api-gateway',
-        aud: 'downstream',
-        sub: 'api-gateway',
-        iat: now,
-        exp: now + 60,
-        rid: requestId,
-      },
-      env.SERVICE_JWT_SECRET
-    );
-    headers.set('X-Gateway-Auth', gatewayToken);
-  } else {
-    logger.warn('SERVICE_JWT_SECRET not set; downstream gateway-origin auth will fail');
-  }
-
-  // For user-facing routes that require user context, assert X-User-ID (set by gateway).
+  // For user-facing routes that require user context, verify Clerk once at the gateway
+  // and propagate only the derived internal token downstream.
   // - Points/Referral: all user-facing routes require auth
   // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
   const isContentRegister =
@@ -396,24 +427,27 @@ async function routeRequest(
     isMediaUploadToken
   ) {
     const token = getBearerToken(request);
-    let userId: string | null = null;
+    let user: GatewayUserContext | null = null;
     let authMisconfigured = false;
 
     if (token && env.CLERK_SECRET_KEY) {
       const verified = await verifyClerkJwt(token, env, origin);
       if (!verified.ok) {
         logger.warn('Invalid user token', { reason: verified.error });
-        userId = null;
+        user = null;
       } else {
-        const sub = verified.payload.sub;
-        userId = typeof sub === 'string' && sub.length > 0 ? sub : null;
+        user = extractGatewayUserContext(verified.payload);
       }
     } else if (token) {
       logger.error('CLERK_SECRET_KEY not set; refusing to trust user token');
       authMisconfigured = true;
     }
 
-    if (!userId) {
+    if (!user && token && !authMisconfigured) {
+      logger.warn('Verified user token is missing usable subject claim');
+    }
+
+    if (!user) {
       const status = authMisconfigured ? 503 : 401;
       const code = authMisconfigured ? 'SERVICE_AUTH_NOT_CONFIGURED' : 'UNAUTHORIZED';
       const message = authMisconfigured
@@ -440,8 +474,31 @@ async function routeRequest(
       return applyCors(res, origin);
     }
 
-    // Prevent spoofing: overwrite any inbound X-User-ID
-    headers.set('X-User-ID', userId);
+    const gatewayToken = await mintInternalGatewayToken(env, requestId, user);
+    if (!gatewayToken) {
+      logger.error('SERVICE_JWT_SECRET not set; cannot mint internal gateway token');
+      const res = new Response(
+        JSON.stringify({
+          error: {
+            code: 'SERVICE_AUTH_NOT_CONFIGURED',
+            message: 'Gateway-to-service auth is not configured',
+          },
+          requestId,
+        }),
+        {
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Request-ID': requestId,
+          },
+        }
+      );
+      return applyCors(res, origin);
+    }
+
+    headers.set('X-Gateway-Auth', gatewayToken);
+    // Temporary derived/debug header for compatibility during migration.
+    headers.set('X-User-ID', user.userId);
   }
 
   // Forward request to service

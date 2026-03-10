@@ -98,17 +98,37 @@ describe('content-service request hardening', () => {
     expect(body.items[0]?.isActive).toBe(true);
   });
 
-  it('rejects event registration without X-User-ID', async () => {
+  it('rejects event registration without gateway token when auth is configured', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://content.example/v1/content/events/event_1/register', {
+        method: 'POST',
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('Unauthorized');
+    expect(body.error.message).toContain('X-Gateway-Auth');
+  });
+
+  it('rejects event registration when gateway token has no user subject', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: '' });
 
     const response = await worker.fetch(
       new Request('https://content.example/v1/content/events/event_1/register', {
         method: 'POST',
         headers: {
           'X-Gateway-Auth': gatewayJwt,
+          'X-User-ID': 'spoofed-user',
         },
       }),
       env
@@ -118,7 +138,7 @@ describe('content-service request hardening', () => {
 
     expect(response.status).toBe(401);
     expect(body.error.code).toBe('Unauthorized');
-    expect(body.error.message).toContain('X-User-ID');
+    expect(body.error.message).toContain('subject');
   });
 
   it('uses DB-less fallback and still calls points-service', async () => {
@@ -133,10 +153,10 @@ describe('content-service request hardening', () => {
         action: string;
         externalId: string;
       };
-      expect(payload.userId).toBe('user_1');
+      expect(payload.userId).toBe('user_from_token');
       expect(payload.amount).toBe(20);
       expect(payload.action).toBe('event_registration');
-      expect(payload.externalId).toContain('content:event_registration:event_1:user_1:');
+      expect(payload.externalId).toContain('content:event_registration:event_1:user_from_token:');
 
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -151,14 +171,14 @@ describe('content-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_SERVICE_URL: 'https://points.example',
     };
-    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_from_token' });
 
     const response = await worker.fetch(
       new Request('https://content.example/v1/content/events/event_1/register', {
         method: 'POST',
         headers: {
           'X-Gateway-Auth': gatewayJwt,
-          'X-User-ID': 'user_1',
+          'X-User-ID': 'spoofed-user',
         },
       }),
       env
@@ -168,7 +188,7 @@ describe('content-service request hardening', () => {
 
     expect(response.status).toBe(201);
     expect(body.ok).toBe(true);
-    expect(body.userId).toBe('user_1');
+    expect(body.userId).toBe('user_from_token');
     expect(body.eventId).toBe('event_1');
     expect(body.note).toContain('DB not configured');
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -185,14 +205,14 @@ describe('content-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_SERVICE_URL: 'https://points.example',
     };
-    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_from_token' });
 
     const response = await worker.fetch(
       new Request('https://content.example/v1/content/events/event_1/register', {
         method: 'POST',
         headers: {
           'X-Gateway-Auth': gatewayJwt,
-          'X-User-ID': 'user_1',
+          'X-User-ID': 'spoofed-user',
         },
       }),
       env

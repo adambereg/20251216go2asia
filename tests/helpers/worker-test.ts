@@ -53,10 +53,11 @@ export async function makeGatewayJwt(
   return signHs256Jwt(
     {
       iss: 'api-gateway',
-      aud: 'downstream',
-      sub: 'api-gateway',
+      aud: 'internal',
+      sub: 'user_test_1',
       iat: now,
       exp: now + 300,
+      rid: 'req_test_1',
       ...overrides,
     },
     secret
@@ -80,6 +81,17 @@ export async function makeServiceJwt(
     },
     secret
   );
+}
+
+export function decodeJwtPayload<T extends JwtPayload = JwtPayload>(token: string): T {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    throw new Error('JWT must have 3 parts');
+  }
+  const payload = parts[1] ?? '';
+  const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return JSON.parse(Buffer.from(`${normalized}${pad}`, 'base64').toString('utf8')) as T;
 }
 
 export async function readJson<T>(response: Response): Promise<T> {

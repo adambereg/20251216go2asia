@@ -29,6 +29,11 @@ export interface Env {
   REFERRAL_FIRST_LOGIN_BONUS?: string;
 }
 
+type GatewayPrincipal = {
+  userId: string;
+  roles: string[];
+};
+
 type JwtVerifyResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
@@ -194,6 +199,17 @@ function getStringClaim(payload: Record<string, unknown>, key: string): string |
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
 function validateServiceJwtClaims(
   payload: Record<string, unknown>,
   expected: {
@@ -259,7 +275,7 @@ async function requireGatewayOrigin(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>
-): Promise<{ ok: true } | { ok: false; res: Response }> {
+): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
@@ -277,15 +293,26 @@ async function requireGatewayOrigin(
 
   const claims = validateServiceJwtClaims(verified.payload, {
     iss: 'api-gateway',
-    aud: 'downstream',
-    sub: 'api-gateway',
+    aud: 'internal',
   });
   if (!claims.ok) {
     logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
     return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token claims', requestId, 401) };
   }
 
-  return { ok: true };
+  const userId = getStringClaim(verified.payload, 'sub');
+  if (!userId) {
+    logger.warn('Gateway-origin token missing subject claim');
+    return { ok: false, res: errorResponse('Unauthorized', 'Missing user subject in X-Gateway-Auth', requestId, 401) };
+  }
+
+  return {
+    ok: true,
+    principal: {
+      userId,
+      roles: getStringArrayClaim(verified.payload, 'roles'),
+    },
+  };
 }
 
 async function requireServiceAuth(
@@ -336,14 +363,6 @@ function parseNonNegativeIntOrDefault(value: string | undefined, defaultValue: n
 function getRows<T>(result: unknown): T[] {
   const rows = (result as Partial<DbExecResult<T>>).rows;
   return Array.isArray(rows) ? rows : [];
-}
-
-function requireUserId(request: Request, requestId: string): { ok: true; userId: string } | { ok: false; res: Response } {
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) {
-    return { ok: false, res: errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401) };
-  }
-  return { ok: true, userId };
 }
 
 function isDevTestEnabled(env: Env): boolean {
@@ -637,13 +656,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const uid = requireUserId(request, requestId);
-        if (!uid.ok) {
-          uid.res.headers.set('X-Request-Id', requestId);
-          return uid.res;
-        }
-        const userId = uid.userId;
+        const userId = auth.principal.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -659,13 +672,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const uid = requireUserId(request, requestId);
-        if (!uid.ok) {
-          uid.res.headers.set('X-Request-Id', requestId);
-          return uid.res;
-        }
-        const userId = uid.userId;
+        const userId = auth.principal.userId;
 
         const db = createDb(requireDatabase(env));
         const ensured = await ensureReferralCode(db, userId);
@@ -691,13 +698,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const uid = requireUserId(request, requestId);
-        if (!uid.ok) {
-          uid.res.headers.set('X-Request-Id', requestId);
-          return uid.res;
-        }
-        const userId = uid.userId;
+        const userId = auth.principal.userId;
 
         const depth = parseDepth(url.searchParams.get('depth'));
         const db = createDb(requireDatabase(env));
@@ -785,13 +786,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const uid = requireUserId(request, requestId);
-        if (!uid.ok) {
-          uid.res.headers.set('X-Request-Id', requestId);
-          return uid.res;
-        }
-        const refereeId = uid.userId;
+        const refereeId = auth.principal.userId;
 
         const bodyUnknown: unknown = await request.json().catch(() => null);
         const body =

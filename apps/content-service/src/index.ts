@@ -66,6 +66,11 @@ export interface Env {
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
 
+type GatewayPrincipal = {
+  userId: string;
+  roles: string[];
+};
+
 type ListResponse<T> = { items: T[]; total?: number; limit?: number; offset?: number };
 
 function isDebugAllowed(request: Request, env: Env): boolean {
@@ -614,10 +619,9 @@ function sanitizeFilename(name: string): string {
 async function handleCreateMediaUploadToken(
   request: Request,
   env: Env,
-  requestId: string
+  requestId: string,
+  userId: string
 ): Promise<Response> {
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
   const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
   if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
 
@@ -1757,14 +1761,6 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
 // - backend role check required on /v1/admin/*
 // ---------------------------------------------------------------------
 
-function requireUserIdHeader(request: Request, requestId: string): { ok: true; userId: string } | { ok: false; res: Response } {
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) {
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' }, requestId }, 401) };
-  }
-  return { ok: true, userId };
-}
-
 async function requireAdmin(
   request: Request,
   env: Env,
@@ -1773,9 +1769,7 @@ async function requireAdmin(
 ): Promise<{ ok: true; userId: string } | { ok: false; res: Response }> {
   const gateway = await requireGatewayOrigin(request, env, requestId, logger);
   if (!gateway.ok) return gateway;
-
-  const uid = requireUserIdHeader(request, requestId);
-  if (!uid.ok) return uid;
+  const userId = gateway.principal.userId;
 
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) {
@@ -1788,19 +1782,19 @@ async function requireAdmin(
   const rows = await sqlClient`
     SELECT role
     FROM users
-    WHERE id = ${uid.userId}
+    WHERE id = ${userId}
     LIMIT 1
   `;
   const role = (rows[0] as { role?: unknown } | undefined)?.role;
   if (role !== 'admin') {
-    logger.warn('Forbidden admin route access', { userId: uid.userId, role: typeof role === 'string' ? role : null });
+    logger.warn('Forbidden admin route access', { userId, role: typeof role === 'string' ? role : null });
     return {
       ok: false,
       res: json({ error: { code: 'Forbidden', message: 'Admin role required' }, requestId }, 403),
     };
   }
 
-  return { ok: true, userId: uid.userId };
+  return { ok: true, userId };
 }
 
 async function getGuideIdBySlugSql(sqlClient: SqlClient, slug: string): Promise<string | null> {
@@ -2496,6 +2490,17 @@ function getStringClaim(payload: Record<string, unknown>, key: string): string |
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
 function validateServiceJwtClaims(
   payload: Record<string, unknown>,
   expected: {
@@ -2561,7 +2566,7 @@ async function requireGatewayOrigin(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>
-): Promise<{ ok: true } | { ok: false; res: Response }> {
+): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
@@ -2584,15 +2589,26 @@ async function requireGatewayOrigin(
 
   const claims = validateServiceJwtClaims(verified.payload, {
     iss: 'api-gateway',
-    aud: 'downstream',
-    sub: 'api-gateway',
+    aud: 'internal',
   });
   if (!claims.ok) {
     logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
     return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
   }
 
-  return { ok: true };
+  const userId = getStringClaim(verified.payload, 'sub');
+  if (!userId) {
+    logger.warn('Gateway-origin token missing subject claim');
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing user subject in X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  return {
+    ok: true,
+    principal: {
+      userId,
+      roles: getStringArrayClaim(verified.payload, 'roles'),
+    },
+  };
 }
 
 async function callPointsService(
@@ -2662,18 +2678,12 @@ async function callPointsService(
 }
 
 async function handleEventRegistration(
-  request: Request,
   env: Env,
   eventId: string,
+  userId: string,
   requestId: string,
   logger: ReturnType<typeof createLogger>
 ): Promise<Response> {
-  // Extract user ID from gateway header
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) {
-    return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
-  }
-
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) {
     // Graceful degradation: points only
@@ -2798,7 +2808,7 @@ export default {
         auth.res.headers.set('X-Request-ID', requestId);
         return auth.res;
       }
-      const res = await handleCreateMediaUploadToken(request, env, requestId);
+      const res = await handleCreateMediaUploadToken(request, env, requestId, auth.principal.userId);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
@@ -2933,12 +2943,6 @@ export default {
           auth.res.headers.set('X-Request-ID', requestId);
           return auth.res;
         }
-        const uid = requireUserIdHeader(request, requestId);
-        if (!uid.ok) {
-          const res = uid.res;
-          res.headers.set('X-Request-ID', requestId);
-          return res;
-        }
       }
       const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
       res.headers.set('X-Request-ID', requestId);
@@ -2960,12 +2964,6 @@ export default {
         if (!auth.ok) {
           auth.res.headers.set('X-Request-ID', requestId);
           return auth.res;
-        }
-        const uid = requireUserIdHeader(request, requestId);
-        if (!uid.ok) {
-          const res = uid.res;
-          res.headers.set('X-Request-ID', requestId);
-          return res;
         }
       }
       const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
@@ -3050,7 +3048,7 @@ export default {
         return auth.res;
       }
       const eventId = eventRegMatch[1];
-      const res = await handleEventRegistration(request, env, eventId, requestId, logger);
+      const res = await handleEventRegistration(env, eventId, auth.principal.userId, requestId, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
