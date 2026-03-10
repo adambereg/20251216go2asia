@@ -22,6 +22,21 @@ type UploadTokenPayload = {
   exp: number;
 };
 
+type MediaLookupResponse = {
+  media_id: string;
+  publicUrl: string | null;
+  variants: Array<{
+    kind: string;
+    publicUrl: string | null;
+    mimeType: string;
+    width: number | null;
+    height: number | null;
+  }>;
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+};
+
 export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
@@ -635,6 +650,67 @@ async function handleUploadByToken(
   );
 }
 
+async function handleGetMediaById(
+  env: Env,
+  requestId: string,
+  mediaId: string
+): Promise<Response> {
+  const dbUrl = requireDatabaseUrl(env, requestId);
+  if (!dbUrl.ok) return dbUrl.res;
+  const db = createDb(dbUrl.url);
+
+  const assetResult = await db.execute(sql`
+    SELECT id, key, mime_type, width, height
+    FROM media_assets
+    WHERE id = ${mediaId}
+    LIMIT 1
+  `);
+  type AssetRow = {
+    id: string;
+    key: string;
+    mime_type: string;
+    width: number | null;
+    height: number | null;
+  };
+  const assetRows = (assetResult as unknown as { rows?: AssetRow[] }).rows ?? [];
+  const asset = assetRows[0];
+  if (!asset) {
+    return errorResponse('NOT_FOUND', `Media asset not found: ${mediaId}`, requestId, 404);
+  }
+
+  const variantsResult = await db.execute(sql`
+    SELECT kind, key, mime_type, width, height
+    FROM media_variants
+    WHERE asset_id = ${mediaId}
+    ORDER BY kind ASC
+  `);
+  type VariantRow = {
+    kind: string;
+    key: string;
+    mime_type: string;
+    width: number | null;
+    height: number | null;
+  };
+  const variantRows = (variantsResult as unknown as { rows?: VariantRow[] }).rows ?? [];
+
+  const response: MediaLookupResponse = {
+    media_id: asset.id,
+    publicUrl: getPublicUrl(env, asset.key),
+    variants: variantRows.map((variant) => ({
+      kind: variant.kind,
+      publicUrl: getPublicUrl(env, variant.key),
+      mimeType: variant.mime_type,
+      width: variant.width,
+      height: variant.height,
+    })),
+    mimeType: asset.mime_type,
+    width: asset.width,
+    height: asset.height,
+  };
+
+  return json(response, 200);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
@@ -674,6 +750,19 @@ export default {
       const uploadMatch = path.match(/^\/v1\/media\/upload\/(.+)$/);
       if (uploadMatch && request.method === 'PUT') {
         response = await handleUploadByToken(request, env, requestId, uploadMatch[1], logger);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      const mediaLookupMatch = path.match(/^\/v1\/media\/([^/]+)$/);
+      if (mediaLookupMatch && request.method === 'GET') {
+        const mediaId = mediaLookupMatch[1];
+        if (mediaId === 'upload-token') {
+          response = handleNotFound(path, requestId);
+          response.headers.set('X-Request-ID', requestId);
+          return response;
+        }
+        response = await handleGetMediaById(env, requestId, decodeURIComponent(mediaId));
         response.headers.set('X-Request-ID', requestId);
         return response;
       }

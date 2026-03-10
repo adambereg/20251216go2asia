@@ -59,6 +59,90 @@ describe('media-service v1', () => {
     expect(body.error.message).toContain('MEDIA_UPLOAD_SIGNING_SECRET');
   });
 
+  it('returns minimal metadata lookup by mediaId', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'asset_media_1',
+            key: 'uploads/content/user_1/now/original.jpg',
+            mime_type: 'image/jpeg',
+            width: 1200,
+            height: 800,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            kind: 'original',
+            key: 'uploads/content/user_1/now/original.jpg',
+            mime_type: 'image/jpeg',
+            width: 1200,
+            height: 800,
+          },
+          {
+            kind: 'thumbnail',
+            key: 'uploads/content/user_1/now/thumbnail.jpg',
+            mime_type: 'image/jpeg',
+            width: 300,
+            height: 200,
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://media.example/v1/media/asset_media_1'),
+      {
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+
+    const body = await readJson<{
+      media_id: string;
+      publicUrl: string;
+      variants: Array<{ kind: string; publicUrl: string; mimeType: string; width: number; height: number }>;
+      mimeType: string;
+      width: number;
+      height: number;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(Object.keys(body).sort()).toEqual(['height', 'media_id', 'mimeType', 'publicUrl', 'variants', 'width']);
+    expect(body.media_id).toBe('asset_media_1');
+    expect(body.publicUrl).toContain('/uploads/content/user_1/now/original.jpg');
+    expect(body.mimeType).toBe('image/jpeg');
+    expect(body.width).toBe(1200);
+    expect(body.height).toBe(800);
+    expect(body.variants).toHaveLength(2);
+    expect(body.variants[0]).toMatchObject({
+      kind: 'original',
+      mimeType: 'image/jpeg',
+      width: 1200,
+      height: 800,
+    });
+    expect(createDbMock).toHaveBeenCalledTimes(1);
+    expect(executeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns 404 for unknown mediaId lookup', async () => {
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://media.example/v1/media/asset_missing'),
+      {
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('NOT_FOUND');
+    expect(body.error.message).toContain('asset_missing');
+    expect(createDbMock).toHaveBeenCalledTimes(1);
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
   it('creates upload token and uploads image with metadata persistence', async () => {
     executeMock
       .mockResolvedValueOnce({ rows: [] }) // consumed check
