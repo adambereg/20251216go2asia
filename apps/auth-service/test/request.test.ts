@@ -31,7 +31,12 @@ describe('auth-service request hardening', () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+    // auth-service still validates legacy gateway-claims contract for this route.
+    // Keep explicit claims here so test reaches "Missing X-User-ID" branch.
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, {
+      aud: 'downstream',
+      sub: 'api-gateway',
+    });
 
     const response = await worker.fetch(
       new Request('https://auth.example/v1/users/ensure', {
