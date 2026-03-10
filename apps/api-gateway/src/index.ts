@@ -448,6 +448,15 @@ function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
   }
 }
 
+function getReservedPhase2ServiceVar(path: string): keyof Env | null {
+  if (path.startsWith('/v1/space/')) return 'SPACE_SERVICE_URL';
+  if (path.startsWith('/v1/quest/')) return 'QUEST_SERVICE_URL';
+  if (path.startsWith('/v1/rielt/')) return 'RIELT_SERVICE_URL';
+  if (path.startsWith('/v1/guru/')) return 'GURU_SERVICE_URL';
+  if (path.startsWith('/v1/rf/')) return 'RF_SERVICE_URL';
+  return null;
+}
+
 /**
  * Ready check endpoint
  */
@@ -574,6 +583,7 @@ async function routeRequest(
   let serviceUrl: string | undefined;
   let missingVar: string | null = null;
   let verifiedUser: GatewayUserContext | null = null;
+  const reservedVar = getReservedPhase2ServiceVar(path);
   
   if (path.startsWith('/v1/auth/')) {
     serviceUrl = env.AUTH_SERVICE_URL;
@@ -616,6 +626,21 @@ async function routeRequest(
   }
 
   if (!serviceUrl) {
+    if (reservedVar) {
+      logger.info('Reserved phase-2 route is not enabled yet', { path, reservedVar });
+      const res = new Response(
+        JSON.stringify({
+          error: {
+            code: 'ROUTE_RESERVED_NOT_ENABLED',
+            message: `${reservedVar} is not configured yet`,
+          },
+          requestId,
+        }),
+        { status: 501, headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId } }
+      );
+      return applyCors(res, origin);
+    }
+
     if (missingVar) {
       logger.error('Service not configured', { path, missingVar });
       const res = new Response(

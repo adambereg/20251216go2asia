@@ -40,6 +40,7 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `/v1/media/*` - Canonical public media contract; currently proxied to Media Service when configured, otherwise temporarily bridged to Content Service media routes as a transitional implementation detail
 - `/v1/points/*` - Routes to Points Service
 - `/v1/referral/*` - Routes to Referral Service
+- `/v1/space/*`, `/v1/quest/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` - Reserved Phase 2 prefixes; gateway returns `501 ROUTE_RESERVED_NOT_ENABLED` until corresponding `*_SERVICE_URL` is configured, then begins proxying
 
 ## Trust Contract
 

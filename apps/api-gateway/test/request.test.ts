@@ -147,6 +147,53 @@ describe('api-gateway request hardening', () => {
     expect(body.error.message).toContain('REFERRAL_SERVICE_URL');
   });
 
+  it('returns 501 for reserved phase-2 prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('SPACE_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxies reserved phase-2 prefix after service URL is configured', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://space.example/v1/space/posts');
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts'),
+      {
+        SPACE_SERVICE_URL: 'https://space.example',
+      }
+    );
+
+    const body = await readJson<{ ok: boolean }>(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps debug routes disabled by default', async () => {
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/_debug/routes'),
