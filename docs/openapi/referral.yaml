@@ -68,7 +68,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -79,6 +78,8 @@ paths:
                 $ref: "#/components/schemas/ReferralCodeResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -92,7 +93,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -103,6 +103,8 @@ paths:
                 $ref: "#/components/schemas/ReferralStatsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -118,7 +120,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - name: depth
           in: query
@@ -137,6 +138,8 @@ paths:
                 $ref: "#/components/schemas/ReferralTreeResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -152,7 +155,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true
@@ -173,6 +175,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -201,6 +205,8 @@ paths:
                 $ref: "#/components/schemas/GenerateCodeResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -230,6 +236,8 @@ paths:
                 $ref: "#/components/schemas/MarkFirstLoginResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -263,6 +271,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -286,13 +296,6 @@ components:
       required: true
       schema:
         type: string
-    XUserId:
-      name: X-User-ID
-      in: header
-      required: true
-      schema:
-        type: string
-      description: User identifier asserted by API Gateway
     XRequestId:
       name: X-Request-Id
       in: header
@@ -303,6 +306,12 @@ components:
   responses:
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceAuthNotConfigured:
+      description: Service auth is not configured (missing secret/env)
       content:
         application/json:
           schema:
@@ -349,10 +358,15 @@ components:
       required: [error]
       properties:
         error:
-          type: string
-          example: "Unauthorized"
-        message:
-          type: string
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "UNAUTHORIZED"
+            message:
+              type: string
+              example: "Missing X-Gateway-Auth header"
         requestId:
           type: string
 

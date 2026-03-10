@@ -53,6 +53,8 @@ import type {
   ReferralCodeResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
+  ServiceAuthNotConfiguredResponse,
+  ServiceNotConfiguredResponse,
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
@@ -92,6 +94,11 @@ export type addPointsResponse500 = {
   status: 500;
 };
 
+export type addPointsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type addPointsResponseSuccess = addPointsResponse200 & {
   headers: Headers;
 };
@@ -100,6 +107,7 @@ export type addPointsResponseError = (
   | addPointsResponse409
   | addPointsResponse429
   | addPointsResponse500
+  | addPointsResponse503
 ) & {
   headers: Headers;
 };
@@ -141,12 +149,18 @@ export type generateReferralCodeResponse500 = {
   status: 500;
 };
 
+export type generateReferralCodeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type generateReferralCodeResponseSuccess = generateReferralCodeResponse200 & {
   headers: Headers;
 };
 export type generateReferralCodeResponseError = (
   | generateReferralCodeResponse401
   | generateReferralCodeResponse500
+  | generateReferralCodeResponse503
 ) & {
   headers: Headers;
 };
@@ -201,6 +215,11 @@ export type linkReferralResponse500 = {
   status: 500;
 };
 
+export type linkReferralResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type linkReferralResponseSuccess = linkReferralResponse200 & {
   headers: Headers;
 };
@@ -209,6 +228,7 @@ export type linkReferralResponseError = (
   | linkReferralResponse404
   | linkReferralResponse409
   | linkReferralResponse500
+  | linkReferralResponse503
 ) & {
   headers: Headers;
 };
@@ -251,12 +271,18 @@ export type markReferralFirstLoginResponse500 = {
   status: 500;
 };
 
+export type markReferralFirstLoginResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type markReferralFirstLoginResponseSuccess = markReferralFirstLoginResponse200 & {
   headers: Headers;
 };
 export type markReferralFirstLoginResponseError = (
   | markReferralFirstLoginResponse401
   | markReferralFirstLoginResponse500
+  | markReferralFirstLoginResponse503
 ) & {
   headers: Headers;
 };
@@ -296,15 +322,30 @@ export type clerkWebhookResponse400 = {
   status: 400;
 };
 
+export type clerkWebhookResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
 export type clerkWebhookResponse500 = {
   data: InternalErrorResponse;
   status: 500;
 };
 
+export type clerkWebhookResponse503 = {
+  data: ServiceNotConfiguredResponse;
+  status: 503;
+};
+
 export type clerkWebhookResponseSuccess = clerkWebhookResponse200 & {
   headers: Headers;
 };
-export type clerkWebhookResponseError = (clerkWebhookResponse400 | clerkWebhookResponse500) & {
+export type clerkWebhookResponseError = (
+  | clerkWebhookResponse400
+  | clerkWebhookResponse401
+  | clerkWebhookResponse500
+  | clerkWebhookResponse503
+) & {
   headers: Headers;
 };
 
@@ -852,6 +893,11 @@ export type registerForEventResponse500 = {
   status: 500;
 };
 
+export type registerForEventResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type registerForEventResponseSuccess = registerForEventResponse201 & {
   headers: Headers;
 };
@@ -859,6 +905,7 @@ export type registerForEventResponseError = (
   | registerForEventResponse401
   | registerForEventResponse409
   | registerForEventResponse500
+  | registerForEventResponse503
 ) & {
   headers: Headers;
 };
@@ -1000,6 +1047,11 @@ export type createMediaUploadTokenResponse500 = {
   status: 500;
 };
 
+export type createMediaUploadTokenResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type createMediaUploadTokenResponseSuccess = createMediaUploadTokenResponse200 & {
   headers: Headers;
 };
@@ -1007,6 +1059,7 @@ export type createMediaUploadTokenResponseError = (
   | createMediaUploadTokenResponse400
   | createMediaUploadTokenResponse401
   | createMediaUploadTokenResponse500
+  | createMediaUploadTokenResponse503
 ) & {
   headers: Headers;
 };
@@ -1107,12 +1160,18 @@ export type getPointsBalanceResponse500 = {
   status: 500;
 };
 
+export type getPointsBalanceResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getPointsBalanceResponseSuccess = getPointsBalanceResponse200 & {
   headers: Headers;
 };
 export type getPointsBalanceResponseError = (
   | getPointsBalanceResponse401
   | getPointsBalanceResponse500
+  | getPointsBalanceResponse503
 ) & {
   headers: Headers;
 };
@@ -1153,12 +1212,18 @@ export type listPointsTransactionsResponse500 = {
   status: 500;
 };
 
+export type listPointsTransactionsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type listPointsTransactionsResponseSuccess = listPointsTransactionsResponse200 & {
   headers: Headers;
 };
 export type listPointsTransactionsResponseError = (
   | listPointsTransactionsResponse401
   | listPointsTransactionsResponse500
+  | listPointsTransactionsResponse503
 ) & {
   headers: Headers;
 };
@@ -1223,6 +1288,11 @@ export type claimReferralResponse500 = {
   status: 500;
 };
 
+export type claimReferralResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type claimReferralResponseSuccess = claimReferralResponse200 & {
   headers: Headers;
 };
@@ -1231,6 +1301,7 @@ export type claimReferralResponseError = (
   | claimReferralResponse404
   | claimReferralResponse409
   | claimReferralResponse500
+  | claimReferralResponse503
 ) & {
   headers: Headers;
 };
@@ -1273,12 +1344,18 @@ export type getReferralCodeResponse500 = {
   status: 500;
 };
 
+export type getReferralCodeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralCodeResponseSuccess = getReferralCodeResponse200 & {
   headers: Headers;
 };
 export type getReferralCodeResponseError = (
   | getReferralCodeResponse401
   | getReferralCodeResponse500
+  | getReferralCodeResponse503
 ) & {
   headers: Headers;
 };
@@ -1315,12 +1392,18 @@ export type getReferralStatsResponse500 = {
   status: 500;
 };
 
+export type getReferralStatsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralStatsResponseSuccess = getReferralStatsResponse200 & {
   headers: Headers;
 };
 export type getReferralStatsResponseError = (
   | getReferralStatsResponse401
   | getReferralStatsResponse500
+  | getReferralStatsResponse503
 ) & {
   headers: Headers;
 };
@@ -1362,12 +1445,18 @@ export type getReferralTreeResponse500 = {
   status: 500;
 };
 
+export type getReferralTreeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getReferralTreeResponseSuccess = getReferralTreeResponse200 & {
   headers: Headers;
 };
 export type getReferralTreeResponseError = (
   | getReferralTreeResponse401
   | getReferralTreeResponse500
+  | getReferralTreeResponse503
 ) & {
   headers: Headers;
 };
@@ -1425,6 +1514,11 @@ export type ensureUserResponse500 = {
   status: 500;
 };
 
+export type ensureUserResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type ensureUserResponseSuccess = ensureUserResponse200 & {
   headers: Headers;
 };
@@ -1432,6 +1526,7 @@ export type ensureUserResponseError = (
   | ensureUserResponse400
   | ensureUserResponse401
   | ensureUserResponse500
+  | ensureUserResponse503
 ) & {
   headers: Headers;
 };

@@ -6,9 +6,9 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { ErrorResponseError } from "./errorResponseError";
+import type { ErrorResponse } from "./errorResponse";
 
-export interface ErrorResponse {
-  error: ErrorResponseError;
-  requestId?: string;
-}
+/**
+ * Service auth is not configured (missing secret/env)
+ */
+export type ServiceAuthNotConfiguredResponse = ErrorResponse;

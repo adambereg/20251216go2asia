@@ -119,7 +119,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - $ref: "#/components/parameters/EventId"
       responses:
@@ -133,6 +132,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -148,7 +149,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true
@@ -167,6 +167,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -442,13 +444,6 @@ components:
       required: true
       schema:
         type: string
-    XUserId:
-      name: X-User-ID
-      in: header
-      required: true
-      schema:
-        type: string
-      description: User identifier asserted by API Gateway
     XRequestId:
       name: X-Request-Id
       in: header
@@ -532,6 +527,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    ServiceAuthNotConfigured:
+      description: Service auth is not configured (missing secret/env)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     BadRequest:
       description: Bad request
       content:
@@ -580,10 +581,15 @@ components:
       required: [error]
       properties:
         error:
-          type: string
-          example: "InternalError"
-        message:
-          type: string
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "UNAUTHORIZED"
+            message:
+              type: string
+              example: "Invalid X-Gateway-Auth token"
         requestId:
           type: string
 

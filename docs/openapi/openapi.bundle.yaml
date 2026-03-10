@@ -86,13 +86,6 @@ components:
       required: false
       schema:
         type: string
-    XUserId:
-      description: User identifier asserted by API Gateway
-      in: header
-      name: X-User-ID
-      required: true
-      schema:
-        type: string
   responses:
     BadRequest:
       content:
@@ -124,6 +117,18 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Rate limited
+    ServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Service auth is not configured (missing secret/env)
+    ServiceNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Service-specific integration is not configured
     Unauthorized:
       content:
         application/json:
@@ -616,11 +621,17 @@ components:
     ErrorResponse:
       properties:
         error:
-          example: Unauthorized
-          type: string
-        message:
-          example: Invalid or missing token
-          type: string
+          properties:
+            code:
+              example: UNAUTHORIZED
+              type: string
+            message:
+              example: Invalid or missing token
+              type: string
+          required:
+            - code
+            - message
+          type: object
         requestId:
           type: string
       required:
@@ -1023,6 +1034,8 @@ paths:
           $ref: "#/components/responses/RateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Add points to a user (idempotent)
@@ -1051,6 +1064,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Ensure referral code exists for user (idempotent)
@@ -1084,6 +1099,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Link referee to referrer by referral code
@@ -1113,6 +1130,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - ServiceAuth: []
       summary: Mark referee first login (idempotent)
@@ -1140,8 +1159,12 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceNotConfigured"
       summary: Clerk webhook receiver (staging)
       tags:
         - auth
@@ -1388,7 +1411,6 @@ paths:
       operationId: registerForEvent
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - $ref: "#/components/parameters/EventId"
       responses:
@@ -1404,6 +1426,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Register current user for event (authorized)
@@ -1455,7 +1479,6 @@ paths:
       operationId: createMediaUploadToken
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         content:
@@ -1476,6 +1499,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Create signed upload token (authorized)
@@ -1521,7 +1546,6 @@ paths:
       operationId: getPointsBalance
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1534,6 +1558,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user points balance
@@ -1545,7 +1571,6 @@ paths:
       operationId: listPointsTransactions
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - in: query
           name: limit
@@ -1571,6 +1596,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: List current user points transactions
@@ -1583,7 +1610,6 @@ paths:
       operationId: claimReferral
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       requestBody:
         content:
@@ -1606,6 +1632,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Claim referral code for current user (idempotent)
@@ -1618,7 +1646,6 @@ paths:
       operationId: getReferralCode
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1631,6 +1658,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral code
@@ -1642,7 +1671,6 @@ paths:
       operationId: getReferralStats
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -1655,6 +1683,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral stats
@@ -1667,7 +1697,6 @@ paths:
       operationId: getReferralTree
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - description: Tree depth to return (1 = direct only, 2 = include sub-referrals)
           in: query
@@ -1690,6 +1719,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get current user's referral tree (depth 1..2)
@@ -1722,6 +1753,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Ensure current user exists in Neon (idempotent upsert)

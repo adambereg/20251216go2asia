@@ -6,9 +6,9 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { ErrorResponseError } from "./errorResponseError";
+import type { ErrorResponse } from "./errorResponse";
 
-export interface ErrorResponse {
-  error: ErrorResponseError;
-  requestId?: string;
-}
+/**
+ * Service-specific integration is not configured
+ */
+export type ServiceNotConfiguredResponse = ErrorResponse;

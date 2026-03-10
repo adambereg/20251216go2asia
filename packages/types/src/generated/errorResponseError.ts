@@ -6,9 +6,8 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { ErrorResponseError } from "./errorResponseError";
 
-export interface ErrorResponse {
-  error: ErrorResponseError;
-  requestId?: string;
-}
+export type ErrorResponseError = {
+  code: string;
+  message: string;
+};

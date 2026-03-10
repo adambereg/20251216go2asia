@@ -86,6 +86,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -114,6 +116,10 @@ paths:
                 additionalProperties: true
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -132,13 +138,6 @@ components:
       required: true
       schema:
         type: string
-    XUserId:
-      name: X-User-ID
-      in: header
-      required: true
-      schema:
-        type: string
-      description: User identifier asserted by API Gateway
     XRequestId:
       name: X-Request-Id
       in: header
@@ -155,6 +154,18 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceAuthNotConfigured:
+      description: Service auth is not configured (missing secret/env)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceNotConfigured:
+      description: Service-specific integration is not configured
       content:
         application/json:
           schema:
@@ -189,10 +200,15 @@ components:
       required: [error]
       properties:
         error:
-          type: string
-          example: "BadRequest"
-        message:
-          type: string
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "UNAUTHORIZED"
+            message:
+              type: string
+              example: "Missing X-Gateway-Auth header"
         requestId:
           type: string
 

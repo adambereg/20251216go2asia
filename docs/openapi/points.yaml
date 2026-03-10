@@ -66,7 +66,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
       responses:
         "200":
@@ -77,6 +76,8 @@ paths:
                 $ref: "#/components/schemas/UserBalance"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -90,7 +91,6 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
         - $ref: "#/components/parameters/XRequestId"
         - name: limit
           in: query
@@ -114,6 +114,8 @@ paths:
                 $ref: "#/components/schemas/TransactionsPage"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -148,6 +150,8 @@ paths:
                 $ref: "#/components/schemas/AddPointsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "409":
           $ref: "#/components/responses/Conflict"
         "429":
@@ -176,13 +180,6 @@ components:
       required: true
       schema:
         type: string
-    XUserId:
-      name: X-User-ID
-      in: header
-      required: true
-      schema:
-        type: string
-      description: User identifier asserted by API Gateway
     XRequestId:
       name: X-Request-Id
       in: header
@@ -194,6 +191,12 @@ components:
   responses:
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceAuthNotConfigured:
+      description: Service auth is not configured (missing secret/env)
       content:
         application/json:
           schema:
@@ -240,11 +243,15 @@ components:
       required: [error]
       properties:
         error:
-          type: string
-          example: "Unauthorized"
-        message:
-          type: string
-          example: "Invalid or missing token"
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "UNAUTHORIZED"
+            message:
+              type: string
+              example: "Invalid Authorization token"
         requestId:
           type: string
 
