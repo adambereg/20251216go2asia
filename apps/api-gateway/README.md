@@ -50,6 +50,13 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - The current `/v1/media/* -> content-service` bridge is transitional and does not redefine the long-term service boundary.
 - Other future Phase 2 prefixes must not copy this alias/fallback approach unless explicitly approved as a separate architectural decision.
 
+## Internal Request Context Skeleton
+
+- `api-gateway` maintains an internal request-context skeleton for future quota, rate-limit, anti-abuse, and AI-usage hooks.
+- Current fields such as `routeKey`, `routeGroup`, `clientIpHash`, `userAgentHash`, `quotaKey`, and `abuseKey` are internal-only gateway data.
+- These fields are not part of the downstream trust contract and are not forwarded as headers.
+- This does not activate a real rate-limit or abuse-prevention layer yet; it only establishes a platform-ready skeleton.
+
 
 
 

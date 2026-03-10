@@ -5,13 +5,89 @@ vi.mock('@clerk/backend', () => ({
 }));
 
 import { verifyToken } from '@clerk/backend';
-import worker, { type Env } from '../src/index';
+import {
+  buildRequestContext,
+  classifyRoute,
+  deriveEnforcementKeys,
+  default as worker,
+  type Env,
+} from '../src/index';
 import { decodeJwtPayload, readJson } from '../../../tests/helpers/worker-test';
 
 describe('api-gateway request hardening', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('classifies routes into stable routeKey and domain-oriented routeGroup', () => {
+    expect(classifyRoute('GET', '/v1/points/balance')).toEqual({
+      routeKey: 'points.balance.get',
+      routeGroup: 'points',
+    });
+    expect(classifyRoute('POST', '/v1/content/events/event_1/register')).toEqual({
+      routeKey: 'content.events.register.post',
+      routeGroup: 'content-engagement',
+    });
+    expect(classifyRoute('POST', '/v1/media/upload-token')).toEqual({
+      routeKey: 'media.upload-token.post',
+      routeGroup: 'media',
+    });
+  });
+
+  it('builds request context with hashed client fingerprint for anonymous routes', async () => {
+    const request = new Request('https://gateway.example/v1/content/events', {
+      headers: {
+        'CF-Connecting-IP': '203.0.113.5',
+        'User-Agent': 'Vitest Browser/1.0',
+      },
+    });
+
+    const context = await buildRequestContext(request, null, 'req_test_anon');
+
+    expect(context).toMatchObject({
+      requestId: 'req_test_anon',
+      actorType: 'anonymous',
+      actorId: null,
+      roles: [],
+      authLevel: 'anonymous',
+      routeKey: 'content.events.list.get',
+      routeGroup: 'content-read',
+    });
+    expect(context.clientIpHash).toBeTruthy();
+    expect(context.userAgentHash).toBeTruthy();
+  });
+
+  it('derives stable enforcement keys for authenticated user routes', async () => {
+    const request = new Request('https://gateway.example/v1/referral/claim', {
+      method: 'POST',
+      headers: {
+        'CF-Connecting-IP': '198.51.100.25',
+        'User-Agent': 'Vitest Browser/1.0',
+      },
+    });
+
+    const context = await buildRequestContext(
+      request,
+      {
+        userId: 'user_123',
+        roles: ['member', 'pro'],
+      },
+      'req_test_user'
+    );
+    const keys = deriveEnforcementKeys(context);
+
+    expect(context).toMatchObject({
+      actorType: 'user',
+      actorId: 'user_123',
+      authLevel: 'user',
+      routeKey: 'referral.claim.post',
+      routeGroup: 'referral',
+      roles: ['member', 'pro'],
+    });
+    expect(keys.quotaKey).toBe('user:user_123:route-group:referral');
+    expect(keys.abuseKey).toContain('user:user_123:ip:');
+    expect(keys.abuseKey).toContain(':route-key:referral.claim.post');
   });
 
   it('does not require legacy CLERK_JWT_SECRET in readiness checks', async () => {
