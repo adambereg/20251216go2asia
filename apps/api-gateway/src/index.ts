@@ -1,10 +1,11 @@
 /**
  * API Gateway for Go2Asia MVP
- * 
+ *
  * Cloudflare Worker that routes requests to backend microservices.
  * Handles JWT validation, requestId propagation, and basic routing.
  */
 
+import { verifyToken } from '@clerk/backend';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
@@ -21,7 +22,7 @@ export interface Env {
   RF_SERVICE_URL?: string;
   
   // Secrets (Cloudflare Secrets)
-  CLERK_JWT_SECRET?: string;
+  CLERK_SECRET_KEY?: string;
   SERVICE_JWT_SECRET?: string;
 
   // Runtime vars (Cloudflare Vars)
@@ -36,17 +37,6 @@ export interface Env {
   DEBUG_ROUTES_ENABLED?: string;
 }
 
-function base64UrlToBytes(input: string): Uint8Array {
-  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
-  const b64 = normalized + pad;
-
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -56,16 +46,6 @@ function bytesToBase64Url(bytes: Uint8Array): string {
 
 function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
-}
-
-function parseJsonObject(input: string): Record<string, unknown> | null {
-  try {
-    const v: unknown = JSON.parse(input);
-    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
-    return v as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 function getBearerToken(request: Request): string | null {
@@ -93,50 +73,6 @@ function applyCors(res: Response, origin: string | null): Response {
   return out;
 }
 
-async function verifyHs256Jwt(token: string, secret: string): Promise<
-  | { ok: true; payload: Record<string, unknown> }
-  | { ok: false; error: string }
-> {
-  const parts = token.split('.');
-  if (parts.length !== 3) return { ok: false, error: 'JWT must have 3 parts' };
-
-  const [headerB64, payloadB64, signatureB64] = parts;
-
-  const header = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(headerB64)));
-  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
-  if (!header || !payload) return { ok: false, error: 'JWT header/payload is not valid JSON object' };
-
-  if (header.alg !== 'HS256') return { ok: false, error: 'Only HS256 is supported' };
-
-  const key = await crypto.subtle.importKey(
-    'raw',
-    utf8ToBytes(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-
-  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
-  const signature = base64UrlToBytes(signatureB64);
-
-  const ok = await crypto.subtle.verify('HMAC', key, signature, data);
-  if (!ok) return { ok: false, error: 'Invalid signature' };
-
-  const exp = payload.exp;
-  if (typeof exp === 'number') {
-    const now = Math.floor(Date.now() / 1000);
-    if (now >= exp) return { ok: false, error: 'Token expired' };
-  }
-
-  const nbf = payload.nbf;
-  if (typeof nbf === 'number') {
-    const now = Math.floor(Date.now() / 1000);
-    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
-  }
-
-  return { ok: true, payload };
-}
-
 async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
@@ -153,6 +89,42 @@ async function signHs256Jwt(payload: Record<string, unknown>, secret: string): P
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
   const sigB64 = bytesToBase64Url(sig);
   return `${headerB64}.${payloadB64}.${sigB64}`;
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getAuthorizedParties(origin: string | null): string[] | undefined {
+  if (!origin) return undefined;
+  try {
+    const parsed = new URL(origin);
+    return [`${parsed.protocol}//${parsed.host}`];
+  } catch {
+    return undefined;
+  }
+}
+
+function getClerkVerificationCheck(env: Env): 'ok' | 'missing' {
+  return getSecretCheck(env.CLERK_SECRET_KEY);
+}
+
+async function verifyClerkJwt(token: string, env: Env, origin: string | null): Promise<
+  | { ok: true; payload: Record<string, unknown> }
+  | { ok: false; error: string }
+> {
+  const secretKey = env.CLERK_SECRET_KEY?.trim();
+  if (!secretKey) return { ok: false, error: 'CLERK_SECRET_KEY is missing' };
+
+  try {
+    const payload = (await verifyToken(token, {
+      secretKey,
+      authorizedParties: getAuthorizedParties(origin),
+    })) as Record<string, unknown>;
+    return { ok: true, payload };
+  } catch (error) {
+    return { ok: false, error: toErrorMessage(error) };
+  }
 }
 
 /**
@@ -198,7 +170,7 @@ async function handleReady(env: Env): Promise<Response> {
     contentServiceUrl: getUrlCheck(env.CONTENT_SERVICE_URL),
     pointsServiceUrl: getUrlCheck(env.POINTS_SERVICE_URL),
     referralServiceUrl: getUrlCheck(env.REFERRAL_SERVICE_URL),
-    clerkJwtSecret: getSecretCheck(env.CLERK_JWT_SECRET),
+    clerkSecretKey: getClerkVerificationCheck(env),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
   };
   const missing = Object.entries(checks)
@@ -427,8 +399,8 @@ async function routeRequest(
     let userId: string | null = null;
     let authMisconfigured = false;
 
-    if (token && env.CLERK_JWT_SECRET) {
-      const verified = await verifyHs256Jwt(token, env.CLERK_JWT_SECRET);
+    if (token && env.CLERK_SECRET_KEY) {
+      const verified = await verifyClerkJwt(token, env, origin);
       if (!verified.ok) {
         logger.warn('Invalid user token', { reason: verified.error });
         userId = null;
@@ -437,7 +409,7 @@ async function routeRequest(
         userId = typeof sub === 'string' && sub.length > 0 ? sub : null;
       }
     } else if (token) {
-      logger.error('CLERK_JWT_SECRET not set; refusing to trust user token');
+      logger.error('CLERK_SECRET_KEY not set; refusing to trust user token');
       authMisconfigured = true;
     }
 

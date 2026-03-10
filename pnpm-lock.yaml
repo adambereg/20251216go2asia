@@ -32,6 +32,9 @@ importers:
 
   apps/api-gateway:
     dependencies:
+      '@clerk/backend':
+        specifier: ^3.0.2
+        version: 3.0.2
       '@go2asia/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -517,6 +520,18 @@ packages:
       - react-dom
     dev: false
 
+  /@clerk/backend@3.0.2:
+    resolution: {integrity: sha512-ScRbTcAGOAaCUbOW91NsUkUVokqGRx1c8unadB4YhXhv151FLMIZSnZBtcDK4deOYgNgE1jEu6+6LFbxl2ThTQ==}
+    engines: {node: '>=20.9.0'}
+    dependencies:
+      '@clerk/shared': 4.1.0
+      standardwebhooks: 1.0.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - react
+      - react-dom
+    dev: false
+
   /@clerk/clerk-react@5.60.0(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-P88FncsJpq/3WZJhhlj+md8mYb35BIXpr462C/figwsBGHsinr8VuBQUMcMZZ/6M34C8ABfLTPa6PHVp6+3D5Q==}
     engines: {node: '>=18.17.0'}
@@ -570,6 +585,26 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
       std-env: 3.10.0
       swr: 2.3.4(react@18.3.1)
+    dev: false
+
+  /@clerk/shared@4.1.0:
+    resolution: {integrity: sha512-Yll2rwp6Buj2208xOQ38UOezWpZObT+Bmo4mgXhFMtv/h/wrI5TBYKhFyTIX0ftGXR1xYvuzg9S/lfn5XQDdGQ==}
+    engines: {node: '>=20.9.0'}
+    requiresBuild: true
+    peerDependencies:
+      react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+      react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+    dependencies:
+      '@tanstack/query-core': 5.90.16
+      dequal: 2.0.3
+      glob-to-regexp: 0.4.1
+      js-cookie: 3.0.5
+      std-env: 3.10.0
     dev: false
 
   /@clerk/types@4.101.14(react-dom@18.3.1)(react@18.3.1):
@@ -4074,6 +4109,10 @@ packages:
 
   /@tanstack/query-core@5.90.12:
     resolution: {integrity: sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==}
+
+  /@tanstack/query-core@5.90.16:
+    resolution: {integrity: sha512-MvtWckSVufs/ja463/K4PyJeqT+HMlJWtw6PrCpywznd2NSgO3m4KwO9RqbFqGg6iDE8vVMFWMeQI4Io3eEYww==}
+    dev: false
 
   /@tanstack/query-devtools@5.91.1:
     resolution: {integrity: sha512-l8bxjk6BMsCaVQH6NzQEE/bEgFy1hAs5qbgXl0xhzezlaQbPk6Mgz9BqEg2vTLPOHD8N4k+w/gdgCbEzecGyNg==}

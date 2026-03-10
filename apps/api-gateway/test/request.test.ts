@@ -1,12 +1,38 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@clerk/backend', () => ({
+  verifyToken: vi.fn(),
+}));
+
+import { verifyToken } from '@clerk/backend';
 import worker, { type Env } from '../src/index';
-import { makeUserJwt, readJson } from '../../../tests/helpers/worker-test';
+import { readJson } from '../../../tests/helpers/worker-test';
 
 describe('api-gateway request hardening', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('does not require legacy CLERK_JWT_SECRET in readiness checks', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/ready'),
+      {
+        AUTH_SERVICE_URL: 'https://auth.example',
+        CONTENT_SERVICE_URL: 'https://content.example',
+        POINTS_SERVICE_URL: 'https://points.example',
+        REFERRAL_SERVICE_URL: 'https://referral.example',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ status: string; checks: Record<string, string> }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('ready');
+    expect(body.checks.clerkSecretKey).toBe('ok');
+    expect(body.checks.clerkJwtSecret).toBeUndefined();
   });
 
   it('returns 401 for protected user route without bearer token', async () => {
@@ -54,6 +80,26 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(404);
   });
 
+  it('returns 503 when bearer token is present but Clerk verification is not configured', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/points/balance', {
+        headers: {
+          Authorization: 'Bearer token-without-config',
+        },
+      }),
+      {
+        POINTS_SERVICE_URL: 'https://points.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(503);
+    expect(body.error.code).toBe('SERVICE_AUTH_NOT_CONFIGURED');
+    expect(body.error.message).toContain('not configured');
+  });
+
   it('forwards authenticated user context and overwrites spoofed X-User-ID', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.headers.get('X-User-ID')).toBe('user_from_jwt');
@@ -68,18 +114,21 @@ describe('api-gateway request hardening', () => {
       });
     });
     vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'user_from_jwt',
+    } as never);
 
     const env: Env = {
       POINTS_SERVICE_URL: 'https://points.example',
-      CLERK_JWT_SECRET: 'clerk-secret',
+      CLERK_SECRET_KEY: 'sk_test_123',
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    const token = await makeUserJwt(env.CLERK_JWT_SECRET!, { sub: 'user_from_jwt' });
 
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/points/balance', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: 'Bearer clerk-session-token',
+          Origin: 'https://app.example',
           'X-User-ID': 'spoofed-user',
         },
       }),
@@ -91,5 +140,12 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(verifyToken)).toHaveBeenCalledWith(
+      'clerk-session-token',
+      expect.objectContaining({
+        secretKey: 'sk_test_123',
+        authorizedParties: ['https://app.example'],
+      })
+    );
   });
 });

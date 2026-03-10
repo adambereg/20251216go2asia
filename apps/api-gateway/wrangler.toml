@@ -10,7 +10,7 @@ name = "go2asia-api-gateway"
 name = "go2asia-api-gateway-staging"
 
 # Environment variables (set via Cloudflare Dashboard or wrangler secret)
-# CLERK_JWT_SECRET - Clerk JWT verification secret
+# CLERK_SECRET_KEY - Clerk server key for JWT verification via JWKS
 # SERVICE_JWT_SECRET - Service-to-service JWT secret
 # AUTH_SERVICE_URL - Internal Auth Service URL
 # CONTENT_SERVICE_URL - Internal Content Service URL

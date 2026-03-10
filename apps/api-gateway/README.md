@@ -27,7 +27,7 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `CONTENT_SERVICE_URL` - Internal Content Service URL
 - `POINTS_SERVICE_URL` - Internal Points Service URL
 - `REFERRAL_SERVICE_URL` - Internal Referral Service URL
-- `CLERK_JWT_SECRET` - Clerk JWT verification secret
+- `CLERK_SECRET_KEY` - Clerk server key used by `@clerk/backend` to verify user JWT via Clerk JWKS
 - `SERVICE_JWT_SECRET` - Service-to-service JWT secret
 
 ## Routes
