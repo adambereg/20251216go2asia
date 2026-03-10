@@ -6,7 +6,7 @@
  * - stable unauthenticated /health endpoint (no DB)
  */
 
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -31,6 +31,17 @@ function handleHealth(env: Env): Response {
   });
 }
 
+function handleReady(env: Env): Response {
+  return json({
+    service: 'token-service',
+    env: env.ENVIRONMENT ?? 'staging',
+    status: 'ready',
+    version: env.VERSION ?? 'unknown',
+    checks: {},
+    missing: [],
+  });
+}
+
 function handleNotFound(path: string): Response {
   return json(
     {
@@ -46,21 +57,55 @@ function handleNotFound(path: string): Response {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'token-service');
+    const logger = createLogger(requestId, 'token-service', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
-    if (path === '/health' || path === '/version') {
-      const res = handleHealth(env);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
+    try {
+      if (path === '/health' || path === '/version') {
+        response = handleHealth(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      if (path === '/ready') {
+        response = handleReady(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      logger.warn('Unhandled route', { method: request.method, path });
+      response = handleNotFound(path);
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } catch (error) {
+      logger.error('Unhandled error', error, { method: request.method, path });
+      response = json(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Unexpected error',
+          },
+          requestId,
+        },
+        500
+      );
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
     }
-
-    logger.warn('Unhandled route', { method: request.method, path });
-    const res = handleNotFound(path);
-    res.headers.set('X-Request-ID', requestId);
-    return res;
   },
 };
 

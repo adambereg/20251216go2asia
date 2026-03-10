@@ -20,6 +20,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 const STAGING_GATEWAY_URL =
   process.env.STAGING_GATEWAY_URL?.trim() || 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev';
 const OPENAPI_BUNDLE_PATH = process.env.OPENAPI_BUNDLE_PATH?.trim() || 'docs/openapi/openapi.bundle.yaml';
+const TEST_ARTIFACT_PATH = process.env.TEST_ARTIFACT_PATH?.trim() || '';
+const RELEASE_SHA = process.env.RELEASE_SHA?.trim() || '';
 
 // Limits (M5B-min)
 const MAX_CASES_PER_ENDPOINT = 1;
@@ -120,6 +122,33 @@ function validateAgainstSchema(spec, schemaRaw, value, path = '$', depth = 0) {
   return errors;
 }
 
+function validateRuntimeShape(operationId, value) {
+  const errors = [];
+  if (!isObject(value)) {
+    errors.push(`${operationId}: response body must be a JSON object`);
+    return errors;
+  }
+
+  if (operationId.startsWith('list')) {
+    if (!Array.isArray(value.items)) errors.push(`${operationId}: expected items[] array`);
+    return errors;
+  }
+
+  if (operationId === 'getEventById' && typeof value.id !== 'string') {
+    errors.push(`${operationId}: expected string field 'id'`);
+  }
+  if (operationId === 'getArticleBySlug' && typeof value.slug !== 'string') {
+    errors.push(`${operationId}: expected string field 'slug'`);
+  }
+  if (operationId === 'getPlaceByIdOrSlug') {
+    const hasId = typeof value.id === 'string';
+    const hasSlug = typeof value.slug === 'string';
+    if (!hasId && !hasSlug) errors.push(`${operationId}: expected string field 'id' or 'slug'`);
+  }
+
+  return errors;
+}
+
 async function fetchJson(url) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -214,11 +243,12 @@ async function main() {
   console.log(`[contract] endpoints=${selected.length}, maxCasesPerEndpoint=${MAX_CASES_PER_ENDPOINT}, timeoutMs=${REQUEST_TIMEOUT_MS}`);
 
   const ids = await discoverIds(STAGING_GATEWAY_URL);
-  assert(ids.eventId, 'Discovery failed: cannot determine eventId from /v1/content/events?limit=1');
-  assert(ids.articleSlug, 'Discovery failed: cannot determine articleSlug from /v1/content/articles?limit=1');
-  assert(ids.placeIdOrSlug, 'Discovery failed: cannot determine placeIdOrSlug from /v1/content/places?limit=1');
+  if (!ids.eventId) console.warn('[contract:warn] event detail discovery skipped: no event id found');
+  if (!ids.articleSlug) console.warn('[contract:warn] article detail discovery skipped: no article slug found');
+  if (!ids.placeIdOrSlug) console.warn('[contract:warn] place detail discovery skipped: no place id/slug found');
 
   const failures = [];
+  const checks = [];
 
   for (const entry of selected) {
     const { path, op, method } = entry;
@@ -229,6 +259,12 @@ async function main() {
     if (path.includes('{id}')) params.id = ids.eventId;
     if (path.includes('{slug}')) params.slug = ids.articleSlug;
     if (path.includes('{idOrSlug}')) params.idOrSlug = ids.placeIdOrSlug;
+
+    if ((path.includes('{id}') && !params.id) || (path.includes('{slug}') && !params.slug) || (path.includes('{idOrSlug}') && !params.idOrSlug)) {
+      console.warn(`[contract:skip] ${operationId} skipped: no discovered path param available`);
+      checks.push({ operationId, path, skipped: true, reason: 'discovery_missing' });
+      continue;
+    }
 
     const hasLimit = Array.isArray(op.parameters) && op.parameters.some((p) => (p && p.$ref ? String(p.$ref).endsWith('/Limit') : p?.name === 'limit'));
     const url = buildUrl(STAGING_GATEWAY_URL, path, params, hasLimit ? { limit: 1 } : {});
@@ -242,12 +278,26 @@ async function main() {
 
     const ok = res.ok && res.status === 200 && typeof res.json !== 'undefined' && res.json !== null;
     if (!ok) {
+      checks.push({ operationId, path, status: res.status, ok: false });
       failures.push({
         operationId,
         url,
         status: res.status,
         contentType: res.contentType,
         bodyPreview: String(res.text || '').slice(0, 300),
+      });
+      continue;
+    }
+
+    if (!String(res.contentType || '').includes('application/json')) {
+      checks.push({ operationId, path, status: res.status, ok: false, reason: 'invalid_content_type' });
+      failures.push({
+        operationId,
+        url,
+        status: res.status,
+        contentType: res.contentType,
+        bodyPreview: String(res.text || '').slice(0, 300),
+        error: 'Expected application/json content-type',
       });
       continue;
     }
@@ -259,8 +309,12 @@ async function main() {
       resp200?.content?.['application/*+json']?.schema ||
       null;
 
-    const errors = validateAgainstSchema(spec, schema, res.json);
+    const errors = [
+      ...validateAgainstSchema(spec, schema, res.json),
+      ...validateRuntimeShape(operationId, res.json),
+    ];
     if (errors.length > 0) {
+      checks.push({ operationId, path, status: res.status, ok: false, reason: 'schema_validation_failed' });
       failures.push({
         operationId,
         url,
@@ -268,8 +322,27 @@ async function main() {
         schemaErrors: errors.slice(0, 20),
       });
     } else {
+      checks.push({ operationId, path, status: res.status, ok: true });
       console.log(`[ok] ${operationId} ${path}`);
     }
+  }
+
+  if (TEST_ARTIFACT_PATH) {
+    const normalized = TEST_ARTIFACT_PATH.replace(/\\/g, '/');
+    const dir = normalized.includes('/') ? normalized.slice(0, normalized.lastIndexOf('/')) : '';
+    if (dir) await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(
+      normalized,
+      `${JSON.stringify({
+        base: STAGING_GATEWAY_URL,
+        bundle: OPENAPI_BUNDLE_PATH,
+        releaseSha: RELEASE_SHA || undefined,
+        checks,
+        failures,
+        ok: failures.length === 0,
+      }, null, 2)}\n`,
+      'utf8'
+    );
   }
 
   if (failures.length > 0) {

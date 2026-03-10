@@ -1,11 +1,12 @@
 /**
  * API Gateway for Go2Asia MVP
- * 
+ *
  * Cloudflare Worker that routes requests to backend microservices.
  * Handles JWT validation, requestId propagation, and basic routing.
  */
 
-import { createLogger, getRequestId, generateRequestId } from '@go2asia/logger';
+import { verifyToken } from '@clerk/backend';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
   // Service URLs (internal)
@@ -21,7 +22,7 @@ export interface Env {
   RF_SERVICE_URL?: string;
   
   // Secrets (Cloudflare Secrets)
-  CLERK_JWT_SECRET?: string;
+  CLERK_SECRET_KEY?: string;
   SERVICE_JWT_SECRET?: string;
 
   // Runtime vars (Cloudflare Vars)
@@ -36,16 +37,10 @@ export interface Env {
   DEBUG_ROUTES_ENABLED?: string;
 }
 
-function base64UrlToBytes(input: string): Uint8Array {
-  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
-  const b64 = normalized + pad;
-
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
+type GatewayUserContext = {
+  userId: string;
+  roles: string[];
+};
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
@@ -58,28 +53,10 @@ function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
 
-function parseJsonObject(input: string): Record<string, unknown> | null {
-  try {
-    const v: unknown = JSON.parse(input);
-    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
-    return v as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 function getBearerToken(request: Request): string | null {
   const auth = request.headers.get('Authorization') ?? '';
   const match = auth.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
-}
-
-function getJwtSubWithoutVerification(token: string): string | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(parts[1])));
-  const sub = payload?.sub;
-  return typeof sub === 'string' && sub.length > 0 ? sub : null;
 }
 
 function safeHostFromUrl(input?: string): string | null {
@@ -101,44 +78,6 @@ function applyCors(res: Response, origin: string | null): Response {
   return out;
 }
 
-async function verifyHs256Jwt(token: string, secret: string): Promise<
-  | { ok: true; payload: Record<string, unknown> }
-  | { ok: false; error: string }
-> {
-  const parts = token.split('.');
-  if (parts.length !== 3) return { ok: false, error: 'JWT must have 3 parts' };
-
-  const [headerB64, payloadB64, signatureB64] = parts;
-
-  const header = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(headerB64)));
-  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
-  if (!header || !payload) return { ok: false, error: 'JWT header/payload is not valid JSON object' };
-
-  if (header.alg !== 'HS256') return { ok: false, error: 'Only HS256 is supported' };
-
-  const key = await crypto.subtle.importKey(
-    'raw',
-    utf8ToBytes(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-
-  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
-  const signature = base64UrlToBytes(signatureB64);
-
-  const ok = await crypto.subtle.verify('HMAC', key, signature, data);
-  if (!ok) return { ok: false, error: 'Invalid signature' };
-
-  const exp = payload.exp;
-  if (typeof exp === 'number') {
-    const now = Math.floor(Date.now() / 1000);
-    if (now >= exp) return { ok: false, error: 'Token expired' };
-  }
-
-  return { ok: true, payload };
-}
-
 async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
@@ -155,6 +94,86 @@ async function signHs256Jwt(payload: Record<string, unknown>, secret: string): P
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
   const sigB64 = bytesToBase64Url(sig);
   return `${headerB64}.${payloadB64}.${sigB64}`;
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function getAuthorizedParties(origin: string | null): string[] | undefined {
+  if (!origin) return undefined;
+  try {
+    const parsed = new URL(origin);
+    return [`${parsed.protocol}//${parsed.host}`];
+  } catch {
+    return undefined;
+  }
+}
+
+function getClerkVerificationCheck(env: Env): 'ok' | 'missing' {
+  return getSecretCheck(env.CLERK_SECRET_KEY);
+}
+
+async function verifyClerkJwt(token: string, env: Env, origin: string | null): Promise<
+  | { ok: true; payload: Record<string, unknown> }
+  | { ok: false; error: string }
+> {
+  const secretKey = env.CLERK_SECRET_KEY?.trim();
+  if (!secretKey) return { ok: false, error: 'CLERK_SECRET_KEY is missing' };
+
+  try {
+    const payload = (await verifyToken(token, {
+      secretKey,
+      authorizedParties: getAuthorizedParties(origin),
+    })) as Record<string, unknown>;
+    return { ok: true, payload };
+  } catch (error) {
+    return { ok: false, error: toErrorMessage(error) };
+  }
+}
+
+function extractGatewayUserContext(payload: Record<string, unknown>): GatewayUserContext | null {
+  const userId = getStringClaim(payload, 'sub');
+  if (!userId) return null;
+  const roles = getStringArrayClaim(payload, 'roles');
+  return { userId, roles };
+}
+
+async function mintInternalGatewayToken(
+  env: Env,
+  requestId: string,
+  user: GatewayUserContext
+): Promise<string | null> {
+  if (!env.SERVICE_JWT_SECRET) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const payload: Record<string, unknown> = {
+    iss: 'api-gateway',
+    aud: 'internal',
+    sub: user.userId,
+    iat: now,
+    exp: now + 300,
+    rid: requestId,
+  };
+  if (user.roles.length > 0) {
+    payload.roles = user.roles;
+  }
+  return signHs256Jwt(payload, env.SERVICE_JWT_SECRET);
 }
 
 /**
@@ -177,19 +196,50 @@ async function handleHealth(env: Env): Promise<Response> {
   );
 }
 
+function getSecretCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
+  if (typeof value !== 'string' || value.trim().length === 0) return 'missing';
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? 'ok' : 'invalid';
+  } catch {
+    return 'invalid';
+  }
+}
+
 /**
  * Ready check endpoint
  */
-async function handleReady(): Promise<Response> {
+async function handleReady(env: Env): Promise<Response> {
+  const checks = {
+    authServiceUrl: getUrlCheck(env.AUTH_SERVICE_URL),
+    contentServiceUrl: getUrlCheck(env.CONTENT_SERVICE_URL),
+    pointsServiceUrl: getUrlCheck(env.POINTS_SERVICE_URL),
+    referralServiceUrl: getUrlCheck(env.REFERRAL_SERVICE_URL),
+    clerkSecretKey: getClerkVerificationCheck(env),
+    serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
   return new Response(
     JSON.stringify({
-      status: 'ready',
       service: 'api-gateway',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
     }),
     {
-      status: 200,
+      status,
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
       },
     }
   );
@@ -234,7 +284,7 @@ async function routeRequest(
     return handleHealth(env);
   }
   if (path === '/ready') {
-    return handleReady();
+    return handleReady(env);
   }
 
   // Debug (safe): show which service URLs are configured (host only)
@@ -359,25 +409,8 @@ async function routeRequest(
   if (contentType) headers.set('Content-Type', contentType);
   headers.set('X-Request-Id', requestId);
 
-  // M3 trust model: downstream accepts user-context only if request is authenticated as gateway-origin.
-  if (env.SERVICE_JWT_SECRET) {
-    const now = Math.floor(Date.now() / 1000);
-    const gatewayToken = await signHs256Jwt(
-      {
-        iss: 'api-gateway',
-        aud: 'downstream',
-        iat: now,
-        exp: now + 60,
-        rid: requestId,
-      },
-      env.SERVICE_JWT_SECRET
-    );
-    headers.set('X-Gateway-Auth', gatewayToken);
-  } else {
-    logger.warn('SERVICE_JWT_SECRET not set; downstream gateway-origin auth will fail');
-  }
-
-  // For user-facing routes that require user context, assert X-User-ID (set by gateway).
+  // For user-facing routes that require user context, verify Clerk once at the gateway
+  // and propagate only the derived internal token downstream.
   // - Points/Referral: all user-facing routes require auth
   // - Content register: POST /v1/content/events/{id}/register requires auth (content-service expects X-User-ID)
   const isContentRegister =
@@ -394,34 +427,42 @@ async function routeRequest(
     isMediaUploadToken
   ) {
     const token = getBearerToken(request);
-    let userId: string | null = null;
+    let user: GatewayUserContext | null = null;
+    let authMisconfigured = false;
 
-    if (token && env.CLERK_JWT_SECRET) {
-      const verified = await verifyHs256Jwt(token, env.CLERK_JWT_SECRET);
+    if (token && env.CLERK_SECRET_KEY) {
+      const verified = await verifyClerkJwt(token, env, origin);
       if (!verified.ok) {
         logger.warn('Invalid user token', { reason: verified.error });
-        userId = null;
+        user = null;
       } else {
-        const sub = verified.payload.sub;
-        userId = typeof sub === 'string' && sub.length > 0 ? sub : null;
+        user = extractGatewayUserContext(verified.payload);
       }
     } else if (token) {
-      // Fallback (M3): no signature verification if CLERK_JWT_SECRET is not configured
-      logger.warn('CLERK_JWT_SECRET not set; user token is not verified (temporary M3 behavior)');
-      userId = getJwtSubWithoutVerification(token);
+      logger.error('CLERK_SECRET_KEY not set; refusing to trust user token');
+      authMisconfigured = true;
     }
 
-    if (!userId) {
+    if (!user && token && !authMisconfigured) {
+      logger.warn('Verified user token is missing usable subject claim');
+    }
+
+    if (!user) {
+      const status = authMisconfigured ? 503 : 401;
+      const code = authMisconfigured ? 'SERVICE_AUTH_NOT_CONFIGURED' : 'UNAUTHORIZED';
+      const message = authMisconfigured
+        ? 'User auth verification is not configured'
+        : 'Missing or invalid user token';
       const res = new Response(
         JSON.stringify({
           error: {
-            code: 'UNAUTHORIZED',
-            message: 'Missing or invalid user token',
+            code,
+            message,
           },
           requestId,
         }),
         {
-          status: 401,
+          status,
           headers: {
             'Content-Type': 'application/json',
             'X-Request-ID': requestId,
@@ -433,8 +474,31 @@ async function routeRequest(
       return applyCors(res, origin);
     }
 
-    // Prevent spoofing: overwrite any inbound X-User-ID
-    headers.set('X-User-ID', userId);
+    const gatewayToken = await mintInternalGatewayToken(env, requestId, user);
+    if (!gatewayToken) {
+      logger.error('SERVICE_JWT_SECRET not set; cannot mint internal gateway token');
+      const res = new Response(
+        JSON.stringify({
+          error: {
+            code: 'SERVICE_AUTH_NOT_CONFIGURED',
+            message: 'Gateway-to-service auth is not configured',
+          },
+          requestId,
+        }),
+        {
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Request-ID': requestId,
+          },
+        }
+      );
+      return applyCors(res, origin);
+    }
+
+    headers.set('X-Gateway-Auth', gatewayToken);
+    // Temporary derived/debug header for compatibility during migration.
+    headers.set('X-User-ID', user.userId);
   }
 
   // Forward request to service
@@ -496,23 +560,30 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     // Extract or generate requestId
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'api-gateway');
+    const logger = createLogger(requestId, 'api-gateway', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
+    const path = new URL(request.url).pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
     logger.info('Incoming request', {
       method: request.method,
-      path: new URL(request.url).pathname,
+      path,
     });
 
     try {
-      const response = await routeRequest(request, env, logger);
+      response = await routeRequest(request, env, logger);
 
       // Ensure headers are mutable before setting X-Request-ID
       const out = new Response(response.body, response);
       out.headers.set('X-Request-ID', requestId);
+      response = out;
       return out;
     } catch (error) {
-      logger.error('Unhandled error in API Gateway', error);
-      return new Response(
+      logger.error('Unhandled error in API Gateway', error, { method: request.method, path });
+      response = new Response(
         JSON.stringify({
           error: {
             code: 'INTERNAL_ERROR',
@@ -528,6 +599,16 @@ export default {
           },
         }
       );
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+        targetHost: response?.headers.get('X-Proxy-Target-Host') ?? undefined,
+        downstreamStatus: response?.headers.get('X-Proxy-Downstream-Status') ?? undefined,
+      });
     }
   },
 };

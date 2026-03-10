@@ -45,7 +45,7 @@ import {
   listGuides,
   listPlacesForGuideFeed,
 } from '@go2asia/db/queries/guides';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -65,6 +65,11 @@ export interface Env {
   MEDIA_BUCKET?: R2Bucket;
   SPACE_MEDIA_BUCKET?: R2Bucket;
 }
+
+type GatewayPrincipal = {
+  userId: string;
+  roles: string[];
+};
 
 type ListResponse<T> = { items: T[]; total?: number; limit?: number; offset?: number };
 
@@ -101,6 +106,7 @@ export interface ContentEventDto {
   year: number | null;
   heroMediaKey: string | null; // R2 object key (relative path)
   galleryMediaKeys: string[]; // R2 object keys (never JSON string)
+  isActive: boolean;
   isFree: boolean;
   priceAmount: string | null;
   priceCurrency: string | null;
@@ -353,6 +359,16 @@ function base64UrlToBytes(input: string): Uint8Array {
   return bytes;
 }
 
+function parseJsonObject(input: string): Record<string, unknown> | null {
+  try {
+    const value: unknown = JSON.parse(input);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    return value as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 type BlogPostsCursorV1 = {
   v: 1;
   sort: BlogPostSort;
@@ -603,10 +619,9 @@ function sanitizeFilename(name: string): string {
 async function handleCreateMediaUploadToken(
   request: Request,
   env: Env,
-  requestId: string
+  requestId: string,
+  userId: string
 ): Promise<Response> {
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
   const secret = (env.MEDIA_UPLOAD_SIGNING_SECRET ?? '').trim();
   if (!secret) return json({ error: { code: 'ServiceNotConfigured', message: 'MEDIA_UPLOAD_SIGNING_SECRET is missing' } }, 503);
 
@@ -729,6 +744,37 @@ function handleHealth(env: Env): Response {
   });
 }
 
+function getCheck(value: unknown): 'ok' | 'missing' {
+  if (typeof value === 'string') return value.trim().length > 0 ? 'ok' : 'missing';
+  return value ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getCheck(env.DATABASE_URL),
+    serviceJwtSecret: getCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: 'content-service',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
+      optional: {
+        mediaUploadSigningSecret: getCheck(env.MEDIA_UPLOAD_SIGNING_SECRET),
+        mediaBucket: getCheck(env.MEDIA_BUCKET ?? env.SPACE_MEDIA_BUCKET),
+      },
+    },
+    status
+  );
+}
+
 function handleNotFound(path: string): Response {
   return json(
     {
@@ -786,6 +832,7 @@ function toContentEvent(row: EventRow): ContentEventDto {
     year: row.year ?? null,
     heroMediaKey,
     galleryMediaKeys,
+    isActive: Boolean(row.is_active),
     isFree: Boolean(row.is_free),
     priceAmount: row.price_amount ?? null,
     priceCurrency: row.price_currency ?? null,
@@ -1709,14 +1756,44 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
 
 // ---------------------------------------------------------------------
 // Mini-admin (v1): write operations for Guide Engine
-// Security v1: X-User-ID header required on /v1/admin/*
+// Security hardening:
+// - gateway-origin auth required on protected/admin routes
+// - backend role check required on /v1/admin/*
 // ---------------------------------------------------------------------
 
-function requireAdmin(request: Request): { ok: true; userId: string } | { ok: false; res: Response } {
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) {
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401) };
+async function requireAdmin(
+  request: Request,
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<{ ok: true; userId: string } | { ok: false; res: Response }> {
+  const gateway = await requireGatewayOrigin(request, env, requestId, logger);
+  if (!gateway.ok) return gateway;
+  const userId = gateway.principal.userId;
+
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) {
+    return {
+      ok: false,
+      res: json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' }, requestId }, 503),
+    };
   }
+
+  const rows = await sqlClient`
+    SELECT role
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `;
+  const role = (rows[0] as { role?: unknown } | undefined)?.role;
+  if (role !== 'admin') {
+    logger.warn('Forbidden admin route access', { userId, role: typeof role === 'string' ? role : null });
+    return {
+      ok: false,
+      res: json({ error: { code: 'Forbidden', message: 'Admin role required' }, requestId }, 403),
+    };
+  }
+
   return { ok: true, userId };
 }
 
@@ -2368,6 +2445,88 @@ function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
 
+async function verifyHs256Jwt(
+  token: string,
+  secret: string
+): Promise<{ ok: true; payload: Record<string, unknown> } | { ok: false; error: string }> {
+  const parts = token.split('.');
+  if (parts.length !== 3) return { ok: false, error: 'JWT must have 3 parts' };
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const header = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(headerB64)));
+  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
+  if (!header || !payload) return { ok: false, error: 'JWT header/payload is not valid JSON object' };
+  if (header.alg !== 'HS256') return { ok: false, error: 'Only HS256 is supported' };
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    utf8ToBytes(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
+  const signature = base64UrlToBytes(signatureB64);
+  const ok = await crypto.subtle.verify('HMAC', key, signature, data);
+  if (!ok) return { ok: false, error: 'Invalid signature' };
+
+  const exp = payload.exp;
+  if (typeof exp === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now >= exp) return { ok: false, error: 'Token expired' };
+  }
+
+  const nbf = payload.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
+  }
+
+  return { ok: true, payload };
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function validateServiceJwtClaims(
+  payload: Record<string, unknown>,
+  expected: {
+    iss?: string;
+    aud?: string;
+    sub?: string;
+  }
+): { ok: true } | { ok: false; error: string } {
+  if (expected.iss) {
+    const iss = getStringClaim(payload, 'iss');
+    if (iss !== expected.iss) return { ok: false, error: 'Invalid issuer' };
+  }
+
+  if (expected.aud) {
+    const aud = getStringClaim(payload, 'aud');
+    if (aud !== expected.aud) return { ok: false, error: 'Invalid audience' };
+  }
+
+  if (expected.sub) {
+    const sub = getStringClaim(payload, 'sub');
+    if (sub !== expected.sub) return { ok: false, error: 'Invalid subject' };
+  }
+
+  return { ok: true };
+}
+
 async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
@@ -2400,6 +2559,56 @@ async function createServiceJwt(env: Env, targetService: string, requestId: stri
     },
     env.SERVICE_JWT_SECRET
   );
+}
+
+async function requireGatewayOrigin(
+  request: Request,
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
+  const secret = env.SERVICE_JWT_SECRET;
+  if (!secret) {
+    logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
+    return {
+      ok: false,
+      res: json({ error: { code: 'ServiceAuthNotConfigured', message: 'Service auth is not configured' }, requestId }, 503),
+    };
+  }
+
+  const token = request.headers.get('X-Gateway-Auth');
+  if (!token) {
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  const verified = await verifyHs256Jwt(token, secret);
+  if (!verified.ok) {
+    logger.warn('Invalid gateway-origin token', { reason: verified.error });
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'api-gateway',
+    aud: 'internal',
+  });
+  if (!claims.ok) {
+    logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
+  }
+
+  const userId = getStringClaim(verified.payload, 'sub');
+  if (!userId) {
+    logger.warn('Gateway-origin token missing subject claim');
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing user subject in X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  return {
+    ok: true,
+    principal: {
+      userId,
+      roles: getStringArrayClaim(verified.payload, 'roles'),
+    },
+  };
 }
 
 async function callPointsService(
@@ -2469,18 +2678,12 @@ async function callPointsService(
 }
 
 async function handleEventRegistration(
-  request: Request,
   env: Env,
   eventId: string,
+  userId: string,
   requestId: string,
   logger: ReturnType<typeof createLogger>
 ): Promise<Response> {
-  // Extract user ID from gateway header
-  const userId = request.headers.get('X-User-ID');
-  if (!userId) {
-    return json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
-  }
-
   const sqlClient = getSqlClient(env, logger);
   if (!sqlClient) {
     // Graceful degradation: points only
@@ -2542,24 +2745,37 @@ async function handleEventRegistration(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'content-service');
+    const logger = createLogger(requestId, 'content-service', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
-    if (path === '/health' || path === '/version') {
-      const res = handleHealth(env);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
+    try {
+      response = await (async (): Promise<Response> => {
+      if (path === '/health' || path === '/version') {
+        const res = handleHealth(env);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
 
-    // Debug endpoints (guarded; never in production)
-    if (path === '/v1/content/_debug/db' && request.method === 'GET') {
-      if (!isDebugAllowed(request, env)) return handleNotFound(path);
-      const res = await handleDebugDb(env, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
+      if (path === '/ready') {
+        const res = handleReady(env);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
+
+      // Debug endpoints (guarded; never in production)
+      if (path === '/v1/content/_debug/db' && request.method === 'GET') {
+        if (!isDebugAllowed(request, env)) return handleNotFound(path);
+        const res = await handleDebugDb(env, logger);
+        res.headers.set('X-Request-ID', requestId);
+        return res;
+      }
 
     // Canon debug endpoints (no secrets)
     if (path === '/v1/content/_debug/version' && request.method === 'GET') {
@@ -2587,7 +2803,12 @@ export default {
 
     // Media / Storage (Milestone 2.2)
     if (path === '/v1/content/media/upload-token' && request.method === 'POST') {
-      const res = await handleCreateMediaUploadToken(request, env, requestId);
+      const auth = await requireGatewayOrigin(request, env, requestId, logger);
+      if (!auth.ok) {
+        auth.res.headers.set('X-Request-ID', requestId);
+        return auth.res;
+      }
+      const res = await handleCreateMediaUploadToken(request, env, requestId, auth.principal.userId);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
@@ -2717,11 +2938,10 @@ export default {
       const includeEmptyRaw = url.searchParams.get('include_empty');
       const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
       if (includeEmpty) {
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
-          res.headers.set('X-Request-ID', requestId);
-          return res;
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-ID', requestId);
+          return auth.res;
         }
       }
       const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
@@ -2740,11 +2960,10 @@ export default {
       const includeEmptyRaw = url.searchParams.get('include_empty');
       const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
       if (includeEmpty) {
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
-          res.headers.set('X-Request-ID', requestId);
-          return res;
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-ID', requestId);
+          return auth.res;
         }
       }
       const res = await handleGetGuideBySlug(env, slug, logger, { includeEmpty });
@@ -2756,7 +2975,7 @@ export default {
     // Mini-admin v1 (write) — Guide Engine
     // -----------------------------------------------------------------
     if (path.startsWith('/v1/admin/')) {
-      const admin = requireAdmin(request);
+      const admin = await requireAdmin(request, env, requestId, logger);
       if (!admin.ok) {
         admin.res.headers.set('X-Request-ID', requestId);
         return admin.res;
@@ -2823,16 +3042,45 @@ export default {
     // Event registration endpoint
     const eventRegMatch = path.match(/^\/v1\/content\/events\/([^/]+)\/register$/);
     if (eventRegMatch && request.method === 'POST') {
+      const auth = await requireGatewayOrigin(request, env, requestId, logger);
+      if (!auth.ok) {
+        auth.res.headers.set('X-Request-ID', requestId);
+        return auth.res;
+      }
       const eventId = eventRegMatch[1];
-      const res = await handleEventRegistration(request, env, eventId, requestId, logger);
+      const res = await handleEventRegistration(env, eventId, auth.principal.userId, requestId, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }
 
-    logger.warn('Unhandled route', { method: request.method, path });
-    const res = handleNotFound(path);
-    res.headers.set('X-Request-ID', requestId);
-    return res;
+      logger.warn('Unhandled route', { method: request.method, path });
+      const res = handleNotFound(path);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+      })();
+      return response;
+    } catch (error) {
+      logger.error('Unhandled error', error, { method: request.method, path });
+      response = json(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Unexpected error',
+          },
+          requestId,
+        },
+        500
+      );
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
+    }
   },
 };
 

@@ -15,44 +15,29 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Public GET #1 (events)
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Run gateway smoke
         env:
-          GW: ${{ inputs.staging_gateway_url }}
-        run: |
-          set -euo pipefail
-          url="$GW/v1/content/events?limit=1"
-          code="$(curl -sS -o /tmp/events.json -w '%{http_code}' "$url")"
-          echo "GET $url -> $code"
-          test "$code" = "200"
-
-      - name: Public GET #2 (articles)
-        env:
-          GW: ${{ inputs.staging_gateway_url }}
-        run: |
-          set -euo pipefail
-          url="$GW/v1/content/articles?limit=1"
-          code="$(curl -sS -o /tmp/articles.json -w '%{http_code}' "$url")"
-          echo "GET $url -> $code"
-          test "$code" = "200"
-
-      - name: Optional auth call (users.ensure) if STAGING_TEST_JWT present
-        env:
-          GW: ${{ inputs.staging_gateway_url }}
-          STAGING_TEST_JWT: "${{ secrets.STAGING_TEST_JWT }}"
-        run: |
-          set -euo pipefail
-          if [ -z "${STAGING_TEST_JWT:-}" ]; then
-            echo "STAGING_TEST_JWT is not configured -> skipping auth smoke."
-            exit 0
-          fi
-          url="$GW/v1/users/ensure"
-          code="$(curl -sS -o /tmp/ensure.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${STAGING_TEST_JWT}" \
-            -H "Content-Type: application/json" \
-            --data '{"email":"ci-smoke@example.com"}' \
-            "$url")"
-          echo "POST $url -> $code"
-          test "$code" = "200"
+          STAGING_GATEWAY_URL: ${{ inputs.staging_gateway_url }}
+          STAGING_TEST_JWT: ${{ secrets['STAGING_TEST_JWT'] }}
+          TEST_ARTIFACT_PATH: test-results/manual/gateway-smoke.json
+        run: node scripts/content_gateway_smoke.mjs
+      - name: Upload gateway smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-gateway-smoke-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: test-results/manual/gateway-smoke.json
 
 
 

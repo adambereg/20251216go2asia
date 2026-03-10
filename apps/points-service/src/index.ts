@@ -10,7 +10,8 @@
  */
 
 import { createDb, sql } from '@go2asia/db';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
+
 import { decideExternalIdIdempotency } from './idempotency';
 
 export interface Env {
@@ -27,6 +28,11 @@ export interface Env {
   POINTS_VELOCITY_CAP?: string; // integer points
   POINTS_VELOCITY_WINDOW_SECONDS?: string; // integer seconds
 }
+
+type GatewayPrincipal = {
+  userId: string;
+  roles: string[];
+};
 
 type JsonPrimitive = string | number | boolean | null;
 
@@ -114,6 +120,35 @@ function handleHealth(env: Env): Response {
   );
 }
 
+function getCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getCheck(env.DATABASE_URL),
+    serviceJwtSecret: getCheck(env.SERVICE_JWT_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: SERVICE_NAME,
+      env: getEnvName(env),
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: getVersion(env),
+      checks,
+      missing,
+    },
+    status,
+    {
+      'Cache-Control': 'no-store',
+    }
+  );
+}
+
 function base64UrlToBytes(input: string): Uint8Array {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
@@ -179,7 +214,55 @@ async function verifyHs256Jwt(token: string, secret: string): Promise<JwtVerifyR
     if (now >= exp) return { ok: false, error: 'Token expired' };
   }
 
+  const nbf = payloadJson.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
+  }
+
   return { ok: true, payload: payloadJson };
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function getStringArrayClaim(payload: Record<string, unknown>, key: string): string[] {
+  const value = payload[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function validateServiceJwtClaims(
+  payload: Record<string, unknown>,
+  expected: {
+    iss?: string;
+    aud?: string;
+    sub?: string;
+  }
+): { ok: true } | { ok: false; error: string } {
+  if (expected.iss) {
+    const iss = getStringClaim(payload, 'iss');
+    if (iss !== expected.iss) return { ok: false, error: 'Invalid issuer' };
+  }
+
+  if (expected.aud) {
+    const aud = getStringClaim(payload, 'aud');
+    if (aud !== expected.aud) return { ok: false, error: 'Invalid audience' };
+  }
+
+  if (expected.sub) {
+    const sub = getStringClaim(payload, 'sub');
+    if (sub !== expected.sub) return { ok: false, error: 'Invalid subject' };
+  }
+
+  return { ok: true };
 }
 
 async function requireGatewayOrigin(
@@ -187,7 +270,7 @@ async function requireGatewayOrigin(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>
-): Promise<{ ok: true } | { ok: false; res: Response }> {
+): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
@@ -203,7 +286,28 @@ async function requireGatewayOrigin(
     return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token', requestId, 401) };
   }
 
-  return { ok: true };
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'api-gateway',
+    aud: 'internal',
+  });
+  if (!claims.ok) {
+    logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
+    return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token claims', requestId, 401) };
+  }
+
+  const userId = getStringClaim(verified.payload, 'sub');
+  if (!userId) {
+    logger.warn('Gateway-origin token missing subject claim');
+    return { ok: false, res: errorResponse('Unauthorized', 'Missing user subject in X-Gateway-Auth', requestId, 401) };
+  }
+
+  return {
+    ok: true,
+    principal: {
+      userId,
+      roles: getStringArrayClaim(verified.payload, 'roles'),
+    },
+  };
 }
 
 async function requireServiceAuth(
@@ -226,6 +330,15 @@ async function requireServiceAuth(
   if (!verified.ok) {
     logger.warn('Invalid service token', { reason: verified.error });
     return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token', requestId, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'go2asia-service-auth',
+    aud: SERVICE_NAME,
+  });
+  if (!claims.ok) {
+    logger.warn('Service token claims rejected', { reason: claims.error });
+    return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token claims', requestId, 401) };
   }
 
   return { ok: true };
@@ -332,14 +445,26 @@ async function enforceVelocityCap(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, SERVICE_NAME);
+    const logger = createLogger(requestId, SERVICE_NAME, {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
     try {
+      response = await (async (): Promise<Response> => {
       if (path === '/health' || path === '/version') {
         const res = handleHealth(env);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (path === '/ready') {
+        const res = handleReady(env);
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -351,13 +476,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
-        }
+        const userId = auth.principal.userId;
 
         const db = createDb(requireDatabase(env));
         const { balance, updatedAt } = await getUserBalance(db, userId);
@@ -373,13 +492,7 @@ export default {
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
-
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = errorResponse('Unauthorized', 'Missing X-User-ID header', requestId, 401);
-          res.headers.set('X-Request-Id', requestId);
-          return res;
-        }
+        const userId = auth.principal.userId;
 
         const limit = Math.min(
           100,
@@ -635,11 +748,20 @@ export default {
       const res = errorResponse('NotFound', `No route for path: ${path}`, requestId, 404);
       res.headers.set('X-Request-Id', requestId);
       return res;
+      })();
+      return response;
     } catch (err) {
-      logger.error('Unhandled error', { err: String(err) });
-      const res = errorResponse('InternalError', 'Unexpected error', requestId, 500);
-      res.headers.set('X-Request-Id', requestId);
-      return res;
+      logger.error('Unhandled error', err, { method: request.method, path });
+      response = errorResponse('InternalError', 'Unexpected error', requestId, 500);
+      response.headers.set('X-Request-Id', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
     }
   },
 };

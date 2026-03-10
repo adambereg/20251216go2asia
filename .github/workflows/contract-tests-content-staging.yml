@@ -28,7 +28,16 @@ jobs:
         env:
           STAGING_GATEWAY_URL: ${{ inputs.staging_gateway_url }}
           OPENAPI_BUNDLE_PATH: docs/openapi/openapi.bundle.yaml
+          TEST_ARTIFACT_PATH: test-results/manual/content-public-contract.json
         run: node scripts/contract/content_public_contract.mjs
+      - name: Upload contract artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-content-contract-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: test-results/manual/content-public-contract.json
 
 
 

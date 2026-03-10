@@ -1,5 +1,5 @@
 # GENERATED FILE — DO NOT EDIT
-# Source: docs\openapi\openapi.yaml, docs\openapi\auth.yaml, docs\openapi\content.yaml, docs\openapi\points.yaml, docs\openapi\referral.yaml
+# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/referral.yaml
 
 components:
   parameters:

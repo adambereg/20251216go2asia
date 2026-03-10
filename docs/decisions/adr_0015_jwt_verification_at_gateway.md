@@ -13,7 +13,7 @@
 
 - **API Gateway** выполняет:
   - извлечение Bearer token из `Authorization`
-  - валидацию Clerk JWT (если `CLERK_JWT_SECRET` сконфигурирован)
+  - валидацию Clerk JWT через Clerk-compatible verification flow (`@clerk/backend` / JWKS, используя `CLERK_SECRET_KEY`)
   - вычисление `userId` (JWT `sub`) и установку `X-User-ID`
   - CORS на ранних ошибках (401/403), чтобы браузер не превращал их в “network error”
 - **Auth Service** отвечает за:

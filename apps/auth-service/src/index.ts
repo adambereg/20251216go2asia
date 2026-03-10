@@ -8,7 +8,8 @@
  */
 
 import { createDb, sql } from '@go2asia/db';
-import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
+import { Webhook } from 'svix';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -39,6 +40,33 @@ function handleHealth(env: Env): Response {
     status: 'ok',
     version: env.VERSION ?? 'unknown',
   });
+}
+
+function getSecretCheck(value?: string): 'ok' | 'missing' {
+  return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function handleReady(env: Env): Response {
+  const checks = {
+    databaseUrl: getSecretCheck(env.DATABASE_URL),
+    serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
+    clerkWebhookSecret: getSecretCheck(env.CLERK_WEBHOOK_SECRET),
+  };
+  const missing = Object.entries(checks)
+    .filter(([, status]) => status !== 'ok')
+    .map(([name]) => name);
+  const status = missing.length === 0 ? 200 : 503;
+  return json(
+    {
+      service: 'auth-service',
+      env: env.ENVIRONMENT ?? 'staging',
+      status: status === 200 ? 'ready' : 'not_ready',
+      version: env.VERSION ?? 'unknown',
+      checks,
+      missing,
+    },
+    status
+  );
 }
 
 function handleNotFound(path: string): Response {
@@ -121,7 +149,44 @@ async function verifyHs256Jwt(token: string, secret: string): Promise<JwtVerifyR
     if (now >= exp) return { ok: false, error: 'Token expired' };
   }
 
+  const nbf = payload.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
+  }
+
   return { ok: true, payload };
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function validateServiceJwtClaims(
+  payload: Record<string, unknown>,
+  expected: {
+    iss?: string;
+    aud?: string;
+    sub?: string;
+  }
+): { ok: true } | { ok: false; error: string } {
+  if (expected.iss) {
+    const iss = getStringClaim(payload, 'iss');
+    if (iss !== expected.iss) return { ok: false, error: 'Invalid issuer' };
+  }
+
+  if (expected.aud) {
+    const aud = getStringClaim(payload, 'aud');
+    if (aud !== expected.aud) return { ok: false, error: 'Invalid audience' };
+  }
+
+  if (expected.sub) {
+    const sub = getStringClaim(payload, 'sub');
+    if (sub !== expected.sub) return { ok: false, error: 'Invalid subject' };
+  }
+
+  return { ok: true };
 }
 
 async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
@@ -190,6 +255,16 @@ async function requireGatewayOrigin(
   if (!verified.ok) {
     logger.warn('Invalid gateway-origin token', { reason: verified.error });
     return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'api-gateway',
+    aud: 'downstream',
+    sub: 'api-gateway',
+  });
+  if (!claims.ok) {
+    logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
+    return { ok: false, res: json({ error: { code: 'UNAUTHORIZED', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
   }
 
   return { ok: true };
@@ -434,8 +509,47 @@ async function handleClerkWebhook(
   requestId: string,
   logger: ReturnType<typeof createLogger>
 ): Promise<Response> {
-  // M3: Basic webhook handling (full Clerk signature verification is post-M3)
-  const bodyUnknown: unknown = await request.json().catch(() => null);
+  const webhookSecret = (env.CLERK_WEBHOOK_SECRET ?? '').trim();
+  if (!webhookSecret) {
+    logger.error('Missing CLERK_WEBHOOK_SECRET (misconfiguration)');
+    return json({ error: { code: 'SERVICE_NOT_CONFIGURED', message: 'CLERK_WEBHOOK_SECRET is missing' }, requestId }, 503);
+  }
+
+  const rawBody = await request.text().catch(() => null);
+  if (!rawBody) {
+    logger.warn('Missing webhook body');
+    return json({ error: { code: 'BadRequest', message: 'Missing webhook body' }, requestId }, 400);
+  }
+
+  const svixId = request.headers.get('svix-id');
+  const svixTimestamp = request.headers.get('svix-timestamp');
+  const svixSignature = request.headers.get('svix-signature');
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    logger.warn('Missing Clerk webhook signature headers');
+    return json({ error: { code: 'Unauthorized', message: 'Missing webhook signature headers' }, requestId }, 401);
+  }
+
+  try {
+    const webhook = new Webhook(webhookSecret);
+    webhook.verify(rawBody, {
+      'svix-id': svixId,
+      'svix-timestamp': svixTimestamp,
+      'svix-signature': svixSignature,
+    });
+  } catch (error) {
+    logger.warn('Invalid Clerk webhook signature', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return json({ error: { code: 'Unauthorized', message: 'Invalid webhook signature' }, requestId }, 401);
+  }
+
+  let bodyUnknown: unknown;
+  try {
+    bodyUnknown = JSON.parse(rawBody);
+  } catch {
+    logger.warn('Webhook body is not valid JSON');
+    return json({ error: { code: 'BadRequest', message: 'Invalid webhook JSON' }, requestId }, 400);
+  }
   const body = bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown) ? (bodyUnknown as Record<string, unknown>) : null;
 
   if (!body || typeof body.type !== 'string') {
@@ -527,36 +641,70 @@ async function handleClerkWebhook(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
-    const logger = createLogger(requestId, 'auth-service');
+    const logger = createLogger(requestId, 'auth-service', {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const startedAt = Date.now();
+    let response: Response | null = null;
 
-    if (path === '/health' || path === '/version') {
-      const res = handleHealth(env);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
+    try {
+      if (path === '/health' || path === '/version') {
+        response = handleHealth(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      if (path === '/ready') {
+        response = handleReady(env);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      // Clerk webhook handler
+      if (path === '/v1/auth/webhook/clerk' && request.method === 'POST') {
+        response = await handleClerkWebhook(request, env, requestId, logger);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      // Users (MVP): ensure current user exists in Neon.
+      // Called via API Gateway after successful sign-in/sign-up.
+      if (path === '/v1/users/ensure' && request.method === 'POST') {
+        response = await handleEnsureUser(request, env, requestId, logger);
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      logger.warn('Unhandled route', { method: request.method, path });
+      response = handleNotFound(path);
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } catch (error) {
+      logger.error('Unhandled error', error, { method: request.method, path });
+      response = json(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Unexpected error',
+          },
+          requestId,
+        },
+        500
+      );
+      response.headers.set('X-Request-ID', requestId);
+      return response;
+    } finally {
+      logRequestCompleted(logger, {
+        method: request.method,
+        path,
+        status: response?.status ?? 500,
+        durationMs: Date.now() - startedAt,
+      });
     }
-
-    // Clerk webhook handler
-    if (path === '/v1/auth/webhook/clerk' && request.method === 'POST') {
-      const res = await handleClerkWebhook(request, env, requestId, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
-
-    // Users (MVP): ensure current user exists in Neon.
-    // Called via API Gateway after successful sign-in/sign-up.
-    if (path === '/v1/users/ensure' && request.method === 'POST') {
-      const res = await handleEnsureUser(request, env, requestId, logger);
-      res.headers.set('X-Request-ID', requestId);
-      return res;
-    }
-
-    logger.warn('Unhandled route', { method: request.method, path });
-    const res = handleNotFound(path);
-    res.headers.set('X-Request-ID', requestId);
-    return res;
   },
 };
 
