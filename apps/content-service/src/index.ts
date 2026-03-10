@@ -353,6 +353,16 @@ function base64UrlToBytes(input: string): Uint8Array {
   return bytes;
 }
 
+function parseJsonObject(input: string): Record<string, unknown> | null {
+  try {
+    const value: unknown = JSON.parse(input);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    return value as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 type BlogPostsCursorV1 = {
   v: 1;
   sort: BlogPostSort;
@@ -1709,15 +1719,55 @@ async function handleListGuides(env: Env, url: URL, logger: ReturnType<typeof cr
 
 // ---------------------------------------------------------------------
 // Mini-admin (v1): write operations for Guide Engine
-// Security v1: X-User-ID header required on /v1/admin/*
+// Security hardening:
+// - gateway-origin auth required on protected/admin routes
+// - backend role check required on /v1/admin/*
 // ---------------------------------------------------------------------
 
-function requireAdmin(request: Request): { ok: true; userId: string } | { ok: false; res: Response } {
+function requireUserIdHeader(request: Request, requestId: string): { ok: true; userId: string } | { ok: false; res: Response } {
   const userId = request.headers.get('X-User-ID');
   if (!userId) {
-    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401) };
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' }, requestId }, 401) };
   }
   return { ok: true, userId };
+}
+
+async function requireAdmin(
+  request: Request,
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<{ ok: true; userId: string } | { ok: false; res: Response }> {
+  const gateway = await requireGatewayOrigin(request, env, requestId, logger);
+  if (!gateway.ok) return gateway;
+
+  const uid = requireUserIdHeader(request, requestId);
+  if (!uid.ok) return uid;
+
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) {
+    return {
+      ok: false,
+      res: json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' }, requestId }, 503),
+    };
+  }
+
+  const rows = await sqlClient`
+    SELECT role
+    FROM users
+    WHERE id = ${uid.userId}
+    LIMIT 1
+  `;
+  const role = (rows[0] as { role?: unknown } | undefined)?.role;
+  if (role !== 'admin') {
+    logger.warn('Forbidden admin route access', { userId: uid.userId, role: typeof role === 'string' ? role : null });
+    return {
+      ok: false,
+      res: json({ error: { code: 'Forbidden', message: 'Admin role required' }, requestId }, 403),
+    };
+  }
+
+  return { ok: true, userId: uid.userId };
 }
 
 async function getGuideIdBySlugSql(sqlClient: SqlClient, slug: string): Promise<string | null> {
@@ -2368,6 +2418,77 @@ function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
 
+async function verifyHs256Jwt(
+  token: string,
+  secret: string
+): Promise<{ ok: true; payload: Record<string, unknown> } | { ok: false; error: string }> {
+  const parts = token.split('.');
+  if (parts.length !== 3) return { ok: false, error: 'JWT must have 3 parts' };
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const header = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(headerB64)));
+  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
+  if (!header || !payload) return { ok: false, error: 'JWT header/payload is not valid JSON object' };
+  if (header.alg !== 'HS256') return { ok: false, error: 'Only HS256 is supported' };
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    utf8ToBytes(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
+  const signature = base64UrlToBytes(signatureB64);
+  const ok = await crypto.subtle.verify('HMAC', key, signature, data);
+  if (!ok) return { ok: false, error: 'Invalid signature' };
+
+  const exp = payload.exp;
+  if (typeof exp === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now >= exp) return { ok: false, error: 'Token expired' };
+  }
+
+  const nbf = payload.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
+  }
+
+  return { ok: true, payload };
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function validateServiceJwtClaims(
+  payload: Record<string, unknown>,
+  expected: {
+    iss?: string;
+    aud?: string;
+    sub?: string;
+  }
+): { ok: true } | { ok: false; error: string } {
+  if (expected.iss) {
+    const iss = getStringClaim(payload, 'iss');
+    if (iss !== expected.iss) return { ok: false, error: 'Invalid issuer' };
+  }
+
+  if (expected.aud) {
+    const aud = getStringClaim(payload, 'aud');
+    if (aud !== expected.aud) return { ok: false, error: 'Invalid audience' };
+  }
+
+  if (expected.sub) {
+    const sub = getStringClaim(payload, 'sub');
+    if (sub !== expected.sub) return { ok: false, error: 'Invalid subject' };
+  }
+
+  return { ok: true };
+}
+
 async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
@@ -2400,6 +2521,45 @@ async function createServiceJwt(env: Env, targetService: string, requestId: stri
     },
     env.SERVICE_JWT_SECRET
   );
+}
+
+async function requireGatewayOrigin(
+  request: Request,
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<{ ok: true } | { ok: false; res: Response }> {
+  const secret = env.SERVICE_JWT_SECRET;
+  if (!secret) {
+    logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
+    return {
+      ok: false,
+      res: json({ error: { code: 'ServiceAuthNotConfigured', message: 'Service auth is not configured' }, requestId }, 503),
+    };
+  }
+
+  const token = request.headers.get('X-Gateway-Auth');
+  if (!token) {
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Missing X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  const verified = await verifyHs256Jwt(token, secret);
+  if (!verified.ok) {
+    logger.warn('Invalid gateway-origin token', { reason: verified.error });
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth' }, requestId }, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'api-gateway',
+    aud: 'downstream',
+    sub: 'api-gateway',
+  });
+  if (!claims.ok) {
+    logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
+    return { ok: false, res: json({ error: { code: 'Unauthorized', message: 'Invalid X-Gateway-Auth claims' }, requestId }, 401) };
+  }
+
+  return { ok: true };
 }
 
 async function callPointsService(
@@ -2587,6 +2747,11 @@ export default {
 
     // Media / Storage (Milestone 2.2)
     if (path === '/v1/content/media/upload-token' && request.method === 'POST') {
+      const auth = await requireGatewayOrigin(request, env, requestId, logger);
+      if (!auth.ok) {
+        auth.res.headers.set('X-Request-ID', requestId);
+        return auth.res;
+      }
       const res = await handleCreateMediaUploadToken(request, env, requestId);
       res.headers.set('X-Request-ID', requestId);
       return res;
@@ -2717,9 +2882,14 @@ export default {
       const includeEmptyRaw = url.searchParams.get('include_empty');
       const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
       if (includeEmpty) {
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-ID', requestId);
+          return auth.res;
+        }
+        const uid = requireUserIdHeader(request, requestId);
+        if (!uid.ok) {
+          const res = uid.res;
           res.headers.set('X-Request-ID', requestId);
           return res;
         }
@@ -2740,9 +2910,14 @@ export default {
       const includeEmptyRaw = url.searchParams.get('include_empty');
       const includeEmpty = includeEmptyRaw === 'true' || includeEmptyRaw === '1';
       if (includeEmpty) {
-        const userId = request.headers.get('X-User-ID');
-        if (!userId) {
-          const res = json({ error: { code: 'Unauthorized', message: 'Missing X-User-ID header' } }, 401);
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-ID', requestId);
+          return auth.res;
+        }
+        const uid = requireUserIdHeader(request, requestId);
+        if (!uid.ok) {
+          const res = uid.res;
           res.headers.set('X-Request-ID', requestId);
           return res;
         }
@@ -2756,7 +2931,7 @@ export default {
     // Mini-admin v1 (write) — Guide Engine
     // -----------------------------------------------------------------
     if (path.startsWith('/v1/admin/')) {
-      const admin = requireAdmin(request);
+      const admin = await requireAdmin(request, env, requestId, logger);
       if (!admin.ok) {
         admin.res.headers.set('X-Request-ID', requestId);
         return admin.res;
@@ -2823,6 +2998,11 @@ export default {
     // Event registration endpoint
     const eventRegMatch = path.match(/^\/v1\/content\/events\/([^/]+)\/register$/);
     if (eventRegMatch && request.method === 'POST') {
+      const auth = await requireGatewayOrigin(request, env, requestId, logger);
+      if (!auth.ok) {
+        auth.res.headers.set('X-Request-ID', requestId);
+        return auth.res;
+      }
       const eventId = eventRegMatch[1];
       const res = await handleEventRegistration(request, env, eventId, requestId, logger);
       res.headers.set('X-Request-ID', requestId);

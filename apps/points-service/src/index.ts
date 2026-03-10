@@ -11,6 +11,7 @@
 
 import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId } from '@go2asia/logger';
+
 import { decideExternalIdIdempotency } from './idempotency';
 
 export interface Env {
@@ -179,7 +180,44 @@ async function verifyHs256Jwt(token: string, secret: string): Promise<JwtVerifyR
     if (now >= exp) return { ok: false, error: 'Token expired' };
   }
 
+  const nbf = payloadJson.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
+  }
+
   return { ok: true, payload: payloadJson };
+}
+
+function getStringClaim(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function validateServiceJwtClaims(
+  payload: Record<string, unknown>,
+  expected: {
+    iss?: string;
+    aud?: string;
+    sub?: string;
+  }
+): { ok: true } | { ok: false; error: string } {
+  if (expected.iss) {
+    const iss = getStringClaim(payload, 'iss');
+    if (iss !== expected.iss) return { ok: false, error: 'Invalid issuer' };
+  }
+
+  if (expected.aud) {
+    const aud = getStringClaim(payload, 'aud');
+    if (aud !== expected.aud) return { ok: false, error: 'Invalid audience' };
+  }
+
+  if (expected.sub) {
+    const sub = getStringClaim(payload, 'sub');
+    if (sub !== expected.sub) return { ok: false, error: 'Invalid subject' };
+  }
+
+  return { ok: true };
 }
 
 async function requireGatewayOrigin(
@@ -201,6 +239,16 @@ async function requireGatewayOrigin(
   if (!verified.ok) {
     logger.warn('Invalid gateway-origin token', { reason: verified.error });
     return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token', requestId, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'api-gateway',
+    aud: 'downstream',
+    sub: 'api-gateway',
+  });
+  if (!claims.ok) {
+    logger.warn('Gateway-origin token claims rejected', { reason: claims.error });
+    return { ok: false, res: errorResponse('Unauthorized', 'Invalid X-Gateway-Auth token claims', requestId, 401) };
   }
 
   return { ok: true };
@@ -226,6 +274,15 @@ async function requireServiceAuth(
   if (!verified.ok) {
     logger.warn('Invalid service token', { reason: verified.error });
     return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token', requestId, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'go2asia-service-auth',
+    aud: SERVICE_NAME,
+  });
+  if (!claims.ok) {
+    logger.warn('Service token claims rejected', { reason: claims.error });
+    return { ok: false, res: errorResponse('Unauthorized', 'Invalid service token claims', requestId, 401) };
   }
 
   return { ok: true };

@@ -74,14 +74,6 @@ function getBearerToken(request: Request): string | null {
   return match?.[1] ?? null;
 }
 
-function getJwtSubWithoutVerification(token: string): string | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const payload = parseJsonObject(new TextDecoder().decode(base64UrlToBytes(parts[1])));
-  const sub = payload?.sub;
-  return typeof sub === 'string' && sub.length > 0 ? sub : null;
-}
-
 function safeHostFromUrl(input?: string): string | null {
   if (!input) return null;
   try {
@@ -134,6 +126,12 @@ async function verifyHs256Jwt(token: string, secret: string): Promise<
   if (typeof exp === 'number') {
     const now = Math.floor(Date.now() / 1000);
     if (now >= exp) return { ok: false, error: 'Token expired' };
+  }
+
+  const nbf = payload.nbf;
+  if (typeof nbf === 'number') {
+    const now = Math.floor(Date.now() / 1000);
+    if (now < nbf) return { ok: false, error: 'Token is not active yet' };
   }
 
   return { ok: true, payload };
@@ -366,6 +364,7 @@ async function routeRequest(
       {
         iss: 'api-gateway',
         aud: 'downstream',
+        sub: 'api-gateway',
         iat: now,
         exp: now + 60,
         rid: requestId,
@@ -395,6 +394,7 @@ async function routeRequest(
   ) {
     const token = getBearerToken(request);
     let userId: string | null = null;
+    let authMisconfigured = false;
 
     if (token && env.CLERK_JWT_SECRET) {
       const verified = await verifyHs256Jwt(token, env.CLERK_JWT_SECRET);
@@ -406,22 +406,26 @@ async function routeRequest(
         userId = typeof sub === 'string' && sub.length > 0 ? sub : null;
       }
     } else if (token) {
-      // Fallback (M3): no signature verification if CLERK_JWT_SECRET is not configured
-      logger.warn('CLERK_JWT_SECRET not set; user token is not verified (temporary M3 behavior)');
-      userId = getJwtSubWithoutVerification(token);
+      logger.error('CLERK_JWT_SECRET not set; refusing to trust user token');
+      authMisconfigured = true;
     }
 
     if (!userId) {
+      const status = authMisconfigured ? 503 : 401;
+      const code = authMisconfigured ? 'SERVICE_AUTH_NOT_CONFIGURED' : 'UNAUTHORIZED';
+      const message = authMisconfigured
+        ? 'User auth verification is not configured'
+        : 'Missing or invalid user token';
       const res = new Response(
         JSON.stringify({
           error: {
-            code: 'UNAUTHORIZED',
-            message: 'Missing or invalid user token',
+            code,
+            message,
           },
           requestId,
         }),
         {
-          status: 401,
+          status,
           headers: {
             'Content-Type': 'application/json',
             'X-Request-ID': requestId,

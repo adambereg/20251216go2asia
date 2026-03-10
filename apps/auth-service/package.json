@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@go2asia/db": "workspace:*",
-    "@go2asia/logger": "workspace:*"
+    "@go2asia/logger": "workspace:*",
+    "svix": "^1.87.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
@@ -23,6 +24,3 @@
     "wrangler": "^3.19.0"
   }
 }
-
-
-
