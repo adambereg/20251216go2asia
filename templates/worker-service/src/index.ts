@@ -73,16 +73,8 @@ function handleReady(env: Env): Response {
   );
 }
 
-function handleNotFound(path: string): Response {
-  return json(
-    {
-      error: {
-        code: 'NOT_FOUND',
-        message: `No route for path: ${path}`,
-      },
-    },
-    404
-  );
+function handleNotFound(path: string, requestId: string): Response {
+  return errorResponse('NOT_FOUND', `No route for path: ${path}`, requestId, 404);
 }
 
 function utf8ToBytes(input: string): Uint8Array {
@@ -295,7 +287,7 @@ export default {
       // - User-facing routes -> requireGatewayOrigin(...)
       // - Internal routes -> requireServiceAuth(...)
       logger.warn('Unhandled route', { method: request.method, path });
-      response = handleNotFound(path);
+      response = handleNotFound(path, requestId);
       response.headers.set('X-Request-ID', requestId);
       return response;
     } catch (error) {
