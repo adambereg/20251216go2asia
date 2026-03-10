@@ -344,4 +344,59 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/content/media/upload-token');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('routes canonical /v1/media/* directly to media-service when configured', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://media.example/v1/media/upload-token');
+      return new Response(
+        JSON.stringify({
+          uploadUrl: '/v1/media/upload/signed-token',
+          key: 'uploads/content/media_user/123/file.jpg',
+          publicUrl: 'https://media.go2asia.space/uploads/content/media_user/123/file.jpg',
+          expiresAt: '2026-03-11T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      MEDIA_SERVICE_URL: 'https://media.example',
+      CONTENT_SERVICE_URL: 'https://content.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/upload-token', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scope: 'content',
+          filename: 'file.jpg',
+          contentType: 'image/jpeg',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ uploadUrl: string; key: string }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.uploadUrl).toBe('/v1/media/upload/signed-token');
+    expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/media/upload-token');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
