@@ -15,16 +15,23 @@ SSOT плана: `docs/plans/phase2_delivery_plan.md`
 
 ## 2) Реализация в Phase 2 (без нового сервиса)
 
-В Phase 2.2 media‑контур реализуется внутри существующего `apps/content-service` (platform milestone).
+В Phase 2.2 media‑контур реализуется внутри существующего `apps/content-service` (platform milestone),
+но наружу закрепляется через канонический публичный gateway contract:
+- `POST /v1/media/upload-token`
+- `PUT /v1/media/upload/{token}`
+
+До выделения отдельного `media-service` gateway проксирует этот surface в `content-service`.
+Это именно transitional implementation detail, а не новая постоянная service boundary для media.
+Из этого не следует общее правило “делать aliases через existing services” для других будущих доменов Фазы 2.
 
 R2 binding’и (см. `apps/content-service/wrangler.toml`):
 - `MEDIA_BUCKET` → `go2asia-media`
 - `SPACE_MEDIA_BUCKET` → `go2asiaspace` (готовность для Space)
 
-## 3) API (Content Service)
+## 3) API (canonical gateway media surface)
 
-- `POST /v1/content/media/upload-token` (authorized, требует user context через gateway)
-- `PUT /v1/content/media/upload/{token}` (upload бинарных данных по signed token)
+- `POST /v1/media/upload-token` (authorized, требует user context через gateway)
+- `PUT /v1/media/upload/{token}` (upload бинарных данных по signed token)
 
 OpenAPI: `docs/openapi/content.yaml`
 

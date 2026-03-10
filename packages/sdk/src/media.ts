@@ -92,7 +92,7 @@ export async function createMediaUploadToken(
       method: 'POST',
       body: JSON.stringify(input),
     },
-    '/v1/content/media/upload-token'
+    '/v1/media/upload-token'
   );
 }
 

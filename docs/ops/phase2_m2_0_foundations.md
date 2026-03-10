@@ -19,6 +19,7 @@ SSOT плана: `docs/plans/phase2_delivery_plan.md`
 ## 2) API Gateway: prefix contract (Phase 2)
 
 Gateway остаётся единым входом. В Milestone 2.0 фиксируется набор префиксов Фазы 2:
+- `/v1/media/*` → canonical public contract for media; до выделения `media-service` допускается только transitional fallback в `CONTENT_SERVICE_URL`
 - `/v1/space/*` → `SPACE_SERVICE_URL` (будет активирован в Milestone 2.3)
 - `/v1/quest/*` → `QUEST_SERVICE_URL` (Milestone 2.4)
 - `/v1/rielt/*` → `RIELT_SERVICE_URL` (Milestone 2.5)
@@ -26,6 +27,7 @@ Gateway остаётся единым входом. В Milestone 2.0 фикси�
 - `/v1/rf/*` → `RF_SERVICE_URL` (Milestone 2.7)
 
 Важно: пока сервис не реализован/не настроен, gateway **не должен** ломать existing behavior для остального продукта.
+Важно: transitional alias/fallback для media не считается общим шаблоном для других будущих доменов и не должен копироваться без отдельного архитектурного решения.
 
 ## 3) OpenAPI-first
 
@@ -42,11 +44,13 @@ Bundling:
 SDK ходит в API Gateway через `packages/sdk/src/mutator.ts` и использует Clerk token, когда он доступен.
 
 Правило: SDK добавляется **только** под реально существующие `/v1/*` endpoints, без “заглушек” под Phase 3.
+Root import `@go2asia/sdk` должен экспортировать только стабильные gateway-facing helpers; generated low-level артефакты остаются namespaced.
 
 ## 5) DB readiness (schema-by-domain)
 
 Источник: `packages/db/src/schema/*`
 
 Правило: новые домены Phase 2 добавляются как отдельные schema‑файлы (например `schema/space.ts`, `schema/quest.ts` и т.д.), без смешивания в существующие домены.
+Для baseline зафиксирован список Phase 2 domain boundaries в `packages/db/src/schema/conventions.ts`.
 
 

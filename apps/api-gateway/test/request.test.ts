@@ -162,4 +162,63 @@ describe('api-gateway request hardening', () => {
       })
     );
   });
+
+  it('routes canonical /v1/media/* requests through content-service fallback and normalizes uploadUrl', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://content.example/v1/content/media/upload-token');
+      expect(request.headers.get('X-Gateway-Auth')).toBeTruthy();
+      expect(request.headers.get('X-User-ID')).toBe('media_user');
+
+      return new Response(
+        JSON.stringify({
+          uploadUrl: '/v1/content/media/upload/signed-token',
+          key: 'uploads/space/media_user/123/file.jpg',
+          publicUrl: 'https://cdn.example/file.jpg',
+          expiresAt: '2026-03-10T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      CONTENT_SERVICE_URL: 'https://content.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/upload-token', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          scope: 'space',
+          filename: 'file.jpg',
+          contentType: 'image/jpeg',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ uploadUrl: string; key: string }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.uploadUrl).toBe('/v1/media/upload/signed-token');
+    expect(body.key).toContain('uploads/space/media_user/');
+    expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/content/media/upload-token');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

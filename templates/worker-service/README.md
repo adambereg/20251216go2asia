@@ -4,8 +4,11 @@
 
 Цель: чтобы новые сервисы Фазы 2 (`space-service`, `quest-service`, `rielt-service`, `guru-service`, `rf-service`) создавались **одинаково**, с одинаковыми базовыми контрактами:
 - `/health` и `/version`
+- `/ready`
 - `X-Request-ID`
 - структурный логинг через `@go2asia/logger`
+- `X-Gateway-Auth` verification scaffold для user-facing routes
+- `Authorization: Bearer <service-jwt>` scaffold для internal routes
 
 > Важно: это **шаблон**, не “реальный сервис”. Он не входит в `pnpm-workspace.yaml` и не деплоится.
 
@@ -19,6 +22,7 @@
 - `package.json`: `name`, `description`
 - `wrangler.toml`: `name` / `env.staging.name` / `env.production.name`
 - `src/index.ts`: константу `SERVICE_NAME`
+- `src/index.ts`: required env checks inside `handleReady(...)`
 
 3) Добавить переменную окружения в `apps/api-gateway`:
 - `<SERVICE>_SERVICE_URL` (например `SPACE_SERVICE_URL`)

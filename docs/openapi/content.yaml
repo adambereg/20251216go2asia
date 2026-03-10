@@ -136,13 +136,13 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /v1/content/media/upload-token:
+  /v1/media/upload-token:
     post:
       tags: [media]
       operationId: createMediaUploadToken
       summary: Create signed upload token (authorized)
       description: >
-        Creates a short-lived signed token for uploading media to R2 via Content Service.
+        Creates a short-lived signed token for uploading media through the canonical gateway-level media surface.
         Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
       security:
         - GatewayAuth: []
@@ -170,7 +170,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /v1/content/media/upload/{token}:
+  /v1/media/upload/{token}:
     put:
       tags: [media]
       operationId: uploadMediaByToken
@@ -816,7 +816,7 @@ components:
       properties:
         uploadUrl:
           type: string
-          description: Relative URL to upload endpoint (via API Gateway)
+          description: Relative URL to the canonical media upload endpoint (via API Gateway)
         key:
           type: string
           description: R2 object key

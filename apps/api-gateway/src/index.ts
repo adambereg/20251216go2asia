@@ -12,6 +12,7 @@ export interface Env {
   // Service URLs (internal)
   AUTH_SERVICE_URL?: string;
   CONTENT_SERVICE_URL?: string;
+  MEDIA_SERVICE_URL?: string;
   POINTS_SERVICE_URL?: string;
   REFERRAL_SERVICE_URL?: string;
   // Phase 2 services (not all exist yet; keep optional and only route when configured)
@@ -75,6 +76,32 @@ function applyCors(res: Response, origin: string | null): Response {
   out.headers.set('Access-Control-Allow-Origin', origin);
   out.headers.set('Vary', 'Origin');
   out.headers.set('Access-Control-Expose-Headers', 'X-Request-ID');
+  return out;
+}
+
+async function maybeNormalizeGatewayResponse(path: string, response: Response): Promise<Response> {
+  // Keep `/v1/media/*` as the canonical public contract even while the runtime
+  // implementation still falls back to content-service.
+  if (path !== '/v1/media/upload-token') return response;
+
+  const contentType = response.headers.get('Content-Type') ?? '';
+  if (!contentType.includes('application/json')) return response;
+
+  const text = await response.text();
+  let body = text;
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.uploadUrl === 'string' && parsed.uploadUrl.startsWith('/v1/content/media/upload/')) {
+      parsed.uploadUrl = parsed.uploadUrl.replace('/v1/content/media/upload/', '/v1/media/upload/');
+      body = JSON.stringify(parsed);
+    }
+  } catch {
+    body = text;
+  }
+
+  const out = new Response(body, response);
+  out.headers.set('Content-Type', 'application/json');
   return out;
 }
 
@@ -256,9 +283,7 @@ async function routeRequest(
   const url = new URL(request.url);
   const path = url.pathname;
   // Support legacy alias /v1/api/content/* by rewriting to /v1/content/*
-  const downstreamPath = path.startsWith('/v1/api/content/')
-    ? path.replace('/v1/api/content/', '/v1/content/')
-    : path;
+  let downstreamPath = path.startsWith('/v1/api/content/') ? path.replace('/v1/api/content/', '/v1/content/') : path;
   const requestId = getRequestId(request) || generateRequestId();
   const origin = request.headers.get('Origin');
 
@@ -313,6 +338,11 @@ async function routeRequest(
           { prefix: '/v1/auth/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/users/', var: 'AUTH_SERVICE_URL', host: safeHostFromUrl(env.AUTH_SERVICE_URL) },
           { prefix: '/v1/content/', var: 'CONTENT_SERVICE_URL', host: safeHostFromUrl(env.CONTENT_SERVICE_URL) },
+          {
+            prefix: '/v1/media/',
+            var: 'MEDIA_SERVICE_URL (fallback CONTENT_SERVICE_URL)',
+            host: safeHostFromUrl(env.MEDIA_SERVICE_URL ?? env.CONTENT_SERVICE_URL),
+          },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
           // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
@@ -342,6 +372,16 @@ async function routeRequest(
   } else if (path.startsWith('/v1/content/') || path.startsWith('/v1/api/content/')) {
     serviceUrl = env.CONTENT_SERVICE_URL;
     if (!serviceUrl) missingVar = 'CONTENT_SERVICE_URL';
+  } else if (path.startsWith('/v1/media/')) {
+    // `/v1/media/*` is a canonical public contract.
+    // The content-service fallback below is transitional only until media-service exists.
+    // Do not generalize this aliasing pattern to other future domains without an explicit decision.
+    serviceUrl = env.MEDIA_SERVICE_URL ?? env.CONTENT_SERVICE_URL;
+    if (!serviceUrl) {
+      missingVar = 'CONTENT_SERVICE_URL';
+    } else if (!env.MEDIA_SERVICE_URL) {
+      downstreamPath = path.replace('/v1/media/', '/v1/content/media/');
+    }
   } else if (path.startsWith('/v1/points/')) {
     serviceUrl = env.POINTS_SERVICE_URL;
     if (!serviceUrl) missingVar = 'POINTS_SERVICE_URL';
@@ -417,7 +457,8 @@ async function routeRequest(
     request.method === 'POST' && /^\/v1\/content\/events\/[^/]+\/register$/.test(downstreamPath);
   // Media (Phase 2.2): token issuance requires auth, upload itself is authorized by a signed token.
   const isMediaUploadToken =
-    request.method === 'POST' && downstreamPath === '/v1/content/media/upload-token';
+    request.method === 'POST' &&
+    (downstreamPath === '/v1/content/media/upload-token' || downstreamPath === '/v1/media/upload-token');
 
   if (
     path.startsWith('/v1/points/') ||
@@ -512,23 +553,28 @@ async function routeRequest(
 
   // Only pass a body for methods that can have one.
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
-  const serviceRequest = new Request(targetUrl, {
+  const serviceRequestInit: RequestInit & { duplex?: 'half' } = {
     method: request.method,
     headers,
     body: hasBody ? request.body : undefined,
-  });
+  };
+  if (hasBody) {
+    serviceRequestInit.duplex = 'half';
+  }
+  const serviceRequest = new Request(targetUrl, serviceRequestInit);
 
   try {
     const response = await fetch(serviceRequest);
+    const normalizedResponse = await maybeNormalizeGatewayResponse(path, response);
 
     // Cloudflare may return a Response with immutable headers.
     // Always clone before adding/overriding headers.
-    const out = new Response(response.body, response);
+    const out = new Response(normalizedResponse.body, normalizedResponse);
     // Diagnostic headers (no secrets). Helps debug proxy-chain issues.
     out.headers.set('X-Proxy-Target-Host', safeHostFromUrl(baseUrl) ?? '');
     out.headers.set('X-Proxy-Target-Path', downstreamPath);
-    out.headers.set('X-Proxy-Downstream-Status', String(response.status));
-    out.headers.set('X-Proxy-Downstream-Content-Type', response.headers.get('Content-Type') ?? '');
+    out.headers.set('X-Proxy-Downstream-Status', String(normalizedResponse.status));
+    out.headers.set('X-Proxy-Downstream-Content-Type', normalizedResponse.headers.get('Content-Type') ?? '');
     return applyCors(out, origin);
   } catch (error) {
     logger.error('Error forwarding request to service', error, {

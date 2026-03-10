@@ -882,119 +882,6 @@ export const registerForEvent = async (
 };
 
 /**
- * Creates a short-lived signed token for uploading media to R2 via Content Service. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
-
- * @summary Create signed upload token (authorized)
- */
-export type createMediaUploadTokenResponse200 = {
-  data: CreateUploadTokenResponse;
-  status: 200;
-};
-
-export type createMediaUploadTokenResponse400 = {
-  data: BadRequestResponse;
-  status: 400;
-};
-
-export type createMediaUploadTokenResponse401 = {
-  data: UnauthorizedResponse;
-  status: 401;
-};
-
-export type createMediaUploadTokenResponse500 = {
-  data: InternalErrorResponse;
-  status: 500;
-};
-
-export type createMediaUploadTokenResponseSuccess = createMediaUploadTokenResponse200 & {
-  headers: Headers;
-};
-export type createMediaUploadTokenResponseError = (
-  | createMediaUploadTokenResponse400
-  | createMediaUploadTokenResponse401
-  | createMediaUploadTokenResponse500
-) & {
-  headers: Headers;
-};
-
-export type createMediaUploadTokenResponse =
-  | createMediaUploadTokenResponseSuccess
-  | createMediaUploadTokenResponseError;
-
-export const getCreateMediaUploadTokenUrl = () => {
-  return `/v1/content/media/upload-token`;
-};
-
-export const createMediaUploadToken = async (
-  createUploadTokenRequest: CreateUploadTokenRequest,
-  options?: RequestInit
-): Promise<createMediaUploadTokenResponse> => {
-  return customInstance<createMediaUploadTokenResponse>(getCreateMediaUploadTokenUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createUploadTokenRequest),
-  });
-};
-
-/**
- * Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
-
- * @summary Upload media by signed token (no user auth)
- */
-export type uploadMediaByTokenResponse201 = {
-  data: UploadResult;
-  status: 201;
-};
-
-export type uploadMediaByTokenResponse400 = {
-  data: BadRequestResponse;
-  status: 400;
-};
-
-export type uploadMediaByTokenResponse401 = {
-  data: UnauthorizedResponse;
-  status: 401;
-};
-
-export type uploadMediaByTokenResponse500 = {
-  data: InternalErrorResponse;
-  status: 500;
-};
-
-export type uploadMediaByTokenResponseSuccess = uploadMediaByTokenResponse201 & {
-  headers: Headers;
-};
-export type uploadMediaByTokenResponseError = (
-  | uploadMediaByTokenResponse400
-  | uploadMediaByTokenResponse401
-  | uploadMediaByTokenResponse500
-) & {
-  headers: Headers;
-};
-
-export type uploadMediaByTokenResponse =
-  | uploadMediaByTokenResponseSuccess
-  | uploadMediaByTokenResponseError;
-
-export const getUploadMediaByTokenUrl = (token: string) => {
-  return `/v1/content/media/upload/${token}`;
-};
-
-export const uploadMediaByToken = async (
-  token: string,
-  uploadMediaByTokenBody: Blob,
-  options?: RequestInit
-): Promise<uploadMediaByTokenResponse> => {
-  return customInstance<uploadMediaByTokenResponse>(getUploadMediaByTokenUrl(token), {
-    ...options,
-    method: "PUT",
-    headers: { "Content-Type": "application/octet-stream", ...options?.headers },
-    body: JSON.stringify(uploadMediaByTokenBody),
-  });
-};
-
-/**
  * @summary List places (public)
  */
 export type listPlacesResponse200 = {
@@ -1085,6 +972,119 @@ export const getPlaceByIdOrSlug = async (
   return customInstance<getPlaceByIdOrSlugResponse>(getGetPlaceByIdOrSlugUrl(idOrSlug), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+
+ * @summary Create signed upload token (authorized)
+ */
+export type createMediaUploadTokenResponse200 = {
+  data: CreateUploadTokenResponse;
+  status: 200;
+};
+
+export type createMediaUploadTokenResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type createMediaUploadTokenResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type createMediaUploadTokenResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type createMediaUploadTokenResponseSuccess = createMediaUploadTokenResponse200 & {
+  headers: Headers;
+};
+export type createMediaUploadTokenResponseError = (
+  | createMediaUploadTokenResponse400
+  | createMediaUploadTokenResponse401
+  | createMediaUploadTokenResponse500
+) & {
+  headers: Headers;
+};
+
+export type createMediaUploadTokenResponse =
+  | createMediaUploadTokenResponseSuccess
+  | createMediaUploadTokenResponseError;
+
+export const getCreateMediaUploadTokenUrl = () => {
+  return `/v1/media/upload-token`;
+};
+
+export const createMediaUploadToken = async (
+  createUploadTokenRequest: CreateUploadTokenRequest,
+  options?: RequestInit
+): Promise<createMediaUploadTokenResponse> => {
+  return customInstance<createMediaUploadTokenResponse>(getCreateMediaUploadTokenUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createUploadTokenRequest),
+  });
+};
+
+/**
+ * Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
+
+ * @summary Upload media by signed token (no user auth)
+ */
+export type uploadMediaByTokenResponse201 = {
+  data: UploadResult;
+  status: 201;
+};
+
+export type uploadMediaByTokenResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type uploadMediaByTokenResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type uploadMediaByTokenResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type uploadMediaByTokenResponseSuccess = uploadMediaByTokenResponse201 & {
+  headers: Headers;
+};
+export type uploadMediaByTokenResponseError = (
+  | uploadMediaByTokenResponse400
+  | uploadMediaByTokenResponse401
+  | uploadMediaByTokenResponse500
+) & {
+  headers: Headers;
+};
+
+export type uploadMediaByTokenResponse =
+  | uploadMediaByTokenResponseSuccess
+  | uploadMediaByTokenResponseError;
+
+export const getUploadMediaByTokenUrl = (token: string) => {
+  return `/v1/media/upload/${token}`;
+};
+
+export const uploadMediaByToken = async (
+  token: string,
+  uploadMediaByTokenBody: Blob,
+  options?: RequestInit
+): Promise<uploadMediaByTokenResponse> => {
+  return customInstance<uploadMediaByTokenResponse>(getUploadMediaByTokenUrl(token), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/octet-stream", ...options?.headers },
+    body: JSON.stringify(uploadMediaByTokenBody),
   });
 };
 

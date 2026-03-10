@@ -1,12 +1,13 @@
 /**
  * Database schema for Go2Asia MVP
- * 
- * All schemas are organized by service (auth, content, points, referral).
+ *
+ * All schemas are organized by domain boundary.
  * This file exports all schemas for use with Drizzle ORM.
  */
 
 export * from './auth';
 export * from './blog';
+export * from './conventions';
 export * from './content';
 export * from './points';
 export * from './referral';

@@ -25,6 +25,7 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 
 - `AUTH_SERVICE_URL` - Internal Auth Service URL
 - `CONTENT_SERVICE_URL` - Internal Content Service URL
+- `MEDIA_SERVICE_URL` - Optional dedicated Media Service URL; if unset, the canonical public contract `/v1/media/*` temporarily falls back to `CONTENT_SERVICE_URL`
 - `POINTS_SERVICE_URL` - Internal Points Service URL
 - `REFERRAL_SERVICE_URL` - Internal Referral Service URL
 - `CLERK_SECRET_KEY` - Clerk server key used by `@clerk/backend` to verify user JWT via Clerk JWKS
@@ -36,6 +37,7 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `/ready` - Readiness check endpoint
 - `/v1/auth/*` - Routes to Auth Service
 - `/v1/content/*` - Routes to Content Service
+- `/v1/media/*` - Canonical public media contract; currently proxied to Media Service when configured, otherwise temporarily bridged to Content Service media routes as a transitional implementation detail
 - `/v1/points/*` - Routes to Points Service
 - `/v1/referral/*` - Routes to Referral Service
 
@@ -45,6 +47,8 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - For protected user routes, gateway mints an internal HS256 token signed with `SERVICE_JWT_SECRET`.
 - Downstream services trust only `X-Gateway-Auth`.
 - `X-User-ID` may still be forwarded as a derived/debug header during migration, but it is not a trust source.
+- The current `/v1/media/* -> content-service` bridge is transitional and does not redefine the long-term service boundary.
+- Other future Phase 2 prefixes must not copy this alias/fallback approach unless explicitly approved as a separate architectural decision.
 
 
 

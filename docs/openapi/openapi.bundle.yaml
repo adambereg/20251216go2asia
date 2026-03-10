@@ -556,7 +556,7 @@ components:
           nullable: true
           type: string
         uploadUrl:
-          description: Relative URL to upload endpoint (via API Gateway)
+          description: Relative URL to the canonical media upload endpoint (via API Gateway)
           type: string
       required:
         - uploadUrl
@@ -1409,73 +1409,6 @@ paths:
       summary: Register current user for event (authorized)
       tags:
         - content
-  /v1/content/media/upload-token:
-    post:
-      description: |
-        Creates a short-lived signed token for uploading media to R2 via Content Service. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
-      operationId: createMediaUploadToken
-      parameters:
-        - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/XUserId"
-        - $ref: "#/components/parameters/XRequestId"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateUploadTokenRequest"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreateUploadTokenResponse"
-          description: OK
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - GatewayAuth: []
-      summary: Create signed upload token (authorized)
-      tags:
-        - media
-  /v1/content/media/upload/{token}:
-    put:
-      description: |
-        Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
-      operationId: uploadMediaByToken
-      parameters:
-        - in: path
-          name: token
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              format: binary
-              type: string
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UploadResult"
-          description: Created
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      summary: Upload media by signed token (no user auth)
-      tags:
-        - media
   /v1/content/places:
     get:
       operationId: listPlaces
@@ -1515,6 +1448,73 @@ paths:
       summary: Get place by id or slug (public)
       tags:
         - content
+  /v1/media/upload-token:
+    post:
+      description: |
+        Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
+      operationId: createMediaUploadToken
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadTokenResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - GatewayAuth: []
+      summary: Create signed upload token (authorized)
+      tags:
+        - media
+  /v1/media/upload/{token}:
+    put:
+      description: |
+        Uploads binary content to R2. The request is authorized by the signed token in the URL. Recommended Content-Type: image/*
+      operationId: uploadMediaByToken
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              format: binary
+              type: string
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      summary: Upload media by signed token (no user auth)
+      tags:
+        - media
   /v1/points/balance:
     get:
       description: User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
