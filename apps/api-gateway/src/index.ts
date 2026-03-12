@@ -747,7 +747,15 @@ async function routeRequest(
     if (token && env.CLERK_SECRET_KEY) {
       const verified = await verifyClerkJwt(token, env, origin);
       if (!verified.ok) {
-        logger.warn('Invalid user token', { reason: verified.error });
+        const unverifiedPayload = getJwtPayloadUnsafe(token);
+        logger.warn('Clerk verification failed', {
+          reason: verified.error,
+          origin: origin ?? null,
+          authorizedParties: getAuthorizedParties(origin, token) ?? null,
+          tokenIss: getStringClaim(unverifiedPayload ?? {}, 'iss') ?? null,
+          tokenAzp: getStringClaim(unverifiedPayload ?? {}, 'azp') ?? null,
+          hasSub: !!getStringClaim(unverifiedPayload ?? {}, 'sub'),
+        });
         verifiedUser = null;
       } else {
         verifiedUser = extractGatewayUserContext(verified.payload);
