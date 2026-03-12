@@ -143,6 +143,92 @@ describe('media-service v1', () => {
     expect(executeMock).toHaveBeenCalledTimes(1);
   });
 
+  it('attaches media usage for owner and marks asset attached', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [{ id: 'asset_media_1', owner_user_id: 'user_attach_1' }],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET, { sub: 'user_attach_1' });
+
+    const response = await worker.fetch(
+      new Request('https://media.example/v1/media/asset_media_1/attach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          ownerType: 'space_post',
+          ownerId: 'post_42',
+          usageType: 'hero_image',
+          slot: 'cover',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      ok: boolean;
+      media_id: string;
+      status: string;
+      usage: { ownerType: string; ownerId: string; usageType: string; slot: string | null };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.media_id).toBe('asset_media_1');
+    expect(body.status).toBe('attached');
+    expect(body.usage).toMatchObject({
+      ownerType: 'space_post',
+      ownerId: 'post_42',
+      usageType: 'hero_image',
+      slot: 'cover',
+    });
+    expect(createDbMock).toHaveBeenCalledTimes(1);
+    expect(executeMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects attach for non-owner', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [{ id: 'asset_media_2', owner_user_id: 'owner_user' }],
+    });
+
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET, { sub: 'another_user' });
+
+    const response = await worker.fetch(
+      new Request('https://media.example/v1/media/asset_media_2/attach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          ownerType: 'space_post',
+          ownerId: 'post_42',
+          usageType: 'hero_image',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('FORBIDDEN');
+    expect(createDbMock).toHaveBeenCalledTimes(1);
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
   it('creates upload token and uploads image with metadata persistence', async () => {
     executeMock
       .mockResolvedValueOnce({ rows: [] }) // consumed check

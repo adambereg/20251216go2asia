@@ -53,6 +53,12 @@ components:
         maximum: 200
         minimum: 1
         type: integer
+    MediaId:
+      in: path
+      name: mediaId
+      required: true
+      schema:
+        type: string
     PlaceIdOrSlug:
       in: path
       name: idOrSlug
@@ -171,6 +177,66 @@ components:
         - transactionId
         - applied
         - balance
+      type: object
+    AttachMediaUsageRequest:
+      properties:
+        ownerId:
+          type: string
+        ownerType:
+          enum:
+            - user
+            - space_post
+            - rielt_listing
+            - rf_partner
+            - quest_submission
+            - blog_post
+            - atlas_entity
+          type: string
+        slot:
+          nullable: true
+          type: string
+        usageType:
+          description: Slot semantic, e.g. hero_image, gallery_item, cover
+          type: string
+      required:
+        - ownerType
+        - ownerId
+        - usageType
+      type: object
+    AttachMediaUsageResponse:
+      properties:
+        media_id:
+          type: string
+        ok:
+          type: boolean
+        requestId:
+          type: string
+        status:
+          enum:
+            - attached
+          type: string
+        usage:
+          properties:
+            ownerId:
+              type: string
+            ownerType:
+              type: string
+            slot:
+              nullable: true
+              type: string
+            usageType:
+              type: string
+          required:
+            - ownerType
+            - ownerId
+            - usageType
+          type: object
+      required:
+        - ok
+        - media_id
+        - status
+        - usage
+        - requestId
       type: object
     ClaimReferralRequest:
       properties:
@@ -1538,6 +1604,45 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
       summary: Upload media by signed token (no user auth)
+      tags:
+        - media
+  /v1/media/{mediaId}/attach:
+    post:
+      description: |
+        Records a minimal usage binding for an existing media asset and marks it attached. Requires gateway-origin auth and media ownership.
+      operationId: attachMediaUsage
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/MediaId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachMediaUsageRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachMediaUsageResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Attach media usage to a domain owner (authorized)
       tags:
         - media
   /v1/points/balance:

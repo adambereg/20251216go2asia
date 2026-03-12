@@ -207,6 +207,46 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/media/{mediaId}/attach:
+    post:
+      tags: [media]
+      operationId: attachMediaUsage
+      summary: Attach media usage to a domain owner (authorized)
+      description: >
+        Records a minimal usage binding for an existing media asset and marks it attached.
+        Requires gateway-origin auth and media ownership.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/MediaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachMediaUsageRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachMediaUsageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /v1/content/countries:
     get:
       tags: [content]
@@ -452,6 +492,12 @@ components:
         type: string
     EventId:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MediaId:
+      name: mediaId
       in: path
       required: true
       schema:
@@ -851,6 +897,49 @@ components:
         requestId:
           type: string
           nullable: true
+
+    AttachMediaUsageRequest:
+      type: object
+      required: [ownerType, ownerId, usageType]
+      properties:
+        ownerType:
+          type: string
+          enum: [user, space_post, rielt_listing, rf_partner, quest_submission, blog_post, atlas_entity]
+        ownerId:
+          type: string
+        usageType:
+          type: string
+          description: Slot semantic, e.g. hero_image, gallery_item, cover
+        slot:
+          type: string
+          nullable: true
+
+    AttachMediaUsageResponse:
+      type: object
+      required: [ok, media_id, status, usage, requestId]
+      properties:
+        ok:
+          type: boolean
+        media_id:
+          type: string
+        status:
+          type: string
+          enum: [attached]
+        usage:
+          type: object
+          required: [ownerType, ownerId, usageType]
+          properties:
+            ownerType:
+              type: string
+            ownerId:
+              type: string
+            usageType:
+              type: string
+            slot:
+              type: string
+              nullable: true
+        requestId:
+          type: string
 
     ContentEventDto:
       type: object

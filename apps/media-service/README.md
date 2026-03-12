@@ -7,6 +7,9 @@ Minimal Phase 2 media backend (`apps/media-service`).
 - Signed upload flow:
   - `POST /v1/media/upload-token`
   - `PUT /v1/media/upload/{token}`
+- Minimal read/bind surface:
+  - `GET /v1/media/{mediaId}`
+  - `POST /v1/media/{mediaId}/attach`
 - Metadata persistence in Neon (`media_files`)
 - Ownership/access basics via gateway-issued `X-Gateway-Auth` (`sub` as owner)
 - Canonical public contract `/v1/media/*`
@@ -34,3 +37,4 @@ Optional:
 - Public entrypoint remains API Gateway `/v1/media/*`.
 - Gateway cutover is controlled by `MEDIA_SERVICE_URL`.
 - Content-service fallback remains transitional during migration.
+- Lifecycle stays intentionally minimal: `uploaded -> attached` (`deleted` reserved).

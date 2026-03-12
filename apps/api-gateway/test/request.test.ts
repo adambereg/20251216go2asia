@@ -14,6 +14,19 @@ import {
 } from '../src/index';
 import { decodeJwtPayload, readJson } from '../../../tests/helpers/worker-test';
 
+function base64Url(input: string): string {
+  return Buffer.from(input, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function makeUnsignedJwt(payload: Record<string, unknown>): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  return `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}.sig`;
+}
+
 describe('api-gateway request hardening', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -398,5 +411,58 @@ describe('api-gateway request hardening', () => {
     expect(body.uploadUrl).toBe('/v1/media/upload/signed-token');
     expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/media/upload-token');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('derives authorizedParties from token azp when Origin header is absent', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const sessionJwt = makeUnsignedJwt({
+      iss: 'https://upward-marmot-95.clerk.accounts.dev',
+      azp: 'https://go2asia.space',
+      sub: 'media_user',
+      exp: Math.floor(Date.now() / 1000) + 300,
+      iat: Math.floor(Date.now() / 1000),
+    });
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/upload-token', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionJwt}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scope: 'content',
+          filename: 'file.jpg',
+          contentType: 'image/jpeg',
+        }),
+      }),
+      {
+        MEDIA_SERVICE_URL: 'https://media.example',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(verifyToken)).toHaveBeenCalledWith(
+      sessionJwt,
+      expect.objectContaining({
+        secretKey: 'sk_test_123',
+        authorizedParties: ['https://go2asia.space'],
+      })
+    );
   });
 });

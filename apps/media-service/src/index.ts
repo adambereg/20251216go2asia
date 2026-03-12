@@ -37,6 +37,19 @@ type MediaLookupResponse = {
   height: number | null;
 };
 
+type AttachMediaUsageResponse = {
+  ok: true;
+  media_id: string;
+  status: 'attached';
+  usage: {
+    ownerType: string;
+    ownerId: string;
+    usageType: string;
+    slot: string | null;
+  };
+  requestId: string;
+};
+
 export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
@@ -393,6 +406,13 @@ function requireDatabaseUrl(env: Env, requestId: string): { ok: true; url: strin
   return { ok: true, url: dbUrl };
 }
 
+function normalizeOptionalField(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
+}
+
 async function persistMediaMetadata(
   db: ReturnType<typeof createDb>,
   env: Env,
@@ -425,11 +445,12 @@ async function persistMediaMetadata(
       id, owner_user_id, scope, provider, bucket, key, mime_type, size, width, height, status, created_at, updated_at
     )
     VALUES (
-      ${assetId}, ${input.ownerUserId}, ${input.scope}, 'r2', ${bucket}, ${input.key}, ${input.contentType}, ${input.size}, null, null, 'draft', now(), now()
+      ${assetId}, ${input.ownerUserId}, ${input.scope}, 'r2', ${bucket}, ${input.key}, ${input.contentType}, ${input.size}, null, null, 'uploaded', now(), now()
     )
     ON CONFLICT (provider, bucket, key) DO UPDATE
     SET owner_user_id = EXCLUDED.owner_user_id,
         scope = EXCLUDED.scope,
+        status = 'uploaded',
         mime_type = EXCLUDED.mime_type,
         size = EXCLUDED.size,
         updated_at = now()
@@ -711,6 +732,82 @@ async function handleGetMediaById(
   return json(response, 200);
 }
 
+async function handleAttachMediaUsage(
+  request: Request,
+  env: Env,
+  requestId: string,
+  mediaId: string,
+  principal: GatewayPrincipal
+): Promise<Response> {
+  const dbUrl = requireDatabaseUrl(env, requestId);
+  if (!dbUrl.ok) return dbUrl.res;
+  const db = createDb(dbUrl.url);
+
+  const bodyUnknown: unknown = await request.json().catch(() => null);
+  const body =
+    bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+      ? (bodyUnknown as Record<string, unknown>)
+      : null;
+
+  const ownerType = normalizeOptionalField(body?.ownerType, 64);
+  const ownerId = normalizeOptionalField(body?.ownerId, 128);
+  const usageType = normalizeOptionalField(body?.usageType, 64);
+  const slot = normalizeOptionalField(body?.slot, 64);
+
+  if (!ownerType || !ownerId || !usageType) {
+    return errorResponse('BAD_REQUEST', 'ownerType, ownerId and usageType are required', requestId, 400);
+  }
+
+  const assetResult = await db.execute(sql`
+    SELECT id, owner_user_id
+    FROM media_assets
+    WHERE id = ${mediaId}
+    LIMIT 1
+  `);
+  type AssetOwnerRow = { id: string; owner_user_id: string };
+  const assetRows = (assetResult as unknown as { rows?: AssetOwnerRow[] }).rows ?? [];
+  const asset = assetRows[0];
+  if (!asset) {
+    return errorResponse('NOT_FOUND', `Media asset not found: ${mediaId}`, requestId, 404);
+  }
+
+  if (asset.owner_user_id !== principal.userId) {
+    return errorResponse('FORBIDDEN', 'You do not own this media asset', requestId, 403);
+  }
+
+  const usageId = `usage_${crypto.randomUUID()}`;
+  await db.execute(sql`
+    INSERT INTO media_usage (id, media_id, owner_type, owner_id, usage_type, slot, created_at, deleted_at)
+    VALUES (${usageId}, ${mediaId}, ${ownerType}, ${ownerId}, ${usageType}, ${slot}, now(), null)
+    ON CONFLICT (media_id, owner_type, owner_id, usage_type, slot) DO NOTHING
+  `);
+
+  await db.execute(sql`
+    UPDATE media_assets
+    SET status = 'attached',
+        attached_entity_type = ${ownerType},
+        attached_entity_id = ${ownerId},
+        attached_slot = ${slot},
+        attached_at = now(),
+        updated_at = now()
+    WHERE id = ${mediaId}
+  `);
+
+  const response: AttachMediaUsageResponse = {
+    ok: true,
+    media_id: mediaId,
+    status: 'attached',
+    usage: {
+      ownerType,
+      ownerId,
+      usageType,
+      slot,
+    },
+    requestId,
+  };
+  return json(response, 200);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
@@ -763,6 +860,24 @@ export default {
           return response;
         }
         response = await handleGetMediaById(env, requestId, decodeURIComponent(mediaId));
+        response.headers.set('X-Request-ID', requestId);
+        return response;
+      }
+
+      const mediaAttachMatch = path.match(/^\/v1\/media\/([^/]+)\/attach$/);
+      if (mediaAttachMatch && request.method === 'POST') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-ID', requestId);
+          return auth.res;
+        }
+        response = await handleAttachMediaUsage(
+          request,
+          env,
+          requestId,
+          decodeURIComponent(mediaAttachMatch[1]),
+          auth.principal
+        );
         response.headers.set('X-Request-ID', requestId);
         return response;
       }

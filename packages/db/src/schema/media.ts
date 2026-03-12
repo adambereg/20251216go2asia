@@ -6,11 +6,28 @@
  * - media_variants: original/derived representations per asset
  */
 
-import { index, pgEnum, pgTable, text, timestamp, unique, varchar, integer } from 'drizzle-orm/pg-core';
+import { index, integer, pgEnum, pgTable, text, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 
-export const mediaAssetStatusEnum = pgEnum('media_asset_status', ['draft', 'published', 'archived']);
+export const mediaAssetStatusEnum = pgEnum('media_asset_status', [
+  'draft',
+  'published',
+  'archived',
+  'uploading',
+  'uploaded',
+  'attached',
+  'deleted',
+]);
 export const mediaVariantKindEnum = pgEnum('media_variant_kind', ['original', 'thumbnail', 'webp', 'avif']);
 export const mediaVariantStatusEnum = pgEnum('media_variant_status', ['pending', 'ready', 'failed']);
+export const mediaUsageOwnerTypeEnum = pgEnum('media_usage_owner_type', [
+  'user',
+  'space_post',
+  'rielt_listing',
+  'rf_partner',
+  'quest_submission',
+  'blog_post',
+  'atlas_entity',
+]);
 
 export const mediaAssets = pgTable(
   'media_assets',
@@ -45,6 +62,33 @@ export const mediaAssets = pgTable(
       table.status,
       table.createdAt
     ),
+  })
+);
+
+export const mediaUsage = pgTable(
+  'media_usage',
+  {
+    id: text('id').primaryKey(),
+    mediaId: text('media_id')
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: 'cascade' }),
+    ownerType: mediaUsageOwnerTypeEnum('owner_type').notNull(),
+    ownerId: text('owner_id').notNull(),
+    usageType: varchar('usage_type', { length: 64 }).notNull(),
+    slot: varchar('slot', { length: 64 }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+  },
+  (table) => ({
+    uniqueUsage: unique('media_usage_unique').on(
+      table.mediaId,
+      table.ownerType,
+      table.ownerId,
+      table.usageType,
+      table.slot
+    ),
+    idxMediaId: index('idx_media_usage_media_id').on(table.mediaId),
+    idxOwner: index('idx_media_usage_owner').on(table.ownerType, table.ownerId),
   })
 );
 

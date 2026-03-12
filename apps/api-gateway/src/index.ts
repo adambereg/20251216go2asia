@@ -94,6 +94,16 @@ function utf8ToBytes(input: string): Uint8Array {
   return new TextEncoder().encode(input);
 }
 
+function base64UrlToBytes(input: string): Uint8Array {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  const b64 = normalized + pad;
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
 async function sha256Base64Url(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', utf8ToBytes(input));
   return bytesToBase64Url(new Uint8Array(digest).slice(0, 12));
@@ -354,10 +364,36 @@ function getStringArrayClaim(payload: Record<string, unknown>, key: string): str
   return [];
 }
 
-function getAuthorizedParties(origin: string | null): string[] | undefined {
-  if (!origin) return undefined;
+function getJwtPayloadUnsafe(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
   try {
-    const parsed = new URL(origin);
+    const payloadJson = new TextDecoder().decode(base64UrlToBytes(parts[1]));
+    const parsed: unknown = JSON.parse(payloadJson);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function getAuthorizedParties(origin: string | null, token: string): string[] | undefined {
+  if (origin) {
+    try {
+      const parsed = new URL(origin);
+      return [`${parsed.protocol}//${parsed.host}`];
+    } catch {
+      return undefined;
+    }
+  }
+
+  // For non-browser clients (e.g. staging smoke scripts) Origin may be absent.
+  // In that case, derive authorized party from session token azp when present.
+  const unverifiedPayload = getJwtPayloadUnsafe(token);
+  const azp = getStringClaim(unverifiedPayload ?? {}, 'azp');
+  if (!azp) return undefined;
+  try {
+    const parsed = new URL(azp);
     return [`${parsed.protocol}//${parsed.host}`];
   } catch {
     return undefined;
@@ -378,7 +414,7 @@ async function verifyClerkJwt(token: string, env: Env, origin: string | null): P
   try {
     const payload = (await verifyToken(token, {
       secretKey,
-      authorizedParties: getAuthorizedParties(origin),
+      authorizedParties: getAuthorizedParties(origin, token),
     })) as Record<string, unknown>;
     return { ok: true, payload };
   } catch (error) {
