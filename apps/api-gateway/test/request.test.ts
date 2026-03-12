@@ -413,6 +413,59 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('adds X-Gateway-Auth when proxying POST /v1/media/:id/attach', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://media.example/v1/media/asset_media_1/attach');
+      expect(request.headers.get('X-Gateway-Auth')).toBeTruthy();
+      expect(request.headers.get('X-User-ID')).toBe('media_user');
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          media_id: 'asset_media_1',
+          status: 'attached',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      MEDIA_SERVICE_URL: 'https://media.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/asset_media_1/attach', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          ownerType: 'space_post',
+          ownerId: 'post_step3_001',
+          usageType: 'hero_image',
+          slot: 'cover',
+        }),
+      }),
+      env
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('derives authorizedParties from token azp when Origin header is absent', async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(JSON.stringify({ ok: true }), {

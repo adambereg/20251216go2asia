@@ -733,13 +733,19 @@ async function routeRequest(
   const isMediaUploadToken =
     request.method === 'POST' &&
     (downstreamPath === '/v1/content/media/upload-token' || downstreamPath === '/v1/media/upload-token');
+  // Media attach requires gateway-to-service auth header.
+  const isMediaAttach =
+    request.method === 'POST' &&
+    (/^\/v1\/content\/media\/[^/]+\/attach$/.test(downstreamPath) ||
+      /^\/v1\/media\/[^/]+\/attach$/.test(downstreamPath));
 
   if (
     path.startsWith('/v1/points/') ||
     path.startsWith('/v1/referral/') ||
     path.startsWith('/v1/users/') ||
     isContentRegister ||
-    isMediaUploadToken
+    isMediaUploadToken ||
+    isMediaAttach
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;
