@@ -9,6 +9,8 @@
 import type {
   AddPointsRequest,
   AddPointsResponse,
+  AttachMediaUsageRequest,
+  AttachMediaUsageResponse,
   BadRequestResponse,
   ClaimReferralRequest,
   ClaimReferralResponse,
@@ -1138,6 +1140,81 @@ export const uploadMediaByToken = async (
     method: "PUT",
     headers: { "Content-Type": "application/octet-stream", ...options?.headers },
     body: JSON.stringify(uploadMediaByTokenBody),
+  });
+};
+
+/**
+ * Records a minimal usage binding for an existing media asset and marks it attached. Requires gateway-origin auth and media ownership.
+
+ * @summary Attach media usage to a domain owner (authorized)
+ */
+export type attachMediaUsageResponse200 = {
+  data: AttachMediaUsageResponse;
+  status: 200;
+};
+
+export type attachMediaUsageResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type attachMediaUsageResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type attachMediaUsageResponse403 = {
+  data: UnauthorizedResponse;
+  status: 403;
+};
+
+export type attachMediaUsageResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type attachMediaUsageResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type attachMediaUsageResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type attachMediaUsageResponseSuccess = attachMediaUsageResponse200 & {
+  headers: Headers;
+};
+export type attachMediaUsageResponseError = (
+  | attachMediaUsageResponse400
+  | attachMediaUsageResponse401
+  | attachMediaUsageResponse403
+  | attachMediaUsageResponse404
+  | attachMediaUsageResponse500
+  | attachMediaUsageResponse503
+) & {
+  headers: Headers;
+};
+
+export type attachMediaUsageResponse =
+  | attachMediaUsageResponseSuccess
+  | attachMediaUsageResponseError;
+
+export const getAttachMediaUsageUrl = (mediaId: string) => {
+  return `/v1/media/${mediaId}/attach`;
+};
+
+export const attachMediaUsage = async (
+  mediaId: string,
+  attachMediaUsageRequest: AttachMediaUsageRequest,
+  options?: RequestInit
+): Promise<attachMediaUsageResponse> => {
+  return customInstance<attachMediaUsageResponse>(getAttachMediaUsageUrl(mediaId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(attachMediaUsageRequest),
   });
 };
 

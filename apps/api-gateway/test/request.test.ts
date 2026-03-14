@@ -14,6 +14,19 @@ import {
 } from '../src/index';
 import { decodeJwtPayload, readJson } from '../../../tests/helpers/worker-test';
 
+function base64Url(input: string): string {
+  return Buffer.from(input, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function makeUnsignedJwt(payload: Record<string, unknown>): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  return `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}.sig`;
+}
+
 describe('api-gateway request hardening', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -343,5 +356,166 @@ describe('api-gateway request hardening', () => {
     expect(body.key).toContain('uploads/space/media_user/');
     expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/content/media/upload-token');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('routes canonical /v1/media/* directly to media-service when configured', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://media.example/v1/media/upload-token');
+      return new Response(
+        JSON.stringify({
+          uploadUrl: '/v1/media/upload/signed-token',
+          key: 'uploads/content/media_user/123/file.jpg',
+          publicUrl: 'https://media.go2asia.space/uploads/content/media_user/123/file.jpg',
+          expiresAt: '2026-03-11T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      MEDIA_SERVICE_URL: 'https://media.example',
+      CONTENT_SERVICE_URL: 'https://content.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/upload-token', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scope: 'content',
+          filename: 'file.jpg',
+          contentType: 'image/jpeg',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ uploadUrl: string; key: string }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.uploadUrl).toBe('/v1/media/upload/signed-token');
+    expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/media/upload-token');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('adds X-Gateway-Auth when proxying POST /v1/media/:id/attach', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://media.example/v1/media/asset_media_1/attach');
+      expect(request.headers.get('X-Gateway-Auth')).toBeTruthy();
+      expect(request.headers.get('X-User-ID')).toBe('media_user');
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          media_id: 'asset_media_1',
+          status: 'attached',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      MEDIA_SERVICE_URL: 'https://media.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/asset_media_1/attach', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          ownerType: 'space_post',
+          ownerId: 'post_step3_001',
+          usageType: 'hero_image',
+          slot: 'cover',
+        }),
+      }),
+      env
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('derives authorizedParties from token azp when Origin header is absent', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'media_user',
+      roles: ['member'],
+    } as never);
+
+    const sessionJwt = makeUnsignedJwt({
+      iss: 'https://upward-marmot-95.clerk.accounts.dev',
+      azp: 'https://go2asia.space',
+      sub: 'media_user',
+      exp: Math.floor(Date.now() / 1000) + 300,
+      iat: Math.floor(Date.now() / 1000),
+    });
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/media/upload-token', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionJwt}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scope: 'content',
+          filename: 'file.jpg',
+          contentType: 'image/jpeg',
+        }),
+      }),
+      {
+        MEDIA_SERVICE_URL: 'https://media.example',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(verifyToken)).toHaveBeenCalledWith(
+      sessionJwt,
+      expect.objectContaining({
+        secretKey: 'sk_test_123',
+        authorizedParties: ['https://go2asia.space'],
+      })
+    );
   });
 });

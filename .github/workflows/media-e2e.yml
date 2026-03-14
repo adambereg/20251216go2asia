@@ -1,0 +1,65 @@
+name: Media E2E (staging)
+
+on:
+  workflow_run:
+    workflows:
+      - Deploy Workers (staging)
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      staging_gateway_url:
+        description: "Staging API Gateway base URL"
+        required: false
+        default: "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-e2e-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  media-e2e:
+    name: Run media e2e smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run media e2e smoke
+        env:
+          STAGING_GATEWAY_URL: ${{ github.event.inputs.staging_gateway_url || 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev' }}
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_INSTANCE_URL: ${{ secrets.CLERK_INSTANCE_URL }}
+          CLERK_TEST_USER_OWNER: ${{ secrets.CLERK_TEST_USER_OWNER }}
+          CLERK_TEST_USER_ALT: ${{ secrets.CLERK_TEST_USER_ALT }}
+        run: pnpm smoke:media:e2e
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## Media E2E (staging)"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Trigger | ${{ github.event_name }} |"
+            echo "| Gateway | ${{ github.event.inputs.staging_gateway_url || 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev' }} |"
+            echo "| Run | ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

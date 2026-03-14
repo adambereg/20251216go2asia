@@ -64,6 +64,7 @@ logs/
 tmp/
 temp/
 .cache/
+.tmp/media_e2e_last_id
 
 # Build artifacts
 .turbo/

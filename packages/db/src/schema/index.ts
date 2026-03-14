@@ -9,5 +9,6 @@ export * from './auth';
 export * from './blog';
 export * from './conventions';
 export * from './content';
+export * from './media';
 export * from './points';
 export * from './referral';
