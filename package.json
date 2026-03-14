@@ -18,7 +18,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "db:import:themes-md": "pnpm -C packages/db db:import:themes-md",
-    "smoke:media:e2e:staging": "node scripts/media_e2e_staging.mjs"
+    "smoke:media:e2e": "node scripts/media_e2e_runner.mjs",
+    "smoke:media:e2e:staging": "node scripts/media_e2e_staging.mjs",
+    "smoke:media:e2e:step7": "powershell -NoProfile -Command \"$env:MEDIA_E2E_ONLY_STEP7='true'; $env:STAGING_TEST_JWT_ALT=Read-Host 'Paste ALT JWT'; node scripts/media_e2e_staging.mjs\""
   },
   "devDependencies": {
     "@stoplight/spectral-cli": "^6.12.0",
