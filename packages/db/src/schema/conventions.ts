@@ -32,7 +32,7 @@ export const PHASE2_DOMAIN_SCHEMA_CONVENTIONS: Record<
     schemaFile: './space',
     tablePrefix: 'space_',
     ownerService: 'space-service',
-    notes: 'Space owns social-first UGC, repost, reactions, thread, and feed-adjacent tables.',
+    notes: 'Space owns the social publication core: posts, reposts, groups, memberships, profile projections, media relations, and feed-adjacent tables.',
   },
   quest: {
     domain: 'quest',
