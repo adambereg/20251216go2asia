@@ -83,12 +83,26 @@ Contract rules:
 Core events:
 
 - `reaction.created`
-- `reaction.removed`
+- `reaction.deleted`
 
-Common payload fields:
+Envelope and compatibility rules:
+
+- events should follow Unified Event Envelope V1 in `docs/architecture/events/events_contracts_v1.md`;
+- canonical delete event name is `reaction.deleted`;
+- legacy alias `reaction.removed` may be accepted by consumers during migration;
+- new producers MUST NOT emit `reaction.removed`.
+
+Required envelope fields:
 
 - `eventId`
+- `eventType`
+- `eventVersion`
 - `occurredAt`
+- `producer.service`
+- `payload`
+
+Required reaction payload fields:
+
 - `actorUserId`
 - `targetType`
 - `targetId`

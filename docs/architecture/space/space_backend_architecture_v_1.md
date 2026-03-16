@@ -123,11 +123,17 @@ Space Service sits in the center of the user experience, but must remain narrowl
 - moderation status
 
 ### E. Publication events
-- `post.created`
-- `post.reposted`
-- `group.created`
-- `membership.changed`
-- `media.attached`
+- `space.post.created`
+- `space.post.reposted`
+- `space.group.created`
+- `space.group.member_joined`
+- `space.group.member_left`
+- `space.post.media_attached`
+
+Compatibility note:
+
+- consumers may temporarily map legacy aliases (`post.created`, `membership.changed`, `media.attached`) to canonical `space.*` names during migration;
+- new producers MUST emit canonical names only.
 
 ---
 
@@ -188,13 +194,7 @@ This should live in a separate **Reactions Service**.
 It owns:
 
 - like
-- bookmark
-- rating
-- short review
-- question
-- contact request
-- thread reply
-- inquiry thread-related interactions
+- additional interaction types are deferred to future reactions versions
 
 This is aligned with the social-first model without classic inline-comment systems.
 
@@ -561,9 +561,9 @@ Space should be one of the major producers of rewardable events.
 
 Examples:
 
-- `post_created`
-- `repost_created`
-- `group_created`
+- `space.post.created`
+- `space.post.reposted`
+- `space.group.created`
 - curator social milestones
 - engagement threshold reached
 
