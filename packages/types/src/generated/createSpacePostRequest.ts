@@ -6,14 +6,17 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { SpacePostType } from "./spacePostType";
+import type { PublicCreateSpacePostType } from "./publicCreateSpacePostType";
 import type { SpaceRepostTargetType } from "./spaceRepostTargetType";
 import type { SpaceVisibility } from "./spaceVisibility";
 
 export interface CreateSpacePostRequest {
-  /** @nullable */
+  /**
+   * Allowed only when visibility = group.
+   * @nullable
+   */
   groupId?: string | null;
-  postType: SpacePostType;
+  postType: PublicCreateSpacePostType;
   /** @nullable */
   repostTargetId?: string | null;
   /** @nullable */

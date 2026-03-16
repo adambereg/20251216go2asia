@@ -7,6 +7,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
+ */
 export interface AttachSpacePostMediaRequest {
   mediaId: string;
   /** @nullable */

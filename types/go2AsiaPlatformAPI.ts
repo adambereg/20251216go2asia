@@ -1603,12 +1603,18 @@ export type getSpaceActivityFeedResponse500 = {
   status: 500;
 };
 
+export type getSpaceActivityFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceActivityFeedResponseSuccess = getSpaceActivityFeedResponse200 & {
   headers: Headers;
 };
 export type getSpaceActivityFeedResponseError = (
   | getSpaceActivityFeedResponse401
   | getSpaceActivityFeedResponse500
+  | getSpaceActivityFeedResponse503
 ) & {
   headers: Headers;
 };
@@ -1651,6 +1657,11 @@ export type getSpaceGroupFeedResponse200 = {
   status: 200;
 };
 
+export type getSpaceGroupFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
 export type getSpaceGroupFeedResponse403 = {
   data: SpaceForbiddenResponse;
   status: 403;
@@ -1666,13 +1677,20 @@ export type getSpaceGroupFeedResponse500 = {
   status: 500;
 };
 
+export type getSpaceGroupFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceGroupFeedResponseSuccess = getSpaceGroupFeedResponse200 & {
   headers: Headers;
 };
 export type getSpaceGroupFeedResponseError = (
+  | getSpaceGroupFeedResponse401
   | getSpaceGroupFeedResponse403
   | getSpaceGroupFeedResponse404
   | getSpaceGroupFeedResponse500
+  | getSpaceGroupFeedResponse503
 ) & {
   headers: Headers;
 };
@@ -1726,12 +1744,18 @@ export type getSpaceHomeFeedResponse500 = {
   status: 500;
 };
 
+export type getSpaceHomeFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceHomeFeedResponseSuccess = getSpaceHomeFeedResponse200 & {
   headers: Headers;
 };
 export type getSpaceHomeFeedResponseError = (
   | getSpaceHomeFeedResponse401
   | getSpaceHomeFeedResponse500
+  | getSpaceHomeFeedResponse503
 ) & {
   headers: Headers;
 };
@@ -1774,14 +1798,9 @@ export type getSpaceProfileFeedResponse200 = {
   status: 200;
 };
 
-export type getSpaceProfileFeedResponse403 = {
-  data: SpaceForbiddenResponse;
-  status: 403;
-};
-
-export type getSpaceProfileFeedResponse404 = {
-  data: NotFoundResponse;
-  status: 404;
+export type getSpaceProfileFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
 };
 
 export type getSpaceProfileFeedResponse500 = {
@@ -1789,13 +1808,18 @@ export type getSpaceProfileFeedResponse500 = {
   status: 500;
 };
 
+export type getSpaceProfileFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceProfileFeedResponseSuccess = getSpaceProfileFeedResponse200 & {
   headers: Headers;
 };
 export type getSpaceProfileFeedResponseError = (
-  | getSpaceProfileFeedResponse403
-  | getSpaceProfileFeedResponse404
+  | getSpaceProfileFeedResponse401
   | getSpaceProfileFeedResponse500
+  | getSpaceProfileFeedResponse503
 ) & {
   headers: Headers;
 };
@@ -1859,6 +1883,11 @@ export type createSpaceGroupResponse500 = {
   status: 500;
 };
 
+export type createSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type createSpaceGroupResponseSuccess = createSpaceGroupResponse201 & {
   headers: Headers;
 };
@@ -1867,6 +1896,7 @@ export type createSpaceGroupResponseError = (
   | createSpaceGroupResponse401
   | createSpaceGroupResponse409
   | createSpaceGroupResponse500
+  | createSpaceGroupResponse503
 ) & {
   headers: Headers;
 };
@@ -1899,6 +1929,11 @@ export type getSpaceGroupResponse200 = {
   status: 200;
 };
 
+export type getSpaceGroupResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
 export type getSpaceGroupResponse403 = {
   data: SpaceForbiddenResponse;
   status: 403;
@@ -1914,13 +1949,20 @@ export type getSpaceGroupResponse500 = {
   status: 500;
 };
 
+export type getSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceGroupResponseSuccess = getSpaceGroupResponse200 & {
   headers: Headers;
 };
 export type getSpaceGroupResponseError = (
+  | getSpaceGroupResponse401
   | getSpaceGroupResponse403
   | getSpaceGroupResponse404
   | getSpaceGroupResponse500
+  | getSpaceGroupResponse503
 ) & {
   headers: Headers;
 };
@@ -1964,19 +2006,14 @@ export type joinSpaceGroupResponse404 = {
   status: 404;
 };
 
-export type joinSpaceGroupResponse409 = {
-  data: ConflictResponse;
-  status: 409;
-};
-
-export type joinSpaceGroupResponse429 = {
-  data: SpaceRateLimitedResponse;
-  status: 429;
-};
-
 export type joinSpaceGroupResponse500 = {
   data: InternalErrorResponse;
   status: 500;
+};
+
+export type joinSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
 };
 
 export type joinSpaceGroupResponseSuccess = joinSpaceGroupResponse200 & {
@@ -1986,9 +2023,8 @@ export type joinSpaceGroupResponseError = (
   | joinSpaceGroupResponse401
   | joinSpaceGroupResponse403
   | joinSpaceGroupResponse404
-  | joinSpaceGroupResponse409
-  | joinSpaceGroupResponse429
   | joinSpaceGroupResponse500
+  | joinSpaceGroupResponse503
 ) & {
   headers: Headers;
 };
@@ -2042,6 +2078,11 @@ export type leaveSpaceGroupResponse500 = {
   status: 500;
 };
 
+export type leaveSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type leaveSpaceGroupResponseSuccess = leaveSpaceGroupResponse204 & {
   headers: Headers;
 };
@@ -2051,6 +2092,7 @@ export type leaveSpaceGroupResponseError = (
   | leaveSpaceGroupResponse404
   | leaveSpaceGroupResponse409
   | leaveSpaceGroupResponse500
+  | leaveSpaceGroupResponse503
 ) & {
   headers: Headers;
 };
@@ -2089,11 +2131,6 @@ export type createSpacePostResponse401 = {
   status: 401;
 };
 
-export type createSpacePostResponse429 = {
-  data: SpaceRateLimitedResponse;
-  status: 429;
-};
-
 export type createSpacePostResponse500 = {
   data: InternalErrorResponse;
   status: 500;
@@ -2110,7 +2147,6 @@ export type createSpacePostResponseSuccess = createSpacePostResponse201 & {
 export type createSpacePostResponseError = (
   | createSpacePostResponse400
   | createSpacePostResponse401
-  | createSpacePostResponse429
   | createSpacePostResponse500
   | createSpacePostResponse503
 ) & {
@@ -2163,6 +2199,11 @@ export type deleteSpacePostResponse500 = {
   status: 500;
 };
 
+export type deleteSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type deleteSpacePostResponseSuccess = deleteSpacePostResponse204 & {
   headers: Headers;
 };
@@ -2171,6 +2212,7 @@ export type deleteSpacePostResponseError = (
   | deleteSpacePostResponse403
   | deleteSpacePostResponse404
   | deleteSpacePostResponse500
+  | deleteSpacePostResponse503
 ) & {
   headers: Headers;
 };
@@ -2199,6 +2241,11 @@ export type getSpacePostResponse200 = {
   status: 200;
 };
 
+export type getSpacePostResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
 export type getSpacePostResponse403 = {
   data: SpaceForbiddenResponse;
   status: 403;
@@ -2214,13 +2261,20 @@ export type getSpacePostResponse500 = {
   status: 500;
 };
 
+export type getSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpacePostResponseSuccess = getSpacePostResponse200 & {
   headers: Headers;
 };
 export type getSpacePostResponseError = (
+  | getSpacePostResponse401
   | getSpacePostResponse403
   | getSpacePostResponse404
   | getSpacePostResponse500
+  | getSpacePostResponse503
 ) & {
   headers: Headers;
 };
@@ -2269,11 +2323,6 @@ export type attachSpacePostMediaResponse404 = {
   status: 404;
 };
 
-export type attachSpacePostMediaResponse409 = {
-  data: ConflictResponse;
-  status: 409;
-};
-
 export type attachSpacePostMediaResponse429 = {
   data: SpaceRateLimitedResponse;
   status: 429;
@@ -2284,6 +2333,11 @@ export type attachSpacePostMediaResponse500 = {
   status: 500;
 };
 
+export type attachSpacePostMediaResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type attachSpacePostMediaResponseSuccess = attachSpacePostMediaResponse200 & {
   headers: Headers;
 };
@@ -2292,9 +2346,9 @@ export type attachSpacePostMediaResponseError = (
   | attachSpacePostMediaResponse401
   | attachSpacePostMediaResponse403
   | attachSpacePostMediaResponse404
-  | attachSpacePostMediaResponse409
   | attachSpacePostMediaResponse429
   | attachSpacePostMediaResponse500
+  | attachSpacePostMediaResponse503
 ) & {
   headers: Headers;
 };
@@ -2348,6 +2402,11 @@ export type detachSpacePostMediaResponse500 = {
   status: 500;
 };
 
+export type detachSpacePostMediaResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type detachSpacePostMediaResponseSuccess = detachSpacePostMediaResponse204 & {
   headers: Headers;
 };
@@ -2356,6 +2415,7 @@ export type detachSpacePostMediaResponseError = (
   | detachSpacePostMediaResponse403
   | detachSpacePostMediaResponse404
   | detachSpacePostMediaResponse500
+  | detachSpacePostMediaResponse503
 ) & {
   headers: Headers;
 };
@@ -2407,14 +2467,14 @@ export type repostSpacePostResponse404 = {
   status: 404;
 };
 
-export type repostSpacePostResponse429 = {
-  data: SpaceRateLimitedResponse;
-  status: 429;
-};
-
 export type repostSpacePostResponse500 = {
   data: InternalErrorResponse;
   status: 500;
+};
+
+export type repostSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
 };
 
 export type repostSpacePostResponseSuccess = repostSpacePostResponse201 & {
@@ -2425,8 +2485,8 @@ export type repostSpacePostResponseError = (
   | repostSpacePostResponse401
   | repostSpacePostResponse403
   | repostSpacePostResponse404
-  | repostSpacePostResponse429
   | repostSpacePostResponse500
+  | repostSpacePostResponse503
 ) & {
   headers: Headers;
 };
@@ -2458,9 +2518,9 @@ export type getSpaceProfileResponse200 = {
   status: 200;
 };
 
-export type getSpaceProfileResponse403 = {
-  data: SpaceForbiddenResponse;
-  status: 403;
+export type getSpaceProfileResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
 };
 
 export type getSpaceProfileResponse404 = {
@@ -2473,13 +2533,19 @@ export type getSpaceProfileResponse500 = {
   status: 500;
 };
 
+export type getSpaceProfileResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
 export type getSpaceProfileResponseSuccess = getSpaceProfileResponse200 & {
   headers: Headers;
 };
 export type getSpaceProfileResponseError = (
-  | getSpaceProfileResponse403
+  | getSpaceProfileResponse401
   | getSpaceProfileResponse404
   | getSpaceProfileResponse500
+  | getSpaceProfileResponse503
 ) & {
   headers: Headers;
 };

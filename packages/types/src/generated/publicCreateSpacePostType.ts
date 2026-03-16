@@ -7,11 +7,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
- */
-export interface AttachSpacePostMediaRequest {
-  mediaId: string;
-  /** @nullable */
-  sortOrder?: number | null;
-}
+export type PublicCreateSpacePostType =
+  (typeof PublicCreateSpacePostType)[keyof typeof PublicCreateSpacePostType];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const PublicCreateSpacePostType = {
+  post: "post",
+  repost: "repost",
+} as const;

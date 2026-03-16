@@ -16,8 +16,8 @@ vi.mock('@go2asia/db', () => ({
   }),
 }));
 
-import worker, { type Env } from '../src/index';
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
+import worker, { type Env } from '../src/index';
 
 describe('space-service v1', () => {
   beforeEach(() => {

@@ -1,7 +1,7 @@
+import type { SpaceEventPublisher } from '../events/publisher';
 import { type GatewayPrincipal } from '../middleware/auth';
 import { readJsonObject } from '../middleware/http';
 import { createGroup, getGroup, joinGroup, leaveGroup } from '../services/spaceService';
-import type { SpaceEventPublisher } from '../events/publisher';
 
 type Env = {
   DATABASE_URL?: string;

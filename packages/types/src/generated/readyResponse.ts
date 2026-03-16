@@ -6,12 +6,14 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { ReadyResponseChecks } from "./readyResponseChecks";
+import type { ReadyResponseStatus } from "./readyResponseStatus";
 
-/**
- * Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
- */
-export interface AttachSpacePostMediaRequest {
-  mediaId: string;
-  /** @nullable */
-  sortOrder?: number | null;
+export interface ReadyResponse {
+  checks: ReadyResponseChecks;
+  env: string;
+  missing: string[];
+  service: string;
+  status: ReadyResponseStatus;
+  version: string;
 }

@@ -7,11 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
- */
-export interface AttachSpacePostMediaRequest {
-  mediaId: string;
-  /** @nullable */
-  sortOrder?: number | null;
-}
+export type ReadyResponseStatus = (typeof ReadyResponseStatus)[keyof typeof ReadyResponseStatus];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ReadyResponseStatus = {
+  ready: "ready",
+  not_ready: "not_ready",
+} as const;
