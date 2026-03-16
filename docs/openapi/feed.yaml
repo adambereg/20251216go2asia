@@ -1,0 +1,361 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Feed Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Feed Service (Step 6, V1 read/distribution layer).
+    Feed composes read models from space-service and reactions-service and does not own source entities.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: feed-service.example
+
+tags:
+  - name: health
+  - name: feed
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getFeedHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedHealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getFeedVersion
+      summary: Version (alias of /health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedHealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: getFeedReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedReadyResponse"
+
+  /v1/feed/home:
+    get:
+      tags: [feed]
+      operationId: getHomeFeed
+      summary: Home feed (read-only)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/feed/group/{groupId}:
+    get:
+      tags: [feed]
+      operationId: getGroupFeed
+      summary: Group feed (read-only)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/feed/profile/{userId}:
+    get:
+      tags: [feed]
+      operationId: getProfileFeed
+      summary: Profile feed (read-only)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/feed/activity:
+    get:
+      tags: [feed]
+      operationId: getActivityFeed
+      summary: Activity feed (read-only)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+
+  parameters:
+    XGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+    FeedServiceUnavailable:
+      description: Upstream service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+
+  schemas:
+    FeedHealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+          example: feed-service
+        env:
+          type: string
+          example: staging
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "<sha>"
+
+    FeedReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
+    FeedErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          nullable: true
+
+    FeedReactionsSummary:
+      type: object
+      required: [counts, viewer]
+      properties:
+        counts:
+          type: object
+          required: [like]
+          properties:
+            like:
+              type: integer
+              minimum: 0
+        viewer:
+          type: object
+          required: [liked]
+          properties:
+            liked:
+              type: boolean
+
+    FeedItemPost:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+      additionalProperties: true
+
+    FeedItem:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        post:
+          $ref: "#/components/schemas/FeedItemPost"
+        reactions:
+          $ref: "#/components/schemas/FeedReactionsSummary"
+      additionalProperties: true
+
+    FeedPageResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedItem"
+        nextCursor:
+          type: string
+          nullable: true
+        degraded:
+          type: object
+          properties:
+            reactions:
+              type: boolean
