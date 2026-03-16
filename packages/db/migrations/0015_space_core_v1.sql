@@ -211,6 +211,26 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
+    WHERE conname = 'space_post_non_repost_forbids_repost_target_check'
+  ) THEN
+    ALTER TABLE "space_post"
+      ADD CONSTRAINT "space_post_non_repost_forbids_repost_target_check"
+      CHECK (
+        "post_type" = 'repost'
+        OR (
+          "repost_target_type" IS NULL
+          AND "repost_target_id" IS NULL
+        )
+      );
+  END IF;
+END $$;
+--> statement-breakpoint
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
     WHERE conname = 'space_post_group_id_requires_group_visibility_check'
   ) THEN
     ALTER TABLE "space_post"

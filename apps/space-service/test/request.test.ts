@@ -271,6 +271,37 @@ describe('space-service v1', () => {
     expect(body.error.code).toBe('REPOST_TARGET_INVALID');
   });
 
+  it('rejects repostTarget fields for non-repost posts', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Regular post',
+          repostTargetType: 'place',
+          repostTargetId: '123',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('repost target fields are only allowed for repost posts');
+  });
+
   it('filters non-group visibility rows from group feed queries', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

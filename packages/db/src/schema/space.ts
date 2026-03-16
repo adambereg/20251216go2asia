@@ -90,6 +90,10 @@ export const spacePosts = pgTable(
       'space_post_repost_requires_target_check',
       sql`(${table.postType} <> 'repost' OR (${table.repostTargetType} IS NOT NULL AND ${table.repostTargetId} IS NOT NULL))`
     ),
+    nonRepostForbidsRepostTarget: check(
+      'space_post_non_repost_forbids_repost_target_check',
+      sql`(${table.postType} = 'repost' OR (${table.repostTargetType} IS NULL AND ${table.repostTargetId} IS NULL))`
+    ),
     groupVisibilityRequiresGroup: check(
       'space_post_group_visibility_requires_group_check',
       sql`(${table.visibility} <> 'group' OR ${table.groupId} IS NOT NULL)`
