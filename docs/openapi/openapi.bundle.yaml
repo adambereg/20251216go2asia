@@ -1,5 +1,5 @@
 # GENERATED FILE — DO NOT EDIT
-# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/referral.yaml
+# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/referral.yaml, docs/openapi/space.yaml
 
 components:
   parameters:
@@ -33,9 +33,29 @@ components:
       required: true
       schema:
         type: string
+    Cursor:
+      in: query
+      name: cursor
+      required: false
+      schema:
+        type: string
     EventId:
       in: path
       name: id
+      required: true
+      schema:
+        type: string
+    FeedLimit:
+      in: query
+      name: limit
+      required: false
+      schema:
+        maximum: 100
+        minimum: 1
+        type: integer
+    GroupId:
+      in: path
+      name: groupId
       required: true
       schema:
         type: string
@@ -74,16 +94,34 @@ components:
           - showplace
           - business
         type: string
+    PostId:
+      in: path
+      name: postId
+      required: true
+      schema:
+        type: string
     TabKey:
       in: query
       name: tabKey
       required: false
       schema:
         type: string
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema:
+        type: string
     XGatewayAuth:
       in: header
       name: X-Gateway-Auth
       required: true
+      schema:
+        type: string
+    XGatewayAuthOptional:
+      in: header
+      name: X-Gateway-Auth
+      required: false
       schema:
         type: string
     XRequestId:
@@ -135,6 +173,30 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Service-specific integration is not configured
+    SpaceForbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Forbidden
+    SpaceRateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Too many requests
+    SpaceServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Service auth is not configured
+    SpaceValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Validation error
     Unauthorized:
       content:
         application/json:
@@ -237,6 +299,17 @@ components:
         - status
         - usage
         - requestId
+      type: object
+    AttachSpacePostMediaRequest:
+      description: Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
+      properties:
+        mediaId:
+          type: string
+        sortOrder:
+          nullable: true
+          type: integer
+      required:
+        - mediaId
       type: object
     ClaimReferralRequest:
       properties:
@@ -593,6 +666,56 @@ components:
         - lang
         - bodyMarkdown
       type: object
+    CreateSpaceGroupRequest:
+      properties:
+        description:
+          nullable: true
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        visibility:
+          $ref: "#/components/schemas/SpaceGroupVisibility"
+      required:
+        - slug
+        - title
+        - visibility
+      type: object
+    CreateSpacePostRequest:
+      properties:
+        groupId:
+          description: Allowed only when visibility = group.
+          nullable: true
+          type: string
+        postType:
+          $ref: "#/components/schemas/PublicCreateSpacePostType"
+        repostTargetId:
+          nullable: true
+          type: string
+        repostTargetType:
+          $ref: "#/components/schemas/SpaceRepostTargetType"
+          nullable: true
+        text:
+          nullable: true
+          type: string
+        visibility:
+          $ref: "#/components/schemas/SpaceVisibility"
+      required:
+        - postType
+        - visibility
+      type: object
+    CreateSpaceRepostRequest:
+      properties:
+        groupId:
+          nullable: true
+          type: string
+        text:
+          nullable: true
+          type: string
+        visibility:
+          $ref: "#/components/schemas/SpaceVisibility"
+      type: object
     CreateUploadTokenRequest:
       properties:
         contentType:
@@ -911,6 +1034,40 @@ components:
         - externalId
         - createdAt
       type: object
+    PublicCreateSpacePostType:
+      enum:
+        - post
+        - repost
+      type: string
+    ReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
     ReferralCodeResponse:
       properties:
         code:
@@ -979,6 +1136,339 @@ components:
         - depth
         - referrals
       type: object
+    SpaceActivityFeedItem:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          nullable: true
+          type: string
+        id:
+          type: string
+        relatedEntityId:
+          nullable: true
+          type: string
+        relatedEntityType:
+          nullable: true
+          type: string
+        relatedPostId:
+          nullable: true
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+      required:
+        - id
+        - type
+        - title
+        - createdAt
+      type: object
+    SpaceActivityFeedResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/SpaceActivityFeedItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    SpaceAuthorProjection:
+      properties:
+        avatarUrl:
+          nullable: true
+          type: string
+        displayName:
+          type: string
+        roleLabel:
+          nullable: true
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - displayName
+      type: object
+    SpaceFeedItem:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        post:
+          $ref: "#/components/schemas/SpacePostResponse"
+        reason:
+          $ref: "#/components/schemas/SpaceFeedReason"
+      required:
+        - id
+        - reason
+        - post
+        - createdAt
+      type: object
+    SpaceFeedReason:
+      enum:
+        - author_post
+        - group_post
+        - repost
+        - system
+        - recommended
+      type: string
+    SpaceFeedResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/SpaceFeedItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    SpaceGroupMemberRole:
+      enum:
+        - member
+        - moderator
+        - owner
+      type: string
+    SpaceGroupMemberStatus:
+      enum:
+        - active
+        - pending
+        - removed
+        - blocked
+      type: string
+    SpaceGroupMembershipResponse:
+      properties:
+        groupId:
+          type: string
+        joinedAt:
+          format: date-time
+          type: string
+        role:
+          $ref: "#/components/schemas/SpaceGroupMemberRole"
+        status:
+          $ref: "#/components/schemas/SpaceGroupMemberStatus"
+        userId:
+          type: string
+      required:
+        - groupId
+        - userId
+        - role
+        - status
+        - joinedAt
+      type: object
+    SpaceGroupResponse:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          nullable: true
+          type: string
+        id:
+          type: string
+        membersCount:
+          type: integer
+        ownerId:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: "#/components/schemas/SpaceGroupStatus"
+        title:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        visibility:
+          $ref: "#/components/schemas/SpaceGroupVisibility"
+      required:
+        - id
+        - slug
+        - title
+        - ownerId
+        - visibility
+        - status
+        - membersCount
+        - createdAt
+        - updatedAt
+      type: object
+    SpaceGroupStatus:
+      enum:
+        - active
+        - hidden
+        - archived
+      type: string
+    SpaceGroupVisibility:
+      enum:
+        - public
+        - private
+        - invite_only
+      type: string
+    SpacePostMediaAttachment:
+      properties:
+        mediaId:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+        - mediaId
+        - sortOrder
+      type: object
+    SpacePostMediaAttachmentResponse:
+      properties:
+        attachedAt:
+          format: date-time
+          type: string
+        mediaId:
+          type: string
+        postId:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+        - postId
+        - mediaId
+        - sortOrder
+        - attachedAt
+      type: object
+    SpacePostRepostRef:
+      properties:
+        resolvedPreview:
+          $ref: "#/components/schemas/SpaceResolvedRepostPreview"
+          nullable: true
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/SpaceRepostTargetType"
+      required:
+        - targetType
+        - targetId
+      type: object
+    SpacePostResponse:
+      properties:
+        author:
+          $ref: "#/components/schemas/SpaceAuthorProjection"
+        createdAt:
+          format: date-time
+          type: string
+        groupId:
+          nullable: true
+          type: string
+        id:
+          type: string
+        media:
+          items:
+            $ref: "#/components/schemas/SpacePostMediaAttachment"
+          type: array
+        postType:
+          $ref: "#/components/schemas/SpacePostType"
+        publishedAt:
+          format: date-time
+          type: string
+        repost:
+          $ref: "#/components/schemas/SpacePostRepostRef"
+          nullable: true
+        status:
+          $ref: "#/components/schemas/SpacePostStatus"
+        text:
+          nullable: true
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        visibility:
+          $ref: "#/components/schemas/SpaceVisibility"
+      required:
+        - id
+        - author
+        - postType
+        - visibility
+        - status
+        - media
+        - createdAt
+        - updatedAt
+        - publishedAt
+      type: object
+    SpacePostStatus:
+      enum:
+        - active
+        - flagged
+        - hidden
+        - deleted
+      type: string
+    SpacePostType:
+      enum:
+        - post
+        - repost
+        - system
+      type: string
+    SpaceProfileResponse:
+      properties:
+        avatarUrl:
+          nullable: true
+          type: string
+        bioShort:
+          nullable: true
+          type: string
+        cityId:
+          nullable: true
+          type: string
+        countryId:
+          nullable: true
+          type: string
+        displayName:
+          type: string
+        roleLabel:
+          nullable: true
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - displayName
+      type: object
+    SpaceRepostTargetType:
+      enum:
+        - space_post
+        - blog_post
+        - place
+        - event
+        - partner
+        - listing
+        - quest
+      type: string
+    SpaceResolvedRepostPreview:
+      properties:
+        href:
+          nullable: true
+          type: string
+        imageUrl:
+          nullable: true
+          type: string
+        subtitle:
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+        - title
+      type: object
+    SpaceVisibility:
+      enum:
+        - public
+        - followers
+        - group
+        - private
+      type: string
     TransactionsPage:
       properties:
         items:
@@ -1831,6 +2321,434 @@ paths:
       summary: Get current user's referral tree (depth 1..2)
       tags:
         - referral
+  /v1/space/feed/activity:
+    get:
+      operationId: getSpaceActivityFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceActivityFeedResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get activity feed
+      tags:
+        - space
+  /v1/space/feed/group/{groupId}:
+    get:
+      operationId: getSpaceGroupFeed
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceFeedResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      summary: Get group feed
+      tags:
+        - space
+  /v1/space/feed/home:
+    get:
+      operationId: getSpaceHomeFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceFeedResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get home feed
+      tags:
+        - space
+  /v1/space/feed/profile/{userId}:
+    get:
+      operationId: getSpaceProfileFeed
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceFeedResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      summary: Get profile feed
+      tags:
+        - space
+  /v1/space/groups:
+    post:
+      operationId: createSpaceGroup
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSpaceGroupRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceGroupResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create group
+      tags:
+        - space
+  /v1/space/groups/{groupId}:
+    get:
+      operationId: getSpaceGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceGroupResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      summary: Get group by id
+      tags:
+        - space
+  /v1/space/groups/{groupId}/join:
+    post:
+      operationId: joinSpaceGroup
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceGroupMembershipResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Join group
+      tags:
+        - space
+  /v1/space/groups/{groupId}/leave:
+    post:
+      operationId: leaveSpaceGroup
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Leave group
+      tags:
+        - space
+  /v1/space/posts:
+    post:
+      operationId: createSpacePost
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSpacePostRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create post or repost
+      tags:
+        - space
+  /v1/space/posts/{postId}:
+    delete:
+      operationId: deleteSpacePost
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Soft-delete post
+      tags:
+        - space
+    get:
+      operationId: getSpacePost
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      summary: Get post by id
+      tags:
+        - space
+  /v1/space/posts/{postId}/media:
+    post:
+      operationId: attachSpacePostMedia
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachSpacePostMediaRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostMediaAttachmentResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/SpaceRateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Attach media relation to post
+      tags:
+        - space
+  /v1/space/posts/{postId}/media/{mediaId}:
+    delete:
+      operationId: detachSpacePostMedia
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+        - $ref: "#/components/parameters/MediaId"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Remove media relation from post
+      tags:
+        - space
+  /v1/space/posts/{postId}/repost:
+    post:
+      operationId: repostSpacePost
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSpaceRepostRequest"
+        required: false
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Convenience repost of an existing Space post
+      tags:
+        - space
+  /v1/space/profiles/{userId}:
+    get:
+      operationId: getSpaceProfile
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaceProfileResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      summary: Get social profile projection
+      tags:
+        - space
   /v1/users/ensure:
     post:
       description: |
@@ -1895,6 +2813,8 @@ tags:
     name: points
   - description: Service-to-service APIs (authenticated)
     name: internal
+  - description: Space social-core endpoints
+    name: space
 x-microservices:
   atlas:
     repo: services/atlas

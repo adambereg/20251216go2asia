@@ -46,6 +46,14 @@ describe('api-gateway request hardening', () => {
       routeKey: 'media.upload-token.post',
       routeGroup: 'media',
     });
+    expect(classifyRoute('POST', '/v1/space/posts')).toEqual({
+      routeKey: 'space.posts.create.post',
+      routeGroup: 'space',
+    });
+    expect(classifyRoute('GET', '/v1/space/feed/home')).toEqual({
+      routeKey: 'space.feed.home.get',
+      routeGroup: 'space',
+    });
   });
 
   it('builds request context with hashed client fingerprint for anonymous routes', async () => {
@@ -145,6 +153,34 @@ describe('api-gateway request hardening', () => {
     expect(body.error.code).toBe('UNAUTHORIZED');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
     expect(response.headers.get('X-Request-ID')).toBeTruthy();
+  });
+
+  it('returns 401 for protected space write route without bearer token', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Hello',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
   it('returns 503 when a known service route is not configured', async () => {
@@ -356,6 +392,60 @@ describe('api-gateway request hardening', () => {
     expect(body.key).toContain('uploads/space/media_user/');
     expect(response.headers.get('X-Proxy-Target-Path')).toBe('/v1/content/media/upload-token');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards authenticated context to protected space routes', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://space.example/v1/space/posts');
+      expect(request.headers.get('X-User-ID')).toBe('user_from_jwt');
+      const gatewayToken = request.headers.get('X-Gateway-Auth');
+      expect(gatewayToken).toBeTruthy();
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(gatewayToken!);
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'user_from_jwt',
+      roles: ['member'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer real-user-token',
+          'Content-Type': 'application/json',
+          'X-User-ID': 'spoofed_user',
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Hello',
+        }),
+      }),
+      {
+        SPACE_SERVICE_URL: 'https://space.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+        CLERK_SECRET_KEY: 'sk_test_123',
+      }
+    );
+
+    const body = await readJson<{ ok: boolean }>(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'user_from_jwt',
+      roles: ['member'],
+    });
   });
 
   it('routes canonical /v1/media/* directly to media-service when configured', async () => {

@@ -11,6 +11,7 @@ import type {
   AddPointsResponse,
   AttachMediaUsageRequest,
   AttachMediaUsageResponse,
+  AttachSpacePostMediaRequest,
   BadRequestResponse,
   ClaimReferralRequest,
   ClaimReferralResponse,
@@ -21,6 +22,9 @@ import type {
   ContentBlogPostDetailDto,
   ContentEventDto,
   ContentPlaceDto,
+  CreateSpaceGroupRequest,
+  CreateSpacePostRequest,
+  CreateSpaceRepostRequest,
   CreateUploadTokenRequest,
   CreateUploadTokenResponse,
   CursorListBlogPostsResponse,
@@ -31,6 +35,10 @@ import type {
   GenerateCodeRequest,
   GenerateCodeResponse,
   GetReferralTreeParams,
+  GetSpaceActivityFeedParams,
+  GetSpaceGroupFeedParams,
+  GetSpaceHomeFeedParams,
+  GetSpaceProfileFeedParams,
   InternalErrorResponse,
   LinkReferralRequest,
   LinkReferralResponse,
@@ -57,6 +65,17 @@ import type {
   ReferralTreeResponse,
   ServiceAuthNotConfiguredResponse,
   ServiceNotConfiguredResponse,
+  SpaceActivityFeedResponse,
+  SpaceFeedResponse,
+  SpaceForbiddenResponse,
+  SpaceGroupMembershipResponse,
+  SpaceGroupResponse,
+  SpacePostMediaAttachmentResponse,
+  SpacePostResponse,
+  SpaceProfileResponse,
+  SpaceRateLimitedResponse,
+  SpaceServiceAuthNotConfiguredResponse,
+  SpaceValidationErrorResponse,
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
@@ -1561,6 +1580,987 @@ export const getReferralTree = async (
   options?: RequestInit
 ): Promise<getReferralTreeResponse> => {
   return customInstance<getReferralTreeResponse>(getGetReferralTreeUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get activity feed
+ */
+export type getSpaceActivityFeedResponse200 = {
+  data: SpaceActivityFeedResponse;
+  status: 200;
+};
+
+export type getSpaceActivityFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceActivityFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceActivityFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceActivityFeedResponseSuccess = getSpaceActivityFeedResponse200 & {
+  headers: Headers;
+};
+export type getSpaceActivityFeedResponseError = (
+  | getSpaceActivityFeedResponse401
+  | getSpaceActivityFeedResponse500
+  | getSpaceActivityFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceActivityFeedResponse =
+  | getSpaceActivityFeedResponseSuccess
+  | getSpaceActivityFeedResponseError;
+
+export const getGetSpaceActivityFeedUrl = (params?: GetSpaceActivityFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/space/feed/activity?${stringifiedParams}`
+    : `/v1/space/feed/activity`;
+};
+
+export const getSpaceActivityFeed = async (
+  params?: GetSpaceActivityFeedParams,
+  options?: RequestInit
+): Promise<getSpaceActivityFeedResponse> => {
+  return customInstance<getSpaceActivityFeedResponse>(getGetSpaceActivityFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get group feed
+ */
+export type getSpaceGroupFeedResponse200 = {
+  data: SpaceFeedResponse;
+  status: 200;
+};
+
+export type getSpaceGroupFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceGroupFeedResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type getSpaceGroupFeedResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getSpaceGroupFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceGroupFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceGroupFeedResponseSuccess = getSpaceGroupFeedResponse200 & {
+  headers: Headers;
+};
+export type getSpaceGroupFeedResponseError = (
+  | getSpaceGroupFeedResponse401
+  | getSpaceGroupFeedResponse403
+  | getSpaceGroupFeedResponse404
+  | getSpaceGroupFeedResponse500
+  | getSpaceGroupFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceGroupFeedResponse =
+  | getSpaceGroupFeedResponseSuccess
+  | getSpaceGroupFeedResponseError;
+
+export const getGetSpaceGroupFeedUrl = (groupId: string, params?: GetSpaceGroupFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/space/feed/group/${groupId}?${stringifiedParams}`
+    : `/v1/space/feed/group/${groupId}`;
+};
+
+export const getSpaceGroupFeed = async (
+  groupId: string,
+  params?: GetSpaceGroupFeedParams,
+  options?: RequestInit
+): Promise<getSpaceGroupFeedResponse> => {
+  return customInstance<getSpaceGroupFeedResponse>(getGetSpaceGroupFeedUrl(groupId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get home feed
+ */
+export type getSpaceHomeFeedResponse200 = {
+  data: SpaceFeedResponse;
+  status: 200;
+};
+
+export type getSpaceHomeFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceHomeFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceHomeFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceHomeFeedResponseSuccess = getSpaceHomeFeedResponse200 & {
+  headers: Headers;
+};
+export type getSpaceHomeFeedResponseError = (
+  | getSpaceHomeFeedResponse401
+  | getSpaceHomeFeedResponse500
+  | getSpaceHomeFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceHomeFeedResponse =
+  | getSpaceHomeFeedResponseSuccess
+  | getSpaceHomeFeedResponseError;
+
+export const getGetSpaceHomeFeedUrl = (params?: GetSpaceHomeFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/space/feed/home?${stringifiedParams}`
+    : `/v1/space/feed/home`;
+};
+
+export const getSpaceHomeFeed = async (
+  params?: GetSpaceHomeFeedParams,
+  options?: RequestInit
+): Promise<getSpaceHomeFeedResponse> => {
+  return customInstance<getSpaceHomeFeedResponse>(getGetSpaceHomeFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get profile feed
+ */
+export type getSpaceProfileFeedResponse200 = {
+  data: SpaceFeedResponse;
+  status: 200;
+};
+
+export type getSpaceProfileFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceProfileFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceProfileFeedResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceProfileFeedResponseSuccess = getSpaceProfileFeedResponse200 & {
+  headers: Headers;
+};
+export type getSpaceProfileFeedResponseError = (
+  | getSpaceProfileFeedResponse401
+  | getSpaceProfileFeedResponse500
+  | getSpaceProfileFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceProfileFeedResponse =
+  | getSpaceProfileFeedResponseSuccess
+  | getSpaceProfileFeedResponseError;
+
+export const getGetSpaceProfileFeedUrl = (userId: string, params?: GetSpaceProfileFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/space/feed/profile/${userId}?${stringifiedParams}`
+    : `/v1/space/feed/profile/${userId}`;
+};
+
+export const getSpaceProfileFeed = async (
+  userId: string,
+  params?: GetSpaceProfileFeedParams,
+  options?: RequestInit
+): Promise<getSpaceProfileFeedResponse> => {
+  return customInstance<getSpaceProfileFeedResponse>(getGetSpaceProfileFeedUrl(userId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create group
+ */
+export type createSpaceGroupResponse201 = {
+  data: SpaceGroupResponse;
+  status: 201;
+};
+
+export type createSpaceGroupResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
+export type createSpaceGroupResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type createSpaceGroupResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type createSpaceGroupResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type createSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type createSpaceGroupResponseSuccess = createSpaceGroupResponse201 & {
+  headers: Headers;
+};
+export type createSpaceGroupResponseError = (
+  | createSpaceGroupResponse400
+  | createSpaceGroupResponse401
+  | createSpaceGroupResponse409
+  | createSpaceGroupResponse500
+  | createSpaceGroupResponse503
+) & {
+  headers: Headers;
+};
+
+export type createSpaceGroupResponse =
+  | createSpaceGroupResponseSuccess
+  | createSpaceGroupResponseError;
+
+export const getCreateSpaceGroupUrl = () => {
+  return `/v1/space/groups`;
+};
+
+export const createSpaceGroup = async (
+  createSpaceGroupRequest: CreateSpaceGroupRequest,
+  options?: RequestInit
+): Promise<createSpaceGroupResponse> => {
+  return customInstance<createSpaceGroupResponse>(getCreateSpaceGroupUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSpaceGroupRequest),
+  });
+};
+
+/**
+ * @summary Get group by id
+ */
+export type getSpaceGroupResponse200 = {
+  data: SpaceGroupResponse;
+  status: 200;
+};
+
+export type getSpaceGroupResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceGroupResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type getSpaceGroupResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getSpaceGroupResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceGroupResponseSuccess = getSpaceGroupResponse200 & {
+  headers: Headers;
+};
+export type getSpaceGroupResponseError = (
+  | getSpaceGroupResponse401
+  | getSpaceGroupResponse403
+  | getSpaceGroupResponse404
+  | getSpaceGroupResponse500
+  | getSpaceGroupResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceGroupResponse = getSpaceGroupResponseSuccess | getSpaceGroupResponseError;
+
+export const getGetSpaceGroupUrl = (groupId: string) => {
+  return `/v1/space/groups/${groupId}`;
+};
+
+export const getSpaceGroup = async (
+  groupId: string,
+  options?: RequestInit
+): Promise<getSpaceGroupResponse> => {
+  return customInstance<getSpaceGroupResponse>(getGetSpaceGroupUrl(groupId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Join group
+ */
+export type joinSpaceGroupResponse200 = {
+  data: SpaceGroupMembershipResponse;
+  status: 200;
+};
+
+export type joinSpaceGroupResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type joinSpaceGroupResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type joinSpaceGroupResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type joinSpaceGroupResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type joinSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type joinSpaceGroupResponseSuccess = joinSpaceGroupResponse200 & {
+  headers: Headers;
+};
+export type joinSpaceGroupResponseError = (
+  | joinSpaceGroupResponse401
+  | joinSpaceGroupResponse403
+  | joinSpaceGroupResponse404
+  | joinSpaceGroupResponse500
+  | joinSpaceGroupResponse503
+) & {
+  headers: Headers;
+};
+
+export type joinSpaceGroupResponse = joinSpaceGroupResponseSuccess | joinSpaceGroupResponseError;
+
+export const getJoinSpaceGroupUrl = (groupId: string) => {
+  return `/v1/space/groups/${groupId}/join`;
+};
+
+export const joinSpaceGroup = async (
+  groupId: string,
+  options?: RequestInit
+): Promise<joinSpaceGroupResponse> => {
+  return customInstance<joinSpaceGroupResponse>(getJoinSpaceGroupUrl(groupId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary Leave group
+ */
+export type leaveSpaceGroupResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type leaveSpaceGroupResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type leaveSpaceGroupResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type leaveSpaceGroupResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type leaveSpaceGroupResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type leaveSpaceGroupResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type leaveSpaceGroupResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type leaveSpaceGroupResponseSuccess = leaveSpaceGroupResponse204 & {
+  headers: Headers;
+};
+export type leaveSpaceGroupResponseError = (
+  | leaveSpaceGroupResponse401
+  | leaveSpaceGroupResponse403
+  | leaveSpaceGroupResponse404
+  | leaveSpaceGroupResponse409
+  | leaveSpaceGroupResponse500
+  | leaveSpaceGroupResponse503
+) & {
+  headers: Headers;
+};
+
+export type leaveSpaceGroupResponse = leaveSpaceGroupResponseSuccess | leaveSpaceGroupResponseError;
+
+export const getLeaveSpaceGroupUrl = (groupId: string) => {
+  return `/v1/space/groups/${groupId}/leave`;
+};
+
+export const leaveSpaceGroup = async (
+  groupId: string,
+  options?: RequestInit
+): Promise<leaveSpaceGroupResponse> => {
+  return customInstance<leaveSpaceGroupResponse>(getLeaveSpaceGroupUrl(groupId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary Create post or repost
+ */
+export type createSpacePostResponse201 = {
+  data: SpacePostResponse;
+  status: 201;
+};
+
+export type createSpacePostResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
+export type createSpacePostResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type createSpacePostResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type createSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type createSpacePostResponseSuccess = createSpacePostResponse201 & {
+  headers: Headers;
+};
+export type createSpacePostResponseError = (
+  | createSpacePostResponse400
+  | createSpacePostResponse401
+  | createSpacePostResponse500
+  | createSpacePostResponse503
+) & {
+  headers: Headers;
+};
+
+export type createSpacePostResponse = createSpacePostResponseSuccess | createSpacePostResponseError;
+
+export const getCreateSpacePostUrl = () => {
+  return `/v1/space/posts`;
+};
+
+export const createSpacePost = async (
+  createSpacePostRequest: CreateSpacePostRequest,
+  options?: RequestInit
+): Promise<createSpacePostResponse> => {
+  return customInstance<createSpacePostResponse>(getCreateSpacePostUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSpacePostRequest),
+  });
+};
+
+/**
+ * @summary Soft-delete post
+ */
+export type deleteSpacePostResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteSpacePostResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type deleteSpacePostResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type deleteSpacePostResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type deleteSpacePostResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type deleteSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type deleteSpacePostResponseSuccess = deleteSpacePostResponse204 & {
+  headers: Headers;
+};
+export type deleteSpacePostResponseError = (
+  | deleteSpacePostResponse401
+  | deleteSpacePostResponse403
+  | deleteSpacePostResponse404
+  | deleteSpacePostResponse500
+  | deleteSpacePostResponse503
+) & {
+  headers: Headers;
+};
+
+export type deleteSpacePostResponse = deleteSpacePostResponseSuccess | deleteSpacePostResponseError;
+
+export const getDeleteSpacePostUrl = (postId: string) => {
+  return `/v1/space/posts/${postId}`;
+};
+
+export const deleteSpacePost = async (
+  postId: string,
+  options?: RequestInit
+): Promise<deleteSpacePostResponse> => {
+  return customInstance<deleteSpacePostResponse>(getDeleteSpacePostUrl(postId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+/**
+ * @summary Get post by id
+ */
+export type getSpacePostResponse200 = {
+  data: SpacePostResponse;
+  status: 200;
+};
+
+export type getSpacePostResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpacePostResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type getSpacePostResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getSpacePostResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpacePostResponseSuccess = getSpacePostResponse200 & {
+  headers: Headers;
+};
+export type getSpacePostResponseError = (
+  | getSpacePostResponse401
+  | getSpacePostResponse403
+  | getSpacePostResponse404
+  | getSpacePostResponse500
+  | getSpacePostResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpacePostResponse = getSpacePostResponseSuccess | getSpacePostResponseError;
+
+export const getGetSpacePostUrl = (postId: string) => {
+  return `/v1/space/posts/${postId}`;
+};
+
+export const getSpacePost = async (
+  postId: string,
+  options?: RequestInit
+): Promise<getSpacePostResponse> => {
+  return customInstance<getSpacePostResponse>(getGetSpacePostUrl(postId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Attach media relation to post
+ */
+export type attachSpacePostMediaResponse200 = {
+  data: SpacePostMediaAttachmentResponse;
+  status: 200;
+};
+
+export type attachSpacePostMediaResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
+export type attachSpacePostMediaResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type attachSpacePostMediaResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type attachSpacePostMediaResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type attachSpacePostMediaResponse429 = {
+  data: SpaceRateLimitedResponse;
+  status: 429;
+};
+
+export type attachSpacePostMediaResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type attachSpacePostMediaResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type attachSpacePostMediaResponseSuccess = attachSpacePostMediaResponse200 & {
+  headers: Headers;
+};
+export type attachSpacePostMediaResponseError = (
+  | attachSpacePostMediaResponse400
+  | attachSpacePostMediaResponse401
+  | attachSpacePostMediaResponse403
+  | attachSpacePostMediaResponse404
+  | attachSpacePostMediaResponse429
+  | attachSpacePostMediaResponse500
+  | attachSpacePostMediaResponse503
+) & {
+  headers: Headers;
+};
+
+export type attachSpacePostMediaResponse =
+  | attachSpacePostMediaResponseSuccess
+  | attachSpacePostMediaResponseError;
+
+export const getAttachSpacePostMediaUrl = (postId: string) => {
+  return `/v1/space/posts/${postId}/media`;
+};
+
+export const attachSpacePostMedia = async (
+  postId: string,
+  attachSpacePostMediaRequest: AttachSpacePostMediaRequest,
+  options?: RequestInit
+): Promise<attachSpacePostMediaResponse> => {
+  return customInstance<attachSpacePostMediaResponse>(getAttachSpacePostMediaUrl(postId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(attachSpacePostMediaRequest),
+  });
+};
+
+/**
+ * @summary Remove media relation from post
+ */
+export type detachSpacePostMediaResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type detachSpacePostMediaResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type detachSpacePostMediaResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type detachSpacePostMediaResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type detachSpacePostMediaResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type detachSpacePostMediaResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type detachSpacePostMediaResponseSuccess = detachSpacePostMediaResponse204 & {
+  headers: Headers;
+};
+export type detachSpacePostMediaResponseError = (
+  | detachSpacePostMediaResponse401
+  | detachSpacePostMediaResponse403
+  | detachSpacePostMediaResponse404
+  | detachSpacePostMediaResponse500
+  | detachSpacePostMediaResponse503
+) & {
+  headers: Headers;
+};
+
+export type detachSpacePostMediaResponse =
+  | detachSpacePostMediaResponseSuccess
+  | detachSpacePostMediaResponseError;
+
+export const getDetachSpacePostMediaUrl = (postId: string, mediaId: string) => {
+  return `/v1/space/posts/${postId}/media/${mediaId}`;
+};
+
+export const detachSpacePostMedia = async (
+  postId: string,
+  mediaId: string,
+  options?: RequestInit
+): Promise<detachSpacePostMediaResponse> => {
+  return customInstance<detachSpacePostMediaResponse>(getDetachSpacePostMediaUrl(postId, mediaId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+/**
+ * @summary Convenience repost of an existing Space post
+ */
+export type repostSpacePostResponse201 = {
+  data: SpacePostResponse;
+  status: 201;
+};
+
+export type repostSpacePostResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
+export type repostSpacePostResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type repostSpacePostResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type repostSpacePostResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type repostSpacePostResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type repostSpacePostResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type repostSpacePostResponseSuccess = repostSpacePostResponse201 & {
+  headers: Headers;
+};
+export type repostSpacePostResponseError = (
+  | repostSpacePostResponse400
+  | repostSpacePostResponse401
+  | repostSpacePostResponse403
+  | repostSpacePostResponse404
+  | repostSpacePostResponse500
+  | repostSpacePostResponse503
+) & {
+  headers: Headers;
+};
+
+export type repostSpacePostResponse = repostSpacePostResponseSuccess | repostSpacePostResponseError;
+
+export const getRepostSpacePostUrl = (postId: string) => {
+  return `/v1/space/posts/${postId}/repost`;
+};
+
+export const repostSpacePost = async (
+  postId: string,
+  createSpaceRepostRequest?: CreateSpaceRepostRequest,
+  options?: RequestInit
+): Promise<repostSpacePostResponse> => {
+  return customInstance<repostSpacePostResponse>(getRepostSpacePostUrl(postId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSpaceRepostRequest),
+  });
+};
+
+/**
+ * @summary Get social profile projection
+ */
+export type getSpaceProfileResponse200 = {
+  data: SpaceProfileResponse;
+  status: 200;
+};
+
+export type getSpaceProfileResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getSpaceProfileResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getSpaceProfileResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getSpaceProfileResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getSpaceProfileResponseSuccess = getSpaceProfileResponse200 & {
+  headers: Headers;
+};
+export type getSpaceProfileResponseError = (
+  | getSpaceProfileResponse401
+  | getSpaceProfileResponse404
+  | getSpaceProfileResponse500
+  | getSpaceProfileResponse503
+) & {
+  headers: Headers;
+};
+
+export type getSpaceProfileResponse = getSpaceProfileResponseSuccess | getSpaceProfileResponseError;
+
+export const getGetSpaceProfileUrl = (userId: string) => {
+  return `/v1/space/profiles/${userId}`;
+};
+
+export const getSpaceProfile = async (
+  userId: string,
+  options?: RequestInit
+): Promise<getSpaceProfileResponse> => {
+  return customInstance<getSpaceProfileResponse>(getGetSpaceProfileUrl(userId), {
     ...options,
     method: "GET",
   });

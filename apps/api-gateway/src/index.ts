@@ -198,6 +198,51 @@ export function classifyRoute(method: string, path: string): RouteClassification
     return { routeKey: `content.read.${normalizedMethod.toLowerCase()}`, routeGroup: 'content-read' };
   }
 
+  if (normalizedPath === '/v1/space/posts' && normalizedMethod === 'POST') {
+    return { routeKey: 'space.posts.create.post', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/posts\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'space.posts.detail.get', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/posts\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'space.posts.delete.delete', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/posts\/[^/]+\/repost$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'space.posts.repost.post', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/posts\/[^/]+\/media$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'space.posts.media.attach.post', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/posts\/[^/]+\/media\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'space.posts.media.detach.delete', routeGroup: 'space' };
+  }
+  if (normalizedPath === '/v1/space/groups' && normalizedMethod === 'POST') {
+    return { routeKey: 'space.groups.create.post', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/groups\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'space.groups.detail.get', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/groups\/[^/]+\/join$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'space.groups.join.post', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/groups\/[^/]+\/leave$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'space.groups.leave.post', routeGroup: 'space' };
+  }
+  if (normalizedPath === '/v1/space/feed/home' && normalizedMethod === 'GET') {
+    return { routeKey: 'space.feed.home.get', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/feed\/profile\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'space.feed.profile.get', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/feed\/group\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'space.feed.group.get', routeGroup: 'space' };
+  }
+  if (normalizedPath === '/v1/space/feed/activity' && normalizedMethod === 'GET') {
+    return { routeKey: 'space.feed.activity.get', routeGroup: 'space' };
+  }
+  if (/^\/v1\/space\/profiles\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'space.profiles.detail.get', routeGroup: 'space' };
+  }
   if (normalizedPath.startsWith('/v1/space/')) {
     return { routeKey: `space.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'space' };
   }
@@ -493,6 +538,20 @@ function getReservedPhase2ServiceVar(path: string): keyof Env | null {
   return null;
 }
 
+function isProtectedSpaceRoute(method: string, path: string): boolean {
+  if (method === 'POST' && path === '/v1/space/posts') return true;
+  if (method === 'DELETE' && /^\/v1\/space\/posts\/[^/]+$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/repost$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/media$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/space\/posts\/[^/]+\/media\/[^/]+$/.test(path)) return true;
+  if (method === 'POST' && path === '/v1/space/groups') return true;
+  if (method === 'POST' && /^\/v1\/space\/groups\/[^/]+\/join$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/space\/groups\/[^/]+\/leave$/.test(path)) return true;
+  if (method === 'GET' && path === '/v1/space/feed/home') return true;
+  if (method === 'GET' && path === '/v1/space/feed/activity') return true;
+  return false;
+}
+
 /**
  * Ready check endpoint
  */
@@ -745,7 +804,8 @@ async function routeRequest(
     path.startsWith('/v1/users/') ||
     isContentRegister ||
     isMediaUploadToken ||
-    isMediaAttach
+    isMediaAttach ||
+    isProtectedSpaceRoute(request.method, path)
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;

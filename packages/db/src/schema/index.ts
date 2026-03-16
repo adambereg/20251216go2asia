@@ -12,3 +12,4 @@ export * from './content';
 export * from './media';
 export * from './points';
 export * from './referral';
+export * from './space';
