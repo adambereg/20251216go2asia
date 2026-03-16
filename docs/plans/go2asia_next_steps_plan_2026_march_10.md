@@ -231,18 +231,26 @@
 
 1. Реализовать reaction model в отдельном reactions-domain/service:
    - `like`
-   - `repost`
+2. Явно зафиксировать V1 границы (OUT OF SCOPE):
+   - `repost` (остаётся в `space-service`);
+   - `bookmark`
    - `rating`
    - `short_review`
-   - `bookmark`
    - `question`
    - `contact_request`
    - `thread_reply`
    - `completed`
-2. Ввести unified target contract (Space + ecosystem targets).
-3. Реализовать thread/inquiry model.
+   - `was_here`
+   - `want_to_visit`
+   - organizer / PRO / marketplace workflows;
+   - points ownership;
+   - feed ranking ownership;
+   - AI orchestration;
+   - realtime push / websocket;
+   - advanced moderation / anti-fraud.
+3. Ввести unified target contract (Space + ecosystem targets).
 4. Ввести basic anti-spam / throttling / moderation flags.
-5. Подключить rewards через `Points` как внешнюю интеграцию (без переноса ownership в `space-service`).
+5. Подключить rewards через `Points` как внешнюю интеграцию (без переноса ownership в `reactions-service`).
 
 ### Result
 
@@ -335,7 +343,7 @@
    - detail pages;
    - nearby endpoint.
 3. Реализовать minimal owner/PRO CRUD.
-4. Реализовать inquiry через `contact_request + thread model`.
+4. Реализовать inquiry через отдельный domain/service в будущей фазе (не через `reactions-service` V1).
 5. Использовать Atlas geography через текущий `content-service`.
 
 ### Result
