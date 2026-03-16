@@ -721,15 +721,24 @@ Space must be event-driven from day one.
 
 ## 9.1 Events emitted by Space
 
+Envelope rule:
+
+- Space events follow Unified Event Envelope V1 from `docs/architecture/events/events_contracts_v1.md`.
+
 Minimum events:
 
 - `space.post.created`
 - `space.post.deleted`
 - `space.post.reposted`
 - `space.group.created`
-- `space.group.joined`
-- `space.group.left`
+- `space.group.member_joined`
+- `space.group.member_left`
 - `space.post.media_attached`
+
+Compatibility note:
+
+- consumers may temporarily map legacy aliases `space.group.joined` -> `space.group.member_joined` and `space.group.left` -> `space.group.member_left` during migration;
+- new producers MUST emit canonical names only.
 
 ---
 
@@ -796,14 +805,7 @@ Reactions remain fully outside Space.
 Reactions own:
 
 - like;
-- repost-as-reaction if modeled there later;
-- rating;
-- short_review;
-- bookmark;
-- question;
-- contact_request;
-- thread_reply;
-- inquiry thread interactions.
+- additional interaction types are deferred to future reactions versions.
 
 Space owns publication. Reactions owns interaction.
 
@@ -817,9 +819,9 @@ Space should emit rewardable events only.
 
 Examples:
 
-- `post_created`
-- `post_reposted`
-- `group_created` (optional later)
+- `space.post.created`
+- `space.post.reposted`
+- `space.group.created` (optional later)
 
 Space must not calculate balances.
 

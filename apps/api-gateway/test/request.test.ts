@@ -62,6 +62,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'reactions.summary-batch.post',
       routeGroup: 'reactions',
     });
+    expect(classifyRoute('GET', '/v1/feed/home')).toEqual({
+      routeKey: 'feed.home.get',
+      routeGroup: 'feed',
+    });
   });
 
   it('builds request context with hashed client fingerprint for anonymous routes', async () => {
@@ -219,6 +223,27 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected feed read route without bearer token', async () => {
+    const env: Env = {
+      FEED_SERVICE_URL: 'https://feed.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/home', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
   it('returns 503 when a known service route is not configured', async () => {
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/referral/stats'),
@@ -273,6 +298,28 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(501);
     expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
     expect(body.error.message).toContain('REACTIONS_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 501 for reserved feed prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/home', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('FEED_SERVICE_URL');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
     expect(fetchMock).not.toHaveBeenCalled();
   });

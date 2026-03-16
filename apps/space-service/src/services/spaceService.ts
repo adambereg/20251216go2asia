@@ -161,12 +161,43 @@ async function mapPostResponse(db: ReturnType<typeof createDb>, post: SpacePostR
 async function emit(
   publisher: SpaceEventPublisher,
   eventType: SpaceDomainEventType,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  meta?: {
+    requestId?: string;
+    actorUserId?: string;
+    subject?: {
+      targetType: string;
+      targetId: string;
+    };
+  }
 ): Promise<void> {
   await publisher.publish({
     eventId: `evt_${crypto.randomUUID()}`,
     eventType,
+    eventVersion: 1,
     occurredAt: new Date().toISOString(),
+    producer: {
+      service: 'space-service',
+    },
+    ...(meta?.requestId
+      ? {
+          trace: {
+            requestId: meta.requestId,
+          },
+        }
+      : {}),
+    ...(meta?.actorUserId
+      ? {
+          actor: {
+            userId: meta.actorUserId,
+          },
+        }
+      : {}),
+    ...(meta?.subject
+      ? {
+          subject: meta.subject,
+        }
+      : {}),
     payload,
   });
 }
@@ -262,6 +293,13 @@ export async function createPost(
     visibility,
     repostTargetType,
     repostTargetId,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_post',
+      targetId: postId,
+    },
   });
 
   return new Response(JSON.stringify(await mapPostResponse(db, created)), {
@@ -363,6 +401,13 @@ export async function deletePost(
   await emit(publisher, 'space.post.deleted', {
     postId,
     authorId: principal.userId,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_post',
+      targetId: postId,
+    },
   });
 
   return new Response(null, { status: 204 });
@@ -408,6 +453,13 @@ export async function attachMedia(
     mediaId,
     authorId: principal.userId,
     sortOrder,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_post',
+      targetId: postId,
+    },
   });
 
   return new Response(
@@ -453,6 +505,13 @@ export async function detachMedia(
     postId,
     mediaId,
     authorId: principal.userId,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_post',
+      targetId: postId,
+    },
   });
 
   return new Response(null, { status: 204 });
@@ -506,6 +565,13 @@ export async function createGroup(
     groupId,
     ownerId: principal.userId,
     visibility,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_group',
+      targetId: groupId,
+    },
   });
 
   return new Response(JSON.stringify(mapGroupResponse(group)), {
@@ -613,6 +679,13 @@ export async function joinGroup(
     groupId,
     userId: principal.userId,
     status: membership.status,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_group',
+      targetId: groupId,
+    },
   });
 
   return new Response(JSON.stringify(mapMembershipResponse(membership)), {
@@ -658,6 +731,13 @@ export async function leaveGroup(
   await emit(publisher, 'space.group.member_left', {
     groupId,
     userId: principal.userId,
+  }, {
+    requestId,
+    actorUserId: principal.userId,
+    subject: {
+      targetType: 'space_group',
+      targetId: groupId,
+    },
   });
 
   return new Response(null, { status: 204 });

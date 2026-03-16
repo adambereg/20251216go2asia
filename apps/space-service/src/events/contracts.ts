@@ -11,6 +11,23 @@ export type SpaceDomainEventType =
 export type SpaceDomainEvent = {
   eventId: string;
   eventType: SpaceDomainEventType;
+  eventVersion: number;
   occurredAt: string;
+  producer: {
+    service: 'space-service';
+    environment?: string;
+  };
+  trace?: {
+    requestId?: string;
+    correlationId?: string;
+    causationId?: string;
+  };
+  actor?: {
+    userId?: string;
+  };
+  subject?: {
+    targetType: string;
+    targetId: string;
+  };
   payload: Record<string, unknown>;
 };

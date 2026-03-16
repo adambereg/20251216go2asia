@@ -152,7 +152,21 @@ export async function upsertReaction(
     await publisher.publish({
       eventId: `evt_${crypto.randomUUID()}`,
       eventType: 'reaction.created',
+      eventVersion: 1,
       occurredAt: new Date().toISOString(),
+      producer: {
+        service: 'reactions-service',
+      },
+      trace: {
+        requestId,
+      },
+      actor: {
+        userId: principal.userId,
+      },
+      subject: {
+        targetType: parsed.targetType,
+        targetId: parsed.targetId,
+      },
       payload: {
         actorUserId: principal.userId,
         targetType: parsed.targetType,
@@ -205,7 +219,21 @@ export async function removeReactionById(
   await publisher.publish({
     eventId: `evt_${crypto.randomUUID()}`,
     eventType: 'reaction.deleted',
+    eventVersion: 1,
     occurredAt: new Date().toISOString(),
+    producer: {
+      service: 'reactions-service',
+    },
+    trace: {
+      requestId,
+    },
+    actor: {
+      userId: principal.userId,
+    },
+    subject: {
+      targetType: existing.target_type,
+      targetId: existing.target_id,
+    },
     payload: {
       actorUserId: principal.userId,
       targetType: existing.target_type,
