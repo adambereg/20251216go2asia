@@ -1,4 +1,4 @@
-export const PHASE2_DOMAIN_SCHEMA_NAMES = ['media', 'space', 'quest', 'rielt', 'guru', 'rf'] as const;
+export const PHASE2_DOMAIN_SCHEMA_NAMES = ['media', 'space', 'reactions', 'quest', 'rielt', 'guru', 'rf'] as const;
 
 export type Phase2DomainSchemaName = (typeof PHASE2_DOMAIN_SCHEMA_NAMES)[number];
 
@@ -9,6 +9,7 @@ export interface Phase2DomainSchemaConvention {
   ownerService:
     | 'content-service'
     | 'space-service'
+    | 'reactions-service'
     | 'quest-service'
     | 'rielt-service'
     | 'guru-service'
@@ -33,6 +34,13 @@ export const PHASE2_DOMAIN_SCHEMA_CONVENTIONS: Record<
     tablePrefix: 'space_',
     ownerService: 'space-service',
     notes: 'Space owns the social publication core: posts, reposts, groups, memberships, profile projections, media relations, and feed-adjacent tables.',
+  },
+  reactions: {
+    domain: 'reactions',
+    schemaFile: './reactions',
+    tablePrefix: 'reactions_',
+    ownerService: 'reactions-service',
+    notes: 'Reactions owns interaction facts and target aggregates for V1 like-only semantics.',
   },
   quest: {
     domain: 'quest',

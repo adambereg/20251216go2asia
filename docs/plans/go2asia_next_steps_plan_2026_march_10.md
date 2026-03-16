@@ -178,20 +178,23 @@
 
 ---
 
-## Step 4 — Build `space-service`
+## Step 4 — `space-service` (completed, merged to `main`)
 
 ### Goal
 
-Создать реальный social core платформы.
+Зафиксировать и стабилизировать реализованный social core платформы в утверждённых SSOT-границах.
 
 ### Actions
 
-1. Поднять `space-service`.
-2. Реализовать:
+1. Зафиксировать статус: `feat/step4-space-service-v1` merged в `main`.
+2. Поддерживать social-core scope `space-service`:
    - posts;
    - reposts;
    - groups;
-   - базовые profile projections.
+   - group membership;
+   - profile projections;
+   - post-media relations;
+   - simple feed surfaces (chronological + basic filtering).
 3. Поддержать post types:
    - `post`
    - `repost`
@@ -203,42 +206,56 @@
    - `partner`
    - `listing`
    - `quest`
-5. Подключить базовые Points rewards.
+5. Явно не включать в `space-service`:
+   - reactions;
+   - points/rewards ownership;
+   - organizer/planner logic;
+   - AI orchestration;
+   - partner/quest workflows;
+   - PRO console logic.
 
 ### Result
 
-- появляется единый UGC/social backend;
-- остальные модули получают реальный discussion layer.
+- реализован и закреплён единый UGC/social backend;
+- `space-service` остаётся узким social core, без scope drift.
 
 ---
 
-## Step 5 — Add `Reactions` Inside Space Boundary
+## Step 5 — Build `reactions-service` Outside Space Boundary
 
 ### Goal
 
-Ввести единый interaction language для всей платформы.
+Ввести единый interaction language как отдельный interaction-домен, интегрированный со Space и другими доменами.
 
 ### Actions
 
-1. Реализовать reaction model:
+1. Реализовать reaction model в отдельном reactions-domain/service:
    - `like`
-   - `repost`
+2. Явно зафиксировать V1 границы (OUT OF SCOPE):
+   - `repost` (остаётся в `space-service`);
+   - `bookmark`
    - `rating`
    - `short_review`
-   - `bookmark`
    - `question`
    - `contact_request`
    - `thread_reply`
    - `completed`
-2. Ввести unified target contract.
-3. Реализовать thread/inquiry model.
+   - `was_here`
+   - `want_to_visit`
+   - organizer / PRO / marketplace workflows;
+   - points ownership;
+   - feed ranking ownership;
+   - AI orchestration;
+   - realtime push / websocket;
+   - advanced moderation / anti-fraud.
+3. Ввести unified target contract (Space + ecosystem targets).
 4. Ввести basic anti-spam / throttling / moderation flags.
-5. Подключить rewards через `Points`.
+5. Подключить rewards через `Points` как внешнюю интеграцию (без переноса ownership в `reactions-service`).
 
 ### Result
 
-- реализуется social-first архитектурное решение;
-- больше не требуется проектировать отдельные comment systems.
+- реализуется social-first interaction layer вне `space-service`;
+- реакции переиспользуются across domains без расширения Space boundary.
 
 ---
 
@@ -246,7 +263,7 @@
 
 ### Goal
 
-Сделать `Space` реальной distribution system, а не просто CRUD-хранилищем постов.
+Сделать feed отдельным distribution/read surface, сохранив `space-service` источником social-core данных.
 
 ### Actions
 
@@ -258,13 +275,14 @@
 2. Использовать простую ranking strategy:
    - chronological first;
    - лёгкие priority rules.
-3. Подключить circulation вокруг blog reposts.
-4. Не внедрять ML ranking на первой фазе.
+3. Подключить сигналы от `space-service` и `reactions-service` без переноса ownership внешних сигналов в `space-service`.
+4. Подключить circulation вокруг blog reposts.
+5. Не внедрять ML ranking на первой фазе.
 
 ### Result
 
-- `Space` становится живым social contour;
-- формируется реальный контур вовлечения и распространения контента.
+- формируется реальный контур вовлечения и распространения контента;
+- feed агрегирует сигналы доменов, но не меняет boundaries `space-service`.
 
 ---
 
@@ -325,7 +343,7 @@
    - detail pages;
    - nearby endpoint.
 3. Реализовать minimal owner/PRO CRUD.
-4. Реализовать inquiry через `contact_request + thread model`.
+4. Реализовать inquiry через отдельный domain/service в будущей фазе (не через `reactions-service` V1).
 5. Использовать Atlas geography через текущий `content-service`.
 
 ### Result
@@ -436,7 +454,7 @@
 
 1. `MVP-core` зафиксирован и hardened.
 2. `media-service` введён как единый asset contract.
-3. `Space + Reactions + Feed` работают на реальном backend.
+3. `Space + Reactions + Feed` работают на реальном backend как отдельные bounded contexts с явными контрактами.
 4. `Quest` создаёт реальные progress/reward flows.
 5. `Rielt` даёт реальные listings и inquiries.
 6. `Guru` агрегирует реальные домены.
@@ -452,8 +470,8 @@
 1. MVP hardening
 2. Platform readiness
 3. `media-service`
-4. `space-service`
-5. `reactions`
+4. `space-service` (done, merged to `main`)
+5. `reactions-service` (outside `space-service` boundary)
 6. `feed`
 7. `quest-service`
 8. `rielt-service`
@@ -486,6 +504,14 @@
 - OpenAPI-first;
 - single platform conventions;
 - domain ownership discipline.
+
+### Boundary note for future phases
+
+Явное уточнение границ:
+
+- Organizer domain — future/extracted scope (не часть текущего Space core cycle);
+- PRO console domain — future/separate scope (не часть текущего Space core cycle);
+- текущий цикл не должен возвращать эти области внутрь `space-service`.
 
 ---
 

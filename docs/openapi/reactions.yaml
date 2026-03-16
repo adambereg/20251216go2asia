@@ -1,0 +1,459 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Reactions Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Reactions Service (Step 5, V1).
+    Reactions are outside space-service boundary.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: reactions-service.example
+
+tags:
+  - name: health
+  - name: reactions
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getReactionsHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionsHealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getReactionsVersion
+      summary: Version (alias of /health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionsHealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: getReactionsReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionsReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionsReadyResponse"
+
+  /v1/reactions:
+    post:
+      tags: [reactions]
+      operationId: upsertReaction
+      summary: Create or update a like (idempotent write)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertReactionRequest"
+      responses:
+        "200":
+          description: Reaction applied (created or updated)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionWriteResponse"
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/ReactionsConflict"
+        "429":
+          $ref: "#/components/responses/ReactionsRateLimited"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/reactions/{reactionId}:
+    delete:
+      tags: [reactions]
+      operationId: removeReaction
+      summary: Remove an active like
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReactionId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Reaction removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionDeleteResponse"
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/reactions/summary/{targetType}/{targetId}:
+    get:
+      tags: [reactions]
+      operationId: getReactionSummary
+      summary: Get like summary for one target
+      parameters:
+        - $ref: "#/components/parameters/TargetType"
+        - $ref: "#/components/parameters/TargetId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/reactions/summary:batch:
+    post:
+      tags: [reactions]
+      operationId: getReactionSummaryBatch
+      summary: Get like summaries for multiple targets
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionSummaryBatchRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryBatchResponse"
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+
+  parameters:
+    XGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    XGatewayAuthOptional:
+      name: X-Gateway-Auth
+      in: header
+      required: false
+      schema:
+        type: string
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    TargetType:
+      name: targetType
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ReactionTargetType"
+    TargetId:
+      name: targetId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReactionId:
+      name: reactionId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    ReactionsValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    ReactionsConflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    ReactionsRateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    ReactionsServiceAuthNotConfigured:
+      description: Service auth is not configured
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+
+  schemas:
+    ReactionsHealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+          example: reactions-service
+        env:
+          type: string
+          example: staging
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "<sha>"
+
+    ReactionsReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
+    ReactionsErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          nullable: true
+
+    ReactionType:
+      type: string
+      enum: [like]
+
+    ReactionTargetType:
+      type: string
+      enum: [space_post, blog_post, place, event, partner, listing, quest]
+
+    ReactionStatus:
+      type: string
+      enum: [active, deleted]
+
+    ReactionRecord:
+      type: object
+      required: [id, actorUserId, targetType, targetId, reactionType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        actorUserId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        targetId:
+          type: string
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+        status:
+          $ref: "#/components/schemas/ReactionStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpsertReactionRequest:
+      type: object
+      required: [targetType, targetId, reactionType]
+      properties:
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        targetId:
+          type: string
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+
+    ReactionWriteResponse:
+      type: object
+      required: [reaction, applied]
+      properties:
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+        applied:
+          type: boolean
+          description: false when response is an idempotent replay
+
+    ReactionDeleteResponse:
+      type: object
+      required: [removed]
+      properties:
+        removed:
+          type: boolean
+
+    ReactionSummaryItem:
+      type: object
+      required: [targetType, targetId, counts, viewer]
+      properties:
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        targetId:
+          type: string
+        counts:
+          type: object
+          required: [like]
+          properties:
+            like:
+              type: integer
+              minimum: 0
+        viewer:
+          type: object
+          required: [liked]
+          properties:
+            liked:
+              type: boolean
+
+    ReactionSummaryResponse:
+      type: object
+      required: [item]
+      properties:
+        item:
+          $ref: "#/components/schemas/ReactionSummaryItem"
+
+    ReactionSummaryBatchTarget:
+      type: object
+      required: [targetType, targetId]
+      properties:
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        targetId:
+          type: string
+
+    ReactionSummaryBatchRequest:
+      type: object
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ReactionSummaryBatchTarget"
+
+    ReactionSummaryBatchResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReactionSummaryItem"

@@ -54,6 +54,14 @@ describe('api-gateway request hardening', () => {
       routeKey: 'space.feed.home.get',
       routeGroup: 'space',
     });
+    expect(classifyRoute('POST', '/v1/reactions')).toEqual({
+      routeKey: 'reactions.create.post',
+      routeGroup: 'reactions',
+    });
+    expect(classifyRoute('POST', '/v1/reactions/summary:batch')).toEqual({
+      routeKey: 'reactions.summary-batch.post',
+      routeGroup: 'reactions',
+    });
   });
 
   it('builds request context with hashed client fingerprint for anonymous routes', async () => {
@@ -183,6 +191,34 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected reactions write route without bearer token', async () => {
+    const env: Env = {
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          targetType: 'space_post',
+          targetId: 'post_1',
+          reactionType: 'like',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
   it('returns 503 when a known service route is not configured', async () => {
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/referral/stats'),
@@ -214,6 +250,29 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(501);
     expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
     expect(body.error.message).toContain('SPACE_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 501 for reserved reactions prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('REACTIONS_SERVICE_URL');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
     expect(fetchMock).not.toHaveBeenCalled();
   });

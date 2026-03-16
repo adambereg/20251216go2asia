@@ -17,6 +17,7 @@ export interface Env {
   REFERRAL_SERVICE_URL?: string;
   // Phase 2 services (not all exist yet; keep optional and only route when configured)
   SPACE_SERVICE_URL?: string;
+  REACTIONS_SERVICE_URL?: string;
   QUEST_SERVICE_URL?: string;
   RIELT_SERVICE_URL?: string;
   GURU_SERVICE_URL?: string;
@@ -53,6 +54,7 @@ export type RouteGroup =
   | 'points'
   | 'referral'
   | 'space'
+  | 'reactions'
   | 'quest'
   | 'rielt'
   | 'guru'
@@ -245,6 +247,21 @@ export function classifyRoute(method: string, path: string): RouteClassification
   }
   if (normalizedPath.startsWith('/v1/space/')) {
     return { routeKey: `space.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'space' };
+  }
+  if (normalizedPath === '/v1/reactions' && normalizedMethod === 'POST') {
+    return { routeKey: 'reactions.create.post', routeGroup: 'reactions' };
+  }
+  if (/^\/v1\/reactions\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'reactions.delete.delete', routeGroup: 'reactions' };
+  }
+  if (/^\/v1\/reactions\/summary\/[^/]+\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'reactions.summary.get', routeGroup: 'reactions' };
+  }
+  if (normalizedPath === '/v1/reactions/summary:batch' && normalizedMethod === 'POST') {
+    return { routeKey: 'reactions.summary-batch.post', routeGroup: 'reactions' };
+  }
+  if (normalizedPath.startsWith('/v1/reactions/')) {
+    return { routeKey: `reactions.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'reactions' };
   }
   if (normalizedPath.startsWith('/v1/quest/')) {
     return { routeKey: `quest.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'quest' };
@@ -531,6 +548,7 @@ function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
 
 function getReservedPhase2ServiceVar(path: string): keyof Env | null {
   if (path.startsWith('/v1/space/')) return 'SPACE_SERVICE_URL';
+  if (path === '/v1/reactions' || path.startsWith('/v1/reactions/')) return 'REACTIONS_SERVICE_URL';
   if (path.startsWith('/v1/quest/')) return 'QUEST_SERVICE_URL';
   if (path.startsWith('/v1/rielt/')) return 'RIELT_SERVICE_URL';
   if (path.startsWith('/v1/guru/')) return 'GURU_SERVICE_URL';
@@ -549,6 +567,13 @@ function isProtectedSpaceRoute(method: string, path: string): boolean {
   if (method === 'POST' && /^\/v1\/space\/groups\/[^/]+\/leave$/.test(path)) return true;
   if (method === 'GET' && path === '/v1/space/feed/home') return true;
   if (method === 'GET' && path === '/v1/space/feed/activity') return true;
+  return false;
+}
+
+function isProtectedReactionsRoute(method: string, path: string): boolean {
+  if (method === 'POST' && path === '/v1/reactions') return true;
+  if (method === 'DELETE' && /^\/v1\/reactions\/[^/]+$/.test(path)) return true;
+  if (method === 'POST' && path === '/v1/reactions/summary:batch') return true;
   return false;
 }
 
@@ -663,6 +688,7 @@ async function routeRequest(
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
           // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
           { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
+          { prefix: '/v1/reactions/', var: 'REACTIONS_SERVICE_URL', host: safeHostFromUrl(env.REACTIONS_SERVICE_URL) },
           { prefix: '/v1/quest/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
           { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
           { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
@@ -710,6 +736,8 @@ async function routeRequest(
     // Phase 2 (planned): do not fail with 502 if the service is not configured yet.
     // Keep behavior consistent with "unknown route" until SPACE_SERVICE_URL is provided.
     if (env.SPACE_SERVICE_URL) serviceUrl = env.SPACE_SERVICE_URL;
+  } else if (path === '/v1/reactions' || path.startsWith('/v1/reactions/')) {
+    if (env.REACTIONS_SERVICE_URL) serviceUrl = env.REACTIONS_SERVICE_URL;
   } else if (path.startsWith('/v1/quest/')) {
     if (env.QUEST_SERVICE_URL) serviceUrl = env.QUEST_SERVICE_URL;
   } else if (path.startsWith('/v1/rielt/')) {
@@ -805,7 +833,8 @@ async function routeRequest(
     isContentRegister ||
     isMediaUploadToken ||
     isMediaAttach ||
-    isProtectedSpaceRoute(request.method, path)
+    isProtectedSpaceRoute(request.method, path) ||
+    isProtectedReactionsRoute(request.method, path)
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;
