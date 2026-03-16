@@ -198,6 +198,16 @@ export async function listMediaByPostId(db: DbExecutor, postId: string): Promise
   return rowsOf<SpaceMediaRow>(result);
 }
 
+export async function hasPostMediaRelation(db: DbExecutor, postId: string, mediaId: string): Promise<boolean> {
+  const result = await db.execute(sql`
+    SELECT 1 AS present
+    FROM space_post_media
+    WHERE post_id = ${postId} AND media_id = ${mediaId}
+    LIMIT 1
+  `);
+  return rowsOf<{ present: number }>(result).length > 0;
+}
+
 export async function upsertPostMedia(
   db: DbExecutor,
   input: { postId: string; mediaId: string; sortOrder: number }
@@ -443,6 +453,7 @@ export async function listGroupFeedPosts(
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.group_id = ${groupId}
+      AND sp.visibility = 'group'
       AND sp.status = 'active'
       AND sp.deleted_at IS NULL
       ${applyCursorCondition(cursor)}

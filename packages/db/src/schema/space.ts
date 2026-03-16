@@ -94,6 +94,10 @@ export const spacePosts = pgTable(
       'space_post_group_visibility_requires_group_check',
       sql`(${table.visibility} <> 'group' OR ${table.groupId} IS NOT NULL)`
     ),
+    groupIdRequiresGroupVisibility: check(
+      'space_post_group_id_requires_group_visibility_check',
+      sql`(${table.groupId} IS NULL OR ${table.visibility} = 'group')`
+    ),
     idxAuthorPublishedAt: index('idx_space_post_author_published_at').on(table.authorId, table.publishedAt, table.id),
     idxGroupPublishedAt: index('idx_space_post_group_published_at').on(table.groupId, table.publishedAt, table.id),
     idxVisibilityPublishedAt: index('idx_space_post_visibility_published_at').on(table.visibility, table.publishedAt, table.id),

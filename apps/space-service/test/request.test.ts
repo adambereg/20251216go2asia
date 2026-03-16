@@ -36,7 +36,7 @@ describe('space-service v1', () => {
 
     expect(response.status).toBe(503);
     expect(body.status).toBe('not_ready');
-    expect(body.missing).toEqual(['databaseUrl', 'serviceJwtSecret', 'mediaServiceUrl']);
+    expect(body.missing).toEqual(['databaseUrl', 'serviceJwtSecret']);
   });
 
   it('returns 401 for protected post creation without gateway auth', async () => {
@@ -55,7 +55,6 @@ describe('space-service v1', () => {
       {
         SERVICE_JWT_SECRET: 'service-secret',
         DATABASE_URL: 'postgres://example',
-        MEDIA_SERVICE_URL: 'https://media.example',
       }
     );
 
@@ -68,7 +67,6 @@ describe('space-service v1', () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
       DATABASE_URL: 'postgres://example',
-      MEDIA_SERVICE_URL: 'https://media.example',
     };
     const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
 
@@ -92,6 +90,36 @@ describe('space-service v1', () => {
     expect(response.status).toBe(400);
     expect(body.error.code).toBe('VALIDATION_ERROR');
     expect(body.error.message).toContain('groupId');
+  });
+
+  it('rejects groupId when visibility is not group', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Public post',
+          groupId: 'sgroup_1',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('group');
   });
 
   it('returns a public post for anonymous read', async () => {
@@ -124,7 +152,6 @@ describe('space-service v1', () => {
       {
         DATABASE_URL: 'postgres://example',
         SERVICE_JWT_SECRET: 'service-secret',
-        MEDIA_SERVICE_URL: 'https://media.example',
       }
     );
 
@@ -139,7 +166,6 @@ describe('space-service v1', () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
       DATABASE_URL: 'postgres://example',
-      MEDIA_SERVICE_URL: 'https://media.example',
     };
     const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
 
@@ -187,29 +213,114 @@ describe('space-service v1', () => {
     expect(body.membersCount).toBe(1);
   });
 
-  it('attaches media through media-service lifecycle', async () => {
+  it('rejects external system post creation', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
       DATABASE_URL: 'postgres://example',
-      MEDIA_SERVICE_URL: 'https://media.example',
     };
     const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      if (requestUrl.endsWith('/v1/media/media_1')) {
-        return new Response(JSON.stringify({ media_id: 'media_1' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestUrl.endsWith('/v1/media/media_1/attach')) {
-        return new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`Unexpected fetch url: ${requestUrl}`);
-    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'system',
+          visibility: 'public',
+          text: 'system message',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('system');
+  });
+
+  it('rejects invalid repostTargetType for repost', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'public',
+          repostTargetType: 'bad_type',
+          repostTargetId: 'entity_1',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('REPOST_TARGET_INVALID');
+  });
+
+  it('filters non-group visibility rows from group feed queries', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_1',
+            slug: 'group-1',
+            title: 'Group 1',
+            description: null,
+            owner_id: 'user_test_1',
+            visibility: 'public',
+            status: 'active',
+            members_count: 1,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/group/sgroup_1', {
+        method: 'GET',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: unknown[] }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items).toEqual([]);
+    const groupFeedQuery = executeMock.mock.calls[1]?.[0];
+    expect(JSON.stringify(groupFeedQuery)).toContain("sp.visibility = 'group'");
+  });
+
+  it('attaches media as relation-only without lifecycle fetches', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -257,6 +368,6 @@ describe('space-service v1', () => {
     expect(body.postId).toBe('spost_1');
     expect(body.mediaId).toBe('media_1');
     expect(body.sortOrder).toBe(2);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,3 @@
-import { createLogger } from '@go2asia/logger';
-
 import { type GatewayPrincipal } from '../middleware/auth';
 import { readJsonObject } from '../middleware/http';
 import {
@@ -23,7 +21,6 @@ export async function handlePostsRoute(
   request: Request,
   env: Env,
   requestId: string,
-  logger: ReturnType<typeof createLogger>,
   publisher: SpaceEventPublisher,
   principal: GatewayPrincipal | null
 ): Promise<Response | null> {
@@ -51,17 +48,7 @@ export async function handlePostsRoute(
   const attachMatch = path.match(/^\/v1\/space\/posts\/([^/]+)\/media$/);
   if (attachMatch && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
-    const gatewayAuthToken = request.headers.get('X-Gateway-Auth') ?? '';
-    return attachMedia(
-      env,
-      decodeURIComponent(attachMatch[1]),
-      body,
-      principal,
-      requestId,
-      gatewayAuthToken,
-      logger,
-      publisher
-    );
+    return attachMedia(env, decodeURIComponent(attachMatch[1]), body, principal, requestId, publisher);
   }
 
   const detachMatch = path.match(/^\/v1\/space\/posts\/([^/]+)\/media\/([^/]+)$/);

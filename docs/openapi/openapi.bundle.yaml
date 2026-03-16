@@ -301,6 +301,7 @@ components:
         - requestId
       type: object
     AttachSpacePostMediaRequest:
+      description: Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
       properties:
         mediaId:
           type: string
@@ -684,10 +685,11 @@ components:
     CreateSpacePostRequest:
       properties:
         groupId:
+          description: Allowed only when visibility = group.
           nullable: true
           type: string
         postType:
-          $ref: "#/components/schemas/SpacePostType"
+          $ref: "#/components/schemas/PublicCreateSpacePostType"
         repostTargetId:
           nullable: true
           type: string
@@ -1031,6 +1033,40 @@ components:
         - action
         - externalId
         - createdAt
+      type: object
+    PublicCreateSpacePostType:
+      enum:
+        - post
+        - repost
+      type: string
+    ReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
       type: object
     ReferralCodeResponse:
       properties:
@@ -2304,6 +2340,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get activity feed
@@ -2324,12 +2362,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpaceFeedResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get group feed
       tags:
         - space
@@ -2352,6 +2394,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Get home feed
@@ -2372,12 +2416,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpaceFeedResponse"
           description: OK
-        "403":
-          $ref: "#/components/responses/SpaceForbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get profile feed
       tags:
         - space
@@ -2408,6 +2452,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Create group
@@ -2426,12 +2472,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpaceGroupResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get group by id
       tags:
         - space
@@ -2455,12 +2505,10 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Join group
@@ -2486,6 +2534,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Leave group
@@ -2514,8 +2564,6 @@ paths:
           $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":
@@ -2543,6 +2591,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Soft-delete post
@@ -2560,12 +2610,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpacePostResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get post by id
       tags:
         - space
@@ -2597,12 +2651,12 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/SpaceRateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Attach media relation to post
@@ -2627,6 +2681,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Remove media relation from post
@@ -2660,10 +2716,10 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
       summary: Convenience repost of an existing Space post
@@ -2682,12 +2738,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpaceProfileResponse"
           description: OK
-        "403":
-          $ref: "#/components/responses/SpaceForbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get social profile projection
       tags:
         - space

@@ -13,7 +13,6 @@ export interface Env {
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
   DATABASE_URL?: string;
-  MEDIA_SERVICE_URL?: string;
   SPACE_MAX_MEDIA_ATTACHMENTS?: string;
   SPACE_MAX_TEXT_LENGTH?: string;
 }
@@ -31,7 +30,6 @@ function handleReady(env: Env): Response {
   const checks = {
     databaseUrl: getSecretCheck(env.DATABASE_URL),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
-    mediaServiceUrl: getSecretCheck(env.MEDIA_SERVICE_URL),
   };
   const missing = Object.entries(checks)
     .filter(([, status]) => status !== 'ok')
@@ -108,7 +106,7 @@ export default {
       }
 
       response =
-        (await handlePostsRoute(request, env, requestId, logger, publisher, principal)) ??
+        (await handlePostsRoute(request, env, requestId, publisher, principal)) ??
         (await handleGroupsRoute(request, env, requestId, publisher, principal)) ??
         (await handleFeedRoute(request, env, requestId, principal)) ??
         (await handleProfilesRoute(request, env, requestId)) ??

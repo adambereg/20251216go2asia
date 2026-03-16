@@ -1,5 +1,4 @@
 import { createDb } from '@go2asia/db';
-import { createLogger } from '@go2asia/logger';
 
 import type { GatewayPrincipal } from '../middleware/auth';
 import { decodeFeedCursor, encodeFeedCursor, errorResponse } from '../middleware/http';
@@ -9,6 +8,7 @@ import {
   ensureProfileProjection,
   getGroupById,
   getMembership,
+  hasPostMediaRelation,
   getPostById,
   getProfileByUserId,
   insertSpaceGroup,
@@ -34,10 +34,11 @@ import type { SpaceEventPublisher } from '../events/publisher';
 
 type ServiceEnv = {
   DATABASE_URL?: string;
-  MEDIA_SERVICE_URL?: string;
   SPACE_MAX_MEDIA_ATTACHMENTS?: string;
   SPACE_MAX_TEXT_LENGTH?: string;
 };
+
+const REPOST_TARGET_TYPES = new Set(['space_post', 'blog_post', 'place', 'event', 'partner', 'listing', 'quest']);
 
 function toIso(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -46,6 +47,12 @@ function toIso(value: string | Date): string {
 function parseIntOrDefault(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function isConstraintViolation(error: unknown, constraintName: string): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const dbError = error as { code?: string; constraint?: string; message?: string };
+  return dbError.code === '23505' || dbError.constraint === constraintName || dbError.message?.includes(constraintName) === true;
 }
 
 function getDb(env: ServiceEnv, requestId: string) {
@@ -186,12 +193,24 @@ export async function createPost(
     return errorResponse('VALIDATION_ERROR', 'postType and visibility are required', requestId, 400);
   }
 
+  if (postType === 'system') {
+    return errorResponse('VALIDATION_ERROR', 'postType=system is not allowed on the public create route', requestId, 400);
+  }
+
   if (visibility === 'group' && !groupId) {
     return errorResponse('VALIDATION_ERROR', 'groupId is required when visibility = group', requestId, 400);
   }
 
+  if (visibility !== 'group' && groupId) {
+    return errorResponse('VALIDATION_ERROR', 'groupId is only allowed when visibility = group', requestId, 400);
+  }
+
   if (postType === 'repost' && (!repostTargetType || !repostTargetId)) {
     return errorResponse('REPOST_TARGET_INVALID', 'repost target is required for reposts', requestId, 400);
+  }
+
+  if (repostTargetType && !REPOST_TARGET_TYPES.has(repostTargetType)) {
+    return errorResponse('REPOST_TARGET_INVALID', 'repostTargetType is invalid', requestId, 400);
   }
 
   if (postType !== 'repost' && (repostTargetType || repostTargetId)) {
@@ -355,8 +374,6 @@ export async function attachMedia(
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
   requestId: string,
-  gatewayAuthToken: string,
-  logger: ReturnType<typeof createLogger>,
   publisher: SpaceEventPublisher
 ): Promise<Response> {
   const dbState = getDb(env, requestId);
@@ -378,47 +395,10 @@ export async function attachMedia(
     return errorResponse('VALIDATION_ERROR', 'mediaId is required', requestId, 400);
   }
 
+  const existingRelation = await hasPostMediaRelation(db, postId, mediaId);
   const currentCount = await countMediaByPostId(db, postId);
-  if (currentCount >= parseIntOrDefault(env.SPACE_MAX_MEDIA_ATTACHMENTS, 8)) {
+  if (!existingRelation && currentCount >= parseIntOrDefault(env.SPACE_MAX_MEDIA_ATTACHMENTS, 8)) {
     return errorResponse('RATE_LIMITED', 'Maximum media attachments reached for this post', requestId, 429);
-  }
-
-  if (!env.MEDIA_SERVICE_URL) {
-    return errorResponse('SERVICE_NOT_CONFIGURED', 'MEDIA_SERVICE_URL is not configured', requestId, 503);
-  }
-
-  const mediaLookup = await fetch(`${env.MEDIA_SERVICE_URL}/v1/media/${encodeURIComponent(mediaId)}`);
-  if (mediaLookup.status === 404) {
-    return errorResponse('NOT_FOUND', `Media asset not found: ${mediaId}`, requestId, 404);
-  }
-  if (!mediaLookup.ok) {
-    logger.error('Media lookup failed', { status: mediaLookup.status, postId, mediaId });
-    return errorResponse('INTERNAL_ERROR', 'Media lookup failed', requestId, 502);
-  }
-
-  const mediaAttach = await fetch(`${env.MEDIA_SERVICE_URL}/v1/media/${encodeURIComponent(mediaId)}/attach`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Gateway-Auth': gatewayAuthToken,
-    },
-    body: JSON.stringify({
-      ownerType: 'space_post',
-      ownerId: postId,
-      usageType: 'space_post_media',
-      slot: `attachment:${sortOrder}`,
-    }),
-  });
-
-  if (mediaAttach.status === 403) {
-    return errorResponse('MEDIA_ATTACH_NOT_ALLOWED', 'Media ownership validation failed', requestId, 403);
-  }
-  if (mediaAttach.status === 404) {
-    return errorResponse('NOT_FOUND', `Media asset not found: ${mediaId}`, requestId, 404);
-  }
-  if (!mediaAttach.ok) {
-    logger.error('Media attach lifecycle update failed', { status: mediaAttach.status, postId, mediaId });
-    return errorResponse('INTERNAL_ERROR', 'Media attach lifecycle update failed', requestId, 502);
   }
 
   await upsertPostMedia(db, { postId, mediaId, sortOrder });
@@ -500,14 +480,21 @@ export async function createGroup(
   await ensureProfileProjection(db, principal.userId);
 
   const groupId = `sgroup_${crypto.randomUUID()}`;
-  await insertSpaceGroup(db, {
-    id: groupId,
-    slug,
-    title,
-    description,
-    ownerId: principal.userId,
-    visibility,
-  });
+  try {
+    await insertSpaceGroup(db, {
+      id: groupId,
+      slug,
+      title,
+      description,
+      ownerId: principal.userId,
+      visibility,
+    });
+  } catch (error) {
+    if (isConstraintViolation(error, 'space_group_slug_unique')) {
+      return errorResponse('CONFLICT', 'Group slug already exists', requestId, 409);
+    }
+    throw error;
+  }
   await createOwnerMembership(db, groupId, principal.userId);
 
   const group = await getGroupById(db, groupId);
@@ -593,6 +580,13 @@ export async function joinGroup(
   const current = await getMembership(db, groupId, principal.userId);
   if (current?.status === 'blocked') {
     return errorResponse('GROUP_JOIN_NOT_ALLOWED', 'You are blocked in this group', requestId, 403);
+  }
+
+  if (current?.status === 'active') {
+    return new Response(JSON.stringify(mapMembershipResponse(current)), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   if (group.visibility === 'private' && group.owner_id !== principal.userId) {

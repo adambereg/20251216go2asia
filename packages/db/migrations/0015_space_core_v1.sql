@@ -118,19 +118,19 @@ CREATE TABLE IF NOT EXISTS "space_post" (
 --> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS "idx_space_post_author_published_at"
-  ON "space_post" ("author_id", "published_at" DESC, "id" DESC);
+  ON "space_post" ("author_id", "published_at", "id");
 --> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS "idx_space_post_group_published_at"
-  ON "space_post" ("group_id", "published_at" DESC, "id" DESC);
+  ON "space_post" ("group_id", "published_at", "id");
 --> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS "idx_space_post_visibility_published_at"
-  ON "space_post" ("visibility", "published_at" DESC, "id" DESC);
+  ON "space_post" ("visibility", "published_at", "id");
 --> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS "idx_space_post_status_published_at"
-  ON "space_post" ("status", "published_at" DESC, "id" DESC);
+  ON "space_post" ("status", "published_at", "id");
 --> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS "idx_space_post_repost_target"
@@ -202,6 +202,20 @@ BEGIN
       REFERENCES "public"."space_group"("id")
       ON DELETE no action
       ON UPDATE no action;
+  END IF;
+END $$;
+--> statement-breakpoint
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'space_post_group_id_requires_group_visibility_check'
+  ) THEN
+    ALTER TABLE "space_post"
+      ADD CONSTRAINT "space_post_group_id_requires_group_visibility_check"
+      CHECK ("group_id" IS NULL OR "visibility" = 'group');
   END IF;
 END $$;
 --> statement-breakpoint

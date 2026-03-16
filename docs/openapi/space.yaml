@@ -50,6 +50,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
 
+  /ready:
+    get:
+      tags: [health]
+      operationId: getSpaceReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+
   /v1/space/posts:
     post:
       tags: [space]
@@ -77,8 +96,6 @@ paths:
           $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
         "503":
           $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
@@ -99,10 +116,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpacePostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
     delete:
@@ -124,6 +145,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -159,8 +182,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -196,10 +219,10 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/SpaceRateLimited"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -224,6 +247,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -256,6 +281,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -274,10 +301,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpaceGroupResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -305,10 +336,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/SpaceRateLimited"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -334,6 +363,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -358,6 +389,8 @@ paths:
                 $ref: "#/components/schemas/SpaceFeedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -378,10 +411,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpaceFeedResponse"
-        "403":
-          $ref: "#/components/responses/SpaceForbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -402,10 +435,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpaceFeedResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -430,6 +467,8 @@ paths:
                 $ref: "#/components/schemas/SpaceActivityFeedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -448,10 +487,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpaceProfileResponse"
-        "403":
-          $ref: "#/components/responses/SpaceForbidden"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -589,6 +630,28 @@ components:
           type: string
           example: "<sha>"
 
+    ReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
     ErrorResponse:
       type: object
       required: [error]
@@ -608,6 +671,10 @@ components:
     SpacePostType:
       type: string
       enum: [post, repost, system]
+
+    PublicCreateSpacePostType:
+      type: string
+      enum: [post, repost]
 
     SpaceVisibility:
       type: string
@@ -698,7 +765,7 @@ components:
       required: [postType, visibility]
       properties:
         postType:
-          $ref: "#/components/schemas/SpacePostType"
+          $ref: "#/components/schemas/PublicCreateSpacePostType"
         visibility:
           $ref: "#/components/schemas/SpaceVisibility"
         text:
@@ -707,6 +774,7 @@ components:
         groupId:
           type: string
           nullable: true
+          description: Allowed only when visibility = group.
         repostTargetType:
           $ref: "#/components/schemas/SpaceRepostTargetType"
           nullable: true
@@ -833,6 +901,7 @@ components:
     AttachSpacePostMediaRequest:
       type: object
       required: [mediaId]
+      description: Stores only the post-media relation inside Space. No upload or media lifecycle ownership.
       properties:
         mediaId:
           type: string
