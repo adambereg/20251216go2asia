@@ -326,4 +326,111 @@ describe('feed-service request', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('forwards gateway auth to both space and reactions upstream calls', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        expect(request.headers.get('X-Gateway-Auth')).toBe(token);
+        return new Response(
+          JSON.stringify({
+            items: [{ id: 'item_1', post: { id: 'spost_1' } }],
+            nextCursor: null,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (request.url === 'https://reactions.example/v1/reactions/summary:batch') {
+        expect(request.headers.get('X-Gateway-Auth')).toBe(token);
+        return new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('degrades reactions when reactions upstream throws network exception', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        return new Response(
+          JSON.stringify({
+            items: [{ id: 'item_1', post: { id: 'spost_1' } }],
+            nextCursor: null,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (request.url === 'https://reactions.example/v1/reactions/summary:batch') {
+        throw new Error('network down');
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+    const body = await readJson<{
+      degraded?: { reactions?: boolean };
+      items: Array<{ reactions: { counts: { like: number }; viewer: { liked: boolean } } }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.degraded?.reactions).toBe(true);
+    expect(body.items[0]?.reactions.counts.like).toBe(0);
+    expect(body.items[0]?.reactions.viewer.liked).toBe(false);
+  });
+
+  it('returns controlled upstream error when space upstream throws network exception', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        throw new Error('space timeout');
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(503);
+    expect(body.error.code).toBe('UPSTREAM_UNAVAILABLE');
+  });
 });

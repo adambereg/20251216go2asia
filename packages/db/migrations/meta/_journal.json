@@ -27,7 +27,119 @@
       "idx": 3,
       "version": "5",
       "when": 1770890419773,
+      "tag": "0003_content_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1770890419774,
       "tag": "0003_foamy_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1770890419775,
+      "tag": "0004_atlas_city_dedup_and_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1770890419776,
+      "tag": "0004_place_kind_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1770890419777,
+      "tag": "0005_atlas_city_filters",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1770890419778,
+      "tag": "0006_atlas_guides_engine_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1770890419779,
+      "tag": "0007_atlas_guides_engine_v1_themes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1770890419780,
+      "tag": "0008_pulse_events_media_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1770890419781,
+      "tag": "0009_pulse_events_media_prefix",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1770890419782,
+      "tag": "0010_pulse_events_media_prefix_normalize",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1770890419783,
+      "tag": "0011_blog_posts_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1770890419784,
+      "tag": "0012_blog_posts_geo_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1770890419785,
+      "tag": "0013_media_assets_variants_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1770890419786,
+      "tag": "0014_media_usage_attach_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1770890419787,
+      "tag": "0015_space_core_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1770890419788,
+      "tag": "0016_reactions_like_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1770890419789,
+      "tag": "0017_reactions_idempotency_v1",
       "breakpoints": true
     }
   ]

@@ -763,6 +763,17 @@ components:
     CreateSpacePostRequest:
       type: object
       required: [postType, visibility]
+      allOf:
+        - if:
+            properties:
+              postType:
+                const: post
+          then:
+            required: [text]
+            properties:
+              text:
+                type: string
+                pattern: '.*\S.*'
       properties:
         postType:
           $ref: "#/components/schemas/PublicCreateSpacePostType"
@@ -771,6 +782,9 @@ components:
         text:
           type: string
           nullable: true
+          description: >
+            Optional for reposts. For postType=post, text is required after trim and must contain
+            at least one non-whitespace character.
         groupId:
           type: string
           nullable: true

@@ -54,6 +54,32 @@ function listMigrationFiles(dir: string): string[] {
   return files;
 }
 
+function readJournalTags(dir: string): string[] {
+  const journalPath = path.join(dir, 'meta', '_journal.json');
+  const raw = fs.readFileSync(journalPath, 'utf8');
+  const parsed = JSON.parse(raw) as { entries?: Array<{ tag?: string }> };
+  const tags = (parsed.entries ?? [])
+    .map((entry) => (typeof entry.tag === 'string' ? `${entry.tag}.sql` : null))
+    .filter((value): value is string => Boolean(value));
+  return tags;
+}
+
+function assertJournalAligned(migrationFiles: string[], journalFiles: string[]) {
+  const migrationSet = new Set(migrationFiles);
+  const journalSet = new Set(journalFiles);
+  const missingInJournal = migrationFiles.filter((file) => !journalSet.has(file));
+  const missingOnDisk = journalFiles.filter((file) => !migrationSet.has(file));
+  if (missingInJournal.length === 0 && missingOnDisk.length === 0) return;
+
+  const details = [
+    missingInJournal.length > 0 ? `missing_in_journal=${missingInJournal.join(',')}` : '',
+    missingOnDisk.length > 0 ? `missing_on_disk=${missingOnDisk.join(',')}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  throw new Error(`Migration journal is not aligned with SQL migrations (${details})`);
+}
+
 function splitStatements(sql: string): string[] {
   // Drizzle migrations are split with this marker; keep it simple and safe.
   // Anything between markers is executed as-is.
@@ -156,6 +182,8 @@ async function main() {
 
   const dir = migrationsDir();
   const files = listMigrationFiles(dir);
+  const journalFiles = readJournalTags(dir);
+  assertJournalAligned(files, journalFiles);
 
   const client = new Client({
     connectionString: url,

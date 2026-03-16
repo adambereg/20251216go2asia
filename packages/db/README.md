@@ -14,18 +14,24 @@ const db = createDb(process.env.DATABASE_URL);
 const users = await db.select().from(schema.users);
 ```
 
-## Migrations
+## Migrations (SSOT)
+
+SQL files in `packages/db/migrations/*.sql` are the source of truth.
 
 ```bash
 # Generate migration from schema changes
 pnpm db:generate
 
-# Apply migrations
-pnpm db:migrate
+# Apply DDL migrations (preferred for staging/prod)
+pnpm db:ddl:apply
+pnpm db:ddl:apply:staging
 
-# Push schema directly (dev only)
+# Legacy Drizzle commands (local/dev only)
+pnpm db:migrate
 pnpm db:push
 ```
+
+`src/ddlApply.ts` verifies that `migrations/meta/_journal.json` matches migration SQL files before applying DDL.
 
 ## Schema Structure
 

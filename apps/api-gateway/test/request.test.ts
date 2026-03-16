@@ -714,4 +714,90 @@ describe('api-gateway request hardening', () => {
       })
     );
   });
+
+  it('proxies reactions summary batch without bearer auth', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://reactions.example/v1/reactions/summary:batch');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      return new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions/summary:batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          targets: [{ targetType: 'space_post', targetId: 'post_1' }],
+        }),
+      }),
+      {
+        REACTIONS_SERVICE_URL: 'https://reactions.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards Idempotency-Key to reactions write route', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://reactions.example/v1/reactions');
+      expect(request.headers.get('Idempotency-Key')).toBe('idem-key-1');
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'user_from_jwt',
+      roles: ['member'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer real-user-token',
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'idem-key-1',
+        },
+        body: JSON.stringify({
+          targetType: 'space_post',
+          targetId: 'post_1',
+          reactionType: 'like',
+        }),
+      }),
+      {
+        REACTIONS_SERVICE_URL: 'https://reactions.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+        CLERK_SECRET_KEY: 'sk_test_123',
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes Idempotency-Key in CORS allow headers', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Headers')).toContain('Idempotency-Key');
+  });
 });

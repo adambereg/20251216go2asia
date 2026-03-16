@@ -34,18 +34,27 @@ export async function fetchReactionBatchSummary(
   targets: Array<{ targetType: 'space_post'; targetId: string }>
 ): Promise<UpstreamResult<ReactionsSummaryBatchResponse>> {
   const trimmed = input.baseUrl.endsWith('/') ? input.baseUrl.slice(0, -1) : input.baseUrl;
-  const response = await fetch(
-    new Request(`${trimmed}/v1/reactions/summary:batch`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Gateway-Auth': input.gatewayAuth,
-        'X-Request-Id': input.requestId,
-      },
-      body: JSON.stringify({ targets }),
-    })
-  );
+  let response: Response;
+  try {
+    response = await fetch(
+      new Request(`${trimmed}/v1/reactions/summary:batch`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': input.gatewayAuth,
+          'X-Request-Id': input.requestId,
+        },
+        body: JSON.stringify({ targets }),
+      })
+    );
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      body: null,
+    };
+  }
 
   const body = await readJsonObjectOrNull(response);
   if (!response.ok) {

@@ -5,7 +5,9 @@ import {
   deleteReactionByIdForUser,
   getActiveReactionByIdForUser,
   getActiveReactionByIdentity,
+  getReactionIdempotencyRecord,
   getReactionSummary,
+  insertReactionIdempotencyRecord,
   insertActiveReaction,
   type ReactionRow,
   type ReactionTargetType,
@@ -90,22 +92,69 @@ function parseBatchSummaryInput(body: Record<string, unknown> | null): BatchSumm
   return { targets };
 }
 
+function parseIdempotencyKey(raw: string | null): { ok: true; value: string | null } | { ok: false } {
+  if (raw === null) return { ok: true, value: null };
+  const normalized = raw.trim();
+  if (normalized.length === 0) return { ok: false };
+  if (normalized.length < 8 || normalized.length > 128) return { ok: false };
+  return { ok: true, value: normalized };
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function buildUpsertPayloadHash(input: UpsertReactionInput): Promise<string> {
+  return sha256Hex(`${input.targetType}:${input.targetId}:${input.reactionType}`);
+}
+
 export async function upsertReaction(
   env: Env,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
   requestId: string,
-  publisher: ReactionsEventPublisher
+  publisher: ReactionsEventPublisher,
+  rawIdempotencyKey: string | null
 ): Promise<Response> {
   const parsed = parseUpsertReactionInput(body);
   if (!parsed) {
     return errorResponse('VALIDATION_ERROR', 'Invalid reaction payload', requestId, 400);
+  }
+  const parsedIdempotencyKey = parseIdempotencyKey(rawIdempotencyKey);
+  if (!parsedIdempotencyKey.ok) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid Idempotency-Key header', requestId, 400);
   }
   if (!env.DATABASE_URL) {
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
   }
 
   const db = createDb(env.DATABASE_URL);
+  const payloadHash = await buildUpsertPayloadHash(parsed);
+  const idempotencyKey = parsedIdempotencyKey.value;
+  if (idempotencyKey) {
+    const record = await getReactionIdempotencyRecord(db, {
+      userId: principal.userId,
+      idempotencyKey,
+    });
+    if (record) {
+      if (record.payload_hash !== payloadHash) {
+        return errorResponse('CONFLICT', 'Idempotency-Key was already used for a different payload', requestId, 409);
+      }
+      const replayReaction = await getActiveReactionByIdForUser(db, record.reaction_id, principal.userId);
+      if (!replayReaction) {
+        return errorResponse('CONFLICT', 'Idempotency replay is not available for this reaction state', requestId, 409);
+      }
+      return json(
+        {
+          reaction: normalizeReaction(replayReaction),
+          applied: false,
+        },
+        200
+      );
+    }
+  }
+
   const existing = await getActiveReactionByIdentity(db, {
     userId: principal.userId,
     targetType: parsed.targetType,
@@ -141,6 +190,24 @@ export async function upsertReaction(
 
   if (!reaction) {
     return errorResponse('INTERNAL_ERROR', 'Failed to persist reaction', requestId, 500);
+  }
+
+  if (idempotencyKey) {
+    const inserted = await insertReactionIdempotencyRecord(db, {
+      userId: principal.userId,
+      idempotencyKey,
+      payloadHash,
+      reactionId: reaction.id,
+    });
+    if (!inserted) {
+      const record = await getReactionIdempotencyRecord(db, {
+        userId: principal.userId,
+        idempotencyKey,
+      });
+      if (!record || record.payload_hash !== payloadHash || record.reaction_id !== reaction.id) {
+        return errorResponse('CONFLICT', 'Idempotency-Key was already used for a different payload', requestId, 409);
+      }
+    }
   }
 
   if (created) {

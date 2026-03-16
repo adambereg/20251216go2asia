@@ -25,6 +25,14 @@ export type ReactionSummaryRow = {
   viewer_liked: boolean;
 };
 
+export type ReactionIdempotencyRow = {
+  user_id: string;
+  idempotency_key: string;
+  payload_hash: string;
+  reaction_id: string;
+  created_at: string | Date;
+};
+
 function rowsOf<T>(result: unknown): T[] {
   return ((result as { rows?: T[] } | null)?.rows ?? []) as T[];
 }
@@ -171,4 +179,44 @@ export async function getReactionSummary(
       viewer_liked: false,
     }
   );
+}
+
+export async function getReactionIdempotencyRecord(
+  db: DbExecutor,
+  input: { userId: string; idempotencyKey: string }
+): Promise<ReactionIdempotencyRow | null> {
+  const result = await db.execute(sql`
+    SELECT user_id, idempotency_key, payload_hash, reaction_id, created_at
+    FROM reaction_idempotency_keys
+    WHERE user_id = ${input.userId}
+      AND idempotency_key = ${input.idempotencyKey}
+    LIMIT 1
+  `);
+  return rowsOf<ReactionIdempotencyRow>(result)[0] ?? null;
+}
+
+export async function insertReactionIdempotencyRecord(
+  db: DbExecutor,
+  input: { userId: string; idempotencyKey: string; payloadHash: string; reactionId: string }
+): Promise<ReactionIdempotencyRow | null> {
+  const result = await db.execute(sql`
+    INSERT INTO reaction_idempotency_keys (
+      user_id,
+      idempotency_key,
+      payload_hash,
+      reaction_id,
+      created_at
+    )
+    VALUES (
+      ${input.userId},
+      ${input.idempotencyKey},
+      ${input.payloadHash},
+      ${input.reactionId},
+      now()
+    )
+    ON CONFLICT (user_id, idempotency_key)
+    DO NOTHING
+    RETURNING user_id, idempotency_key, payload_hash, reaction_id, created_at
+  `);
+  return rowsOf<ReactionIdempotencyRow>(result)[0] ?? null;
 }
