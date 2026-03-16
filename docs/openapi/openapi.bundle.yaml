@@ -683,6 +683,18 @@ components:
         - visibility
       type: object
     CreateSpacePostRequest:
+      allOf:
+        - if:
+            properties:
+              postType:
+                const: post
+          then:
+            properties:
+              text:
+                pattern: .*\S.*
+                type: string
+            required:
+              - text
       properties:
         groupId:
           description: Allowed only when visibility = group.
@@ -697,6 +709,8 @@ components:
           $ref: "#/components/schemas/SpaceRepostTargetType"
           nullable: true
         text:
+          description: |
+            Optional for reposts. For postType=post, text is required after trim and must contain at least one non-whitespace character.
           nullable: true
           type: string
         visibility:

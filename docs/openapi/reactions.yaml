@@ -214,6 +214,10 @@ components:
       name: Idempotency-Key
       in: header
       required: false
+      description: >
+        Optional idempotency key for POST /v1/reactions.
+        Reusing the same key with the same payload returns an idempotent replay (applied=false).
+        Reusing the same key with a different payload returns 409 Conflict.
       schema:
         type: string
         minLength: 8
@@ -257,7 +261,7 @@ components:
           schema:
             $ref: "#/components/schemas/ReactionsErrorResponse"
     ReactionsConflict:
-      description: Conflict
+      description: Conflict (for example idempotency key reuse with different payload)
       content:
         application/json:
           schema:

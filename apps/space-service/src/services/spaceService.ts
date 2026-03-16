@@ -75,6 +75,22 @@ function normalizeOptionalString(value: unknown, maxLength = 10_000): string | n
   return normalized.slice(0, maxLength);
 }
 
+function parseCreatePostText(
+  value: unknown,
+  maxLength: number
+): { ok: true; text: string | null } | { ok: false; message: string } {
+  if (value === undefined || value === null) return { ok: true, text: null };
+  if (typeof value !== 'string') {
+    return { ok: false, message: 'text must be a string when provided' };
+  }
+  const normalized = value.trim();
+  if (!normalized) return { ok: true, text: null };
+  if (normalized.length > maxLength) {
+    return { ok: false, message: `text length must be <= ${maxLength}` };
+  }
+  return { ok: true, text: normalized };
+}
+
 function normalizeVisibility(value: unknown): 'public' | 'followers' | 'group' | 'private' | null {
   return value === 'public' || value === 'followers' || value === 'group' || value === 'private' ? value : null;
 }
@@ -215,7 +231,12 @@ export async function createPost(
 
   const postType = normalizePostType(body?.postType);
   const visibility = normalizeVisibility(body?.visibility);
-  const text = normalizeOptionalString(body?.text, parseIntOrDefault(env.SPACE_MAX_TEXT_LENGTH, 5000));
+  const maxTextLength = parseIntOrDefault(env.SPACE_MAX_TEXT_LENGTH, 5000);
+  const parsedText = parseCreatePostText(body?.text, maxTextLength);
+  if (!parsedText.ok) {
+    return errorResponse('VALIDATION_ERROR', parsedText.message, requestId, 400);
+  }
+  const text = parsedText.text;
   const groupId = normalizeOptionalString(body?.groupId, 128);
   const repostTargetType = normalizeOptionalString(body?.repostTargetType, 64);
   const repostTargetId = normalizeOptionalString(body?.repostTargetId, 128);

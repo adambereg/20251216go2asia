@@ -591,7 +591,6 @@ function isProtectedSpaceRoute(method: string, path: string): boolean {
 function isProtectedReactionsRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/reactions') return true;
   if (method === 'DELETE' && /^\/v1\/reactions\/[^/]+$/.test(path)) return true;
-  if (method === 'POST' && path === '/v1/reactions/summary:batch') return true;
   return false;
 }
 
@@ -665,7 +664,7 @@ async function routeRequest(
         Vary: 'Origin',
         'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
         'Access-Control-Allow-Headers':
-          'Authorization,Content-Type,X-Request-Id,X-Request-ID,X-Gateway-Auth,X-User-ID',
+          'Authorization,Content-Type,Idempotency-Key,X-Request-Id,X-Request-ID,X-Gateway-Auth,X-User-ID',
         'Access-Control-Max-Age': '86400',
       },
     });
@@ -834,9 +833,11 @@ async function routeRequest(
   const accept = request.headers.get('Accept');
   const acceptLang = request.headers.get('Accept-Language');
   const contentType = request.headers.get('Content-Type');
+  const idempotencyKey = request.headers.get('Idempotency-Key');
   if (accept) headers.set('Accept', accept);
   if (acceptLang) headers.set('Accept-Language', acceptLang);
   if (contentType) headers.set('Content-Type', contentType);
+  if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey);
   headers.set('X-Request-Id', requestId);
 
   // For user-facing routes that require user context, verify Clerk once at the gateway

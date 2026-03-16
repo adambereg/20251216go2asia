@@ -315,6 +315,181 @@ describe('reactions-service request', () => {
     expect(body.items[0]?.viewer.liked).toBe(true);
   });
 
+  it('returns batch summary without gateway auth (optional viewer)', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          target_type: 'space_post',
+          target_id: 'post_1',
+          like_count: 2,
+          viewer_liked: false,
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions/summary:batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targets: [{ targetType: 'space_post', targetId: 'post_1' }],
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: Array<{ viewer: { liked: boolean } }> }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items[0]?.viewer.liked).toBe(false);
+  });
+
+  it('replays same idempotency key with same payload', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_1',
+            user_id: 'user_1',
+            target_type: 'space_post',
+            target_id: 'post_1',
+            reaction_type: 'like',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            user_id: 'user_1',
+            idempotency_key: 'idem-key-123',
+            payload_hash: '8346ae6deb57428f276e2c58f535aeb14f6879adba7d7f5fa78267d384c4de35',
+            reaction_id: 'react_1',
+            created_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            user_id: 'user_1',
+            idempotency_key: 'idem-key-123',
+            payload_hash: '8346ae6deb57428f276e2c58f535aeb14f6879adba7d7f5fa78267d384c4de35',
+            reaction_id: 'react_1',
+            created_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_1',
+            user_id: 'user_1',
+            target_type: 'space_post',
+            target_id: 'post_1',
+            reaction_type: 'like',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      });
+
+    const requestBody = JSON.stringify({
+      targetType: 'space_post',
+      targetId: 'post_1',
+      reactionType: 'like',
+    });
+
+    const first = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+          'Idempotency-Key': 'idem-key-123',
+        },
+        body: requestBody,
+      }),
+      env
+    );
+    expect(first.status).toBe(200);
+    const firstBody = await readJson<{ applied: boolean }>(first);
+    expect(firstBody.applied).toBe(true);
+
+    const second = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+          'Idempotency-Key': 'idem-key-123',
+        },
+        body: requestBody,
+      }),
+      env
+    );
+    expect(second.status).toBe(200);
+    const secondBody = await readJson<{ applied: boolean }>(second);
+    expect(secondBody.applied).toBe(false);
+  });
+
+  it('returns conflict for idempotency key reuse with different payload', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          user_id: 'user_1',
+          idempotency_key: 'idem-key-999',
+          payload_hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          reaction_id: 'react_9',
+          created_at: '2026-03-14T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+          'Idempotency-Key': 'idem-key-999',
+        },
+        body: JSON.stringify({
+          targetType: 'space_post',
+          targetId: 'post_2',
+          reactionType: 'like',
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
+  });
+
   it('returns deterministic deduped batch summary for mixed targets', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',

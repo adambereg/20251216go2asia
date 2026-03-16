@@ -36,16 +36,25 @@ async function getFromSpace<T>(
   query: Record<string, string | number | null | undefined>
 ): Promise<UpstreamResult<T>> {
   const url = buildUrl(input.baseUrl, path, query);
-  const response = await fetch(
-    new Request(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'X-Gateway-Auth': input.gatewayAuth,
-        'X-Request-Id': input.requestId,
-      },
-    })
-  );
+  let response: Response;
+  try {
+    response = await fetch(
+      new Request(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Gateway-Auth': input.gatewayAuth,
+          'X-Request-Id': input.requestId,
+        },
+      })
+    );
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      body: null,
+    };
+  }
 
   const body = await readJsonObjectOrNull(response);
   if (!response.ok) {

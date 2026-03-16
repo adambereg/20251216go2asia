@@ -66,3 +66,31 @@ export const reactionAggregates = pgTable(
     idxTargetType: index('idx_reaction_aggregates_target_type').on(table.targetType),
   })
 );
+
+export const reactionIdempotencyKeys = pgTable(
+  'reaction_idempotency_keys',
+  {
+    userId: text('user_id').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    payloadHash: text('payload_hash').notNull(),
+    reactionId: text('reaction_id').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUserKey: unique('reaction_idempotency_user_key_unique').on(table.userId, table.idempotencyKey),
+    userIdNotBlank: check('reaction_idempotency_user_id_not_blank_check', sql`(length(trim(${table.userId})) > 0)`),
+    idempotencyKeyNotBlank: check(
+      'reaction_idempotency_key_not_blank_check',
+      sql`(length(trim(${table.idempotencyKey})) > 0)`
+    ),
+    payloadHashNotBlank: check(
+      'reaction_idempotency_payload_hash_not_blank_check',
+      sql`(length(trim(${table.payloadHash})) > 0)`
+    ),
+    reactionIdNotBlank: check(
+      'reaction_idempotency_reaction_id_not_blank_check',
+      sql`(length(trim(${table.reactionId})) > 0)`
+    ),
+    idxReactionIdempotencyReactionId: index('idx_reaction_idempotency_reaction_id').on(table.reactionId),
+  })
+);

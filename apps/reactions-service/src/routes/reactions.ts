@@ -23,7 +23,7 @@ export async function handleReactionsRoute(
 
   if (path === '/v1/reactions' && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
-    return upsertReaction(env, body, principal, requestId, publisher);
+    return upsertReaction(env, body, principal, requestId, publisher, request.headers.get('Idempotency-Key'));
   }
 
   const deleteMatch = path.match(/^\/v1\/reactions\/([^/]+)$/);

@@ -47,7 +47,6 @@ function handleReady(env: Env): Response {
 function isProtectedRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/reactions') return true;
   if (method === 'DELETE' && /^\/v1\/reactions\/[^/]+$/.test(path)) return true;
-  if (method === 'POST' && path === '/v1/reactions/summary:batch') return true;
   return false;
 }
 
