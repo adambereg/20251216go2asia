@@ -10,7 +10,7 @@ import type { PublicCreateSpacePostType } from "./publicCreateSpacePostType";
 import type { SpaceRepostTargetType } from "./spaceRepostTargetType";
 import type { SpaceVisibility } from "./spaceVisibility";
 
-export interface CreateSpacePostRequest {
+export type CreateSpacePostRequest = unknown & {
   /**
    * Allowed only when visibility = group.
    * @nullable
@@ -21,7 +21,34 @@ export interface CreateSpacePostRequest {
   repostTargetId?: string | null;
   /** @nullable */
   repostTargetType?: SpaceRepostTargetType;
-  /** @nullable */
+  /**
+   * Optional for reposts. For postType=post, text is required after trim and must contain at least one non-whitespace character.
+
+   * @nullable
+   */
   text?: string | null;
   visibility: SpaceVisibility;
-}
+} & Required<
+    Pick<
+      unknown & {
+        /**
+         * Allowed only when visibility = group.
+         * @nullable
+         */
+        groupId?: string | null;
+        postType: PublicCreateSpacePostType;
+        /** @nullable */
+        repostTargetId?: string | null;
+        /** @nullable */
+        repostTargetType?: SpaceRepostTargetType;
+        /**
+   * Optional for reposts. For postType=post, text is required after trim and must contain at least one non-whitespace character.
+
+   * @nullable
+   */
+        text?: string | null;
+        visibility: SpaceVisibility;
+      },
+      "postType" | "visibility"
+    >
+  >;
