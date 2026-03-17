@@ -463,6 +463,73 @@
 
 ---
 
+## Step 13 — Integration Layer: Connect Quest, Space, Points, RF, Dashboard and PRO Console
+
+### Goal
+
+Form a unified user experience by integrating previously built domain services into a coherent system.
+
+This step does NOT introduce new core domains.
+It connects existing ones.
+
+---
+
+### Scope
+
+#### 1. Space ↔ Quest integration
+- validate `space_action` steps via space-service
+- allow post creation as part of quest flow
+- support quest-related social content (reports, completion posts)
+
+#### 2. Quest ↔ Points integration
+- connect quest events to points-service
+- handle:
+  - quest.completed
+  - quest.step.completed
+- Quest does NOT calculate balances
+
+#### 3. Quest ↔ RF / Voucher integration
+- include RF partner locations in quests
+- enable voucher eligibility via steps/completion
+- prepare voucher redemption flow
+
+#### 4. Dashboard integration
+- display:
+  - active quests
+  - progress
+  - rewards
+- aggregate data from:
+  - quest-service
+  - points-service
+  - (future voucher-service)
+
+#### 5. PRO Console integration
+- quest creation (combined quests)
+- step builder (places, events, partners, social)
+- submission review and moderation
+- analytics for PRO
+
+---
+
+### Architectural Constraints
+
+- Do NOT merge domains
+- Quest remains activity engine
+- Space remains social layer
+- Points remains economic source of truth
+- Voucher logic remains external
+
+---
+
+### Output
+
+- End-to-end flow:
+  Discover → Participate → Share → Reward
+- Connected ecosystem behavior
+- Foundation for Guru, AI layer and token economy
+
+---
+
 ## 5. Practical Execution Order
 
 Краткий operational порядок:
