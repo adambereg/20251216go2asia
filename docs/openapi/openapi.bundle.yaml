@@ -1,5 +1,5 @@
 # GENERATED FILE — DO NOT EDIT
-# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/referral.yaml, docs/openapi/space.yaml
+# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/quest.yaml, docs/openapi/referral.yaml, docs/openapi/space.yaml
 
 components:
   parameters:
@@ -39,6 +39,12 @@ components:
       required: false
       schema:
         type: string
+    Difficulty:
+      in: query
+      name: difficulty
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestDifficulty"
     EventId:
       in: path
       name: id
@@ -65,6 +71,13 @@ components:
       required: false
       schema:
         type: string
+    Lat:
+      in: query
+      name: lat
+      required: false
+      schema:
+        format: double
+        type: number
     Limit:
       in: query
       name: limit
@@ -73,12 +86,36 @@ components:
         maximum: 200
         minimum: 1
         type: integer
+    Lng:
+      in: query
+      name: lng
+      required: false
+      schema:
+        format: double
+        type: number
     MediaId:
       in: path
       name: mediaId
       required: true
       schema:
         type: string
+    Page:
+      in: query
+      name: page
+      required: false
+      schema:
+        default: 1
+        minimum: 1
+        type: integer
+    PageSize:
+      in: query
+      name: pageSize
+      required: false
+      schema:
+        default: 20
+        maximum: 100
+        minimum: 1
+        type: integer
     PlaceIdOrSlug:
       in: path
       name: idOrSlug
@@ -100,9 +137,33 @@ components:
       required: true
       schema:
         type: string
+    QuestId:
+      in: path
+      name: questId
+      required: true
+      schema:
+        type: string
+    StepId:
+      in: path
+      name: stepId
+      required: true
+      schema:
+        type: string
+    SubmissionId:
+      in: path
+      name: submissionId
+      required: true
+      schema:
+        type: string
     TabKey:
       in: query
       name: tabKey
+      required: false
+      schema:
+        type: string
+    Theme:
+      in: query
+      name: theme
       required: false
       schema:
         type: string
@@ -155,6 +216,54 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Not found
+    QuestConflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Conflict
+    QuestForbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Forbidden
+    QuestInternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Internal server error
+    QuestNotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Not found
+    QuestRateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Too many requests
+    QuestServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Service auth is not configured
+    QuestUnauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Unauthorized
+    QuestValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QuestErrorResponse"
+      description: Validation error
     RateLimited:
       content:
         application/json:
@@ -239,6 +348,32 @@ components:
         - transactionId
         - applied
         - balance
+      type: object
+    AddQuestStepRequest:
+      properties:
+        order:
+          minimum: 1
+          type: integer
+        requirements:
+          $ref: "#/components/schemas/QuestStepRequirement"
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        targetId:
+          nullable: true
+          type: string
+        targetType:
+          nullable: true
+          type: string
+        type:
+          $ref: "#/components/schemas/QuestStepType"
+        verificationType:
+          $ref: "#/components/schemas/QuestVerificationType"
+      required:
+        - order
+        - type
+        - verificationType
       type: object
     AttachMediaUsageRequest:
       properties:
@@ -666,6 +801,37 @@ components:
         - lang
         - bodyMarkdown
       type: object
+    CreateQuestRequest:
+      properties:
+        cityId:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        difficulty:
+          $ref: "#/components/schemas/QuestDifficulty"
+          nullable: true
+        geoScope:
+          $ref: "#/components/schemas/QuestGeoScope"
+          nullable: true
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        theme:
+          nullable: true
+          type: string
+        title:
+          type: string
+        type:
+          nullable: true
+          type: string
+        visibility:
+          $ref: "#/components/schemas/QuestVisibility"
+      required:
+        - title
+      type: object
     CreateSpaceGroupRequest:
       properties:
         description:
@@ -1053,6 +1219,354 @@ components:
         - post
         - repost
       type: string
+    QuestDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/QuestSummaryResponse"
+        - properties:
+            steps:
+              items:
+                $ref: "#/components/schemas/QuestStepResponse"
+              type: array
+          required:
+            - steps
+          type: object
+    QuestDifficulty:
+      enum:
+        - easy
+        - medium
+        - hard
+      type: string
+    QuestErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    QuestGeoScope:
+      additionalProperties: false
+      properties:
+        lat:
+          format: double
+          type: number
+        lng:
+          format: double
+          type: number
+        radiusMeters:
+          minimum: 1
+          type: integer
+      type: object
+    QuestHealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: quest-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    QuestListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/QuestSummaryResponse"
+          type: array
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+      type: object
+    QuestProgressResponse:
+      properties:
+        completedAt:
+          format: date-time
+          nullable: true
+          type: string
+        currentStep:
+          minimum: 1
+          nullable: true
+          type: integer
+        id:
+          type: string
+        questId:
+          type: string
+        startedAt:
+          format: date-time
+          type: string
+        status:
+          $ref: "#/components/schemas/QuestProgressStatus"
+        totalSteps:
+          minimum: 0
+          type: integer
+        userId:
+          type: string
+      required:
+        - id
+        - questId
+        - userId
+        - status
+        - currentStep
+        - totalSteps
+        - startedAt
+      type: object
+    QuestProgressStatus:
+      enum:
+        - not_started
+        - in_progress
+        - pending_review
+        - completed
+        - failed
+        - expired
+      type: string
+    QuestProofData:
+      additionalProperties: true
+      type: object
+    QuestProofType:
+      enum:
+        - photo
+        - geo
+        - qr
+        - space_post
+        - text
+      type: string
+    QuestReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
+    QuestStatus:
+      enum:
+        - draft
+        - published
+        - archived
+      type: string
+    QuestStepRequirement:
+      additionalProperties: true
+      type: object
+    QuestStepResponse:
+      properties:
+        id:
+          type: string
+        order:
+          minimum: 1
+          type: integer
+        questId:
+          type: string
+        requirements:
+          $ref: "#/components/schemas/QuestStepRequirement"
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        targetId:
+          nullable: true
+          type: string
+        targetType:
+          nullable: true
+          type: string
+        type:
+          $ref: "#/components/schemas/QuestStepType"
+        verificationType:
+          $ref: "#/components/schemas/QuestVerificationType"
+      required:
+        - id
+        - questId
+        - order
+        - type
+        - verificationType
+      type: object
+    QuestStepType:
+      enum:
+        - visit_place
+        - attend_event
+        - visit_partner
+        - challenge
+        - photo_proof
+        - geo_checkin
+        - qr_code
+        - space_action
+      type: string
+    QuestSubmissionListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/QuestSubmissionResponse"
+          type: array
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+      type: object
+    QuestSubmissionResponse:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        progressId:
+          type: string
+        proofData:
+          $ref: "#/components/schemas/QuestProofData"
+        proofType:
+          $ref: "#/components/schemas/QuestProofType"
+        reviewedAt:
+          format: date-time
+          nullable: true
+          type: string
+        reviewedBy:
+          nullable: true
+          type: string
+        status:
+          $ref: "#/components/schemas/QuestSubmissionStatus"
+        stepId:
+          type: string
+        userId:
+          type: string
+      required:
+        - id
+        - progressId
+        - stepId
+        - userId
+        - proofType
+        - status
+        - createdAt
+      type: object
+    QuestSubmissionStatus:
+      enum:
+        - pending
+        - approved
+        - rejected
+      type: string
+    QuestSummaryResponse:
+      properties:
+        cityId:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        creatorProId:
+          type: string
+        description:
+          nullable: true
+          type: string
+        difficulty:
+          $ref: "#/components/schemas/QuestDifficulty"
+          nullable: true
+        geoScope:
+          $ref: "#/components/schemas/QuestGeoScope"
+          nullable: true
+        id:
+          type: string
+        publishedAt:
+          format: date-time
+          nullable: true
+          type: string
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        status:
+          $ref: "#/components/schemas/QuestStatus"
+        stepsCount:
+          minimum: 0
+          type: integer
+        theme:
+          nullable: true
+          type: string
+        title:
+          type: string
+        type:
+          nullable: true
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        visibility:
+          $ref: "#/components/schemas/QuestVisibility"
+      required:
+        - id
+        - title
+        - status
+        - visibility
+        - stepsCount
+        - createdAt
+        - updatedAt
+      type: object
+    QuestVerificationType:
+      enum:
+        - auto
+        - geo
+        - qr
+        - manual
+        - space_post
+      type: string
+    QuestVisibility:
+      enum:
+        - public
+        - private
+      type: string
     ReadyResponse:
       properties:
         checks:
@@ -1149,6 +1663,19 @@ components:
         - userId
         - depth
         - referrals
+      type: object
+    ReviewSubmissionRequest:
+      properties:
+        decision:
+          enum:
+            - approve
+            - reject
+          type: string
+        reason:
+          nullable: true
+          type: string
+      required:
+        - decision
       type: object
     SpaceActivityFeedItem:
       properties:
@@ -1483,6 +2010,16 @@ components:
         - group
         - private
       type: string
+    SubmitQuestStepRequest:
+      properties:
+        proofData:
+          $ref: "#/components/schemas/QuestProofData"
+        proofType:
+          $ref: "#/components/schemas/QuestProofType"
+      required:
+        - proofType
+        - proofData
+      type: object
     TransactionsPage:
       properties:
         items:
@@ -2212,6 +2749,280 @@ paths:
       summary: List current user points transactions
       tags:
         - points
+  /v1/quests:
+    get:
+      operationId: listQuests
+      parameters:
+        - $ref: "#/components/parameters/CityId"
+        - $ref: "#/components/parameters/Lat"
+        - $ref: "#/components/parameters/Lng"
+        - $ref: "#/components/parameters/Theme"
+        - $ref: "#/components/parameters/Difficulty"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+      summary: List published quests
+      tags:
+        - quests
+    post:
+      operationId: createQuest
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create quest draft
+      tags:
+        - quests
+  /v1/quests/{questId}:
+    get:
+      operationId: getQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: OK
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+      summary: Get published quest details
+      tags:
+        - quests
+  /v1/quests/{questId}/progress:
+    get:
+      operationId: getQuestProgress
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestProgressResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get current user progress for a quest
+      tags:
+        - quests
+  /v1/quests/{questId}/publish:
+    post:
+      operationId: publishQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: Published
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Publish quest
+      tags:
+        - quests
+  /v1/quests/{questId}/start:
+    post:
+      operationId: startQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestProgressResponse"
+          description: Started or existing in-flight progress returned
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Start quest for current user
+      tags:
+        - quests
+  /v1/quests/{questId}/steps:
+    post:
+      operationId: addQuestStep
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddQuestStepRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestStepResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Add step to draft quest
+      tags:
+        - quests
+  /v1/quests/{questId}/steps/{stepId}/submit:
+    post:
+      operationId: submitQuestStep
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/StepId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitQuestStepRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestSubmissionResponse"
+          description: Submission created
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "429":
+          $ref: "#/components/responses/QuestRateLimited"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Submit proof for the current quest step
+      tags:
+        - quests
+  /v1/quests/{questId}/submissions:
+    get:
+      operationId: listQuestSubmissions
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestSubmissionListResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List submissions for quest review
+      tags:
+        - quests
   /v1/referral/claim:
     post:
       description: |
@@ -2763,6 +3574,45 @@ paths:
       summary: Get social profile projection
       tags:
         - space
+  /v1/submissions/{submissionId}/review:
+    post:
+      operationId: reviewQuestSubmission
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewSubmissionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestSubmissionResponse"
+          description: Reviewed
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Approve or reject submission
+      tags:
+        - quests
   /v1/users/ensure:
     post:
       description: |
@@ -2827,6 +3677,7 @@ tags:
     name: points
   - description: Service-to-service APIs (authenticated)
     name: internal
+  - name: quests
   - description: Space social-core endpoints
     name: space
 x-microservices:

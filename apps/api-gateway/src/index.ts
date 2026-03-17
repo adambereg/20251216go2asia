@@ -280,7 +280,37 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath.startsWith('/v1/feed/')) {
     return { routeKey: `feed.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'feed' };
   }
-  if (normalizedPath.startsWith('/v1/quest/')) {
+  if (normalizedPath === '/v1/quests' && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.list.get', routeGroup: 'quest' };
+  }
+  if (normalizedPath === '/v1/quests' && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.create.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.detail.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/start$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.start.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/progress$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.progress.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/steps$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.steps.create.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/publish$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.publish.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.submit.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/submissions$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.submissions.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/submissions\/[^/]+\/review$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.review.post', routeGroup: 'quest' };
+  }
+  if (normalizedPath.startsWith('/v1/quests/') || normalizedPath.startsWith('/v1/submissions/')) {
     return { routeKey: `quest.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'quest' };
   }
   if (normalizedPath.startsWith('/v1/rielt/')) {
@@ -567,7 +597,9 @@ function getReservedPhase2ServiceVar(path: string): keyof Env | null {
   if (path.startsWith('/v1/space/')) return 'SPACE_SERVICE_URL';
   if (path === '/v1/reactions' || path.startsWith('/v1/reactions/')) return 'REACTIONS_SERVICE_URL';
   if (path.startsWith('/v1/feed/')) return 'FEED_SERVICE_URL';
-  if (path.startsWith('/v1/quest/')) return 'QUEST_SERVICE_URL';
+  if (path === '/v1/quests' || path.startsWith('/v1/quests/') || path.startsWith('/v1/submissions/')) {
+    return 'QUEST_SERVICE_URL';
+  }
   if (path.startsWith('/v1/rielt/')) return 'RIELT_SERVICE_URL';
   if (path.startsWith('/v1/guru/')) return 'GURU_SERVICE_URL';
   if (path.startsWith('/v1/rf/')) return 'RF_SERVICE_URL';
@@ -599,6 +631,18 @@ function isProtectedFeedRoute(method: string, path: string): boolean {
   if (method === 'GET' && path === '/v1/feed/activity') return true;
   if (method === 'GET' && /^\/v1\/feed\/group\/[^/]+$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/feed\/profile\/[^/]+$/.test(path)) return true;
+  return false;
+}
+
+function isProtectedQuestRoute(method: string, path: string): boolean {
+  if (method === 'POST' && path === '/v1/quests') return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/publish$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/[^/]+\/submissions$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/submissions\/[^/]+\/review$/.test(path)) return true;
   return false;
 }
 
@@ -715,7 +759,7 @@ async function routeRequest(
           { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
           { prefix: '/v1/reactions/', var: 'REACTIONS_SERVICE_URL', host: safeHostFromUrl(env.REACTIONS_SERVICE_URL) },
           { prefix: '/v1/feed/', var: 'FEED_SERVICE_URL', host: safeHostFromUrl(env.FEED_SERVICE_URL) },
-          { prefix: '/v1/quest/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
+          { prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
           { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
           { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
           { prefix: '/v1/rf/', var: 'RF_SERVICE_URL', host: safeHostFromUrl(env.RF_SERVICE_URL) },
@@ -766,7 +810,7 @@ async function routeRequest(
     if (env.REACTIONS_SERVICE_URL) serviceUrl = env.REACTIONS_SERVICE_URL;
   } else if (path.startsWith('/v1/feed/')) {
     if (env.FEED_SERVICE_URL) serviceUrl = env.FEED_SERVICE_URL;
-  } else if (path.startsWith('/v1/quest/')) {
+  } else if (path === '/v1/quests' || path.startsWith('/v1/quests/') || path.startsWith('/v1/submissions/')) {
     if (env.QUEST_SERVICE_URL) serviceUrl = env.QUEST_SERVICE_URL;
   } else if (path.startsWith('/v1/rielt/')) {
     if (env.RIELT_SERVICE_URL) serviceUrl = env.RIELT_SERVICE_URL;
@@ -865,7 +909,8 @@ async function routeRequest(
     isMediaAttach ||
     isProtectedSpaceRoute(request.method, path) ||
     isProtectedReactionsRoute(request.method, path) ||
-    isProtectedFeedRoute(request.method, path)
+    isProtectedFeedRoute(request.method, path) ||
+    isProtectedQuestRoute(request.method, path)
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;

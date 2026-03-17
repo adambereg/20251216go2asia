@@ -9,6 +9,7 @@
 import type {
   AddPointsRequest,
   AddPointsResponse,
+  AddQuestStepRequest,
   AttachMediaUsageRequest,
   AttachMediaUsageResponse,
   AttachSpacePostMediaRequest,
@@ -22,6 +23,7 @@ import type {
   ContentBlogPostDetailDto,
   ContentEventDto,
   ContentPlaceDto,
+  CreateQuestRequest,
   CreateSpaceGroupRequest,
   CreateSpacePostRequest,
   CreateSpaceRepostRequest,
@@ -56,13 +58,30 @@ import type {
   ListPlacesParams,
   ListPlacesResponse,
   ListPointsTransactionsParams,
+  ListQuestSubmissionsParams,
+  ListQuestsParams,
   MarkFirstLoginRequest,
   MarkFirstLoginResponse,
   NotFoundResponse,
+  QuestConflictResponse,
+  QuestDetailResponse,
+  QuestForbiddenResponse,
+  QuestInternalErrorResponse,
+  QuestListResponse,
+  QuestNotFoundResponse,
+  QuestProgressResponse,
+  QuestRateLimitedResponse,
+  QuestServiceAuthNotConfiguredResponse,
+  QuestStepResponse,
+  QuestSubmissionListResponse,
+  QuestSubmissionResponse,
+  QuestUnauthorizedResponse,
+  QuestValidationErrorResponse,
   RateLimitedResponse,
   ReferralCodeResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
+  ReviewSubmissionRequest,
   ServiceAuthNotConfiguredResponse,
   ServiceNotConfiguredResponse,
   SpaceActivityFeedResponse,
@@ -76,6 +95,7 @@ import type {
   SpaceRateLimitedResponse,
   SpaceServiceAuthNotConfiguredResponse,
   SpaceValidationErrorResponse,
+  SubmitQuestStepRequest,
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
@@ -1355,6 +1375,585 @@ export const listPointsTransactions = async (
 };
 
 /**
+ * @summary List published quests
+ */
+export type listQuestsResponse200 = {
+  data: QuestListResponse;
+  status: 200;
+};
+
+export type listQuestsResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type listQuestsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type listQuestsResponseSuccess = listQuestsResponse200 & {
+  headers: Headers;
+};
+export type listQuestsResponseError = (listQuestsResponse400 | listQuestsResponse500) & {
+  headers: Headers;
+};
+
+export type listQuestsResponse = listQuestsResponseSuccess | listQuestsResponseError;
+
+export const getListQuestsUrl = (params?: ListQuestsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/quests?${stringifiedParams}` : `/v1/quests`;
+};
+
+export const listQuests = async (
+  params?: ListQuestsParams,
+  options?: RequestInit
+): Promise<listQuestsResponse> => {
+  return customInstance<listQuestsResponse>(getListQuestsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create quest draft
+ */
+export type createQuestResponse201 = {
+  data: QuestDetailResponse;
+  status: 201;
+};
+
+export type createQuestResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type createQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type createQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type createQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type createQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type createQuestResponseSuccess = createQuestResponse201 & {
+  headers: Headers;
+};
+export type createQuestResponseError = (
+  | createQuestResponse400
+  | createQuestResponse401
+  | createQuestResponse403
+  | createQuestResponse500
+  | createQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type createQuestResponse = createQuestResponseSuccess | createQuestResponseError;
+
+export const getCreateQuestUrl = () => {
+  return `/v1/quests`;
+};
+
+export const createQuest = async (
+  createQuestRequest: CreateQuestRequest,
+  options?: RequestInit
+): Promise<createQuestResponse> => {
+  return customInstance<createQuestResponse>(getCreateQuestUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createQuestRequest),
+  });
+};
+
+/**
+ * @summary Get published quest details
+ */
+export type getQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type getQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getQuestResponseSuccess = getQuestResponse200 & {
+  headers: Headers;
+};
+export type getQuestResponseError = (getQuestResponse404 | getQuestResponse500) & {
+  headers: Headers;
+};
+
+export type getQuestResponse = getQuestResponseSuccess | getQuestResponseError;
+
+export const getGetQuestUrl = (questId: string) => {
+  return `/v1/quests/${questId}`;
+};
+
+export const getQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getQuestResponse> => {
+  return customInstance<getQuestResponse>(getGetQuestUrl(questId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get current user progress for a quest
+ */
+export type getQuestProgressResponse200 = {
+  data: QuestProgressResponse;
+  status: 200;
+};
+
+export type getQuestProgressResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type getQuestProgressResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getQuestProgressResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getQuestProgressResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getQuestProgressResponseSuccess = getQuestProgressResponse200 & {
+  headers: Headers;
+};
+export type getQuestProgressResponseError = (
+  | getQuestProgressResponse401
+  | getQuestProgressResponse404
+  | getQuestProgressResponse500
+  | getQuestProgressResponse503
+) & {
+  headers: Headers;
+};
+
+export type getQuestProgressResponse =
+  | getQuestProgressResponseSuccess
+  | getQuestProgressResponseError;
+
+export const getGetQuestProgressUrl = (questId: string) => {
+  return `/v1/quests/${questId}/progress`;
+};
+
+export const getQuestProgress = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getQuestProgressResponse> => {
+  return customInstance<getQuestProgressResponse>(getGetQuestProgressUrl(questId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Publish quest
+ */
+export type publishQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type publishQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type publishQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type publishQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type publishQuestResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type publishQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type publishQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type publishQuestResponseSuccess = publishQuestResponse200 & {
+  headers: Headers;
+};
+export type publishQuestResponseError = (
+  | publishQuestResponse401
+  | publishQuestResponse403
+  | publishQuestResponse404
+  | publishQuestResponse409
+  | publishQuestResponse500
+  | publishQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type publishQuestResponse = publishQuestResponseSuccess | publishQuestResponseError;
+
+export const getPublishQuestUrl = (questId: string) => {
+  return `/v1/quests/${questId}/publish`;
+};
+
+export const publishQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<publishQuestResponse> => {
+  return customInstance<publishQuestResponse>(getPublishQuestUrl(questId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary Start quest for current user
+ */
+export type startQuestResponse200 = {
+  data: QuestProgressResponse;
+  status: 200;
+};
+
+export type startQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type startQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type startQuestResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type startQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type startQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type startQuestResponseSuccess = startQuestResponse200 & {
+  headers: Headers;
+};
+export type startQuestResponseError = (
+  | startQuestResponse401
+  | startQuestResponse404
+  | startQuestResponse409
+  | startQuestResponse500
+  | startQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type startQuestResponse = startQuestResponseSuccess | startQuestResponseError;
+
+export const getStartQuestUrl = (questId: string) => {
+  return `/v1/quests/${questId}/start`;
+};
+
+export const startQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<startQuestResponse> => {
+  return customInstance<startQuestResponse>(getStartQuestUrl(questId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary Add step to draft quest
+ */
+export type addQuestStepResponse201 = {
+  data: QuestStepResponse;
+  status: 201;
+};
+
+export type addQuestStepResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type addQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type addQuestStepResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type addQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type addQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type addQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type addQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type addQuestStepResponseSuccess = addQuestStepResponse201 & {
+  headers: Headers;
+};
+export type addQuestStepResponseError = (
+  | addQuestStepResponse400
+  | addQuestStepResponse401
+  | addQuestStepResponse403
+  | addQuestStepResponse404
+  | addQuestStepResponse409
+  | addQuestStepResponse500
+  | addQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type addQuestStepResponse = addQuestStepResponseSuccess | addQuestStepResponseError;
+
+export const getAddQuestStepUrl = (questId: string) => {
+  return `/v1/quests/${questId}/steps`;
+};
+
+export const addQuestStep = async (
+  questId: string,
+  addQuestStepRequest: AddQuestStepRequest,
+  options?: RequestInit
+): Promise<addQuestStepResponse> => {
+  return customInstance<addQuestStepResponse>(getAddQuestStepUrl(questId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addQuestStepRequest),
+  });
+};
+
+/**
+ * @summary Submit proof for the current quest step
+ */
+export type submitQuestStepResponse201 = {
+  data: QuestSubmissionResponse;
+  status: 201;
+};
+
+export type submitQuestStepResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type submitQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type submitQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type submitQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type submitQuestStepResponse429 = {
+  data: QuestRateLimitedResponse;
+  status: 429;
+};
+
+export type submitQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type submitQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type submitQuestStepResponseSuccess = submitQuestStepResponse201 & {
+  headers: Headers;
+};
+export type submitQuestStepResponseError = (
+  | submitQuestStepResponse400
+  | submitQuestStepResponse401
+  | submitQuestStepResponse404
+  | submitQuestStepResponse409
+  | submitQuestStepResponse429
+  | submitQuestStepResponse500
+  | submitQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type submitQuestStepResponse = submitQuestStepResponseSuccess | submitQuestStepResponseError;
+
+export const getSubmitQuestStepUrl = (questId: string, stepId: string) => {
+  return `/v1/quests/${questId}/steps/${stepId}/submit`;
+};
+
+export const submitQuestStep = async (
+  questId: string,
+  stepId: string,
+  submitQuestStepRequest: SubmitQuestStepRequest,
+  options?: RequestInit
+): Promise<submitQuestStepResponse> => {
+  return customInstance<submitQuestStepResponse>(getSubmitQuestStepUrl(questId, stepId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitQuestStepRequest),
+  });
+};
+
+/**
+ * @summary List submissions for quest review
+ */
+export type listQuestSubmissionsResponse200 = {
+  data: QuestSubmissionListResponse;
+  status: 200;
+};
+
+export type listQuestSubmissionsResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type listQuestSubmissionsResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type listQuestSubmissionsResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type listQuestSubmissionsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type listQuestSubmissionsResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listQuestSubmissionsResponseSuccess = listQuestSubmissionsResponse200 & {
+  headers: Headers;
+};
+export type listQuestSubmissionsResponseError = (
+  | listQuestSubmissionsResponse401
+  | listQuestSubmissionsResponse403
+  | listQuestSubmissionsResponse404
+  | listQuestSubmissionsResponse500
+  | listQuestSubmissionsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listQuestSubmissionsResponse =
+  | listQuestSubmissionsResponseSuccess
+  | listQuestSubmissionsResponseError;
+
+export const getListQuestSubmissionsUrl = (
+  questId: string,
+  params?: ListQuestSubmissionsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/quests/${questId}/submissions?${stringifiedParams}`
+    : `/v1/quests/${questId}/submissions`;
+};
+
+export const listQuestSubmissions = async (
+  questId: string,
+  params?: ListQuestSubmissionsParams,
+  options?: RequestInit
+): Promise<listQuestSubmissionsResponse> => {
+  return customInstance<listQuestSubmissionsResponse>(getListQuestSubmissionsUrl(questId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * User-facing write endpoint (called via gateway). Links current user as referee to referrer resolved by referral code. Invariant: referee can have at most one referrer.
 
  * @summary Claim referral code for current user (idempotent)
@@ -2563,6 +3162,85 @@ export const getSpaceProfile = async (
   return customInstance<getSpaceProfileResponse>(getGetSpaceProfileUrl(userId), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * @summary Approve or reject submission
+ */
+export type reviewQuestSubmissionResponse200 = {
+  data: QuestSubmissionResponse;
+  status: 200;
+};
+
+export type reviewQuestSubmissionResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type reviewQuestSubmissionResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type reviewQuestSubmissionResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type reviewQuestSubmissionResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type reviewQuestSubmissionResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type reviewQuestSubmissionResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type reviewQuestSubmissionResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type reviewQuestSubmissionResponseSuccess = reviewQuestSubmissionResponse200 & {
+  headers: Headers;
+};
+export type reviewQuestSubmissionResponseError = (
+  | reviewQuestSubmissionResponse400
+  | reviewQuestSubmissionResponse401
+  | reviewQuestSubmissionResponse403
+  | reviewQuestSubmissionResponse404
+  | reviewQuestSubmissionResponse409
+  | reviewQuestSubmissionResponse500
+  | reviewQuestSubmissionResponse503
+) & {
+  headers: Headers;
+};
+
+export type reviewQuestSubmissionResponse =
+  | reviewQuestSubmissionResponseSuccess
+  | reviewQuestSubmissionResponseError;
+
+export const getReviewQuestSubmissionUrl = (submissionId: string) => {
+  return `/v1/submissions/${submissionId}/review`;
+};
+
+export const reviewQuestSubmission = async (
+  submissionId: string,
+  reviewSubmissionRequest: ReviewSubmissionRequest,
+  options?: RequestInit
+): Promise<reviewQuestSubmissionResponse> => {
+  return customInstance<reviewQuestSubmissionResponse>(getReviewQuestSubmissionUrl(submissionId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviewSubmissionRequest),
   });
 };
 

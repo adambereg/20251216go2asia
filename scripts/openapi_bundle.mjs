@@ -30,6 +30,7 @@ const SERVICE_SPECS = [
   path.join(REPO_ROOT, 'docs', 'openapi', 'auth.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'content.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'points.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'quest.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'referral.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'space.yaml'),
 ];

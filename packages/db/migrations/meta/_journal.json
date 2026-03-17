@@ -141,6 +141,13 @@
       "when": 1770890419789,
       "tag": "0017_reactions_idempotency_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1773620000000,
+      "tag": "0018_quest_core_v1",
+      "breakpoints": true
     }
   ]
 }

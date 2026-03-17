@@ -1,0 +1,28 @@
+{
+  "name": "@go2asia/quest-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quest Service for Go2Asia Step 7 activity engine baseline (Cloudflare Worker)",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev --env staging",
+    "deploy": "wrangler deploy --env staging",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "test:ci": "vitest run --config ./vitest.config.ts"
+  },
+  "dependencies": {
+    "@go2asia/db": "workspace:*",
+    "@go2asia/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "@go2asia/config": "workspace:*",
+    "@vitest/coverage-v8": "^1.6.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.0",
+    "wrangler": "^4.64.0"
+  }
+}

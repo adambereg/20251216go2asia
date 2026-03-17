@@ -66,6 +66,18 @@ describe('api-gateway request hardening', () => {
       routeKey: 'feed.home.get',
       routeGroup: 'feed',
     });
+    expect(classifyRoute('GET', '/v1/quests')).toEqual({
+      routeKey: 'quest.list.get',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('POST', '/v1/quests/quest_1/start')).toEqual({
+      routeKey: 'quest.start.post',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('POST', '/v1/submissions/sub_1/review')).toEqual({
+      routeKey: 'quest.review.post',
+      routeGroup: 'quest',
+    });
   });
 
   it('builds request context with hashed client fingerprint for anonymous routes', async () => {
@@ -244,6 +256,54 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected quest routes without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/quest_1/start', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest review route without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://app.example',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decision: 'approve',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
   it('returns 503 when a known service route is not configured', async () => {
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/referral/stats'),
@@ -322,6 +382,114 @@ describe('api-gateway request hardening', () => {
     expect(body.error.message).toContain('FEED_SERVICE_URL');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 501 for reserved quest prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('QUEST_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxies public quest reads without gateway auth', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://quest.example/v1/quests');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
+      expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests'),
+      {
+        QUEST_SERVICE_URL: 'https://quest.example',
+      }
+    );
+
+    const body = await readJson<{ total: number }>(response);
+    expect(response.status).toBe(200);
+    expect(body.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards authenticated quest submit requests to quest-service', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://quest.example/v1/quests/quest_1/steps/step_1/submit');
+      expect(request.headers.get('X-User-ID')).toBe('quest_user');
+      expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(request.headers.get('X-Gateway-Auth')!);
+      return new Response(JSON.stringify({ id: 'qsub_1', status: 'pending' }), {
+        status: 201,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'quest_user',
+      roles: ['member'],
+    } as never);
+
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/quest_1/steps/step_1/submit', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer clerk-session-token',
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          proofType: 'photo',
+          proofData: {
+            mediaId: 'media_1',
+          },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; status: string }>(response);
+    expect(response.status).toBe(201);
+    expect(body).toMatchObject({
+      id: 'qsub_1',
+      status: 'pending',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'quest_user',
+      roles: ['member'],
+    });
   });
 
   it('proxies reserved phase-2 prefix after service URL is configured', async () => {
