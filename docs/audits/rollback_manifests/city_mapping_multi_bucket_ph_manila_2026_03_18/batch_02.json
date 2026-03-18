@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "ph/manila",
+  "ts_utc": "2026-03-18T14:44:29.961Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "manila"
+  },
+  "target_city_id": "mnl",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "ph-2026-manila-marathon",
+    "ph-2026-manila-pride",
+    "ph-2026-new-year-celebrations",
+    "ph-2026-new-year-countdown",
+    "ph-2026-philippine-comic-convention"
+  ],
+  "changed_ids": [
+    "ph-2026-manila-marathon",
+    "ph-2026-manila-pride",
+    "ph-2026-new-year-celebrations",
+    "ph-2026-new-year-countdown",
+    "ph-2026-philippine-comic-convention"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-manila-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-manila-pride",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-new-year-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-new-year-countdown",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-philippine-comic-convention",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 1
+}

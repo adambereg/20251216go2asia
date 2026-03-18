@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "vn/hanoi",
+  "ts_utc": "2026-03-18T14:34:37.706Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "hanoi"
+  },
+  "target_city_id": "han",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "vn-2026-reunification-day",
+    "vn-2026-tet-nguyen-dan",
+    "vn-2026-tet-viet-tet-pho",
+    "vn-2026-vesak",
+    "vn-2026-vietnam-international-travel-mart"
+  ],
+  "changed_ids": [
+    "vn-2026-reunification-day",
+    "vn-2026-tet-viet-tet-pho",
+    "vn-2026-vesak",
+    "vn-2026-vietnam-international-travel-mart",
+    "vn-2026-tet-nguyen-dan"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-reunification-day",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-tet-nguyen-dan",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-tet-viet-tet-pho",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-vesak",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-vietnam-international-travel-mart",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 2
+}

@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "vn/hanoi",
+  "ts_utc": "2026-03-18T14:34:36.670Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "hanoi"
+  },
+  "target_city_id": "han",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "vn-2026-christmas-celebrations",
+    "vn-2026-hanoi-book-fair",
+    "vn-2026-hanoi-marathon-heritage-race",
+    "vn-2026-hanoi-moon-festival-parade",
+    "vn-2026-mid-autumn-festival"
+  ],
+  "changed_ids": [
+    "vn-2026-hanoi-book-fair",
+    "vn-2026-hanoi-marathon-heritage-race",
+    "vn-2026-hanoi-moon-festival-parade",
+    "vn-2026-mid-autumn-festival",
+    "vn-2026-christmas-celebrations"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-christmas-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-hanoi-book-fair",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-hanoi-marathon-heritage-race",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-hanoi-moon-festival-parade",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-mid-autumn-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 7
+}

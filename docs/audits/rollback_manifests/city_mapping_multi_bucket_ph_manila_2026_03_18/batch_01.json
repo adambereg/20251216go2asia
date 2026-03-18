@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "ph/manila",
+  "ts_utc": "2026-03-18T14:44:28.884Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "manila"
+  },
+  "target_city_id": "mnl",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "ph-2026-chinese-new-year",
+    "ph-2026-christmas-season-celebrations",
+    "ph-2026-flores-de-mayo",
+    "ph-2026-holy-week-easter",
+    "ph-2026-independence-day"
+  ],
+  "changed_ids": [
+    "ph-2026-chinese-new-year",
+    "ph-2026-christmas-season-celebrations",
+    "ph-2026-flores-de-mayo",
+    "ph-2026-holy-week-easter",
+    "ph-2026-independence-day"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-chinese-new-year",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-christmas-season-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-flores-de-mayo",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-holy-week-easter",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-independence-day",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 6
+}

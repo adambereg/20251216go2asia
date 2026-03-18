@@ -1,0 +1,58 @@
+{
+  "executed_at_utc": "2026-03-18T14:34:35.461Z",
+  "scope": {
+    "country_id": "la",
+    "source_city_slug": "vientiane",
+    "target_field": "events.city_id",
+    "target_city_id": "vte"
+  },
+  "before": {
+    "unresolved_city_id_null": 12,
+    "already_target": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 7,
+      "sample_ids": [
+        "la-2026-boun-bang-fai",
+        "la-2026-boun-pi-mai",
+        "la-2026-boun-visakhaboucha"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_la_vientiane_2026_03_18/batch_01.json"
+    },
+    {
+      "batch_no": 2,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 2,
+      "sample_ids": [
+        "la-2026-chinese-new-year-celebrations",
+        "la-2026-lao-food-festival",
+        "la-2026-mekong-riverside-festival"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_la_vientiane_2026_03_18/batch_02.json"
+    },
+    {
+      "batch_no": 3,
+      "planned": 2,
+      "changed": 2,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "la-2026-that-luang-festival",
+        "la-2026-traditional-temple-festivals"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_la_vientiane_2026_03_18/batch_03.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "target_count": 12,
+    "fk_broken_target_rows": 0
+  }
+}

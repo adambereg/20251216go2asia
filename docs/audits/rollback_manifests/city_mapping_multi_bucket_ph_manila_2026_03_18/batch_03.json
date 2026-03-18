@@ -1,0 +1,27 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "ph/manila",
+  "ts_utc": "2026-03-18T14:44:31.034Z",
+  "batch_no": 3,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "manila"
+  },
+  "target_city_id": "mnl",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "ph-2026-philippine-tech-summit"
+  ],
+  "changed_ids": [
+    "ph-2026-philippine-tech-summit"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-philippine-tech-summit",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}
