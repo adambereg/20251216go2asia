@@ -1,0 +1,38 @@
+{
+  "pilot": "chiang-mai",
+  "ts_utc": "2026-03-18T13:22:57.772Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "th",
+    "source_city_slug": "chiang-mai"
+  },
+  "target_city_id": "cnx",
+  "planned_count": 3,
+  "changed_count": 3,
+  "planned_ids": [
+    "th-2026-bo-sang-umbrella-festival",
+    "th-2026-chiang-mai-flower-festival",
+    "th-2026-yi-peng"
+  ],
+  "changed_ids": [
+    "th-2026-bo-sang-umbrella-festival",
+    "th-2026-chiang-mai-flower-festival",
+    "th-2026-yi-peng"
+  ],
+  "before_state": [
+    {
+      "id": "th-2026-bo-sang-umbrella-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-chiang-mai-flower-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-yi-peng",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}
