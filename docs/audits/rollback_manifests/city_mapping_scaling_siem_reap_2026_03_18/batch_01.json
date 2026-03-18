@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_scaling",
+  "bucket": "kh/siem-reap",
+  "ts_utc": "2026-03-18T14:06:11.353Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "siem-reap"
+  },
+  "target_city_id": "rep",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "kh-2026-angkor-light-festival",
+    "kh-2026-angkor-photo-festival",
+    "kh-2026-angkor-sankranta",
+    "kh-2026-angkor-wat-half-marathon",
+    "kh-2026-siem-reap-art-week"
+  ],
+  "changed_ids": [
+    "kh-2026-angkor-light-festival",
+    "kh-2026-angkor-photo-festival",
+    "kh-2026-angkor-sankranta",
+    "kh-2026-angkor-wat-half-marathon",
+    "kh-2026-siem-reap-art-week"
+  ],
+  "before_state": [
+    {
+      "id": "kh-2026-angkor-light-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-angkor-photo-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-angkor-sankranta",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-angkor-wat-half-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-siem-reap-art-week",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

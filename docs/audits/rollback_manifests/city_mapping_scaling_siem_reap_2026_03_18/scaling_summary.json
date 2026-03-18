@@ -1,0 +1,72 @@
+{
+  "executed_at_utc": "2026-03-18T14:06:12.320Z",
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "siem-reap",
+    "target_field": "events.city_id",
+    "target_city_id": "rep"
+  },
+  "before": {
+    "unresolved_city_id_null": 5,
+    "already_city_id_rep": 0
+  },
+  "batch": {
+    "planned": 5,
+    "changed": 5,
+    "sample_ids": [
+      "kh-2026-angkor-light-festival",
+      "kh-2026-angkor-photo-festival",
+      "kh-2026-angkor-sankranta"
+    ],
+    "manifest_file": "docs/audits/rollback_manifests/city_mapping_scaling_siem_reap_2026_03_18/batch_01.json"
+  },
+  "after": {
+    "unresolved_city_id_null": 0,
+    "city_id_rep": 5,
+    "fk_broken_rep_rows": 0
+  },
+  "watched_other_buckets_before": [
+    {
+      "country_id": "id",
+      "city_slug": "jakarta",
+      "unresolved": 10
+    },
+    {
+      "country_id": "la",
+      "city_slug": "vientiane",
+      "unresolved": 12
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "manila",
+      "unresolved": 11
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "hanoi",
+      "unresolved": 12
+    }
+  ],
+  "watched_other_buckets_after": [
+    {
+      "country_id": "id",
+      "city_slug": "jakarta",
+      "unresolved": 10
+    },
+    {
+      "country_id": "la",
+      "city_slug": "vientiane",
+      "unresolved": 12
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "manila",
+      "unresolved": 11
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "hanoi",
+      "unresolved": 12
+    }
+  ]
+}
