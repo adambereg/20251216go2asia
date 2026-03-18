@@ -1,0 +1,50 @@
+{
+  "pilot": "bangkok",
+  "ts_utc": "2026-03-18T12:50:43.158Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "th",
+    "source_city_slug": "bangkok"
+  },
+  "target_city_id": "bkk",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "th-2026-bangkok-oktoberfest",
+    "th-2026-bangkok-pride",
+    "th-2026-chakri-memorial-day",
+    "th-2026-loy-krathong",
+    "th-2026-makha-bucha"
+  ],
+  "changed_ids": [
+    "th-2026-bangkok-oktoberfest",
+    "th-2026-bangkok-pride",
+    "th-2026-chakri-memorial-day",
+    "th-2026-loy-krathong",
+    "th-2026-makha-bucha"
+  ],
+  "before_state": [
+    {
+      "id": "th-2026-bangkok-oktoberfest",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-bangkok-pride",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-chakri-memorial-day",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-loy-krathong",
+      "prev_city_id": null
+    },
+    {
+      "id": "th-2026-makha-bucha",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 4
+}
