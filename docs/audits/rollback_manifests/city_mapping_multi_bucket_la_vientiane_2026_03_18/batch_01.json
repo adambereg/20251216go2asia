@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "la/vientiane",
+  "ts_utc": "2026-03-18T14:34:32.685Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "la",
+    "source_city_slug": "vientiane"
+  },
+  "target_city_id": "vte",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "la-2026-agricultural-village-festivals",
+    "la-2026-boat-racing-festival",
+    "la-2026-boun-bang-fai",
+    "la-2026-boun-pi-mai",
+    "la-2026-boun-visakhaboucha"
+  ],
+  "changed_ids": [
+    "la-2026-boun-bang-fai",
+    "la-2026-boun-pi-mai",
+    "la-2026-boun-visakhaboucha",
+    "la-2026-agricultural-village-festivals",
+    "la-2026-boat-racing-festival"
+  ],
+  "before_state": [
+    {
+      "id": "la-2026-agricultural-village-festivals",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-boat-racing-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-boun-bang-fai",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-boun-pi-mai",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-boun-visakhaboucha",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 7
+}

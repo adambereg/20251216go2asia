@@ -1,0 +1,59 @@
+{
+  "executed_at_utc": "2026-03-18T12:50:40.772Z",
+  "scope": {
+    "country_id": "th",
+    "source_city_slug": "bangkok",
+    "target_field": "events.city_id",
+    "target_city_id": "bkk"
+  },
+  "before": {
+    "unresolved_city_id_null": 14,
+    "already_city_id_bkk": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 9,
+      "sample_ids": [
+        "th-2026-asalha-bucha",
+        "th-2026-bangkok-design-week",
+        "th-2026-bangkok-international-festival-of-dance-and-music"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_bangkok_2026_03_18/batch_01.json"
+    },
+    {
+      "batch_no": 2,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 4,
+      "sample_ids": [
+        "th-2026-bangkok-oktoberfest",
+        "th-2026-bangkok-pride",
+        "th-2026-chakri-memorial-day"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_bangkok_2026_03_18/batch_02.json"
+    },
+    {
+      "batch_no": 3,
+      "planned": 4,
+      "changed": 4,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "th-2026-queens-birthday-mothers-day",
+        "th-2026-songkran-festival",
+        "th-2026-visakha-bucha"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_bangkok_2026_03_18/batch_03.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "city_id_bkk": 14,
+    "fk_broken_bkk_rows": 0
+  }
+}

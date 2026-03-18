@@ -1,0 +1,27 @@
+{
+  "phase": "tail_optimization_micro_batch",
+  "bucket": "ph/davao",
+  "ts_utc": "2026-03-18T15:30:36.711Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "davao"
+  },
+  "target_city_id": "dav",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "ph-2026-kadayawan-festival"
+  ],
+  "changed_ids": [
+    "ph-2026-kadayawan-festival"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-kadayawan-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

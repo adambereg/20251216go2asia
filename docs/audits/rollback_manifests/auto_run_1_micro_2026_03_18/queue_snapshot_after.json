@@ -1,0 +1,78 @@
+{
+  "snapshot_at": "2026-03-18T15:44:04.277Z",
+  "selected": [
+    {
+      "country_id": "id",
+      "city_slug": "denpasar",
+      "status": "done"
+    },
+    {
+      "country_id": "id",
+      "city_slug": "makassar",
+      "status": "done"
+    },
+    {
+      "country_id": "kh",
+      "city_slug": "battambang",
+      "status": "done"
+    },
+    {
+      "country_id": "my",
+      "city_slug": "kota-kinabalu",
+      "status": "done"
+    },
+    {
+      "country_id": "my",
+      "city_slug": "langkawi",
+      "status": "done"
+    },
+    {
+      "country_id": "th",
+      "city_slug": "pattaya",
+      "status": "done"
+    }
+  ],
+  "unresolved_rows_before": 49,
+  "unresolved_rows_after": 43,
+  "unresolved_buckets_before": 40,
+  "unresolved_buckets_after": 34,
+  "blocked_buckets_count": 3,
+  "scope_leak_checks": [
+    {
+      "country_id": "id",
+      "city_slug": "denpasar",
+      "target_city_id": "dps",
+      "outside_count": 0
+    },
+    {
+      "country_id": "id",
+      "city_slug": "makassar",
+      "target_city_id": "mks",
+      "outside_count": 0
+    },
+    {
+      "country_id": "kh",
+      "city_slug": "battambang",
+      "target_city_id": "bat",
+      "outside_count": 0
+    },
+    {
+      "country_id": "my",
+      "city_slug": "kota-kinabalu",
+      "target_city_id": "bki",
+      "outside_count": 0
+    },
+    {
+      "country_id": "my",
+      "city_slug": "langkawi",
+      "target_city_id": "lgk",
+      "outside_count": 0
+    },
+    {
+      "country_id": "th",
+      "city_slug": "pattaya",
+      "target_city_id": "pty",
+      "outside_count": 0
+    }
+  ]
+}

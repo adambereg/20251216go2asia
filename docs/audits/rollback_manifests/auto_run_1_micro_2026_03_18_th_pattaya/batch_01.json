@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "th/pattaya",
+  "ts_utc": "2026-03-18T15:44:02.083Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "th",
+    "source_city_slug": "pattaya"
+  },
+  "target_city_id": "pty",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "th-2026-pattaya-music-festival"
+  ],
+  "changed_ids": [
+    "th-2026-pattaya-music-festival"
+  ],
+  "before_state": [
+    {
+      "id": "th-2026-pattaya-music-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

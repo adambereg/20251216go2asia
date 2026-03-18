@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "id/jakarta",
+  "ts_utc": "2026-03-18T14:44:34.099Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "id",
+    "source_city_slug": "jakarta"
+  },
+  "target_city_id": "jkt",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "id-2026-jakarta-fashion-week",
+    "id-2026-jakarta-great-sale-festival",
+    "id-2026-jakarta-marathon",
+    "id-2026-java-jazz-festival",
+    "id-2026-traditional-games-festival"
+  ],
+  "changed_ids": [
+    "id-2026-jakarta-fashion-week",
+    "id-2026-jakarta-great-sale-festival",
+    "id-2026-jakarta-marathon",
+    "id-2026-java-jazz-festival",
+    "id-2026-traditional-games-festival"
+  ],
+  "before_state": [
+    {
+      "id": "id-2026-jakarta-fashion-week",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-jakarta-great-sale-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-jakarta-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-java-jazz-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-traditional-games-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

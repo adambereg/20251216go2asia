@@ -1,0 +1,41 @@
+{
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "da-nang",
+      "status": "done"
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "ho-chi-minh-city",
+      "status": "done"
+    }
+  ],
+  "unresolved_rows_before": 69,
+  "unresolved_rows_after": 62,
+  "unresolved_buckets_before": 51,
+  "unresolved_buckets_after": 49,
+  "blocked_count": 3,
+  "watch_remaining": [
+    {
+      "country_id": "my",
+      "city_slug": "george-town",
+      "unresolved": 2
+    },
+    {
+      "country_id": "my",
+      "city_slug": "sepang",
+      "unresolved": 2
+    },
+    {
+      "country_id": "th",
+      "city_slug": "koh-phangan",
+      "unresolved": 2
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "hoi-an",
+      "unresolved": 3
+    }
+  ]
+}

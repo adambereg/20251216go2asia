@@ -1,0 +1,39 @@
+{
+  "phase": "structured_scaling_queue_driven_triplet",
+  "bucket": "vn/hoi-an",
+  "ts_utc": "2026-03-18T15:08:42.959Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "hoi-an"
+  },
+  "target_city_id": "hoi",
+  "planned_count": 3,
+  "changed_count": 3,
+  "planned_ids": [
+    "vn-2026-da-nang-art-light-festival",
+    "vn-2026-hoi-an-lantern-festival",
+    "vn-2026-hoi-an-legendary-night"
+  ],
+  "changed_ids": [
+    "vn-2026-da-nang-art-light-festival",
+    "vn-2026-hoi-an-lantern-festival",
+    "vn-2026-hoi-an-legendary-night"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-da-nang-art-light-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-hoi-an-lantern-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-hoi-an-legendary-night",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

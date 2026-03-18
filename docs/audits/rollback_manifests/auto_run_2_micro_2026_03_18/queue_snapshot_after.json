@@ -1,0 +1,23 @@
+{
+  "snapshot_at": "2026-03-18T15:44:08.768Z",
+  "selected": [
+    {
+      "country_id": "my",
+      "city_slug": "tanah-rata",
+      "status": "done"
+    }
+  ],
+  "unresolved_rows_before": 43,
+  "unresolved_rows_after": 42,
+  "unresolved_buckets_before": 34,
+  "unresolved_buckets_after": 33,
+  "blocked_buckets_count": 3,
+  "scope_leak_checks": [
+    {
+      "country_id": "my",
+      "city_slug": "tanah-rata",
+      "target_city_id": "tna",
+      "outside_count": 0
+    }
+  ]
+}

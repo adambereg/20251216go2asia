@@ -1,0 +1,33 @@
+{
+  "executed_at_utc": "2026-03-18T15:08:43.884Z",
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "hoi-an",
+    "target_field": "events.city_id",
+    "target_city_id": "hoi"
+  },
+  "before": {
+    "unresolved_city_id_null": 3,
+    "already_target": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 3,
+      "changed": 3,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "vn-2026-da-nang-art-light-festival",
+        "vn-2026-hoi-an-lantern-festival",
+        "vn-2026-hoi-an-legendary-night"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_queue_triplet_vn_hoi_an_ph_cebu_la_luang_prabang_2026_03_18_vn_hoi_an/batch_01.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "target_count": 3,
+    "fk_broken_target_rows": 0
+  }
+}

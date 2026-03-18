@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "la/vientiane",
+  "ts_utc": "2026-03-18T14:34:33.726Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "la",
+    "source_city_slug": "vientiane"
+  },
+  "target_city_id": "vte",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "la-2026-chinese-new-year-celebrations",
+    "la-2026-lao-food-festival",
+    "la-2026-mekong-riverside-festival",
+    "la-2026-new-year-celebrations-laos",
+    "la-2026-new-year-countdown"
+  ],
+  "changed_ids": [
+    "la-2026-chinese-new-year-celebrations",
+    "la-2026-lao-food-festival",
+    "la-2026-mekong-riverside-festival",
+    "la-2026-new-year-celebrations-laos",
+    "la-2026-new-year-countdown"
+  ],
+  "before_state": [
+    {
+      "id": "la-2026-chinese-new-year-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-lao-food-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-mekong-riverside-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-new-year-celebrations-laos",
+      "prev_city_id": null
+    },
+    {
+      "id": "la-2026-new-year-countdown",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 2
+}

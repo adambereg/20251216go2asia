@@ -1,0 +1,27 @@
+{
+  "phase": "tail_optimization_micro_batch",
+  "bucket": "ph/puerto-princesa",
+  "ts_utc": "2026-03-18T15:30:38.575Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "puerto-princesa"
+  },
+  "target_city_id": "pps",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "ph-2026-palawan-diving-festival"
+  ],
+  "changed_ids": [
+    "ph-2026-palawan-diving-festival"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-palawan-diving-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

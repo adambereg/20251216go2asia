@@ -1,0 +1,15 @@
+{
+  "scope": {
+    "country_id": "id",
+    "city_slug": "denpasar",
+    "target_city_id": "dps"
+  },
+  "planned": 1,
+  "changed": 1,
+  "fk_broken": 0,
+  "before_unresolved": 1,
+  "after_unresolved": 0,
+  "after_target_count": 1,
+  "anomaly": false,
+  "manifest_file": "docs/audits/rollback_manifests/auto_run_1_micro_2026_03_18_id_denpasar/batch_01.json"
+}

@@ -1,0 +1,50 @@
+{
+  "pilot": "phnom-penh",
+  "ts_utc": "2026-03-18T13:47:37.984Z",
+  "batch_no": 2,
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "phnom-penh"
+  },
+  "target_city_id": "pnh",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "kh-2026-new-year-celebrations",
+    "kh-2026-new-year-countdown",
+    "kh-2026-pchum-ben",
+    "kh-2026-phnom-penh-fashion-week",
+    "kh-2026-phnom-penh-food-festival"
+  ],
+  "changed_ids": [
+    "kh-2026-new-year-celebrations",
+    "kh-2026-new-year-countdown",
+    "kh-2026-pchum-ben",
+    "kh-2026-phnom-penh-fashion-week",
+    "kh-2026-phnom-penh-food-festival"
+  ],
+  "before_state": [
+    {
+      "id": "kh-2026-new-year-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-new-year-countdown",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-pchum-ben",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-phnom-penh-fashion-week",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-phnom-penh-food-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 3
+}

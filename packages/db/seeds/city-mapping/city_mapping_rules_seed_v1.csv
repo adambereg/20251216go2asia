@@ -1,0 +1,12 @@
+rule_version,source_domain,source_scope,country_id,source_city_slug,target_city_id,rule_type,status,evidence_type,evidence_count,approved_by,approved_at,notes
+v1,pulse,events.city_slug,id,bali,bali,direct_slug,active,tier1_proven,4,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,id,lombok,lom,direct_slug,active,tier1_proven,1,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,id,ubud,ubud,direct_slug,active,tier1_proven,3,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,id,yogyakarta,jog,direct_slug,active,tier1_proven,1,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,my,kuala-lumpur,kul,direct_slug,active,tier1_proven,13,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,my,penang,png,direct_slug,active,tier1_proven,1,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,ph,boracay,boracay,direct_slug,active,tier1_proven,2,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,sg,singapore,sin,direct_slug,active,tier1_proven,23,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,th,koh-samui,usm,direct_slug,active,tier1_proven,1,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,th,phuket,hkt,direct_slug,active,tier1_proven,9,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2
+v1,pulse,events.city_slug,vn,hue,hue,direct_slug,active,tier1_proven,1,checkpoint_c2,2026-03-18,tier1 resolved and applied in C2

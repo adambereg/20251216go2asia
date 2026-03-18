@@ -1,0 +1,31 @@
+{
+  "snapshot_at": "2026-03-18T15:08:48.975Z",
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "hoi-an",
+      "status": "done"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "cebu",
+      "status": "done"
+    },
+    {
+      "country_id": "la",
+      "city_slug": "luang-prabang",
+      "status": "done"
+    }
+  ],
+  "unresolved_rows_before": 62,
+  "unresolved_rows_after": 55,
+  "unresolved_buckets_before": 49,
+  "unresolved_buckets_after": 46,
+  "blocked_buckets_count": 3,
+  "cross_checks": {
+    "vn_outside_hoi": 0,
+    "ph_outside_ceb": 0,
+    "la_outside_lpq": 0,
+    "fk_broken": 0
+  }
+}

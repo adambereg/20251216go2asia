@@ -1,0 +1,59 @@
+{
+  "executed_at_utc": "2026-03-18T13:47:39.732Z",
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "phnom-penh",
+    "target_field": "events.city_id",
+    "target_city_id": "pnh"
+  },
+  "before": {
+    "unresolved_city_id_null": 13,
+    "already_city_id_pnh": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 8,
+      "sample_ids": [
+        "kh-2026-bon-om-touk-water-festival",
+        "kh-2026-cambodia-international-film-festival",
+        "kh-2026-chinese-new-year"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_phnom_penh_2026_03_18/batch_01.json"
+    },
+    {
+      "batch_no": 2,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 3,
+      "sample_ids": [
+        "kh-2026-new-year-celebrations",
+        "kh-2026-new-year-countdown",
+        "kh-2026-pchum-ben"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_phnom_penh_2026_03_18/batch_02.json"
+    },
+    {
+      "batch_no": 3,
+      "planned": 3,
+      "changed": 3,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "kh-2026-provincial-boat-races",
+        "kh-2026-royal-ploughing-ceremony",
+        "kh-2026-visak-bochea"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_pilot_phnom_penh_2026_03_18/batch_03.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "city_id_pnh": 13,
+    "fk_broken_pnh_rows": 0
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "executed_at_utc": "2026-03-18T14:44:31.752Z",
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "manila",
+    "target_field": "events.city_id",
+    "target_city_id": "mnl"
+  },
+  "before": {
+    "unresolved_city_id_null": 11,
+    "already_target": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 6,
+      "sample_ids": [
+        "ph-2026-chinese-new-year",
+        "ph-2026-christmas-season-celebrations",
+        "ph-2026-flores-de-mayo"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_ph_manila_2026_03_18/batch_01.json"
+    },
+    {
+      "batch_no": 2,
+      "planned": 5,
+      "changed": 5,
+      "fk_broken": 0,
+      "remaining_after_batch": 1,
+      "sample_ids": [
+        "ph-2026-manila-marathon",
+        "ph-2026-manila-pride",
+        "ph-2026-new-year-celebrations"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_ph_manila_2026_03_18/batch_02.json"
+    },
+    {
+      "batch_no": 3,
+      "planned": 1,
+      "changed": 1,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "ph-2026-philippine-tech-summit"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_multi_bucket_ph_manila_2026_03_18/batch_03.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "target_count": 11,
+    "fk_broken_target_rows": 0
+  }
+}

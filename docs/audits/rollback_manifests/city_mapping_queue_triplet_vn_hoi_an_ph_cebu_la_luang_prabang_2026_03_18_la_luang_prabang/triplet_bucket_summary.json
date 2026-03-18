@@ -1,0 +1,32 @@
+{
+  "executed_at_utc": "2026-03-18T15:08:48.371Z",
+  "scope": {
+    "country_id": "la",
+    "source_city_slug": "luang-prabang",
+    "target_field": "events.city_id",
+    "target_city_id": "lpq"
+  },
+  "before": {
+    "unresolved_city_id_null": 2,
+    "already_target": 0
+  },
+  "batches": [
+    {
+      "batch_no": 1,
+      "planned": 2,
+      "changed": 2,
+      "fk_broken": 0,
+      "remaining_after_batch": 0,
+      "sample_ids": [
+        "la-2026-luang-prabang-cultural-night-market-events",
+        "la-2026-luang-prabang-film-festival"
+      ],
+      "manifest_file": "docs/audits/rollback_manifests/city_mapping_queue_triplet_vn_hoi_an_ph_cebu_la_luang_prabang_2026_03_18_la_luang_prabang/batch_01.json"
+    }
+  ],
+  "after": {
+    "unresolved_city_id_null": 0,
+    "target_count": 2,
+    "fk_broken_target_rows": 0
+  }
+}

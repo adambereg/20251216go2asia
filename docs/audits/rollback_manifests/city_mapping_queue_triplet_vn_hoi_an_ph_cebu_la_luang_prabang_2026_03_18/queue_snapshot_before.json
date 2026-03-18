@@ -1,0 +1,42 @@
+{
+  "snapshot_at": "2026-03-18T15:08:40.547Z",
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "hoi-an",
+      "status": "ready",
+      "affected_rows": 3,
+      "manifest_ids": [
+        "vn-2026-da-nang-art-light-festival",
+        "vn-2026-hoi-an-lantern-festival",
+        "vn-2026-hoi-an-legendary-night"
+      ],
+      "target_city_id": "hoi"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "cebu",
+      "status": "ready",
+      "affected_rows": 2,
+      "manifest_ids": [
+        "ph-2026-cebu-city-marathon",
+        "ph-2026-sinulog-festival"
+      ],
+      "target_city_id": "ceb"
+    },
+    {
+      "country_id": "la",
+      "city_slug": "luang-prabang",
+      "status": "ready",
+      "affected_rows": 2,
+      "manifest_ids": [
+        "la-2026-luang-prabang-cultural-night-market-events",
+        "la-2026-luang-prabang-film-festival"
+      ],
+      "target_city_id": "lpq"
+    }
+  ],
+  "unresolved_rows_total": 62,
+  "unresolved_buckets_total": 49,
+  "blocked_buckets_count": 3
+}

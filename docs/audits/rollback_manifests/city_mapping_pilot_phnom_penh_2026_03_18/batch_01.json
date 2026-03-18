@@ -1,0 +1,50 @@
+{
+  "pilot": "phnom-penh",
+  "ts_utc": "2026-03-18T13:47:36.933Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "phnom-penh"
+  },
+  "target_city_id": "pnh",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "kh-2026-bon-om-touk-water-festival",
+    "kh-2026-cambodia-international-film-festival",
+    "kh-2026-chinese-new-year",
+    "kh-2026-christmas-celebrations",
+    "kh-2026-khmer-new-year"
+  ],
+  "changed_ids": [
+    "kh-2026-bon-om-touk-water-festival",
+    "kh-2026-cambodia-international-film-festival",
+    "kh-2026-chinese-new-year",
+    "kh-2026-christmas-celebrations",
+    "kh-2026-khmer-new-year"
+  ],
+  "before_state": [
+    {
+      "id": "kh-2026-bon-om-touk-water-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-cambodia-international-film-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-chinese-new-year",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-christmas-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "kh-2026-khmer-new-year",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 8
+}

@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "id/makassar",
+  "ts_utc": "2026-03-18T15:43:52.532Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "id",
+    "source_city_slug": "makassar"
+  },
+  "target_city_id": "mks",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "id-2026-makassar-maritime-festival"
+  ],
+  "changed_ids": [
+    "id-2026-makassar-maritime-festival"
+  ],
+  "before_state": [
+    {
+      "id": "id-2026-makassar-maritime-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

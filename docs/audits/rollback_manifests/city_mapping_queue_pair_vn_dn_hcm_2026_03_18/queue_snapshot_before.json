@@ -1,0 +1,30 @@
+{
+  "snapshot_at": "2026-03-18T15:00:08.047Z",
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "da-nang",
+      "status": "ready",
+      "affected_rows": 4,
+      "manifest_ids": [
+        "vn-2026-da-nang-beach-festival",
+        "vn-2026-da-nang-international-marathon",
+        "vn-2026-diff",
+        "vn-2026-fireworks-warm-up"
+      ],
+      "target_city_id": "dad"
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "ho-chi-minh-city",
+      "status": "ready",
+      "affected_rows": 3,
+      "manifest_ids": [
+        "vn-2026-ho-chi-minh-city-marathon",
+        "vn-2026-tet-flower-markets",
+        "vn-2026-vietnam-street-food-festival"
+      ],
+      "target_city_id": "sgn"
+    }
+  ]
+}

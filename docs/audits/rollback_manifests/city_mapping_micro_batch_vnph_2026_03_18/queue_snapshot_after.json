@@ -1,0 +1,49 @@
+{
+  "snapshot_at": "2026-03-18T15:30:41.638Z",
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "ha-long",
+      "status": "done"
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "nha-trang",
+      "status": "done"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "baguio",
+      "status": "done"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "davao",
+      "status": "done"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "puerto-princesa",
+      "status": "done"
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "siargao",
+      "status": "done"
+    }
+  ],
+  "unresolved_rows_before": 55,
+  "unresolved_rows_after": 49,
+  "unresolved_buckets_before": 46,
+  "unresolved_buckets_after": 40,
+  "blocked_buckets_count": 3,
+  "cross_checks": {
+    "vn_outside_hlo": 0,
+    "vn_outside_ntr": 0,
+    "ph_outside_bag": 0,
+    "ph_outside_dav": 0,
+    "ph_outside_pps": 0,
+    "ph_outside_srg": 0,
+    "fk_broken": 0
+  }
+}

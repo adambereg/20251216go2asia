@@ -1,0 +1,51 @@
+{
+  "phase": "controlled_multi_bucket",
+  "bucket": "id/jakarta",
+  "ts_utc": "2026-03-18T14:44:33.026Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "id",
+    "source_city_slug": "jakarta"
+  },
+  "target_city_id": "jkt",
+  "planned_count": 5,
+  "changed_count": 5,
+  "planned_ids": [
+    "id-2026-chinese-new-year-imlek",
+    "id-2026-christmas-celebrations",
+    "id-2026-independence-day",
+    "id-2026-jakarta-fair-kemayoran",
+    "id-2026-jakarta-fashion-expo"
+  ],
+  "changed_ids": [
+    "id-2026-chinese-new-year-imlek",
+    "id-2026-christmas-celebrations",
+    "id-2026-independence-day",
+    "id-2026-jakarta-fair-kemayoran",
+    "id-2026-jakarta-fashion-expo"
+  ],
+  "before_state": [
+    {
+      "id": "id-2026-chinese-new-year-imlek",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-christmas-celebrations",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-independence-day",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-jakarta-fair-kemayoran",
+      "prev_city_id": null
+    },
+    {
+      "id": "id-2026-jakarta-fashion-expo",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 5
+}

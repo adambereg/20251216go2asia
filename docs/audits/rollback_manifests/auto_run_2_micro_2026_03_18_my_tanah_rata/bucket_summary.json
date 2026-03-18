@@ -1,0 +1,15 @@
+{
+  "scope": {
+    "country_id": "my",
+    "city_slug": "tanah-rata",
+    "target_city_id": "tna"
+  },
+  "planned": 1,
+  "changed": 1,
+  "fk_broken": 0,
+  "before_unresolved": 1,
+  "after_unresolved": 0,
+  "after_target_count": 1,
+  "anomaly": false,
+  "manifest_file": "docs/audits/rollback_manifests/auto_run_2_micro_2026_03_18_my_tanah_rata/batch_01.json"
+}
