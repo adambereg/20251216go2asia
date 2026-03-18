@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "my/kota-kinabalu",
+  "ts_utc": "2026-03-18T15:43:56.804Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "my",
+    "source_city_slug": "kota-kinabalu"
+  },
+  "target_city_id": "bki",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "my-2026-sabah-cultural-events"
+  ],
+  "changed_ids": [
+    "my-2026-sabah-cultural-events"
+  ],
+  "before_state": [
+    {
+      "id": "my-2026-sabah-cultural-events",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

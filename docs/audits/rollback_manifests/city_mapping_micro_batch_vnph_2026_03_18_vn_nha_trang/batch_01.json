@@ -1,0 +1,27 @@
+{
+  "phase": "tail_optimization_micro_batch",
+  "bucket": "vn/nha-trang",
+  "ts_utc": "2026-03-18T15:30:32.973Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "nha-trang"
+  },
+  "target_city_id": "ntr",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "vn-2026-nha-trang-sea-festival"
+  ],
+  "changed_ids": [
+    "vn-2026-nha-trang-sea-festival"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-nha-trang-sea-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

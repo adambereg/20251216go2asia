@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "my/langkawi",
+  "ts_utc": "2026-03-18T15:43:58.845Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "my",
+    "source_city_slug": "langkawi"
+  },
+  "target_city_id": "lgk",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "my-2026-lima-exhibition"
+  ],
+  "changed_ids": [
+    "my-2026-lima-exhibition"
+  ],
+  "before_state": [
+    {
+      "id": "my-2026-lima-exhibition",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

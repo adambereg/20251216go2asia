@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "id/denpasar",
+  "ts_utc": "2026-03-18T15:43:50.455Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "id",
+    "source_city_slug": "denpasar"
+  },
+  "target_city_id": "dps",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "id-2026-bali-arts-festival"
+  ],
+  "changed_ids": [
+    "id-2026-bali-arts-festival"
+  ],
+  "before_state": [
+    {
+      "id": "id-2026-bali-arts-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

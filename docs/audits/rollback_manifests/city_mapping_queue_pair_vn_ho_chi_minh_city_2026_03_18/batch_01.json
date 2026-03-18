@@ -1,0 +1,39 @@
+{
+  "phase": "structured_scaling_queue_driven",
+  "bucket": "vn/ho-chi-minh-city",
+  "ts_utc": "2026-03-18T15:00:12.113Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "ho-chi-minh-city"
+  },
+  "target_city_id": "sgn",
+  "planned_count": 3,
+  "changed_count": 3,
+  "planned_ids": [
+    "vn-2026-ho-chi-minh-city-marathon",
+    "vn-2026-tet-flower-markets",
+    "vn-2026-vietnam-street-food-festival"
+  ],
+  "changed_ids": [
+    "vn-2026-ho-chi-minh-city-marathon",
+    "vn-2026-vietnam-street-food-festival",
+    "vn-2026-tet-flower-markets"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-ho-chi-minh-city-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-tet-flower-markets",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-vietnam-street-food-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

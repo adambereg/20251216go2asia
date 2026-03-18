@@ -1,0 +1,110 @@
+{
+  "snapshot_at": "2026-03-18T15:43:48.915Z",
+  "selected": [
+    {
+      "country_id": "id",
+      "city_slug": "denpasar",
+      "target_city_id": "dps",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "dps",
+        "slug": "dps",
+        "country_id": "id",
+        "name": "Денпасар"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "id-2026-bali-arts-festival"
+      ]
+    },
+    {
+      "country_id": "id",
+      "city_slug": "makassar",
+      "target_city_id": "mks",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "mks",
+        "slug": "mks",
+        "country_id": "id",
+        "name": "Макассар"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "id-2026-makassar-maritime-festival"
+      ]
+    },
+    {
+      "country_id": "kh",
+      "city_slug": "battambang",
+      "target_city_id": "bat",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "bat",
+        "slug": "bat",
+        "country_id": "kh",
+        "name": "Баттамбанг"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "kh-2026-battambang-street-art-festival"
+      ]
+    },
+    {
+      "country_id": "my",
+      "city_slug": "kota-kinabalu",
+      "target_city_id": "bki",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "bki",
+        "slug": "bki",
+        "country_id": "my",
+        "name": "Кота Кинабалу"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "my-2026-sabah-cultural-events"
+      ]
+    },
+    {
+      "country_id": "my",
+      "city_slug": "langkawi",
+      "target_city_id": "lgk",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "lgk",
+        "slug": "lgk",
+        "country_id": "my",
+        "name": "Лангкави"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "my-2026-lima-exhibition"
+      ]
+    },
+    {
+      "country_id": "th",
+      "city_slug": "pattaya",
+      "target_city_id": "pty",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "pty",
+        "slug": "pty",
+        "country_id": "th",
+        "name": "Паттайя"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "th-2026-pattaya-music-festival"
+      ]
+    }
+  ],
+  "unresolved_rows_total": 49,
+  "unresolved_buckets_total": 40,
+  "blocked_buckets_count": 3
+}

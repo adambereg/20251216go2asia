@@ -1,0 +1,27 @@
+{
+  "phase": "tail_optimization_micro_batch",
+  "bucket": "ph/siargao",
+  "ts_utc": "2026-03-18T15:30:40.434Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "siargao"
+  },
+  "target_city_id": "srg",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "ph-2026-siargao-surf-competition"
+  ],
+  "changed_ids": [
+    "ph-2026-siargao-surf-competition"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-siargao-surf-competition",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

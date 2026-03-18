@@ -1,0 +1,112 @@
+{
+  "snapshot_at": "2026-03-18T15:29:54.261Z",
+  "selected": [
+    {
+      "country_id": "vn",
+      "city_slug": "ha-long",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "vn-2026-ha-long-carnival"
+      ],
+      "target_city_id": "hlo",
+      "target_city": {
+        "id": "hlo",
+        "slug": "hlo",
+        "country_id": "vn",
+        "name": "Халонг"
+      }
+    },
+    {
+      "country_id": "vn",
+      "city_slug": "nha-trang",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "vn-2026-nha-trang-sea-festival"
+      ],
+      "target_city_id": "ntr",
+      "target_city": {
+        "id": "ntr",
+        "slug": "ntr",
+        "country_id": "vn",
+        "name": "Нячанг"
+      }
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "baguio",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "ph-2026-panagbenga-festival"
+      ],
+      "target_city_id": "bag",
+      "target_city": {
+        "id": "bag",
+        "slug": "bag",
+        "country_id": "ph",
+        "name": "Багио"
+      }
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "davao",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "ph-2026-kadayawan-festival"
+      ],
+      "target_city_id": "dav",
+      "target_city": {
+        "id": "dav",
+        "slug": "dav",
+        "country_id": "ph",
+        "name": "Давао"
+      }
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "puerto-princesa",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "ph-2026-palawan-diving-festival"
+      ],
+      "target_city_id": "pps",
+      "target_city": {
+        "id": "pps",
+        "slug": "pps",
+        "country_id": "ph",
+        "name": "Пуэрто Принцеса"
+      }
+    },
+    {
+      "country_id": "ph",
+      "city_slug": "siargao",
+      "queue_status": "ready",
+      "affected_rows": 1,
+      "manifest_ids": [
+        "ph-2026-siargao-surf-competition"
+      ],
+      "target_city_id": "srg",
+      "target_city": {
+        "id": "srg",
+        "slug": "srg",
+        "country_id": "ph",
+        "name": "Сиаргао"
+      }
+    }
+  ],
+  "unresolved_rows_total": 55,
+  "unresolved_buckets_total": 46,
+  "blocked_buckets_count": 3,
+  "execution_order": [
+    "vn/ha-long",
+    "vn/nha-trang",
+    "ph/baguio",
+    "ph/davao",
+    "ph/puerto-princesa",
+    "ph/siargao"
+  ]
+}

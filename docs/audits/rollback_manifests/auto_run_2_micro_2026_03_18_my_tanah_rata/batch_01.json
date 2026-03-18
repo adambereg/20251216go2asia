@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 2",
+  "bucket": "my/tanah-rata",
+  "ts_utc": "2026-03-18T15:44:07.483Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "my",
+    "source_city_slug": "tanah-rata"
+  },
+  "target_city_id": "tna",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "my-2026-cameron-highlands-flower-festival"
+  ],
+  "changed_ids": [
+    "my-2026-cameron-highlands-flower-festival"
+  ],
+  "before_state": [
+    {
+      "id": "my-2026-cameron-highlands-flower-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

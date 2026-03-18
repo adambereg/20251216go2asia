@@ -1,0 +1,15 @@
+{
+  "scope": {
+    "country_id": "th",
+    "city_slug": "pattaya",
+    "target_city_id": "pty"
+  },
+  "planned": 1,
+  "changed": 1,
+  "fk_broken": 0,
+  "before_unresolved": 1,
+  "after_unresolved": 0,
+  "after_target_count": 1,
+  "anomaly": false,
+  "manifest_file": "docs/audits/rollback_manifests/auto_run_1_micro_2026_03_18_th_pattaya/batch_01.json"
+}

@@ -1,0 +1,28 @@
+{
+  "executed_at_utc": "2026-03-18T15:30:41.121Z",
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "siargao",
+    "target_field": "events.city_id",
+    "target_city_id": "srg"
+  },
+  "before": {
+    "unresolved_city_id_null": 1,
+    "already_target": 0
+  },
+  "batch": {
+    "planned": 1,
+    "changed": 1,
+    "fk_broken": 0,
+    "remaining_after_batch": 0,
+    "sample_ids": [
+      "ph-2026-siargao-surf-competition"
+    ],
+    "manifest_file": "docs/audits/rollback_manifests/city_mapping_micro_batch_vnph_2026_03_18_ph_siargao/batch_01.json"
+  },
+  "after": {
+    "unresolved_city_id_null": 0,
+    "target_count": 1,
+    "fk_broken_target_rows": 0
+  }
+}

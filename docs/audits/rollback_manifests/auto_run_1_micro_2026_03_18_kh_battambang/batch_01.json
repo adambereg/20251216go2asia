@@ -1,0 +1,28 @@
+{
+  "phase": "limited_auto_continue_micro",
+  "run": "AutoRun 1",
+  "bucket": "kh/battambang",
+  "ts_utc": "2026-03-18T15:43:54.792Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "kh",
+    "source_city_slug": "battambang"
+  },
+  "target_city_id": "bat",
+  "planned_count": 1,
+  "changed_count": 1,
+  "planned_ids": [
+    "kh-2026-battambang-street-art-festival"
+  ],
+  "changed_ids": [
+    "kh-2026-battambang-street-art-festival"
+  ],
+  "before_state": [
+    {
+      "id": "kh-2026-battambang-street-art-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

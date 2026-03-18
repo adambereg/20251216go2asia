@@ -1,0 +1,45 @@
+{
+  "phase": "structured_scaling_queue_driven",
+  "bucket": "vn/da-nang",
+  "ts_utc": "2026-03-18T15:00:10.098Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "vn",
+    "source_city_slug": "da-nang"
+  },
+  "target_city_id": "dad",
+  "planned_count": 4,
+  "changed_count": 4,
+  "planned_ids": [
+    "vn-2026-da-nang-beach-festival",
+    "vn-2026-da-nang-international-marathon",
+    "vn-2026-diff",
+    "vn-2026-fireworks-warm-up"
+  ],
+  "changed_ids": [
+    "vn-2026-da-nang-international-marathon",
+    "vn-2026-diff",
+    "vn-2026-fireworks-warm-up",
+    "vn-2026-da-nang-beach-festival"
+  ],
+  "before_state": [
+    {
+      "id": "vn-2026-da-nang-beach-festival",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-da-nang-international-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-diff",
+      "prev_city_id": null
+    },
+    {
+      "id": "vn-2026-fireworks-warm-up",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}

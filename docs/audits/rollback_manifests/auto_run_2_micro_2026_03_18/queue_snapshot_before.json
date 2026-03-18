@@ -1,0 +1,25 @@
+{
+  "snapshot_at": "2026-03-18T15:44:06.200Z",
+  "selected": [
+    {
+      "country_id": "my",
+      "city_slug": "tanah-rata",
+      "target_city_id": "tna",
+      "queue_status": "ready",
+      "target_exists": true,
+      "target_city": {
+        "id": "tna",
+        "slug": "tna",
+        "country_id": "my",
+        "name": "Танах Рата"
+      },
+      "affected_rows": 1,
+      "manifest_ids": [
+        "my-2026-cameron-highlands-flower-festival"
+      ]
+    }
+  ],
+  "unresolved_rows_total": 43,
+  "unresolved_buckets_total": 34,
+  "blocked_buckets_count": 3
+}

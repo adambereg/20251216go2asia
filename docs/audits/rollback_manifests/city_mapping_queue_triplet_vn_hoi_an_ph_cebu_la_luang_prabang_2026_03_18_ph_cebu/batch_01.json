@@ -1,0 +1,33 @@
+{
+  "phase": "structured_scaling_queue_driven_triplet",
+  "bucket": "ph/cebu",
+  "ts_utc": "2026-03-18T15:08:45.331Z",
+  "batch_no": 1,
+  "scope": {
+    "country_id": "ph",
+    "source_city_slug": "cebu"
+  },
+  "target_city_id": "ceb",
+  "planned_count": 2,
+  "changed_count": 2,
+  "planned_ids": [
+    "ph-2026-cebu-city-marathon",
+    "ph-2026-sinulog-festival"
+  ],
+  "changed_ids": [
+    "ph-2026-cebu-city-marathon",
+    "ph-2026-sinulog-festival"
+  ],
+  "before_state": [
+    {
+      "id": "ph-2026-cebu-city-marathon",
+      "prev_city_id": null
+    },
+    {
+      "id": "ph-2026-sinulog-festival",
+      "prev_city_id": null
+    }
+  ],
+  "fk_broken_count": 0,
+  "remaining_unresolved_after_batch": 0
+}
