@@ -132,13 +132,21 @@
    - `/v1/media/*`
 2. Подготовить service template для новых Workers.
 3. Зафиксировать DB conventions для новых доменов.
-4. Подготовить SDK extension strategy.
-5. Подтвердить architectural SSOT документы как базу для delivery.
+4. Зафиксировать platform data conventions для новых доменов:
+   - canonical geo contract (`country_id`, `city_id`, optional `district_id`, optional `place_id`, coordinates policy);
+   - graph-ready data model baseline (без выделения отдельного graph-service);
+   - relation layer conventions для новых доменов (entity-to-entity linking через явные relations/FK patterns);
+   - metadata layer conventions для новых доменов (`source_type`, `canonical_status`, `trust_score`, `freshness_score`, `created_by`);
+   - ban on new non-canonical geo writes в новых сервисах.
+5. Подготовить SDK extension strategy с учётом canonical geo и relation/metadata conventions.
+6. Подтвердить architectural SSOT документы как базу для delivery.
+7. Зафиксировать, что Atlas остаётся текущим Geo SSOT baseline для всех downstream доменов.
 
 ### Result
 
 - все новые сервисы строятся по одной дисциплине;
-- снижается архитектурный разброс между доменами.
+- снижается архитектурный разброс между доменами;
+- data contracts для Phase 2 заранее совместимы с Geo Canon v1 и KG MVP baseline.
 
 ---
 
@@ -324,14 +332,61 @@
 
 ---
 
+## Pre-Step-8 Normalization Package (Execution Gate)
+
+### Goal
+
+Зафиксировать минимальный normalization package до старта Step 8, чтобы:
+
+- не останавливать roadmap;
+- не делать massive rewrite;
+- не переносить в Step 9–11 structural debt по geo и linking.
+
+### Mandatory P0 (must be frozen before Step 8)
+
+1. Зафиксировать Atlas-as-Geo-SSOT policy:
+   - identity layer: `countries`, `cities`, `places`, `city_aliases`;
+   - content layer: `content_blocks`, guides и editorial контент;
+   - canonical hierarchy: `country -> city -> district(optional) -> place`;
+   - canonical IDs: `country_id`, `city_id`, optional `district_id`, optional `place_id`;
+   - canonical coordinates source: Atlas `lat/lng` (legacy aliases допустимы только как compatibility).
+2. Зафиксировать canonical mapping layer policy для country/city в Pulse/Blog:
+   - deterministic mapping dictionary;
+   - outcome-классы: resolved / unresolved / manual-review.
+3. Зафиксировать ban on new non-canonical geo writes:
+   - новые write paths MUST писать canonical geo refs;
+   - free-text/slugs MAY храниться только как secondary compatibility data.
+4. Зафиксировать Pulse minimum normalization gate:
+   - country-level canonicalization обязателен для новых/обновляемых записей;
+   - city normalization работает фазно (high-confidence first, unresolved queue).
+5. Зафиксировать Blog minimum geo materialization gate:
+   - canonical geo refs materialize для `blog_posts`;
+   - dual-source policy: `blog_posts` = canonical, `articles` = legacy compatibility surface.
+6. Зафиксировать compatibility guardrails для Step 8 consumers:
+   - downstream контракты не зависят от non-canonical geo как primary key.
+
+### P1 (phase-in during Step 8 to Step 11)
+
+1. Расширить relation-layer conventions для cross-domain linking (без full KG rollout).
+2. Расширить metadata-layer conventions для quality/governance сигналов.
+3. Последовательно уменьшать legacy dependence в Pulse/Blog contracts без резкого API-break.
+
+### Result
+
+- Step 8 стартует через управляемый execution gate, а не через “big-bang” нормализацию;
+- платформа остаётся delivery-oriented и при этом не накапливает критичный geo/KG debt.
+
+---
+
 ## Step 8 — Build `rielt-service`
 
 ### Goal
 
-Добавить первый practical domain экосистемы.
+Добавить первый practical domain экосистемы, не нарушая canonical geo/data conventions.
 
 ### Actions
 
+0. Entry gate: запуск только после frozen P0 из `Pre-Step-8 Normalization Package`.
 1. Реализовать listing model:
    - listings;
    - photo relations через `media-service`;
@@ -345,11 +400,14 @@
 3. Реализовать minimal owner/PRO CRUD.
 4. Реализовать inquiry через отдельный domain/service в будущей фазе (не через `reactions-service` V1).
 5. Использовать Atlas geography через текущий `content-service`.
+6. В public/internal contracts использовать canonical geo references как primary geo keys.
+7. Допускать только временные compatibility fallbacks (slug/text) как secondary/read-only слой.
 
 ### Result
 
 - появляется реальная прикладная ценность кроме контента;
-- создаётся supply для `Guru`.
+- создаётся supply для `Guru`;
+- новый practical domain не увеличивает geo normalization debt.
 
 ---
 
@@ -424,7 +482,12 @@
 
 ### Goal
 
-Не строить Geo Layer преждевременно, но подготовить систему к его появлению.
+Не строить Geo Layer преждевременно, но подготовить систему к:
+
+- future geo layer;
+- relation layer;
+- metadata layer;
+- KG MVP compatibility (без отдельного graph-service).
 
 ### Actions
 
@@ -432,6 +495,7 @@
 2. Во всех новых доменах использовать нормализованные geo references:
    - `country_id`
    - `city_id`
+   - optional `district_id` (где применимо)
    - coordinates
 3. Не вводить временные несовместимые geo DTO.
 4. Подготовить будущий platform geo contract:
@@ -439,12 +503,20 @@
    - viewport;
    - normalized geo items;
    - cross-domain projections.
-5. Рассматривать выделение `Geo Layer` только при достижении platform-level нагрузки и complexity threshold.
+5. Зафиксировать минимальный relation layer contract для cross-domain linking:
+   - place/event/post/topic/tag links;
+   - без full graph orchestration.
+6. Зафиксировать минимальный metadata layer contract:
+   - source/canonical/quality/freshness поля;
+   - для auditability и controlled evolution.
+7. Рассматривать выделение `Geo Layer` только при достижении platform-level нагрузки и complexity threshold.
+8. Явно НЕ проектировать отдельный geo-service и graph database на этом этапе.
 
 ### Result
 
 - Atlas остаётся стабильной опорой сейчас;
-- переход к `Geo Layer` позже не потребует painful rewrite.
+- переход к `Geo Layer` позже не потребует painful rewrite;
+- Step 9–13 строятся на KG-compatible contracts без scope explosion.
 
 ---
 
@@ -509,6 +581,11 @@ It connects existing ones.
 - submission review and moderation
 - analytics for PRO
 
+#### 6. Canonical Geo + KG-compatible integration rules
+- использовать canonical geo references для cross-domain routing/filters
+- поддержать minimal cross-domain linking (place/event/post/partner/listing/quest references)
+- выровнять contracts так, чтобы они были KG-compatible, но без построения отдельного knowledge graph
+
 ---
 
 ### Architectural Constraints
@@ -518,6 +595,9 @@ It connects existing ones.
 - Space remains social layer
 - Points remains economic source of truth
 - Voucher logic remains external
+- Canonical geo ownership remains Atlas-based
+- Integration layer must NOT invent parallel geo DTO contracts
+- Integration layer must NOT be reframed as full Knowledge Graph project
 
 ---
 
@@ -527,6 +607,7 @@ It connects existing ones.
   Discover → Participate → Share → Reward
 - Connected ecosystem behavior
 - Foundation for Guru, AI layer and token economy
+- Cross-domain contracts remain canonical-geo-first and KG-compatible by design
 
 ---
 
@@ -541,11 +622,12 @@ It connects existing ones.
 5. `reactions-service` (outside `space-service` boundary)
 6. `feed`
 7. `quest-service`
-8. `rielt-service`
-9. `guru-service`
-10. `rf-service`
-11. `future geo layer preparation`
-12. Phase 3 planning
+8. `Pre-Step-8 normalization package` (execution gate)
+9. `rielt-service`
+10. `guru-service`
+11. `rf-service`
+12. `future geo + relation/metadata readiness preparation`
+13. Phase 3 planning
 
 ---
 
