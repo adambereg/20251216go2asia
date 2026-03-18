@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./queries/blog": "./src/queries/blog.ts",
+    "./queries/cityMapping": "./src/queries/cityMapping.ts",
     "./queries/content": "./src/queries/content.ts",
     "./queries/guides": "./src/queries/guides.ts"
   },
@@ -34,6 +35,7 @@
     "db:import:pulse-md": "cross-env ENVIRONMENT=staging tsx src/importPulseEventsFromMarkdown.ts",
     "db:import:blog-md": "cross-env ENVIRONMENT=staging tsx src/importBlogFromMarkdown.ts",
     "db:verify:blog-canon": "cross-env ENVIRONMENT=staging tsx src/verifyBlogCanon.ts",
+    "db:city-mapping:pilot:preview": "cross-env ENVIRONMENT=staging tsx src/prepareCityMappingPilot.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

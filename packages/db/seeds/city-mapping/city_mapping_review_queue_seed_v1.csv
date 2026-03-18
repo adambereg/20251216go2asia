@@ -1,0 +1,15 @@
+queue_version,source_domain,source_scope,country_id,source_city_slug,proposed_target_city_id,classification,review_status,evidence_type,evidence_count,reason_code,owner,notes
+v1,pulse,events.city_slug,th,bangkok,,review_needed,pending_review,tier4_bucket,14,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,kh,phnom-penh,,review_needed,pending_review,tier4_bucket,13,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,vn,hanoi,,review_needed,pending_review,tier4_bucket,12,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,la,vientiane,,review_needed,pending_review,tier4_bucket,12,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,ph,manila,,review_needed,pending_review,tier4_bucket,11,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,id,jakarta,,review_needed,pending_review,tier4_bucket,10,no_scoped_atlas_signal,data_ops,top unresolved bucket
+v1,pulse,events.city_slug,kh,siem-reap,,review_needed,pending_review,tier4_bucket,5,no_scoped_atlas_signal,data_ops,review queue before promotion
+v1,pulse,events.city_slug,vn,da-nang,,review_needed,pending_review,tier4_bucket,4,no_scoped_atlas_signal,data_ops,review queue before promotion
+v1,pulse,events.city_slug,th,chiang-mai,,review_needed,pending_review,tier4_bucket,3,no_scoped_atlas_signal,data_ops,review queue before promotion
+v1,pulse,events.city_slug,vn,ho-chi-minh-city,,review_needed,pending_review,tier4_bucket,3,no_scoped_atlas_signal,data_ops,review queue before promotion
+v1,pulse,events.city_slug,vn,hoi-an,,review_needed,pending_review,tier4_bucket,3,no_scoped_atlas_signal,data_ops,review queue before promotion
+v1,pulse,events.city_slug,my,sepang,,blocked,blocked,tier4_bucket,2,insufficient_reliable_signal,data_ops,do not promote yet
+v1,pulse,events.city_slug,th,koh-phangan,,blocked,blocked,tier4_bucket,2,insufficient_reliable_signal,data_ops,do not promote yet
+v1,pulse,events.city_slug,my,george-town,,blocked,blocked,tier4_bucket,2,canon_confirmation_required,data_ops,do not promote yet

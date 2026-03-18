@@ -7,6 +7,7 @@
 
 export * from './auth';
 export * from './blog';
+export * from './cityMapping';
 export * from './conventions';
 export * from './content';
 export * from './media';
