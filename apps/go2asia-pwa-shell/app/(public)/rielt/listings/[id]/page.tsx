@@ -1,11 +1,12 @@
 /**
  * Rielt.Market Asia - Listing Detail Page
- * Детальная страница объявления о жилье
+ * Детальная страница объявления о жилье (реальный API)
  */
 
 import { notFound } from 'next/navigation';
+import { fetchListing } from '@go2asia/sdk/rielt';
 import { ListingDetailClient } from './ListingDetailClient';
-import { mockListings } from '@/components/rielt';
+import { rieltDtoToListing } from '@/components/rielt/adapters/rieltDtoToListing';
 
 export default async function ListingDetailPage({
   params,
@@ -13,12 +14,13 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = mockListings.find((l) => l.id === id);
+  const res = await fetchListing(id);
 
-  if (!listing) {
+  if (!res?.listing) {
     notFound();
   }
 
+  const listing = rieltDtoToListing(res.listing);
   return <ListingDetailClient listing={listing} />;
 }
 

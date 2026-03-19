@@ -53,6 +53,10 @@
     "./media": {
       "types": "./src/media.ts",
       "default": "./src/media.ts"
+    },
+    "./rielt": {
+      "types": "./src/rielt.ts",
+      "default": "./src/rielt.ts"
     }
   },
   "scripts": {

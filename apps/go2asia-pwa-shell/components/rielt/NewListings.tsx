@@ -2,28 +2,36 @@
 
 /**
  * Rielt.Market Asia - NewListings
- * Секция "Новое на этой неделе"
+ * Секция "Новое на этой неделе" (реальный API)
  */
 
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { mockListings } from './mockListings';
+import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
+import { rieltDtoToListing } from './adapters/rieltDtoToListing';
 
 export function NewListings() {
-  // Фильтруем объявления, созданные за последние 7 дней
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
+  const { data, isLoading } = useListListings({
+    sort: 'newest',
+    page_size: 6,
+  });
+  const newListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
 
-  const newListings = mockListings
-    .filter((listing) => {
-      const createdAt = new Date(listing.createdAt);
-      return createdAt >= weekAgo;
-    })
-    .sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })
-    .slice(0, 6);
+  if (isLoading) {
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Новое на этой неделе
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   if (newListings.length === 0) {
     return null;
