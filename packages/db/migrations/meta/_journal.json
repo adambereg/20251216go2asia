@@ -148,6 +148,13 @@
       "when": 1773620000000,
       "tag": "0018_quest_core_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1773790000000,
+      "tag": "0019_rielt_core_v1",
+      "breakpoints": true
     }
   ]
 }
