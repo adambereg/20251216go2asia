@@ -9,6 +9,5 @@ export * from './types';
 // Утилиты
 export * from './utils';
 
-// Демо-данные
-export { mockListings } from './mockListings';
+// Slice 8: mockListings removed — frontend uses real API
 

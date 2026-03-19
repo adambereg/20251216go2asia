@@ -16,6 +16,7 @@ export * as media from './media';
 export { customInstance, getBaseUrl } from './mutator';
 export * as pulse from './pulse';
 export * as referrals from './referrals';
+export * as rielt from './rielt';
 export * as transactions from './transactions';
 
 export * as generated from './generated';

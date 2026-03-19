@@ -2,65 +2,48 @@
 
 /**
  * Rielt.Market Asia - Search Results Client Component
- * Страница результатов поиска с фильтрацией и картой
+ * Страница результатов поиска с реальным API
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SearchResultsView } from '@/components/rielt/SearchResults/SearchResultsView';
-import { mockListings } from '@/components/rielt';
+import { useListListings, type RieltListParams } from '@go2asia/sdk/rielt';
+import { rieltDtoToListing } from '@/components/rielt/adapters/rieltDtoToListing';
 import type { SearchFilters, ListingWithDistance } from '@/components/rielt/types';
-import { applyFilters } from '@/components/rielt/utils/filters';
-import { sortListings } from '@/components/rielt/utils/sorting';
-import { addDistancesToListings } from '@/components/rielt/utils/geo';
+
+function mapUrlToApiParams(searchParams: URLSearchParams) {
+  const city = searchParams.get('city');
+  const rentalType = searchParams.get('rentalType');
+  const sortBy = searchParams.get('sortBy');
+  const bedrooms = searchParams.get('bedrooms');
+
+  const listing_type =
+    rentalType === 'long-term' ? 'rent_long' : rentalType === 'short-term' ? 'rent_short' : undefined;
+  const sort: 'newest' | 'price_asc' | 'price_desc' =
+    sortBy === 'price-asc'
+      ? 'price_asc'
+      : sortBy === 'price-desc'
+        ? 'price_desc'
+        : 'newest';
+
+  return {
+    city_id: city || undefined,
+    listing_type,
+    sort,
+    bedrooms_min: bedrooms ? parseInt(bedrooms, 10) : undefined,
+    page: 1,
+    page_size: 50,
+  };
+}
 
 export function SearchResultsClient() {
   const searchParams = useSearchParams();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Парсим параметры из URL
-  const filtersFromURL = useMemo((): Partial<SearchFilters> => {
-    const filters: Partial<SearchFilters> = {};
+  const apiParams = mapUrlToApiParams(searchParams);
+  const { data, isLoading, isError, error } = useListListings(apiParams);
 
-    // Город
-    const city = searchParams.get('city');
-    if (city) {
-      filters.location = { city };
-    }
-
-    // rentalType
-    const rentalType = searchParams.get('rentalType') as 'short-term' | 'long-term' | null;
-    if (rentalType) {
-      filters.rentalType = rentalType;
-    }
-
-    // sortBy
-    const sortBy = searchParams.get('sortBy') as SearchFilters['sortBy'];
-    if (sortBy) {
-      filters.sortBy = sortBy;
-    }
-
-    // amenities
-    const workspace = searchParams.get('workspace') === 'true';
-    const wifi = searchParams.get('wifi') === 'true';
-    const childFriendly = searchParams.get('childFriendly') === 'true';
-    if (workspace || wifi || childFriendly) {
-      filters.amenities = {};
-      if (workspace) filters.amenities.workspace = true;
-      if (wifi) filters.amenities.wifi = true;
-      if (childFriendly) filters.amenities.childFriendly = true;
-    }
-
-    // bedrooms
-    const bedrooms = searchParams.get('bedrooms');
-    if (bedrooms) {
-      // Это будет обработано в фильтрах
-    }
-
-    return filters;
-  }, [searchParams]);
-
-  // Получаем геолокацию пользователя
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -71,7 +54,6 @@ export function SearchResultsClient() {
           });
         },
         () => {
-          // Если геолокация недоступна, используем дефолтную позицию (Бангкок)
           setUserLocation({ lat: 13.7563, lng: 100.5018 });
         }
       );
@@ -80,88 +62,58 @@ export function SearchResultsClient() {
     }
   }, []);
 
-  // Применяем фильтры и сортировку
-  const filteredAndSortedListings = useMemo(() => {
-    let listings: ListingWithDistance[] = [...mockListings];
+  const filtersFromURL: Partial<SearchFilters> = {};
+  const city = searchParams.get('city');
+  if (city) filtersFromURL.location = { city };
+  const rentalType = searchParams.get('rentalType') as 'short-term' | 'long-term' | null;
+  if (rentalType) filtersFromURL.rentalType = rentalType;
+  const sortBy = searchParams.get('sortBy') as SearchFilters['sortBy'];
+  if (sortBy) filtersFromURL.sortBy = sortBy;
 
-    // Добавляем расстояния, если есть геолокация
-    if (userLocation) {
-      listings = addDistancesToListings(listings, userLocation);
-    }
+  let listings: ListingWithDistance[] = [];
+  if (data?.items) {
+    listings = data.items.map((dto) => rieltDtoToListing(dto)) as ListingWithDistance[];
+  }
 
-    // Применяем фильтры
-    const fullFilters: SearchFilters = {
-      ...filtersFromURL,
-      types: ['apartment', 'house', 'studio', 'room', 'coliving'],
-      sortBy: filtersFromURL.sortBy || 'recommended',
-    } as SearchFilters;
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-slate-200 rounded w-1/3" />
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-48 bg-slate-200 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    // Фильтр по городу
-    if (filtersFromURL.location?.city) {
-      listings = listings.filter(
-        (listing) =>
-          listing.address.city.toLowerCase() === filtersFromURL.location!.city!.toLowerCase()
-      );
-    }
-
-    // Фильтр по типу аренды
-    if (filtersFromURL.rentalType) {
-      listings = listings.filter((listing) => listing.rentalType === filtersFromURL.rentalType);
-    }
-
-    // Фильтр по удобствам
-    if (filtersFromURL.amenities) {
-      if (filtersFromURL.amenities.workspace) {
-        listings = listings.filter((listing) => listing.amenities.workspace === true);
-      }
-      if (filtersFromURL.amenities.wifi) {
-        listings = listings.filter((listing) => listing.amenities.wifi === true);
-      }
-      if (filtersFromURL.amenities.childFriendly) {
-        listings = listings.filter((listing) => listing.amenities.childFriendly === true);
-      }
-    }
-
-    // Фильтр по количеству спален
-    const bedrooms = searchParams.get('bedrooms');
-    if (bedrooms) {
-      const bedroomsNum = parseInt(bedrooms);
-      listings = listings.filter((listing) => (listing.bedrooms || 0) >= bedroomsNum);
-    }
-
-    // Применяем остальные фильтры
-    listings = applyFilters(listings, fullFilters);
-
-    // Сортируем
-    listings = sortListings(listings, fullFilters.sortBy);
-
-    return listings;
-  }, [mockListings, filtersFromURL, userLocation, searchParams]);
+  if (isError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-amber-900 mb-2">Ошибка загрузки</h2>
+          <p className="text-amber-800 mb-4">
+            {error?.message ?? 'Не удалось загрузить объявления. Попробуйте позже.'}
+          </p>
+          <a
+            href="/rielt/search"
+            className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium"
+          >
+            Вернуться к поиску
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SearchResultsView
-      listings={filteredAndSortedListings}
+      listings={listings}
       filters={filtersFromURL}
       userLocation={userLocation}
     />
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
