@@ -646,6 +646,16 @@ function isProtectedQuestRoute(method: string, path: string): boolean {
   return false;
 }
 
+function isProtectedRieltRoute(method: string, path: string): boolean {
+  if (method === 'POST' && path === '/v1/rielt/listings') return true;
+  if (method === 'GET' && path === '/v1/rielt/my/listings') return true;
+  if (method === 'GET' && path === '/v1/rielt/my/inquiries') return true;
+  if (method === 'POST' && /^\/v1\/rielt\/listings\/[^/]+\/inquiries$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/rielt\/listings\/[^/]+$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/rielt\/listings\/[^/]+$/.test(path)) return true;
+  return false;
+}
+
 /**
  * Ready check endpoint
  */
@@ -910,7 +920,8 @@ async function routeRequest(
     isProtectedSpaceRoute(request.method, path) ||
     isProtectedReactionsRoute(request.method, path) ||
     isProtectedFeedRoute(request.method, path) ||
-    isProtectedQuestRoute(request.method, path)
+    isProtectedQuestRoute(request.method, path) ||
+    isProtectedRieltRoute(request.method, path)
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;

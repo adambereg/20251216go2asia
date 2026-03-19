@@ -405,6 +405,81 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 501 for reserved rielt prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rielt/listings', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('RIELT_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxies rielt public route when RIELT_SERVICE_URL is configured', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toMatch(/^https:\/\/rielt\.example\/v1\/rielt\/listings/);
+      expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      return new Response(
+        JSON.stringify({
+          items: [],
+          pagination: { page: 1, pageSize: 20, total: 0 },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rielt/listings?page=1&page_size=20'),
+      { RIELT_SERVICE_URL: 'https://rielt.example' }
+    );
+
+    const body = await readJson<{ items: unknown[]; pagination: { total: number } }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items).toEqual([]);
+    expect(body.pagination.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 401 for protected rielt route without bearer token', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rielt/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({ slug: 'test', title: 'Test', description: 'Test' }),
+      }),
+      {
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('proxies public quest reads without gateway auth', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toBe('https://quest.example/v1/quests');
