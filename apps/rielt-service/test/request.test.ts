@@ -16,7 +16,7 @@ vi.mock('@go2asia/db', () => ({
   }),
 }));
 
-import { readJson } from '../../../tests/helpers/worker-test';
+import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import worker from '../src/index';
 
 describe('rielt-service scaffold', () => {
@@ -28,6 +28,10 @@ describe('rielt-service scaffold', () => {
   function sqlOf(callIndex: number): string {
     const arg = executeMock.mock.calls[callIndex]?.[0] as { strings?: string[] } | undefined;
     return (arg?.strings ?? []).join('');
+  }
+
+  async function ownerAuthHeader(secret: string, userId = 'user_owner_1'): Promise<string> {
+    return makeGatewayJwt(secret, { sub: userId, roles: ['owner'] });
   }
 
   it('returns health payload', async () => {
@@ -378,5 +382,692 @@ describe('rielt-service scaffold', () => {
     const values = firstCallArg?.values ?? [];
     expect(values).toContain(5); // limit
     expect(values).toContain(5); // offset
+  });
+
+  it('creates draft listing for owner', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_new_1',
+            slug: 'new-studio',
+            title: 'New Studio',
+            description: 'Fresh listing',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '700',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '35',
+            amenities: ['wifi'],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          slug: 'new-studio',
+          title: 'New Studio',
+          description: 'Fresh listing',
+          listing_type: 'rent_long',
+          price_amount: 700,
+          price_currency: 'usd',
+          price_period: 'month',
+          country_id: 'th',
+          city_id: 'bangkok',
+          bedrooms: 1,
+          bathrooms: 1,
+          area_sqm: 35,
+          amenities: ['wifi'],
+        }),
+      }),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: authSecret,
+      }
+    );
+    const body = await readJson<{ listing: { status: string; slug: string } }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.listing.status).toBe('draft');
+    expect(body.listing.slug).toBe('new-studio');
+    expect(sqlOf(0).toLowerCase()).toContain('insert into rielt_listing');
+    expect(sqlOf(1).toLowerCase()).toContain('insert into rielt_listing_actor_link');
+  });
+
+  it('creates listing when city_id is null', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_new_2',
+            slug: 'island-villa',
+            title: 'Island Villa',
+            description: 'No city listing',
+            listing_type: 'sale',
+            status: 'draft',
+            price_amount: '90000',
+            price_currency: 'USD',
+            price_period: 'total',
+            country_id: 'th',
+            city_id: null,
+            area_text: 'Samui coastline',
+            lat: '9.512',
+            lng: '100.012',
+            bedrooms: 3,
+            bathrooms: 2,
+            area_sqm: '120',
+            amenities: ['pool'],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          slug: 'island-villa',
+          title: 'Island Villa',
+          description: 'No city listing',
+          listing_type: 'sale',
+          price_amount: 90000,
+          price_currency: 'USD',
+          price_period: 'total',
+          country_id: 'th',
+          city_id: null,
+          area_text: 'Samui coastline',
+          lat: 9.512,
+          lng: 100.012,
+          bedrooms: 3,
+          bathrooms: 2,
+          area_sqm: 120,
+          amenities: ['pool'],
+        }),
+      }),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: authSecret,
+      }
+    );
+    const body = await readJson<{ listing: { geo: { cityId: string | null } } }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.listing.geo.cityId).toBeNull();
+  });
+
+  it('rejects create with invalid coordinates', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          slug: 'bad-coords',
+          title: 'Bad Coords',
+          description: 'Invalid geo',
+          listing_type: 'rent_long',
+          price_amount: 100,
+          price_currency: 'USD',
+          price_period: 'month',
+          country_id: 'th',
+          lat: 95,
+          lng: 100.1,
+        }),
+      }),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: authSecret,
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('creates listing with media relations only when media is provided', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_new_3',
+            slug: 'with-media',
+            title: 'With Media',
+            description: 'Media relations',
+            listing_type: 'rent_short',
+            status: 'draft',
+            price_amount: '200',
+            price_currency: 'USD',
+            price_period: 'day',
+            country_id: 'th',
+            city_id: 'phuket',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '30',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          slug: 'with-media',
+          title: 'With Media',
+          description: 'Media relations',
+          listing_type: 'rent_short',
+          price_amount: 200,
+          price_currency: 'USD',
+          price_period: 'day',
+          country_id: 'th',
+          city_id: 'phuket',
+          bedrooms: 1,
+          bathrooms: 1,
+          area_sqm: 30,
+          amenities: [],
+          media: [
+            { media_id: 'm1', sort_order: 0, is_cover: true },
+            { media_id: 'm2', sort_order: 1, is_cover: false },
+          ],
+        }),
+      }),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: authSecret,
+      }
+    );
+
+    expect(response.status).toBe(201);
+    expect(sqlOf(2).toLowerCase()).toContain('insert into rielt_listing_media');
+    expect(sqlOf(3).toLowerCase()).toContain('insert into rielt_listing_media');
+  });
+
+  it('patches listing by active owner', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_patch_1',
+            slug: 'before',
+            title: 'Before',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ actor_role: 'owner' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_patch_1',
+            slug: 'after',
+            title: 'After',
+            description: 'after',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '600',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-11T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_patch_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          slug: 'after',
+          title: 'After',
+          description: 'after',
+          price_amount: 600,
+        }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+
+    expect(response.status).toBe(200);
+    expect(sqlOf(2).toLowerCase()).toContain('update rielt_listing');
+  });
+
+  it('forbids patch for non-owner/non-agent', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_random');
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_patch_2',
+            slug: 'before',
+            title: 'Before',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_patch_2', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          title: 'Updated',
+        }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('FORBIDDEN');
+    expect(executeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns explicit conflict on patching archived listing', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'listing_archived_1',
+          slug: 'archived',
+          title: 'Archived',
+          description: 'archived',
+          listing_type: 'rent_long',
+          status: 'archived',
+          price_amount: '500',
+          price_currency: 'USD',
+          price_period: 'month',
+          country_id: 'th',
+          city_id: null,
+          area_text: null,
+          lat: null,
+          lng: null,
+          bedrooms: null,
+          bathrooms: null,
+          area_sqm: null,
+          amenities: [],
+          created_by_user_id: 'user_owner_1',
+          created_at: '2026-03-10T10:00:00.000Z',
+          updated_at: '2026-03-10T10:00:00.000Z',
+          published_at: null,
+          archived_at: '2026-03-12T10:00:00.000Z',
+          deleted_at: null,
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_archived_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({ title: 'Should fail' }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+
+    expect(response.status).toBe(409);
+  });
+
+  it('archives listing for active owner', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_delete_1',
+            slug: 'to-archive',
+            title: 'To Archive',
+            description: 'to archive',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: null,
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: null,
+            bathrooms: null,
+            area_sqm: null,
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ actor_role: 'owner' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_delete_1',
+            slug: 'to-archive',
+            title: 'To Archive',
+            description: 'to archive',
+            listing_type: 'rent_long',
+            status: 'archived',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: null,
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: null,
+            bathrooms: null,
+            area_sqm: null,
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-12T10:00:00.000Z',
+            published_at: null,
+            archived_at: '2026-03-12T10:00:00.000Z',
+            deleted_at: null,
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_delete_1', {
+        method: 'DELETE',
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ archived: boolean; listing: { status: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.archived).toBe(true);
+    expect(body.listing.status).toBe('archived');
+  });
+
+  it('archive is idempotent for already archived listing', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_delete_2',
+            slug: 'already-archived',
+            title: 'Already Archived',
+            description: 'already archived',
+            listing_type: 'rent_long',
+            status: 'archived',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: null,
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: null,
+            bathrooms: null,
+            area_sqm: null,
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: '2026-03-11T10:00:00.000Z',
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ actor_role: 'owner' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_delete_2',
+            slug: 'already-archived',
+            title: 'Already Archived',
+            description: 'already archived',
+            listing_type: 'rent_long',
+            status: 'archived',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: null,
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: null,
+            bathrooms: null,
+            area_sqm: null,
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-12T10:00:00.000Z',
+            published_at: null,
+            archived_at: '2026-03-11T10:00:00.000Z',
+            deleted_at: null,
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_delete_2', {
+        method: 'DELETE',
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+
+    expect(response.status).toBe(200);
+    expect(sqlOf(2).toLowerCase()).toContain("status = 'archived'");
+  });
+
+  it('my/listings returns actor-visible rows only', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_actor_1');
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_my_1',
+            slug: 'mine',
+            title: 'Mine',
+            description: 'mine',
+            listing_type: 'rent_long',
+            status: 'published',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '35',
+            amenities: [],
+            created_by_user_id: 'user_actor_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: '2026-03-11T10:00:00.000Z',
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 1 }] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/my/listings', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ items: Array<{ id: string }>; pagination: { total: number } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.pagination.total).toBe(1);
+    const query = sqlOf(0).toLowerCase();
+    expect(query).toContain('exists');
+    expect(query).toContain('rielt_listing_actor_link');
+  });
+
+  it('my/listings supports status filters and pagination', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_actor_2');
+    executeMock.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ total: 0 }] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/my/listings?status=draft&sort=price_desc&page=2&page_size=5', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ pagination: { page: number; pageSize: number; total: number } }>(response);
+    const firstCallArg = executeMock.mock.calls[0]?.[0] as { values?: unknown[] } | undefined;
+    const values = firstCallArg?.values ?? [];
+
+    expect(response.status).toBe(200);
+    expect(body.pagination).toMatchObject({ page: 2, pageSize: 5, total: 0 });
+    expect(values).toContain('draft');
+    expect(values).toContain(5);
   });
 });
