@@ -8,8 +8,6 @@ import {
   getDb,
   getListingByIdForManage,
   getPublishedListingByIdOrSlug,
-  insertListingActorLink,
-  insertListingMediaRelations,
   listActorVisibleListings,
   listPublishedListingsNearby,
   listPublishedListings,
@@ -304,6 +302,7 @@ export async function createOwnedListing(
   try {
     const created = await createOwnerListing(db, {
       id: listingId,
+      ownerLinkId: crypto.randomUUID(),
       slug: input.slug,
       title: input.title,
       description: input.description,
@@ -321,29 +320,16 @@ export async function createOwnedListing(
       areaSqm: input.areaSqm,
       amenities: input.amenities,
       createdByUserId: principal.userId,
+      media: input.media.map((item) => ({
+        id: crypto.randomUUID(),
+        listingId,
+        mediaId: item.mediaId,
+        sortOrder: item.sortOrder,
+        isCover: item.isCover,
+      })),
     });
     if (!created) {
       return errorResponse('INTERNAL_ERROR', 'Failed to create listing', requestId, 500);
-    }
-
-    await insertListingActorLink(db, {
-      id: crypto.randomUUID(),
-      listingId,
-      actorUserId: principal.userId,
-      actorRole: 'owner',
-    });
-
-    if (input.media.length > 0) {
-      await insertListingMediaRelations(
-        db,
-        input.media.map((item) => ({
-          id: crypto.randomUUID(),
-          listingId,
-          mediaId: item.mediaId,
-          sortOrder: item.sortOrder,
-          isCover: item.isCover,
-        }))
-      );
     }
 
     return json({ listing: toOwnerListingDto(created) }, 201);

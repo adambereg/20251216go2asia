@@ -376,6 +376,7 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
 
 export function parsePatchListingInput(body: Record<string, unknown> | null): PatchListingInput | null {
   if (!body) return null;
+  if (body.media !== undefined) return null;
 
   const updates: PatchListingInput = {};
   let touched = false;

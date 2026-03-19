@@ -170,114 +170,85 @@ export interface ListNearbyListingsInput {
 
 export async function createOwnerListing(
   db: DbExecutor,
-  input: CreateOwnerListingInput
+  input: CreateOwnerListingInput & { ownerLinkId: string; media: CreateListingMediaRelationInput[] }
 ): Promise<OwnerListingRow | null> {
+  const mediaJson = JSON.stringify(
+    input.media.map((row) => ({
+      id: row.id,
+      media_id: row.mediaId,
+      sort_order: row.sortOrder,
+      is_cover: row.isCover,
+    }))
+  );
+
   const result = await db.execute(sql`
-    INSERT INTO rielt_listing (
-      id,
-      slug,
-      title,
-      description,
-      listing_type,
-      status,
-      price_amount,
-      price_currency,
-      price_period,
-      country_id,
-      city_id,
-      area_text,
-      lat,
-      lng,
-      bedrooms,
-      bathrooms,
-      area_sqm,
-      amenities,
-      created_by_user_id,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      ${input.id},
-      ${input.slug},
-      ${input.title},
-      ${input.description},
-      ${input.listingType},
-      'draft',
-      ${input.priceAmount},
-      ${input.priceCurrency},
-      ${input.pricePeriod},
-      ${input.countryId},
-      ${input.cityId},
-      ${input.areaText},
-      ${input.lat},
-      ${input.lng},
-      ${input.bedrooms},
-      ${input.bathrooms},
-      ${input.areaSqm},
-      ${input.amenities},
-      ${input.createdByUserId},
-      now(),
-      now()
-    )
-    RETURNING
-      id,
-      slug,
-      title,
-      description,
-      listing_type,
-      status,
-      price_amount,
-      price_currency,
-      price_period,
-      country_id,
-      city_id,
-      area_text,
-      lat,
-      lng,
-      bedrooms,
-      bathrooms,
-      area_sqm,
-      amenities,
-      created_by_user_id,
-      created_at,
-      updated_at,
-      published_at,
-      archived_at,
-      deleted_at
-  `);
-
-  return rowsOf<OwnerListingRow>(result)[0] ?? null;
-}
-
-export async function insertListingActorLink(
-  db: DbExecutor,
-  input: { id: string; listingId: string; actorUserId: string; actorRole: ListingActorRole }
-): Promise<void> {
-  await db.execute(sql`
-    INSERT INTO rielt_listing_actor_link (
-      id,
-      listing_id,
-      actor_user_id,
-      actor_role,
-      created_at
-    )
-    VALUES (
-      ${input.id},
-      ${input.listingId},
-      ${input.actorUserId},
-      ${input.actorRole}::listing_actor_role,
-      now()
-    )
-    ON CONFLICT DO NOTHING
-  `);
-}
-
-export async function insertListingMediaRelations(
-  db: DbExecutor,
-  input: CreateListingMediaRelationInput[]
-): Promise<void> {
-  for (const row of input) {
-    await db.execute(sql`
+    WITH inserted_listing AS (
+      INSERT INTO rielt_listing (
+        id,
+        slug,
+        title,
+        description,
+        listing_type,
+        status,
+        price_amount,
+        price_currency,
+        price_period,
+        country_id,
+        city_id,
+        area_text,
+        lat,
+        lng,
+        bedrooms,
+        bathrooms,
+        area_sqm,
+        amenities,
+        created_by_user_id,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ${input.id},
+        ${input.slug},
+        ${input.title},
+        ${input.description},
+        ${input.listingType},
+        'draft',
+        ${input.priceAmount},
+        ${input.priceCurrency},
+        ${input.pricePeriod},
+        ${input.countryId},
+        ${input.cityId},
+        ${input.areaText},
+        ${input.lat},
+        ${input.lng},
+        ${input.bedrooms},
+        ${input.bathrooms},
+        ${input.areaSqm},
+        ${input.amenities},
+        ${input.createdByUserId},
+        now(),
+        now()
+      )
+      RETURNING *
+    ),
+    inserted_owner_link AS (
+      INSERT INTO rielt_listing_actor_link (
+        id,
+        listing_id,
+        actor_user_id,
+        actor_role,
+        created_at
+      )
+      SELECT
+        ${input.ownerLinkId},
+        l.id,
+        ${input.createdByUserId},
+        'owner'::listing_actor_role,
+        now()
+      FROM inserted_listing l
+      RETURNING id
+    ),
+    inserted_media AS (
       INSERT INTO rielt_listing_media (
         id,
         listing_id,
@@ -286,16 +257,51 @@ export async function insertListingMediaRelations(
         is_cover,
         created_at
       )
-      VALUES (
-        ${row.id},
-        ${row.listingId},
-        ${row.mediaId},
-        ${row.sortOrder},
-        ${row.isCover},
+      SELECT
+        m.id,
+        ${input.id},
+        m.media_id,
+        m.sort_order,
+        m.is_cover,
         now()
+      FROM jsonb_to_recordset(${mediaJson}::jsonb) AS m(
+        id text,
+        media_id text,
+        sort_order integer,
+        is_cover boolean
       )
-    `);
-  }
+      RETURNING id
+    )
+    SELECT
+      l.id,
+      l.slug,
+      l.title,
+      l.description,
+      l.listing_type,
+      l.status,
+      l.price_amount,
+      l.price_currency,
+      l.price_period,
+      l.country_id,
+      l.city_id,
+      l.area_text,
+      l.lat,
+      l.lng,
+      l.bedrooms,
+      l.bathrooms,
+      l.area_sqm,
+      l.amenities,
+      l.created_by_user_id,
+      l.created_at,
+      l.updated_at,
+      l.published_at,
+      l.archived_at,
+      l.deleted_at
+    FROM inserted_listing l
+    WHERE EXISTS (SELECT 1 FROM inserted_owner_link)
+  `);
+
+  return rowsOf<OwnerListingRow>(result)[0] ?? null;
 }
 
 export async function getListingByIdForManage(db: DbExecutor, listingId: string): Promise<OwnerListingRow | null> {

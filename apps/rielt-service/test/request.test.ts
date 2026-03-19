@@ -454,7 +454,7 @@ describe('rielt-service scaffold', () => {
     expect(body.listing.status).toBe('draft');
     expect(body.listing.slug).toBe('new-studio');
     expect(sqlOf(0).toLowerCase()).toContain('insert into rielt_listing');
-    expect(sqlOf(1).toLowerCase()).toContain('insert into rielt_listing_actor_link');
+    expect(sqlOf(0).toLowerCase()).toContain('insert into rielt_listing_actor_link');
   });
 
   it('creates listing when city_id is null', async () => {
@@ -636,8 +636,7 @@ describe('rielt-service scaffold', () => {
     );
 
     expect(response.status).toBe(201);
-    expect(sqlOf(2).toLowerCase()).toContain('insert into rielt_listing_media');
-    expect(sqlOf(3).toLowerCase()).toContain('insert into rielt_listing_media');
+    expect(sqlOf(0).toLowerCase()).toContain('insert into rielt_listing_media');
   });
 
   it('patches listing by active owner', async () => {
@@ -830,6 +829,31 @@ describe('rielt-service scaffold', () => {
     );
 
     expect(response.status).toBe(409);
+  });
+
+  it('rejects patch when media is provided', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_patch_media', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          title: 'Updated',
+          media: [{ media_id: 'm1', sort_order: 0, is_cover: true }],
+        }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
   it('archives listing for active owner', async () => {
