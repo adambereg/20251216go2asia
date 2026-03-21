@@ -110,6 +110,9 @@ export interface GuruResponseMeta {
   lng: number;
   radius_m: number;
   count: number;
+  sources_active: SourceDomain[];
+  sources_stub: SourceDomain[];
+  source_item_counts: Partial<Record<SourceDomain, number>>;
 }
 
 export interface GuruListResponse {

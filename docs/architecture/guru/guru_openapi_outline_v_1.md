@@ -54,6 +54,8 @@ Guru V1 — это **nearby-first aggregation API**.
 - `GET /v1/guru/nearby/{type}`
 - `GET /v1/guru/what-to-do`
 
+Текущий runtime baseline: живой upstream-source в V1 = `rielt`; остальные declared domain adapters остаются explicit stubs и отражаются в `meta.sources_stub`.
+
 ---
 
 ## 3.2 Out of Scope
@@ -134,6 +136,7 @@ type NearbyQueryParams = {
 - `lat` / `lng` обязательны
 - `mode` по умолчанию = `real`
 - `radius_m` имеет разумный default на уровне сервиса
+- `limit` ограничен upstream-safe потолком `50`
 - `types` optional
 - фильтры optional
 
@@ -156,6 +159,9 @@ type GuruResponseMeta = {
   lng: number
   radius_m: number
   count: number
+  sources_active: SourceDomain[]
+  sources_stub: SourceDomain[]
+  source_item_counts: Partial<Record<SourceDomain, number>>
 }
 ```
 
@@ -170,6 +176,7 @@ type PartialFailure = {
 - `data` — итоговая nearby-выдача
 - `meta` — контекст запроса
 - `partial_failures` — graceful degradation
+- `meta.sources_*` и `meta.source_item_counts` — прозрачность по реальным и stub downstream источникам V1
 
 ---
 
@@ -223,6 +230,7 @@ type GetNearbyResponse = GuruListResponse
 - results normalized to `EntityCard`
 - ranking is explainable and deterministic
 - partial upstream failures do not break response
+- invalid upstream payload учитывается как `partial_failures` c reason `invalid_payload`
 - empty response is allowed
 - raw domain DTOs are never returned
 

@@ -14,6 +14,7 @@
   - `packages/sdk/src/balance.ts`
   - `packages/sdk/src/transactions.ts`
   - `packages/sdk/src/referrals.ts`
+  - `packages/sdk/src/guru.ts`
 
 ## User-facing (через Gateway)
 
@@ -41,6 +42,11 @@
 - `GET /v1/referral/stats`
 - `GET /v1/referral/tree?depth=1|2`
 - `POST /v1/referral/claim`
+
+### Guru (Guru Service)
+- `GET /v1/guru/nearby?lat=...&lng=...`
+- `GET /v1/guru/nearby/{type}?lat=...&lng=...`
+- `GET /v1/guru/what-to-do?lat=...&lng=...`
 
 ## Service-to-service (internal)
 

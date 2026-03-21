@@ -274,6 +274,10 @@ Ranking engine V1:
 1. coarse filtering partially at adapter/query stage where cheap
 2. canonical filtering at Guru filter layer after normalization
 
+Runtime note for current baseline:
+- `time_window` влияет на выдачу только для карточек с temporal сигналами (`starts_at`).
+- В текущем V1 (Rielt-only live source) `time_window` может не изменять выдачу и должен трактоваться как compatibility query-параметр.
+
 ---
 
 ## 7.8 Response Composer
@@ -285,6 +289,11 @@ Ranking engine V1:
 ---
 
 ## 8. Upstream Production Integration Model
+
+Current runtime baseline:
+- live upstream adapter: `rielt`
+- explicit stubs in V1: `atlas`, `pulse`, `rf`, `quest`, `space`, `blog`
+- response `meta` должен явно отражать active/stub source state
 
 ## 8.1 Atlas Integration
 Atlas = owner of:

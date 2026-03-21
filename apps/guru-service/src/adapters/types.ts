@@ -8,6 +8,7 @@ export interface AdapterContext {
 export interface AdapterResult {
   items: EntityCard[];
   failure?: PartialFailure;
+  implementation?: 'live' | 'stub';
 }
 
 export interface DomainAdapter {

@@ -7,6 +7,6 @@ export class AtlasAdapter implements DomainAdapter {
 
   async fetchNearby(_query: NearbyQuery): Promise<AdapterResult> {
     // TODO(step9-v1): replace stub when Atlas nearby API is available.
-    return { items: [] };
+    return { items: [], implementation: 'stub' };
   }
 }

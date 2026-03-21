@@ -475,6 +475,27 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 501 for reserved guru prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/guru/nearby?lat=13.7&lng=100.5', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('GURU_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('proxies rielt public route when RIELT_SERVICE_URL is configured', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toMatch(/^https:\/\/rielt\.example\/v1\/rielt\/listings/);
@@ -503,6 +524,46 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(200);
     expect(body.items).toEqual([]);
     expect(body.pagination.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('proxies guru public route without gateway auth header', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://guru.example/v1/guru/nearby?lat=13.7&lng=100.5');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
+      expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      return new Response(
+        JSON.stringify({
+          data: [],
+          meta: {
+            mode: 'real',
+            lat: 13.7,
+            lng: 100.5,
+            radius_m: 2000,
+            count: 0,
+            sources_active: ['rielt'],
+            sources_stub: ['atlas', 'pulse', 'rf', 'quest', 'space', 'blog'],
+            source_item_counts: { rielt: 0 },
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/guru/nearby?lat=13.7&lng=100.5'),
+      { GURU_SERVICE_URL: 'https://guru.example' }
+    );
+    const body = await readJson<{ data: unknown[]; meta: { count: number } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data).toEqual([]);
+    expect(body.meta.count).toBe(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
