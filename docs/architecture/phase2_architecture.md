@@ -148,6 +148,10 @@ Phase 2 начинается после MVP-core и решает главную 
 
 ## 5. Media / Asset Service
 
+> Status note (pre-canonical snapshot): section 5 captures Phase 2 design context.
+> Current canonical SSOT for platform `media-service` is maintained in `docs/architecture/media/*`.
+> If wording diverges, `docs/architecture/media/*` is authoritative for current baseline and transitional runtime notes.
+
 ## 5.1 Role of media-service
 
 `media-service` — это общий platform layer для работы с медиа и asset lifecycle.

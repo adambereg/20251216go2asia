@@ -1,5 +1,10 @@
 # Rielt Service — Интеграции
 
+> ⚠️ Legacy / target-notes reference.
+> Этот файл содержит интеграционные заметки смешанного статуса и не является canonical runtime SSOT.
+> Каноническая фиксация текущего backend-состояния: `docs/architecture/rielt/*`.
+> Ниже: все интеграции без явной runtime-фиксации трактуются как planned/target.
+
 ## User Service
 
 - Автор объявления (`author_user_id`) и владелец объекта (`owner_user_id`) — ссылки на User Service.
@@ -44,29 +49,29 @@
 
 ---
 
-## RF Service (Russian Friendly)
+## RF Service (Russian Friendly) — planned/target
 
-- Rielt Service может отмечать объявления/объекты как партнёрские:
+- Rielt Service может отмечать объявления/объекты как партнёрские (planned/target):
   - `is_partner_object = true`.
-- RF Service:
+- RF Service (planned/target):
   - хранит данные о партнёре (юридическое лицо, тарифы и т.п.),
   - может через internal API Rielt Service получить список объявлений партнёра:
     - `GET /api/rielt/v1/internal/partner/{partner_id}/listings`.
 
 ---
 
-## Atlas / Guru
+## Atlas / Guru — mixed (current + target)
 
 - Rielt Service использует `country_id`, `city_id` совместимые с Atlas.
-- На карте:
+- На карте (planned/target):
   - Atlas может показывать объекты Rielt как слой с пинами, дергая API Rielt:
     - `/catalog/map?city_id=...`.
-- Guru:
+- Guru (target-notes):
   - PRO-гуру могут быть указаны в описании объекта/объявления как “локальный консультант” (это, скорее, UI/контентный уровень, не прямое API-соединение).
 
 ---
 
-## Notification Service
+## Notification Service — planned/target
 
 События:
 

@@ -60,15 +60,15 @@
 |---|---|---|---|---|---|---|
 | Atlas Service | страны/города/места | **слито** в `apps/content-service` (`/v1/content/countries|cities|places`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (routes), `packages/db/src/schema/content.ts` | F1 | Явно отметить в docs: сейчас Atlas/Pulse/Blog реализованы как единый `content-service` |
 | Pulse Service | события + регистрации | **слито** в `apps/content-service` (`/v1/content/events/*`, `/register`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (event routes + register) | F1 | Аналогично: Pulse пока не отдельный сервис |
-| Media Service (Blog) | статьи | **слито** в `apps/content-service` (`/v1/content/articles/*`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` (articles) | F1 | Переименовать в тексте “Media Service” → “Blog (articles) в content-service” (или отметить как будущий разнос) |
+| Media Service (Blog) | статьи | **слито** в `apps/content-service` (`/v1/content/articles/*`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` (articles) | F1 | Это строка про blog/articles контур. Canonical platform media baseline (`/v1/media/*`, asset domain) зафиксирован отдельно в `docs/architecture/media/*`; content fallback трактуется как transitional, не ownership truth. |
 
 ### Social
 
 | Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
 |---|---|---|---|---|---|---|
-| Content Service (Space UGC) | UGC посты/репосты (social-first), без inline-комментов под контентом | нет (в repo `content-service` — это Atlas/Pulse/Blog, не Space) | **Not started + Naming conflict** | отсутствует `apps/space-service`; см. `apps/content-service` (контентный, не social) | F2 | Уточнить именование/границы: “Space Service” vs “content-service” (см. ADR по Space/Content/Feed/Reactions) |
-| Feed Service | ленты Space | нет | **Not started** | нет | F2 | Планировать как часть Space backend |
-| Reactions Service | реакции/репосты/ratings/threads (без inline) | нет | **Not started** | нет | F2 | Планировать; учесть ADR-0020 (social-first, без inline-комментов под объектами модулей) |
+| Space Service (UGC) | UGC посты/репосты (social-first), без inline-комментов под контентом | `apps/space-service` (`/v1/space/*`) | **Implemented (Phase 2 baseline)** | `apps/space-service/src/index.ts`, gateway `/v1/space/*` wiring | F2 | Зафиксировать как текущий social publication contour; не путать с `content-service` (Atlas/Pulse/Blog) |
+| Feed Service | ленты Space | `apps/feed-service` (`/v1/feed/*`) | **Implemented (separate service)** | `apps/feed-service/src/index.ts`, gateway `/v1/feed/*` wiring | F2 | Отражать как отдельный read/composition контур |
+| Reactions Service | реакции/ratings/threads и др. interaction-артефакты (без inline) | `apps/reactions-service` (`/v1/reactions/*`) | **Implemented (separate service)** | `apps/reactions-service/src/index.ts`, gateway `/v1/reactions/*` wiring | F2 | Отражать как interaction-контур; ownership публикаций остаётся в Space Service |
 
 ### Commerce
 
@@ -82,7 +82,7 @@
 
 | Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
 |---|---|---|---|---|---|---|
-| Quest Service | квесты/прогресс/награды | нет | **Not started** | нет | F2 | Планировать после Space core (и до RF capstone) |
+| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; полноценные cross-service integrations (Points/Space/Pulse/RF hooks) поэтапно |
 
 ### AI/ML
 
@@ -134,12 +134,12 @@
 
 Факт repo:
 - В repo есть `apps/content-service`, но он обслуживает **Atlas/Pulse/Blog** (`/v1/content/*`) и **не** является Space backend.
-- Space/Feed/Reactions сервисов в `apps/*` сейчас **нет**.
+- В repo уже есть отдельные сервисы `apps/space-service`, `apps/feed-service`, `apps/reactions-service` с gateway-контуром `/v1/space/*`, `/v1/feed/*`, `/v1/reactions/*`.
 - Модель коммуникации: **social-first без inline-комментариев под объектами** (см. `docs/decisions/adr_0020_no_inline_comments_social_first.md`).
 
 Решение для документации:
 - В `docs/knowledge/backend_microservice.md` не трактовать `content-service` как “Space Content Service”.
-- Для планирования Ф2 использовать “Space Service (UGC) / Feed / Reactions” как отдельный контур (пока Not started) и придерживаться social-first модели (репосты + реакции).
+- Для планирования Ф2 использовать “Space Service (UGC) / Feed / Reactions” как отдельный уже реализованный контур и придерживаться social-first модели (репосты + реакции).
 
 
 

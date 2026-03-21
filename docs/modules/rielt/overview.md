@@ -1,5 +1,9 @@
 # Rielt.Market Asia — Обзор модуля
 
+> ⚠️ Product vision / non-runtime SSOT.
+> Документ описывает продуктовый контекст и не является authoritative backend ownership/runtime contract для `rielt-service`.
+> Канонический backend baseline: `docs/architecture/rielt/*`.
+
 ## 1. Назначение модуля
 Rielt.Market Asia — это универсальная площадка по недвижимости ЮВА, ориентированная преимущественно на русскоязычных экспатов и путешественников. Модуль позволяет:
 - искать долгосрочную аренду,

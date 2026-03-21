@@ -2,6 +2,11 @@
 
 Статус: Phase 1 architecture confirmation for Step 4
 
+Status rubric:
+- **Current runtime reality:** `space-service` is the social publication contour in current execution.
+- **Current Step 4 target:** deliver bounded social core endpoints, including basic feed API surfaces, without taking ownership of full feed ranking/state domain.
+- **Future extraction target:** move feed composition/ranking/state into dedicated `feed-service` when operationally justified.
+
 Основание:
 
 - `docs/plans/go2asia_next_steps_plan_2026_march_10.md`
@@ -25,7 +30,7 @@ Space owns only:
 - group membership
 - profile projections for social rendering
 - post-media attachment relations
-- feed surfaces
+- feed API surfaces (delivery contour only; not ownership of full feed domain state/ranking)
 - publication lifecycle and publication events
 
 Space does not own:

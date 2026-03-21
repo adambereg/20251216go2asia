@@ -1,5 +1,8 @@
 # Space Module Audit — March 2026
 
+> Historical pre-Step4 snapshot (March 2026).  
+> This audit reflects the state before `space-service` rollout and must not be treated as current runtime status.
+
 Цель аудита: проверить `Space Asia` и смежный контур после завершения `Step 3 (media-service)`, чтобы перед `Step 4 (space-service)` убрать legacy-моки, старые API-контракты и frontend-предположения, которые конфликтуют с архитектурой Phase 2.
 
 ---
@@ -226,6 +229,9 @@
    Избежать дублирующихся доменных терминов между UI docs, blog docs и backend contracts.
 
 # Space Module Audit — March 2026
+
+> Historical pre-Step4 snapshot (March 2026).  
+> This duplicated section preserves the same historical context and is not a current runtime status statement.
 
 Цель аудита: проверить `Space Asia` и смежный контур после завершения `Step 3 (media-service)`, чтобы перед `Step 4 (space-service)` убрать legacy-моки, старые API-контракты и frontend-предположения, которые конфликтуют с архитектурой Phase 2.
 

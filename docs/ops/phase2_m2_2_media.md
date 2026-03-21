@@ -1,5 +1,9 @@
 # Milestone 2.2 — Media / Storage (R2, signed uploads, SDK)
 
+> ⚠️ Milestone snapshot / transitional context.
+> Этот документ фиксирует шаг M2.2, где media-контур временно проходил через `content-service`.
+> Текущий canonical platform-media baseline: `docs/architecture/media/*`; fallback через content-service остаётся transitional compatibility behavior.
+
 SSOT плана: `docs/plans/phase2_delivery_plan.md`
 
 Цель Milestone 2.2: дать всем продуктовым модулям Фазы 2 единый и безопасный способ работать с медиа через R2:

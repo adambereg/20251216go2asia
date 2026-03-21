@@ -5,6 +5,11 @@
 **Document role:** SSOT draft for backend architecture and implementation planning of Space Asia  
 **Status:** Draft for engineering review and Cursor implementation guidance
 
+**Status rubric (for interpretation):**
+- **Current runtime reality:** social publication core runs in `space-service`; reactions/feed may be separate services depending on deployment wiring.
+- **Current Step 4 target:** reactions scope is minimal (`like` first), while social publication ownership stays in Space Service.
+- **Future extraction target:** expanded reactions set and dedicated feed/planner contours without changing domain ownership boundaries.
+
 ---
 
 # 1. Purpose
@@ -193,8 +198,8 @@ This should live in a separate **Reactions Service**.
 
 It owns:
 
-- like
-- additional interaction types are deferred to future reactions versions
+- **Current Step 4 minimum:** `like`
+- **Future extended reactions scope (separate Reactions Service):** bookmarks, ratings, short reviews, questions, contact requests, thread replies
 
 This is aligned with the social-first model without classic inline-comment systems.
 
@@ -545,12 +550,14 @@ The correct media flow is:
 2. file is uploaded through the media flow
 3. `media-service` creates an asset
 4. frontend receives `media_id`
-5. frontend calls `space-service` attach endpoint
-6. Space stores the relation between the post and the media asset
+5. frontend records usage bind in `media-service` (`/v1/media/{mediaId}/attach`) for platform attachment metadata
+6. frontend calls `space-service` attach endpoint
+7. Space stores the relation between the post and the media asset
 
 Short formula:
 
 > `media-service` owns asset lifecycle  
+> `media-service` owns usage-bind metadata for platform media references  
 > `space-service` owns social attachment relation
 
 ---

@@ -1,5 +1,9 @@
 # Space Asia — API Contracts
 
+> **Legacy/historical document (not runtime API SSOT).**  
+> This file describes earlier module-level API ideas and must not be treated as the current backend contract.  
+> Current runtime API contour is gateway-first and split by service namespaces (notably `/v1/space/*` and `/v1/reactions/*`).
+
 Base URL:
 /api/space
 

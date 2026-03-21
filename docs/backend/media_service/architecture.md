@@ -1,5 +1,9 @@
 # Media Service — Архитектура
 
+> ⚠️ Legacy blog/content-domain layer.
+> Этот файл не является canonical architecture SSOT для platform `media-service` asset domain.
+> Канонический platform-media baseline: `docs/architecture/media/*`.
+
 ## Роль в экосистеме
 
 Media Service — контентный микросервис уровня **Blog Asia**.

@@ -1,5 +1,9 @@
 # Media Service — Обзор
 
+> ⚠️ Legacy blog/content-domain layer.
+> Документ описывает Blog Asia / editorial content scope и не является canonical platform media SSOT.
+> Канонический platform-media baseline: `docs/architecture/media/*`.
+
 ## Назначение
 
 Media Service — бэкенд для **Blog Asia**: медиаплатформы экосистемы Go2Asia.  
