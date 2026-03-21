@@ -282,12 +282,6 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Service-specific integration is not configured
-    Forbidden:
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-      description: Forbidden
     SpaceForbidden:
       content:
         application/json:
@@ -386,10 +380,14 @@ components:
         ownerId:
           type: string
         ownerType:
-          description: |
-            Media usage attach target category.
-            Current runtime requires a non-empty string and persists against DB enum constraints.
-            Expected baseline values: user, space_post, rielt_listing, rf_partner, quest_submission, blog_post, atlas_entity.
+          enum:
+            - user
+            - space_post
+            - rielt_listing
+            - rf_partner
+            - quest_submission
+            - blog_post
+            - atlas_entity
           type: string
         slot:
           nullable: true
@@ -2050,51 +2048,6 @@ components:
         - ok
         - key
       type: object
-    MediaLookupResponse:
-      properties:
-        media_id:
-          type: string
-        mimeType:
-          type: string
-        width:
-          nullable: true
-          type: integer
-        height:
-          nullable: true
-          type: integer
-        publicUrl:
-          nullable: true
-          type: string
-        variants:
-          items:
-            $ref: "#/components/schemas/MediaLookupVariant"
-          type: array
-      required:
-        - media_id
-        - mimeType
-        - publicUrl
-        - variants
-      type: object
-    MediaLookupVariant:
-      properties:
-        kind:
-          type: string
-        publicUrl:
-          nullable: true
-          type: string
-        mimeType:
-          type: string
-        width:
-          nullable: true
-          type: integer
-        height:
-          nullable: true
-          type: integer
-      required:
-        - kind
-        - publicUrl
-        - mimeType
-      type: object
     UserBalance:
       properties:
         balance:
@@ -2694,38 +2647,10 @@ paths:
       summary: Upload media by signed token (no user auth)
       tags:
         - media
-  /v1/media/{mediaId}:
-    get:
-      description: |
-        Returns canonical media asset metadata and variant descriptors by media id.
-        This route reflects current media-service runtime contour.
-      operationId: getMediaById
-      parameters:
-        - $ref: "#/components/parameters/MediaId"
-        - $ref: "#/components/parameters/XRequestId"
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MediaLookupResponse"
-          description: OK
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceNotConfigured"
-      summary: Lookup media metadata and variants by media id
-      tags:
-        - media
   /v1/media/{mediaId}/attach:
     post:
       description: |
-        Records a minimal usage binding for an existing media asset and marks it attached.
-        Requires gateway-origin auth and media ownership.
+        Records a minimal usage binding for an existing media asset and marks it attached. Requires gateway-origin auth and media ownership.
       operationId: attachMediaUsage
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
@@ -2749,7 +2674,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
