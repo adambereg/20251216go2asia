@@ -1,6 +1,6 @@
 import { AtlasAdapter, type AtlasAdapterEnv } from '../adapters/atlasAdapter';
 import { BlogAdapter } from '../adapters/blogAdapter';
-import { PulseAdapter } from '../adapters/pulseAdapter';
+import { PulseAdapter, type PulseAdapterEnv } from '../adapters/pulseAdapter';
 import { QuestAdapter, type QuestAdapterEnv } from '../adapters/questAdapter';
 import { RFAdapter, type RFAdapterEnv } from '../adapters/rfAdapter';
 import { RieltAdapter, type RieltAdapterEnv } from '../adapters/rieltAdapter';
@@ -11,13 +11,13 @@ import { rankNearbyCards, rankWhatToDoCards } from '../ranking/rankingEngine';
 import type { GuruListResponse, NearbyQuery, PartialFailure, SourceDomain } from '../types/entityCard';
 
 const ADAPTER_TIMEOUT_MS = 1500;
-type GuruAdaptersEnv = RieltAdapterEnv & RFAdapterEnv & QuestAdapterEnv & AtlasAdapterEnv;
+type GuruAdaptersEnv = RieltAdapterEnv & RFAdapterEnv & QuestAdapterEnv & AtlasAdapterEnv & PulseAdapterEnv;
 
 function getAdapters(env: GuruAdaptersEnv): DomainAdapter[] {
   return [
     new RieltAdapter(env),
     new AtlasAdapter(env),
-    new PulseAdapter(),
+    new PulseAdapter(env),
     new RFAdapter(env),
     new QuestAdapter(env),
     new SpaceAdapter(),

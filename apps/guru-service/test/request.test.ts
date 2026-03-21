@@ -108,8 +108,8 @@ describe('guru-service', () => {
     expect(body.meta.mode).toBe('real');
     expect(body.meta.radius_m).toBe(2000);
     expect(body.meta.count).toBe(1);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['pulse', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['space', 'blog']));
     expect(body.data[0]).toMatchObject({ id: 'listing_1', type: 'listing' });
     expect(body.partial_failures).toBeUndefined();
   });
@@ -211,28 +211,44 @@ describe('guru-service', () => {
   });
 
   it('returns nearby by type listing', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          items: [
-            {
-              id: 'listing_2',
-              slug: 'phuket-villa',
-              title: 'Phuket Villa',
-              listingType: 'rent_short',
-              distanceMeters: 950,
-              geo: { countryId: 'th', cityId: null },
-              price: { amount: 1200, currency: 'USD', period: 'day' },
-              bedrooms: 3,
-              bathrooms: 2,
-              areaSqm: 160,
-              media: { coverUrl: null, photos: [] },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'listing_2',
+                slug: 'phuket-villa',
+                title: 'Phuket Villa',
+                listingType: 'rent_short',
+                distanceMeters: 950,
+                geo: { countryId: 'th', cityId: null },
+                price: { amount: 1200, currency: 'USD', period: 'day' },
+                bedrooms: 3,
+                bathrooms: 2,
+                areaSqm: 160,
+                media: { coverUrl: null, photos: [] },
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      if (url.includes('/v1/content/places')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/content/events')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
 
     const response = await worker.fetch(
       new Request('https://guru.example/v1/guru/nearby/listing?lat=7.8804&lng=98.3923&radius_m=3000'),
@@ -253,7 +269,9 @@ describe('guru-service', () => {
   });
 
   it('returns what-to-do response', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
 
     const response = await worker.fetch(
       new Request('https://guru.example/v1/guru/what-to-do?lat=13.7563&lng=100.5018&mode=real'),
@@ -333,8 +351,8 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['pulse', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['space', 'blog']));
     expect(body.meta.source_item_counts.rf).toBe(1);
     expect(body.data).toEqual(
       expect.arrayContaining([
@@ -378,7 +396,7 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
     expect(body.meta.source_item_counts.rf).toBe(0);
     expect(body.partial_failures).toEqual([{ domain: 'rf', reason: 'upstream_502' }]);
   });
@@ -454,8 +472,8 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['pulse', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['space', 'blog']));
     expect(body.meta.source_item_counts.atlas).toBe(1);
     expect(body.data).toEqual(
       expect.arrayContaining([
@@ -504,9 +522,133 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
     expect(body.meta.source_item_counts.atlas).toBe(0);
     expect(body.partial_failures).toEqual([{ domain: 'atlas', reason: 'upstream_503' }]);
+  });
+
+  it('returns Pulse events as live cards and marks pulse active', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      if (url.includes('/v1/content/places')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/content/events')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'event_1',
+                slug: 'sunset-music',
+                title: 'Sunset Music Session',
+                description: 'Live outdoor set',
+                category: 'music',
+                startDate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                endDate: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+                imageUrl: null,
+                latitude: '13.7563',
+                longitude: '100.5018',
+                isActive: true,
+              },
+              {
+                id: 'event_bad',
+                slug: 'bad-event',
+                title: 'Bad Event',
+                startDate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                latitude: null,
+                longitude: null,
+                isActive: true,
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
+
+    const response = await worker.fetch(
+      new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018&types=event'),
+      {
+        SERVICE_JWT_SECRET: 'secret',
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
+        CONTENT_SERVICE_URL: 'https://content.example',
+      }
+    );
+    const body = await readJson<{
+      data: Array<{ id: string; type: string; source: { domain: string } }>;
+      meta: { sources_active: string[]; sources_stub: string[]; source_item_counts: Record<string, number> };
+      partial_failures?: Array<{ domain: string; reason: string }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['space', 'blog']));
+    expect(body.meta.source_item_counts.pulse).toBe(1);
+    expect(body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'event_1',
+          type: 'event',
+          source: expect.objectContaining({ domain: 'pulse' }),
+        }),
+      ])
+    );
+    expect(body.data.some((item) => item.id === 'event_bad')).toBe(false);
+    expect(body.partial_failures).toBeUndefined();
+  });
+
+  it('returns partial failure when Pulse live upstream fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      if (url.includes('/v1/content/places')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/content/events')) {
+        return new Response(JSON.stringify({ error: { code: 'UPSTREAM_ERROR' } }), { status: 502 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
+
+    const response = await worker.fetch(
+      new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018'),
+      {
+        SERVICE_JWT_SECRET: 'secret',
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
+        CONTENT_SERVICE_URL: 'https://content.example',
+      }
+    );
+    const body = await readJson<{
+      meta: { sources_active: string[]; source_item_counts: Record<string, number> };
+      partial_failures?: Array<{ domain: string; reason: string }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.source_item_counts.pulse).toBe(0);
+    expect(body.partial_failures).toEqual([{ domain: 'pulse', reason: 'upstream_502' }]);
   });
 
   it('returns Quest cards as live source in what-to-do flow', async () => {
@@ -561,8 +703,8 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['pulse', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['space', 'blog']));
     expect(body.meta.source_item_counts.quest).toBe(1);
     expect(body.data).toEqual(
       expect.arrayContaining([
@@ -608,7 +750,7 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest', 'atlas', 'pulse']));
     expect(body.meta.source_item_counts.quest).toBe(0);
     expect(body.partial_failures).toEqual([{ domain: 'quest', reason: 'upstream_503' }]);
   });

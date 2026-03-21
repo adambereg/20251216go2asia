@@ -1,4 +1,4 @@
-import type { EntityCard } from '../types/entityCard';
+import type { EntityCard, ExplainReason } from '../types/entityCard';
 
 function toFiniteNumber(value: string | null | undefined): number | null {
   if (typeof value !== 'string') return null;
@@ -20,6 +20,13 @@ function haversineDistanceMeters(aLat: number, aLng: number, bLat: number, bLng:
   const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
   const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   return earthRadius * c;
+}
+
+function parseIsoMs(value: string | null | undefined): number | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
 }
 
 interface RieltNearbyDto {
@@ -276,6 +283,86 @@ export function normalizeAtlasPlaceToEntityCard(
       place_type: item.type,
       place_kind: item.kind,
       category: item.category ?? undefined,
+    },
+  };
+}
+
+interface PulseEventDto {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  imageUrl?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  isActive?: boolean;
+}
+
+export function normalizePulseEventToEntityCard(
+  item: PulseEventDto,
+  anchor: { lat: number; lng: number }
+): EntityCard | null {
+  const lat = toFiniteNumber(item.latitude);
+  const lng = toFiniteNumber(item.longitude);
+  if (lat === null || lng === null) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+  const startMs = parseIsoMs(item.startDate);
+  if (startMs === null) return null;
+  const endMs = parseIsoMs(item.endDate);
+  const now = Date.now();
+
+  const reasons: ExplainReason[] = ['recommended'];
+  if (endMs !== null && startMs <= now && now <= endMs) {
+    reasons.push('happening_now');
+  } else if (startMs > now && startMs - now <= 6 * 60 * 60 * 1000) {
+    reasons.push('starting_soon');
+  }
+
+  const tags = ['event'];
+  if (item.category) tags.push(item.category);
+
+  return {
+    id: item.id,
+    type: 'event',
+    title: item.title,
+    subtitle: item.category ?? 'Event',
+    description: item.description ?? undefined,
+    image_url: item.imageUrl ?? undefined,
+    lat,
+    lng,
+    distance_m: Math.round(haversineDistanceMeters(anchor.lat, anchor.lng, lat, lng)),
+    city_id: undefined,
+    country_id: undefined,
+    tags,
+    rating: undefined,
+    price_level: undefined,
+    is_verified: false,
+    is_rf: false,
+    is_open_now: undefined,
+    starts_at: item.startDate,
+    actions: [
+      {
+        type: 'view_in_pulse',
+        label: 'Open in Pulse',
+        deeplink: `/pulse/${encodeURIComponent(item.slug || item.id)}`,
+      },
+    ],
+    explain: {
+      reasons,
+    },
+    source: {
+      domain: 'pulse',
+      source_id: item.id,
+      source_slug: item.slug,
+    },
+    payload: {
+      category: item.category ?? undefined,
+      end_at: item.endDate ?? undefined,
+      is_active: item.isActive ?? undefined,
     },
   };
 }

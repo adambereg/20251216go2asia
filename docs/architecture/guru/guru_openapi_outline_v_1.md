@@ -54,7 +54,7 @@ Guru V1 — это **nearby-first aggregation API**.
 - `GET /v1/guru/nearby/{type}`
 - `GET /v1/guru/what-to-do`
 
-Текущий runtime baseline: живые upstream-sources в V1 = `rielt` + `rf` + `quest` + `atlas`; остальные declared domain adapters остаются explicit stubs и отражаются в `meta.sources_stub`.
+Текущий runtime baseline: живые upstream-sources в V1 = `rielt` + `rf` + `quest` + `atlas` + `pulse`; остальные declared domain adapters остаются explicit stubs и отражаются в `meta.sources_stub`.
 
 ---
 
