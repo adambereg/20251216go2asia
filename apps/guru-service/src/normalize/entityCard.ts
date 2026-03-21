@@ -71,3 +71,50 @@ export function normalizeRieltNearbyItemToEntityCard(item: RieltNearbyDto, ancho
     },
   };
 }
+
+interface RFPartnerDto {
+  id: string;
+  slug: string;
+  displayName: string;
+  countryId: string;
+  cityId: string;
+}
+
+export function normalizeRFPartnerToEntityCard(item: RFPartnerDto, anchor: { lat: number; lng: number }): EntityCard {
+  return {
+    id: item.id,
+    type: 'partner',
+    title: item.displayName,
+    subtitle: 'RF partner',
+    description: undefined,
+    image_url: undefined,
+    lat: anchor.lat,
+    lng: anchor.lng,
+    distance_m: undefined,
+    city_id: item.cityId,
+    country_id: item.countryId,
+    tags: ['partner', 'rf'],
+    rating: undefined,
+    price_level: undefined,
+    is_verified: false,
+    is_rf: true,
+    actions: [
+      {
+        type: 'open_partner',
+        label: 'Открыть партнера',
+        deeplink: `/rf/partners/${encodeURIComponent(item.slug || item.id)}`,
+      },
+    ],
+    explain: {
+      reasons: ['partner'],
+    },
+    source: {
+      domain: 'rf',
+      source_id: item.id,
+      source_slug: item.slug,
+    },
+    payload: {
+      partner_slug: item.slug,
+    },
+  };
+}

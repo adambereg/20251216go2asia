@@ -5,6 +5,7 @@ import { getNearbyResponse, getWhatToDoResponse } from '../services/nearbyServic
 
 type Env = {
   RIELT_SERVICE_URL?: string;
+  RF_SERVICE_URL?: string;
 };
 
 export async function handleNearbyRoute(request: Request, env: Env, context: RequestContext): Promise<Response | null> {
