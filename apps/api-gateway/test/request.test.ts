@@ -478,6 +478,8 @@ describe('api-gateway request hardening', () => {
   it('proxies rielt public route when RIELT_SERVICE_URL is configured', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toMatch(/^https:\/\/rielt\.example\/v1\/rielt\/listings/);
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
       expect(request.headers.get('X-Request-Id')).toBeTruthy();
       return new Response(
         JSON.stringify({
@@ -527,6 +529,29 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not require bearer auth for rielt nearby static route with PATCH method', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rielt/listings/nearby', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({ title: 'wrong op' }),
+      }),
+      {
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('proxies public quest reads without gateway auth', async () => {

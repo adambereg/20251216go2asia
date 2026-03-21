@@ -2,18 +2,18 @@
 
 **Project:** Go2Asia  
 **Module:** rielt-service  
-**Status:** Final SSOT baseline for rielt-service v1 (implemented listings/owner surface; inquiry HTTP wiring deferred)
-**Completed:** Step 8, Slices 1–8
+**Status:** Final SSOT baseline for rielt-service practical v1 (implemented listings/owner + requester inquiry HTTP wiring)
+**Completed:** Step 9 practical completion baseline
 
 ---
 
-## 1. Purpose of Rielt Service (Step 8)
+## 1. Purpose of Rielt Service
 
 Rielt-service provides listing (accommodation/property) discovery and lightweight inquiry for Go2Asia.
 
 **Role:** Minimal practical domain for property search and owner-inquirer contact intent. Enables users to browse listings by geo, price, bedrooms; view details; and supports one-shot inquiry semantics in the domain model. Owners can create, edit, and archive their listings.
 
-**Why it exists at this stage:** Go2Asia needs a foundational real-estate-like surface for Asia markets. Step 8 delivers the minimal viable domain: listings + inquiries, without booking, payments, or CRM. It is intentionally scoped to stay maintainable and to integrate later with Guru (aggregation), RF (partner logic), and Space (social).
+**Why it exists at this stage:** Go2Asia needs a foundational real-estate-like surface for Asia markets. Current practical baseline delivers listings + requester inquiry/contact intent, without booking, payments, or CRM. It is intentionally scoped to stay maintainable and to integrate later with Guru (aggregation), RF (partner logic), and Space (social).
 
 ---
 
@@ -137,14 +137,14 @@ Rielt-service provides listing (accommodation/property) discovery and lightweigh
 | POST | /v1/rielt/listings | Create listing |
 | GET | /v1/rielt/my/listings | List own listings (status, sort, pagination) |
 | PATCH | /v1/rielt/listings/{id} | Patch owned listing (media not patchable). Slug support for write is not guaranteed. |
-| DELETE | /v1/rielt/listings/{idOrSlug} | Archive owned listing |
+| DELETE | /v1/rielt/listings/{id} | Archive owned listing |
 
-### Inquiry endpoints (auth required, deferred runtime wiring)
+### Inquiry endpoints (auth required, implemented requester baseline)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | /v1/rielt/listings/{idOrSlug}/inquiries | Create inquiry (Idempotency-Key header) — contract defined, wiring deferred |
-| GET | /v1/rielt/my/inquiries | List own inquiries (status, sort, pagination) — contract defined, wiring deferred |
+| POST | /v1/rielt/listings/{idOrSlug}/inquiries | Create inquiry (Idempotency-Key header required) |
+| GET | /v1/rielt/my/inquiries | List own inquiries (status, sort, pagination) |
 
 ---
 
@@ -152,7 +152,7 @@ Rielt-service provides listing (accommodation/property) discovery and lightweigh
 
 - **country_id:** Required. String. No FK; Atlas (content-service) is SSOT for valid values.
 - **city_id:** Nullable. String. No FK; Atlas is SSOT for valid values.
-- **No strict runtime validation against Atlas in Step 8.** Canonical values are expected to be provided by upstream systems.
+- **No strict runtime validation against Atlas in current baseline.** Canonical values are expected to be provided by upstream systems.
 - **No runtime mapping:** Rielt stores IDs/slugs; resolution and display names are handled by content-service or frontend.
 - **lat, lng:** Optional on listing. Used for nearby search; if present, must be valid lat/lng pair.
 
@@ -172,7 +172,7 @@ Rielt-service provides listing (accommodation/property) discovery and lightweigh
 - **owner:** User who created the listing. One active owner per listing.
 - **agent:** Optional agent role; can manage listing alongside owner. Roles: owner, agent.
 - **user:** Anonymous or authenticated user. Public read; auth required for create/patch/delete/inquiry.
-- **Access:** Owner and agent can create, patch, archive. Requester creates inquiry; requester views via /my/inquiries. Owner/agent inquiry views are not implemented in Step 8. Admin can manage. No shared/social ownership.
+- **Access:** Owner and agent can create, patch, publish/unpublish (via PATCH status), and archive. Requester creates inquiry and views own inquiries via `/my/inquiries`. Owner/agent inquiry views are intentionally not implemented in this baseline. Admin can manage. No shared/social ownership.
 
 ---
 
@@ -208,7 +208,7 @@ Rielt-service provides listing (accommodation/property) discovery and lightweigh
 | **Social ownership** | No co-ownership, no groups |
 | **Media URL resolution** | Public DTO returns null/empty; resolution elsewhere |
 | **Geo validation** | No lookup against Atlas at runtime |
-| **Moderation** | No approval workflow; draft → published is direct |
+| **Moderation** | No approval workflow |
 | **Advanced geo** | No polygons, no custom areas |
 | **Reviews / ratings** | Not in rielt |
 | **Favourites / saves** | Not in rielt |
@@ -231,9 +231,9 @@ Rielt-service provides listing (accommodation/property) discovery and lightweigh
 - **Public media:** coverUrl and photos are not resolved in public API responses. Clients receive null/[].
 - **Geo display:** country_id and city_id are raw strings; display names require content-service or client lookup.
 - **Nearby:** Implemented in backend; frontend nearby surface deferred.
-- **Inquiry workflow:** Status is minimal (new/viewed/closed); no notifications, no follow-up. HTTP inquiry routes are currently deferred in runtime wiring.
+- **Inquiry workflow:** Status is minimal (new/viewed/closed); no notifications, no follow-up. Requester-side inquiry routes are implemented; owner-side inquiry workflow is deferred.
 - **Minimal by design:** Scope is deliberately limited to keep rielt-service maintainable and to avoid coupling with booking, payments, or CRM before those domains exist.
 
 ---
 
-*This document is the final SSOT baseline for rielt-service v1. Implemented runtime surface is listings/owner-focused; inquiry remains a defined domain contract with deferred HTTP wiring.*
+*This document is the final SSOT baseline for rielt-service practical v1. Implemented runtime surface covers listings/owner plus requester inquiry baseline.*

@@ -1,17 +1,22 @@
 import {
   archiveListingById,
+  countMyInquiries,
   countActorVisibleListings,
   countPublishedListingsNearby,
   countPublishedListings,
+  createListingInquiry,
   createOwnerListing,
   getActiveActorRoleForListing,
   getDb,
   getListingByIdForManage,
   getPublishedListingByIdOrSlug,
+  listMyInquiries,
   listActorVisibleListings,
   listPublishedListingsNearby,
   listPublishedListings,
   patchOwnerListingById,
+  type InquiryRow,
+  type MyInquiryRow,
   type NearbyListingRow,
   type OwnerListingRow,
   type PatchOwnerListingInput,
@@ -20,8 +25,10 @@ import {
 import type { GatewayPrincipal } from '../middleware/auth';
 import { errorResponse, json } from '../middleware/http';
 import {
+  parseCreateInquiryInput,
   parseCreateListingInput,
   parseListListingsQuery,
+  parseMyInquiriesQuery,
   parseMyListingsQuery,
   parseNearbyListingsQuery,
   parsePatchListingInput,
@@ -127,6 +134,39 @@ function toOwnerListingDto(row: OwnerListingRow) {
   };
 }
 
+function toInquiryDto(row: InquiryRow) {
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    requesterUserId: row.requester_user_id,
+    message: row.message,
+    contact: {
+      name: row.contact_name,
+      phone: row.contact_phone,
+      telegram: row.contact_telegram,
+    },
+    status: row.status,
+    idempotencyKey: row.idempotency_key,
+    createdAt: asIso(row.created_at),
+    closedAt: asIso(row.closed_at),
+  };
+}
+
+function toMyInquiryDto(row: MyInquiryRow) {
+  return {
+    ...toInquiryDto(row),
+    listing: {
+      id: row.listing_id,
+      slug: row.listing_slug,
+      title: row.listing_title,
+      geo: {
+        countryId: row.listing_country_id,
+        cityId: row.listing_city_id,
+      },
+    },
+  };
+}
+
 function toPatchPayload(input: PatchListingInput): PatchOwnerListingInput {
   return {
     slugSet: input.slug !== undefined,
@@ -161,6 +201,8 @@ function toPatchPayload(input: PatchListingInput): PatchOwnerListingInput {
     areaSqm: input.areaSqm ?? null,
     amenitiesSet: input.amenities !== undefined,
     amenities: input.amenities ?? null,
+    statusSet: input.status !== undefined,
+    status: input.status ?? null,
   };
 }
 
@@ -458,6 +500,93 @@ export async function listMyOwnedListings(
 
   return json({
     items: items.map(toOwnerListingDto),
+    pagination: {
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+    },
+  });
+}
+
+export async function createListingInquiryByIdOrSlug(
+  env: Env,
+  principal: GatewayPrincipal,
+  idOrSlug: string,
+  idempotencyKey: string | null,
+  body: Record<string, unknown> | null,
+  requestId: string
+): Promise<Response> {
+  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
+    return errorResponse('VALIDATION_ERROR', 'Idempotency-Key header is required', requestId, 400);
+  }
+  const input = parseCreateInquiryInput(body);
+  if (!input) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid inquiry payload', requestId, 400);
+  }
+
+  let db;
+  try {
+    db = getDb(env);
+  } catch {
+    return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
+  }
+
+  const listing = await getPublishedListingByIdOrSlug(db, idOrSlug);
+  if (!listing) {
+    return errorResponse('NOT_FOUND', 'Listing not found', requestId, 404);
+  }
+
+  const created = await createListingInquiry(db, {
+    id: crypto.randomUUID(),
+    listingId: listing.id,
+    requesterUserId: principal.userId,
+    message: input.message,
+    contactName: input.contactName,
+    contactPhone: input.contactPhone,
+    contactTelegram: input.contactTelegram,
+    idempotencyKey: idempotencyKey.trim(),
+  });
+  if (!created) {
+    return errorResponse('INTERNAL_ERROR', 'Failed to create inquiry', requestId, 500);
+  }
+
+  return json({ inquiry: toInquiryDto(created) }, 201);
+}
+
+export async function listMyListingInquiries(
+  env: Env,
+  principal: GatewayPrincipal,
+  url: URL,
+  requestId: string
+): Promise<Response> {
+  const query = parseMyInquiriesQuery(url.searchParams);
+  if (!query) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid my-inquiries query parameters', requestId, 400);
+  }
+
+  let db;
+  try {
+    db = getDb(env);
+  } catch {
+    return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
+  }
+
+  const [items, total] = await Promise.all([
+    listMyInquiries(db, {
+      requesterUserId: principal.userId,
+      status: query.status,
+      sort: query.sort,
+      limit: query.pageSize,
+      offset: query.offset,
+    }),
+    countMyInquiries(db, {
+      requesterUserId: principal.userId,
+      status: query.status,
+    }),
+  ]);
+
+  return json({
+    items: items.map(toMyInquiryDto),
     pagination: {
       page: query.page,
       pageSize: query.pageSize,

@@ -62,6 +62,11 @@ export interface RieltDetailResponse {
 }
 
 export interface RieltNearbyListResponse {
+  anchor: {
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  };
   items: RieltNearbyListingDto[];
   pagination: {
     page: number;

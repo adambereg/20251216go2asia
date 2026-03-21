@@ -726,6 +726,167 @@ describe('rielt-service scaffold', () => {
     expect(sqlOf(2).toLowerCase()).toContain('update rielt_listing');
   });
 
+  it('allows owner to publish and unpublish listing through patch status', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret);
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_pub_1',
+            slug: 'publish-me',
+            title: 'Publish Me',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-10T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ actor_role: 'owner' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_pub_1',
+            slug: 'publish-me',
+            title: 'Publish Me',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'published',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-12T10:00:00.000Z',
+            published_at: '2026-03-12T10:00:00.000Z',
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_pub_1',
+            slug: 'publish-me',
+            title: 'Publish Me',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'published',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-12T10:00:00.000Z',
+            published_at: '2026-03-12T10:00:00.000Z',
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ actor_role: 'owner' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_pub_1',
+            slug: 'publish-me',
+            title: 'Publish Me',
+            description: 'before',
+            listing_type: 'rent_long',
+            status: 'draft',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            area_text: null,
+            lat: null,
+            lng: null,
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            amenities: [],
+            created_by_user_id: 'user_owner_1',
+            created_at: '2026-03-10T10:00:00.000Z',
+            updated_at: '2026-03-13T10:00:00.000Z',
+            published_at: null,
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      });
+
+    const publishResponse = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_pub_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({ status: 'published' }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const publishBody = await readJson<{ listing: { status: string; publishedAt: string | null } }>(publishResponse);
+    expect(publishResponse.status).toBe(200);
+    expect(publishBody.listing.status).toBe('published');
+    expect(publishBody.listing.publishedAt).toBeTruthy();
+    expect(sqlOf(2).toLowerCase()).toContain('status = case');
+
+    const unpublishResponse = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_pub_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({ status: 'draft' }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const unpublishBody = await readJson<{ listing: { status: string; publishedAt: string | null } }>(unpublishResponse);
+    expect(unpublishResponse.status).toBe(200);
+    expect(unpublishBody.listing.status).toBe('draft');
+    expect(unpublishBody.listing.publishedAt).toBeNull();
+  });
+
   it('forbids patch for non-owner/non-agent', async () => {
     const authSecret = 'service-secret';
     const token = await ownerAuthHeader(authSecret, 'user_random');
@@ -854,6 +1015,158 @@ describe('rielt-service scaffold', () => {
     expect(response.status).toBe(400);
     expect(body.error.code).toBe('VALIDATION_ERROR');
     expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('creates inquiry for published listing and enforces idempotency key', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_inquirer_1');
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'listing_pub_inq_1',
+            slug: 'pub-inquiry',
+            title: 'Pub Inquiry',
+            listing_type: 'rent_long',
+            price_amount: '500',
+            price_currency: 'USD',
+            price_period: 'month',
+            country_id: 'th',
+            city_id: 'bangkok',
+            bedrooms: 1,
+            bathrooms: 1,
+            area_sqm: '40',
+            created_at: '2026-03-01T00:00:00.000Z',
+            updated_at: '2026-03-01T00:00:00.000Z',
+            published_at: '2026-03-01T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'inq_1',
+            listing_id: 'listing_pub_inq_1',
+            requester_user_id: 'user_inquirer_1',
+            message: 'Interested in a long rent',
+            contact_name: 'Alice',
+            contact_phone: '+6600000000',
+            contact_telegram: '@alice',
+            status: 'new',
+            idempotency_key: 'idem-key-1',
+            created_at: '2026-03-12T10:00:00.000Z',
+            closed_at: null,
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/pub-inquiry/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+          'Idempotency-Key': 'idem-key-1',
+        },
+        body: JSON.stringify({
+          message: 'Interested in a long rent',
+          contact_name: 'Alice',
+          contact_phone: '+6600000000',
+          contact_telegram: '@alice',
+        }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{ inquiry: { id: string; listingId: string; status: string } }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.inquiry.id).toBe('inq_1');
+    expect(body.inquiry.listingId).toBe('listing_pub_inq_1');
+    expect(body.inquiry.status).toBe('new');
+  });
+
+  it('lists my inquiries with listing summary', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_inquirer_2');
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'inq_2',
+            listing_id: 'listing_2',
+            requester_user_id: 'user_inquirer_2',
+            message: 'Can we schedule a visit?',
+            contact_name: 'Bob',
+            contact_phone: null,
+            contact_telegram: null,
+            status: 'new',
+            idempotency_key: 'idem-key-2',
+            created_at: '2026-03-12T10:00:00.000Z',
+            closed_at: null,
+            listing_slug: 'listing-two',
+            listing_title: 'Listing Two',
+            listing_country_id: 'th',
+            listing_city_id: 'bangkok',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 1 }] });
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/my/inquiries?status=new&sort=newest&page=1&page_size=20', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+    const body = await readJson<{
+      items: Array<{ id: string; listing: { slug: string; geo: { countryId: string } } }>;
+      pagination: { total: number };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items[0]?.id).toBe('inq_2');
+    expect(body.items[0]?.listing.slug).toBe('listing-two');
+    expect(body.items[0]?.listing.geo.countryId).toBe('th');
+    expect(body.pagination.total).toBe(1);
+  });
+
+  it('returns 400 for inquiry create without Idempotency-Key', async () => {
+    const authSecret = 'service-secret';
+    const token = await ownerAuthHeader(authSecret, 'user_inquirer_3');
+
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/listing_3/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          message: 'Please contact me',
+        }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
+    );
+
+    expect(response.status).toBe(400);
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('treats PATCH nearby path as non-owner route and returns 404', async () => {
+    const response = await worker.fetch(
+      new Request('https://rielt.example/v1/rielt/listings/nearby', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Should not patch nearby' }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' }
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('NOT_FOUND');
   });
 
   it('archives listing for active owner', async () => {
