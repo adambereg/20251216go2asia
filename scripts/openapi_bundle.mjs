@@ -8,8 +8,12 @@
  * - Merge in per-service specs:
  *   - docs/openapi/auth.yaml
  *   - docs/openapi/content.yaml
+ *   - docs/openapi/feed.yaml
  *   - docs/openapi/points.yaml
+ *   - docs/openapi/reactions.yaml
+ *   - docs/openapi/quest.yaml
  *   - docs/openapi/referral.yaml
+ *   - docs/openapi/space.yaml
  * - Include only /v1/* and /internal/* paths in bundle (exclude /health and /version to avoid collisions).
  * - Merge components; throw on conflicting definitions (except HealthResponse examples).
  *
@@ -32,6 +36,8 @@ const SERVICE_SPECS = [
   path.join(REPO_ROOT, 'docs', 'openapi', 'points.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'quest.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'referral.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'reactions.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'feed.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'space.yaml'),
 ];
 

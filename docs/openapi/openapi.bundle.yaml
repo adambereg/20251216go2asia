@@ -1,5 +1,5 @@
 # GENERATED FILE — DO NOT EDIT
-# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/quest.yaml, docs/openapi/referral.yaml, docs/openapi/space.yaml
+# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/quest.yaml, docs/openapi/referral.yaml, docs/openapi/reactions.yaml, docs/openapi/feed.yaml, docs/openapi/space.yaml
 
 components:
   parameters:
@@ -65,6 +65,16 @@ components:
       required: true
       schema:
         type: string
+    IdempotencyKey:
+      description: |
+        Optional idempotency key for POST /v1/reactions. Reusing the same key with the same payload returns an idempotent replay (applied=false). Reusing the same key with a different payload returns 409 Conflict.
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema:
+        maxLength: 128
+        minLength: 8
+        type: string
     Lang:
       in: query
       name: lang
@@ -129,6 +139,12 @@ components:
       required: true
       schema:
         type: string
+    ReactionId:
+      in: path
+      name: reactionId
+      required: true
+      schema:
+        type: string
     StepId:
       in: path
       name: stepId
@@ -147,6 +163,18 @@ components:
       required: false
       schema:
         type: string
+    TargetId:
+      in: path
+      name: targetId
+      required: true
+      schema:
+        type: string
+    TargetType:
+      in: path
+      name: targetType
+      required: true
+      schema:
+        $ref: "#/components/schemas/ReactionTargetType"
     Theme:
       in: query
       name: theme
@@ -190,6 +218,18 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Conflict
+    FeedServiceUnavailable:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+      description: Upstream service unavailable
+    Forbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+      description: Forbidden
     InternalError:
       content:
         application/json:
@@ -256,6 +296,30 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Rate limited
+    ReactionsConflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Conflict (for example idempotency key reuse with different payload)
+    ReactionsRateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Rate limited
+    ReactionsServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Service auth is not configured
+    ReactionsValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Validation error
     ServiceAuthNotConfigured:
       content:
         application/json:
@@ -1008,6 +1072,136 @@ components:
         - eventId
         - userId
       type: object
+    FeedErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    FeedHealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: feed-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    FeedItem:
+      additionalProperties: true
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        post:
+          $ref: "#/components/schemas/FeedItemPost"
+        reactions:
+          $ref: "#/components/schemas/FeedReactionsSummary"
+      required:
+        - id
+      type: object
+    FeedItemPost:
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      type: object
+    FeedPageResponse:
+      properties:
+        degraded:
+          description: Present only when feed returns a controlled degraded composition (for example reactions fallback).
+          properties:
+            reactions:
+              type: boolean
+          type: object
+        items:
+          items:
+            $ref: "#/components/schemas/FeedItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    FeedReactionsSummary:
+      properties:
+        counts:
+          properties:
+            like:
+              minimum: 0
+              type: integer
+          required:
+            - like
+          type: object
+        viewer:
+          properties:
+            liked:
+              type: boolean
+          required:
+            - liked
+          type: object
+      required:
+        - counts
+        - viewer
+      type: object
+    FeedReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
     GenerateCodeRequest:
       properties:
         userId:
@@ -1553,6 +1747,204 @@ components:
         - public
         - private
       type: string
+    ReactionDeleteResponse:
+      properties:
+        removed:
+          type: boolean
+      required:
+        - removed
+      type: object
+    ReactionRecord:
+      properties:
+        actorUserId:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+        status:
+          $ref: "#/components/schemas/ReactionStatus"
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - actorUserId
+        - targetType
+        - targetId
+        - reactionType
+        - status
+        - createdAt
+        - updatedAt
+      type: object
+    ReactionStatus:
+      enum:
+        - active
+        - deleted
+      type: string
+    ReactionSummaryBatchRequest:
+      properties:
+        targets:
+          items:
+            $ref: "#/components/schemas/ReactionSummaryBatchTarget"
+          maxItems: 100
+          minItems: 1
+          type: array
+      required:
+        - targets
+      type: object
+    ReactionSummaryBatchResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ReactionSummaryItem"
+          type: array
+      required:
+        - items
+      type: object
+    ReactionSummaryBatchTarget:
+      properties:
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+      required:
+        - targetType
+        - targetId
+      type: object
+    ReactionSummaryItem:
+      properties:
+        counts:
+          properties:
+            like:
+              minimum: 0
+              type: integer
+          required:
+            - like
+          type: object
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        viewer:
+          properties:
+            liked:
+              type: boolean
+          required:
+            - liked
+          type: object
+      required:
+        - targetType
+        - targetId
+        - counts
+        - viewer
+      type: object
+    ReactionSummaryResponse:
+      properties:
+        item:
+          $ref: "#/components/schemas/ReactionSummaryItem"
+      required:
+        - item
+      type: object
+    ReactionTargetType:
+      enum:
+        - space_post
+        - blog_post
+        - place
+        - event
+        - partner
+        - listing
+        - quest
+      type: string
+    ReactionType:
+      enum:
+        - like
+      type: string
+    ReactionWriteResponse:
+      properties:
+        applied:
+          description: false when response is an idempotent replay
+          type: boolean
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+      required:
+        - reaction
+        - applied
+      type: object
+    ReactionsErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    ReactionsHealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: reactions-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    ReactionsReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
     ReadyResponse:
       properties:
         checks:
@@ -2033,6 +2425,19 @@ components:
       required:
         - ok
         - key
+      type: object
+    UpsertReactionRequest:
+      properties:
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+      required:
+        - targetType
+        - targetId
+        - reactionType
       type: object
     UserBalance:
       properties:
@@ -2565,6 +2970,112 @@ paths:
       summary: Get place by id or slug (public)
       tags:
         - content
+  /v1/feed/activity:
+    get:
+      operationId: getActivityFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Activity feed (read-only, no reactions enrichment in V1)
+      tags:
+        - feed
+  /v1/feed/group/{groupId}:
+    get:
+      operationId: getGroupFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Group feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
+  /v1/feed/home:
+    get:
+      operationId: getHomeFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Home feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
+  /v1/feed/profile/{userId}:
+    get:
+      operationId: getProfileFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Profile feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
   /v1/media/upload-token:
     post:
       description: |
@@ -3005,6 +3516,125 @@ paths:
       summary: List submissions for quest review
       tags:
         - quests
+  /v1/reactions:
+    post:
+      operationId: upsertReaction
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertReactionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionWriteResponse"
+          description: Reaction applied (created or updated)
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/ReactionsConflict"
+        "429":
+          $ref: "#/components/responses/ReactionsRateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create or update a like (idempotent write)
+      tags:
+        - reactions
+  /v1/reactions/summary/{targetType}/{targetId}:
+    get:
+      operationId: getReactionSummary
+      parameters:
+        - $ref: "#/components/parameters/TargetType"
+        - $ref: "#/components/parameters/TargetId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      summary: Get like summary for one target
+      tags:
+        - reactions
+  /v1/reactions/summary:batch:
+    post:
+      operationId: getReactionSummaryBatch
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionSummaryBatchRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryBatchResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      summary: Get like summaries for multiple targets
+      tags:
+        - reactions
+  /v1/reactions/{reactionId}:
+    delete:
+      operationId: removeReaction
+      parameters:
+        - $ref: "#/components/parameters/ReactionId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionDeleteResponse"
+          description: Reaction removed
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Remove an active like
+      tags:
+        - reactions
   /v1/referral/claim:
     post:
       description: |
@@ -3660,6 +4290,8 @@ tags:
   - description: Service-to-service APIs (authenticated)
     name: internal
   - name: quests
+  - name: reactions
+  - name: feed
   - description: Space social-core endpoints
     name: space
 x-microservices:

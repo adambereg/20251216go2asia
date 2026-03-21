@@ -509,10 +509,11 @@ describe('api-gateway request hardening', () => {
       {}
     );
 
-    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    const body = await readJson<{ error: { code: string; message: string }; requestId?: string }>(response);
     expect(response.status).toBe(501);
     expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
     expect(body.error.message).toContain('RF_SERVICE_URL');
+    expect(body.requestId).toBe(response.headers.get('X-Request-ID'));
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -783,6 +784,7 @@ describe('api-gateway request hardening', () => {
       expect(request.url).toBe('https://rf.example/v1/rf/offers/rf_offer_1/claim');
       expect(request.headers.get('Idempotency-Key')).toBe('rf-claim-1');
       expect(request.headers.get('X-User-ID')).toBe('rf_user');
+      expect(request.headers.get('X-Request-ID')).toBe(request.headers.get('X-Request-Id'));
       gatewayClaims = decodeJwtPayload<Record<string, unknown>>(request.headers.get('X-Gateway-Auth')!);
       return new Response(JSON.stringify({ voucher: { id: 'rf_voucher_1', status: 'claimed' } }), {
         status: 201,

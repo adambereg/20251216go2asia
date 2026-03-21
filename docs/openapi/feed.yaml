@@ -75,7 +75,7 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -101,7 +101,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/GroupId"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -131,7 +131,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/UserId"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -156,7 +156,7 @@ paths:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -186,7 +186,7 @@ components:
       required: true
       schema:
         type: string
-    Limit:
+    FeedLimit:
       name: limit
       in: query
       required: false
@@ -194,7 +194,6 @@ components:
         type: integer
         minimum: 1
         maximum: 100
-        default: 20
     Cursor:
       name: cursor
       in: query

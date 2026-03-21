@@ -707,13 +707,13 @@ async function handleReady(env: Env): Promise<Response> {
 async function routeRequest(
   request: Request,
   env: Env,
-  logger: ReturnType<typeof createLogger>
+  logger: ReturnType<typeof createLogger>,
+  requestId: string
 ): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
   // Support legacy alias /v1/api/content/* by rewriting to /v1/content/*
   let downstreamPath = path.startsWith('/v1/api/content/') ? path.replace('/v1/api/content/', '/v1/content/') : path;
-  const requestId = getRequestId(request) || generateRequestId();
   const origin = request.headers.get('Origin');
   const route = classifyRoute(request.method, path);
 
@@ -904,6 +904,7 @@ async function routeRequest(
   if (contentType) headers.set('Content-Type', contentType);
   if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey);
   headers.set('X-Request-Id', requestId);
+  headers.set('X-Request-ID', requestId);
 
   // For user-facing routes that require user context, verify Clerk once at the gateway
   // and propagate only the derived internal token downstream.
@@ -1111,7 +1112,7 @@ export default {
     });
 
     try {
-      response = await routeRequest(request, env, logger);
+      response = await routeRequest(request, env, logger, requestId);
 
       // Ensure headers are mutable before setting X-Request-ID
       const out = new Response(response.body, response);

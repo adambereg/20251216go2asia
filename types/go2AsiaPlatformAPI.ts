@@ -34,8 +34,15 @@ import type {
   EnsureUserRequest,
   EnsureUserResponse,
   EventRegistrationResponse,
+  FeedPageResponse,
+  FeedServiceUnavailableResponse,
+  ForbiddenResponse,
   GenerateCodeRequest,
   GenerateCodeResponse,
+  GetActivityFeedParams,
+  GetGroupFeedParams,
+  GetHomeFeedParams,
+  GetProfileFeedParams,
   GetReferralTreeParams,
   GetSpaceActivityFeedParams,
   GetSpaceGroupFeedParams,
@@ -77,6 +84,15 @@ import type {
   QuestUnauthorizedResponse,
   QuestValidationErrorResponse,
   RateLimitedResponse,
+  ReactionDeleteResponse,
+  ReactionSummaryBatchRequest,
+  ReactionSummaryBatchResponse,
+  ReactionSummaryResponse,
+  ReactionWriteResponse,
+  ReactionsConflictResponse,
+  ReactionsRateLimitedResponse,
+  ReactionsServiceAuthNotConfiguredResponse,
+  ReactionsValidationErrorResponse,
   ReferralCodeResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
@@ -98,6 +114,7 @@ import type {
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
+  UpsertReactionRequest,
   UserBalance,
 } from "../packages/sdk/src/generated";
 
@@ -1063,6 +1080,266 @@ export const getPlaceByIdOrSlug = async (
 };
 
 /**
+ * @summary Activity feed (read-only, no reactions enrichment in V1)
+ */
+export type getActivityFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getActivityFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getActivityFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getActivityFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getActivityFeedResponseSuccess = getActivityFeedResponse200 & {
+  headers: Headers;
+};
+export type getActivityFeedResponseError = (
+  | getActivityFeedResponse401
+  | getActivityFeedResponse500
+  | getActivityFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getActivityFeedResponse = getActivityFeedResponseSuccess | getActivityFeedResponseError;
+
+export const getGetActivityFeedUrl = (params?: GetActivityFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/activity?${stringifiedParams}`
+    : `/v1/feed/activity`;
+};
+
+export const getActivityFeed = async (
+  params?: GetActivityFeedParams,
+  options?: RequestInit
+): Promise<getActivityFeedResponse> => {
+  return customInstance<getActivityFeedResponse>(getGetActivityFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Group feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getGroupFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getGroupFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getGroupFeedResponse403 = {
+  data: ForbiddenResponse;
+  status: 403;
+};
+
+export type getGroupFeedResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getGroupFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getGroupFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getGroupFeedResponseSuccess = getGroupFeedResponse200 & {
+  headers: Headers;
+};
+export type getGroupFeedResponseError = (
+  | getGroupFeedResponse401
+  | getGroupFeedResponse403
+  | getGroupFeedResponse404
+  | getGroupFeedResponse500
+  | getGroupFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getGroupFeedResponse = getGroupFeedResponseSuccess | getGroupFeedResponseError;
+
+export const getGetGroupFeedUrl = (groupId: string, params?: GetGroupFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/group/${groupId}?${stringifiedParams}`
+    : `/v1/feed/group/${groupId}`;
+};
+
+export const getGroupFeed = async (
+  groupId: string,
+  params?: GetGroupFeedParams,
+  options?: RequestInit
+): Promise<getGroupFeedResponse> => {
+  return customInstance<getGroupFeedResponse>(getGetGroupFeedUrl(groupId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Home feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getHomeFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getHomeFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getHomeFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getHomeFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getHomeFeedResponseSuccess = getHomeFeedResponse200 & {
+  headers: Headers;
+};
+export type getHomeFeedResponseError = (
+  | getHomeFeedResponse401
+  | getHomeFeedResponse500
+  | getHomeFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getHomeFeedResponse = getHomeFeedResponseSuccess | getHomeFeedResponseError;
+
+export const getGetHomeFeedUrl = (params?: GetHomeFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/feed/home?${stringifiedParams}` : `/v1/feed/home`;
+};
+
+export const getHomeFeed = async (
+  params?: GetHomeFeedParams,
+  options?: RequestInit
+): Promise<getHomeFeedResponse> => {
+  return customInstance<getHomeFeedResponse>(getGetHomeFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Profile feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getProfileFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getProfileFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getProfileFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getProfileFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getProfileFeedResponseSuccess = getProfileFeedResponse200 & {
+  headers: Headers;
+};
+export type getProfileFeedResponseError = (
+  | getProfileFeedResponse401
+  | getProfileFeedResponse500
+  | getProfileFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getProfileFeedResponse = getProfileFeedResponseSuccess | getProfileFeedResponseError;
+
+export const getGetProfileFeedUrl = (userId: string, params?: GetProfileFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/profile/${userId}?${stringifiedParams}`
+    : `/v1/feed/profile/${userId}`;
+};
+
+export const getProfileFeed = async (
+  userId: string,
+  params?: GetProfileFeedParams,
+  options?: RequestInit
+): Promise<getProfileFeedResponse> => {
+  return customInstance<getProfileFeedResponse>(getGetProfileFeedUrl(userId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
 
  * @summary Create signed upload token (authorized)
@@ -1943,6 +2220,257 @@ export const listQuestSubmissions = async (
   return customInstance<listQuestSubmissionsResponse>(getListQuestSubmissionsUrl(questId, params), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * @summary Create or update a like (idempotent write)
+ */
+export type upsertReactionResponse200 = {
+  data: ReactionWriteResponse;
+  status: 200;
+};
+
+export type upsertReactionResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type upsertReactionResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type upsertReactionResponse409 = {
+  data: ReactionsConflictResponse;
+  status: 409;
+};
+
+export type upsertReactionResponse429 = {
+  data: ReactionsRateLimitedResponse;
+  status: 429;
+};
+
+export type upsertReactionResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type upsertReactionResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type upsertReactionResponseSuccess = upsertReactionResponse200 & {
+  headers: Headers;
+};
+export type upsertReactionResponseError = (
+  | upsertReactionResponse400
+  | upsertReactionResponse401
+  | upsertReactionResponse409
+  | upsertReactionResponse429
+  | upsertReactionResponse500
+  | upsertReactionResponse503
+) & {
+  headers: Headers;
+};
+
+export type upsertReactionResponse = upsertReactionResponseSuccess | upsertReactionResponseError;
+
+export const getUpsertReactionUrl = () => {
+  return `/v1/reactions`;
+};
+
+export const upsertReaction = async (
+  upsertReactionRequest: UpsertReactionRequest,
+  options?: RequestInit
+): Promise<upsertReactionResponse> => {
+  return customInstance<upsertReactionResponse>(getUpsertReactionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertReactionRequest),
+  });
+};
+
+/**
+ * @summary Get like summary for one target
+ */
+export type getReactionSummaryResponse200 = {
+  data: ReactionSummaryResponse;
+  status: 200;
+};
+
+export type getReactionSummaryResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReactionSummaryResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReactionSummaryResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getReactionSummaryResponseSuccess = getReactionSummaryResponse200 & {
+  headers: Headers;
+};
+export type getReactionSummaryResponseError = (
+  | getReactionSummaryResponse401
+  | getReactionSummaryResponse500
+  | getReactionSummaryResponse503
+) & {
+  headers: Headers;
+};
+
+export type getReactionSummaryResponse =
+  | getReactionSummaryResponseSuccess
+  | getReactionSummaryResponseError;
+
+export const getGetReactionSummaryUrl = (
+  targetType: "space_post" | "blog_post" | "place" | "event" | "partner" | "listing" | "quest",
+  targetId: string
+) => {
+  return `/v1/reactions/summary/${targetType}/${targetId}`;
+};
+
+export const getReactionSummary = async (
+  targetType: "space_post" | "blog_post" | "place" | "event" | "partner" | "listing" | "quest",
+  targetId: string,
+  options?: RequestInit
+): Promise<getReactionSummaryResponse> => {
+  return customInstance<getReactionSummaryResponse>(
+    getGetReactionSummaryUrl(targetType, targetId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
+};
+
+/**
+ * @summary Get like summaries for multiple targets
+ */
+export type getReactionSummaryBatchResponse200 = {
+  data: ReactionSummaryBatchResponse;
+  status: 200;
+};
+
+export type getReactionSummaryBatchResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type getReactionSummaryBatchResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReactionSummaryBatchResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReactionSummaryBatchResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getReactionSummaryBatchResponseSuccess = getReactionSummaryBatchResponse200 & {
+  headers: Headers;
+};
+export type getReactionSummaryBatchResponseError = (
+  | getReactionSummaryBatchResponse400
+  | getReactionSummaryBatchResponse401
+  | getReactionSummaryBatchResponse500
+  | getReactionSummaryBatchResponse503
+) & {
+  headers: Headers;
+};
+
+export type getReactionSummaryBatchResponse =
+  | getReactionSummaryBatchResponseSuccess
+  | getReactionSummaryBatchResponseError;
+
+export const getGetReactionSummaryBatchUrl = () => {
+  return `/v1/reactions/summary:batch`;
+};
+
+export const getReactionSummaryBatch = async (
+  reactionSummaryBatchRequest: ReactionSummaryBatchRequest,
+  options?: RequestInit
+): Promise<getReactionSummaryBatchResponse> => {
+  return customInstance<getReactionSummaryBatchResponse>(getGetReactionSummaryBatchUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reactionSummaryBatchRequest),
+  });
+};
+
+/**
+ * @summary Remove an active like
+ */
+export type removeReactionResponse200 = {
+  data: ReactionDeleteResponse;
+  status: 200;
+};
+
+export type removeReactionResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type removeReactionResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type removeReactionResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type removeReactionResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type removeReactionResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type removeReactionResponseSuccess = removeReactionResponse200 & {
+  headers: Headers;
+};
+export type removeReactionResponseError = (
+  | removeReactionResponse400
+  | removeReactionResponse401
+  | removeReactionResponse404
+  | removeReactionResponse500
+  | removeReactionResponse503
+) & {
+  headers: Headers;
+};
+
+export type removeReactionResponse = removeReactionResponseSuccess | removeReactionResponseError;
+
+export const getRemoveReactionUrl = (reactionId: string) => {
+  return `/v1/reactions/${reactionId}`;
+};
+
+export const removeReaction = async (
+  reactionId: string,
+  options?: RequestInit
+): Promise<removeReactionResponse> => {
+  return customInstance<removeReactionResponse>(getRemoveReactionUrl(reactionId), {
+    ...options,
+    method: "DELETE",
   });
 };
 

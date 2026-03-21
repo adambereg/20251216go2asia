@@ -44,7 +44,7 @@ export default function CountryCitiesPage() {
   const cities =
     dataSource === 'mock'
       ? mockRepo.atlas.listCities().filter((c) => c.countryId === countryId)
-      : (citiesData?.items && citiesData.items.length > 0 ? citiesData.items : mockRepo.atlas.listCities().filter((c) => c.countryId === countryId));
+      : (citiesData?.items ?? []);
 
   return (
     <div className="space-y-6">
@@ -86,7 +86,8 @@ export default function CountryCitiesPage() {
             </div>
           ) : (
             <div className="text-center py-12 text-slate-600">
-              Города не найдены
+              Города не найдены в API.
+              {dataSource === 'api' ? ' Мок-данные в этом режиме не подмешиваются.' : ''}
             </div>
           )}
         </div>
