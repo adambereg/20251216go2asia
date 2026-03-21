@@ -3,6 +3,7 @@ import { createLogger, generateRequestId, getRequestId, logRequestCompleted } fr
 import { createNoopReactionsEventPublisher } from './events/publisher';
 import { getOptionalGatewayPrincipal, requireGatewayOrigin } from './middleware/auth';
 import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
+import { enforceReactionsWriteThrottle } from './middleware/throttle';
 import { handleReactionsRoute } from './routes/reactions';
 
 export interface Env {
@@ -10,6 +11,8 @@ export interface Env {
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
   DATABASE_URL?: string;
+  REACTIONS_WRITE_LIMIT?: string;
+  REACTIONS_WRITE_WINDOW_SECONDS?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -90,6 +93,12 @@ export default {
           }
           principal = auth.principal;
         }
+      }
+
+      const throttled = enforceReactionsWriteThrottle(env, principal, request.method, path, requestId);
+      if (throttled) {
+        response = withRequestId(throttled, requestId);
+        return response;
       }
 
       response = (await handleReactionsRoute(request, env, requestId, publisher, principal)) ?? handleNotFound(path, requestId);

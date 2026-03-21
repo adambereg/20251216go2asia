@@ -10,7 +10,8 @@ Prerequisites:
 - Step 5 completed: `reactions-service` is a separate interaction domain (V1 `like` only).
 - Step 5.5 completed: reactions baseline is stabilized for feed consumption.
 
-Feed V1 is architecture-only in this step. No feed service code is implemented in this document.
+Feed V1 is implemented as a read/distribution service in `apps/feed-service`.
+This document remains the boundary and runtime-behavior baseline for Step 6 completion checks.
 
 ## 1) Feed service boundary
 
@@ -86,14 +87,14 @@ Boundary guarantees:
 
 V1 ranking policy:
 
-- chronological-first ordering;
-- stable tie-breaker by entity id;
-- light priority rules only (rule-based, deterministic, no ML).
+- chronological-first ordering (`createdAt` descending when available);
+- stable tie-breaker by entity id for equal timestamps;
+- fallback to stable upstream item order when timestamps are absent;
+- no hidden or ML scoring in V1.
 
-Allowed V1 light priorities:
+Light priority rules:
 
-- optional mild boost for user-relevant system content;
-- optional mild boost for directly-related group content in home context.
+- deferred in current runtime baseline (no priority boosts are applied in Step 6 completion state).
 
 Not allowed in V1:
 

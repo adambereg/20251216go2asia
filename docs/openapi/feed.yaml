@@ -70,7 +70,7 @@ paths:
     get:
       tags: [feed]
       operationId: getHomeFeed
-      summary: Home feed (read-only)
+      summary: Home feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
@@ -95,7 +95,7 @@ paths:
     get:
       tags: [feed]
       operationId: getGroupFeed
-      summary: Group feed (read-only)
+      summary: Group feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
@@ -125,7 +125,7 @@ paths:
     get:
       tags: [feed]
       operationId: getProfileFeed
-      summary: Profile feed (read-only)
+      summary: Profile feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
@@ -151,7 +151,7 @@ paths:
     get:
       tags: [feed]
       operationId: getActivityFeed
-      summary: Activity feed (read-only)
+      summary: Activity feed (read-only, no reactions enrichment in V1)
       security:
         - GatewayAuth: []
       parameters:
@@ -356,6 +356,7 @@ components:
           nullable: true
         degraded:
           type: object
+          description: Present only when feed returns a controlled degraded composition (for example reactions fallback).
           properties:
             reactions:
               type: boolean

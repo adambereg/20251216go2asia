@@ -210,6 +210,57 @@ describe('feed-service request', () => {
     expect(body.nextCursor).toBe('cursor_next');
   });
 
+  it('applies deterministic chronology-first ordering with stable id tie-break', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              { id: 'post_c', createdAt: '2026-03-16T00:00:00.000Z', post: { id: 'post_c' } },
+              { id: 'post_a', createdAt: '2026-03-16T00:00:00.000Z', post: { id: 'post_a' } },
+              { id: 'post_b', createdAt: '2026-03-17T00:00:00.000Z', post: { id: 'post_b' } },
+            ],
+            nextCursor: null,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (request.url === 'https://reactions.example/v1/reactions/summary:batch') {
+        return new Response(
+          JSON.stringify({
+            items: [
+              { targetType: 'space_post', targetId: 'post_a', counts: { like: 1 }, viewer: { liked: false } },
+              { targetType: 'space_post', targetId: 'post_b', counts: { like: 2 }, viewer: { liked: true } },
+              { targetType: 'space_post', targetId: 'post_c', counts: { like: 3 }, viewer: { liked: false } },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+    const body = await readJson<{ items: Array<{ id: string; reactions: { counts: { like: number } } }> }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items.map((item) => item.id)).toEqual(['post_b', 'post_a', 'post_c']);
+    expect(body.items.map((item) => item.reactions.counts.like)).toEqual([2, 1, 3]);
+  });
+
   it('falls back to default reactions when reactions-service is degraded', async () => {
     const env: Env = {
       SPACE_SERVICE_URL: 'https://space.example',
@@ -408,6 +459,50 @@ describe('feed-service request', () => {
     expect(body.items[0]?.reactions.viewer.liked).toBe(false);
   });
 
+  it('degrades reactions when reactions upstream returns invalid success payload', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        return new Response(
+          JSON.stringify({
+            items: [{ id: 'item_1', post: { id: 'spost_1' } }],
+            nextCursor: null,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (request.url === 'https://reactions.example/v1/reactions/summary:batch') {
+        return new Response(JSON.stringify({ items: [{ targetType: 'space_post' }] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+    const body = await readJson<{
+      degraded?: { reactions?: boolean };
+      items: Array<{ reactions: { counts: { like: number }; viewer: { liked: boolean } } }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.degraded?.reactions).toBe(true);
+    expect(body.items[0]?.reactions.counts.like).toBe(0);
+    expect(body.items[0]?.reactions.viewer.liked).toBe(false);
+  });
+
   it('returns controlled upstream error when space upstream throws network exception', async () => {
     const env: Env = {
       SPACE_SERVICE_URL: 'https://space.example',
@@ -432,5 +527,38 @@ describe('feed-service request', () => {
     const body = await readJson<{ error: { code: string } }>(response);
     expect(response.status).toBe(503);
     expect(body.error.code).toBe('UPSTREAM_UNAVAILABLE');
+  });
+
+  it('returns controlled invalid-upstream error when space payload shape is broken', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.url.startsWith('https://space.example/v1/space/feed/home')) {
+        return new Response(
+          JSON.stringify({
+            items: [{ createdAt: '2026-03-16T00:00:00.000Z' }],
+            nextCursor: null,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://feed.example/v1/feed/home', {
+        headers: { 'X-Gateway-Auth': token },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(502);
+    expect(body.error.code).toBe('UPSTREAM_INVALID_RESPONSE');
   });
 });

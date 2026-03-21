@@ -276,6 +276,75 @@ describe('reactions-service request', () => {
     expect(publishMock).toHaveBeenCalledTimes(1);
   });
 
+  it('applies basic write throttling guardrail for reaction writes', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      REACTIONS_WRITE_LIMIT: '2',
+      REACTIONS_WRITE_WINDOW_SECONDS: '60',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_rl_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_1',
+            user_id: 'user_rl_1',
+            target_type: 'space_post',
+            target_id: 'post_1',
+            reaction_type: 'like',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_1',
+            user_id: 'user_rl_1',
+            target_type: 'space_post',
+            target_id: 'post_1',
+            reaction_type: 'like',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      });
+
+    const makeRequest = () =>
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          targetType: 'space_post',
+          targetId: 'post_1',
+          reactionType: 'like',
+        }),
+      });
+
+    const first = await worker.fetch(makeRequest(), env);
+    expect(first.status).toBe(200);
+
+    const second = await worker.fetch(makeRequest(), env);
+    expect(second.status).toBe(200);
+
+    const third = await worker.fetch(makeRequest(), env);
+    const body = await readJson<{ error: { code: string } }>(third);
+    expect(third.status).toBe(429);
+    expect(body.error.code).toBe('RATE_LIMITED');
+    expect(executeMock).toHaveBeenCalledTimes(4);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+  });
+
   it('returns batch summary', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',

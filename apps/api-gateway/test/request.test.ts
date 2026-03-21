@@ -66,6 +66,18 @@ describe('api-gateway request hardening', () => {
       routeKey: 'feed.home.get',
       routeGroup: 'feed',
     });
+    expect(classifyRoute('GET', '/v1/feed/activity')).toEqual({
+      routeKey: 'feed.activity.get',
+      routeGroup: 'feed',
+    });
+    expect(classifyRoute('GET', '/v1/feed/group/group_1')).toEqual({
+      routeKey: 'feed.group.get',
+      routeGroup: 'feed',
+    });
+    expect(classifyRoute('GET', '/v1/feed/profile/user_1')).toEqual({
+      routeKey: 'feed.profile.get',
+      routeGroup: 'feed',
+    });
     expect(classifyRoute('GET', '/v1/quests')).toEqual({
       routeKey: 'quest.list.get',
       routeGroup: 'quest',
@@ -254,6 +266,43 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected feed group/profile/activity routes without bearer token', async () => {
+    const env: Env = {
+      FEED_SERVICE_URL: 'https://feed.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const activity = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/activity', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const activityBody = await readJson<{ error: { code: string } }>(activity);
+    expect(activity.status).toBe(401);
+    expect(activityBody.error.code).toBe('UNAUTHORIZED');
+
+    const group = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/group/group_1', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const groupBody = await readJson<{ error: { code: string } }>(group);
+    expect(group.status).toBe(401);
+    expect(groupBody.error.code).toBe('UNAUTHORIZED');
+
+    const profile = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/profile/user_1', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const profileBody = await readJson<{ error: { code: string } }>(profile);
+    expect(profile.status).toBe(401);
+    expect(profileBody.error.code).toBe('UNAUTHORIZED');
   });
 
   it('returns 401 for protected quest routes without bearer token', async () => {
