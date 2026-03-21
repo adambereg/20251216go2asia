@@ -8,7 +8,11 @@
  */
 
 export interface RfCreatePartnerRequest {
+  /** @nullable */
+  atlasPlaceId?: string | null;
   cityId: string;
   countryId: string;
   displayName: string;
+  /** @nullable */
+  hostAtlasPlaceId?: string | null;
 }

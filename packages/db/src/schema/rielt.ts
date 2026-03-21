@@ -14,6 +14,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
+import { places } from './content';
+
 export const listingStatusEnum = pgEnum('listing_status', ['draft', 'published', 'archived']);
 export const listingActorRoleEnum = pgEnum('listing_actor_role', ['owner', 'agent']);
 export const listingInquiryStatusEnum = pgEnum('listing_inquiry_status', ['new', 'viewed', 'closed']);
@@ -32,6 +34,8 @@ export const rieltListings = pgTable(
     pricePeriod: varchar('price_period', { length: 16 }).notNull(),
     countryId: text('country_id').notNull(),
     cityId: text('city_id'),
+    atlasPlaceId: text('atlas_place_id').references(() => places.id),
+    atlasContainerPlaceId: text('atlas_container_place_id').references(() => places.id),
     areaText: text('area_text'),
     lat: numeric('lat', { precision: 9, scale: 6 }),
     lng: numeric('lng', { precision: 9, scale: 6 }),
@@ -90,6 +94,10 @@ export const rieltListings = pgTable(
       'rielt_listing_lng_range_check',
       sql`(${table.lng} IS NULL OR (${table.lng} >= -180 AND ${table.lng} <= 180))`
     ),
+    atlasContainerDiffersFromPlaceCheck: check(
+      'rielt_listing_atlas_container_differs_check',
+      sql`(${table.atlasPlaceId} IS NULL OR ${table.atlasContainerPlaceId} IS NULL OR ${table.atlasPlaceId} <> ${table.atlasContainerPlaceId})`
+    ),
     idxStatusCountryCityUpdatedAt: index('idx_rielt_listing_status_country_city_updated_at').on(
       table.status,
       table.countryId,
@@ -104,6 +112,16 @@ export const rieltListings = pgTable(
     ),
     idxCreatedByStatusUpdatedAt: index('idx_rielt_listing_created_by_status_updated_at').on(
       table.createdByUserId,
+      table.status,
+      table.updatedAt
+    ),
+    idxAtlasPlaceStatusUpdatedAt: index('idx_rielt_listing_atlas_place_status_updated_at').on(
+      table.atlasPlaceId,
+      table.status,
+      table.updatedAt
+    ),
+    idxAtlasContainerStatusUpdatedAt: index('idx_rielt_listing_atlas_container_status_updated_at').on(
+      table.atlasContainerPlaceId,
       table.status,
       table.updatedAt
     ),

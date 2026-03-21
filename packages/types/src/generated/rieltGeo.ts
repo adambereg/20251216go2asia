@@ -9,6 +9,10 @@
 
 export interface RieltGeo {
   /** @nullable */
+  atlasContainerPlaceId?: string | null;
+  /** @nullable */
+  atlasPlaceId?: string | null;
+  /** @nullable */
   cityId?: string | null;
   countryId: string;
 }

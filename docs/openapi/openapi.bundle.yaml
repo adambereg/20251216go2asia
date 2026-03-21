@@ -2672,11 +2672,17 @@ components:
       type: object
     RfCreatePartnerRequest:
       properties:
+        atlasPlaceId:
+          nullable: true
+          type: string
         cityId:
           type: string
         countryId:
           type: string
         displayName:
+          type: string
+        hostAtlasPlaceId:
+          nullable: true
           type: string
       required:
         - displayName
@@ -2796,6 +2802,9 @@ components:
       type: object
     RfPartner:
       properties:
+        atlasPlaceId:
+          nullable: true
+          type: string
         cityId:
           type: string
         countryId:
@@ -2804,6 +2813,9 @@ components:
           format: date-time
           type: string
         displayName:
+          type: string
+        hostAtlasPlaceId:
+          nullable: true
           type: string
         id:
           type: string
@@ -3039,6 +3051,12 @@ components:
         area_text:
           nullable: true
           type: string
+        atlas_container_place_id:
+          nullable: true
+          type: string
+        atlas_place_id:
+          nullable: true
+          type: string
         bathrooms:
           minimum: 0
           nullable: true
@@ -3123,6 +3141,12 @@ components:
       type: object
     RieltGeo:
       properties:
+        atlasContainerPlaceId:
+          nullable: true
+          type: string
+        atlasPlaceId:
+          nullable: true
+          type: string
         cityId:
           nullable: true
           type: string
@@ -3355,6 +3379,12 @@ components:
         areaText:
           nullable: true
           type: string
+        atlasContainerPlaceId:
+          nullable: true
+          type: string
+        atlasPlaceId:
+          nullable: true
+          type: string
         cityId:
           nullable: true
           type: string
@@ -3482,6 +3512,12 @@ components:
           nullable: true
           type: number
         area_text:
+          nullable: true
+          type: string
+        atlas_container_place_id:
+          nullable: true
+          type: string
+        atlas_place_id:
           nullable: true
           type: string
         bathrooms:

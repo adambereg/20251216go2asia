@@ -46,6 +46,8 @@ export interface CreateListingInput {
   pricePeriod: string;
   countryId: string;
   cityId: string | null;
+  atlasPlaceId: string | null;
+  atlasContainerPlaceId: string | null;
   areaText: string | null;
   lat: number | null;
   lng: number | null;
@@ -66,6 +68,8 @@ export interface PatchListingInput {
   pricePeriod?: string;
   countryId?: string;
   cityId?: string | null;
+  atlasPlaceId?: string | null;
+  atlasContainerPlaceId?: string | null;
   areaText?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -333,6 +337,9 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
   const pricePeriod = parsePricePeriod(body.price_period);
   const countryId = parseRequiredTrimmedString(body.country_id, 64);
   const cityId = body.city_id === undefined ? null : parseOptionalTrimmedString(body.city_id, 128);
+  const atlasPlaceId = body.atlas_place_id === undefined ? null : parseOptionalTrimmedString(body.atlas_place_id, 128);
+  const atlasContainerPlaceId =
+    body.atlas_container_place_id === undefined ? null : parseOptionalTrimmedString(body.atlas_container_place_id, 128);
   const areaText = body.area_text === undefined ? null : parseOptionalTrimmedString(body.area_text, 160);
   const lat = body.lat === undefined ? null : parseOptionalNumber(body.lat);
   const lng = body.lng === undefined ? null : parseOptionalNumber(body.lng);
@@ -354,6 +361,8 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
     !pricePeriod ||
     !countryId ||
     cityId === undefined ||
+    atlasPlaceId === undefined ||
+    atlasContainerPlaceId === undefined ||
     areaText === undefined ||
     lat === undefined ||
     lng === undefined ||
@@ -368,6 +377,7 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
   }
 
   if (!hasValidLatLngPair(lat, lng)) return null;
+  if (atlasPlaceId !== null && atlasContainerPlaceId !== null && atlasPlaceId === atlasContainerPlaceId) return null;
 
   return {
     slug,
@@ -379,6 +389,8 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
     pricePeriod,
     countryId,
     cityId,
+    atlasPlaceId,
+    atlasContainerPlaceId,
     areaText,
     lat,
     lng,
@@ -451,6 +463,18 @@ export function parsePatchListingInput(body: Record<string, unknown> | null): Pa
     updates.cityId = cityId;
     touched = true;
   }
+  if (body.atlas_place_id !== undefined) {
+    const atlasPlaceId = parseOptionalTrimmedString(body.atlas_place_id, 128);
+    if (atlasPlaceId === undefined) return null;
+    updates.atlasPlaceId = atlasPlaceId;
+    touched = true;
+  }
+  if (body.atlas_container_place_id !== undefined) {
+    const atlasContainerPlaceId = parseOptionalTrimmedString(body.atlas_container_place_id, 128);
+    if (atlasContainerPlaceId === undefined) return null;
+    updates.atlasContainerPlaceId = atlasContainerPlaceId;
+    touched = true;
+  }
   if (body.area_text !== undefined) {
     const areaText = parseOptionalTrimmedString(body.area_text, 160);
     if (areaText === undefined) return null;
@@ -505,6 +529,14 @@ export function parsePatchListingInput(body: Record<string, unknown> | null): Pa
   const nextLat = updates.lat !== undefined ? updates.lat : null;
   const nextLng = updates.lng !== undefined ? updates.lng : null;
   if ((updates.lat !== undefined || updates.lng !== undefined) && !hasValidLatLngPair(nextLat, nextLng)) return null;
+  if (
+    updates.atlasPlaceId !== undefined &&
+    updates.atlasContainerPlaceId !== undefined &&
+    updates.atlasPlaceId !== null &&
+    updates.atlasPlaceId === updates.atlasContainerPlaceId
+  ) {
+    return null;
+  }
 
   return updates;
 }

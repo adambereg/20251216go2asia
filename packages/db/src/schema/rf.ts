@@ -1,5 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgEnum, pgTable, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+
+import { places } from './content';
 
 export const rfPartnerStatusEnum = pgEnum('rf_partner_status', ['active', 'archived']);
 export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', 'archived']);
@@ -24,6 +26,8 @@ export const rfPartners = pgTable(
     displayName: varchar('display_name', { length: 160 }).notNull(),
     countryId: varchar('country_id', { length: 128 }).notNull(),
     cityId: varchar('city_id', { length: 128 }).notNull(),
+    atlasPlaceId: text('atlas_place_id').references(() => places.id),
+    hostAtlasPlaceId: text('host_atlas_place_id').references(() => places.id),
     status: rfPartnerStatusEnum('status').notNull().default('active'),
     ownerUserId: varchar('owner_user_id', { length: 128 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -33,9 +37,23 @@ export const rfPartners = pgTable(
     displayNameNotBlank: check('rf_partner_display_name_not_blank_check', sql`(length(trim(${table.displayName})) > 0)`),
     countryIdNotBlank: check('rf_partner_country_id_not_blank_check', sql`(length(trim(${table.countryId})) > 0)`),
     cityIdNotBlank: check('rf_partner_city_id_not_blank_check', sql`(length(trim(${table.cityId})) > 0)`),
+    hostPlaceDiffersFromPlace: check(
+      'rf_partner_host_place_differs_check',
+      sql`(${table.atlasPlaceId} IS NULL OR ${table.hostAtlasPlaceId} IS NULL OR ${table.atlasPlaceId} <> ${table.hostAtlasPlaceId})`
+    ),
     ownerUserIdNotBlank: check('rf_partner_owner_user_id_not_blank_check', sql`(length(trim(${table.ownerUserId})) > 0)`),
     idxStatusUpdatedAt: index('idx_rf_partner_status_updated_at').on(table.status, table.updatedAt),
     idxOwnerStatusUpdatedAt: index('idx_rf_partner_owner_status_updated_at').on(table.ownerUserId, table.status, table.updatedAt),
+    idxAtlasPlaceStatusUpdatedAt: index('idx_rf_partner_atlas_place_status_updated_at').on(
+      table.atlasPlaceId,
+      table.status,
+      table.updatedAt
+    ),
+    idxHostAtlasPlaceStatusUpdatedAt: index('idx_rf_partner_host_atlas_place_status_updated_at').on(
+      table.hostAtlasPlaceId,
+      table.status,
+      table.updatedAt
+    ),
   })
 );
 

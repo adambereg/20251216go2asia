@@ -15,6 +15,7 @@ import {
   listPublishedListingsNearby,
   listPublishedListings,
   patchOwnerListingById,
+  validateAtlasGeoLinks,
   type InquiryRow,
   type MyInquiryRow,
   type NearbyListingRow,
@@ -83,6 +84,8 @@ function toPublicListingDto(row: PublicListingRow) {
     geo: {
       countryId: row.country_id,
       cityId: row.city_id,
+      atlasPlaceId: row.atlas_place_id ?? null,
+      atlasContainerPlaceId: row.atlas_container_place_id ?? null,
     },
     media: {
       coverUrl: null as string | null,
@@ -117,6 +120,8 @@ function toOwnerListingDto(row: OwnerListingRow) {
     geo: {
       countryId: row.country_id,
       cityId: row.city_id,
+      atlasPlaceId: row.atlas_place_id ?? null,
+      atlasContainerPlaceId: row.atlas_container_place_id ?? null,
       lat: toNumber(row.lat),
       lng: toNumber(row.lng),
       areaText: row.area_text,
@@ -187,6 +192,10 @@ function toPatchPayload(input: PatchListingInput): PatchOwnerListingInput {
     countryId: input.countryId ?? null,
     cityIdSet: input.cityId !== undefined,
     cityId: input.cityId ?? null,
+    atlasPlaceIdSet: input.atlasPlaceId !== undefined,
+    atlasPlaceId: input.atlasPlaceId ?? null,
+    atlasContainerPlaceIdSet: input.atlasContainerPlaceId !== undefined,
+    atlasContainerPlaceId: input.atlasContainerPlaceId ?? null,
     areaTextSet: input.areaText !== undefined,
     areaText: input.areaText ?? null,
     latSet: input.lat !== undefined,
@@ -340,6 +349,16 @@ export async function createOwnedListing(
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
   }
 
+  const geoValidation = await validateAtlasGeoLinks(db, {
+    countryId: input.countryId,
+    cityId: input.cityId,
+    atlasPlaceId: input.atlasPlaceId,
+    atlasContainerPlaceId: input.atlasContainerPlaceId,
+  });
+  if (!geoValidation.ok) {
+    return errorResponse(geoValidation.code, geoValidation.message, requestId, 400);
+  }
+
   const listingId = crypto.randomUUID();
   try {
     const created = await createOwnerListing(db, {
@@ -354,6 +373,8 @@ export async function createOwnedListing(
       pricePeriod: input.pricePeriod,
       countryId: input.countryId,
       cityId: input.cityId,
+      atlasPlaceId: input.atlasPlaceId,
+      atlasContainerPlaceId: input.atlasContainerPlaceId,
       areaText: input.areaText,
       lat: input.lat,
       lng: input.lng,
@@ -406,6 +427,23 @@ export async function patchOwnedListing(
   if (!listing) return errorResponse('NOT_FOUND', 'Listing not found', requestId, 404);
   if (listing.status === 'archived') {
     return errorResponse('CONFLICT', 'Archived listing cannot be modified', requestId, 409);
+  }
+
+  const nextCountryId = patchInput.countryId ?? listing.country_id;
+  const nextCityId = patchInput.cityId !== undefined ? patchInput.cityId : listing.city_id;
+  const nextAtlasPlaceId = patchInput.atlasPlaceId !== undefined ? patchInput.atlasPlaceId : (listing.atlas_place_id ?? null);
+  const nextAtlasContainerPlaceId =
+    patchInput.atlasContainerPlaceId !== undefined
+      ? patchInput.atlasContainerPlaceId
+      : (listing.atlas_container_place_id ?? null);
+  const geoValidation = await validateAtlasGeoLinks(db, {
+    countryId: nextCountryId,
+    cityId: nextCityId,
+    atlasPlaceId: nextAtlasPlaceId,
+    atlasContainerPlaceId: nextAtlasContainerPlaceId,
+  });
+  if (!geoValidation.ok) {
+    return errorResponse(geoValidation.code, geoValidation.message, requestId, 400);
   }
 
   const isAdmin = hasAnyRole(principal, ADMIN_ROLES);

@@ -580,6 +580,12 @@ components:
         cityId:
           type: string
           nullable: true
+        atlasPlaceId:
+          type: string
+          nullable: true
+        atlasContainerPlaceId:
+          type: string
+          nullable: true
 
     RieltMedia:
       type: object
@@ -640,6 +646,12 @@ components:
         countryId:
           type: string
         cityId:
+          type: string
+          nullable: true
+        atlasPlaceId:
+          type: string
+          nullable: true
+        atlasContainerPlaceId:
           type: string
           nullable: true
         lat:
@@ -930,6 +942,12 @@ components:
         city_id:
           type: string
           nullable: true
+        atlas_place_id:
+          type: string
+          nullable: true
+        atlas_container_place_id:
+          type: string
+          nullable: true
         area_text:
           type: string
           nullable: true
@@ -985,6 +1003,12 @@ components:
         country_id:
           type: string
         city_id:
+          type: string
+          nullable: true
+        atlas_place_id:
+          type: string
+          nullable: true
+        atlas_container_place_id:
           type: string
           nullable: true
         area_text:

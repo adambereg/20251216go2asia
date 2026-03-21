@@ -17,6 +17,7 @@ import {
   listPublicPartners,
   redeemVoucher,
   shouldThrottleWrite,
+  validatePartnerGeoLinks,
 } from '../store';
 
 type RfRouteEnv = {
@@ -100,10 +101,31 @@ export async function handleRfRoute(
     const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
     const countryId = typeof body.countryId === 'string' ? body.countryId.trim() : '';
     const cityId = typeof body.cityId === 'string' ? body.cityId.trim() : '';
+    const atlasPlaceIdRaw = typeof body.atlasPlaceId === 'string' ? body.atlasPlaceId.trim() : '';
+    const hostAtlasPlaceIdRaw = typeof body.hostAtlasPlaceId === 'string' ? body.hostAtlasPlaceId.trim() : '';
+    const atlasPlaceId = atlasPlaceIdRaw.length > 0 ? atlasPlaceIdRaw : null;
+    const hostAtlasPlaceId = hostAtlasPlaceIdRaw.length > 0 ? hostAtlasPlaceIdRaw : null;
     if (!displayName || !countryId || !cityId) {
       return errorResponse('INVALID_REQUEST', 'displayName, countryId and cityId are required', requestId, 400);
     }
-    const partner = await createPartner(db, principal, { displayName, countryId, cityId });
+
+    const geoValidation = await validatePartnerGeoLinks(db, {
+      countryId,
+      cityId,
+      atlasPlaceId,
+      hostAtlasPlaceId,
+    });
+    if (!geoValidation.ok) {
+      return errorResponse(geoValidation.code, geoValidation.error, requestId, geoValidation.status);
+    }
+
+    const partner = await createPartner(db, principal, {
+      displayName,
+      countryId,
+      cityId,
+      atlasPlaceId,
+      hostAtlasPlaceId,
+    });
     return json(partner, 201);
   }
 
