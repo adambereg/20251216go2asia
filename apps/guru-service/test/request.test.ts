@@ -33,7 +33,7 @@ describe('guru-service', () => {
 
     expect(response.status).toBe(503);
     expect(body.status).toBe('not_ready');
-    expect(body.missing).toEqual(['serviceJwtSecret', 'rieltServiceUrl', 'rfServiceUrl']);
+    expect(body.missing).toEqual(['serviceJwtSecret', 'rieltServiceUrl', 'rfServiceUrl', 'questServiceUrl']);
   });
 
   it('returns 404 envelope for unknown route', async () => {
@@ -54,28 +54,38 @@ describe('guru-service', () => {
   });
 
   it('returns blended nearby response from rielt adapter', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          items: [
-            {
-              id: 'listing_1',
-              slug: 'bangkok-studio',
-              title: 'Bangkok Studio',
-              listingType: 'rent_long',
-              distanceMeters: 420,
-              geo: { countryId: 'th', cityId: 'bangkok' },
-              price: { amount: 500, currency: 'USD', period: 'month' },
-              bedrooms: 1,
-              bathrooms: 1,
-              areaSqm: 42,
-              media: { coverUrl: null, photos: [] },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'listing_1',
+                slug: 'bangkok-studio',
+                title: 'Bangkok Studio',
+                listingType: 'rent_long',
+                distanceMeters: 420,
+                geo: { countryId: 'th', cityId: 'bangkok' },
+                price: { amount: 500, currency: 'USD', period: 'month' },
+                bedrooms: 1,
+                bathrooms: 1,
+                areaSqm: 42,
+                media: { coverUrl: null, photos: [] },
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
 
     const response = await worker.fetch(
       new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018&mode=real&radius_m=2000&types=listing'),
@@ -83,6 +93,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
 
@@ -96,8 +107,8 @@ describe('guru-service', () => {
     expect(body.meta.mode).toBe('real');
     expect(body.meta.radius_m).toBe(2000);
     expect(body.meta.count).toBe(1);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['atlas', 'pulse', 'quest', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['atlas', 'pulse', 'space', 'blog']));
     expect(body.data[0]).toMatchObject({ id: 'listing_1', type: 'listing' });
     expect(body.partial_failures).toBeUndefined();
   });
@@ -109,6 +120,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
 
@@ -120,7 +132,19 @@ describe('guru-service', () => {
   it('returns 200 with partial_failures when rielt times out', async () => {
     const timeoutError = new Error('timeout');
     timeoutError.name = 'AbortError';
-    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(timeoutError);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return Promise.reject(timeoutError);
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
 
     const response = await worker.fetch(
       new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018&mode=virtual'),
@@ -128,6 +152,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
 
@@ -146,14 +171,24 @@ describe('guru-service', () => {
   });
 
   it('returns 200 with invalid_payload partial failure when rielt payload shape is broken', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          items: [{ id: 'bad_1', title: 'Broken listing payload' }],
-        }),
-        { status: 200 }
-      )
-    );
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(
+          JSON.stringify({
+            items: [{ id: 'bad_1', title: 'Broken listing payload' }],
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
 
     const response = await worker.fetch(
       new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018'),
@@ -161,6 +196,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
     const body = await readJson<{ partial_failures?: Array<{ domain: string; reason: string }>; data: unknown[] }>(response);
@@ -200,6 +236,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
 
@@ -219,6 +256,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
 
@@ -236,6 +274,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
     const body = await readJson<{ error: { code: string } }>(response);
@@ -276,6 +315,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
     const body = await readJson<{
@@ -285,8 +325,8 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf']));
-    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['atlas', 'pulse', 'quest', 'space', 'blog']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['atlas', 'pulse', 'space', 'blog']));
     expect(body.meta.source_item_counts.rf).toBe(1);
     expect(body.data).toEqual(
       expect.arrayContaining([
@@ -319,6 +359,7 @@ describe('guru-service', () => {
         SERVICE_JWT_SECRET: 'secret',
         RIELT_SERVICE_URL: 'https://rielt.example',
         RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
       }
     );
     const body = await readJson<{
@@ -328,9 +369,111 @@ describe('guru-service', () => {
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf']));
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest']));
     expect(body.meta.source_item_counts.rf).toBe(0);
     expect(body.partial_failures).toEqual([{ domain: 'rf', reason: 'upstream_502' }]);
+  });
+
+  it('returns Quest cards as live source in what-to-do flow', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'quest_1',
+                title: 'Coffee Route',
+                description: 'Find the best local coffee points',
+                cityId: 'city_bangkok',
+                type: 'route',
+                theme: 'coffee',
+                difficulty: 'easy',
+                rewardPoints: 100,
+                stepsCount: 3,
+              },
+            ],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
+
+    const response = await worker.fetch(
+      new Request('https://guru.example/v1/guru/what-to-do?lat=13.7563&lng=100.5018'),
+      {
+        SERVICE_JWT_SECRET: 'secret',
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
+      }
+    );
+    const body = await readJson<{
+      data: Array<{ id: string; type: string; title: string; source: { domain: string } }>;
+      meta: { sources_active: string[]; sources_stub: string[]; source_item_counts: Record<string, number> };
+      partial_failures?: Array<{ domain: string; reason: string }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest']));
+    expect(body.meta.sources_stub).toEqual(expect.arrayContaining(['atlas', 'pulse', 'space', 'blog']));
+    expect(body.meta.source_item_counts.quest).toBe(1);
+    expect(body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'quest_1',
+          type: 'quest',
+          title: 'Coffee Route',
+          source: expect.objectContaining({ domain: 'quest' }),
+        }),
+      ])
+    );
+    expect(body.partial_failures).toBeUndefined();
+  });
+
+  it('returns partial failure when Quest live upstream fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/v1/rielt/listings/nearby')) {
+        return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      }
+      if (url.includes('/v1/rf/partners')) {
+        return new Response(JSON.stringify({ items: [], nextCursor: null }), { status: 200 });
+      }
+      if (url.includes('/v1/quests')) {
+        return new Response(JSON.stringify({ error: { code: 'UPSTREAM_ERROR' } }), { status: 503 });
+      }
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
+
+    const response = await worker.fetch(
+      new Request('https://guru.example/v1/guru/nearby?lat=13.7563&lng=100.5018'),
+      {
+        SERVICE_JWT_SECRET: 'secret',
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        RF_SERVICE_URL: 'https://rf.example',
+        QUEST_SERVICE_URL: 'https://quest.example',
+      }
+    );
+    const body = await readJson<{
+      meta: { sources_active: string[]; source_item_counts: Record<string, number> };
+      partial_failures?: Array<{ domain: string; reason: string }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.meta.sources_active).toEqual(expect.arrayContaining(['rielt', 'rf', 'quest']));
+    expect(body.meta.source_item_counts.quest).toBe(0);
+    expect(body.partial_failures).toEqual([{ domain: 'quest', reason: 'upstream_503' }]);
   });
 });
 

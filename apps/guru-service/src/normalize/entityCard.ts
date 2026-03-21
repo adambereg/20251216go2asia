@@ -118,3 +118,66 @@ export function normalizeRFPartnerToEntityCard(item: RFPartnerDto, anchor: { lat
     },
   };
 }
+
+interface QuestDto {
+  id: string;
+  title: string;
+  description: string | null;
+  cityId: string | null;
+  type: string | null;
+  theme: string | null;
+  difficulty: 'easy' | 'medium' | 'hard' | null;
+  rewardPoints: number | null;
+  stepsCount: number;
+}
+
+export function normalizeQuestToEntityCard(item: QuestDto, anchor: { lat: number; lng: number }): EntityCard {
+  const tags = ['quest'];
+  if (item.type) tags.push(item.type);
+  if (item.theme) tags.push(item.theme);
+  if (item.difficulty) tags.push(item.difficulty);
+
+  const subtitleParts = ['Quest'];
+  if (item.difficulty) subtitleParts.push(item.difficulty);
+  if (item.theme) subtitleParts.push(item.theme);
+
+  return {
+    id: item.id,
+    type: 'quest',
+    title: item.title,
+    subtitle: subtitleParts.join(' · '),
+    description: item.description ?? undefined,
+    image_url: undefined,
+    lat: anchor.lat,
+    lng: anchor.lng,
+    distance_m: undefined,
+    city_id: item.cityId ?? undefined,
+    country_id: undefined,
+    tags,
+    rating: undefined,
+    price_level: undefined,
+    is_verified: false,
+    is_rf: false,
+    actions: [
+      {
+        type: 'start_quest',
+        label: 'Начать квест',
+        deeplink: `/quests/${encodeURIComponent(item.id)}`,
+      },
+    ],
+    explain: {
+      reasons: ['recommended'],
+    },
+    source: {
+      domain: 'quest',
+      source_id: item.id,
+    },
+    payload: {
+      quest_type: item.type ?? undefined,
+      theme: item.theme ?? undefined,
+      difficulty: item.difficulty ?? undefined,
+      reward_points: item.rewardPoints ?? undefined,
+      steps_count: item.stepsCount,
+    },
+  };
+}

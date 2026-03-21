@@ -13,3 +13,4 @@ name = "go2asia-guru-service-staging"
 # - SERVICE_JWT_SECRET
 # - RIELT_SERVICE_URL
 # - RF_SERVICE_URL
+# - QUEST_SERVICE_URL
