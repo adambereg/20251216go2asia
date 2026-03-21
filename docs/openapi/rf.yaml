@@ -1,0 +1,718 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia RF Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for RF runtime baseline (Step 11).
+    Covers live partner/offer/voucher/pro-link practical surfaces.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: rf-service.example
+
+tags:
+  - name: health
+  - name: rf
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getRfHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfHealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getRfVersion
+      summary: Version (alias of /health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfHealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: getRfReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfReadyResponse"
+
+  /v1/rf/partners:
+    get:
+      tags: [rf]
+      operationId: rfListPartners
+      summary: List public partners
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerListResponse"
+    post:
+      tags: [rf]
+      operationId: rfCreatePartner
+      summary: Create partner (business owner flow)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreatePartnerRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartner"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+
+  /v1/rf/partners/{partnerId}:
+    get:
+      tags: [rf]
+      operationId: rfGetPartner
+      summary: Get public partner
+      parameters:
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartner"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/offers:
+    get:
+      tags: [rf]
+      operationId: rfListOffers
+      summary: List public active offers
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOfferListResponse"
+
+  /v1/rf/offers/{offerId}:
+    get:
+      tags: [rf]
+      operationId: rfGetOffer
+      summary: Get public offer
+      parameters:
+        - $ref: "#/components/parameters/RfOfferId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/business/partners/{partnerId}/offers:
+    post:
+      tags: [rf]
+      operationId: rfCreateOffer
+      summary: Create draft offer for partner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreateOfferRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate:
+    post:
+      tags: [rf]
+      operationId: rfActivateOffer
+      summary: Activate partner offer
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfOfferId"
+      responses:
+        "200":
+          description: Activated or already active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+
+  /v1/rf/offers/{offerId}/claim:
+    post:
+      tags: [rf]
+      operationId: rfClaimVoucher
+      summary: Claim voucher for active offer (idempotent by user+key)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfOfferId"
+        - $ref: "#/components/parameters/RfIdempotencyKey"
+      responses:
+        "200":
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+        "201":
+          description: Voucher created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+
+  /v1/rf/me/vouchers:
+    get:
+      tags: [rf]
+      operationId: rfListMyVouchers
+      summary: List current user vouchers
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfVoucherListResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+
+  /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem:
+    post:
+      tags: [rf]
+      operationId: rfRedeemVoucher
+      summary: Redeem voucher by partner owner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfVoucherId"
+      responses:
+        "200":
+          description: Redeem processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRedeemResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+
+  /v1/rf/pro/links:
+    get:
+      tags: [rf]
+      operationId: rfListProLinks
+      summary: List current user PRO links
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProLinkListResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+    post:
+      tags: [rf]
+      operationId: rfCreateProLink
+      summary: Create PRO link
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreateProLinkRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProLink"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/pro/links/{proLinkId}/accept:
+    post:
+      tags: [rf]
+      operationId: rfAcceptProLink
+      summary: Accept PRO link by partner owner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfProLinkId"
+      responses:
+        "200":
+          description: Accepted or already active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfAcceptProLinkResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+
+  parameters:
+    RfXGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    RfIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+    RfPartnerId:
+      name: partnerId
+      in: path
+      required: true
+      schema:
+        type: string
+    RfOfferId:
+      name: offerId
+      in: path
+      required: true
+      schema:
+        type: string
+    RfVoucherId:
+      name: voucherId
+      in: path
+      required: true
+      schema:
+        type: string
+    RfProLinkId:
+      name: proLinkId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    RfUnauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfForbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfNotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfConflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfRateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+
+  schemas:
+    RfHealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+
+    RfReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
+    RfErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          nullable: true
+
+    RfPartner:
+      type: object
+      required: [id, slug, displayName, countryId, cityId, status, ownerUserId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        displayName:
+          type: string
+        countryId:
+          type: string
+        cityId:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        ownerUserId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RfOffer:
+      type: object
+      required: [id, partnerId, title, offerType, visibility, status, createdByUserId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        title:
+          type: string
+        offerType:
+          type: string
+          enum: [discount, bundle, gift, access, campaign, event_related]
+        visibility:
+          type: string
+          enum: [public, pro_only, invite_only]
+        status:
+          type: string
+          enum: [draft, active, archived]
+        createdByUserId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RfVoucher:
+      type: object
+      required: [id, offerId, partnerId, issuedToUserId, status, code, claimedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        offerId:
+          type: string
+        partnerId:
+          type: string
+        issuedToUserId:
+          type: string
+        status:
+          type: string
+          enum: [claimed, redeemed, cancelled]
+        code:
+          type: string
+        claimedAt:
+          type: string
+          format: date-time
+        redeemedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RfProLink:
+      type: object
+      required: [id, partnerId, proUserId, status, roleScope, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        proUserId:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, ended]
+        roleScope:
+          type: string
+          enum: [onboarding, curation, promotion, moderation_support, account_support]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RfPartnerListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfPartner"
+        nextCursor:
+          type: string
+          nullable: true
+
+    RfOfferListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfOffer"
+        nextCursor:
+          type: string
+          nullable: true
+
+    RfVoucherListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfVoucher"
+        nextCursor:
+          type: string
+          nullable: true
+
+    RfProLinkListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfProLink"
+        nextCursor:
+          type: string
+          nullable: true
+
+    RfClaimResponse:
+      type: object
+      required: [voucher, idempotentReplay]
+      properties:
+        voucher:
+          $ref: "#/components/schemas/RfVoucher"
+        idempotentReplay:
+          type: boolean
+
+    RfRedeemResponse:
+      type: object
+      required: [voucher, applied]
+      properties:
+        voucher:
+          $ref: "#/components/schemas/RfVoucher"
+        applied:
+          type: boolean
+
+    RfAcceptProLinkResponse:
+      type: object
+      required: [proLink, applied]
+      properties:
+        proLink:
+          $ref: "#/components/schemas/RfProLink"
+        applied:
+          type: boolean
+
+    RfCreatePartnerRequest:
+      type: object
+      required: [displayName, countryId, cityId]
+      properties:
+        displayName:
+          type: string
+        countryId:
+          type: string
+        cityId:
+          type: string
+
+    RfCreateOfferRequest:
+      type: object
+      required: [title, offerType, visibility]
+      properties:
+        title:
+          type: string
+        offerType:
+          type: string
+          enum: [discount, bundle, gift, access, campaign, event_related]
+        visibility:
+          type: string
+          enum: [public, pro_only, invite_only]
+
+    RfCreateProLinkRequest:
+      type: object
+      required: [partnerId, roleScope]
+      properties:
+        partnerId:
+          type: string
+        roleScope:
+          type: string
+          enum: [onboarding, curation, promotion, moderation_support, account_support]

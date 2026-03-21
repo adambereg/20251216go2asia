@@ -90,6 +90,21 @@ export function DashboardView({ initialData }: DashboardViewProps) {
   const router = useRouter();
   const { user, isLoaded: userLoaded } = useUser();
 
+  const apiPlaceholderLevel: DashboardData['level'] = {
+    current: 1,
+    xp: 0,
+    next_level_xp: 1000,
+    multiplier: 1,
+  };
+
+  const apiPlaceholderSeason: DashboardData['season'] = {
+    id: 'season-placeholder',
+    name: 'Season data pending',
+    days_left: 0,
+    ends_at: new Date(0).toISOString(),
+    points_in_season: 0,
+  };
+
   // Загружаем баланс Points
   const {
     data: balanceData,
@@ -195,11 +210,10 @@ export function DashboardView({ initialData }: DashboardViewProps) {
     return {
       balances,
       recent_transactions: recentTransactions,
-      // Для M4 пока используем стабильные мок-данные для level/season/next_actions,
-      // чтобы UI соответствовал референсу без изменения API.
-      level: mockDashboardData.level,
-      season: mockDashboardData.season,
-      next_actions: mockDashboardData.next_actions,
+      // В API-режиме не подмешиваем mission/gamification mocks.
+      level: apiPlaceholderLevel,
+      season: apiPlaceholderSeason,
+      next_actions: [],
     };
   }, [balanceData, transactionsData, initialData]);
 
@@ -327,8 +341,8 @@ export function DashboardView({ initialData }: DashboardViewProps) {
       <DashboardContent
         greetingName={userName}
         data={effectiveData}
-        todayActions={mockNextActions}
-        missionsOfDay={mockMissions}
+        todayActions={isFallback ? mockNextActions : []}
+        missionsOfDay={isFallback ? mockMissions : []}
         transactions={effectiveData.recent_transactions}
         onViewHistory={handleViewHistory}
         onTopUp={handleTopUp}

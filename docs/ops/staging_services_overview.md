@@ -6,7 +6,7 @@
 
 | Service | Worker name | URL (staging) | Required env vars | Notes |
 |---|---|---|---|---|
-| api-gateway | `go2asia-api-gateway-staging` | `https://go2asia-api-gateway-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `CLERK_SECRET_KEY` (для Clerk-compatible проверки user JWT через JWKS), `DATABASE_URL` (если используется), `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL` | В репо: `apps/api-gateway`. Проксирует downstream по `/v1/*`. Для защищённых user routes mint'ит internal token и передаёт trusted `X-Gateway-Auth`; `X-User-ID` может присутствовать только как derived/debug header. Health: `GET /health`. Readiness: `GET /ready`. |
+| api-gateway | `go2asia-api-gateway-staging` | `https://go2asia-api-gateway-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `SERVICE_JWT_SECRET`, `CLERK_SECRET_KEY` (для Clerk-compatible проверки user JWT через JWKS), `DATABASE_URL` (если используется), `AUTH_SERVICE_URL`, `CONTENT_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `POINTS_SERVICE_URL` (phase-2 optional: `SPACE_SERVICE_URL`, `REACTIONS_SERVICE_URL`, `FEED_SERVICE_URL`, `QUEST_SERVICE_URL`, `RIELT_SERVICE_URL`, `GURU_SERVICE_URL`, `RF_SERVICE_URL`) | В репо: `apps/api-gateway`. Проксирует downstream по `/v1/*`. Для защищённых user routes mint'ит internal token и передаёт trusted `X-Gateway-Auth`; `X-User-ID` может присутствовать только как derived/debug header. Health: `GET /health`. Readiness: `GET /ready`. |
 | auth-service | `go2asia-auth-service-staging` | `https://go2asia-auth-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `POINTS_SERVICE_URL`, `REFERRAL_SERVICE_URL`, `SERVICE_JWT_SECRET` (+ опционально `CLERK_WEBHOOK_SECRET`, `DATABASE_URL`) | В репо: `apps/auth-service`. Обрабатывает Clerk webhooks (`POST /v1/auth/webhook/clerk`). Интегрируется с Points (registration/first_login) и Referral (generate code). Health: `GET /health`. |
 | content-service | `go2asia-content-service-staging` | `https://go2asia-content-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `POINTS_SERVICE_URL`, `SERVICE_JWT_SECRET`, `DATABASE_URL` | В репо: `apps/content-service`. Регистрация на события (`POST /v1/content/events/{id}/register`). Интегрируется с Points (event_registration). Health: `GET /health`. |
 | points-service | `go2asia-points-service-staging` | `https://go2asia-points-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` (+ опционально `POINTS_VELOCITY_CAP`, `POINTS_VELOCITY_WINDOW_SECONDS`) | В репо: `apps/points-service`. Требует gateway-origin auth (`X-Gateway-Auth`) для user endpoints. Health: `GET /health`. |
@@ -22,7 +22,7 @@
 - `/v1/media/*` → `MEDIA_SERVICE_URL` (fallback: `CONTENT_SERVICE_URL`)
 - `/v1/referral/*` → `REFERRAL_SERVICE_URL`
 - `/v1/points/*` → `POINTS_SERVICE_URL`
-- Phase 2 reserved: `/v1/space/*`, `/v1/quest/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` — `501` until `*_SERVICE_URL` configured
+- Phase 2 reserved: `/v1/space/*`, `/v1/reactions*`, `/v1/feed/*`, `/v1/quests*`, `/v1/submissions/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` — `501` until `*_SERVICE_URL` configured
 
 ### Smoke check policy (GitHub Actions)
 

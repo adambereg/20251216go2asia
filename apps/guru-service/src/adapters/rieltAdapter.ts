@@ -43,6 +43,7 @@ export class RieltAdapter implements DomainAdapter {
       return {
         items: [],
         failure: { domain: this.domain, reason: 'service_url_missing' },
+        implementation: 'live',
       };
     }
 
@@ -73,20 +74,37 @@ export class RieltAdapter implements DomainAdapter {
             domain: this.domain,
             reason: `upstream_${response.status}`,
           },
+          implementation: 'live',
         };
       }
 
       const payload = (await response.json()) as RieltNearbyResponse;
-      const items = Array.isArray(payload.items)
-        ? payload.items.map((item) => normalizeRieltNearbyItemToEntityCard(item, { lat: query.lat, lng: query.lng }))
-        : [];
+      if (!payload || typeof payload !== 'object' || !Array.isArray(payload.items)) {
+        return {
+          items: [],
+          failure: { domain: this.domain, reason: 'invalid_payload' },
+          implementation: 'live',
+        };
+      }
 
-      return { items };
+      try {
+        const items = payload.items.map((item) =>
+          normalizeRieltNearbyItemToEntityCard(item, { lat: query.lat, lng: query.lng })
+        );
+        return { items, implementation: 'live' };
+      } catch {
+        return {
+          items: [],
+          failure: { domain: this.domain, reason: 'invalid_payload' },
+          implementation: 'live',
+        };
+      }
     } catch (error) {
       const reason = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'request_failed';
       return {
         items: [],
         failure: { domain: this.domain, reason },
+        implementation: 'live',
       };
     } finally {
       clearTimeout(timer);

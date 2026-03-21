@@ -1,6 +1,6 @@
 # Derived endpoint list (source-of-fact)
 
-**Дата:** 2025-12-24  
+**Дата:** 2026-03-21  
 **Назначение:** зафиксировать минимальный список endpoints, которые реально используются в коде (Gateway/SDK/FE) и должны быть покрыты OpenAPI SSOT.
 
 ## Источники
@@ -14,6 +14,8 @@
   - `packages/sdk/src/balance.ts`
   - `packages/sdk/src/transactions.ts`
   - `packages/sdk/src/referrals.ts`
+  - `packages/sdk/src/guru.ts`
+  - `packages/sdk/src/rielt.ts`
 
 ## User-facing (через Gateway)
 
@@ -41,6 +43,78 @@
 - `GET /v1/referral/stats`
 - `GET /v1/referral/tree?depth=1|2`
 - `POST /v1/referral/claim`
+
+### Guru (Guru Service)
+- `GET /v1/guru/nearby?lat=...&lng=...`
+- `GET /v1/guru/nearby/{type}?lat=...&lng=...`
+- `GET /v1/guru/what-to-do?lat=...&lng=...`
+
+### Space (Space Service)
+- `POST /v1/space/posts`
+- `GET /v1/space/posts/{postId}`
+- `DELETE /v1/space/posts/{postId}`
+- `POST /v1/space/posts/{postId}/repost`
+- `POST /v1/space/posts/{postId}/media`
+- `DELETE /v1/space/posts/{postId}/media/{mediaId}`
+- `POST /v1/space/groups`
+- `GET /v1/space/groups/{groupId}`
+- `POST /v1/space/groups/{groupId}/join`
+- `POST /v1/space/groups/{groupId}/leave`
+- `GET /v1/space/feed/home`
+- `GET /v1/space/feed/profile/{userId}`
+- `GET /v1/space/feed/group/{groupId}`
+- `GET /v1/space/feed/activity`
+- `GET /v1/space/profiles/{userId}`
+
+### Reactions (Reactions Service)
+- `POST /v1/reactions`
+- `DELETE /v1/reactions/{reactionId}`
+- `GET /v1/reactions/summary/{targetType}/{targetId}`
+- `POST /v1/reactions/summary:batch`
+
+### Feed (Feed Service)
+- `GET /v1/feed/home`
+- `GET /v1/feed/group/{groupId}`
+- `GET /v1/feed/profile/{userId}`
+- `GET /v1/feed/activity`
+
+### Quest (Quest Service)
+- `GET /v1/quests`
+- `POST /v1/quests`
+- `GET /v1/quests/{questId}`
+- `POST /v1/quests/{questId}/start`
+- `GET /v1/quests/{questId}/progress`
+- `POST /v1/quests/{questId}/steps`
+- `POST /v1/quests/{questId}/publish`
+- `POST /v1/quests/{questId}/steps/{stepId}/submit`
+- `GET /v1/quests/{questId}/submissions`
+- `POST /v1/submissions/{submissionId}/review`
+
+### Rielt (Rielt Service)
+- `GET /v1/rielt/listings`
+- `GET /v1/rielt/listings/{idOrSlug}`
+- `GET /v1/rielt/listings/nearby`
+- `POST /v1/rielt/listings`
+- `PATCH /v1/rielt/listings/{id}`
+- `DELETE /v1/rielt/listings/{id}`
+- `GET /v1/rielt/my/listings`
+- `POST /v1/rielt/listings/{idOrSlug}/inquiries`
+- `GET /v1/rielt/my/inquiries`
+
+### RF (RF Service, runtime baseline)
+- `GET /v1/rf/partners`
+- `GET /v1/rf/partners/{partnerId}`
+- `GET /v1/rf/offers`
+- `GET /v1/rf/offers/{offerId}`
+- `POST /v1/rf/business/partners`
+- `POST /v1/rf/business/partners/{partnerId}/offers`
+- `POST /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate`
+- `POST /v1/rf/offers/{offerId}/claim`
+- `GET /v1/rf/me/vouchers`
+- `GET /v1/rf/pro/links`
+- `POST /v1/rf/pro/links`
+- `POST /v1/rf/pro/links/{proLinkId}/accept`
+- `POST /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem`
 
 ## Service-to-service (internal)
 

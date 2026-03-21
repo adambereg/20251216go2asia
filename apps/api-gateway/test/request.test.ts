@@ -66,6 +66,18 @@ describe('api-gateway request hardening', () => {
       routeKey: 'feed.home.get',
       routeGroup: 'feed',
     });
+    expect(classifyRoute('GET', '/v1/feed/activity')).toEqual({
+      routeKey: 'feed.activity.get',
+      routeGroup: 'feed',
+    });
+    expect(classifyRoute('GET', '/v1/feed/group/group_1')).toEqual({
+      routeKey: 'feed.group.get',
+      routeGroup: 'feed',
+    });
+    expect(classifyRoute('GET', '/v1/feed/profile/user_1')).toEqual({
+      routeKey: 'feed.profile.get',
+      routeGroup: 'feed',
+    });
     expect(classifyRoute('GET', '/v1/quests')).toEqual({
       routeKey: 'quest.list.get',
       routeGroup: 'quest',
@@ -256,6 +268,43 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected feed group/profile/activity routes without bearer token', async () => {
+    const env: Env = {
+      FEED_SERVICE_URL: 'https://feed.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const activity = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/activity', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const activityBody = await readJson<{ error: { code: string } }>(activity);
+    expect(activity.status).toBe(401);
+    expect(activityBody.error.code).toBe('UNAUTHORIZED');
+
+    const group = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/group/group_1', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const groupBody = await readJson<{ error: { code: string } }>(group);
+    expect(group.status).toBe(401);
+    expect(groupBody.error.code).toBe('UNAUTHORIZED');
+
+    const profile = await worker.fetch(
+      new Request('https://gateway.example/v1/feed/profile/user_1', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      env
+    );
+    const profileBody = await readJson<{ error: { code: string } }>(profile);
+    expect(profile.status).toBe(401);
+    expect(profileBody.error.code).toBe('UNAUTHORIZED');
+  });
+
   it('returns 401 for protected quest routes without bearer token', async () => {
     const env: Env = {
       QUEST_SERVICE_URL: 'https://quest.example',
@@ -426,9 +475,54 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 501 for reserved guru prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/guru/nearby?lat=13.7&lng=100.5', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('GURU_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 501 for reserved rf prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/partners', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string }; requestId?: string }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('RF_SERVICE_URL');
+    expect(body.requestId).toBe(response.headers.get('X-Request-ID'));
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('proxies rielt public route when RIELT_SERVICE_URL is configured', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toMatch(/^https:\/\/rielt\.example\/v1\/rielt\/listings/);
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
       expect(request.headers.get('X-Request-Id')).toBeTruthy();
       return new Response(
         JSON.stringify({
@@ -452,6 +546,46 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(200);
     expect(body.items).toEqual([]);
     expect(body.pagination.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('proxies guru public route without gateway auth header', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://guru.example/v1/guru/nearby?lat=13.7&lng=100.5');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
+      expect(request.headers.get('X-Request-Id')).toBeTruthy();
+      return new Response(
+        JSON.stringify({
+          data: [],
+          meta: {
+            mode: 'real',
+            lat: 13.7,
+            lng: 100.5,
+            radius_m: 2000,
+            count: 0,
+            sources_active: ['rielt'],
+            sources_stub: ['atlas', 'pulse', 'rf', 'quest', 'space', 'blog'],
+            source_item_counts: { rielt: 0 },
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/guru/nearby?lat=13.7&lng=100.5'),
+      { GURU_SERVICE_URL: 'https://guru.example' }
+    );
+    const body = await readJson<{ data: unknown[]; meta: { count: number } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data).toEqual([]);
+    expect(body.meta.count).toBe(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -480,6 +614,58 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 401 for protected rf route without bearer token', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/business/partners', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          displayName: 'RF Partner',
+          countryId: 'country_th',
+          cityId: 'city_phuket',
+        }),
+      }),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not require bearer auth for rielt nearby static route with PATCH method', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rielt/listings/nearby', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({ title: 'wrong op' }),
+      }),
+      {
+        RIELT_SERVICE_URL: 'https://rielt.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('proxies public quest reads without gateway auth', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toBe('https://quest.example/v1/quests');
@@ -505,6 +691,31 @@ describe('api-gateway request hardening', () => {
     const body = await readJson<{ total: number }>(response);
     expect(response.status).toBe(200);
     expect(body.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('proxies rf public reads without gateway auth header', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://rf.example/v1/rf/partners');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
+      return new Response(JSON.stringify({ items: [], nextCursor: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/partners'),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+      }
+    );
+
+    const body = await readJson<{ items: unknown[] }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items).toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -567,6 +778,51 @@ describe('api-gateway request hardening', () => {
     });
   });
 
+  it('forwards authenticated rf claim requests with gateway auth', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://rf.example/v1/rf/offers/rf_offer_1/claim');
+      expect(request.headers.get('Idempotency-Key')).toBe('rf-claim-1');
+      expect(request.headers.get('X-User-ID')).toBe('rf_user');
+      expect(request.headers.get('X-Request-ID')).toBe(request.headers.get('X-Request-Id'));
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(request.headers.get('X-Gateway-Auth')!);
+      return new Response(JSON.stringify({ voucher: { id: 'rf_voucher_1', status: 'claimed' } }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'rf_user',
+      roles: ['member'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer user-token',
+          'Idempotency-Key': 'rf-claim-1',
+          Origin: 'https://app.example',
+        },
+      }),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(201);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'rf_user',
+      roles: ['member'],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('proxies reserved phase-2 prefix after service URL is configured', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toBe('https://space.example/v1/space/posts');
@@ -599,6 +855,25 @@ describe('api-gateway request hardening', () => {
     );
 
     expect(response.status).toBe(404);
+  });
+
+  it('lists quest submissions prefix in debug routes when enabled', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/routes'),
+      {
+        DEBUG_ROUTES_ENABLED: 'true',
+        QUEST_SERVICE_URL: 'https://quest.example',
+      }
+    );
+    const body = await readJson<{ routes: Array<{ prefix: string; var: string }> }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.routes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL' }),
+        expect.objectContaining({ prefix: '/v1/submissions/', var: 'QUEST_SERVICE_URL' }),
+      ])
+    );
   });
 
   it('returns 503 when bearer token is present but Clerk verification is not configured', async () => {

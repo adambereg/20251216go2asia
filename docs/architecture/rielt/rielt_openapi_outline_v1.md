@@ -3,8 +3,8 @@
 **Project:** Go2Asia  
 **Module:** Rielt  
 **Service:** `rielt-service`  
-**Document role:** API-outline SSOT for the implemented Rielt surface (listings/owner) with deferred inquiry HTTP wiring notes  
-**Status:** Final for Step 8  
+**Document role:** API-outline SSOT for the implemented Rielt practical surface (listings/owner + requester inquiry)  
+**Status:** Final practical V1 baseline  
 **Source:** `rielt_service_v1_completion.md`
 
 ---
@@ -15,7 +15,7 @@ The Rielt API exposes:
 
 - **Public read:** List and detail of published listings; nearby search.
 - **Owner write:** Create, patch, archive listings; list own listings.
-- **Inquiry:** Data model and contract shape are defined; HTTP wiring is currently deferred in runtime.
+- **Inquiry:** Requester create/list flow is implemented (owner-side inquiry workflow remains deferred).
 
 The API does **not** expose:
 
@@ -37,7 +37,7 @@ The API does **not** expose:
 |-------|------|-------|
 | **public** | None | List, nearby, detail |
 | **owner** | Bearer | Create, my/listings, patch, delete |
-| **inquiry** | Bearer | Deferred in current runtime (contract shape retained) |
+| **inquiry** | Bearer | Implemented for requester create/list |
 
 ---
 
@@ -67,7 +67,7 @@ The API does **not** expose:
 
 **Query params:** lat, lng, radius_km (required), country_id, city_id, listing_type, page, page_size.
 
-**Response:** `{ items: NearbyListingDto[], pagination: { page, pageSize, total } }`. Each item includes distanceMeters.
+**Response:** `{ anchor: { lat, lng, radiusKm }, items: NearbyListingDto[], pagination: { page, pageSize, total } }`. Each item includes distanceMeters.
 
 **Key errors:** VALIDATION_ERROR (invalid lat/lng/radius), SERVICE_NOT_CONFIGURED.
 
@@ -133,7 +133,7 @@ The API does **not** expose:
 
 **Path params:** id. Intended stable contract: write-by-id only. Current implementation accepts path token resolved as id-or-slug; write-by-id is the intended stable contract.
 
-**Request body:** Partial: slug, title, description, listing_type, price_*, country_id, city_id, area_text, lat, lng, bedrooms, bathrooms, area_sqm, amenities. media is explicitly not allowed.
+**Request body:** Partial: slug, title, description, listing_type, price_*, country_id, city_id, area_text, lat, lng, bedrooms, bathrooms, area_sqm, amenities, status (`draft` or `published`). media is explicitly not allowed.
 
 **Response:** `{ listing: OwnerListingDto }`
 
@@ -143,13 +143,13 @@ The API does **not** expose:
 
 ---
 
-## 3.7 DELETE /v1/rielt/listings/{idOrSlug}
+## 3.7 DELETE /v1/rielt/listings/{id}
 
 **Purpose:** Archive owned listing.
 
 **Auth:** Required (Bearer).
 
-**Path params:** idOrSlug. Current implementation accepts path token as id-or-slug; write-by-id is the intended stable contract.
+**Path params:** id (write-by-id only).
 
 **Response:** `{ listing: OwnerListingDto }` or 204.
 
@@ -159,7 +159,7 @@ The API does **not** expose:
 
 ---
 
-## 3.8 POST /v1/rielt/listings/{idOrSlug}/inquiries (deferred runtime wiring)
+## 3.8 POST /v1/rielt/listings/{idOrSlug}/inquiries
 
 **Purpose:** Create one-shot inquiry. Idempotent by (requester, listing, Idempotency-Key).
 
@@ -171,7 +171,7 @@ The API does **not** expose:
 
 **Request body:** message (required), contact_name, contact_phone, contact_telegram.
 
-**Response (target contract):** `{ inquiry: InquiryDto }`
+**Response:** `{ inquiry: InquiryDto }`
 
 **Key errors:** UNAUTHORIZED, NOT_FOUND, FORBIDDEN (listing not published), VALIDATION_ERROR. Duplicate key returns existing inquiry (no new row is created).
 
@@ -179,7 +179,7 @@ The API does **not** expose:
 
 ---
 
-## 3.9 GET /v1/rielt/my/inquiries (deferred runtime wiring)
+## 3.9 GET /v1/rielt/my/inquiries
 
 **Purpose:** List own inquiries (requester).
 
@@ -187,7 +187,7 @@ The API does **not** expose:
 
 **Query params:** status (new \| viewed \| closed \| null), sort (newest \| oldest), page, page_size.
 
-**Response (target contract):** `{ items: MyInquiryDto[], pagination: { page, pageSize, total } }`. Each item includes listing summary.
+**Response:** `{ items: MyInquiryDto[], pagination: { page, pageSize, total } }`. Each item includes listing summary.
 
 **Key errors:** UNAUTHORIZED, VALIDATION_ERROR, SERVICE_NOT_CONFIGURED.
 
@@ -250,7 +250,7 @@ Description is present only in owner DTOs.
 # 6. Inquiry/API Rules
 
 - **One-shot only:** No reply, no thread endpoints.
-- **No owner-side inquiry workflow endpoints in Step 8:** Owner/agent cannot list inquiries for their listings via Rielt API.
+- **No owner-side inquiry workflow endpoints in current baseline:** Owner/agent cannot list inquiries for their listings via Rielt API.
 
 ---
 
@@ -267,4 +267,4 @@ Description is present only in owner DTOs.
 
 ---
 
-*This outline describes the Step 8 API baseline. Implemented in runtime: listings/owner surfaces. Inquiry HTTP routes are documented as deferred contract shape.*
+*This outline describes the practical V1 API baseline. Implemented in runtime: listings/owner surfaces plus requester inquiry create/list routes.*

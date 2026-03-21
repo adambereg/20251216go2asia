@@ -9,7 +9,7 @@ import { NFTTab } from './NFTTab';
 import { useGetBalance } from '@go2asia/sdk/balance';
 import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transactions';
 import type { WalletData, NFTWalletData, ModuleType } from '../types';
-import { mockWalletData, mockNFTWalletData } from '../mockData';
+import { mockWalletData } from '../mockData';
 import { TransactionList } from './TransactionList';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -215,7 +215,14 @@ export function WalletView({
 
   const nftData = useMemo(() => {
     if (initialNFTData) return initialNFTData;
-    return mockNFTWalletData; // TODO: получить из NFT badges API
+    return {
+      nft_count: 0,
+      nfts: [],
+      filters: {
+        rarity: ['common', 'rare', 'legendary'],
+        modules: ['space', 'atlas', 'pulse', 'rf', 'quest', 'guru'],
+      },
+    } satisfies NFTWalletData;
   }, [initialNFTData]);
 
   const handleLoadMore = () => {

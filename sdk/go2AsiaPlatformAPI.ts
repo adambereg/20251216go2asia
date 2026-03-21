@@ -34,13 +34,26 @@ import type {
   EnsureUserRequest,
   EnsureUserResponse,
   EventRegistrationResponse,
+  FeedPageResponse,
+  FeedServiceUnavailableResponse,
+  ForbiddenResponse,
   GenerateCodeRequest,
   GenerateCodeResponse,
+  GetActivityFeedParams,
+  GetGroupFeedParams,
+  GetHomeFeedParams,
+  GetProfileFeedParams,
   GetReferralTreeParams,
   GetSpaceActivityFeedParams,
   GetSpaceGroupFeedParams,
   GetSpaceHomeFeedParams,
   GetSpaceProfileFeedParams,
+  GuruGetNearbyByTypeParams,
+  GuruGetNearbyParams,
+  GuruGetWhatToDoParams,
+  GuruInternalErrorResponse,
+  GuruListResponse,
+  GuruValidationErrorResponse,
   InternalErrorResponse,
   LinkReferralRequest,
   LinkReferralResponse,
@@ -70,7 +83,6 @@ import type {
   QuestListResponse,
   QuestNotFoundResponse,
   QuestProgressResponse,
-  QuestRateLimitedResponse,
   QuestServiceAuthNotConfiguredResponse,
   QuestStepResponse,
   QuestSubmissionListResponse,
@@ -78,10 +90,60 @@ import type {
   QuestUnauthorizedResponse,
   QuestValidationErrorResponse,
   RateLimitedResponse,
+  ReactionDeleteResponse,
+  ReactionSummaryBatchRequest,
+  ReactionSummaryBatchResponse,
+  ReactionSummaryResponse,
+  ReactionWriteResponse,
+  ReactionsConflictResponse,
+  ReactionsRateLimitedResponse,
+  ReactionsServiceAuthNotConfiguredResponse,
+  ReactionsValidationErrorResponse,
   ReferralCodeResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
   ReviewSubmissionRequest,
+  RfAcceptProLinkResponse,
+  RfClaimResponse,
+  RfConflictResponse,
+  RfCreateOfferRequest,
+  RfCreatePartnerRequest,
+  RfCreateProLinkRequest,
+  RfForbiddenResponse,
+  RfNotFoundResponse,
+  RfOffer,
+  RfOfferListResponse,
+  RfPartner,
+  RfPartnerListResponse,
+  RfProLink,
+  RfProLinkListResponse,
+  RfRateLimitedResponse,
+  RfRedeemResponse,
+  RfUnauthorizedResponse,
+  RfValidationErrorResponse,
+  RfVoucherListResponse,
+  RieltArchiveResponse,
+  RieltConflictResponse,
+  RieltCreateInquiryRequest,
+  RieltCreateListingRequest,
+  RieltDetailResponse,
+  RieltForbiddenResponse,
+  RieltInquiryEnvelope,
+  RieltInternalErrorResponse,
+  RieltListMyInquiriesParams,
+  RieltListMyListingsParams,
+  RieltListNearbyListingsParams,
+  RieltListPublicListingsParams,
+  RieltListResponse,
+  RieltMyInquiryListResponse,
+  RieltNearbyListResponse,
+  RieltNotFoundResponse,
+  RieltOwnerListResponse,
+  RieltOwnerListingEnvelope,
+  RieltPatchListingRequest,
+  RieltServiceUnavailableResponse,
+  RieltUnauthorizedResponse,
+  RieltValidationErrorResponse,
   ServiceAuthNotConfiguredResponse,
   ServiceNotConfiguredResponse,
   SpaceActivityFeedResponse,
@@ -99,6 +161,7 @@ import type {
   TransactionsPage,
   UnauthorizedResponse,
   UploadResult,
+  UpsertReactionRequest,
   UserBalance,
 } from "../packages/sdk/src/generated";
 
@@ -1064,6 +1127,435 @@ export const getPlaceByIdOrSlug = async (
 };
 
 /**
+ * @summary Activity feed (read-only, no reactions enrichment in V1)
+ */
+export type getActivityFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getActivityFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getActivityFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getActivityFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getActivityFeedResponseSuccess = getActivityFeedResponse200 & {
+  headers: Headers;
+};
+export type getActivityFeedResponseError = (
+  | getActivityFeedResponse401
+  | getActivityFeedResponse500
+  | getActivityFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getActivityFeedResponse = getActivityFeedResponseSuccess | getActivityFeedResponseError;
+
+export const getGetActivityFeedUrl = (params?: GetActivityFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/activity?${stringifiedParams}`
+    : `/v1/feed/activity`;
+};
+
+export const getActivityFeed = async (
+  params?: GetActivityFeedParams,
+  options?: RequestInit
+): Promise<getActivityFeedResponse> => {
+  return customInstance<getActivityFeedResponse>(getGetActivityFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Group feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getGroupFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getGroupFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getGroupFeedResponse403 = {
+  data: ForbiddenResponse;
+  status: 403;
+};
+
+export type getGroupFeedResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type getGroupFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getGroupFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getGroupFeedResponseSuccess = getGroupFeedResponse200 & {
+  headers: Headers;
+};
+export type getGroupFeedResponseError = (
+  | getGroupFeedResponse401
+  | getGroupFeedResponse403
+  | getGroupFeedResponse404
+  | getGroupFeedResponse500
+  | getGroupFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getGroupFeedResponse = getGroupFeedResponseSuccess | getGroupFeedResponseError;
+
+export const getGetGroupFeedUrl = (groupId: string, params?: GetGroupFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/group/${groupId}?${stringifiedParams}`
+    : `/v1/feed/group/${groupId}`;
+};
+
+export const getGroupFeed = async (
+  groupId: string,
+  params?: GetGroupFeedParams,
+  options?: RequestInit
+): Promise<getGroupFeedResponse> => {
+  return customInstance<getGroupFeedResponse>(getGetGroupFeedUrl(groupId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Home feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getHomeFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getHomeFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getHomeFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getHomeFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getHomeFeedResponseSuccess = getHomeFeedResponse200 & {
+  headers: Headers;
+};
+export type getHomeFeedResponseError = (
+  | getHomeFeedResponse401
+  | getHomeFeedResponse500
+  | getHomeFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getHomeFeedResponse = getHomeFeedResponseSuccess | getHomeFeedResponseError;
+
+export const getGetHomeFeedUrl = (params?: GetHomeFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/feed/home?${stringifiedParams}` : `/v1/feed/home`;
+};
+
+export const getHomeFeed = async (
+  params?: GetHomeFeedParams,
+  options?: RequestInit
+): Promise<getHomeFeedResponse> => {
+  return customInstance<getHomeFeedResponse>(getGetHomeFeedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Profile feed (read-only, chronology-first with reactions enrichment)
+ */
+export type getProfileFeedResponse200 = {
+  data: FeedPageResponse;
+  status: 200;
+};
+
+export type getProfileFeedResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getProfileFeedResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getProfileFeedResponse503 = {
+  data: FeedServiceUnavailableResponse;
+  status: 503;
+};
+
+export type getProfileFeedResponseSuccess = getProfileFeedResponse200 & {
+  headers: Headers;
+};
+export type getProfileFeedResponseError = (
+  | getProfileFeedResponse401
+  | getProfileFeedResponse500
+  | getProfileFeedResponse503
+) & {
+  headers: Headers;
+};
+
+export type getProfileFeedResponse = getProfileFeedResponseSuccess | getProfileFeedResponseError;
+
+export const getGetProfileFeedUrl = (userId: string, params?: GetProfileFeedParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/feed/profile/${userId}?${stringifiedParams}`
+    : `/v1/feed/profile/${userId}`;
+};
+
+export const getProfileFeed = async (
+  userId: string,
+  params?: GetProfileFeedParams,
+  options?: RequestInit
+): Promise<getProfileFeedResponse> => {
+  return customInstance<getProfileFeedResponse>(getGetProfileFeedUrl(userId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Blended nearby aggregation
+ */
+export type guruGetNearbyResponse200 = {
+  data: GuruListResponse;
+  status: 200;
+};
+
+export type guruGetNearbyResponse400 = {
+  data: GuruValidationErrorResponse;
+  status: 400;
+};
+
+export type guruGetNearbyResponse500 = {
+  data: GuruInternalErrorResponse;
+  status: 500;
+};
+
+export type guruGetNearbyResponseSuccess = guruGetNearbyResponse200 & {
+  headers: Headers;
+};
+export type guruGetNearbyResponseError = (guruGetNearbyResponse400 | guruGetNearbyResponse500) & {
+  headers: Headers;
+};
+
+export type guruGetNearbyResponse = guruGetNearbyResponseSuccess | guruGetNearbyResponseError;
+
+export const getGuruGetNearbyUrl = (params: GuruGetNearbyParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/guru/nearby?${stringifiedParams}` : `/v1/guru/nearby`;
+};
+
+export const guruGetNearby = async (
+  params: GuruGetNearbyParams,
+  options?: RequestInit
+): Promise<guruGetNearbyResponse> => {
+  return customInstance<guruGetNearbyResponse>(getGuruGetNearbyUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Nearby aggregation constrained to one type
+ */
+export type guruGetNearbyByTypeResponse200 = {
+  data: GuruListResponse;
+  status: 200;
+};
+
+export type guruGetNearbyByTypeResponse400 = {
+  data: GuruValidationErrorResponse;
+  status: 400;
+};
+
+export type guruGetNearbyByTypeResponse500 = {
+  data: GuruInternalErrorResponse;
+  status: 500;
+};
+
+export type guruGetNearbyByTypeResponseSuccess = guruGetNearbyByTypeResponse200 & {
+  headers: Headers;
+};
+export type guruGetNearbyByTypeResponseError = (
+  | guruGetNearbyByTypeResponse400
+  | guruGetNearbyByTypeResponse500
+) & {
+  headers: Headers;
+};
+
+export type guruGetNearbyByTypeResponse =
+  | guruGetNearbyByTypeResponseSuccess
+  | guruGetNearbyByTypeResponseError;
+
+export const getGuruGetNearbyByTypeUrl = (
+  type: "place" | "event" | "listing" | "partner" | "quest" | "pro" | "blog_tag",
+  params: GuruGetNearbyByTypeParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/guru/nearby/${type}?${stringifiedParams}`
+    : `/v1/guru/nearby/${type}`;
+};
+
+export const guruGetNearbyByType = async (
+  type: "place" | "event" | "listing" | "partner" | "quest" | "pro" | "blog_tag",
+  params: GuruGetNearbyByTypeParams,
+  options?: RequestInit
+): Promise<guruGetNearbyByTypeResponse> => {
+  return customInstance<guruGetNearbyByTypeResponse>(getGuruGetNearbyByTypeUrl(type, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Action-oriented nearby composition
+ */
+export type guruGetWhatToDoResponse200 = {
+  data: GuruListResponse;
+  status: 200;
+};
+
+export type guruGetWhatToDoResponse400 = {
+  data: GuruValidationErrorResponse;
+  status: 400;
+};
+
+export type guruGetWhatToDoResponse500 = {
+  data: GuruInternalErrorResponse;
+  status: 500;
+};
+
+export type guruGetWhatToDoResponseSuccess = guruGetWhatToDoResponse200 & {
+  headers: Headers;
+};
+export type guruGetWhatToDoResponseError = (
+  | guruGetWhatToDoResponse400
+  | guruGetWhatToDoResponse500
+) & {
+  headers: Headers;
+};
+
+export type guruGetWhatToDoResponse = guruGetWhatToDoResponseSuccess | guruGetWhatToDoResponseError;
+
+export const getGuruGetWhatToDoUrl = (params: GuruGetWhatToDoParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/guru/what-to-do?${stringifiedParams}`
+    : `/v1/guru/what-to-do`;
+};
+
+export const guruGetWhatToDo = async (
+  params: GuruGetWhatToDoParams,
+  options?: RequestInit
+): Promise<guruGetWhatToDoResponse> => {
+  return customInstance<guruGetWhatToDoResponse>(getGuruGetWhatToDoUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * Creates a short-lived signed token for uploading media through the canonical gateway-level media surface. Security: token issuance requires gateway-origin auth + asserted user context. Upload uses the signed token.
 
  * @summary Create signed upload token (authorized)
@@ -1823,11 +2315,6 @@ export type submitQuestStepResponse409 = {
   status: 409;
 };
 
-export type submitQuestStepResponse429 = {
-  data: QuestRateLimitedResponse;
-  status: 429;
-};
-
 export type submitQuestStepResponse500 = {
   data: QuestInternalErrorResponse;
   status: 500;
@@ -1846,7 +2333,6 @@ export type submitQuestStepResponseError = (
   | submitQuestStepResponse401
   | submitQuestStepResponse404
   | submitQuestStepResponse409
-  | submitQuestStepResponse429
   | submitQuestStepResponse500
   | submitQuestStepResponse503
 ) & {
@@ -1950,6 +2436,257 @@ export const listQuestSubmissions = async (
   return customInstance<listQuestSubmissionsResponse>(getListQuestSubmissionsUrl(questId, params), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * @summary Create or update a like (idempotent write)
+ */
+export type upsertReactionResponse200 = {
+  data: ReactionWriteResponse;
+  status: 200;
+};
+
+export type upsertReactionResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type upsertReactionResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type upsertReactionResponse409 = {
+  data: ReactionsConflictResponse;
+  status: 409;
+};
+
+export type upsertReactionResponse429 = {
+  data: ReactionsRateLimitedResponse;
+  status: 429;
+};
+
+export type upsertReactionResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type upsertReactionResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type upsertReactionResponseSuccess = upsertReactionResponse200 & {
+  headers: Headers;
+};
+export type upsertReactionResponseError = (
+  | upsertReactionResponse400
+  | upsertReactionResponse401
+  | upsertReactionResponse409
+  | upsertReactionResponse429
+  | upsertReactionResponse500
+  | upsertReactionResponse503
+) & {
+  headers: Headers;
+};
+
+export type upsertReactionResponse = upsertReactionResponseSuccess | upsertReactionResponseError;
+
+export const getUpsertReactionUrl = () => {
+  return `/v1/reactions`;
+};
+
+export const upsertReaction = async (
+  upsertReactionRequest: UpsertReactionRequest,
+  options?: RequestInit
+): Promise<upsertReactionResponse> => {
+  return customInstance<upsertReactionResponse>(getUpsertReactionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertReactionRequest),
+  });
+};
+
+/**
+ * @summary Get like summary for one target
+ */
+export type getReactionSummaryResponse200 = {
+  data: ReactionSummaryResponse;
+  status: 200;
+};
+
+export type getReactionSummaryResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReactionSummaryResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReactionSummaryResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getReactionSummaryResponseSuccess = getReactionSummaryResponse200 & {
+  headers: Headers;
+};
+export type getReactionSummaryResponseError = (
+  | getReactionSummaryResponse401
+  | getReactionSummaryResponse500
+  | getReactionSummaryResponse503
+) & {
+  headers: Headers;
+};
+
+export type getReactionSummaryResponse =
+  | getReactionSummaryResponseSuccess
+  | getReactionSummaryResponseError;
+
+export const getGetReactionSummaryUrl = (
+  targetType: "space_post" | "blog_post" | "place" | "event" | "partner" | "listing" | "quest",
+  targetId: string
+) => {
+  return `/v1/reactions/summary/${targetType}/${targetId}`;
+};
+
+export const getReactionSummary = async (
+  targetType: "space_post" | "blog_post" | "place" | "event" | "partner" | "listing" | "quest",
+  targetId: string,
+  options?: RequestInit
+): Promise<getReactionSummaryResponse> => {
+  return customInstance<getReactionSummaryResponse>(
+    getGetReactionSummaryUrl(targetType, targetId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
+};
+
+/**
+ * @summary Get like summaries for multiple targets
+ */
+export type getReactionSummaryBatchResponse200 = {
+  data: ReactionSummaryBatchResponse;
+  status: 200;
+};
+
+export type getReactionSummaryBatchResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type getReactionSummaryBatchResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReactionSummaryBatchResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReactionSummaryBatchResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getReactionSummaryBatchResponseSuccess = getReactionSummaryBatchResponse200 & {
+  headers: Headers;
+};
+export type getReactionSummaryBatchResponseError = (
+  | getReactionSummaryBatchResponse400
+  | getReactionSummaryBatchResponse401
+  | getReactionSummaryBatchResponse500
+  | getReactionSummaryBatchResponse503
+) & {
+  headers: Headers;
+};
+
+export type getReactionSummaryBatchResponse =
+  | getReactionSummaryBatchResponseSuccess
+  | getReactionSummaryBatchResponseError;
+
+export const getGetReactionSummaryBatchUrl = () => {
+  return `/v1/reactions/summary:batch`;
+};
+
+export const getReactionSummaryBatch = async (
+  reactionSummaryBatchRequest: ReactionSummaryBatchRequest,
+  options?: RequestInit
+): Promise<getReactionSummaryBatchResponse> => {
+  return customInstance<getReactionSummaryBatchResponse>(getGetReactionSummaryBatchUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reactionSummaryBatchRequest),
+  });
+};
+
+/**
+ * @summary Remove an active like
+ */
+export type removeReactionResponse200 = {
+  data: ReactionDeleteResponse;
+  status: 200;
+};
+
+export type removeReactionResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type removeReactionResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type removeReactionResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type removeReactionResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type removeReactionResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type removeReactionResponseSuccess = removeReactionResponse200 & {
+  headers: Headers;
+};
+export type removeReactionResponseError = (
+  | removeReactionResponse400
+  | removeReactionResponse401
+  | removeReactionResponse404
+  | removeReactionResponse500
+  | removeReactionResponse503
+) & {
+  headers: Headers;
+};
+
+export type removeReactionResponse = removeReactionResponseSuccess | removeReactionResponseError;
+
+export const getRemoveReactionUrl = (reactionId: string) => {
+  return `/v1/reactions/${reactionId}`;
+};
+
+export const removeReaction = async (
+  reactionId: string,
+  options?: RequestInit
+): Promise<removeReactionResponse> => {
+  return customInstance<removeReactionResponse>(getRemoveReactionUrl(reactionId), {
+    ...options,
+    method: "DELETE",
   });
 };
 
@@ -2179,6 +2916,1207 @@ export const getReferralTree = async (
   options?: RequestInit
 ): Promise<getReferralTreeResponse> => {
   return customInstance<getReferralTreeResponse>(getGetReferralTreeUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create draft offer for partner
+ */
+export type rfCreateOfferResponse201 = {
+  data: RfOffer;
+  status: 201;
+};
+
+export type rfCreateOfferResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfCreateOfferResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfCreateOfferResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfCreateOfferResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfCreateOfferResponseSuccess = rfCreateOfferResponse201 & {
+  headers: Headers;
+};
+export type rfCreateOfferResponseError = (
+  | rfCreateOfferResponse400
+  | rfCreateOfferResponse401
+  | rfCreateOfferResponse403
+  | rfCreateOfferResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfCreateOfferResponse = rfCreateOfferResponseSuccess | rfCreateOfferResponseError;
+
+export const getRfCreateOfferUrl = (partnerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/offers`;
+};
+
+export const rfCreateOffer = async (
+  partnerId: string,
+  rfCreateOfferRequest: RfCreateOfferRequest,
+  options?: RequestInit
+): Promise<rfCreateOfferResponse> => {
+  return customInstance<rfCreateOfferResponse>(getRfCreateOfferUrl(partnerId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfCreateOfferRequest),
+  });
+};
+
+/**
+ * @summary Activate partner offer
+ */
+export type rfActivateOfferResponse200 = {
+  data: RfOffer;
+  status: 200;
+};
+
+export type rfActivateOfferResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfActivateOfferResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfActivateOfferResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfActivateOfferResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfActivateOfferResponseSuccess = rfActivateOfferResponse200 & {
+  headers: Headers;
+};
+export type rfActivateOfferResponseError = (
+  | rfActivateOfferResponse401
+  | rfActivateOfferResponse403
+  | rfActivateOfferResponse404
+  | rfActivateOfferResponse409
+) & {
+  headers: Headers;
+};
+
+export type rfActivateOfferResponse = rfActivateOfferResponseSuccess | rfActivateOfferResponseError;
+
+export const getRfActivateOfferUrl = (partnerId: string, offerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/offers/${offerId}/activate`;
+};
+
+export const rfActivateOffer = async (
+  partnerId: string,
+  offerId: string,
+  options?: RequestInit
+): Promise<rfActivateOfferResponse> => {
+  return customInstance<rfActivateOfferResponse>(getRfActivateOfferUrl(partnerId, offerId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary Redeem voucher by partner owner
+ */
+export type rfRedeemVoucherResponse200 = {
+  data: RfRedeemResponse;
+  status: 200;
+};
+
+export type rfRedeemVoucherResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfRedeemVoucherResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfRedeemVoucherResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfRedeemVoucherResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfRedeemVoucherResponse429 = {
+  data: RfRateLimitedResponse;
+  status: 429;
+};
+
+export type rfRedeemVoucherResponseSuccess = rfRedeemVoucherResponse200 & {
+  headers: Headers;
+};
+export type rfRedeemVoucherResponseError = (
+  | rfRedeemVoucherResponse401
+  | rfRedeemVoucherResponse403
+  | rfRedeemVoucherResponse404
+  | rfRedeemVoucherResponse409
+  | rfRedeemVoucherResponse429
+) & {
+  headers: Headers;
+};
+
+export type rfRedeemVoucherResponse = rfRedeemVoucherResponseSuccess | rfRedeemVoucherResponseError;
+
+export const getRfRedeemVoucherUrl = (partnerId: string, voucherId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/vouchers/${voucherId}/redeem`;
+};
+
+export const rfRedeemVoucher = async (
+  partnerId: string,
+  voucherId: string,
+  options?: RequestInit
+): Promise<rfRedeemVoucherResponse> => {
+  return customInstance<rfRedeemVoucherResponse>(getRfRedeemVoucherUrl(partnerId, voucherId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary List current user vouchers
+ */
+export type rfListMyVouchersResponse200 = {
+  data: RfVoucherListResponse;
+  status: 200;
+};
+
+export type rfListMyVouchersResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfListMyVouchersResponseSuccess = rfListMyVouchersResponse200 & {
+  headers: Headers;
+};
+export type rfListMyVouchersResponseError = rfListMyVouchersResponse401 & {
+  headers: Headers;
+};
+
+export type rfListMyVouchersResponse =
+  | rfListMyVouchersResponseSuccess
+  | rfListMyVouchersResponseError;
+
+export const getRfListMyVouchersUrl = () => {
+  return `/v1/rf/me/vouchers`;
+};
+
+export const rfListMyVouchers = async (
+  options?: RequestInit
+): Promise<rfListMyVouchersResponse> => {
+  return customInstance<rfListMyVouchersResponse>(getRfListMyVouchersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List public active offers
+ */
+export type rfListOffersResponse200 = {
+  data: RfOfferListResponse;
+  status: 200;
+};
+
+export type rfListOffersResponseSuccess = rfListOffersResponse200 & {
+  headers: Headers;
+};
+export type rfListOffersResponse = rfListOffersResponseSuccess;
+
+export const getRfListOffersUrl = () => {
+  return `/v1/rf/offers`;
+};
+
+export const rfListOffers = async (options?: RequestInit): Promise<rfListOffersResponse> => {
+  return customInstance<rfListOffersResponse>(getRfListOffersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get public offer
+ */
+export type rfGetOfferResponse200 = {
+  data: RfOffer;
+  status: 200;
+};
+
+export type rfGetOfferResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfGetOfferResponseSuccess = rfGetOfferResponse200 & {
+  headers: Headers;
+};
+export type rfGetOfferResponseError = rfGetOfferResponse404 & {
+  headers: Headers;
+};
+
+export type rfGetOfferResponse = rfGetOfferResponseSuccess | rfGetOfferResponseError;
+
+export const getRfGetOfferUrl = (offerId: string) => {
+  return `/v1/rf/offers/${offerId}`;
+};
+
+export const rfGetOffer = async (
+  offerId: string,
+  options?: RequestInit
+): Promise<rfGetOfferResponse> => {
+  return customInstance<rfGetOfferResponse>(getRfGetOfferUrl(offerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Claim voucher for active offer (idempotent by user+key)
+ */
+export type rfClaimVoucherResponse200 = {
+  data: RfClaimResponse;
+  status: 200;
+};
+
+export type rfClaimVoucherResponse201 = {
+  data: RfClaimResponse;
+  status: 201;
+};
+
+export type rfClaimVoucherResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfClaimVoucherResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfClaimVoucherResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfClaimVoucherResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfClaimVoucherResponse429 = {
+  data: RfRateLimitedResponse;
+  status: 429;
+};
+
+export type rfClaimVoucherResponseSuccess = (
+  | rfClaimVoucherResponse200
+  | rfClaimVoucherResponse201
+) & {
+  headers: Headers;
+};
+export type rfClaimVoucherResponseError = (
+  | rfClaimVoucherResponse400
+  | rfClaimVoucherResponse401
+  | rfClaimVoucherResponse404
+  | rfClaimVoucherResponse409
+  | rfClaimVoucherResponse429
+) & {
+  headers: Headers;
+};
+
+export type rfClaimVoucherResponse = rfClaimVoucherResponseSuccess | rfClaimVoucherResponseError;
+
+export const getRfClaimVoucherUrl = (offerId: string) => {
+  return `/v1/rf/offers/${offerId}/claim`;
+};
+
+export const rfClaimVoucher = async (
+  offerId: string,
+  options?: RequestInit
+): Promise<rfClaimVoucherResponse> => {
+  return customInstance<rfClaimVoucherResponse>(getRfClaimVoucherUrl(offerId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary List public partners
+ */
+export type rfListPartnersResponse200 = {
+  data: RfPartnerListResponse;
+  status: 200;
+};
+
+export type rfListPartnersResponseSuccess = rfListPartnersResponse200 & {
+  headers: Headers;
+};
+export type rfListPartnersResponse = rfListPartnersResponseSuccess;
+
+export const getRfListPartnersUrl = () => {
+  return `/v1/rf/partners`;
+};
+
+export const rfListPartners = async (options?: RequestInit): Promise<rfListPartnersResponse> => {
+  return customInstance<rfListPartnersResponse>(getRfListPartnersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create partner (business owner flow)
+ */
+export type rfCreatePartnerResponse201 = {
+  data: RfPartner;
+  status: 201;
+};
+
+export type rfCreatePartnerResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfCreatePartnerResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfCreatePartnerResponseSuccess = rfCreatePartnerResponse201 & {
+  headers: Headers;
+};
+export type rfCreatePartnerResponseError = (
+  | rfCreatePartnerResponse400
+  | rfCreatePartnerResponse401
+) & {
+  headers: Headers;
+};
+
+export type rfCreatePartnerResponse = rfCreatePartnerResponseSuccess | rfCreatePartnerResponseError;
+
+export const getRfCreatePartnerUrl = () => {
+  return `/v1/rf/partners`;
+};
+
+export const rfCreatePartner = async (
+  rfCreatePartnerRequest: RfCreatePartnerRequest,
+  options?: RequestInit
+): Promise<rfCreatePartnerResponse> => {
+  return customInstance<rfCreatePartnerResponse>(getRfCreatePartnerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfCreatePartnerRequest),
+  });
+};
+
+/**
+ * @summary Get public partner
+ */
+export type rfGetPartnerResponse200 = {
+  data: RfPartner;
+  status: 200;
+};
+
+export type rfGetPartnerResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfGetPartnerResponseSuccess = rfGetPartnerResponse200 & {
+  headers: Headers;
+};
+export type rfGetPartnerResponseError = rfGetPartnerResponse404 & {
+  headers: Headers;
+};
+
+export type rfGetPartnerResponse = rfGetPartnerResponseSuccess | rfGetPartnerResponseError;
+
+export const getRfGetPartnerUrl = (partnerId: string) => {
+  return `/v1/rf/partners/${partnerId}`;
+};
+
+export const rfGetPartner = async (
+  partnerId: string,
+  options?: RequestInit
+): Promise<rfGetPartnerResponse> => {
+  return customInstance<rfGetPartnerResponse>(getRfGetPartnerUrl(partnerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List current user PRO links
+ */
+export type rfListProLinksResponse200 = {
+  data: RfProLinkListResponse;
+  status: 200;
+};
+
+export type rfListProLinksResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfListProLinksResponseSuccess = rfListProLinksResponse200 & {
+  headers: Headers;
+};
+export type rfListProLinksResponseError = rfListProLinksResponse401 & {
+  headers: Headers;
+};
+
+export type rfListProLinksResponse = rfListProLinksResponseSuccess | rfListProLinksResponseError;
+
+export const getRfListProLinksUrl = () => {
+  return `/v1/rf/pro/links`;
+};
+
+export const rfListProLinks = async (options?: RequestInit): Promise<rfListProLinksResponse> => {
+  return customInstance<rfListProLinksResponse>(getRfListProLinksUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create PRO link
+ */
+export type rfCreateProLinkResponse201 = {
+  data: RfProLink;
+  status: 201;
+};
+
+export type rfCreateProLinkResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfCreateProLinkResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfCreateProLinkResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfCreateProLinkResponseSuccess = rfCreateProLinkResponse201 & {
+  headers: Headers;
+};
+export type rfCreateProLinkResponseError = (
+  | rfCreateProLinkResponse400
+  | rfCreateProLinkResponse401
+  | rfCreateProLinkResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfCreateProLinkResponse = rfCreateProLinkResponseSuccess | rfCreateProLinkResponseError;
+
+export const getRfCreateProLinkUrl = () => {
+  return `/v1/rf/pro/links`;
+};
+
+export const rfCreateProLink = async (
+  rfCreateProLinkRequest: RfCreateProLinkRequest,
+  options?: RequestInit
+): Promise<rfCreateProLinkResponse> => {
+  return customInstance<rfCreateProLinkResponse>(getRfCreateProLinkUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfCreateProLinkRequest),
+  });
+};
+
+/**
+ * @summary Accept PRO link by partner owner
+ */
+export type rfAcceptProLinkResponse200 = {
+  data: RfAcceptProLinkResponse;
+  status: 200;
+};
+
+export type rfAcceptProLinkResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfAcceptProLinkResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfAcceptProLinkResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfAcceptProLinkResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfAcceptProLinkResponseSuccess = rfAcceptProLinkResponse200 & {
+  headers: Headers;
+};
+export type rfAcceptProLinkResponseError = (
+  | rfAcceptProLinkResponse401
+  | rfAcceptProLinkResponse403
+  | rfAcceptProLinkResponse404
+  | rfAcceptProLinkResponse409
+) & {
+  headers: Headers;
+};
+
+export type rfAcceptProLinkResponse = rfAcceptProLinkResponseSuccess | rfAcceptProLinkResponseError;
+
+export const getRfAcceptProLinkUrl = (proLinkId: string) => {
+  return `/v1/rf/pro/links/${proLinkId}/accept`;
+};
+
+export const rfAcceptProLink = async (
+  proLinkId: string,
+  options?: RequestInit
+): Promise<rfAcceptProLinkResponse> => {
+  return customInstance<rfAcceptProLinkResponse>(getRfAcceptProLinkUrl(proLinkId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * @summary List published listings
+ */
+export type rieltListPublicListingsResponse200 = {
+  data: RieltListResponse;
+  status: 200;
+};
+
+export type rieltListPublicListingsResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltListPublicListingsResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltListPublicListingsResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltListPublicListingsResponseSuccess = rieltListPublicListingsResponse200 & {
+  headers: Headers;
+};
+export type rieltListPublicListingsResponseError = (
+  | rieltListPublicListingsResponse400
+  | rieltListPublicListingsResponse500
+  | rieltListPublicListingsResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltListPublicListingsResponse =
+  | rieltListPublicListingsResponseSuccess
+  | rieltListPublicListingsResponseError;
+
+export const getRieltListPublicListingsUrl = (params?: RieltListPublicListingsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/rielt/listings?${stringifiedParams}`
+    : `/v1/rielt/listings`;
+};
+
+export const rieltListPublicListings = async (
+  params?: RieltListPublicListingsParams,
+  options?: RequestInit
+): Promise<rieltListPublicListingsResponse> => {
+  return customInstance<rieltListPublicListingsResponse>(getRieltListPublicListingsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create owner listing
+ */
+export type rieltCreateListingResponse201 = {
+  data: RieltOwnerListingEnvelope;
+  status: 201;
+};
+
+export type rieltCreateListingResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltCreateListingResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltCreateListingResponse403 = {
+  data: RieltForbiddenResponse;
+  status: 403;
+};
+
+export type rieltCreateListingResponse409 = {
+  data: RieltConflictResponse;
+  status: 409;
+};
+
+export type rieltCreateListingResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltCreateListingResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltCreateListingResponseSuccess = rieltCreateListingResponse201 & {
+  headers: Headers;
+};
+export type rieltCreateListingResponseError = (
+  | rieltCreateListingResponse400
+  | rieltCreateListingResponse401
+  | rieltCreateListingResponse403
+  | rieltCreateListingResponse409
+  | rieltCreateListingResponse500
+  | rieltCreateListingResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltCreateListingResponse =
+  | rieltCreateListingResponseSuccess
+  | rieltCreateListingResponseError;
+
+export const getRieltCreateListingUrl = () => {
+  return `/v1/rielt/listings`;
+};
+
+export const rieltCreateListing = async (
+  rieltCreateListingRequest: RieltCreateListingRequest,
+  options?: RequestInit
+): Promise<rieltCreateListingResponse> => {
+  return customInstance<rieltCreateListingResponse>(getRieltCreateListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rieltCreateListingRequest),
+  });
+};
+
+/**
+ * @summary List nearby published listings
+ */
+export type rieltListNearbyListingsResponse200 = {
+  data: RieltNearbyListResponse;
+  status: 200;
+};
+
+export type rieltListNearbyListingsResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltListNearbyListingsResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltListNearbyListingsResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltListNearbyListingsResponseSuccess = rieltListNearbyListingsResponse200 & {
+  headers: Headers;
+};
+export type rieltListNearbyListingsResponseError = (
+  | rieltListNearbyListingsResponse400
+  | rieltListNearbyListingsResponse500
+  | rieltListNearbyListingsResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltListNearbyListingsResponse =
+  | rieltListNearbyListingsResponseSuccess
+  | rieltListNearbyListingsResponseError;
+
+export const getRieltListNearbyListingsUrl = (params: RieltListNearbyListingsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/rielt/listings/nearby?${stringifiedParams}`
+    : `/v1/rielt/listings/nearby`;
+};
+
+export const rieltListNearbyListings = async (
+  params: RieltListNearbyListingsParams,
+  options?: RequestInit
+): Promise<rieltListNearbyListingsResponse> => {
+  return customInstance<rieltListNearbyListingsResponse>(getRieltListNearbyListingsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Archive owner listing by id (runtime currently accepts id-or-slug token)
+ */
+export type rieltArchiveListingResponse200 = {
+  data: RieltArchiveResponse;
+  status: 200;
+};
+
+export type rieltArchiveListingResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltArchiveListingResponse403 = {
+  data: RieltForbiddenResponse;
+  status: 403;
+};
+
+export type rieltArchiveListingResponse404 = {
+  data: RieltNotFoundResponse;
+  status: 404;
+};
+
+export type rieltArchiveListingResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltArchiveListingResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltArchiveListingResponseSuccess = rieltArchiveListingResponse200 & {
+  headers: Headers;
+};
+export type rieltArchiveListingResponseError = (
+  | rieltArchiveListingResponse401
+  | rieltArchiveListingResponse403
+  | rieltArchiveListingResponse404
+  | rieltArchiveListingResponse500
+  | rieltArchiveListingResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltArchiveListingResponse =
+  | rieltArchiveListingResponseSuccess
+  | rieltArchiveListingResponseError;
+
+export const getRieltArchiveListingUrl = (idOrSlug: string) => {
+  return `/v1/rielt/listings/${idOrSlug}`;
+};
+
+export const rieltArchiveListing = async (
+  idOrSlug: string,
+  options?: RequestInit
+): Promise<rieltArchiveListingResponse> => {
+  return customInstance<rieltArchiveListingResponse>(getRieltArchiveListingUrl(idOrSlug), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+/**
+ * @summary Get published listing by id or slug
+ */
+export type rieltGetPublicListingResponse200 = {
+  data: RieltDetailResponse;
+  status: 200;
+};
+
+export type rieltGetPublicListingResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltGetPublicListingResponse404 = {
+  data: RieltNotFoundResponse;
+  status: 404;
+};
+
+export type rieltGetPublicListingResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltGetPublicListingResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltGetPublicListingResponseSuccess = rieltGetPublicListingResponse200 & {
+  headers: Headers;
+};
+export type rieltGetPublicListingResponseError = (
+  | rieltGetPublicListingResponse400
+  | rieltGetPublicListingResponse404
+  | rieltGetPublicListingResponse500
+  | rieltGetPublicListingResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltGetPublicListingResponse =
+  | rieltGetPublicListingResponseSuccess
+  | rieltGetPublicListingResponseError;
+
+export const getRieltGetPublicListingUrl = (idOrSlug: string) => {
+  return `/v1/rielt/listings/${idOrSlug}`;
+};
+
+export const rieltGetPublicListing = async (
+  idOrSlug: string,
+  options?: RequestInit
+): Promise<rieltGetPublicListingResponse> => {
+  return customInstance<rieltGetPublicListingResponse>(getRieltGetPublicListingUrl(idOrSlug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Patch owner listing by id (runtime currently accepts id-or-slug token)
+ */
+export type rieltPatchListingResponse200 = {
+  data: RieltOwnerListingEnvelope;
+  status: 200;
+};
+
+export type rieltPatchListingResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltPatchListingResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltPatchListingResponse403 = {
+  data: RieltForbiddenResponse;
+  status: 403;
+};
+
+export type rieltPatchListingResponse404 = {
+  data: RieltNotFoundResponse;
+  status: 404;
+};
+
+export type rieltPatchListingResponse409 = {
+  data: RieltConflictResponse;
+  status: 409;
+};
+
+export type rieltPatchListingResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltPatchListingResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltPatchListingResponseSuccess = rieltPatchListingResponse200 & {
+  headers: Headers;
+};
+export type rieltPatchListingResponseError = (
+  | rieltPatchListingResponse400
+  | rieltPatchListingResponse401
+  | rieltPatchListingResponse403
+  | rieltPatchListingResponse404
+  | rieltPatchListingResponse409
+  | rieltPatchListingResponse500
+  | rieltPatchListingResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltPatchListingResponse =
+  | rieltPatchListingResponseSuccess
+  | rieltPatchListingResponseError;
+
+export const getRieltPatchListingUrl = (idOrSlug: string) => {
+  return `/v1/rielt/listings/${idOrSlug}`;
+};
+
+export const rieltPatchListing = async (
+  idOrSlug: string,
+  rieltPatchListingRequest: RieltPatchListingRequest,
+  options?: RequestInit
+): Promise<rieltPatchListingResponse> => {
+  return customInstance<rieltPatchListingResponse>(getRieltPatchListingUrl(idOrSlug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rieltPatchListingRequest),
+  });
+};
+
+/**
+ * @summary Create listing inquiry (idempotent by requester/listing/key)
+ */
+export type rieltCreateInquiryResponse201 = {
+  data: RieltInquiryEnvelope;
+  status: 201;
+};
+
+export type rieltCreateInquiryResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltCreateInquiryResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltCreateInquiryResponse404 = {
+  data: RieltNotFoundResponse;
+  status: 404;
+};
+
+export type rieltCreateInquiryResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltCreateInquiryResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltCreateInquiryResponseSuccess = rieltCreateInquiryResponse201 & {
+  headers: Headers;
+};
+export type rieltCreateInquiryResponseError = (
+  | rieltCreateInquiryResponse400
+  | rieltCreateInquiryResponse401
+  | rieltCreateInquiryResponse404
+  | rieltCreateInquiryResponse500
+  | rieltCreateInquiryResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltCreateInquiryResponse =
+  | rieltCreateInquiryResponseSuccess
+  | rieltCreateInquiryResponseError;
+
+export const getRieltCreateInquiryUrl = (idOrSlug: string) => {
+  return `/v1/rielt/listings/${idOrSlug}/inquiries`;
+};
+
+export const rieltCreateInquiry = async (
+  idOrSlug: string,
+  rieltCreateInquiryRequest: RieltCreateInquiryRequest,
+  options?: RequestInit
+): Promise<rieltCreateInquiryResponse> => {
+  return customInstance<rieltCreateInquiryResponse>(getRieltCreateInquiryUrl(idOrSlug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rieltCreateInquiryRequest),
+  });
+};
+
+/**
+ * @summary List requester inquiries
+ */
+export type rieltListMyInquiriesResponse200 = {
+  data: RieltMyInquiryListResponse;
+  status: 200;
+};
+
+export type rieltListMyInquiriesResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltListMyInquiriesResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltListMyInquiriesResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltListMyInquiriesResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltListMyInquiriesResponseSuccess = rieltListMyInquiriesResponse200 & {
+  headers: Headers;
+};
+export type rieltListMyInquiriesResponseError = (
+  | rieltListMyInquiriesResponse400
+  | rieltListMyInquiriesResponse401
+  | rieltListMyInquiriesResponse500
+  | rieltListMyInquiriesResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltListMyInquiriesResponse =
+  | rieltListMyInquiriesResponseSuccess
+  | rieltListMyInquiriesResponseError;
+
+export const getRieltListMyInquiriesUrl = (params?: RieltListMyInquiriesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/rielt/my/inquiries?${stringifiedParams}`
+    : `/v1/rielt/my/inquiries`;
+};
+
+export const rieltListMyInquiries = async (
+  params?: RieltListMyInquiriesParams,
+  options?: RequestInit
+): Promise<rieltListMyInquiriesResponse> => {
+  return customInstance<rieltListMyInquiriesResponse>(getRieltListMyInquiriesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List actor-visible listings
+ */
+export type rieltListMyListingsResponse200 = {
+  data: RieltOwnerListResponse;
+  status: 200;
+};
+
+export type rieltListMyListingsResponse400 = {
+  data: RieltValidationErrorResponse;
+  status: 400;
+};
+
+export type rieltListMyListingsResponse401 = {
+  data: RieltUnauthorizedResponse;
+  status: 401;
+};
+
+export type rieltListMyListingsResponse500 = {
+  data: RieltInternalErrorResponse;
+  status: 500;
+};
+
+export type rieltListMyListingsResponse503 = {
+  data: RieltServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rieltListMyListingsResponseSuccess = rieltListMyListingsResponse200 & {
+  headers: Headers;
+};
+export type rieltListMyListingsResponseError = (
+  | rieltListMyListingsResponse400
+  | rieltListMyListingsResponse401
+  | rieltListMyListingsResponse500
+  | rieltListMyListingsResponse503
+) & {
+  headers: Headers;
+};
+
+export type rieltListMyListingsResponse =
+  | rieltListMyListingsResponseSuccess
+  | rieltListMyListingsResponseError;
+
+export const getRieltListMyListingsUrl = (params?: RieltListMyListingsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/rielt/my/listings?${stringifiedParams}`
+    : `/v1/rielt/my/listings`;
+};
+
+export const rieltListMyListings = async (
+  params?: RieltListMyListingsParams,
+  options?: RequestInit
+): Promise<rieltListMyListingsResponse> => {
+  return customInstance<rieltListMyListingsResponse>(getRieltListMyListingsUrl(params), {
     ...options,
     method: "GET",
   });

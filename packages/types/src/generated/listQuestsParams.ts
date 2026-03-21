@@ -7,8 +7,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CityIdParameter } from "./cityIdParameter";
-import type { LatParameter } from "./latParameter";
-import type { LngParameter } from "./lngParameter";
 import type { ThemeParameter } from "./themeParameter";
 import type { DifficultyParameter } from "./difficultyParameter";
 import type { PageParameter } from "./pageParameter";
@@ -16,8 +14,6 @@ import type { PageSizeParameter } from "./pageSizeParameter";
 
 export type ListQuestsParams = {
   cityId?: CityIdParameter;
-  lat?: LatParameter;
-  lng?: LngParameter;
   theme?: ThemeParameter;
   difficulty?: DifficultyParameter;
   /**

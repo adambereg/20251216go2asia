@@ -73,11 +73,27 @@ export interface PatchListingInput {
   bathrooms?: number | null;
   areaSqm?: number | null;
   amenities?: string[];
+  status?: 'draft' | 'published';
 }
 
 export interface MyListingsQuery {
   status: ListingStatus | null;
   sort: 'newest' | 'price_asc' | 'price_desc';
+  page: number;
+  pageSize: number;
+  offset: number;
+}
+
+export interface CreateInquiryInput {
+  message: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactTelegram: string | null;
+}
+
+export interface MyInquiriesQuery {
+  status: 'new' | 'viewed' | 'closed' | null;
+  sort: 'newest' | 'oldest';
   page: number;
   pageSize: number;
   offset: number;
@@ -477,6 +493,12 @@ export function parsePatchListingInput(body: Record<string, unknown> | null): Pa
     updates.amenities = amenities;
     touched = true;
   }
+  if (body.status !== undefined) {
+    const status = parseLifecycleStatus(body.status);
+    if (!status) return null;
+    updates.status = status;
+    touched = true;
+  }
 
   if (!touched) return null;
 
@@ -493,9 +515,60 @@ function parseStatus(value: string | null): ListingStatus | null | undefined {
   return undefined;
 }
 
+function parseLifecycleStatus(value: unknown): 'draft' | 'published' | undefined {
+  if (value !== 'draft' && value !== 'published') return undefined;
+  return value;
+}
+
+function parseInquiryStatus(value: string | null): MyInquiriesQuery['status'] | undefined {
+  if (value === null || value.trim().length === 0) return null;
+  if (value === 'new' || value === 'viewed' || value === 'closed') return value;
+  return undefined;
+}
+
+function parseInquirySort(value: string | null): MyInquiriesQuery['sort'] | undefined {
+  if (value === null || value.trim().length === 0) return 'newest';
+  if (value === 'newest' || value === 'oldest') return value;
+  return undefined;
+}
+
 export function parseMyListingsQuery(searchParams: URLSearchParams): MyListingsQuery | null {
   const status = parseStatus(searchParams.get('status'));
   const sort = parseSort(searchParams.get('sort'));
+  const rawPage = searchParams.get('page');
+  const rawPageSize = searchParams.get('page_size');
+  const page = rawPage ? Number(rawPage) : 1;
+  const pageSize = rawPageSize ? Number(rawPageSize) : 20;
+
+  if (status === undefined || sort === undefined) return null;
+  if (!Number.isInteger(page) || page < 1) return null;
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) return null;
+
+  return {
+    status,
+    sort,
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize,
+  };
+}
+
+export function parseCreateInquiryInput(body: Record<string, unknown> | null): CreateInquiryInput | null {
+  if (!body) return null;
+  const message = parseRequiredTrimmedString(body.message, 4000);
+  const contactName = body.contact_name === undefined ? null : parseOptionalTrimmedString(body.contact_name, 120);
+  const contactPhone = body.contact_phone === undefined ? null : parseOptionalTrimmedString(body.contact_phone, 40);
+  const contactTelegram =
+    body.contact_telegram === undefined ? null : parseOptionalTrimmedString(body.contact_telegram, 80);
+  if (!message || contactName === undefined || contactPhone === undefined || contactTelegram === undefined) {
+    return null;
+  }
+  return { message, contactName, contactPhone, contactTelegram };
+}
+
+export function parseMyInquiriesQuery(searchParams: URLSearchParams): MyInquiriesQuery | null {
+  const status = parseInquiryStatus(searchParams.get('status'));
+  const sort = parseInquirySort(searchParams.get('sort'));
   const rawPage = searchParams.get('page');
   const rawPageSize = searchParams.get('page_size');
   const page = rawPage ? Number(rawPage) : 1;

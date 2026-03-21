@@ -1,0 +1,436 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Guru Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Guru nearby-intent aggregator (Step 10 baseline).
+    Runtime baseline: live rielt adapter + explicit stubs for other domains.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: guru-service.example
+
+tags:
+  - name: health
+  - name: guru
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getGuruHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruHealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getGuruVersion
+      summary: Version (alias of /health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruHealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: getGuruReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruReadyResponse"
+
+  /v1/guru/nearby:
+    get:
+      tags: [guru]
+      operationId: guruGetNearby
+      summary: Blended nearby aggregation
+      parameters:
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTypes"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+        - $ref: "#/components/parameters/GuruRfOnly"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+
+  /v1/guru/nearby/{type}:
+    get:
+      tags: [guru]
+      operationId: guruGetNearbyByType
+      summary: Nearby aggregation constrained to one type
+      parameters:
+        - $ref: "#/components/parameters/GuruTypePath"
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+        - $ref: "#/components/parameters/GuruRfOnly"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+
+  /v1/guru/what-to-do:
+    get:
+      tags: [guru]
+      operationId: guruGetWhatToDo
+      summary: Action-oriented nearby composition
+      parameters:
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+
+components:
+  parameters:
+    GuruTypePath:
+      name: type
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/GuruEntityType"
+    GuruMode:
+      name: mode
+      in: query
+      schema:
+        type: string
+        enum: [real, virtual]
+        default: real
+    GuruLat:
+      name: lat
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -90
+        maximum: 90
+    GuruLng:
+      name: lng
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -180
+        maximum: 180
+    GuruRadiusM:
+      name: radius_m
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50000
+        default: 2000
+    GuruLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 30
+    GuruTypes:
+      name: types
+      in: query
+      description: Comma-separated entity types (not allowed on nearby-by-type or what-to-do)
+      schema:
+        type: string
+        example: listing,partner
+    GuruTimeWindow:
+      name: time_window
+      in: query
+      schema:
+        type: string
+    GuruOpenNow:
+      name: open_now
+      in: query
+      schema:
+        type: boolean
+    GuruVerifiedOnly:
+      name: verified_only
+      in: query
+      schema:
+        type: boolean
+    GuruRfOnly:
+      name: rf_only
+      in: query
+      schema:
+        type: boolean
+
+  responses:
+    GuruValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GuruErrorResponse"
+    GuruInternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GuruErrorResponse"
+
+  schemas:
+    GuruHealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+
+    GuruReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
+    GuruErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          nullable: true
+
+    GuruEntityType:
+      type: string
+      enum: [place, event, listing, partner, quest, pro, blog_tag]
+
+    GuruSourceDomain:
+      type: string
+      enum: [atlas, pulse, rielt, rf, quest, space, blog]
+
+    GuruEntityAction:
+      type: object
+      required: [type, label, deeplink]
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        deeplink:
+          type: string
+
+    GuruSourceRef:
+      type: object
+      required: [domain, source_id]
+      properties:
+        domain:
+          $ref: "#/components/schemas/GuruSourceDomain"
+        source_id:
+          type: string
+        source_slug:
+          type: string
+
+    GuruExplain:
+      type: object
+      required: [reasons]
+      properties:
+        reasons:
+          type: array
+          items:
+            type: string
+
+    GuruEntityCard:
+      type: object
+      required: [id, type, title]
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/GuruEntityType"
+        title:
+          type: string
+        subtitle:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        distance_m:
+          type: number
+        city_id:
+          type: string
+        country_id:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        price_level:
+          type: number
+        is_verified:
+          type: boolean
+        is_rf:
+          type: boolean
+        is_open_now:
+          type: boolean
+        starts_at:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuruEntityAction"
+        explain:
+          $ref: "#/components/schemas/GuruExplain"
+        source:
+          $ref: "#/components/schemas/GuruSourceRef"
+        payload:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+
+    GuruPartialFailure:
+      type: object
+      required: [domain, reason]
+      properties:
+        domain:
+          $ref: "#/components/schemas/GuruSourceDomain"
+        reason:
+          type: string
+
+    GuruMeta:
+      type: object
+      required: [mode, lat, lng, radius_m, count, sources_active, sources_stub, source_item_counts]
+      properties:
+        mode:
+          type: string
+          enum: [real, virtual]
+        lat:
+          type: number
+        lng:
+          type: number
+        radius_m:
+          type: integer
+        count:
+          type: integer
+        sources_active:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuruSourceDomain"
+        sources_stub:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuruSourceDomain"
+        source_item_counts:
+          type: object
+          additionalProperties:
+            type: integer
+
+    GuruListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuruEntityCard"
+        meta:
+          $ref: "#/components/schemas/GuruMeta"
+        partial_failures:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuruPartialFailure"

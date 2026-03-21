@@ -14,6 +14,11 @@ type FeedPageResponse = {
   nextCursor?: string | null;
 };
 
+type NormalizedFeedPage = {
+  items: Array<Record<string, unknown>>;
+  nextCursor: string | null;
+};
+
 function parseCacheTtlSeconds(value: string | undefined): number {
   const parsed = Number.parseInt(value ?? '', 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return 15;
@@ -50,6 +55,57 @@ function extractSpacePostIds(items: Array<Record<string, unknown>>): string[] {
     }
   }
   return [...postIds];
+}
+
+function toEpochMillis(value: unknown): number | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeAndSortItems(items: unknown): Array<Record<string, unknown>> | null {
+  if (!Array.isArray(items)) return null;
+  const normalized: Array<{ item: Record<string, unknown>; index: number; id: string; createdAtMs: number | null }> = [];
+  for (let index = 0; index < items.length; index++) {
+    const raw = items[index];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const item = raw as Record<string, unknown>;
+    if (typeof item.id !== 'string' || item.id.trim().length === 0) return null;
+    normalized.push({
+      item,
+      index,
+      id: item.id,
+      createdAtMs: toEpochMillis(item.createdAt),
+    });
+  }
+
+  normalized.sort((a, b) => {
+    if (a.createdAtMs !== null && b.createdAtMs !== null) {
+      if (a.createdAtMs !== b.createdAtMs) return b.createdAtMs - a.createdAtMs;
+      return a.id.localeCompare(b.id);
+    }
+    if (a.createdAtMs !== null) return -1;
+    if (b.createdAtMs !== null) return 1;
+    return a.index - b.index;
+  });
+
+  return normalized.map((entry) => entry.item);
+}
+
+function normalizeFeedPageResponse(upstream: FeedPageResponse): NormalizedFeedPage | null {
+  const items = normalizeAndSortItems(upstream.items);
+  if (!items) return null;
+  if (
+    upstream.nextCursor !== null &&
+    upstream.nextCursor !== undefined &&
+    typeof upstream.nextCursor !== 'string'
+  ) {
+    return null;
+  }
+  return {
+    items,
+    nextCursor: upstream.nextCursor ?? null,
+  };
 }
 
 function applyReactionSummaryToItems(
@@ -104,9 +160,9 @@ async function composeWithReactions(
   env: FeedEnv,
   principal: FeedPrincipal,
   requestId: string,
-  upstream: FeedPageResponse
+  upstream: NormalizedFeedPage
 ): Promise<Record<string, unknown>> {
-  const items = Array.isArray(upstream.items) ? (upstream.items as Array<Record<string, unknown>>) : [];
+  const items = upstream.items;
   const postIds = extractSpacePostIds(items);
 
   if (!env.REACTIONS_SERVICE_URL) {
@@ -204,9 +260,23 @@ export async function getHomeFeed(
         body: space.body,
       };
     }
-    return composeWithReactions(env, principal, requestId, space.data);
+    const normalized = normalizeFeedPageResponse(space.data);
+    if (!normalized) {
+      throw {
+        kind: 'space_invalid_response',
+        status: 502,
+        body: {
+          error: {
+            code: 'UPSTREAM_INVALID_RESPONSE',
+            message: 'space-service returned invalid feed payload',
+          },
+          requestId,
+        },
+      };
+    }
+    return composeWithReactions(env, principal, requestId, normalized);
   }).catch((error: { kind?: string; status?: number; body?: Record<string, unknown> }) => {
-    if (error?.kind === 'space_error') {
+    if (error?.kind === 'space_error' || error?.kind === 'space_invalid_response') {
       return {
         __error: true,
         status: error.status ?? 503,
@@ -265,9 +335,23 @@ export async function getGroupFeed(
         body: space.body,
       };
     }
-    return composeWithReactions(env, principal, requestId, space.data);
+    const normalized = normalizeFeedPageResponse(space.data);
+    if (!normalized) {
+      throw {
+        kind: 'space_invalid_response',
+        status: 502,
+        body: {
+          error: {
+            code: 'UPSTREAM_INVALID_RESPONSE',
+            message: 'space-service returned invalid feed payload',
+          },
+          requestId,
+        },
+      };
+    }
+    return composeWithReactions(env, principal, requestId, normalized);
   }).catch((error: { kind?: string; status?: number; body?: Record<string, unknown> }) => {
-    if (error?.kind === 'space_error') {
+    if (error?.kind === 'space_error' || error?.kind === 'space_invalid_response') {
       return {
         __error: true,
         status: error.status ?? 503,
@@ -326,9 +410,23 @@ export async function getProfileFeed(
         body: space.body,
       };
     }
-    return composeWithReactions(env, principal, requestId, space.data);
+    const normalized = normalizeFeedPageResponse(space.data);
+    if (!normalized) {
+      throw {
+        kind: 'space_invalid_response',
+        status: 502,
+        body: {
+          error: {
+            code: 'UPSTREAM_INVALID_RESPONSE',
+            message: 'space-service returned invalid feed payload',
+          },
+          requestId,
+        },
+      };
+    }
+    return composeWithReactions(env, principal, requestId, normalized);
   }).catch((error: { kind?: string; status?: number; body?: Record<string, unknown> }) => {
-    if (error?.kind === 'space_error') {
+    if (error?.kind === 'space_error' || error?.kind === 'space_invalid_response') {
       return {
         __error: true,
         status: error.status ?? 503,
@@ -384,12 +482,26 @@ export async function getActivityFeed(
         body: space.body,
       };
     }
+    const normalized = normalizeFeedPageResponse(space.data);
+    if (!normalized) {
+      throw {
+        kind: 'space_invalid_response',
+        status: 502,
+        body: {
+          error: {
+            code: 'UPSTREAM_INVALID_RESPONSE',
+            message: 'space-service returned invalid feed payload',
+          },
+          requestId,
+        },
+      };
+    }
     return {
-      items: Array.isArray(space.data.items) ? space.data.items : [],
-      nextCursor: space.data.nextCursor ?? null,
+      items: normalized.items,
+      nextCursor: normalized.nextCursor,
     };
   }).catch((error: { kind?: string; status?: number; body?: Record<string, unknown> }) => {
-    if (error?.kind === 'space_error') {
+    if (error?.kind === 'space_error' || error?.kind === 'space_invalid_response') {
       return {
         __error: true,
         status: error.status ?? 503,

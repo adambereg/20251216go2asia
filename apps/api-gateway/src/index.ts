@@ -647,12 +647,22 @@ function isProtectedQuestRoute(method: string, path: string): boolean {
 }
 
 function isProtectedRieltRoute(method: string, path: string): boolean {
+  const isOwnerListingPath = /^\/v1\/rielt\/listings\/[^/]+$/.test(path) && path !== '/v1/rielt/listings/nearby';
   if (method === 'POST' && path === '/v1/rielt/listings') return true;
   if (method === 'GET' && path === '/v1/rielt/my/listings') return true;
   if (method === 'GET' && path === '/v1/rielt/my/inquiries') return true;
   if (method === 'POST' && /^\/v1\/rielt\/listings\/[^/]+\/inquiries$/.test(path)) return true;
-  if (method === 'PATCH' && /^\/v1\/rielt\/listings\/[^/]+$/.test(path)) return true;
-  if (method === 'DELETE' && /^\/v1\/rielt\/listings\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && isOwnerListingPath) return true;
+  if (method === 'DELETE' && isOwnerListingPath) return true;
+  return false;
+}
+
+function isProtectedRfRoute(method: string, path: string): boolean {
+  if (path.startsWith('/v1/rf/business/')) return true;
+  if (path.startsWith('/v1/rf/pro/')) return true;
+  if (path.startsWith('/v1/rf/me/')) return true;
+  if (method === 'POST' && /^\/v1\/rf\/offers\/[^/]+\/claim$/.test(path)) return true;
+  if (path.startsWith('/v1/rf/internal/')) return true;
   return false;
 }
 
@@ -697,13 +707,13 @@ async function handleReady(env: Env): Promise<Response> {
 async function routeRequest(
   request: Request,
   env: Env,
-  logger: ReturnType<typeof createLogger>
+  logger: ReturnType<typeof createLogger>,
+  requestId: string
 ): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
   // Support legacy alias /v1/api/content/* by rewriting to /v1/content/*
   let downstreamPath = path.startsWith('/v1/api/content/') ? path.replace('/v1/api/content/', '/v1/content/') : path;
-  const requestId = getRequestId(request) || generateRequestId();
   const origin = request.headers.get('Origin');
   const route = classifyRoute(request.method, path);
 
@@ -770,6 +780,7 @@ async function routeRequest(
           { prefix: '/v1/reactions/', var: 'REACTIONS_SERVICE_URL', host: safeHostFromUrl(env.REACTIONS_SERVICE_URL) },
           { prefix: '/v1/feed/', var: 'FEED_SERVICE_URL', host: safeHostFromUrl(env.FEED_SERVICE_URL) },
           { prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
+          { prefix: '/v1/submissions/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
           { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
           { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
           { prefix: '/v1/rf/', var: 'RF_SERVICE_URL', host: safeHostFromUrl(env.RF_SERVICE_URL) },
@@ -893,6 +904,7 @@ async function routeRequest(
   if (contentType) headers.set('Content-Type', contentType);
   if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey);
   headers.set('X-Request-Id', requestId);
+  headers.set('X-Request-ID', requestId);
 
   // For user-facing routes that require user context, verify Clerk once at the gateway
   // and propagate only the derived internal token downstream.
@@ -921,7 +933,8 @@ async function routeRequest(
     isProtectedReactionsRoute(request.method, path) ||
     isProtectedFeedRoute(request.method, path) ||
     isProtectedQuestRoute(request.method, path) ||
-    isProtectedRieltRoute(request.method, path)
+    isProtectedRieltRoute(request.method, path) ||
+    isProtectedRfRoute(request.method, path)
   ) {
     const token = getBearerToken(request);
     let authMisconfigured = false;
@@ -1099,7 +1112,7 @@ export default {
     });
 
     try {
-      response = await routeRequest(request, env, logger);
+      response = await routeRequest(request, env, logger, requestId);
 
       // Ensure headers are mutable before setting X-Request-ID
       const out = new Response(response.body, response);

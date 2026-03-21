@@ -34,7 +34,8 @@ export async function handleOwnerRoute(
     return listMyOwnedListings(env, principal, new URL(request.url), context.requestId);
   }
 
-  const listingMatch = path.match(/^\/v1\/rielt\/listings\/([^/]+)$/);
+  const isOwnerListingPath = /^\/v1\/rielt\/listings\/[^/]+$/.test(path) && path !== '/v1/rielt/listings/nearby';
+  const listingMatch = isOwnerListingPath ? path.match(/^\/v1\/rielt\/listings\/([^/]+)$/) : null;
   if (listingMatch && request.method === 'PATCH') {
     if (!principal) {
       return errorResponse('UNAUTHORIZED', 'Authentication required', context.requestId, 401);

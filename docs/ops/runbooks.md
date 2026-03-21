@@ -23,7 +23,8 @@
 ### Если причина — misconfig
 
 - Если gateway возвращает `SERVICE_NOT_CONFIGURED`, значит отсутствует `*_SERVICE_URL` или related secret/var.
-- Для зарезервированных Phase 2 префиксов (`/v1/space/*`, `/v1/quest/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*`): `501 ROUTE_RESERVED_NOT_ENABLED` до настройки соответствующего `*_SERVICE_URL`.
+- Для зарезервированных Phase 2 префиксов (`/v1/space/*`, `/v1/reactions*`, `/v1/feed/*`, `/v1/quests*`, `/v1/submissions/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*`): `501 ROUTE_RESERVED_NOT_ENABLED` до настройки соответствующего `*_SERVICE_URL`.
+- `GET /ready` у gateway не подтверждает включение Phase 2 proxy vars; для social-core обязательно дополнительно проверять отсутствие `501` на целевых префиксах.
 - Проверить vars/secrets в Cloudflare для нужного worker.
 - После исправления повторить `GET /ready`.
 

@@ -7,6 +7,6 @@ export class RFAdapter implements DomainAdapter {
 
   async fetchNearby(_query: NearbyQuery): Promise<AdapterResult> {
     // TODO(step9-v1): replace stub when RF service is implemented.
-    return { items: [] };
+    return { items: [], implementation: 'stub' };
   }
 }

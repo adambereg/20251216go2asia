@@ -1,0 +1,1033 @@
+openapi: 3.1.0
+
+info:
+  title: Go2Asia Rielt Service API
+  version: 0.1.0
+  description: >
+    Downstream API contract for Rielt practical listing domain (Step 9 baseline).
+    Covers live public, owner and requester inquiry surfaces.
+
+servers:
+  - url: https://staging.api.go2asia.space
+    description: Staging API Gateway
+  - url: https://{workerHost}
+    description: Direct service URL (workers.dev / local)
+    variables:
+      workerHost:
+        default: rielt-service.example
+
+tags:
+  - name: health
+  - name: rielt
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getRieltHealth
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltHealthResponse"
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getRieltVersion
+      summary: Version (alias of /health)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltHealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: getRieltReady
+      summary: Readiness check
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltReadyResponse"
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltReadyResponse"
+
+  /v1/rielt/listings:
+    get:
+      tags: [rielt]
+      operationId: rieltListPublicListings
+      summary: List published listings
+      parameters:
+        - $ref: "#/components/parameters/RieltCountryId"
+        - $ref: "#/components/parameters/RieltCityId"
+        - $ref: "#/components/parameters/RieltListingType"
+        - $ref: "#/components/parameters/RieltMinPrice"
+        - $ref: "#/components/parameters/RieltMaxPrice"
+        - $ref: "#/components/parameters/RieltBedroomsMin"
+        - $ref: "#/components/parameters/RieltBedroomsMax"
+        - $ref: "#/components/parameters/RieltSort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltListResponse"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+    post:
+      tags: [rielt]
+      operationId: rieltCreateListing
+      summary: Create owner listing
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltCreateListingRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "409":
+          $ref: "#/components/responses/RieltConflict"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+  /v1/rielt/listings/nearby:
+    get:
+      tags: [rielt]
+      operationId: rieltListNearbyListings
+      summary: List nearby published listings
+      parameters:
+        - $ref: "#/components/parameters/RieltLat"
+        - $ref: "#/components/parameters/RieltLng"
+        - $ref: "#/components/parameters/RieltRadiusKm"
+        - $ref: "#/components/parameters/RieltCountryId"
+        - $ref: "#/components/parameters/RieltCityId"
+        - $ref: "#/components/parameters/RieltListingType"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltNearbyListResponse"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+  /v1/rielt/listings/{idOrSlug}:
+    get:
+      tags: [rielt]
+      operationId: rieltGetPublicListing
+      summary: Get published listing by id or slug
+      parameters:
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltDetailResponse"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+    patch:
+      tags: [rielt]
+      operationId: rieltPatchListing
+      summary: Patch owner listing by id (runtime currently accepts id-or-slug token)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltPatchListingRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "409":
+          $ref: "#/components/responses/RieltConflict"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+    delete:
+      tags: [rielt]
+      operationId: rieltArchiveListing
+      summary: Archive owner listing by id (runtime currently accepts id-or-slug token)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltArchiveResponse"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+  /v1/rielt/my/listings:
+    get:
+      tags: [rielt]
+      operationId: rieltListMyListings
+      summary: List actor-visible listings
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltStatus"
+        - $ref: "#/components/parameters/RieltSort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListResponse"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+  /v1/rielt/listings/{idOrSlug}/inquiries:
+    post:
+      tags: [rielt]
+      operationId: rieltCreateInquiry
+      summary: Create listing inquiry (idempotent by requester/listing/key)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdempotencyKey"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltCreateInquiryRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltInquiryEnvelope"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+  /v1/rielt/my/inquiries:
+    get:
+      tags: [rielt]
+      operationId: rieltListMyInquiries
+      summary: List requester inquiries
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltInquiryStatus"
+        - $ref: "#/components/parameters/RieltInquirySort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltMyInquiryListResponse"
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+
+components:
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-Gateway-Auth
+
+  parameters:
+    RieltXGatewayAuth:
+      name: X-Gateway-Auth
+      in: header
+      required: true
+      schema:
+        type: string
+    RieltIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+    RieltIdOrSlug:
+      name: idOrSlug
+      in: path
+      required: true
+      schema:
+        type: string
+    RieltCountryId:
+      name: country_id
+      in: query
+      schema:
+        type: string
+    RieltCityId:
+      name: city_id
+      in: query
+      schema:
+        type: string
+    RieltListingType:
+      name: listing_type
+      in: query
+      schema:
+        type: string
+        enum: [rent_long, rent_short, sale]
+    RieltMinPrice:
+      name: min_price
+      in: query
+      schema:
+        type: number
+        minimum: 0
+    RieltMaxPrice:
+      name: max_price
+      in: query
+      schema:
+        type: number
+        minimum: 0
+    RieltBedroomsMin:
+      name: bedrooms_min
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    RieltBedroomsMax:
+      name: bedrooms_max
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    RieltSort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [newest, price_asc, price_desc]
+    RieltStatus:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [draft, published, archived]
+    RieltInquiryStatus:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [new, viewed, closed]
+    RieltInquirySort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [newest, oldest]
+    RieltPage:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    RieltPageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    RieltLat:
+      name: lat
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -90
+        maximum: 90
+    RieltLng:
+      name: lng
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -180
+        maximum: 180
+    RieltRadiusKm:
+      name: radius_km
+      in: query
+      required: true
+      schema:
+        type: number
+        exclusiveMinimum: 0
+
+  responses:
+    RieltUnauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltForbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltNotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltConflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltServiceUnavailable:
+      description: Service unavailable / not configured
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+    RieltInternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+
+  schemas:
+    RieltHealthResponse:
+      type: object
+      required: [service, env, status, version]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+
+    RieltReadyResponse:
+      type: object
+      required: [service, env, status, version, checks, missing]
+      properties:
+        service:
+          type: string
+        env:
+          type: string
+        status:
+          type: string
+          enum: [ready, not_ready]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        missing:
+          type: array
+          items:
+            type: string
+
+    RieltErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          nullable: true
+
+    RieltPrice:
+      type: object
+      required: [amount, currency, period]
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        period:
+          type: string
+
+    RieltGeo:
+      type: object
+      required: [countryId]
+      properties:
+        countryId:
+          type: string
+        cityId:
+          type: string
+          nullable: true
+
+    RieltMedia:
+      type: object
+      required: [coverUrl, photos]
+      properties:
+        coverUrl:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+
+    RieltListing:
+      type: object
+      required: [id, slug, title, listingType, price, geo, media]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        listingType:
+          type: string
+        price:
+          $ref: "#/components/schemas/RieltPrice"
+        bedrooms:
+          type: integer
+          nullable: true
+        bathrooms:
+          type: integer
+          nullable: true
+        areaSqm:
+          type: number
+          nullable: true
+        geo:
+          $ref: "#/components/schemas/RieltGeo"
+        media:
+          $ref: "#/components/schemas/RieltMedia"
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RieltOwnerGeo:
+      type: object
+      required: [countryId]
+      properties:
+        countryId:
+          type: string
+        cityId:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        areaText:
+          type: string
+          nullable: true
+
+    RieltOwnerSpecs:
+      type: object
+      required: [amenities]
+      properties:
+        bedrooms:
+          type: integer
+          nullable: true
+        bathrooms:
+          type: integer
+          nullable: true
+        areaSqm:
+          type: number
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+
+    RieltOwnerListing:
+      type: object
+      required: [id, slug, title, listingType, status, price, geo, specs]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        listingType:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+        price:
+          $ref: "#/components/schemas/RieltPrice"
+        geo:
+          $ref: "#/components/schemas/RieltOwnerGeo"
+        specs:
+          $ref: "#/components/schemas/RieltOwnerSpecs"
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RieltPagination:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+
+    RieltListResponse:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RieltListing"
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+
+    RieltDetailResponse:
+      type: object
+      required: [listing]
+      properties:
+        listing:
+          $ref: "#/components/schemas/RieltListing"
+
+    RieltNearbyListing:
+      allOf:
+        - $ref: "#/components/schemas/RieltListing"
+        - type: object
+          properties:
+            distanceMeters:
+              type: integer
+
+    RieltNearbyAnchor:
+      type: object
+      required: [lat, lng, radiusKm]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        radiusKm:
+          type: number
+
+    RieltNearbyListResponse:
+      type: object
+      required: [anchor, items, pagination]
+      properties:
+        anchor:
+          $ref: "#/components/schemas/RieltNearbyAnchor"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RieltNearbyListing"
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+
+    RieltOwnerListingEnvelope:
+      type: object
+      required: [listing]
+      properties:
+        listing:
+          $ref: "#/components/schemas/RieltOwnerListing"
+
+    RieltArchiveResponse:
+      allOf:
+        - $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+        - type: object
+          required: [archived]
+          properties:
+            archived:
+              type: boolean
+
+    RieltOwnerListResponse:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RieltOwnerListing"
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+
+    RieltInquiryContact:
+      type: object
+      required: [name, phone, telegram]
+      properties:
+        name:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        telegram:
+          type: string
+          nullable: true
+
+    RieltInquiry:
+      type: object
+      required: [id, listingId, requesterUserId, message, contact, status, idempotencyKey]
+      properties:
+        id:
+          type: string
+        listingId:
+          type: string
+        requesterUserId:
+          type: string
+        message:
+          type: string
+        contact:
+          $ref: "#/components/schemas/RieltInquiryContact"
+        status:
+          type: string
+          enum: [new, viewed, closed]
+        idempotencyKey:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RieltInquiryListingRef:
+      type: object
+      required: [id, slug, title, geo]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        geo:
+          $ref: "#/components/schemas/RieltGeo"
+
+    RieltMyInquiry:
+      allOf:
+        - $ref: "#/components/schemas/RieltInquiry"
+        - type: object
+          required: [listing]
+          properties:
+            listing:
+              $ref: "#/components/schemas/RieltInquiryListingRef"
+
+    RieltInquiryEnvelope:
+      type: object
+      required: [inquiry]
+      properties:
+        inquiry:
+          $ref: "#/components/schemas/RieltInquiry"
+
+    RieltMyInquiryListResponse:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RieltMyInquiry"
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+
+    RieltCreateListingMediaInput:
+      type: object
+      required: [media_id]
+      properties:
+        media_id:
+          type: string
+        sort_order:
+          type: integer
+          minimum: 0
+          default: 0
+        is_cover:
+          type: boolean
+          default: false
+
+    RieltCreateListingRequest:
+      type: object
+      required:
+        - slug
+        - title
+        - description
+        - listing_type
+        - price_amount
+        - price_currency
+        - price_period
+        - country_id
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        listing_type:
+          type: string
+          enum: [rent_long, rent_short, sale]
+        price_amount:
+          type: number
+          minimum: 0
+        price_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        price_period:
+          type: string
+          enum: [month, day, total]
+        country_id:
+          type: string
+        city_id:
+          type: string
+          nullable: true
+        area_text:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        bedrooms:
+          type: integer
+          minimum: 0
+          nullable: true
+        bathrooms:
+          type: integer
+          minimum: 0
+          nullable: true
+        area_sqm:
+          type: number
+          minimum: 0
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+        media:
+          type: array
+          items:
+            $ref: "#/components/schemas/RieltCreateListingMediaInput"
+
+    RieltPatchListingRequest:
+      type: object
+      minProperties: 1
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        listing_type:
+          type: string
+          enum: [rent_long, rent_short, sale]
+        price_amount:
+          type: number
+          minimum: 0
+        price_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        price_period:
+          type: string
+          enum: [month, day, total]
+        country_id:
+          type: string
+        city_id:
+          type: string
+          nullable: true
+        area_text:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        bedrooms:
+          type: integer
+          minimum: 0
+          nullable: true
+        bathrooms:
+          type: integer
+          minimum: 0
+          nullable: true
+        area_sqm:
+          type: number
+          minimum: 0
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, published]
+
+    RieltCreateInquiryRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        contact_name:
+          type: string
+          nullable: true
+        contact_phone:
+          type: string
+          nullable: true
+        contact_telegram:
+          type: string
+          nullable: true

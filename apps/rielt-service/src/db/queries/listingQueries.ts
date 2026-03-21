@@ -66,6 +66,27 @@ export type NearbyListingRow = PublicListingRow & {
   distance_meters: number | string;
 };
 
+export type InquiryRow = {
+  id: string;
+  listing_id: string;
+  requester_user_id: string;
+  message: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_telegram: string | null;
+  status: 'new' | 'viewed' | 'closed';
+  idempotency_key: string;
+  created_at: string | Date;
+  closed_at: string | Date | null;
+};
+
+export type MyInquiryRow = InquiryRow & {
+  listing_slug: string;
+  listing_title: string;
+  listing_country_id: string;
+  listing_city_id: string | null;
+};
+
 type CountRow = { total: number };
 
 function rowsOf<T>(result: unknown): T[] {
@@ -147,6 +168,8 @@ export interface PatchOwnerListingInput {
   areaSqm: number | null;
   amenitiesSet: boolean;
   amenities: string[] | null;
+  statusSet: boolean;
+  status: 'draft' | 'published' | null;
 }
 
 export interface ListActorListingsInput {
@@ -164,6 +187,25 @@ export interface ListNearbyListingsInput {
   countryId: string | null;
   cityId: string | null;
   listingType: string | null;
+  limit: number;
+  offset: number;
+}
+
+export interface CreateListingInquiryInput {
+  id: string;
+  listingId: string;
+  requesterUserId: string;
+  message: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactTelegram: string | null;
+  idempotencyKey: string;
+}
+
+export interface ListMyInquiriesInput {
+  requesterUserId: string;
+  status: 'new' | 'viewed' | 'closed' | null;
+  sort: 'newest' | 'oldest';
   limit: number;
   offset: number;
 }
@@ -381,6 +423,12 @@ export async function patchOwnerListingById(
       bathrooms = CASE WHEN ${p.bathroomsSet}::boolean THEN ${p.bathrooms} ELSE bathrooms END,
       area_sqm = CASE WHEN ${p.areaSqmSet}::boolean THEN ${p.areaSqm} ELSE area_sqm END,
       amenities = CASE WHEN ${p.amenitiesSet}::boolean THEN ${p.amenities} ELSE amenities END,
+      status = CASE WHEN ${p.statusSet}::boolean THEN ${p.status}::listing_status ELSE status END,
+      published_at = CASE
+        WHEN ${p.statusSet}::boolean AND ${p.status}::listing_status = 'published' THEN COALESCE(published_at, now())
+        WHEN ${p.statusSet}::boolean AND ${p.status}::listing_status = 'draft' THEN NULL
+        ELSE published_at
+      END,
       updated_at = now()
     WHERE id = ${input.listingId}
       AND deleted_at IS NULL
@@ -749,6 +797,139 @@ export async function countPublishedListingsNearby(
     SELECT COUNT(*)::int AS total
     FROM scored
     WHERE distance_meters <= (SELECT radius_km * 1000.0 FROM p)
+  `);
+
+  return rowsOf<CountRow>(result)[0]?.total ?? 0;
+}
+
+export async function createListingInquiry(
+  db: DbExecutor,
+  input: CreateListingInquiryInput
+): Promise<InquiryRow | null> {
+  const result = await db.execute(sql`
+    WITH inserted AS (
+      INSERT INTO rielt_listing_inquiry (
+        id,
+        listing_id,
+        requester_user_id,
+        message,
+        contact_name,
+        contact_phone,
+        contact_telegram,
+        status,
+        idempotency_key,
+        created_at
+      )
+      VALUES (
+        ${input.id},
+        ${input.listingId},
+        ${input.requesterUserId},
+        ${input.message},
+        ${input.contactName},
+        ${input.contactPhone},
+        ${input.contactTelegram},
+        'new',
+        ${input.idempotencyKey},
+        now()
+      )
+      ON CONFLICT (requester_user_id, listing_id, idempotency_key) DO NOTHING
+      RETURNING
+        id,
+        listing_id,
+        requester_user_id,
+        message,
+        contact_name,
+        contact_phone,
+        contact_telegram,
+        status,
+        idempotency_key,
+        created_at,
+        closed_at
+    )
+    SELECT
+      i.id,
+      i.listing_id,
+      i.requester_user_id,
+      i.message,
+      i.contact_name,
+      i.contact_phone,
+      i.contact_telegram,
+      i.status,
+      i.idempotency_key,
+      i.created_at,
+      i.closed_at
+    FROM inserted i
+    UNION ALL
+    SELECT
+      q.id,
+      q.listing_id,
+      q.requester_user_id,
+      q.message,
+      q.contact_name,
+      q.contact_phone,
+      q.contact_telegram,
+      q.status,
+      q.idempotency_key,
+      q.created_at,
+      q.closed_at
+    FROM rielt_listing_inquiry q
+    WHERE q.requester_user_id = ${input.requesterUserId}
+      AND q.listing_id = ${input.listingId}
+      AND q.idempotency_key = ${input.idempotencyKey}
+      AND q.deleted_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM inserted)
+    LIMIT 1
+  `);
+
+  return rowsOf<InquiryRow>(result)[0] ?? null;
+}
+
+export async function listMyInquiries(db: DbExecutor, input: ListMyInquiriesInput): Promise<MyInquiryRow[]> {
+  const sortSql = input.sort === 'oldest' ? sql`q.created_at ASC, q.id ASC` : sql`q.created_at DESC, q.id DESC`;
+  const result = await db.execute(sql`
+    SELECT
+      q.id,
+      q.listing_id,
+      q.requester_user_id,
+      q.message,
+      q.contact_name,
+      q.contact_phone,
+      q.contact_telegram,
+      q.status,
+      q.idempotency_key,
+      q.created_at,
+      q.closed_at,
+      l.slug AS listing_slug,
+      l.title AS listing_title,
+      l.country_id AS listing_country_id,
+      l.city_id AS listing_city_id
+    FROM rielt_listing_inquiry q
+    JOIN rielt_listing l
+      ON l.id = q.listing_id
+     AND l.deleted_at IS NULL
+    WHERE q.requester_user_id = ${input.requesterUserId}
+      AND q.deleted_at IS NULL
+      AND (${input.status}::listing_inquiry_status IS NULL OR q.status = ${input.status}::listing_inquiry_status)
+    ORDER BY ${sortSql}
+    LIMIT ${input.limit}
+    OFFSET ${input.offset}
+  `);
+  return rowsOf<MyInquiryRow>(result);
+}
+
+export async function countMyInquiries(
+  db: DbExecutor,
+  input: Omit<ListMyInquiriesInput, 'sort' | 'limit' | 'offset'>
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM rielt_listing_inquiry q
+    JOIN rielt_listing l
+      ON l.id = q.listing_id
+     AND l.deleted_at IS NULL
+    WHERE q.requester_user_id = ${input.requesterUserId}
+      AND q.deleted_at IS NULL
+      AND (${input.status}::listing_inquiry_status IS NULL OR q.status = ${input.status}::listing_inquiry_status)
   `);
 
   return rowsOf<CountRow>(result)[0]?.total ?? 0;

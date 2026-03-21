@@ -59,6 +59,9 @@ export interface GuruResponseMeta {
   lng: number;
   radius_m: number;
   count: number;
+  sources_active: GuruSourceDomain[];
+  sources_stub: GuruSourceDomain[];
+  source_item_counts: Partial<Record<GuruSourceDomain, number>>;
 }
 
 export interface GuruPartialFailure {

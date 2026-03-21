@@ -40,7 +40,7 @@ Goals:
 |----------|------|
 | **PWA shell** | Direct consumer. Search, detail, EditorPicks, NewListings. |
 | **Guru (current)** | Reads listing data for nearby/discovery composition. Rielt remains listing source; Guru owns aggregation. |
-| **Future Guru** | May consume inquiry signals after inquiry HTTP wiring is enabled. |
+| **Future Guru** | May consume inquiry signals (requester inquiry HTTP wiring already enabled in current runtime). |
 | **Future RF** | May tag/link listings to RF offers. Integration structural, not implemented. |
 | **Future Space** | May reference or embed listings in posts. Integration structural, not implemented. |
 
@@ -57,7 +57,7 @@ Goals:
 ## 4.2 Who writes to Rielt
 
 - **Owner/agent (via frontend):** Create, patch, archive listings.
-- **Requester (via frontend):** Inquiry create/list is target contract; current runtime wiring is deferred.
+- **Requester (via frontend):** Inquiry create/list is an operational runtime contour.
 - **Only rielt-service** writes rielt-owned tables. No direct DB writes from other services.
 
 ## 4.3 Who is allowed to mutate

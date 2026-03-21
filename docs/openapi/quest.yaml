@@ -73,8 +73,6 @@ paths:
       summary: List published quests
       parameters:
         - $ref: "#/components/parameters/CityId"
-        - $ref: "#/components/parameters/Lat"
-        - $ref: "#/components/parameters/Lng"
         - $ref: "#/components/parameters/Theme"
         - $ref: "#/components/parameters/Difficulty"
         - $ref: "#/components/parameters/Page"
@@ -301,8 +299,6 @@ paths:
           $ref: "#/components/responses/QuestNotFound"
         "409":
           $ref: "#/components/responses/QuestConflict"
-        "429":
-          $ref: "#/components/responses/QuestRateLimited"
         "503":
           $ref: "#/components/responses/QuestServiceAuthNotConfigured"
         "500":
@@ -434,20 +430,6 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/QuestDifficulty"
-    Lat:
-      name: lat
-      in: query
-      required: false
-      schema:
-        type: number
-        format: double
-    Lng:
-      name: lng
-      in: query
-      required: false
-      schema:
-        type: number
-        format: double
     Page:
       name: page
       in: query

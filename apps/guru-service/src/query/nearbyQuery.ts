@@ -4,7 +4,7 @@ const ENTITY_TYPES: EntityType[] = ['place', 'event', 'listing', 'partner', 'que
 const DEFAULT_RADIUS_M = 2000;
 const MAX_RADIUS_M = 50000;
 const DEFAULT_LIMIT = 30;
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 50;
 
 function parseMode(raw: string | null): PresenceMode | null {
   if (!raw) return 'real';

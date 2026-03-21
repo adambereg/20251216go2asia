@@ -23,7 +23,7 @@ export default function CountryOverviewPage() {
   const resolved: any =
     dataSource === 'mock'
       ? mockCountry
-      : countryData ?? mockRepo.atlas.getCountryById(countryId || '');
+      : countryData ?? null;
 
   if (isLoading) {
     return (
@@ -42,7 +42,10 @@ export default function CountryOverviewPage() {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-          <p className="text-slate-600">Данные о стране не найдены.</p>
+          <p className="text-slate-600">
+            Данные о стране не найдены в API.
+            {dataSource === 'api' ? ' Мок-данные в этом режиме не подмешиваются.' : ''}
+          </p>
         </div>
       </div>
     );

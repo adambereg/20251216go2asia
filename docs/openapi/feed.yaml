@@ -70,12 +70,12 @@ paths:
     get:
       tags: [feed]
       operationId: getHomeFeed
-      summary: Home feed (read-only)
+      summary: Home feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -95,13 +95,13 @@ paths:
     get:
       tags: [feed]
       operationId: getGroupFeed
-      summary: Group feed (read-only)
+      summary: Group feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/GroupId"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -125,13 +125,13 @@ paths:
     get:
       tags: [feed]
       operationId: getProfileFeed
-      summary: Profile feed (read-only)
+      summary: Profile feed (read-only, chronology-first with reactions enrichment)
       security:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/UserId"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -151,12 +151,12 @@ paths:
     get:
       tags: [feed]
       operationId: getActivityFeed
-      summary: Activity feed (read-only)
+      summary: Activity feed (read-only, no reactions enrichment in V1)
       security:
         - GatewayAuth: []
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/FeedLimit"
         - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
@@ -186,7 +186,7 @@ components:
       required: true
       schema:
         type: string
-    Limit:
+    FeedLimit:
       name: limit
       in: query
       required: false
@@ -194,7 +194,6 @@ components:
         type: integer
         minimum: 1
         maximum: 100
-        default: 20
     Cursor:
       name: cursor
       in: query
@@ -356,6 +355,7 @@ components:
           nullable: true
         degraded:
           type: object
+          description: Present only when feed returns a controlled degraded composition (for example reactions fallback).
           properties:
             reactions:
               type: boolean

@@ -11,7 +11,7 @@
 - **Listings:** CRUD для владельца (create, list my, patch, archive)
 - **Public read:** Список опубликованных (filters, pagination, nearby)
 - **Детали:** GET по id или slug
-- **Inquiries:** Доменная модель и контракт зафиксированы; HTTP wiring в текущем runtime отложен
+- **Inquiries:** Requester runtime wiring реализован (create/list my inquiries). Owner-side workflow остаётся deferred.
 - **Модель:** rielt_listing, rielt_listing_media, rielt_listing_actor_link, rielt_listing_inquiry
 - **Роли:** owner, agent (через listing_actor_link)
 
@@ -66,11 +66,11 @@
 | PATCH | /v1/rielt/listings/{id} |
 | DELETE | /v1/rielt/listings/{idOrSlug} |
 
-### Inquiry (Bearer, deferred runtime wiring)
+### Inquiry (Bearer)
 | Method | Path |
 |--------|------|
-| POST | /v1/rielt/listings/{idOrSlug}/inquiries | (контракт определён, runtime wiring deferred) |
-| GET | /v1/rielt/my/inquiries | (контракт определён, runtime wiring deferred) |
+| POST | /v1/rielt/listings/{idOrSlug}/inquiries | requester create inquiry (runtime live) |
+| GET | /v1/rielt/my/inquiries | requester list own inquiries (runtime live) |
 
 ---
 
@@ -85,8 +85,8 @@
 3. **Управление своими объявлениями**
    - Auth → GET /v1/rielt/my/listings → PATCH / DELETE по id
 
-4. **Inquiry от пользователя (target contract)**
-   - Контракт и БД-модель определены; runtime HTTP wiring для сценария отложен
+4. **Inquiry от пользователя (runtime baseline)**
+   - Контракт, БД-модель и requester HTTP wiring реализованы; owner-side inquiry workflow deferred
 
 5. **Поиск по geo**
    - GET /v1/rielt/listings?country_id=…&city_id=…&sort=newest

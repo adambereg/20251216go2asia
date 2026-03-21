@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createDbMock, executeMock } = vi.hoisted(() => {
+const { createDbMock, executeMock, createPublisherMock, publishMock } = vi.hoisted(() => {
   const execute = vi.fn();
+  const publish = vi.fn();
   return {
     executeMock: execute,
     createDbMock: vi.fn(() => ({ execute })),
+    publishMock: publish,
+    createPublisherMock: vi.fn(() => ({ publish })),
   };
 });
 
@@ -16,6 +19,10 @@ vi.mock('@go2asia/db', () => ({
   }),
 }));
 
+vi.mock('../src/events/publisher', () => ({
+  createNoopQuestEventPublisher: createPublisherMock,
+}));
+
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import worker, { type Env } from '../src/index';
 
@@ -23,6 +30,8 @@ describe('quest-service v1', () => {
   beforeEach(() => {
     createDbMock.mockClear();
     executeMock.mockReset();
+    createPublisherMock.mockClear();
+    publishMock.mockReset();
   });
 
   afterEach(() => {
@@ -227,6 +236,31 @@ describe('quest-service v1', () => {
       status: 'in_progress',
       currentStep: 1,
     });
+  });
+
+  it('returns not found for progress when quest is not published or inaccessible', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'vip_1', roles: ['member'] });
+
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_hidden/progress', {
+        method: 'GET',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('NOT_FOUND');
+    expect(executeMock).toHaveBeenCalledTimes(1);
   });
 
   it('rejects submit when step order is violated', async () => {
@@ -662,5 +696,131 @@ describe('quest-service v1', () => {
       status: 'approved',
       reviewedBy: 'pro_1',
     });
+  });
+
+  it('reject review keeps progress in progress and emits rejection event', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      ENVIRONMENT: 'test',
+    };
+    const proJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qsub_1',
+            progress_id: 'qprog_1',
+            step_id: 'qstep_1',
+            user_id: 'vip_1',
+            proof_type: 'photo',
+            proof_data: { mediaId: 'media_1' },
+            status: 'pending',
+            reviewed_by: null,
+            reviewed_at: null,
+            rejection_reason: null,
+            created_at: '2026-03-16T10:06:00.000Z',
+            updated_at: '2026-03-16T10:06:00.000Z',
+            quest_id: 'quest_1',
+            creator_pro_id: 'pro_1',
+            progress_status: 'pending_review',
+            current_step: 1,
+            step_order: 1,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: 'Quest description',
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: 'route',
+            theme: 'coffee',
+            difficulty: 'easy',
+            status: 'published',
+            visibility: 'public',
+            reward_points: 100,
+            steps_count: 2,
+            published_at: '2026-03-16T10:00:00.000Z',
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qsub_1',
+            progress_id: 'qprog_1',
+            step_id: 'qstep_1',
+            user_id: 'vip_1',
+            proof_type: 'photo',
+            proof_data: { mediaId: 'media_1' },
+            status: 'rejected',
+            reviewed_by: 'pro_1',
+            reviewed_at: '2026-03-16T10:07:00.000Z',
+            rejection_reason: 'Need clearer proof',
+            created_at: '2026-03-16T10:06:00.000Z',
+            updated_at: '2026-03-16T10:07:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'vip_1',
+            status: 'in_progress',
+            current_step: 1,
+            started_at: '2026-03-16T10:05:00.000Z',
+            completed_at: null,
+            created_at: '2026-03-16T10:05:00.000Z',
+            updated_at: '2026-03-16T10:07:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/qsub_1/review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': proJwt,
+        },
+        body: JSON.stringify({
+          decision: 'reject',
+          reason: 'Need clearer proof',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; status: string; reviewedBy: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      id: 'qsub_1',
+      status: 'rejected',
+      reviewedBy: 'pro_1',
+    });
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'quest.submission.rejected',
+        payload: expect.objectContaining({
+          questId: 'quest_1',
+          progressId: 'qprog_1',
+          stepId: 'qstep_1',
+          submissionId: 'qsub_1',
+          userId: 'vip_1',
+          reason: 'Need clearer proof',
+        }),
+      })
+    );
   });
 });

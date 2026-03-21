@@ -28,6 +28,10 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `MEDIA_SERVICE_URL` - Optional dedicated Media Service URL; if unset, the canonical public contract `/v1/media/*` temporarily falls back to `CONTENT_SERVICE_URL`
 - `POINTS_SERVICE_URL` - Internal Points Service URL
 - `REFERRAL_SERVICE_URL` - Internal Referral Service URL
+- `SPACE_SERVICE_URL` - Phase 2 Space Service URL (enables `/v1/space/*`)
+- `REACTIONS_SERVICE_URL` - Phase 2 Reactions Service URL (enables `/v1/reactions*`)
+- `FEED_SERVICE_URL` - Phase 2 Feed Service URL (enables `/v1/feed/*`)
+- `QUEST_SERVICE_URL` - Phase 2 Quest Service URL (enables `/v1/quests*` and `/v1/submissions/*`)
 - `CLERK_SECRET_KEY` - Clerk server key used by `@clerk/backend` to verify user JWT via Clerk JWKS
 - `SERVICE_JWT_SECRET` - Service-to-service JWT secret
 
@@ -40,7 +44,7 @@ Set via Cloudflare Dashboard or `wrangler secret`:
 - `/v1/media/*` - Canonical public media contract; currently proxied to Media Service when configured, otherwise temporarily bridged to Content Service media routes as a transitional implementation detail
 - `/v1/points/*` - Routes to Points Service
 - `/v1/referral/*` - Routes to Referral Service
-- `/v1/space/*`, `/v1/quest/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` - Reserved Phase 2 prefixes; gateway returns `501 ROUTE_RESERVED_NOT_ENABLED` until corresponding `*_SERVICE_URL` is configured, then begins proxying
+- `/v1/space/*`, `/v1/reactions*`, `/v1/feed/*`, `/v1/quests*`, `/v1/submissions/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` - Reserved/Phase 2 prefixes; gateway returns `501 ROUTE_RESERVED_NOT_ENABLED` until corresponding `*_SERVICE_URL` is configured, then begins proxying
 
 ## Trust Contract
 

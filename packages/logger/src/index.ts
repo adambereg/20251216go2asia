@@ -107,7 +107,7 @@ export function createLogger(
  * Extracts requestId from Cloudflare Workers request headers
  */
 export function getRequestId(request: Request): string | undefined {
-  return request.headers.get('X-Request-ID') || undefined;
+  return request.headers.get('X-Request-ID') || request.headers.get('X-Request-Id') || undefined;
 }
 
 /**

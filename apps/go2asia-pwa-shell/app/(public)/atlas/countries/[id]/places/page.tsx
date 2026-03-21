@@ -57,7 +57,7 @@ export default function CountryPlacesPage() {
       ? mockRepo.atlas
           .listPlaces()
           .filter((p) => (p.country || '').toLowerCase() === (countryIdToCountryName[countryId] || '').toLowerCase())
-      : (placesData?.items && placesData.items.length > 0 ? placesData.items : mockRepo.atlas.listPlaces());
+      : (placesData?.items ?? []);
 
   // В мок-режиме, если совпадений по стране нет (или страна не задана), показываем демо-выборку.
   const effectivePlaces = dataSource === 'mock' ? (places.length > 0 ? places : mockRepo.atlas.listPlaces().slice(0, 12)) : places;
@@ -112,7 +112,8 @@ export default function CountryPlacesPage() {
             </div>
           ) : (
             <div className="text-center py-12 text-slate-600">
-              Места не найдены
+              Места не найдены в API.
+              {dataSource === 'api' ? ' Мок-данные в этом режиме не подмешиваются.' : ''}
             </div>
           )}
         </div>

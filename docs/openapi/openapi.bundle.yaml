@@ -1,5 +1,5 @@
 # GENERATED FILE — DO NOT EDIT
-# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/points.yaml, docs/openapi/quest.yaml, docs/openapi/referral.yaml, docs/openapi/space.yaml
+# Source: docs/openapi/openapi.yaml, docs/openapi/auth.yaml, docs/openapi/content.yaml, docs/openapi/guru.yaml, docs/openapi/points.yaml, docs/openapi/quest.yaml, docs/openapi/referral.yaml, docs/openapi/rf.yaml, docs/openapi/reactions.yaml, docs/openapi/rielt.yaml, docs/openapi/feed.yaml, docs/openapi/space.yaml
 
 components:
   parameters:
@@ -65,19 +65,96 @@ components:
       required: true
       schema:
         type: string
+    GuruLat:
+      in: query
+      name: lat
+      required: true
+      schema:
+        maximum: 90
+        minimum: -90
+        type: number
+    GuruLimit:
+      in: query
+      name: limit
+      schema:
+        default: 30
+        maximum: 50
+        minimum: 1
+        type: integer
+    GuruLng:
+      in: query
+      name: lng
+      required: true
+      schema:
+        maximum: 180
+        minimum: -180
+        type: number
+    GuruMode:
+      in: query
+      name: mode
+      schema:
+        default: real
+        enum:
+          - real
+          - virtual
+        type: string
+    GuruOpenNow:
+      in: query
+      name: open_now
+      schema:
+        type: boolean
+    GuruRadiusM:
+      in: query
+      name: radius_m
+      schema:
+        default: 2000
+        maximum: 50000
+        minimum: 1
+        type: integer
+    GuruRfOnly:
+      in: query
+      name: rf_only
+      schema:
+        type: boolean
+    GuruTimeWindow:
+      in: query
+      name: time_window
+      schema:
+        type: string
+    GuruTypePath:
+      in: path
+      name: type
+      required: true
+      schema:
+        $ref: "#/components/schemas/GuruEntityType"
+    GuruTypes:
+      description: Comma-separated entity types (not allowed on nearby-by-type or what-to-do)
+      in: query
+      name: types
+      schema:
+        example: listing,partner
+        type: string
+    GuruVerifiedOnly:
+      in: query
+      name: verified_only
+      schema:
+        type: boolean
+    IdempotencyKey:
+      description: |
+        Optional idempotency key for POST /v1/reactions. Reusing the same key with the same payload returns an idempotent replay (applied=false). Reusing the same key with a different payload returns 409 Conflict.
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema:
+        maxLength: 128
+        minLength: 8
+        type: string
     Lang:
       in: query
       name: lang
       required: false
       schema:
         type: string
-    Lat:
-      in: query
-      name: lat
-      required: false
-      schema:
-        format: double
-        type: number
     Limit:
       in: query
       name: limit
@@ -86,13 +163,6 @@ components:
         maximum: 200
         minimum: 1
         type: integer
-    Lng:
-      in: query
-      name: lng
-      required: false
-      schema:
-        format: double
-        type: number
     MediaId:
       in: path
       name: mediaId
@@ -143,6 +213,182 @@ components:
       required: true
       schema:
         type: string
+    ReactionId:
+      in: path
+      name: reactionId
+      required: true
+      schema:
+        type: string
+    RfIdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema:
+        type: string
+    RfOfferId:
+      in: path
+      name: offerId
+      required: true
+      schema:
+        type: string
+    RfPartnerId:
+      in: path
+      name: partnerId
+      required: true
+      schema:
+        type: string
+    RfProLinkId:
+      in: path
+      name: proLinkId
+      required: true
+      schema:
+        type: string
+    RfVoucherId:
+      in: path
+      name: voucherId
+      required: true
+      schema:
+        type: string
+    RfXGatewayAuth:
+      in: header
+      name: X-Gateway-Auth
+      required: true
+      schema:
+        type: string
+    RieltBedroomsMax:
+      in: query
+      name: bedrooms_max
+      schema:
+        minimum: 0
+        type: integer
+    RieltBedroomsMin:
+      in: query
+      name: bedrooms_min
+      schema:
+        minimum: 0
+        type: integer
+    RieltCityId:
+      in: query
+      name: city_id
+      schema:
+        type: string
+    RieltCountryId:
+      in: query
+      name: country_id
+      schema:
+        type: string
+    RieltIdOrSlug:
+      in: path
+      name: idOrSlug
+      required: true
+      schema:
+        type: string
+    RieltIdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema:
+        type: string
+    RieltInquirySort:
+      in: query
+      name: sort
+      schema:
+        enum:
+          - newest
+          - oldest
+        type: string
+    RieltInquiryStatus:
+      in: query
+      name: status
+      schema:
+        enum:
+          - new
+          - viewed
+          - closed
+        type: string
+    RieltLat:
+      in: query
+      name: lat
+      required: true
+      schema:
+        maximum: 90
+        minimum: -90
+        type: number
+    RieltListingType:
+      in: query
+      name: listing_type
+      schema:
+        enum:
+          - rent_long
+          - rent_short
+          - sale
+        type: string
+    RieltLng:
+      in: query
+      name: lng
+      required: true
+      schema:
+        maximum: 180
+        minimum: -180
+        type: number
+    RieltMaxPrice:
+      in: query
+      name: max_price
+      schema:
+        minimum: 0
+        type: number
+    RieltMinPrice:
+      in: query
+      name: min_price
+      schema:
+        minimum: 0
+        type: number
+    RieltPage:
+      in: query
+      name: page
+      schema:
+        default: 1
+        minimum: 1
+        type: integer
+    RieltPageSize:
+      in: query
+      name: page_size
+      schema:
+        default: 20
+        maximum: 100
+        minimum: 1
+        type: integer
+    RieltRadiusKm:
+      in: query
+      name: radius_km
+      required: true
+      schema:
+        exclusiveMinimum: 0
+        type: number
+    RieltSort:
+      in: query
+      name: sort
+      schema:
+        enum:
+          - newest
+          - price_asc
+          - price_desc
+        type: string
+    RieltStatus:
+      in: query
+      name: status
+      schema:
+        enum:
+          - draft
+          - published
+          - archived
+        type: string
+    RieltXGatewayAuth:
+      in: header
+      name: X-Gateway-Auth
+      required: true
+      schema:
+        type: string
     StepId:
       in: path
       name: stepId
@@ -161,6 +407,18 @@ components:
       required: false
       schema:
         type: string
+    TargetId:
+      in: path
+      name: targetId
+      required: true
+      schema:
+        type: string
+    TargetType:
+      in: path
+      name: targetType
+      required: true
+      schema:
+        $ref: "#/components/schemas/ReactionTargetType"
     Theme:
       in: query
       name: theme
@@ -204,6 +462,30 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Conflict
+    FeedServiceUnavailable:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+      description: Upstream service unavailable
+    Forbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FeedErrorResponse"
+      description: Forbidden
+    GuruInternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GuruErrorResponse"
+      description: Internal server error
+    GuruValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GuruErrorResponse"
+      description: Validation error
     InternalError:
       content:
         application/json:
@@ -270,6 +552,108 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Rate limited
+    ReactionsConflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Conflict (for example idempotency key reuse with different payload)
+    ReactionsRateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Rate limited
+    ReactionsServiceAuthNotConfigured:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Service auth is not configured
+    ReactionsValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReactionsErrorResponse"
+      description: Validation error
+    RfConflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Conflict
+    RfForbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Forbidden
+    RfNotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Not found
+    RfRateLimited:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Too many requests
+    RfUnauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Unauthorized
+    RfValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Validation error
+    RieltConflict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Conflict
+    RieltForbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Forbidden
+    RieltInternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Internal server error
+    RieltNotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Not found
+    RieltServiceUnavailable:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Service unavailable / not configured
+    RieltUnauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Unauthorized
+    RieltValidationError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RieltErrorResponse"
+      description: Validation error
     ServiceAuthNotConfigured:
       content:
         application/json:
@@ -1022,6 +1406,136 @@ components:
         - eventId
         - userId
       type: object
+    FeedErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    FeedHealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: feed-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    FeedItem:
+      additionalProperties: true
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        post:
+          $ref: "#/components/schemas/FeedItemPost"
+        reactions:
+          $ref: "#/components/schemas/FeedReactionsSummary"
+      required:
+        - id
+      type: object
+    FeedItemPost:
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+      required:
+        - id
+      type: object
+    FeedPageResponse:
+      properties:
+        degraded:
+          description: Present only when feed returns a controlled degraded composition (for example reactions fallback).
+          properties:
+            reactions:
+              type: boolean
+          type: object
+        items:
+          items:
+            $ref: "#/components/schemas/FeedItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    FeedReactionsSummary:
+      properties:
+        counts:
+          properties:
+            like:
+              minimum: 0
+              type: integer
+          required:
+            - like
+          type: object
+        viewer:
+          properties:
+            liked:
+              type: boolean
+          required:
+            - liked
+          type: object
+      required:
+        - counts
+        - viewer
+      type: object
+    FeedReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
     GenerateCodeRequest:
       properties:
         userId:
@@ -1041,6 +1555,243 @@ components:
         - userId
         - code
         - created
+      type: object
+    GuruEntityAction:
+      properties:
+        deeplink:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+      required:
+        - type
+        - label
+        - deeplink
+      type: object
+    GuruEntityCard:
+      additionalProperties: true
+      properties:
+        actions:
+          items:
+            $ref: "#/components/schemas/GuruEntityAction"
+          type: array
+        city_id:
+          type: string
+        country_id:
+          type: string
+        description:
+          type: string
+        distance_m:
+          type: number
+        explain:
+          $ref: "#/components/schemas/GuruExplain"
+        id:
+          type: string
+        image_url:
+          type: string
+        is_open_now:
+          type: boolean
+        is_rf:
+          type: boolean
+        is_verified:
+          type: boolean
+        lat:
+          type: number
+        lng:
+          type: number
+        payload:
+          additionalProperties: true
+          type: object
+        price_level:
+          type: number
+        rating:
+          type: number
+        source:
+          $ref: "#/components/schemas/GuruSourceRef"
+        starts_at:
+          type: string
+        subtitle:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/GuruEntityType"
+      required:
+        - id
+        - type
+        - title
+      type: object
+    GuruEntityType:
+      enum:
+        - place
+        - event
+        - listing
+        - partner
+        - quest
+        - pro
+        - blog_tag
+      type: string
+    GuruErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    GuruExplain:
+      properties:
+        reasons:
+          items:
+            type: string
+          type: array
+      required:
+        - reasons
+      type: object
+    GuruHealthResponse:
+      properties:
+        env:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    GuruListResponse:
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/GuruEntityCard"
+          type: array
+        meta:
+          $ref: "#/components/schemas/GuruMeta"
+        partial_failures:
+          items:
+            $ref: "#/components/schemas/GuruPartialFailure"
+          type: array
+      required:
+        - data
+        - meta
+      type: object
+    GuruMeta:
+      properties:
+        count:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        mode:
+          enum:
+            - real
+            - virtual
+          type: string
+        radius_m:
+          type: integer
+        source_item_counts:
+          additionalProperties:
+            type: integer
+          type: object
+        sources_active:
+          items:
+            $ref: "#/components/schemas/GuruSourceDomain"
+          type: array
+        sources_stub:
+          items:
+            $ref: "#/components/schemas/GuruSourceDomain"
+          type: array
+      required:
+        - mode
+        - lat
+        - lng
+        - radius_m
+        - count
+        - sources_active
+        - sources_stub
+        - source_item_counts
+      type: object
+    GuruPartialFailure:
+      properties:
+        domain:
+          $ref: "#/components/schemas/GuruSourceDomain"
+        reason:
+          type: string
+      required:
+        - domain
+        - reason
+      type: object
+    GuruReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
+    GuruSourceDomain:
+      enum:
+        - atlas
+        - pulse
+        - rielt
+        - rf
+        - quest
+        - space
+        - blog
+      type: string
+    GuruSourceRef:
+      properties:
+        domain:
+          $ref: "#/components/schemas/GuruSourceDomain"
+        source_id:
+          type: string
+        source_slug:
+          type: string
+      required:
+        - domain
+        - source_id
       type: object
     HealthResponse:
       properties:
@@ -1567,6 +2318,204 @@ components:
         - public
         - private
       type: string
+    ReactionDeleteResponse:
+      properties:
+        removed:
+          type: boolean
+      required:
+        - removed
+      type: object
+    ReactionRecord:
+      properties:
+        actorUserId:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+        status:
+          $ref: "#/components/schemas/ReactionStatus"
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - actorUserId
+        - targetType
+        - targetId
+        - reactionType
+        - status
+        - createdAt
+        - updatedAt
+      type: object
+    ReactionStatus:
+      enum:
+        - active
+        - deleted
+      type: string
+    ReactionSummaryBatchRequest:
+      properties:
+        targets:
+          items:
+            $ref: "#/components/schemas/ReactionSummaryBatchTarget"
+          maxItems: 100
+          minItems: 1
+          type: array
+      required:
+        - targets
+      type: object
+    ReactionSummaryBatchResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ReactionSummaryItem"
+          type: array
+      required:
+        - items
+      type: object
+    ReactionSummaryBatchTarget:
+      properties:
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+      required:
+        - targetType
+        - targetId
+      type: object
+    ReactionSummaryItem:
+      properties:
+        counts:
+          properties:
+            like:
+              minimum: 0
+              type: integer
+          required:
+            - like
+          type: object
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+        viewer:
+          properties:
+            liked:
+              type: boolean
+          required:
+            - liked
+          type: object
+      required:
+        - targetType
+        - targetId
+        - counts
+        - viewer
+      type: object
+    ReactionSummaryResponse:
+      properties:
+        item:
+          $ref: "#/components/schemas/ReactionSummaryItem"
+      required:
+        - item
+      type: object
+    ReactionTargetType:
+      enum:
+        - space_post
+        - blog_post
+        - place
+        - event
+        - partner
+        - listing
+        - quest
+      type: string
+    ReactionType:
+      enum:
+        - like
+      type: string
+    ReactionWriteResponse:
+      properties:
+        applied:
+          description: false when response is an idempotent replay
+          type: boolean
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+      required:
+        - reaction
+        - applied
+      type: object
+    ReactionsErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    ReactionsHealthResponse:
+      properties:
+        env:
+          example: staging
+          type: string
+        service:
+          example: reactions-service
+          type: string
+        status:
+          example: ok
+          type: string
+        version:
+          example: <sha>
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    ReactionsReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
     ReadyResponse:
       properties:
         checks:
@@ -1676,6 +2625,955 @@ components:
           type: string
       required:
         - decision
+      type: object
+    RfAcceptProLinkResponse:
+      properties:
+        applied:
+          type: boolean
+        proLink:
+          $ref: "#/components/schemas/RfProLink"
+      required:
+        - proLink
+        - applied
+      type: object
+    RfClaimResponse:
+      properties:
+        idempotentReplay:
+          type: boolean
+        voucher:
+          $ref: "#/components/schemas/RfVoucher"
+      required:
+        - voucher
+        - idempotentReplay
+      type: object
+    RfCreateOfferRequest:
+      properties:
+        offerType:
+          enum:
+            - discount
+            - bundle
+            - gift
+            - access
+            - campaign
+            - event_related
+          type: string
+        title:
+          type: string
+        visibility:
+          enum:
+            - public
+            - pro_only
+            - invite_only
+          type: string
+      required:
+        - title
+        - offerType
+        - visibility
+      type: object
+    RfCreatePartnerRequest:
+      properties:
+        cityId:
+          type: string
+        countryId:
+          type: string
+        displayName:
+          type: string
+      required:
+        - displayName
+        - countryId
+        - cityId
+      type: object
+    RfCreateProLinkRequest:
+      properties:
+        partnerId:
+          type: string
+        roleScope:
+          enum:
+            - onboarding
+            - curation
+            - promotion
+            - moderation_support
+            - account_support
+          type: string
+      required:
+        - partnerId
+        - roleScope
+      type: object
+    RfErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    RfHealthResponse:
+      properties:
+        env:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    RfOffer:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        createdByUserId:
+          type: string
+        id:
+          type: string
+        offerType:
+          enum:
+            - discount
+            - bundle
+            - gift
+            - access
+            - campaign
+            - event_related
+          type: string
+        partnerId:
+          type: string
+        status:
+          enum:
+            - draft
+            - active
+            - archived
+          type: string
+        title:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        visibility:
+          enum:
+            - public
+            - pro_only
+            - invite_only
+          type: string
+      required:
+        - id
+        - partnerId
+        - title
+        - offerType
+        - visibility
+        - status
+        - createdByUserId
+        - createdAt
+        - updatedAt
+      type: object
+    RfOfferListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RfOffer"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    RfPartner:
+      properties:
+        cityId:
+          type: string
+        countryId:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        displayName:
+          type: string
+        id:
+          type: string
+        ownerUserId:
+          type: string
+        slug:
+          type: string
+        status:
+          enum:
+            - active
+            - archived
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - slug
+        - displayName
+        - countryId
+        - cityId
+        - status
+        - ownerUserId
+        - createdAt
+        - updatedAt
+      type: object
+    RfPartnerListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RfPartner"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    RfProLink:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        partnerId:
+          type: string
+        proUserId:
+          type: string
+        roleScope:
+          enum:
+            - onboarding
+            - curation
+            - promotion
+            - moderation_support
+            - account_support
+          type: string
+        status:
+          enum:
+            - pending
+            - active
+            - ended
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - partnerId
+        - proUserId
+        - status
+        - roleScope
+        - createdAt
+        - updatedAt
+      type: object
+    RfProLinkListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RfProLink"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    RfReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
+      type: object
+    RfRedeemResponse:
+      properties:
+        applied:
+          type: boolean
+        voucher:
+          $ref: "#/components/schemas/RfVoucher"
+      required:
+        - voucher
+        - applied
+      type: object
+    RfVoucher:
+      properties:
+        claimedAt:
+          format: date-time
+          type: string
+        code:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        issuedToUserId:
+          type: string
+        offerId:
+          type: string
+        partnerId:
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        status:
+          enum:
+            - claimed
+            - redeemed
+            - cancelled
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - offerId
+        - partnerId
+        - issuedToUserId
+        - status
+        - code
+        - claimedAt
+        - createdAt
+        - updatedAt
+      type: object
+    RfVoucherListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RfVoucher"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
+    RieltArchiveResponse:
+      allOf:
+        - $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+        - properties:
+            archived:
+              type: boolean
+          required:
+            - archived
+          type: object
+    RieltCreateInquiryRequest:
+      properties:
+        contact_name:
+          nullable: true
+          type: string
+        contact_phone:
+          nullable: true
+          type: string
+        contact_telegram:
+          nullable: true
+          type: string
+        message:
+          type: string
+      required:
+        - message
+      type: object
+    RieltCreateListingMediaInput:
+      properties:
+        is_cover:
+          default: false
+          type: boolean
+        media_id:
+          type: string
+        sort_order:
+          default: 0
+          minimum: 0
+          type: integer
+      required:
+        - media_id
+      type: object
+    RieltCreateListingRequest:
+      properties:
+        amenities:
+          items:
+            type: string
+          type: array
+        area_sqm:
+          minimum: 0
+          nullable: true
+          type: number
+        area_text:
+          nullable: true
+          type: string
+        bathrooms:
+          minimum: 0
+          nullable: true
+          type: integer
+        bedrooms:
+          minimum: 0
+          nullable: true
+          type: integer
+        city_id:
+          nullable: true
+          type: string
+        country_id:
+          type: string
+        description:
+          type: string
+        lat:
+          nullable: true
+          type: number
+        listing_type:
+          enum:
+            - rent_long
+            - rent_short
+            - sale
+          type: string
+        lng:
+          nullable: true
+          type: number
+        media:
+          items:
+            $ref: "#/components/schemas/RieltCreateListingMediaInput"
+          type: array
+        price_amount:
+          minimum: 0
+          type: number
+        price_currency:
+          pattern: ^[A-Z]{3}$
+          type: string
+        price_period:
+          enum:
+            - month
+            - day
+            - total
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+      required:
+        - slug
+        - title
+        - description
+        - listing_type
+        - price_amount
+        - price_currency
+        - price_period
+        - country_id
+      type: object
+    RieltDetailResponse:
+      properties:
+        listing:
+          $ref: "#/components/schemas/RieltListing"
+      required:
+        - listing
+      type: object
+    RieltErrorResponse:
+      properties:
+        error:
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+          type: object
+        requestId:
+          nullable: true
+          type: string
+      required:
+        - error
+      type: object
+    RieltGeo:
+      properties:
+        cityId:
+          nullable: true
+          type: string
+        countryId:
+          type: string
+      required:
+        - countryId
+      type: object
+    RieltHealthResponse:
+      properties:
+        env:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+      type: object
+    RieltInquiry:
+      properties:
+        closedAt:
+          format: date-time
+          nullable: true
+          type: string
+        contact:
+          $ref: "#/components/schemas/RieltInquiryContact"
+        createdAt:
+          format: date-time
+          nullable: true
+          type: string
+        id:
+          type: string
+        idempotencyKey:
+          type: string
+        listingId:
+          type: string
+        message:
+          type: string
+        requesterUserId:
+          type: string
+        status:
+          enum:
+            - new
+            - viewed
+            - closed
+          type: string
+      required:
+        - id
+        - listingId
+        - requesterUserId
+        - message
+        - contact
+        - status
+        - idempotencyKey
+      type: object
+    RieltInquiryContact:
+      properties:
+        name:
+          nullable: true
+          type: string
+        phone:
+          nullable: true
+          type: string
+        telegram:
+          nullable: true
+          type: string
+      required:
+        - name
+        - phone
+        - telegram
+      type: object
+    RieltInquiryEnvelope:
+      properties:
+        inquiry:
+          $ref: "#/components/schemas/RieltInquiry"
+      required:
+        - inquiry
+      type: object
+    RieltInquiryListingRef:
+      properties:
+        geo:
+          $ref: "#/components/schemas/RieltGeo"
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - slug
+        - title
+        - geo
+      type: object
+    RieltListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RieltListing"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+      required:
+        - items
+        - pagination
+      type: object
+    RieltListing:
+      properties:
+        areaSqm:
+          nullable: true
+          type: number
+        bathrooms:
+          nullable: true
+          type: integer
+        bedrooms:
+          nullable: true
+          type: integer
+        createdAt:
+          format: date-time
+          nullable: true
+          type: string
+        geo:
+          $ref: "#/components/schemas/RieltGeo"
+        id:
+          type: string
+        listingType:
+          type: string
+        media:
+          $ref: "#/components/schemas/RieltMedia"
+        price:
+          $ref: "#/components/schemas/RieltPrice"
+        publishedAt:
+          format: date-time
+          nullable: true
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        updatedAt:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+        - id
+        - slug
+        - title
+        - listingType
+        - price
+        - geo
+        - media
+      type: object
+    RieltMedia:
+      properties:
+        coverUrl:
+          nullable: true
+          type: string
+        photos:
+          items:
+            type: string
+          type: array
+      required:
+        - coverUrl
+        - photos
+      type: object
+    RieltMyInquiry:
+      allOf:
+        - $ref: "#/components/schemas/RieltInquiry"
+        - properties:
+            listing:
+              $ref: "#/components/schemas/RieltInquiryListingRef"
+          required:
+            - listing
+          type: object
+    RieltMyInquiryListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RieltMyInquiry"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+      required:
+        - items
+        - pagination
+      type: object
+    RieltNearbyAnchor:
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        radiusKm:
+          type: number
+      required:
+        - lat
+        - lng
+        - radiusKm
+      type: object
+    RieltNearbyListResponse:
+      properties:
+        anchor:
+          $ref: "#/components/schemas/RieltNearbyAnchor"
+        items:
+          items:
+            $ref: "#/components/schemas/RieltNearbyListing"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+      required:
+        - anchor
+        - items
+        - pagination
+      type: object
+    RieltNearbyListing:
+      allOf:
+        - $ref: "#/components/schemas/RieltListing"
+        - properties:
+            distanceMeters:
+              type: integer
+          type: object
+    RieltOwnerGeo:
+      properties:
+        areaText:
+          nullable: true
+          type: string
+        cityId:
+          nullable: true
+          type: string
+        countryId:
+          type: string
+        lat:
+          nullable: true
+          type: number
+        lng:
+          nullable: true
+          type: number
+      required:
+        - countryId
+      type: object
+    RieltOwnerListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RieltOwnerListing"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/RieltPagination"
+      required:
+        - items
+        - pagination
+      type: object
+    RieltOwnerListing:
+      properties:
+        archivedAt:
+          format: date-time
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        geo:
+          $ref: "#/components/schemas/RieltOwnerGeo"
+        id:
+          type: string
+        listingType:
+          type: string
+        price:
+          $ref: "#/components/schemas/RieltPrice"
+        publishedAt:
+          format: date-time
+          nullable: true
+          type: string
+        slug:
+          type: string
+        specs:
+          $ref: "#/components/schemas/RieltOwnerSpecs"
+        status:
+          enum:
+            - draft
+            - published
+            - archived
+          type: string
+        title:
+          type: string
+        updatedAt:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+        - id
+        - slug
+        - title
+        - listingType
+        - status
+        - price
+        - geo
+        - specs
+      type: object
+    RieltOwnerListingEnvelope:
+      properties:
+        listing:
+          $ref: "#/components/schemas/RieltOwnerListing"
+      required:
+        - listing
+      type: object
+    RieltOwnerSpecs:
+      properties:
+        amenities:
+          items:
+            type: string
+          type: array
+        areaSqm:
+          nullable: true
+          type: number
+        bathrooms:
+          nullable: true
+          type: integer
+        bedrooms:
+          nullable: true
+          type: integer
+      required:
+        - amenities
+      type: object
+    RieltPagination:
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required:
+        - page
+        - pageSize
+        - total
+      type: object
+    RieltPatchListingRequest:
+      minProperties: 1
+      properties:
+        amenities:
+          items:
+            type: string
+          type: array
+        area_sqm:
+          minimum: 0
+          nullable: true
+          type: number
+        area_text:
+          nullable: true
+          type: string
+        bathrooms:
+          minimum: 0
+          nullable: true
+          type: integer
+        bedrooms:
+          minimum: 0
+          nullable: true
+          type: integer
+        city_id:
+          nullable: true
+          type: string
+        country_id:
+          type: string
+        description:
+          type: string
+        lat:
+          nullable: true
+          type: number
+        listing_type:
+          enum:
+            - rent_long
+            - rent_short
+            - sale
+          type: string
+        lng:
+          nullable: true
+          type: number
+        price_amount:
+          minimum: 0
+          type: number
+        price_currency:
+          pattern: ^[A-Z]{3}$
+          type: string
+        price_period:
+          enum:
+            - month
+            - day
+            - total
+          type: string
+        slug:
+          type: string
+        status:
+          enum:
+            - draft
+            - published
+          type: string
+        title:
+          type: string
+      type: object
+    RieltPrice:
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        period:
+          type: string
+      required:
+        - amount
+        - currency
+        - period
+      type: object
+    RieltReadyResponse:
+      properties:
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+        env:
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          enum:
+            - ready
+            - not_ready
+          type: string
+        version:
+          type: string
+      required:
+        - service
+        - env
+        - status
+        - version
+        - checks
+        - missing
       type: object
     SpaceActivityFeedItem:
       properties:
@@ -2047,6 +3945,19 @@ components:
       required:
         - ok
         - key
+      type: object
+    UpsertReactionRequest:
+      properties:
+        reactionType:
+          $ref: "#/components/schemas/ReactionType"
+        targetId:
+          type: string
+        targetType:
+          $ref: "#/components/schemas/ReactionTargetType"
+      required:
+        - targetType
+        - targetId
+        - reactionType
       type: object
     UserBalance:
       properties:
@@ -2579,6 +4490,194 @@ paths:
       summary: Get place by id or slug (public)
       tags:
         - content
+  /v1/feed/activity:
+    get:
+      operationId: getActivityFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Activity feed (read-only, no reactions enrichment in V1)
+      tags:
+        - feed
+  /v1/feed/group/{groupId}:
+    get:
+      operationId: getGroupFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Group feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
+  /v1/feed/home:
+    get:
+      operationId: getHomeFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Home feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
+  /v1/feed/profile/{userId}:
+    get:
+      operationId: getProfileFeed
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPageResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/FeedServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Profile feed (read-only, chronology-first with reactions enrichment)
+      tags:
+        - feed
+  /v1/guru/nearby:
+    get:
+      operationId: guruGetNearby
+      parameters:
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTypes"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+        - $ref: "#/components/parameters/GuruRfOnly"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+      summary: Blended nearby aggregation
+      tags:
+        - guru
+  /v1/guru/nearby/{type}:
+    get:
+      operationId: guruGetNearbyByType
+      parameters:
+        - $ref: "#/components/parameters/GuruTypePath"
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+        - $ref: "#/components/parameters/GuruRfOnly"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+      summary: Nearby aggregation constrained to one type
+      tags:
+        - guru
+  /v1/guru/what-to-do:
+    get:
+      operationId: guruGetWhatToDo
+      parameters:
+        - $ref: "#/components/parameters/GuruMode"
+        - $ref: "#/components/parameters/GuruLat"
+        - $ref: "#/components/parameters/GuruLng"
+        - $ref: "#/components/parameters/GuruRadiusM"
+        - $ref: "#/components/parameters/GuruLimit"
+        - $ref: "#/components/parameters/GuruTimeWindow"
+        - $ref: "#/components/parameters/GuruOpenNow"
+        - $ref: "#/components/parameters/GuruVerifiedOnly"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuruListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/GuruValidationError"
+        "500":
+          $ref: "#/components/responses/GuruInternalError"
+      summary: Action-oriented nearby composition
+      tags:
+        - guru
   /v1/media/upload-token:
     post:
       description: |
@@ -2754,8 +4853,6 @@ paths:
       operationId: listQuests
       parameters:
         - $ref: "#/components/parameters/CityId"
-        - $ref: "#/components/parameters/Lat"
-        - $ref: "#/components/parameters/Lng"
         - $ref: "#/components/parameters/Theme"
         - $ref: "#/components/parameters/Difficulty"
         - $ref: "#/components/parameters/Page"
@@ -2981,8 +5078,6 @@ paths:
           $ref: "#/components/responses/QuestNotFound"
         "409":
           $ref: "#/components/responses/QuestConflict"
-        "429":
-          $ref: "#/components/responses/QuestRateLimited"
         "500":
           $ref: "#/components/responses/QuestInternalError"
         "503":
@@ -3023,6 +5118,125 @@ paths:
       summary: List submissions for quest review
       tags:
         - quests
+  /v1/reactions:
+    post:
+      operationId: upsertReaction
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertReactionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionWriteResponse"
+          description: Reaction applied (created or updated)
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/ReactionsConflict"
+        "429":
+          $ref: "#/components/responses/ReactionsRateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Create or update a like (idempotent write)
+      tags:
+        - reactions
+  /v1/reactions/summary/{targetType}/{targetId}:
+    get:
+      operationId: getReactionSummary
+      parameters:
+        - $ref: "#/components/parameters/TargetType"
+        - $ref: "#/components/parameters/TargetId"
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      summary: Get like summary for one target
+      tags:
+        - reactions
+  /v1/reactions/summary:batch:
+    post:
+      operationId: getReactionSummaryBatch
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuthOptional"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionSummaryBatchRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionSummaryBatchResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      summary: Get like summaries for multiple targets
+      tags:
+        - reactions
+  /v1/reactions/{reactionId}:
+    delete:
+      operationId: removeReaction
+      parameters:
+        - $ref: "#/components/parameters/ReactionId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionDeleteResponse"
+          description: Reaction removed
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Remove an active like
+      tags:
+        - reactions
   /v1/referral/claim:
     post:
       description: |
@@ -3146,6 +5360,579 @@ paths:
       summary: Get current user's referral tree (depth 1..2)
       tags:
         - referral
+  /v1/rf/business/partners/{partnerId}/offers:
+    post:
+      operationId: rfCreateOffer
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreateOfferRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Create draft offer for partner
+      tags:
+        - rf
+  /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate:
+    post:
+      operationId: rfActivateOffer
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfOfferId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+          description: Activated or already active
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+      security:
+        - GatewayAuth: []
+      summary: Activate partner offer
+      tags:
+        - rf
+  /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem:
+    post:
+      operationId: rfRedeemVoucher
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfVoucherId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRedeemResponse"
+          description: Redeem processed
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+      security:
+        - GatewayAuth: []
+      summary: Redeem voucher by partner owner
+      tags:
+        - rf
+  /v1/rf/me/vouchers:
+    get:
+      operationId: rfListMyVouchers
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfVoucherListResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+      security:
+        - GatewayAuth: []
+      summary: List current user vouchers
+      tags:
+        - rf
+  /v1/rf/offers:
+    get:
+      operationId: rfListOffers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOfferListResponse"
+          description: OK
+      summary: List public active offers
+      tags:
+        - rf
+  /v1/rf/offers/{offerId}:
+    get:
+      operationId: rfGetOffer
+      parameters:
+        - $ref: "#/components/parameters/RfOfferId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfOffer"
+          description: OK
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      summary: Get public offer
+      tags:
+        - rf
+  /v1/rf/offers/{offerId}/claim:
+    post:
+      operationId: rfClaimVoucher
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfOfferId"
+        - $ref: "#/components/parameters/RfIdempotencyKey"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Idempotent replay
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Voucher created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+      security:
+        - GatewayAuth: []
+      summary: Claim voucher for active offer (idempotent by user+key)
+      tags:
+        - rf
+  /v1/rf/partners:
+    get:
+      operationId: rfListPartners
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerListResponse"
+          description: OK
+      summary: List public partners
+      tags:
+        - rf
+    post:
+      operationId: rfCreatePartner
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreatePartnerRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartner"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+      security:
+        - GatewayAuth: []
+      summary: Create partner (business owner flow)
+      tags:
+        - rf
+  /v1/rf/partners/{partnerId}:
+    get:
+      operationId: rfGetPartner
+      parameters:
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartner"
+          description: OK
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      summary: Get public partner
+      tags:
+        - rf
+  /v1/rf/pro/links:
+    get:
+      operationId: rfListProLinks
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProLinkListResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+      security:
+        - GatewayAuth: []
+      summary: List current user PRO links
+      tags:
+        - rf
+    post:
+      operationId: rfCreateProLink
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreateProLinkRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProLink"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Create PRO link
+      tags:
+        - rf
+  /v1/rf/pro/links/{proLinkId}/accept:
+    post:
+      operationId: rfAcceptProLink
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfProLinkId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfAcceptProLinkResponse"
+          description: Accepted or already active
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+      security:
+        - GatewayAuth: []
+      summary: Accept PRO link by partner owner
+      tags:
+        - rf
+  /v1/rielt/listings:
+    get:
+      operationId: rieltListPublicListings
+      parameters:
+        - $ref: "#/components/parameters/RieltCountryId"
+        - $ref: "#/components/parameters/RieltCityId"
+        - $ref: "#/components/parameters/RieltListingType"
+        - $ref: "#/components/parameters/RieltMinPrice"
+        - $ref: "#/components/parameters/RieltMaxPrice"
+        - $ref: "#/components/parameters/RieltBedroomsMin"
+        - $ref: "#/components/parameters/RieltBedroomsMax"
+        - $ref: "#/components/parameters/RieltSort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      summary: List published listings
+      tags:
+        - rielt
+    post:
+      operationId: rieltCreateListing
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltCreateListingRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "409":
+          $ref: "#/components/responses/RieltConflict"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Create owner listing
+      tags:
+        - rielt
+  /v1/rielt/listings/nearby:
+    get:
+      operationId: rieltListNearbyListings
+      parameters:
+        - $ref: "#/components/parameters/RieltLat"
+        - $ref: "#/components/parameters/RieltLng"
+        - $ref: "#/components/parameters/RieltRadiusKm"
+        - $ref: "#/components/parameters/RieltCountryId"
+        - $ref: "#/components/parameters/RieltCityId"
+        - $ref: "#/components/parameters/RieltListingType"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltNearbyListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      summary: List nearby published listings
+      tags:
+        - rielt
+  /v1/rielt/listings/{idOrSlug}:
+    delete:
+      operationId: rieltArchiveListing
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltArchiveResponse"
+          description: Archived
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Archive owner listing by id (runtime currently accepts id-or-slug token)
+      tags:
+        - rielt
+    get:
+      operationId: rieltGetPublicListing
+      parameters:
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltDetailResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      summary: Get published listing by id or slug
+      tags:
+        - rielt
+    patch:
+      operationId: rieltPatchListing
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltPatchListingRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListingEnvelope"
+          description: Updated
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "403":
+          $ref: "#/components/responses/RieltForbidden"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "409":
+          $ref: "#/components/responses/RieltConflict"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Patch owner listing by id (runtime currently accepts id-or-slug token)
+      tags:
+        - rielt
+  /v1/rielt/listings/{idOrSlug}/inquiries:
+    post:
+      operationId: rieltCreateInquiry
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltIdempotencyKey"
+        - $ref: "#/components/parameters/RieltIdOrSlug"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RieltCreateInquiryRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltInquiryEnvelope"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "404":
+          $ref: "#/components/responses/RieltNotFound"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Create listing inquiry (idempotent by requester/listing/key)
+      tags:
+        - rielt
+  /v1/rielt/my/inquiries:
+    get:
+      operationId: rieltListMyInquiries
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltInquiryStatus"
+        - $ref: "#/components/parameters/RieltInquirySort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltMyInquiryListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: List requester inquiries
+      tags:
+        - rielt
+  /v1/rielt/my/listings:
+    get:
+      operationId: rieltListMyListings
+      parameters:
+        - $ref: "#/components/parameters/RieltXGatewayAuth"
+        - $ref: "#/components/parameters/RieltStatus"
+        - $ref: "#/components/parameters/RieltSort"
+        - $ref: "#/components/parameters/RieltPage"
+        - $ref: "#/components/parameters/RieltPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RieltOwnerListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RieltValidationError"
+        "401":
+          $ref: "#/components/responses/RieltUnauthorized"
+        "500":
+          $ref: "#/components/responses/RieltInternalError"
+        "503":
+          $ref: "#/components/responses/RieltServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: List actor-visible listings
+      tags:
+        - rielt
   /v1/space/feed/activity:
     get:
       operationId: getSpaceActivityFeed
@@ -3673,11 +6460,16 @@ tags:
     name: media
   - description: Debug endpoints (no secrets)
     name: debug
+  - name: guru
   - description: Points balance and ledger operations
     name: points
   - description: Service-to-service APIs (authenticated)
     name: internal
   - name: quests
+  - name: rf
+  - name: reactions
+  - name: rielt
+  - name: feed
   - description: Space social-core endpoints
     name: space
 x-microservices:
