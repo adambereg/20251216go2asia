@@ -496,6 +496,27 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 501 for reserved rf prefix when service is not enabled', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/partners', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      {}
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(501);
+    expect(body.error.code).toBe('ROUTE_RESERVED_NOT_ENABLED');
+    expect(body.error.message).toContain('RF_SERVICE_URL');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('proxies rielt public route when RIELT_SERVICE_URL is configured', async () => {
     const fetchMock = vi.fn(async (request: Request) => {
       expect(request.url).toMatch(/^https:\/\/rielt\.example\/v1\/rielt\/listings/);
@@ -592,6 +613,35 @@ describe('api-gateway request hardening', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns 401 for protected rf route without bearer token', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/business/partners', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          displayName: 'RF Partner',
+          countryId: 'country_th',
+          cityId: 'city_phuket',
+        }),
+      }),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('does not require bearer auth for rielt nearby static route with PATCH method', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -640,6 +690,31 @@ describe('api-gateway request hardening', () => {
     const body = await readJson<{ total: number }>(response);
     expect(response.status).toBe(200);
     expect(body.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('proxies rf public reads without gateway auth header', async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://rf.example/v1/rf/partners');
+      expect(request.headers.get('X-Gateway-Auth')).toBeNull();
+      expect(request.headers.get('X-User-ID')).toBeNull();
+      return new Response(JSON.stringify({ items: [], nextCursor: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/partners'),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+      }
+    );
+
+    const body = await readJson<{ items: unknown[] }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items).toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -700,6 +775,50 @@ describe('api-gateway request hardening', () => {
       sub: 'quest_user',
       roles: ['member'],
     });
+  });
+
+  it('forwards authenticated rf claim requests with gateway auth', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://rf.example/v1/rf/offers/rf_offer_1/claim');
+      expect(request.headers.get('Idempotency-Key')).toBe('rf-claim-1');
+      expect(request.headers.get('X-User-ID')).toBe('rf_user');
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(request.headers.get('X-Gateway-Auth')!);
+      return new Response(JSON.stringify({ voucher: { id: 'rf_voucher_1', status: 'claimed' } }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'rf_user',
+      roles: ['member'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer user-token',
+          'Idempotency-Key': 'rf-claim-1',
+          Origin: 'https://app.example',
+        },
+      }),
+      {
+        RF_SERVICE_URL: 'https://rf.example',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    expect(response.status).toBe(201);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'rf_user',
+      roles: ['member'],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('proxies reserved phase-2 prefix after service URL is configured', async () => {
