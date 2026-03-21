@@ -90,9 +90,14 @@ Get list of quests.
 ### Query params
 
 - cityId
-- nearby (lat, lng)
 - theme
 - difficulty
+- page
+- pageSize
+
+Runtime baseline note:
+
+- nearby filtering by `lat/lng` is deferred and is not part of current operational Step 7 API behavior.
 
 Ownership caveat:
 
@@ -280,9 +285,11 @@ Approve / reject.
 
 # 13. Rate Limits
 
-- step submissions
-- quest creation
-- validation actions
+- reserved for future hardening
+
+Current runtime note:
+
+- explicit per-route rate limiting is not enabled in current Step 7 baseline.
 
 ---
 

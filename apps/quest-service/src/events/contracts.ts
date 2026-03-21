@@ -2,6 +2,7 @@ export type QuestDomainEventType =
   | 'quest.started'
   | 'quest.step.completed'
   | 'quest.submission.created'
+  | 'quest.submission.rejected'
   | 'quest.submission.approved'
   | 'quest.completed';
 

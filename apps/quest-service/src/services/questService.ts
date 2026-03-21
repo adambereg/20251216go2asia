@@ -694,7 +694,7 @@ export async function getQuestProgress(
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
-  const quest = await getQuestById(db, questId);
+  const quest = await getPublishedQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
   const progress = await getQuestProgressByQuestAndUser(db, questId, principal.userId);
   if (!progress) return errorResponse('NOT_FOUND', 'Quest progress not found', requestId, 404);
@@ -860,6 +860,21 @@ export async function reviewQuestSubmission(
       nextStep: existing.current_step ?? existing.step_order,
       completed: false,
     });
+    await publisher.publish(
+      buildQuestEvent(env, requestId, principal, {
+        eventType: 'quest.submission.rejected',
+        subjectType: 'quest_submission',
+        subjectId: rejected.id,
+        payload: {
+          questId: existing.quest_id,
+          progressId: existing.progress_id,
+          stepId: existing.step_id,
+          submissionId: rejected.id,
+          userId: rejected.user_id,
+          reason: rejected.rejection_reason,
+        },
+      })
+    );
     return json(normalizeQuestSubmission(rejected), 200);
   }
 

@@ -70,7 +70,6 @@ import type {
   QuestListResponse,
   QuestNotFoundResponse,
   QuestProgressResponse,
-  QuestRateLimitedResponse,
   QuestServiceAuthNotConfiguredResponse,
   QuestStepResponse,
   QuestSubmissionListResponse,
@@ -1823,11 +1822,6 @@ export type submitQuestStepResponse409 = {
   status: 409;
 };
 
-export type submitQuestStepResponse429 = {
-  data: QuestRateLimitedResponse;
-  status: 429;
-};
-
 export type submitQuestStepResponse500 = {
   data: QuestInternalErrorResponse;
   status: 500;
@@ -1846,7 +1840,6 @@ export type submitQuestStepResponseError = (
   | submitQuestStepResponse401
   | submitQuestStepResponse404
   | submitQuestStepResponse409
-  | submitQuestStepResponse429
   | submitQuestStepResponse500
   | submitQuestStepResponse503
 ) & {
