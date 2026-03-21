@@ -1,5 +1,9 @@
 # Media Service — API Contracts
 
+> ⚠️ Legacy / non-canonical scope note.
+> Этот документ относится к blog/content API-контексту (`/api/media/v1/*`) и не является canonical platform media SSOT.
+> Канонический platform-media baseline: `docs/architecture/media/*`.
+
 Версия: **v1**  
 Базовый путь: **`/api/media/v1/`**
 

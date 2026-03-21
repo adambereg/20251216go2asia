@@ -550,12 +550,14 @@ The correct media flow is:
 2. file is uploaded through the media flow
 3. `media-service` creates an asset
 4. frontend receives `media_id`
-5. frontend calls `space-service` attach endpoint
-6. Space stores the relation between the post and the media asset
+5. frontend records usage bind in `media-service` (`/v1/media/{mediaId}/attach`) for platform attachment metadata
+6. frontend calls `space-service` attach endpoint
+7. Space stores the relation between the post and the media asset
 
 Short formula:
 
 > `media-service` owns asset lifecycle  
+> `media-service` owns usage-bind metadata for platform media references  
 > `space-service` owns social attachment relation
 
 ---

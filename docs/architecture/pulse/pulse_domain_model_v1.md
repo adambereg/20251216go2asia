@@ -476,6 +476,7 @@ Supports hero/gallery/media usage without making Pulse the binary storage servic
 
 ### Notes
 Pulse may own semantic event-media linkage while relying on external media infrastructure for storage and delivery.
+For platform-linked media references, `media_key` should map to canonical `media_id` from `media-service`, or use an explicit translation rule from legacy key formats.
 
 ---
 

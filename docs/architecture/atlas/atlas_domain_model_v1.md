@@ -508,6 +508,7 @@ Support hero/gallery/media usage without making Atlas the binary storage system 
 
 ### Notes
 Atlas may own semantic linkage of media, but not low-level media storage binary truth.
+For platform-linked media references, `media_key` should map to canonical `media_id` from `media-service`, or use an explicit translation rule from legacy key formats.
 
 ---
 

@@ -60,7 +60,7 @@
 |---|---|---|---|---|---|---|
 | Atlas Service | страны/города/места | **слито** в `apps/content-service` (`/v1/content/countries|cities|places`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (routes), `packages/db/src/schema/content.ts` | F1 | Явно отметить в docs: сейчас Atlas/Pulse/Blog реализованы как единый `content-service` |
 | Pulse Service | события + регистрации | **слито** в `apps/content-service` (`/v1/content/events/*`, `/register`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (event routes + register) | F1 | Аналогично: Pulse пока не отдельный сервис |
-| Media Service (Blog) | статьи | **слито** в `apps/content-service` (`/v1/content/articles/*`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` (articles) | F1 | Переименовать в тексте “Media Service” → “Blog (articles) в content-service” (или отметить как будущий разнос) |
+| Media Service (Blog) | статьи | **слито** в `apps/content-service` (`/v1/content/articles/*`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` (articles) | F1 | Это строка про blog/articles контур. Canonical platform media baseline (`/v1/media/*`, asset domain) зафиксирован отдельно в `docs/architecture/media/*`; content fallback трактуется как transitional, не ownership truth. |
 
 ### Social
 
