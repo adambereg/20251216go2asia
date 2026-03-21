@@ -1,5 +1,9 @@
 # Quest Service — API Contracts
 
+> **Implementation-notes document (non-canonical routing reference).**  
+> Paths and shapes in this file are not authoritative runtime routing unless explicitly mapped by gateway policy.  
+> Canonical routing/contract reference: `docs/openapi/quest.yaml` and gateway-exposed `/v1/quests` + `/v1/submissions/*`.
+
 Версия: **v1**  
 Базовый путь: **`/api/quest/v1/`**
 

@@ -1,5 +1,9 @@
 # Quest Service — Architecture
 
+> **Implementation-notes document (non-canonical routing reference).**  
+> API path examples here are design-time/service-internal notes and are not authoritative runtime routing unless explicitly mapped by gateway policy.  
+> Canonical runtime contract reference: `docs/openapi/quest.yaml` with gateway-facing `/v1/quests` + `/v1/submissions/*`.
+
 ## Основные компоненты
 
 1. **API Layer**

@@ -1,5 +1,9 @@
 # Rielt Service — API Contracts
 
+> ⚠️ Legacy / non-canonical reference.
+> Этот документ не является authoritative runtime SSOT по backend ownership/контрактам.
+> Канонический backend baseline: `docs/architecture/rielt/*` (в первую очередь `rielt_service_v1_completion.md` и `rielt_openapi_outline_v1.md` с маршрутами `/v1/rielt/*`).
+
 Версия: **v1**  
 Базовый путь: **`/api/rielt/v1/`**
 

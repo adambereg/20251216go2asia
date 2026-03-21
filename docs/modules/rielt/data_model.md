@@ -1,5 +1,9 @@
 # Rielt.Market Asia — Data Model
 
+> ⚠️ Product vision / non-runtime SSOT.
+> Этот data model не является authoritative backend ownership/schema contract для текущего `rielt-service` runtime.
+> Канонический backend baseline: `docs/architecture/rielt/*`.
+
 ## 1. Основные сущности
 
 ### User

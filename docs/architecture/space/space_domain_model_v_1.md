@@ -241,6 +241,11 @@ This is one of the most strategically important parts of the domain.
 
 It makes Space the circulation layer for the whole ecosystem.
 
+For RF-aligned anchoring, repost references must remain branch-capable:
+
+- `partner` targets may represent partner-level or branch-level canonical references through structured metadata/ref payloads;
+- this does not transfer partner/branch ownership into Space and keeps RF as source of truth for business presence.
+
 ---
 
 # 4.3 `space_group`

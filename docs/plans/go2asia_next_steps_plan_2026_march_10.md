@@ -20,6 +20,18 @@
 - завершить MVP-core;
 - подготовить и запустить Phase 2 как реальную экосистемную фазу.
 
+### Architectural baseline (normative)
+
+Этот execution-plan следует архитектурному baseline:
+
+- `docs/architecture/Cross-Domain-Architecture-Note-v1.md`
+
+Для текущего плана это означает:
+
+- ownership boundaries являются обязательными guardrails для всех downstream шагов;
+- canonical identity rules являются обязательной рамкой для cross-domain linking;
+- sequencing Step 1–13 сохраняется, но delivery-артефакты должны быть совместимы с cross-domain baseline.
+
 ---
 
 ## 2. Strategic Principle
@@ -37,6 +49,20 @@
 5. добавить aggregation layer;
 6. ввести partial marketplace;
 7. только после этого переходить к full tokenomics / Phase 3.
+
+### Ownership-first delivery discipline
+
+Downstream delivery must preserve domain boundaries:
+
+- Atlas owns geographic identity;
+- RF owns partner/business presence;
+- Pulse owns event lifecycle and attendance truth;
+- Quest owns progression/proof;
+- Rielt owns property domain;
+- Guru aggregates/discovers but does not own source truth;
+- Space owns social-layer semantics without owning factual source truth of other domains.
+
+Интеграция в Step 8–13 не должна размывать этот split.
 
 ---
 
@@ -69,6 +95,13 @@
 - aggregation layer;
 - partner marketplace;
 - second-loop tokenomics.
+
+### Domain layer and runtime reality clarification
+
+- `Atlas` в данном плане трактуется как current canonical geo domain layer.
+- `Pulse` в данном плане трактуется как current event domain layer.
+- Current runtime reality: Atlas/Pulse в значимой части обслуживаются через shared content contour (см. `docs/decisions/adr_0013_mvp_content_service_consolidation.md`), а не как полностью выделенные самостоятельные production services.
+- Future extraction (`atlas-service`, `pulse-service`) остаётся возможной later option при justified complexity/scale, но не считается current fact.
 
 ---
 
@@ -141,6 +174,29 @@
 5. Подготовить SDK extension strategy с учётом canonical geo и relation/metadata conventions.
 6. Подтвердить architectural SSOT документы как базу для delivery.
 7. Зафиксировать, что Atlas остаётся текущим Geo SSOT baseline для всех downstream доменов.
+
+### SSOT workstream (parallel, non-disruptive)
+
+Запустить отдельный parallel `SSOT workstream` после Step 2 без изменения базового sequencing Step 1–13.
+
+**Missing formal packages:**
+
+- `RF`
+- `Atlas`
+- `Pulse`
+
+**Existing packages requiring reconciliation pass:**
+
+- `Media` (architecture/README-level maturity)
+- `Space` (draft)
+- `Quest` (draft)
+- `Rielt` (final-like; consistency reconciliation only)
+
+**Workstream requirements:**
+
+- все SSOT-артефакты должны быть совместимы с `Cross-Domain-Architecture-Note-v1.md`;
+- service-level wording не должно конфликтовать с current runtime reality;
+- future extraction не объявляется как current status без runtime-факта.
 
 ### Result
 
@@ -365,6 +421,22 @@
 6. Зафиксировать compatibility guardrails для Step 8 consumers:
    - downstream контракты не зависят от non-canonical geo как primary key.
 
+### Cross-domain alignment checkpoint (must-pass before Step 8)
+
+Перед входом в Step 8 должен быть пройден explicit checkpoint по ownership/identity consistency:
+
+- Atlas сохраняет canonical geo ownership;
+- Pulse сохраняет event/attendance ownership;
+- RF сохраняет partner/voucher ownership;
+- Quest сохраняет progression/proof ownership;
+- Guru остаётся aggregation/read layer;
+- Space остаётся social layer и не становится factual owner source-domain сущностей.
+
+Checkpoint валидируется относительно:
+
+- `docs/architecture/Cross-Domain-Architecture-Note-v1.md`
+- `docs/decisions/adr_0013_mvp_content_service_consolidation.md`
+
 ### P1 (phase-in during Step 8 to Step 11)
 
 1. Расширить relation-layer conventions для cross-domain linking (без full KG rollout).
@@ -448,6 +520,15 @@
 
 Завершить Phase 2 как partial marketplace / partner hub.
 
+### Entry precondition (hard)
+
+Step 10 начинается только после frozen RF SSOT package, явно выровненного с:
+
+- `Cross-Domain-Architecture-Note-v1` ownership boundaries;
+- Atlas geo ownership baseline;
+- Pulse event/attendance ownership baseline;
+- current runtime reality (включая shared content contour там, где он является текущим execution-фактом).
+
 ### Actions
 
 1. Реализовать partner model:
@@ -482,12 +563,16 @@
 
 ### Goal
 
-Не строить Geo Layer преждевременно, но подготовить систему к:
+Сделать Step 11 readiness/policy stage для будущей geo/relation/metadata эволюции, без преждевременного объявления отдельного geo-service как текущей runtime-реальности.
 
-- future geo layer;
-- relation layer;
-- metadata layer;
+Step 11 подготавливает:
+
+- future geo layer readiness;
+- relation layer readiness;
+- metadata layer readiness;
 - KG MVP compatibility (без отдельного graph-service).
+
+При этом сохраняется совместимость с current shared geo/content contour до момента, когда extraction действительно operationally justified.
 
 ### Actions
 
@@ -599,6 +684,17 @@ It connects existing ones.
 - Integration layer must NOT invent parallel geo DTO contracts
 - Integration layer must NOT be reframed as full Knowledge Graph project
 
+### Ownership consistency checklist (must-pass)
+
+Каждое integration-изменение в Step 13 принимается только при одновременном соблюдении:
+
+- Atlas geo ownership остаётся canonical;
+- RF ownership остаётся owner partner/business presence и voucher lifecycle;
+- Pulse ownership остаётся owner event lifecycle и attendance truth;
+- Quest ownership остаётся owner progression/proof logic;
+- Guru остаётся aggregation/discovery layer, не source-truth owner;
+- Space остаётся social/reputation/distribution layer, без переноса factual ownership из source domains.
+
 ---
 
 ### Output
@@ -627,7 +723,18 @@ It connects existing ones.
 10. `guru-service`
 11. `rf-service`
 12. `future geo + relation/metadata readiness preparation`
-13. Phase 3 planning
+13. `integration layer` (Step 13)
+
+Parallel track (starts after Step 2, does not reset sequencing):
+
+- `SSOT workstream`
+  - create missing packages: `RF` / `Atlas` / `Pulse`
+  - reconcile existing packages: `Media` / `Space` / `Quest` / `Rielt`
+  - enforce Cross-Domain ownership/identity consistency across artifacts
+
+After Step 13:
+
+- Phase 3 planning
 
 ---
 
@@ -675,4 +782,8 @@ It connects existing ones.
 Короткая формула плана:
 
 > **MVP-core harden -> platform baseline -> social core -> practical domains -> aggregation -> marketplace -> Phase 3 preparation**
+
+Operational clarification:
+
+в рамках текущего execution cycle план не утверждает, что `atlas-service` и `pulse-service` уже выделены как отдельные production services; текущая runtime-реальность может оставаться shared-content-first, при этом ownership baseline Atlas/Pulse остаётся обязательным, а future extraction рассматривается только при оправданной operational необходимости.
 

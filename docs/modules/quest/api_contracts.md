@@ -1,5 +1,9 @@
 # Quest Asia — API Contracts
 
+> **Legacy/historical document (not runtime API SSOT).**  
+> This file reflects earlier module-level API ideas and must not be treated as the authoritative backend routing contract.  
+> Canonical contract reference: `docs/openapi/quest.yaml` with gateway/runtime routing under `/v1/quests` (and related `/v1/submissions/*` paths).
+
 Базовый префикс:
 /api/quests
 

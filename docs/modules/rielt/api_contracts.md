@@ -1,5 +1,9 @@
 # Rielt.Market Asia — API Contracts
 
+> ⚠️ Product vision / non-runtime SSOT.
+> Документ не является authoritative backend ownership/runtime contract для `rielt-service`.
+> Канонический backend baseline: `docs/architecture/rielt/*`.
+
 Базовый префикс:
 /api/rielt
 

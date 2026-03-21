@@ -5,6 +5,11 @@
 **Status:** Draft for engineering implementation  
 **Context:** Space is the social core of Go2Asia and should be implemented as a real backend domain, not as an extension of demo UI.
 
+**Status rubric (current vs target):**
+- **Current runtime reality:** social publication is served through `space-service`; feed/reactions integration may be partially staged by deployment.
+- **Current step target:** production baseline for Space-owned publication core with conservative boundaries.
+- **Future extraction target:** dedicated feed/organizer-related contours can be extracted later without changing ownership boundaries.
+
 ---
 
 ## 1. Purpose
