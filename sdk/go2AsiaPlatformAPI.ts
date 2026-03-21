@@ -2922,6 +2922,52 @@ export const getReferralTree = async (
 };
 
 /**
+ * @summary Create partner (business owner flow)
+ */
+export type rfCreatePartnerResponse201 = {
+  data: RfPartner;
+  status: 201;
+};
+
+export type rfCreatePartnerResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfCreatePartnerResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfCreatePartnerResponseSuccess = rfCreatePartnerResponse201 & {
+  headers: Headers;
+};
+export type rfCreatePartnerResponseError = (
+  | rfCreatePartnerResponse400
+  | rfCreatePartnerResponse401
+) & {
+  headers: Headers;
+};
+
+export type rfCreatePartnerResponse = rfCreatePartnerResponseSuccess | rfCreatePartnerResponseError;
+
+export const getRfCreatePartnerUrl = () => {
+  return `/v1/rf/business/partners`;
+};
+
+export const rfCreatePartner = async (
+  rfCreatePartnerRequest: RfCreatePartnerRequest,
+  options?: RequestInit
+): Promise<rfCreatePartnerResponse> => {
+  return customInstance<rfCreatePartnerResponse>(getRfCreatePartnerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfCreatePartnerRequest),
+  });
+};
+
+/**
  * @summary Create draft offer for partner
  */
 export type rfCreateOfferResponse201 = {
@@ -3288,52 +3334,6 @@ export const rfListPartners = async (options?: RequestInit): Promise<rfListPartn
   return customInstance<rfListPartnersResponse>(getRfListPartnersUrl(), {
     ...options,
     method: "GET",
-  });
-};
-
-/**
- * @summary Create partner (business owner flow)
- */
-export type rfCreatePartnerResponse201 = {
-  data: RfPartner;
-  status: 201;
-};
-
-export type rfCreatePartnerResponse400 = {
-  data: RfValidationErrorResponse;
-  status: 400;
-};
-
-export type rfCreatePartnerResponse401 = {
-  data: RfUnauthorizedResponse;
-  status: 401;
-};
-
-export type rfCreatePartnerResponseSuccess = rfCreatePartnerResponse201 & {
-  headers: Headers;
-};
-export type rfCreatePartnerResponseError = (
-  | rfCreatePartnerResponse400
-  | rfCreatePartnerResponse401
-) & {
-  headers: Headers;
-};
-
-export type rfCreatePartnerResponse = rfCreatePartnerResponseSuccess | rfCreatePartnerResponseError;
-
-export const getRfCreatePartnerUrl = () => {
-  return `/v1/rf/partners`;
-};
-
-export const rfCreatePartner = async (
-  rfCreatePartnerRequest: RfCreatePartnerRequest,
-  options?: RequestInit
-): Promise<rfCreatePartnerResponse> => {
-  return customInstance<rfCreatePartnerResponse>(getRfCreatePartnerUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(rfCreatePartnerRequest),
   });
 };
 

@@ -1,8 +1,8 @@
-import { AtlasAdapter } from '../adapters/atlasAdapter';
+import { AtlasAdapter, type AtlasAdapterEnv } from '../adapters/atlasAdapter';
 import { BlogAdapter } from '../adapters/blogAdapter';
-import { PulseAdapter } from '../adapters/pulseAdapter';
-import { QuestAdapter } from '../adapters/questAdapter';
-import { RFAdapter } from '../adapters/rfAdapter';
+import { PulseAdapter, type PulseAdapterEnv } from '../adapters/pulseAdapter';
+import { QuestAdapter, type QuestAdapterEnv } from '../adapters/questAdapter';
+import { RFAdapter, type RFAdapterEnv } from '../adapters/rfAdapter';
 import { RieltAdapter, type RieltAdapterEnv } from '../adapters/rieltAdapter';
 import { SpaceAdapter } from '../adapters/spaceAdapter';
 import type { DomainAdapter } from '../adapters/types';
@@ -11,14 +11,15 @@ import { rankNearbyCards, rankWhatToDoCards } from '../ranking/rankingEngine';
 import type { GuruListResponse, NearbyQuery, PartialFailure, SourceDomain } from '../types/entityCard';
 
 const ADAPTER_TIMEOUT_MS = 1500;
+type GuruAdaptersEnv = RieltAdapterEnv & RFAdapterEnv & QuestAdapterEnv & AtlasAdapterEnv & PulseAdapterEnv;
 
-function getAdapters(env: RieltAdapterEnv): DomainAdapter[] {
+function getAdapters(env: GuruAdaptersEnv): DomainAdapter[] {
   return [
     new RieltAdapter(env),
-    new AtlasAdapter(),
-    new PulseAdapter(),
-    new RFAdapter(),
-    new QuestAdapter(),
+    new AtlasAdapter(env),
+    new PulseAdapter(env),
+    new RFAdapter(env),
+    new QuestAdapter(env),
     new SpaceAdapter(),
     new BlogAdapter(),
   ];
@@ -26,7 +27,7 @@ function getAdapters(env: RieltAdapterEnv): DomainAdapter[] {
 
 async function collectCards(
   query: NearbyQuery,
-  env: RieltAdapterEnv,
+  env: GuruAdaptersEnv,
   requestId: string
 ): Promise<{
   cards: GuruListResponse['data'];
@@ -84,14 +85,14 @@ function toResponse(
   };
 }
 
-export async function getNearbyResponse(query: NearbyQuery, env: RieltAdapterEnv, requestId: string): Promise<GuruListResponse> {
+export async function getNearbyResponse(query: NearbyQuery, env: GuruAdaptersEnv, requestId: string): Promise<GuruListResponse> {
   const { cards, partialFailures, sourcesActive, sourcesStub, sourceItemCounts } = await collectCards(query, env, requestId);
   const ranked = rankNearbyCards(cards, query);
   const filtered = applyNearbyFilters(ranked, query);
   return toResponse(query, filtered, partialFailures, sourcesActive, sourcesStub, sourceItemCounts);
 }
 
-export async function getWhatToDoResponse(query: NearbyQuery, env: RieltAdapterEnv, requestId: string): Promise<GuruListResponse> {
+export async function getWhatToDoResponse(query: NearbyQuery, env: GuruAdaptersEnv, requestId: string): Promise<GuruListResponse> {
   const { cards, partialFailures, sourcesActive, sourcesStub, sourceItemCounts } = await collectCards(query, env, requestId);
   const ranked = rankWhatToDoCards(cards, query);
   const filtered = applyNearbyFilters(ranked, query);

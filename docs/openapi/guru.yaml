@@ -5,7 +5,7 @@ info:
   version: 0.1.0
   description: >
     Downstream API contract for Guru nearby-intent aggregator (Step 10 baseline).
-    Runtime baseline: live rielt adapter + explicit stubs for other domains.
+    Runtime baseline: live rielt + rf + quest + atlas + pulse adapters, with explicit stubs for remaining domains.
 
 servers:
   - url: https://staging.api.go2asia.space

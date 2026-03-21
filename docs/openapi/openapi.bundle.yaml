@@ -5360,6 +5360,33 @@ paths:
       summary: Get current user's referral tree (depth 1..2)
       tags:
         - referral
+  /v1/rf/business/partners:
+    post:
+      operationId: rfCreatePartner
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreatePartnerRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartner"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+      security:
+        - GatewayAuth: []
+      summary: Create partner (business owner flow)
+      tags:
+        - rf
   /v1/rf/business/partners/{partnerId}/offers:
     post:
       operationId: rfCreateOffer
@@ -5543,32 +5570,6 @@ paths:
                 $ref: "#/components/schemas/RfPartnerListResponse"
           description: OK
       summary: List public partners
-      tags:
-        - rf
-    post:
-      operationId: rfCreatePartner
-      parameters:
-        - $ref: "#/components/parameters/RfXGatewayAuth"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RfCreatePartnerRequest"
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RfPartner"
-          description: Created
-        "400":
-          $ref: "#/components/responses/RfValidationError"
-        "401":
-          $ref: "#/components/responses/RfUnauthorized"
-      security:
-        - GatewayAuth: []
-      summary: Create partner (business owner flow)
       tags:
         - rf
   /v1/rf/partners/{partnerId}:
