@@ -5,8 +5,8 @@ Nearby-first aggregation/BFF service.
 V1 constraints:
 - EntityCard v1 contract boundary
 - Nearby endpoints only
-- Rielt + RF + Quest are real upstream sources
-- Atlas/Pulse/Space/Blog adapters remain explicit stubs
+- Rielt + RF + Quest + Atlas are real upstream sources
+- Pulse/Space/Blog adapters remain explicit stubs
 - Response meta exposes source activity (`sources_active`, `sources_stub`, `source_item_counts`)
 - Upstream-safe query limit is capped to 50
 - No Geo Layer, no AI, no search engine

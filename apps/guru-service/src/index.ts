@@ -12,6 +12,7 @@ export interface Env {
   RIELT_SERVICE_URL?: string;
   RF_SERVICE_URL?: string;
   QUEST_SERVICE_URL?: string;
+  CONTENT_SERVICE_URL?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -29,6 +30,7 @@ function handleReady(env: Env): Response {
     rieltServiceUrl: getSecretCheck(env.RIELT_SERVICE_URL),
     rfServiceUrl: getSecretCheck(env.RF_SERVICE_URL),
     questServiceUrl: getSecretCheck(env.QUEST_SERVICE_URL),
+    contentServiceUrl: getSecretCheck(env.CONTENT_SERVICE_URL),
   };
 
   const missing = Object.entries(checks)

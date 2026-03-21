@@ -1,5 +1,27 @@
 import type { EntityCard } from '../types/entityCard';
 
+function toFiniteNumber(value: string | null | undefined): number | null {
+  if (typeof value !== 'string') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+}
+
+function haversineDistanceMeters(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const toRadians = (deg: number) => (deg * Math.PI) / 180;
+  const earthRadius = 6371000;
+  const dLat = toRadians(bLat - aLat);
+  const dLng = toRadians(bLng - aLng);
+  const lat1 = toRadians(aLat);
+  const lat2 = toRadians(bLat);
+
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLng = Math.sin(dLng / 2);
+  const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  return earthRadius * c;
+}
+
 interface RieltNearbyDto {
   id: string;
   slug: string;
@@ -178,6 +200,82 @@ export function normalizeQuestToEntityCard(item: QuestDto, anchor: { lat: number
       difficulty: item.difficulty ?? undefined,
       reward_points: item.rewardPoints ?? undefined,
       steps_count: item.stepsCount,
+    },
+  };
+}
+
+interface AtlasPlaceDto {
+  id: string;
+  slug: string;
+  name: string;
+  type: string;
+  kind: string;
+  category: string | null;
+  tags: string[] | null;
+  countryId: string | null;
+  cityId: string | null;
+  description: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  heroImage: string | null;
+}
+
+export function normalizeAtlasPlaceToEntityCard(
+  item: AtlasPlaceDto,
+  anchor: { lat: number; lng: number }
+): EntityCard | null {
+  const lat = toFiniteNumber(item.latitude);
+  const lng = toFiniteNumber(item.longitude);
+  if (lat === null || lng === null) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+  const distanceMeters = Math.round(haversineDistanceMeters(anchor.lat, anchor.lng, lat, lng));
+  const tags = ['place'];
+  if (item.kind) tags.push(item.kind);
+  if (item.type) tags.push(item.type);
+  if (item.category) tags.push(item.category);
+  if (Array.isArray(item.tags)) {
+    for (const tag of item.tags) {
+      if (typeof tag === 'string' && tag.trim().length > 0) tags.push(tag);
+    }
+  }
+
+  return {
+    id: item.id,
+    type: 'place',
+    title: item.name,
+    subtitle: item.category ?? item.kind,
+    description: item.description ?? undefined,
+    image_url: item.heroImage ?? undefined,
+    lat,
+    lng,
+    distance_m: distanceMeters,
+    city_id: item.cityId ?? undefined,
+    country_id: item.countryId ?? undefined,
+    tags: Array.from(new Set(tags)),
+    rating: undefined,
+    price_level: undefined,
+    is_verified: false,
+    is_rf: false,
+    actions: [
+      {
+        type: 'view_in_atlas',
+        label: 'Открыть в Atlas',
+        deeplink: `/atlas/places/${encodeURIComponent(item.slug || item.id)}`,
+      },
+    ],
+    explain: {
+      reasons: ['nearby'],
+    },
+    source: {
+      domain: 'atlas',
+      source_id: item.id,
+      source_slug: item.slug,
+    },
+    payload: {
+      place_type: item.type,
+      place_kind: item.kind,
+      category: item.category ?? undefined,
     },
   };
 }
