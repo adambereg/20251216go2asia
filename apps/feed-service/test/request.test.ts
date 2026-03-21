@@ -11,6 +11,23 @@ describe('feed-service request', () => {
     clearCache();
   });
 
+  it('marks service ready without reactions URL in degraded-capable mode', async () => {
+    const response = await worker.fetch(
+      new Request('https://feed.example/ready'),
+      {
+        SPACE_SERVICE_URL: 'https://space.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+    const body = await readJson<{ status: string; checks: Record<string, string>; missing: string[] }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('ready');
+    expect(body.checks.spaceServiceUrl).toBe('ok');
+    expect(body.checks.reactionsServiceUrl).toBe('missing');
+    expect(body.missing).toEqual([]);
+  });
+
   it('aggregates home feed with reactions summary', async () => {
     const env: Env = {
       SPACE_SERVICE_URL: 'https://space.example',

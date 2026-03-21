@@ -28,9 +28,8 @@ function handleReady(env: Env): Response {
     spaceServiceUrl: getUrlCheck(env.SPACE_SERVICE_URL),
     reactionsServiceUrl: getUrlCheck(env.REACTIONS_SERVICE_URL),
   };
-  const missing = Object.entries(checks)
-    .filter(([, status]) => status !== 'ok')
-    .map(([name]) => name);
+  const requiredChecks: Array<keyof typeof checks> = ['serviceJwtSecret', 'spaceServiceUrl'];
+  const missing = requiredChecks.filter((name) => checks[name] !== 'ok');
   const status = missing.length === 0 ? 200 : 503;
 
   return json(

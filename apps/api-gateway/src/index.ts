@@ -770,6 +770,7 @@ async function routeRequest(
           { prefix: '/v1/reactions/', var: 'REACTIONS_SERVICE_URL', host: safeHostFromUrl(env.REACTIONS_SERVICE_URL) },
           { prefix: '/v1/feed/', var: 'FEED_SERVICE_URL', host: safeHostFromUrl(env.FEED_SERVICE_URL) },
           { prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
+          { prefix: '/v1/submissions/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
           { prefix: '/v1/rielt/', var: 'RIELT_SERVICE_URL', host: safeHostFromUrl(env.RIELT_SERVICE_URL) },
           { prefix: '/v1/guru/', var: 'GURU_SERVICE_URL', host: safeHostFromUrl(env.GURU_SERVICE_URL) },
           { prefix: '/v1/rf/', var: 'RF_SERVICE_URL', host: safeHostFromUrl(env.RF_SERVICE_URL) },

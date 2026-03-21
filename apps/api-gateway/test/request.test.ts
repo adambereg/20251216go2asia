@@ -650,6 +650,25 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(404);
   });
 
+  it('lists quest submissions prefix in debug routes when enabled', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/routes'),
+      {
+        DEBUG_ROUTES_ENABLED: 'true',
+        QUEST_SERVICE_URL: 'https://quest.example',
+      }
+    );
+    const body = await readJson<{ routes: Array<{ prefix: string; var: string }> }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.routes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL' }),
+        expect.objectContaining({ prefix: '/v1/submissions/', var: 'QUEST_SERVICE_URL' }),
+      ])
+    );
+  });
+
   it('returns 503 when bearer token is present but Clerk verification is not configured', async () => {
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/points/balance', {
