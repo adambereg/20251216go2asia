@@ -15,7 +15,7 @@
 
 **Where it sits:** Behind api-gateway. Receives requests at /v1/rielt/* when RIELT_SERVICE_URL is configured. Cloudflare Worker / Hono-style handler.
 
-**Responsibility:** Own listing CRUD, public read (list, detail, nearby), and inquiry domain semantics. In current runtime, listing/owner surfaces are implemented; inquiry HTTP path is deferred. No booking, payments, chat, CRM, or media storage.
+**Responsibility:** Own listing CRUD, public read (list, detail, nearby), and inquiry domain semantics. In current runtime, listing/owner surfaces and requester inquiry HTTP paths are implemented; owner-side inquiry workflow is deferred. No booking, payments, chat, CRM, or media storage.
 
 ---
 
@@ -57,7 +57,7 @@ routes/
   index.ts        → handleRieltRoute: public → owner → inquiry
   public.ts       → list, nearby, detail (GET)
   owner.ts        → create, my/listings, patch, delete
-  inquiry.ts      → inquiry contract path (runtime wiring deferred)
+  inquiry.ts      → requester inquiry routes (create/list)
 services/
   rieltService.ts → business logic, DTO mapping, access checks
 db/
@@ -146,10 +146,10 @@ Only published listings are visible in public endpoints. Draft and archived are 
 - Check owner/agent.
 - Set status = archived (or equivalent). Return.
 
-## 6.4 Inquiry create (target contract; deferred runtime wiring)
+## 6.4 Inquiry create (runtime)
 
 - Contract uses body + Idempotency-Key.
-- Idempotent inquiry semantics remain the target contract: duplicate (requester, listing, idempotency_key) returns existing row; no new row is created.
+- Idempotent inquiry semantics are implemented: duplicate (requester, listing, idempotency_key) returns existing row; no new row is created.
 
 ---
 
@@ -179,7 +179,7 @@ Only published listings are visible in public endpoints. Draft and archived are 
 
 - **Public media:** coverUrl and photos not resolved. Clients receive null/[].
 - **Geo display:** country_id and city_id are raw strings. Display names require content-service or client lookup.
-- **Inquiry HTTP wiring:** Deferred in current runtime. Listing/owner routes are the implemented operational surface.
+- **Inquiry scope:** Requester create/list is live. Owner-side inquiry workflow remains deferred.
 - **Minimal by design:** Scope deliberately limited to keep rielt-service maintainable and to avoid coupling with booking, payments, or CRM before those domains exist.
 
 ---

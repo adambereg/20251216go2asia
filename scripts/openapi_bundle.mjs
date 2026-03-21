@@ -9,10 +9,13 @@
  *   - docs/openapi/auth.yaml
  *   - docs/openapi/content.yaml
  *   - docs/openapi/feed.yaml
+ *   - docs/openapi/guru.yaml
  *   - docs/openapi/points.yaml
+ *   - docs/openapi/rf.yaml
  *   - docs/openapi/reactions.yaml
  *   - docs/openapi/quest.yaml
  *   - docs/openapi/referral.yaml
+ *   - docs/openapi/rielt.yaml
  *   - docs/openapi/space.yaml
  * - Include only /v1/* and /internal/* paths in bundle (exclude /health and /version to avoid collisions).
  * - Merge components; throw on conflicting definitions (except HealthResponse examples).
@@ -33,10 +36,13 @@ const OUT_PATH = path.join(REPO_ROOT, 'docs', 'openapi', 'openapi.bundle.yaml');
 const SERVICE_SPECS = [
   path.join(REPO_ROOT, 'docs', 'openapi', 'auth.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'content.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'guru.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'points.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'quest.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'referral.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'rf.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'reactions.yaml'),
+  path.join(REPO_ROOT, 'docs', 'openapi', 'rielt.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'feed.yaml'),
   path.join(REPO_ROOT, 'docs', 'openapi', 'space.yaml'),
 ];
