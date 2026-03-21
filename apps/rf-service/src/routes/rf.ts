@@ -1,3 +1,5 @@
+import { createDb } from '@go2asia/db';
+
 import type { GatewayPrincipal } from '../middleware/auth';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
@@ -7,6 +9,8 @@ import {
   createOffer,
   createPartner,
   createProLink,
+  getPublicOfferById,
+  getPublicPartnerById,
   listMyVouchers,
   listProLinks,
   listPublicOffers,
@@ -14,6 +18,10 @@ import {
   redeemVoucher,
   shouldThrottleWrite,
 } from '../store';
+
+type RfRouteEnv = {
+  DATABASE_URL?: string;
+};
 
 function getPathParam(path: string, regex: RegExp): string | null {
   const match = path.match(regex);
@@ -48,32 +56,38 @@ function isRoleScope(value: unknown): value is 'onboarding' | 'curation' | 'prom
 
 export async function handleRfRoute(
   request: Request,
+  env: RfRouteEnv,
   requestId: string,
   principal: GatewayPrincipal | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
+  if (!path.startsWith('/v1/rf/')) return null;
+
+  if (!env.DATABASE_URL) {
+    return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
+  }
+
+  const db = createDb(env.DATABASE_URL);
 
   if (request.method === 'GET' && path === '/v1/rf/partners') {
-    return json({ items: listPublicPartners(), nextCursor: null });
+    return json({ items: await listPublicPartners(db), nextCursor: null });
   }
 
   if (request.method === 'GET' && path === '/v1/rf/offers') {
-    return json({ items: listPublicOffers(), nextCursor: null });
+    return json({ items: await listPublicOffers(db), nextCursor: null });
   }
 
   const partnerId = getPathParam(path, /^\/v1\/rf\/partners\/([^/]+)$/);
   if (request.method === 'GET' && partnerId) {
-    const items = listPublicPartners();
-    const item = items.find((entry) => entry.id === partnerId);
+    const item = await getPublicPartnerById(db, partnerId);
     if (!item) return errorResponse('RF_PARTNER_NOT_FOUND', 'RF partner was not found', requestId, 404);
     return json(item);
   }
 
   const offerId = getPathParam(path, /^\/v1\/rf\/offers\/([^/]+)$/);
   if (request.method === 'GET' && offerId) {
-    const items = listPublicOffers();
-    const item = items.find((entry) => entry.id === offerId);
+    const item = await getPublicOfferById(db, offerId);
     if (!item) return errorResponse('RF_OFFER_NOT_FOUND', 'RF offer was not found', requestId, 404);
     return json(item);
   }
@@ -89,7 +103,7 @@ export async function handleRfRoute(
     if (!displayName || !countryId || !cityId) {
       return errorResponse('INVALID_REQUEST', 'displayName, countryId and cityId are required', requestId, 400);
     }
-    const partner = createPartner(principal, { displayName, countryId, cityId });
+    const partner = await createPartner(db, principal, { displayName, countryId, cityId });
     return json(partner, 201);
   }
 
@@ -104,7 +118,7 @@ export async function handleRfRoute(
       return errorResponse('INVALID_REQUEST', 'title, offerType and visibility are required', requestId, 400);
     }
 
-    const result = createOffer(principal, {
+    const result = await createOffer(db, principal, {
       partnerId: businessPartnerId,
       title,
       offerType: body.offerType,
@@ -121,7 +135,7 @@ export async function handleRfRoute(
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     const partnerIdValue = decodeURIComponent(activateMatch[1] ?? '');
     const offerIdValue = decodeURIComponent(activateMatch[2] ?? '');
-    const result = activateOffer(principal, { partnerId: partnerIdValue, offerId: offerIdValue });
+    const result = await activateOffer(db, principal, { partnerId: partnerIdValue, offerId: offerIdValue });
     if ('error' in result) {
       if (result.status === 403) return errorResponse('RF_PARTNER_FORBIDDEN', result.error, requestId, 403);
       if (result.status === 409) return errorResponse('RF_OFFER_ARCHIVED', result.error, requestId, 409);
@@ -141,7 +155,7 @@ export async function handleRfRoute(
       return errorResponse('RATE_LIMITED', 'Too many voucher claim requests. Please retry later.', requestId, 429);
     }
 
-    const result = claimVoucher(principal, {
+    const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
       idempotencyKey,
     });
@@ -157,7 +171,7 @@ export async function handleRfRoute(
 
   if (request.method === 'GET' && path === '/v1/rf/me/vouchers') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
-    return json({ items: listMyVouchers(principal), nextCursor: null });
+    return json({ items: await listMyVouchers(db, principal), nextCursor: null });
   }
 
   const redeemMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/vouchers\/([^/]+)\/redeem$/);
@@ -168,7 +182,7 @@ export async function handleRfRoute(
     }
     const partnerIdValue = decodeURIComponent(redeemMatch[1] ?? '');
     const voucherId = decodeURIComponent(redeemMatch[2] ?? '');
-    const result = redeemVoucher(principal, { partnerId: partnerIdValue, voucherId });
+    const result = await redeemVoucher(db, principal, { partnerId: partnerIdValue, voucherId });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json({
       voucher: result.voucher,
@@ -178,7 +192,7 @@ export async function handleRfRoute(
 
   if (request.method === 'GET' && path === '/v1/rf/pro/links') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
-    return json({ items: listProLinks(principal), nextCursor: null });
+    return json({ items: await listProLinks(db, principal), nextCursor: null });
   }
 
   if (request.method === 'POST' && path === '/v1/rf/pro/links') {
@@ -187,7 +201,7 @@ export async function handleRfRoute(
     if (!body || typeof body.partnerId !== 'string' || !isRoleScope(body.roleScope)) {
       return errorResponse('INVALID_REQUEST', 'partnerId and roleScope are required', requestId, 400);
     }
-    const result = createProLink(principal, {
+    const result = await createProLink(db, principal, {
       partnerId: body.partnerId,
       roleScope: body.roleScope,
     });
@@ -200,7 +214,7 @@ export async function handleRfRoute(
   const proLinkId = getPathParam(path, /^\/v1\/rf\/pro\/links\/([^/]+)\/accept$/);
   if (request.method === 'POST' && proLinkId) {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
-    const result = acceptProLink(principal, { proLinkId });
+    const result = await acceptProLink(db, principal, { proLinkId });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json({
       proLink: result.proLink,

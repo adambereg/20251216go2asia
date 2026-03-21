@@ -8,6 +8,7 @@ export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
+  DATABASE_URL?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -21,6 +22,7 @@ function handleHealth(env: Env): Response {
 
 function handleReady(env: Env): Response {
   const checks = {
+    databaseUrl: getSecretCheck(env.DATABASE_URL),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
   };
   const missing = Object.entries(checks)
@@ -84,7 +86,7 @@ export default {
         }
       }
 
-      response = (await handleRfRoute(request, requestId, principal)) ?? handleNotFound(path, requestId);
+      response = (await handleRfRoute(request, env, requestId, principal)) ?? handleNotFound(path, requestId);
       return withRequestId(response, requestId);
     } catch (error) {
       logger.error('Unhandled error', error, { method: request.method, path });
