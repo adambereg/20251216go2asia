@@ -409,6 +409,9 @@ importers:
 
   apps/rf-service:
     dependencies:
+      '@go2asia/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@go2asia/logger':
         specifier: workspace:*
         version: link:../../packages/logger

@@ -11,3 +11,4 @@ name = "go2asia-rf-service-staging"
 
 # Required vars/secrets:
 # - SERVICE_JWT_SECRET
+# - DATABASE_URL

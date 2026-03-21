@@ -1,4 +1,9 @@
+import type { Db } from '@go2asia/db';
+import { sql } from '@go2asia/db';
+
 import type { GatewayPrincipal } from './middleware/auth';
+
+type DbExecutor = Pick<Db, 'execute'>;
 
 export type PartnerStatus = 'active' | 'archived';
 export type OfferStatus = 'draft' | 'active' | 'archived';
@@ -52,13 +57,6 @@ export interface ProLink {
   updatedAt: string;
 }
 
-type IdempotencyRecord = {
-  operation: 'voucher_claim';
-  actorUserId: string;
-  key: string;
-  voucherId: string;
-};
-
 type ClaimResult =
   | { ok: true; voucher: Voucher; idempotentReplay: boolean }
   | { ok: false; code: string; message: string; status: number };
@@ -69,23 +67,129 @@ type ProLinkAcceptResult =
   | { ok: true; proLink: ProLink; applied: boolean }
   | { ok: false; code: string; message: string; status: number };
 
-const partners = new Map<string, Partner>();
-const offers = new Map<string, Offer>();
-const vouchers = new Map<string, Voucher>();
-const proLinks = new Map<string, ProLink>();
-const idempotencyByKey = new Map<string, IdempotencyRecord>();
+type PartnerRow = {
+  id: string;
+  slug: string;
+  display_name: string;
+  country_id: string;
+  city_id: string;
+  status: PartnerStatus;
+  owner_user_id: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type OfferRow = {
+  id: string;
+  partner_id: string;
+  title: string;
+  offer_type: Offer['offerType'];
+  visibility: Offer['visibility'];
+  status: OfferStatus;
+  created_by_user_id: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type VoucherRow = {
+  id: string;
+  offer_id: string;
+  partner_id: string;
+  issued_to_user_id: string;
+  status: VoucherStatus;
+  code: string;
+  claimed_at: string | Date;
+  redeemed_at: string | Date | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type ProLinkRow = {
+  id: string;
+  partner_id: string;
+  pro_user_id: string;
+  status: ProLinkStatus;
+  role_scope: ProLink['roleScope'];
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type IdempotencyRow = {
+  operation: 'voucher_claim';
+  actor_user_id: string;
+  idempotency_key: string;
+  voucher_id: string;
+  created_at: string | Date;
+};
+
 const writeTimestampsByActorAndOp = new Map<string, number[]>();
 
-let idSeq = 1;
+function rowsOf<T>(result: unknown): T[] {
+  return ((result as { rows?: T[] } | null)?.rows ?? []) as T[];
+}
 
-function nowIso(): string {
-  return new Date().toISOString();
+function asIso(value: string | Date | null): string | null {
+  if (!value) return null;
+  return new Date(value).toISOString();
+}
+
+function toPartner(row: PartnerRow): Partner {
+  return {
+    id: row.id,
+    slug: row.slug,
+    displayName: row.display_name,
+    countryId: row.country_id,
+    cityId: row.city_id,
+    status: row.status,
+    ownerUserId: row.owner_user_id,
+    createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+    updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function toOffer(row: OfferRow): Offer {
+  return {
+    id: row.id,
+    partnerId: row.partner_id,
+    title: row.title,
+    offerType: row.offer_type,
+    visibility: row.visibility,
+    status: row.status,
+    createdByUserId: row.created_by_user_id,
+    createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+    updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function toVoucher(row: VoucherRow): Voucher {
+  return {
+    id: row.id,
+    offerId: row.offer_id,
+    partnerId: row.partner_id,
+    issuedToUserId: row.issued_to_user_id,
+    status: row.status,
+    code: row.code,
+    claimedAt: asIso(row.claimed_at) ?? new Date(0).toISOString(),
+    redeemedAt: asIso(row.redeemed_at),
+    createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+    updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function toProLink(row: ProLinkRow): ProLink {
+  return {
+    id: row.id,
+    partnerId: row.partner_id,
+    proUserId: row.pro_user_id,
+    status: row.status,
+    roleScope: row.role_scope,
+    createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+    updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
+  };
 }
 
 function nextId(prefix: string): string {
-  const value = `${prefix}_${idSeq}`;
-  idSeq += 1;
-  return value;
+  return `${prefix}_${crypto.randomUUID()}`;
 }
 
 function toSlug(input: string): string {
@@ -94,12 +198,110 @@ function toSlug(input: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return base.length > 0 ? base : `entity-${idSeq}`;
+  if (base.length > 0) return base;
+  return `entity-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function toVoucherCode(voucherId: string): string {
-  const n = voucherId.replace(/\D+/g, '').padStart(6, '0');
-  return `RF-${n.slice(-6)}`;
+  const compact = voucherId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return `RF-${compact.slice(-6).padStart(6, '0')}`;
+}
+
+async function getOwnedActivePartner(db: DbExecutor, partnerId: string, ownerUserId: string): Promise<PartnerRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    FROM rf_partner
+    WHERE id = ${partnerId}
+      AND status = 'active'
+      AND owner_user_id = ${ownerUserId}
+    LIMIT 1
+  `);
+  return rowsOf<PartnerRow>(result)[0] ?? null;
+}
+
+async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    FROM rf_offer
+    WHERE id = ${offerId}
+    LIMIT 1
+  `);
+  return rowsOf<OfferRow>(result)[0] ?? null;
+}
+
+async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partnerId: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    FROM rf_voucher
+    WHERE id = ${voucherId}
+      AND partner_id = ${partnerId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: string, idempotencyKey: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT v.id, v.offer_id, v.partner_id, v.issued_to_user_id, v.status, v.code, v.claimed_at, v.redeemed_at, v.created_at, v.updated_at
+    FROM rf_claim_idempotency ci
+    INNER JOIN rf_voucher v ON v.id = ci.voucher_id
+    WHERE ci.operation = 'voucher_claim'
+      AND ci.actor_user_id = ${actorUserId}
+      AND ci.idempotency_key = ${idempotencyKey}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string, userId: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    FROM rf_voucher
+    WHERE offer_id = ${offerId}
+      AND issued_to_user_id = ${userId}
+      AND status IN ('claimed', 'redeemed')
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function insertClaimIdempotency(
+  db: DbExecutor,
+  input: { actorUserId: string; idempotencyKey: string; voucherId: string }
+): Promise<IdempotencyRow | null> {
+  const result = await db.execute(sql`
+    WITH inserted AS (
+      INSERT INTO rf_claim_idempotency (
+        operation,
+        actor_user_id,
+        idempotency_key,
+        voucher_id,
+        created_at
+      )
+      VALUES (
+        'voucher_claim',
+        ${input.actorUserId},
+        ${input.idempotencyKey},
+        ${input.voucherId},
+        now()
+      )
+      ON CONFLICT (operation, actor_user_id, idempotency_key)
+      DO NOTHING
+      RETURNING operation, actor_user_id, idempotency_key, voucher_id, created_at
+    )
+    SELECT operation, actor_user_id, idempotency_key, voucher_id, created_at
+    FROM inserted
+    UNION ALL
+    SELECT operation, actor_user_id, idempotency_key, voucher_id, created_at
+    FROM rf_claim_idempotency
+    WHERE operation = 'voucher_claim'
+      AND actor_user_id = ${input.actorUserId}
+      AND idempotency_key = ${input.idempotencyKey}
+      AND NOT EXISTS (SELECT 1 FROM inserted)
+    LIMIT 1
+  `);
+  return rowsOf<IdempotencyRow>(result)[0] ?? null;
 }
 
 export function shouldThrottleWrite(actorUserId: string, operation: 'claim' | 'redeem'): boolean {
@@ -115,47 +317,92 @@ export function shouldThrottleWrite(actorUserId: string, operation: 'claim' | 'r
   return false;
 }
 
-export function listPublicPartners(): Partner[] {
-  return [...partners.values()].filter((partner) => partner.status === 'active');
+export async function listPublicPartners(db: DbExecutor): Promise<Partner[]> {
+  const result = await db.execute(sql`
+    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    FROM rf_partner
+    WHERE status = 'active'
+    ORDER BY created_at DESC, id DESC
+  `);
+  return rowsOf<PartnerRow>(result).map(toPartner);
 }
 
-export function getPublicPartnerById(partnerId: string): Partner | null {
-  const partner = partners.get(partnerId);
-  if (!partner || partner.status !== 'active') return null;
-  return partner;
+export async function getPublicPartnerById(db: DbExecutor, partnerId: string): Promise<Partner | null> {
+  const result = await db.execute(sql`
+    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    FROM rf_partner
+    WHERE id = ${partnerId}
+      AND status = 'active'
+    LIMIT 1
+  `);
+  const row = rowsOf<PartnerRow>(result)[0];
+  return row ? toPartner(row) : null;
 }
 
-export function listPublicOffers(): Offer[] {
-  return [...offers.values()].filter((offer) => offer.status === 'active' && offer.visibility === 'public');
+export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    FROM rf_offer
+    WHERE status = 'active'
+      AND visibility = 'public'
+    ORDER BY created_at DESC, id DESC
+  `);
+  return rowsOf<OfferRow>(result).map(toOffer);
 }
 
-export function getPublicOfferById(offerId: string): Offer | null {
-  const offer = offers.get(offerId);
-  if (!offer || offer.status !== 'active' || offer.visibility !== 'public') return null;
-  return offer;
+export async function getPublicOfferById(db: DbExecutor, offerId: string): Promise<Offer | null> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    FROM rf_offer
+    WHERE id = ${offerId}
+      AND status = 'active'
+      AND visibility = 'public'
+    LIMIT 1
+  `);
+  const row = rowsOf<OfferRow>(result)[0];
+  return row ? toOffer(row) : null;
 }
 
-export function createPartner(
+export async function createPartner(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { displayName: string; countryId: string; cityId: string }
-): Partner {
-  const timestamp = nowIso();
-  const partner: Partner = {
-    id: nextId('rf_partner'),
-    slug: toSlug(input.displayName),
-    displayName: input.displayName,
-    countryId: input.countryId,
-    cityId: input.cityId,
-    status: 'active',
-    ownerUserId: principal.userId,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-  partners.set(partner.id, partner);
-  return partner;
+): Promise<Partner> {
+  const id = nextId('rf_partner');
+  const result = await db.execute(sql`
+    INSERT INTO rf_partner (
+      id,
+      slug,
+      display_name,
+      country_id,
+      city_id,
+      status,
+      owner_user_id,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${id},
+      ${toSlug(input.displayName)},
+      ${input.displayName},
+      ${input.countryId},
+      ${input.cityId},
+      'active',
+      ${principal.userId},
+      now(),
+      now()
+    )
+    RETURNING id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+  `);
+  const row = rowsOf<PartnerRow>(result)[0];
+  if (!row) {
+    throw new Error('Failed to persist RF partner');
+  }
+  return toPartner(row);
 }
 
-export function createOffer(
+export async function createOffer(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: {
     partnerId: string;
@@ -163,194 +410,321 @@ export function createOffer(
     offerType: Offer['offerType'];
     visibility: Offer['visibility'];
   }
-): Offer | { error: string; status: number } {
-  const partner = partners.get(input.partnerId);
-  if (!partner || partner.status !== 'active') return { error: 'Partner not found', status: 404 };
-  if (partner.ownerUserId !== principal.userId) return { error: 'Forbidden partner access', status: 403 };
+): Promise<Offer | { error: string; status: number }> {
+  const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
+  if (!partner) return { error: 'Partner not found', status: 404 };
 
-  const timestamp = nowIso();
-  const offer: Offer = {
-    id: nextId('rf_offer'),
-    partnerId: input.partnerId,
-    title: input.title,
-    offerType: input.offerType,
-    visibility: input.visibility,
-    status: 'draft',
-    createdByUserId: principal.userId,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-  offers.set(offer.id, offer);
-  return offer;
+  const id = nextId('rf_offer');
+  const result = await db.execute(sql`
+    INSERT INTO rf_offer (
+      id,
+      partner_id,
+      title,
+      offer_type,
+      visibility,
+      status,
+      created_by_user_id,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${id},
+      ${input.partnerId},
+      ${input.title},
+      ${input.offerType},
+      ${input.visibility},
+      'draft',
+      ${principal.userId},
+      now(),
+      now()
+    )
+    RETURNING id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+  `);
+  const row = rowsOf<OfferRow>(result)[0];
+  if (!row) throw new Error('Failed to persist RF offer');
+  return toOffer(row);
 }
 
-export function activateOffer(
+export async function activateOffer(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { partnerId: string; offerId: string }
-): Offer | { error: string; status: number } {
-  const partner = partners.get(input.partnerId);
-  if (!partner || partner.status !== 'active') return { error: 'Partner not found', status: 404 };
-  if (partner.ownerUserId !== principal.userId) return { error: 'Forbidden partner access', status: 403 };
+): Promise<Offer | { error: string; status: number }> {
+  const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
+  if (!partner) return { error: 'Partner not found', status: 404 };
 
-  const offer = offers.get(input.offerId);
-  if (!offer || offer.partnerId !== input.partnerId) return { error: 'Offer not found', status: 404 };
+  const offer = await getOfferById(db, input.offerId);
+  if (!offer || offer.partner_id !== input.partnerId) return { error: 'Offer not found', status: 404 };
   if (offer.status === 'archived') return { error: 'Archived offer cannot be activated', status: 409 };
-  if (offer.status === 'active') return offer;
+  if (offer.status === 'active') return toOffer(offer);
 
-  offer.status = 'active';
-  offer.updatedAt = nowIso();
-  offers.set(offer.id, offer);
-  return offer;
+  const result = await db.execute(sql`
+    UPDATE rf_offer
+    SET
+      status = 'active',
+      updated_at = now()
+    WHERE id = ${input.offerId}
+      AND partner_id = ${input.partnerId}
+      AND status = 'draft'
+    RETURNING id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+  `);
+  const updated = rowsOf<OfferRow>(result)[0];
+  if (updated) return toOffer(updated);
+
+  const latest = await getOfferById(db, input.offerId);
+  if (!latest || latest.partner_id !== input.partnerId) return { error: 'Offer not found', status: 404 };
+  if (latest.status === 'active') return toOffer(latest);
+  if (latest.status === 'archived') return { error: 'Archived offer cannot be activated', status: 409 };
+  return { error: 'Offer activation conflict', status: 409 };
 }
 
-export function claimVoucher(
+export async function claimVoucher(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { offerId: string; idempotencyKey: string }
-): ClaimResult {
-  const idempotencyLookupKey = `voucher_claim:${principal.userId}:${input.idempotencyKey}`;
-  const replay = idempotencyByKey.get(idempotencyLookupKey);
-  if (replay) {
-    const voucher = vouchers.get(replay.voucherId);
-    if (voucher) return { ok: true, voucher, idempotentReplay: true };
-  }
+): Promise<ClaimResult> {
+  const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
+  if (replayVoucher) return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
 
-  const offer = offers.get(input.offerId);
+  const offer = await getOfferById(db, input.offerId);
   if (!offer) return { ok: false, code: 'RF_OFFER_NOT_FOUND', message: 'RF offer not found', status: 404 };
   if (offer.status !== 'active') {
     return { ok: false, code: 'RF_OFFER_INACTIVE', message: 'RF offer is not active', status: 409 };
   }
 
-  for (const voucher of vouchers.values()) {
-    if (
-      voucher.offerId === offer.id &&
-      voucher.issuedToUserId === principal.userId &&
-      (voucher.status === 'claimed' || voucher.status === 'redeemed')
-    ) {
-      return { ok: true, voucher, idempotentReplay: false };
+  const existing = await getClaimableVoucherByOfferAndUser(db, offer.id, principal.userId);
+  if (existing) {
+    return { ok: true, voucher: toVoucher(existing), idempotentReplay: false };
+  }
+
+  const voucherId = nextId('rf_voucher');
+  const voucherCode = toVoucherCode(voucherId);
+  const insertResult = await db.execute(sql`
+    INSERT INTO rf_voucher (
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${voucherId},
+      ${offer.id},
+      ${offer.partner_id},
+      ${principal.userId},
+      'claimed',
+      ${voucherCode},
+      now(),
+      NULL,
+      now(),
+      now()
+    )
+    ON CONFLICT (offer_id, issued_to_user_id) WHERE status IN ('claimed', 'redeemed')
+    DO NOTHING
+    RETURNING id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+  `);
+  let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
+
+  if (!voucherRow) {
+    voucherRow = await getClaimableVoucherByOfferAndUser(db, offer.id, principal.userId);
+    if (!voucherRow) {
+      return { ok: false, code: 'RF_VOUCHER_CLAIM_FAILED', message: 'Unable to claim voucher', status: 409 };
     }
   }
 
-  const timestamp = nowIso();
-  const voucher: Voucher = {
-    id: nextId('rf_voucher'),
-    offerId: offer.id,
-    partnerId: offer.partnerId,
-    issuedToUserId: principal.userId,
-    status: 'claimed',
-    code: toVoucherCode(`rf_voucher_${idSeq}`),
-    claimedAt: timestamp,
-    redeemedAt: null,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-  vouchers.set(voucher.id, voucher);
-  idempotencyByKey.set(idempotencyLookupKey, {
-    operation: 'voucher_claim',
+  const idempotency = await insertClaimIdempotency(db, {
     actorUserId: principal.userId,
-    key: input.idempotencyKey,
-    voucherId: voucher.id,
+    idempotencyKey: input.idempotencyKey,
+    voucherId: voucherRow.id,
   });
+  if (!idempotency) {
+    return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
+  }
+  if (idempotency.voucher_id !== voucherRow.id) {
+    const stableReplay = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
+    if (stableReplay) return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+  }
 
-  return { ok: true, voucher, idempotentReplay: false };
+  return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
 }
 
-export function listMyVouchers(principal: GatewayPrincipal): Voucher[] {
-  return [...vouchers.values()].filter((voucher) => voucher.issuedToUserId === principal.userId);
+export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal): Promise<Voucher[]> {
+  const result = await db.execute(sql`
+    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    FROM rf_voucher
+    WHERE issued_to_user_id = ${principal.userId}
+    ORDER BY created_at DESC, id DESC
+  `);
+  return rowsOf<VoucherRow>(result).map(toVoucher);
 }
 
-export function redeemVoucher(
+export async function redeemVoucher(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { partnerId: string; voucherId: string }
-): RedeemResult {
-  const partner = partners.get(input.partnerId);
-  if (!partner || partner.status !== 'active') {
+): Promise<RedeemResult> {
+  const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
+  if (!partner) {
     return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
   }
-  if (partner.ownerUserId !== principal.userId) {
-    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Forbidden partner access', status: 403 };
-  }
 
-  const voucher = vouchers.get(input.voucherId);
-  if (!voucher || voucher.partnerId !== input.partnerId) {
+  const voucher = await getVoucherByIdAndPartner(db, input.voucherId, input.partnerId);
+  if (!voucher) {
     return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
   }
   if (voucher.status === 'cancelled') {
     return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
   }
   if (voucher.status === 'redeemed') {
-    return { ok: true, voucher, applied: false };
+    return { ok: true, voucher: toVoucher(voucher), applied: false };
   }
   if (voucher.status !== 'claimed') {
     return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
   }
 
-  voucher.status = 'redeemed';
-  voucher.redeemedAt = nowIso();
-  voucher.updatedAt = voucher.redeemedAt;
-  vouchers.set(voucher.id, voucher);
-  return { ok: true, voucher, applied: true };
+  const updateResult = await db.execute(sql`
+    UPDATE rf_voucher
+    SET
+      status = 'redeemed',
+      redeemed_at = now(),
+      updated_at = now()
+    WHERE id = ${input.voucherId}
+      AND partner_id = ${input.partnerId}
+      AND status = 'claimed'
+    RETURNING id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+  `);
+  const updated = rowsOf<VoucherRow>(updateResult)[0];
+  if (updated) return { ok: true, voucher: toVoucher(updated), applied: true };
+
+  const latest = await getVoucherByIdAndPartner(db, input.voucherId, input.partnerId);
+  if (!latest) {
+    return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
+  }
+  if (latest.status === 'redeemed') return { ok: true, voucher: toVoucher(latest), applied: false };
+  if (latest.status === 'cancelled') {
+    return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
+  }
+  return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
 }
 
-export function listProLinks(principal: GatewayPrincipal): ProLink[] {
-  return [...proLinks.values()].filter((item) => item.proUserId === principal.userId);
+export async function listProLinks(db: DbExecutor, principal: GatewayPrincipal): Promise<ProLink[]> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE pro_user_id = ${principal.userId}
+    ORDER BY created_at DESC, id DESC
+  `);
+  return rowsOf<ProLinkRow>(result).map(toProLink);
 }
 
-export function createProLink(
+export async function createProLink(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { partnerId: string; roleScope: ProLink['roleScope'] }
-): ProLink | { error: string; status: number } {
-  const partner = partners.get(input.partnerId);
-  if (!partner || partner.status !== 'active') return { error: 'Partner not found', status: 404 };
+): Promise<ProLink | { error: string; status: number }> {
+  const partnerResult = await db.execute(sql`
+    SELECT id
+    FROM rf_partner
+    WHERE id = ${input.partnerId}
+      AND status = 'active'
+    LIMIT 1
+  `);
+  if (!rowsOf<{ id: string }>(partnerResult)[0]) return { error: 'Partner not found', status: 404 };
 
-  for (const item of proLinks.values()) {
-    if (item.partnerId === input.partnerId && item.proUserId === principal.userId && item.status !== 'ended') {
-      return item;
-    }
-  }
+  const insertResult = await db.execute(sql`
+    INSERT INTO rf_pro_link (
+      id,
+      partner_id,
+      pro_user_id,
+      status,
+      role_scope,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${nextId('rf_pro_link')},
+      ${input.partnerId},
+      ${principal.userId},
+      'pending',
+      ${input.roleScope},
+      now(),
+      now()
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+  `);
+  const inserted = rowsOf<ProLinkRow>(insertResult)[0];
+  if (inserted) return toProLink(inserted);
 
-  const timestamp = nowIso();
-  const proLink: ProLink = {
-    id: nextId('rf_pro_link'),
-    partnerId: input.partnerId,
-    proUserId: principal.userId,
-    status: 'pending',
-    roleScope: input.roleScope,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-  proLinks.set(proLink.id, proLink);
-  return proLink;
+  const existingResult = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE partner_id = ${input.partnerId}
+      AND pro_user_id = ${principal.userId}
+      AND status <> 'ended'
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `);
+  const existing = rowsOf<ProLinkRow>(existingResult)[0];
+  if (!existing) throw new Error('Failed to persist RF PRO link');
+  return toProLink(existing);
 }
 
-export function acceptProLink(
+export async function acceptProLink(
+  db: DbExecutor,
   principal: GatewayPrincipal,
   input: { proLinkId: string }
-): ProLinkAcceptResult {
-  const proLink = proLinks.get(input.proLinkId);
-  if (!proLink) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+): Promise<ProLinkAcceptResult> {
+  const result = await db.execute(sql`
+    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    FROM rf_pro_link p
+    INNER JOIN rf_partner rp ON rp.id = p.partner_id
+    WHERE p.id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const row = rowsOf<(ProLinkRow & { owner_user_id: string })>(result)[0];
+  if (!row) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
 
-  const partner = partners.get(proLink.partnerId);
-  if (!partner) return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
-  if (partner.ownerUserId !== principal.userId) {
+  if (row.owner_user_id !== principal.userId) {
     return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Only partner owner can accept link', status: 403 };
   }
-  if (proLink.status === 'active') return { ok: true, proLink, applied: false };
-  if (proLink.status === 'ended') {
+  if (row.status === 'active') return { ok: true, proLink: toProLink(row), applied: false };
+  if (row.status === 'ended') {
     return { ok: false, code: 'RF_PRO_LINK_ENDED', message: 'Cannot accept ended link', status: 409 };
   }
 
-  proLink.status = 'active';
-  proLink.updatedAt = nowIso();
-  proLinks.set(proLink.id, proLink);
-  return { ok: true, proLink, applied: true };
+  const updatedResult = await db.execute(sql`
+    UPDATE rf_pro_link
+    SET
+      status = 'active',
+      updated_at = now()
+    WHERE id = ${input.proLinkId}
+      AND status = 'pending'
+    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+  `);
+  const updated = rowsOf<ProLinkRow>(updatedResult)[0];
+  if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
+
+  const latestResult = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const latest = rowsOf<ProLinkRow>(latestResult)[0];
+  if (!latest) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+  if (latest.status === 'active') return { ok: true, proLink: toProLink(latest), applied: false };
+  if (latest.status === 'ended') {
+    return { ok: false, code: 'RF_PRO_LINK_ENDED', message: 'Cannot accept ended link', status: 409 };
+  }
+  return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot accept link in current state', status: 409 };
 }
 
 export function resetRfStoreForTests(): void {
-  partners.clear();
-  offers.clear();
-  vouchers.clear();
-  proLinks.clear();
-  idempotencyByKey.clear();
   writeTimestampsByActorAndOp.clear();
-  idSeq = 1;
 }
