@@ -40,6 +40,8 @@ export function PulseClientWrapper() {
 
     const search = sp.get('q') ?? sp.get('search');
     if (search) filters.search = search;
+    const theme = sp.get('theme');
+    if (!filters.search && theme) filters.search = theme.replace(/-/g, ' ');
 
     const time = sp.get('time');
     if (time && ['today', 'tomorrow', 'weekend'].includes(time)) filters.timeFilter = time as any;
@@ -63,6 +65,12 @@ export function PulseClientWrapper() {
   }
 
   const filters = useMemo(() => parseFiltersFromURL(searchParams), [searchParams]);
+  const calendarFilters = useMemo<EventFilters>(() => {
+    if (dataSource === 'api' && filters.timeFilter && filters.timeFilter !== 'all') {
+      return { ...filters, timeFilter: 'all' };
+    }
+    return filters;
+  }, [dataSource, filters]);
 
   const apiDateRange = useMemo(() => {
     const utcStartOfDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
@@ -307,7 +315,7 @@ export function PulseClientWrapper() {
         events={events}
         initialView={viewMode}
         initialDate={currentDate}
-        filters={filters}
+        filters={calendarFilters}
         cityOptions={cityOptions}
         onFiltersChange={(f) => updateURLWithFilters(f)}
         onEventClick={(event) => router.push(`/pulse/events/${event.slug ?? event.id}`)}

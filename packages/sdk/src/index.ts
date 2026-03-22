@@ -19,6 +19,7 @@ export * as referrals from './referrals';
 export * as rielt from './rielt';
 export * as rf from './rf';
 export * as guru from './guru';
+export * as quest from './quest';
 export * as transactions from './transactions';
 
 export * as generated from './generated';

@@ -20,9 +20,7 @@ export function CountryMapTab() {
 
   const mockCountry = dataSource === 'mock' && countryId ? mockRepo.atlas.getCountryById(countryId) : null;
   const resolvedCountry: any =
-    dataSource === 'mock'
-      ? mockCountry
-      : countryData ?? (countryId ? mockRepo.atlas.getCountryById(countryId) : null);
+    dataSource === 'mock' ? mockCountry : countryData ?? null;
 
   const { geo, isLoading, error, stats } = useCountryGeoMap(countryId);
 

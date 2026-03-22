@@ -1,345 +1,278 @@
 'use client';
 
-/**
- * Quest Asia - Quest Runner Client
- * Основной компонент для прохождения квеста
- */
-
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Quest, QuestProgress, StepResult, Coordinates } from '@/components/quest/types';
-import { QuestProgressBar } from '@/components/quest/QuestRunner/QuestProgressBar';
-import { StepPills } from '@/components/quest/QuestRunner/StepPills';
-import { StepGeoCheckin } from '@/components/quest/QuestRunner/Steps/StepGeoCheckin';
-import { StepQRCode } from '@/components/quest/QuestRunner/Steps/StepQRCode';
-import { StepQuiz } from '@/components/quest/QuestRunner/Steps/StepQuiz';
-import { StepMedia } from '@/components/quest/QuestRunner/Steps/StepMedia';
-import { StepPulseEvent } from '@/components/quest/QuestRunner/Steps/StepPulseEvent';
-import { StepTask } from '@/components/quest/QuestRunner/Steps/StepTask';
-import { QuestRunnerActions } from '@/components/quest/QuestRunner/QuestRunnerActions';
-import { getCurrentStep, calculateProgress } from '@/components/quest/utils/steps';
-import { isOnline, subscribeToOnlineStatus } from '@/components/quest/utils/offline';
-import { Pause, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Loader2, RefreshCcw } from 'lucide-react';
+import { quest } from '@go2asia/sdk';
+import type {
+  QuestDetailResponse,
+  QuestProgressResponse,
+  QuestProofType,
+  QuestStepResponse,
+  QuestSubmissionResponse,
+} from '@go2asia/sdk/quest';
 
 interface QuestRunnerClientProps {
-  quest: Quest;
+  quest: QuestDetailResponse;
 }
 
-/**
- * Сохранить прогресс в localStorage
- */
-function saveProgressToLocal(progress: QuestProgress): void {
-  try {
-    localStorage.setItem(`quest-progress-${progress.questId}`, JSON.stringify({
-      ...progress,
-      startedAt: progress.startedAt.toISOString(),
-      completedAt: progress.completedAt?.toISOString(),
-      pausedAt: progress.pausedAt?.toISOString(),
-      offlineData: {
-        ...progress.offlineData,
-        lastSyncAt: progress.offlineData.lastSyncAt?.toISOString(),
-      },
-      stepResults: Object.fromEntries(
-        Object.entries(progress.stepResults).map(([key, value]) => [
-          key,
-          {
-            ...value,
-            completedAt: value.completedAt.toISOString(),
-          },
-        ])
-      ),
-    }));
-  } catch (error) {
-    console.error('Failed to save progress to localStorage:', error);
-  }
+type ApiErrorShape = {
+  status?: number;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+};
+
+function readErrorMessage(error: unknown): string {
+  const value = error as ApiErrorShape;
+  if (value?.error?.message) return value.error.message;
+  if (value?.status) return `Request failed (${value.status})`;
+  return 'Unexpected runtime error.';
 }
 
-/**
- * Загрузить прогресс из localStorage
- */
-function loadProgressFromLocal(questId: string): QuestProgress | null {
-  try {
-    const stored = localStorage.getItem(`quest-progress-${questId}`);
-    if (!stored) return null;
-
-    const data = JSON.parse(stored);
-    return {
-      ...data,
-      startedAt: new Date(data.startedAt),
-      completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
-      pausedAt: data.pausedAt ? new Date(data.pausedAt) : undefined,
-      offlineData: {
-        ...data.offlineData,
-        lastSyncAt: data.offlineData.lastSyncAt ? new Date(data.offlineData.lastSyncAt) : undefined,
-      },
-      stepResults: Object.fromEntries(
-        Object.entries(data.stepResults).map(([key, value]: [string, any]) => [
-          key,
-          {
-            ...value,
-            completedAt: new Date(value.completedAt),
-          },
-        ])
-      ),
-    } as QuestProgress;
-  } catch (error) {
-    console.error('Failed to load progress from localStorage:', error);
-    return null;
-  }
+function mapProofType(step: QuestStepResponse): QuestProofType {
+  if (step.verificationType === 'geo') return 'geo';
+  if (step.verificationType === 'qr') return 'qr';
+  if (step.verificationType === 'space_post') return 'space_post';
+  if (step.type === 'photo_proof') return 'photo';
+  return 'text';
 }
 
-export function QuestRunnerClient({ quest }: QuestRunnerClientProps) {
-  const router = useRouter();
-  const [progress, setProgress] = useState<QuestProgress | null>(null);
-  const [isOnlineState, setIsOnlineState] = useState(true);
-  const [showHint, setShowHint] = useState(false);
+function getDefaultProofData(proofType: QuestProofType): Record<string, unknown> {
+  if (proofType === 'geo') return { lat: 0, lng: 0 };
+  if (proofType === 'qr') return { code: 'sample-code' };
+  if (proofType === 'space_post') return { postId: 'sample-post-id' };
+  if (proofType === 'photo') return { mediaId: 'sample-media-id' };
+  return { text: 'sample proof text' };
+}
 
-  // Инициализация прогресса
+function getCurrentStep(progress: QuestProgressResponse | null, steps: QuestStepResponse[]): QuestStepResponse | null {
+  if (!progress) return null;
+  if (progress.status !== 'in_progress') return null;
+  if (!progress.currentStep) return null;
+  return steps.find((step) => step.order === progress.currentStep) ?? null;
+}
+
+export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps) {
+  const [progress, setProgress] = useState<QuestProgressResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastSubmission, setLastSubmission] = useState<QuestSubmissionResponse | null>(null);
+  const [proofType, setProofType] = useState<QuestProofType>('text');
+  const [proofDataText, setProofDataText] = useState('{\n  "text": "sample proof text"\n}');
+
+  const currentStep = useMemo(() => getCurrentStep(progress, questDetail.steps), [progress, questDetail.steps]);
+
   useEffect(() => {
-    // Пробуем загрузить существующий прогресс
-    const savedProgress = loadProgressFromLocal(quest.id);
-    
-    if (savedProgress && savedProgress.status === 'active') {
-      setProgress(savedProgress);
-    } else {
-      // Создаём новый прогресс
-      const newProgress: QuestProgress = {
-        questId: quest.id,
-        userId: 'demo-user', // TODO: получить из контекста авторизации
-        status: 'active',
-        currentStep: 0,
-        completedSteps: [],
-        startedAt: new Date(),
-        offlineData: {
-          cached: true,
-          pendingActions: [],
-        },
-        stepResults: {},
-      };
-      setProgress(newProgress);
-      saveProgressToLocal(newProgress);
-    }
-  }, [quest.id]);
+    if (!currentStep) return;
+    const mapped = mapProofType(currentStep);
+    setProofType(mapped);
+    setProofDataText(JSON.stringify(getDefaultProofData(mapped), null, 2));
+  }, [currentStep?.id]);
 
-  // Подписка на статус сети
+  const loadProgress = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const started = await quest.startQuest(questDetail.id);
+      setProgress(started);
+    } catch (startError) {
+      const message = readErrorMessage(startError);
+      setError(message);
+      setProgress(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [questDetail.id]);
+
+  const refreshProgress = useCallback(async () => {
+    setError(null);
+    try {
+      const next = await quest.fetchQuestProgress(questDetail.id);
+      setProgress(next);
+    } catch (progressError) {
+      setError(readErrorMessage(progressError));
+    }
+  }, [questDetail.id]);
+
   useEffect(() => {
-    setIsOnlineState(isOnline());
-    const unsubscribe = subscribeToOnlineStatus(setIsOnlineState);
-    return unsubscribe;
-  }, []);
+    void loadProgress();
+  }, [loadProgress]);
 
-  // Сохранение прогресса при изменениях
-  useEffect(() => {
-    if (progress) {
-      saveProgressToLocal(progress);
+  const handleSubmitStep = useCallback(async () => {
+    if (!currentStep) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const proofData = JSON.parse(proofDataText) as Record<string, unknown>;
+      const response = await quest.submitQuestStep(questDetail.id, currentStep.id, {
+        proofType,
+        proofData,
+      });
+      setLastSubmission(response);
+      await refreshProgress();
+    } catch (submitError) {
+      if (submitError instanceof SyntaxError) {
+        setError('Proof data must be valid JSON.');
+      } else {
+        setError(readErrorMessage(submitError));
+      }
+    } finally {
+      setSubmitting(false);
     }
-  }, [progress]);
-
-  const currentStepData = progress ? getCurrentStep(quest.steps, progress.currentStep) : null;
-  const progressPercent = progress ? calculateProgress(quest.steps, progress.completedSteps) : 0;
-
-  const handleStepComplete = useCallback((stepId: string, result: StepResult) => {
-    if (!progress) return;
-
-    const newProgress: QuestProgress = {
-      ...progress,
-      currentStep: progress.currentStep + 1,
-      completedSteps: [...progress.completedSteps, stepId],
-      stepResults: {
-        ...progress.stepResults,
-        [stepId]: result,
-      },
-      offlineData: {
-        ...progress.offlineData,
-        pendingActions: [
-          ...progress.offlineData.pendingActions,
-          {
-            id: `action-${Date.now()}`,
-            type: 'step-completion',
-            questId: quest.id,
-            stepId,
-            data: result,
-            createdAt: new Date(),
-            retries: 0,
-          },
-        ],
-      },
-    };
-
-    // Проверяем, завершён ли квест
-    if (newProgress.currentStep >= quest.steps.length) {
-      newProgress.status = 'completed';
-      newProgress.completedAt = new Date();
-      // Переход на экран награды
-      setTimeout(() => {
-        router.push(`/quest/${quest.id}/complete`);
-      }, 1000);
-    }
-
-    setProgress(newProgress);
-  }, [progress, quest.id, quest.steps.length, router]);
-
-  const handleSkipStep = useCallback(() => {
-    if (!progress || !currentStepData) return;
-    if (!currentStepData.validation.skipAllowed) return;
-
-    const penalty = currentStepData.validation.skipPenalty;
-    const newProgress: QuestProgress = {
-      ...progress,
-      currentStep: progress.currentStep + 1,
-      stepResults: {
-        ...progress.stepResults,
-        [currentStepData.id]: {
-          stepId: currentStepData.id,
-          completed: false,
-          completedAt: new Date(),
-          method: 'geo', // По умолчанию
-          data: {},
-          points: -penalty,
-          synced: false,
-        },
-      },
-    };
-
-    if (newProgress.currentStep >= quest.steps.length) {
-      newProgress.status = 'completed';
-      newProgress.completedAt = new Date();
-    }
-
-    setProgress(newProgress);
-  }, [progress, currentStepData, quest.steps.length]);
-
-  const handlePause = useCallback(() => {
-    if (!progress) return;
-
-    const newProgress: QuestProgress = {
-      ...progress,
-      status: 'paused',
-      pausedAt: new Date(),
-    };
-
-    setProgress(newProgress);
-    router.push(`/quest/${quest.id}`);
-  }, [progress, quest.id, router]);
-
-  const handleExit = useCallback(() => {
-    if (confirm('Вы уверены, что хотите выйти? Прогресс будет сохранён.')) {
-      router.push(`/quest/${quest.id}`);
-    }
-  }, [quest.id, router]);
-
-  if (!progress || !currentStepData) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-600">Загрузка...</div>
-      </div>
-    );
-  }
+  }, [currentStep, proofDataText, proofType, questDetail.id, refreshProgress]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-slate-900">{quest.title}</h1>
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <h1 className="text-2xl font-bold text-slate-900">{questDetail.title}</h1>
+          <p className="text-sm text-slate-600 mt-2">
+            Quest runtime lifecycle: start → progress → submit → review/completion.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
-              onClick={handleExit}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              aria-label="Выйти"
+              type="button"
+              onClick={() => void refreshProgress()}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
             >
-              <X className="w-5 h-5 text-slate-600" />
+              <RefreshCcw className="w-4 h-4" />
+              Refresh progress
             </button>
-          </div>
-          
-          <QuestProgressBar progress={progressPercent} />
-          
-          <div className="mt-4">
-            <StepPills
-              steps={quest.steps}
-              currentStepIndex={progress.currentStep}
-              completedSteps={progress.completedSteps}
-            />
+            <Link
+              href={`/quest/${questDetail.id}`}
+              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              Back to quest detail
+            </Link>
           </div>
         </div>
-      </div>
 
-      {/* Офлайн-индикатор */}
-      {!isOnlineState && (
-        <div className="bg-amber-100 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-800">
-          <span className="font-semibold">Офлайн-режим</span> — прогресс сохраняется локально
-        </div>
-      )}
-
-      {/* Текущий шаг */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl border-2 border-slate-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">
-                {progress.currentStep + 1}
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">{currentStepData.title}</h2>
-                <p className="text-slate-600 mt-1">{currentStepData.description}</p>
-              </div>
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+          {loading ? (
+            <div className="flex items-center gap-2 text-slate-600">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Initializing quest progress...
             </div>
-          </div>
+          ) : !progress ? (
+            <p className="text-sm text-slate-700">Progress is unavailable right now.</p>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-slate-900">Current progress</h2>
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500">status</p>
+                  <p className="font-medium text-slate-900">{progress.status}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500">current step</p>
+                  <p className="font-medium text-slate-900">{progress.currentStep ?? 'n/a'}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500">total steps</p>
+                  <p className="font-medium text-slate-900">{progress.totalSteps}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500">started</p>
+                  <p className="font-medium text-slate-900">
+                    {new Date(progress.startedAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
 
-          {/* Компонент шага по типу */}
-          {currentStepData.type === 'geo-checkin' && (
-            <StepGeoCheckin
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
-          )}
-          {currentStepData.type === 'qr-code' && (
-            <StepQRCode
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
-          )}
-          {currentStepData.type === 'quiz' && (
-            <StepQuiz
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
-          )}
-          {(currentStepData.type === 'photo' || currentStepData.type === 'video') && (
-            <StepMedia
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
-          )}
-          {currentStepData.type === 'pulse-event' && (
-            <StepPulseEvent
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
-          )}
-          {currentStepData.type === 'task' && (
-            <StepTask
-              step={currentStepData}
-              onComplete={(result) => handleStepComplete(currentStepData.id, result)}
-            />
+              {progress.status === 'pending_review' ? (
+                <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  Progress is waiting for manual review. New submissions are blocked until review result.
+                </p>
+              ) : null}
+              {progress.status === 'completed' ? (
+                <p className="mt-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  Quest is completed. Reward/ledger flows may still depend on downstream integrations.
+                </p>
+              ) : null}
+              {progress.status === 'failed' || progress.status === 'expired' ? (
+                <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+                  Quest is not active ({progress.status}). Submission is unavailable in this state.
+                </p>
+              ) : null}
+            </>
           )}
         </div>
-      </div>
 
-      {/* Нижняя панель действий */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
-        <QuestRunnerActions
-          step={currentStepData}
-          hint={currentStepData.hint}
-          showHint={showHint}
-          onToggleHint={() => setShowHint(!showHint)}
-          onSkip={handleSkipStep}
-          onPause={handlePause}
-          canSkip={currentStepData.validation.skipAllowed}
-          skipPenalty={currentStepData.validation.skipPenalty}
-        />
+        {currentStep ? (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-slate-900">Current step</h2>
+            <p className="text-sm text-slate-600 mt-2">
+              step #{currentStep.order} · {currentStep.type} · verification {currentStep.verificationType}
+            </p>
+            <p className="text-sm text-slate-600">
+              target: {currentStep.targetType || 'n/a'} {currentStep.targetId ? `(${currentStep.targetId})` : ''}
+            </p>
+            <p className="text-sm text-slate-600">reward points: {currentStep.rewardPoints ?? 0}</p>
+
+            <div className="mt-5">
+              <label htmlFor="proofType" className="block text-sm font-medium text-slate-700 mb-2">
+                Proof type
+              </label>
+              <select
+                id="proofType"
+                value={proofType}
+                onChange={(event) => setProofType(event.target.value as QuestProofType)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="text">text</option>
+                <option value="photo">photo</option>
+                <option value="geo">geo</option>
+                <option value="qr">qr</option>
+                <option value="space_post">space_post</option>
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <label htmlFor="proofData" className="block text-sm font-medium text-slate-700 mb-2">
+                Proof data (JSON)
+              </label>
+              <textarea
+                id="proofData"
+                value={proofDataText}
+                onChange={(event) => setProofDataText(event.target.value)}
+                rows={8}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void handleSubmitStep()}
+              disabled={submitting || !progress || progress.status !== 'in_progress'}
+              className="mt-4 inline-flex items-center rounded-lg bg-purple-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              {submitting ? 'Submitting...' : 'Submit current step'}
+            </button>
+            <p className="mt-3 text-xs text-slate-500">
+              Submit writes real runtime proof data. Validation/review may accept, reject, or delay completion.
+            </p>
+          </div>
+        ) : null}
+
+        {lastSubmission ? (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-slate-900">Last submission</h2>
+            <p className="mt-2 text-sm text-slate-600">id: {lastSubmission.id}</p>
+            <p className="text-sm text-slate-600">status: {lastSubmission.status}</p>
+            <p className="text-sm text-slate-600">proof type: {lastSubmission.proofType}</p>
+            <p className="text-sm text-slate-600">
+              reviewed: {lastSubmission.reviewedAt ? new Date(lastSubmission.reviewedAt).toLocaleString() : 'pending'}
+            </p>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        ) : null}
       </div>
     </div>
   );
 }
-

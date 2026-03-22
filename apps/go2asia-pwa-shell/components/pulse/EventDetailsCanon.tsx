@@ -8,6 +8,7 @@ import { resolveMediaUrl } from '@go2asia/sdk/media';
 import { ImageLightbox } from '@/modules/atlas/components/ImageLightbox';
 import { SectionContentRenderer } from '@/modules/atlas/components/SectionContentRenderer';
 import { getCategoryLabel } from './category';
+import { EventRegisterButton } from './EventRegisterButton';
 
 export type PulseEventEntityDtoLike = {
   id: string;
@@ -320,6 +321,13 @@ export function EventDetailsCanon({ entity }: { entity: PulseEventEntityDtoLike 
                     </a>
                   </div>
                 ) : null}
+
+                <div className="mt-5 space-y-2">
+                  <EventRegisterButton eventId={entity.id} eventTitle={entity.title} />
+                  <p className="text-xs text-slate-500">
+                    Registration is runtime-backed. Availability depends on auth and current event policy.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

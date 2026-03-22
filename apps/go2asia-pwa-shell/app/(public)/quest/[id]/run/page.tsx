@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { mockQuests } from '@/components/quest/mockQuests';
 import { QuestRunnerClient } from './QuestRunnerClient';
 import type { Metadata } from 'next';
+import { quest } from '@go2asia/sdk';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -9,26 +9,26 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const quest = mockQuests.find((q) => q.id === id);
+  const questData = await quest.fetchQuest(id);
 
-  if (!quest) {
+  if (!questData) {
     return {};
   }
 
   return {
-    title: `Прохождение: ${quest.title} - Quest Asia | Go2Asia`,
-    description: `Проходите квест "${quest.title}"`,
+    title: `Прохождение: ${questData.title} - Quest Asia | Go2Asia`,
+    description: `Проходите квест "${questData.title}"`,
   };
 }
 
 export default async function QuestRunnerPage({ params }: PageProps) {
   const { id } = await params;
-  const quest = mockQuests.find((q) => q.id === id);
+  const questData = await quest.fetchQuest(id);
 
-  if (!quest) {
+  if (!questData) {
     notFound();
   }
 
-  return <QuestRunnerClient quest={quest} />;
+  return <QuestRunnerClient quest={questData} />;
 }
 

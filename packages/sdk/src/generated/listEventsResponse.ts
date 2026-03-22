@@ -10,4 +10,10 @@ import type { ContentEventDto } from "./contentEventDto";
 
 export interface ListEventsResponse {
   items: ContentEventDto[];
+  /** @minimum 1 */
+  limit: number;
+  /** @minimum 0 */
+  offset: number;
+  /** @minimum 0 */
+  total: number;
 }

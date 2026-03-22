@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { QuestDetailClient } from './QuestDetailClient';
-import { mockQuests } from '@/components/quest/mockQuests';
+import { quest } from '@go2asia/sdk';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,21 +10,20 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const quest = mockQuests.find((q) => q.id === id);
+  const questData = await quest.fetchQuest(id);
 
-  if (!quest) {
+  if (!questData) {
     return {
       title: 'Квест не найден | Quest Asia',
     };
   }
 
   return {
-    title: `${quest.title} | Quest Asia`,
-    description: quest.description,
+    title: `${questData.title} | Quest Asia`,
+    description: questData.description || 'Quest detail',
     openGraph: {
-      title: quest.title,
-      description: quest.description,
-      images: [quest.coverPhoto],
+      title: questData.title,
+      description: questData.description || 'Quest detail',
       type: 'website',
     },
   };
@@ -36,9 +35,9 @@ export default async function QuestDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const quest = mockQuests.find((q) => q.id === id);
+  const questData = await quest.fetchQuest(id);
 
-  if (!quest) {
+  if (!questData) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -49,6 +48,6 @@ export default async function QuestDetailPage({
     );
   }
 
-  return <QuestDetailClient quest={quest} />;
+  return <QuestDetailClient quest={questData} />;
 }
 
