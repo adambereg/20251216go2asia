@@ -65,6 +65,10 @@
     "./guru": {
       "types": "./src/guru.ts",
       "default": "./src/guru.ts"
+    },
+    "./quest": {
+      "types": "./src/quest.ts",
+      "default": "./src/quest.ts"
     }
   },
   "scripts": {
