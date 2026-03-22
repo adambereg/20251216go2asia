@@ -1,41 +1,82 @@
 # Atlas/Pulse Broader UI Realignment Note v1
 
+**Status:** completed with minor residual debt.
+
 ## 1. Purpose
 
-This note records a controlled Atlas/Pulse broader UI realignment pass after practical, discovery, and engagement wave-1 frontend adoption.
-It fixes drift against current runtime truth without reopening backend cycles or launching broad redesign work.
+This segment aligned Atlas/Pulse frontend behavior with current runtime truth and current cross-domain platform state after practical, discovery, and engagement wave-1 adoption.
+It was executed as a controlled UI realignment pass, not as backend/domain reopening.
 
-## 2. Segment strategy
+## 2. Placement in sequencing
 
-This pass follows a staged combined approach with Atlas-first priority:
-- Atlas-first for place-truth consistency and mock-fallback removal in core Atlas views;
-- Pulse second for runtime-backed event UX honesty and cross-entry consistency.
+This pass matches the next official step from frontend sequencing after:
+- Atlas foundation pass,
+- RF wave 1,
+- Rielt wave 1,
+- Guru wave 1,
+- Quest wave 1.
 
-Reasoning:
-- Atlas remains the reference layer for place semantics;
-- Pulse event UX depends on consistent Atlas/content truth and stable runtime filtering semantics.
+It did not open a new backend/runtime cycle.
 
-## 3. Must-fix executed
+## 3. Starting truth-state
 
-- Atlas city overview no longer silently mixes API mode with mock fallback data.
-- Atlas country map tab no longer silently falls back to mock country data in API mode.
-- Pulse event detail canonical page now surfaces runtime-backed registration CTA.
-- Pulse list page now accepts `theme` URL input as search fallback and avoids double time filtering mismatch in API mode.
+- Atlas was runtime-backed on core countries/cities/places surfaces, but still had silent API-mode mock fallback on critical views.
+- Pulse was runtime-backed on list/detail, but had semantic/UI drift around canonical detail registration surfacing and query/filter handling.
+- Main drift was semantic/presentation-level, not blocker-level backend absence.
 
-## 4. Explicitly deferred
+## 4. Scope of this pass
 
-- Broad Atlas route/tree redesign.
-- Full Pulse UX redesign across calendar/list/detail interaction model.
-- RF/Rielt/Guru/Quest wave-2 expansions.
-- Space-facing shell work.
-- Backend contract/model refactoring or new runtime workstreams.
-- Full generated-vs-manual SDK contract unification across content/pulse in this segment.
+- Atlas truthfulness cleanup on critical runtime-backed surfaces.
+- Pulse canonical event detail realignment.
+- Pulse query/filter semantics cleanup.
+- Narrow UI/runtime alignment only.
 
-## 5. Residual risks
+## 5. What was changed
 
-- Some cross-domain link semantics (especially non-canonical event links from non-Pulse modules) remain dependent on existing upstream IDs/deeplinks.
-- Atlas/Pulse still carries legacy surface depth that should be addressed only in later explicitly scoped passes.
+### Atlas
+- Removed silent API-mode mock fallback in city overview.
+- Removed silent API-mode mock fallback in country map context.
+- Kept honest empty/error/degraded runtime states.
 
-## 6. Segment verdict
+### Pulse
+- Surfaced runtime registration CTA on canonical event detail.
+- Aligned `theme` query handling in API mode.
+- Reduced API/client quick-time filter semantic drift in API mode.
 
-Completed with minor residual debt.
+### Documentation
+- Added this segment fixation note.
+
+## 6. Files changed
+
+- `apps/go2asia-pwa-shell/app/(public)/atlas/cities/[id]/page.tsx`
+- `apps/go2asia-pwa-shell/modules/atlas/components/CountryMapTab.tsx`
+- `apps/go2asia-pwa-shell/app/(public)/pulse/PulseClientWrapper.tsx`
+- `apps/go2asia-pwa-shell/components/pulse/EventDetailsCanon.tsx`
+- `docs/architecture/atlas/atlas_pulse_broader_ui_realignment_note_v1.md`
+
+## 7. Verification summary
+
+- typecheck passed
+- lint passed
+- build passed
+- canonical Atlas/Pulse routes reviewed
+- blocker-level issues not found before commit
+
+## 8. Explicit non-goals / not touched
+
+- no broad Atlas redesign
+- no broad Pulse redesign
+- no Space shell work
+- no backend/domain reopening
+- no RF/Rielt/Guru/Quest wave-2 reopening
+
+## 9. Residual debt / explicitly deferred
+
+- RF city link -> Atlas alignment
+- Guru/Pulse slug-vs-id alignment
+- generated vs manual content typing drift in SDK
+- wider Atlas/Pulse IA and product-surface cleanup outside this pass
+
+## 10. Final architectural meaning
+
+After this segment, Atlas/Pulse became more truthful and closer to runtime behavior as platform content layers, without expanding scope into a new redesign cycle.
