@@ -21,6 +21,8 @@ export interface RieltPriceDto {
 export interface RieltGeoDto {
   countryId: string;
   cityId: string | null;
+  atlasPlaceId: string | null;
+  atlasContainerPlaceId: string | null;
 }
 
 export interface RieltMediaDto {
@@ -103,11 +105,38 @@ export interface RieltNearbyParams {
   page_size?: number;
 }
 
+export interface RieltCreateInquiryRequest {
+  message: string;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_telegram?: string | null;
+}
+
+export interface RieltInquiryDto {
+  id: string;
+  listingId: string;
+  requesterUserId: string;
+  message: string;
+  contact: {
+    name: string | null;
+    phone: string | null;
+    telegram: string | null;
+  };
+  status: 'new' | 'viewed' | 'closed';
+  idempotencyKey: string;
+  createdAt: string | null;
+  closedAt: string | null;
+}
+
+export interface RieltInquiryEnvelope {
+  inquiry: RieltInquiryDto;
+}
+
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
-export function useListListings(params?: RieltListParams) {
+export function useListListings(params?: RieltListParams, enabled = true) {
   const sp = new URLSearchParams();
   if (params?.country_id) sp.set('country_id', params.country_id);
   if (params?.city_id) sp.set('city_id', params.city_id);
@@ -124,6 +153,7 @@ export function useListListings(params?: RieltListParams) {
 
   return useQuery<RieltListResponse, Error>({
     queryKey: ['rielt', 'listings', params ?? {}],
+    enabled,
     queryFn: async () => {
       return customInstance<RieltListResponse>({ method: 'GET' }, `/v1/rielt/listings${qs}`);
     },
@@ -177,6 +207,23 @@ export function useListNearbyListings(params?: RieltNearbyParams | null) {
     },
     staleTime: 30_000,
   });
+}
+
+export async function createListingInquiry(
+  idOrSlug: string,
+  payload: RieltCreateInquiryRequest,
+  idempotencyKey: string
+): Promise<RieltInquiryEnvelope> {
+  return customInstance<RieltInquiryEnvelope>(
+    {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    },
+    `/v1/rielt/listings/${encodeURIComponent(idOrSlug)}/inquiries`
+  );
 }
 
 // ---------------------------------------------------------------------------

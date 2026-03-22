@@ -26,12 +26,18 @@ interface SearchResultsViewProps {
   listings: ListingWithDistance[];
   filters: Partial<SearchFilters>;
   userLocation: { lat: number; lng: number } | null;
+  onSortChange: (sortBy: SearchFilters['sortBy']) => void;
+  nearbyMode: boolean;
+  onToggleNearbyMode: () => void;
 }
 
 export function SearchResultsView({
   listings,
   filters: initialFilters,
   userLocation,
+  onSortChange,
+  nearbyMode,
+  onToggleNearbyMode,
 }: SearchResultsViewProps) {
   const [filters, setFilters] = useState<Partial<SearchFilters>>(initialFilters);
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
@@ -45,13 +51,29 @@ export function SearchResultsView({
             {listings.length} {listings.length === 1 ? 'объявление' : 'объявлений'}
           </h1>
           {filters.location?.city && (
-            <p className="text-slate-600 mt-1">в {filters.location.city}</p>
+            <p className="text-slate-600 mt-1">city_id: {filters.location.city}</p>
           )}
         </div>
-        <SortDropdown
-          value={filters.sortBy || 'recommended'}
-          onChange={(sortBy) => setFilters({ ...filters, sortBy })}
-        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onToggleNearbyMode}
+            className={`px-3 py-2 rounded-lg text-sm font-medium border ${
+              nearbyMode
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 bg-white text-slate-700'
+            }`}
+          >
+            {nearbyMode ? 'Nearby: on (10 km)' : 'Nearby: off'}
+          </button>
+          <SortDropdown
+            value={filters.sortBy || 'recommended'}
+            onChange={(sortBy) => {
+              setFilters({ ...filters, sortBy });
+              onSortChange(sortBy);
+            }}
+          />
+        </div>
       </div>
 
       {/* Фильтры (sticky сверху) */}

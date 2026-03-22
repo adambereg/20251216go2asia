@@ -17,10 +17,12 @@ export interface Coordinates {
 export interface Address {
   country: string;      // Из Atlas
   city: string;         // Из Atlas
+  atlasPlaceId?: string | null;
+  atlasContainerPlaceId?: string | null;
   district?: string;    // Район из Atlas
   street?: string;
   building?: string;
-  coordinates: Coordinates;
+  coordinates?: Coordinates | null;
 }
 
 // =============================================================================

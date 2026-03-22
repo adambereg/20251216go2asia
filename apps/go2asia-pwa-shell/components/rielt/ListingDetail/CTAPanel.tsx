@@ -2,13 +2,13 @@
 
 /**
  * Rielt.Market Asia - CTAPanel
- * Sticky панель действий (бронирование)
+ * Sticky panel with truthful first-pass inquiry flow.
  */
 
 import { useState } from 'react';
-import { Heart, Share2, Calendar, Users, DollarSign } from 'lucide-react';
+import { Heart, Share2 } from 'lucide-react';
+import { createListingInquiry } from '@go2asia/sdk/rielt';
 import type { Listing } from '../types';
-import { calculateNights } from '../utils/calendar';
 
 interface CTAPanelProps {
   listing: Listing;
@@ -17,8 +17,15 @@ interface CTAPanelProps {
 }
 
 export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProps) {
+  void selectedDates;
+  void onDatesChange;
   const [isSaved, setIsSaved] = useState(false);
-  const [guests, setGuests] = useState(1);
+  const [message, setMessage] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactTelegram, setContactTelegram] = useState('');
+  const [inquiryStatus, setInquiryStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [inquiryText, setInquiryText] = useState('');
 
   const price = listing.rentalType === 'long-term' 
     ? listing.pricing.perMonth 
@@ -26,29 +33,43 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
 
-  // Расчёт итоговой цены
-  let totalPrice = 0;
-  if (listing.rentalType === 'short-term' && selectedDates.checkIn && selectedDates.checkOut) {
-    const nights = calculateNights(selectedDates.checkIn, selectedDates.checkOut);
-    totalPrice = (price || 0) * nights;
-    if (listing.pricing.cleaningFee) {
-      totalPrice += listing.pricing.cleaningFee;
+  const buildIdempotencyKey = () => {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return `rielt-inquiry-${crypto.randomUUID()}`;
     }
-    if (listing.pricing.serviceFee) {
-      totalPrice += listing.pricing.serviceFee;
-    }
-  } else if (listing.rentalType === 'long-term') {
-    totalPrice = price || 0;
-  }
-
-  const handleBook = () => {
-    // TODO: Переход на страницу бронирования
-    alert('Функция бронирования будет реализована позже');
+    return `rielt-inquiry-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   };
 
-  const handleRequest = () => {
-    // TODO: Отправка запроса владельцу
-    alert('Функция отправки запроса будет реализована позже');
+  const handleRequest = async () => {
+    if (!message.trim()) {
+      setInquiryStatus('error');
+      setInquiryText('Введите сообщение для запроса.');
+      return;
+    }
+
+    setInquiryStatus('submitting');
+    setInquiryText('');
+
+    try {
+      await createListingInquiry(
+        listing.id,
+        {
+          message: message.trim(),
+          contact_name: contactName.trim() || null,
+          contact_phone: contactPhone.trim() || null,
+          contact_telegram: contactTelegram.trim() || null,
+        },
+        buildIdempotencyKey()
+      );
+      setInquiryStatus('success');
+      setInquiryText('Запрос отправлен через live Rielt API.');
+      setMessage('');
+    } catch (error) {
+      const payload = error as { error?: { code?: string; message?: string }; status?: number };
+      const errorMessage = payload?.error?.message ?? `Request failed (${payload?.status ?? 'unknown'})`;
+      setInquiryStatus('error');
+      setInquiryText(errorMessage);
+    }
   };
 
   const handleShare = async () => {
@@ -86,71 +107,54 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         )}
       </div>
 
-      {/* Форма бронирования (для краткосрока) */}
-      {listing.rentalType === 'short-term' && (
-        <div className="space-y-4 mb-6">
-          <div className="border-2 border-slate-200 rounded-lg p-3">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Даты
-            </label>
-            <div className="flex items-center gap-2 text-slate-600">
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm">
-                {selectedDates.checkIn && selectedDates.checkOut
-                  ? `${selectedDates.checkIn.toLocaleDateString('ru-RU')} — ${selectedDates.checkOut.toLocaleDateString('ru-RU')}`
-                  : 'Выберите даты'}
-              </span>
-            </div>
-          </div>
-
-          <div className="border-2 border-slate-200 rounded-lg p-3">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Гости
-            </label>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-slate-400" />
-              <input
-                type="number"
-                min={1}
-                max={listing.maxGuests}
-                value={guests}
-                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="flex-1 border-0 focus:outline-none text-slate-900"
-              />
-            </div>
-          </div>
-
-          {/* Итоговая цена */}
-          {totalPrice > 0 && (
-            <div className="pt-4 border-t border-slate-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-700">Итого:</span>
-                <span className="text-xl font-bold text-slate-900">
-                  ${totalPrice.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="rounded-lg border border-slate-200 p-3 mb-5">
+        <p className="text-xs text-slate-600">
+          Booking and payment flows are intentionally out of scope for this pass. The live action below sends an
+          inquiry request to the listing owner.
+        </p>
+      </div>
 
       {/* Кнопки действий */}
       <div className="space-y-3">
-        {listing.isInstant ? (
-          <button
-            onClick={handleBook}
-            className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors"
-          >
-            Забронировать
-          </button>
-        ) : (
+        <div className="space-y-2">
+          <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+            placeholder="Напишите ваш запрос по объявлению"
+          />
+          <input
+            value={contactName}
+            onChange={(event) => setContactName(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+            placeholder="Контактное имя (optional)"
+          />
+          <input
+            value={contactPhone}
+            onChange={(event) => setContactPhone(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+            placeholder="Телефон (optional)"
+          />
+          <input
+            value={contactTelegram}
+            onChange={(event) => setContactTelegram(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+            placeholder="Telegram (optional)"
+          />
           <button
             onClick={handleRequest}
-            className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors"
+            disabled={inquiryStatus === 'submitting'}
+            className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl font-semibold transition-colors"
           >
-            Отправить запрос
+            {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить запрос'}
           </button>
-        )}
+          {inquiryText ? (
+            <p className={inquiryStatus === 'success' ? 'text-xs text-emerald-700' : 'text-xs text-red-700'}>
+              {inquiryText}
+            </p>
+          ) : null}
+        </div>
 
         <div className="flex gap-2">
           <button

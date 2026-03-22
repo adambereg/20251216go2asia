@@ -15,7 +15,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
-  const [city, setCity] = useState(initialFilters?.location?.city || '');
+  const [cityId, setCityId] = useState(initialFilters?.location?.city || '');
   const [checkIn, setCheckIn] = useState(initialFilters?.checkIn || '');
   const [checkOut, setCheckOut] = useState(initialFilters?.checkOut || '');
   const [guests, setGuests] = useState(initialFilters?.guests || 1);
@@ -26,7 +26,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch({
-      location: { city },
+      location: { city: cityId },
       checkIn: rentalType === 'short-term' ? checkIn : undefined,
       checkOut: rentalType === 'short-term' ? checkOut : undefined,
       guests,
@@ -70,9 +70,9 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Куда?"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
+              placeholder="City ID (optional)"
+              value={cityId}
+              onChange={(e) => setCityId(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none"
             />
           </div>
