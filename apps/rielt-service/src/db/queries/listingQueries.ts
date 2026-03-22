@@ -27,6 +27,8 @@ export type PublicListingRow = {
   price_period: string;
   country_id: string;
   city_id: string | null;
+  atlas_place_id: string | null;
+  atlas_container_place_id: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   area_sqm: number | string | null;
@@ -47,6 +49,8 @@ export type OwnerListingRow = {
   price_period: string;
   country_id: string;
   city_id: string | null;
+  atlas_place_id: string | null;
+  atlas_container_place_id: string | null;
   area_text: string | null;
   lat: number | string | null;
   lng: number | string | null;
@@ -93,6 +97,100 @@ function rowsOf<T>(result: unknown): T[] {
   return ((result as { rows?: T[] } | null)?.rows ?? []) as T[];
 }
 
+type AtlasPlaceReferenceRow = {
+  id: string;
+  country_id: string | null;
+  city_id: string | null;
+};
+
+async function getAtlasPlaceReference(db: DbExecutor, placeId: string): Promise<AtlasPlaceReferenceRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, country_id, city_id
+    FROM places
+    WHERE id = ${placeId}
+    LIMIT 1
+  `);
+  return rowsOf<AtlasPlaceReferenceRow>(result)[0] ?? null;
+}
+
+export type AtlasGeoLinkValidationInput = {
+  countryId: string;
+  cityId: string | null;
+  atlasPlaceId: string | null;
+  atlasContainerPlaceId: string | null;
+};
+
+export type AtlasGeoLinkValidationResult = { ok: true } | { ok: false; code: string; message: string };
+
+export async function validateAtlasGeoLinks(
+  db: DbExecutor,
+  input: AtlasGeoLinkValidationInput
+): Promise<AtlasGeoLinkValidationResult> {
+  if (input.atlasPlaceId !== null) {
+    const place = await getAtlasPlaceReference(db, input.atlasPlaceId);
+    if (!place) {
+      return {
+        ok: false,
+        code: 'RIELT_INVALID_ATLAS_PLACE_ID',
+        message: 'atlas_place_id is not found in Atlas places',
+      };
+    }
+    if (place.country_id !== input.countryId) {
+      return {
+        ok: false,
+        code: 'RIELT_ATLAS_PLACE_GEO_MISMATCH',
+        message: 'atlas_place_id must belong to the same country_id',
+      };
+    }
+    if (input.cityId !== null && place.city_id !== input.cityId) {
+      return {
+        ok: false,
+        code: 'RIELT_ATLAS_PLACE_GEO_MISMATCH',
+        message: 'atlas_place_id must belong to the same city_id',
+      };
+    }
+  }
+
+  if (input.atlasContainerPlaceId !== null) {
+    const container = await getAtlasPlaceReference(db, input.atlasContainerPlaceId);
+    if (!container) {
+      return {
+        ok: false,
+        code: 'RIELT_INVALID_ATLAS_CONTAINER_PLACE_ID',
+        message: 'atlas_container_place_id is not found in Atlas places',
+      };
+    }
+    if (container.country_id !== input.countryId) {
+      return {
+        ok: false,
+        code: 'RIELT_ATLAS_CONTAINER_GEO_MISMATCH',
+        message: 'atlas_container_place_id must belong to the same country_id',
+      };
+    }
+    if (input.cityId !== null && container.city_id !== input.cityId) {
+      return {
+        ok: false,
+        code: 'RIELT_ATLAS_CONTAINER_GEO_MISMATCH',
+        message: 'atlas_container_place_id must belong to the same city_id',
+      };
+    }
+  }
+
+  if (
+    input.atlasPlaceId !== null &&
+    input.atlasContainerPlaceId !== null &&
+    input.atlasPlaceId === input.atlasContainerPlaceId
+  ) {
+    return {
+      ok: false,
+      code: 'RIELT_ATLAS_PLACE_CONFLICT',
+      message: 'atlas_place_id and atlas_container_place_id must reference different Atlas places',
+    };
+  }
+
+  return { ok: true };
+}
+
 export interface ListPublishedListingsInput {
   countryId: string | null;
   cityId: string | null;
@@ -117,6 +215,8 @@ export interface CreateOwnerListingInput {
   pricePeriod: string;
   countryId: string;
   cityId: string | null;
+  atlasPlaceId: string | null;
+  atlasContainerPlaceId: string | null;
   areaText: string | null;
   lat: number | null;
   lng: number | null;
@@ -154,6 +254,10 @@ export interface PatchOwnerListingInput {
   countryId: string | null;
   cityIdSet: boolean;
   cityId: string | null;
+  atlasPlaceIdSet: boolean;
+  atlasPlaceId: string | null;
+  atlasContainerPlaceIdSet: boolean;
+  atlasContainerPlaceId: string | null;
   areaTextSet: boolean;
   areaText: string | null;
   latSet: boolean;
@@ -237,6 +341,8 @@ export async function createOwnerListing(
         price_period,
         country_id,
         city_id,
+        atlas_place_id,
+        atlas_container_place_id,
         area_text,
         lat,
         lng,
@@ -260,6 +366,8 @@ export async function createOwnerListing(
         ${input.pricePeriod},
         ${input.countryId},
         ${input.cityId},
+        ${input.atlasPlaceId},
+        ${input.atlasContainerPlaceId},
         ${input.areaText},
         ${input.lat},
         ${input.lng},
@@ -326,6 +434,8 @@ export async function createOwnerListing(
       l.price_period,
       l.country_id,
       l.city_id,
+      l.atlas_place_id,
+      l.atlas_container_place_id,
       l.area_text,
       l.lat,
       l.lng,
@@ -360,6 +470,8 @@ export async function getListingByIdForManage(db: DbExecutor, listingId: string)
       price_period,
       country_id,
       city_id,
+      atlas_place_id,
+      atlas_container_place_id,
       area_text,
       lat,
       lng,
@@ -416,6 +528,8 @@ export async function patchOwnerListingById(
       price_period = CASE WHEN ${p.pricePeriodSet}::boolean THEN ${p.pricePeriod} ELSE price_period END,
       country_id = CASE WHEN ${p.countryIdSet}::boolean THEN ${p.countryId} ELSE country_id END,
       city_id = CASE WHEN ${p.cityIdSet}::boolean THEN ${p.cityId} ELSE city_id END,
+      atlas_place_id = CASE WHEN ${p.atlasPlaceIdSet}::boolean THEN ${p.atlasPlaceId} ELSE atlas_place_id END,
+      atlas_container_place_id = CASE WHEN ${p.atlasContainerPlaceIdSet}::boolean THEN ${p.atlasContainerPlaceId} ELSE atlas_container_place_id END,
       area_text = CASE WHEN ${p.areaTextSet}::boolean THEN ${p.areaText} ELSE area_text END,
       lat = CASE WHEN ${p.latSet}::boolean THEN ${p.lat} ELSE lat END,
       lng = CASE WHEN ${p.lngSet}::boolean THEN ${p.lng} ELSE lng END,
@@ -444,6 +558,8 @@ export async function patchOwnerListingById(
       price_period,
       country_id,
       city_id,
+      atlas_place_id,
+      atlas_container_place_id,
       area_text,
       lat,
       lng,
@@ -483,6 +599,8 @@ export async function archiveListingById(db: DbExecutor, listingId: string): Pro
       price_period,
       country_id,
       city_id,
+      atlas_place_id,
+      atlas_container_place_id,
       area_text,
       lat,
       lng,
@@ -525,6 +643,8 @@ export async function listActorVisibleListings(
       l.price_period,
       l.country_id,
       l.city_id,
+      l.atlas_place_id,
+      l.atlas_container_place_id,
       l.area_text,
       l.lat,
       l.lng,
@@ -601,6 +721,8 @@ export async function listPublishedListings(
       price_period,
       country_id,
       city_id,
+      atlas_place_id,
+      atlas_container_place_id,
       bedrooms,
       bathrooms,
       area_sqm,
@@ -663,6 +785,8 @@ export async function getPublishedListingByIdOrSlug(
       price_period,
       country_id,
       city_id,
+      atlas_place_id,
+      atlas_container_place_id,
       bedrooms,
       bathrooms,
       area_sqm,
@@ -718,6 +842,8 @@ export async function listPublishedListingsNearby(
         b.price_period,
         b.country_id,
         b.city_id,
+        b.atlas_place_id,
+        b.atlas_container_place_id,
         b.bedrooms,
         b.bathrooms,
         b.area_sqm,

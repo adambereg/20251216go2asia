@@ -19,6 +19,10 @@ export interface RieltCreateListingRequest {
   area_sqm?: number | null;
   /** @nullable */
   area_text?: string | null;
+  /** @nullable */
+  atlas_container_place_id?: string | null;
+  /** @nullable */
+  atlas_place_id?: string | null;
   /**
    * @minimum 0
    * @nullable

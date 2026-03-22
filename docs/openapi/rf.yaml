@@ -516,6 +516,12 @@ components:
           type: string
         cityId:
           type: string
+        atlasPlaceId:
+          type: string
+          nullable: true
+        hostAtlasPlaceId:
+          type: string
+          nullable: true
         status:
           type: string
           enum: [active, archived]
@@ -695,6 +701,12 @@ components:
           type: string
         cityId:
           type: string
+        atlasPlaceId:
+          type: string
+          nullable: true
+        hostAtlasPlaceId:
+          type: string
+          nullable: true
 
     RfCreateOfferRequest:
       type: object

@@ -11,6 +11,10 @@ export interface RieltOwnerGeo {
   /** @nullable */
   areaText?: string | null;
   /** @nullable */
+  atlasContainerPlaceId?: string | null;
+  /** @nullable */
+  atlasPlaceId?: string | null;
+  /** @nullable */
   cityId?: string | null;
   countryId: string;
   /** @nullable */

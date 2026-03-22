@@ -16,6 +16,8 @@ export interface Partner {
   displayName: string;
   countryId: string;
   cityId: string;
+  atlasPlaceId: string | null;
+  hostAtlasPlaceId: string | null;
   status: PartnerStatus;
   ownerUserId: string;
   createdAt: string;
@@ -73,6 +75,8 @@ type PartnerRow = {
   display_name: string;
   country_id: string;
   city_id: string;
+  atlas_place_id: string | null;
+  host_atlas_place_id: string | null;
   status: PartnerStatus;
   owner_user_id: string;
   created_at: string | Date;
@@ -140,6 +144,8 @@ function toPartner(row: PartnerRow): Partner {
     displayName: row.display_name,
     countryId: row.country_id,
     cityId: row.city_id,
+    atlasPlaceId: row.atlas_place_id ?? null,
+    hostAtlasPlaceId: row.host_atlas_place_id ?? null,
     status: row.status,
     ownerUserId: row.owner_user_id,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
@@ -209,7 +215,7 @@ function toVoucherCode(voucherId: string): string {
 
 async function getOwnedActivePartner(db: DbExecutor, partnerId: string, ownerUserId: string): Promise<PartnerRow | null> {
   const result = await db.execute(sql`
-    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    SELECT id, slug, display_name, country_id, city_id, atlas_place_id, host_atlas_place_id, status, owner_user_id, created_at, updated_at
     FROM rf_partner
     WHERE id = ${partnerId}
       AND status = 'active'
@@ -217,6 +223,79 @@ async function getOwnedActivePartner(db: DbExecutor, partnerId: string, ownerUse
     LIMIT 1
   `);
   return rowsOf<PartnerRow>(result)[0] ?? null;
+}
+
+type AtlasPlaceReferenceRow = {
+  id: string;
+  country_id: string | null;
+  city_id: string | null;
+};
+
+async function getAtlasPlaceReference(db: DbExecutor, placeId: string): Promise<AtlasPlaceReferenceRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, country_id, city_id
+    FROM places
+    WHERE id = ${placeId}
+    LIMIT 1
+  `);
+  return rowsOf<AtlasPlaceReferenceRow>(result)[0] ?? null;
+}
+
+type PartnerGeoLinkValidationInput = {
+  countryId: string;
+  cityId: string;
+  atlasPlaceId: string | null;
+  hostAtlasPlaceId: string | null;
+};
+
+type PartnerGeoValidationResult = { ok: true } | { ok: false; error: string; status: number; code: string };
+
+export async function validatePartnerGeoLinks(
+  db: DbExecutor,
+  input: PartnerGeoLinkValidationInput
+): Promise<PartnerGeoValidationResult> {
+  if (input.atlasPlaceId !== null) {
+    const place = await getAtlasPlaceReference(db, input.atlasPlaceId);
+    if (!place) {
+      return { ok: false, error: 'atlasPlaceId is not found in Atlas places', status: 400, code: 'RF_INVALID_ATLAS_PLACE_ID' };
+    }
+    if (place.country_id !== input.countryId || place.city_id !== input.cityId) {
+      return {
+        ok: false,
+        error: 'atlasPlaceId must belong to the same countryId/cityId as the partner',
+        status: 400,
+        code: 'RF_ATLAS_PLACE_GEO_MISMATCH',
+      };
+    }
+  }
+  if (input.hostAtlasPlaceId !== null) {
+    const hostPlace = await getAtlasPlaceReference(db, input.hostAtlasPlaceId);
+    if (!hostPlace) {
+      return {
+        ok: false,
+        error: 'hostAtlasPlaceId is not found in Atlas places',
+        status: 400,
+        code: 'RF_INVALID_HOST_ATLAS_PLACE_ID',
+      };
+    }
+    if (hostPlace.country_id !== input.countryId || hostPlace.city_id !== input.cityId) {
+      return {
+        ok: false,
+        error: 'hostAtlasPlaceId must belong to the same countryId/cityId as the partner',
+        status: 400,
+        code: 'RF_HOST_ATLAS_PLACE_GEO_MISMATCH',
+      };
+    }
+  }
+  if (input.atlasPlaceId !== null && input.hostAtlasPlaceId !== null && input.atlasPlaceId === input.hostAtlasPlaceId) {
+    return {
+      ok: false,
+      error: 'atlasPlaceId and hostAtlasPlaceId must reference different Atlas places',
+      status: 400,
+      code: 'RF_ATLAS_PLACE_CONFLICT',
+    };
+  }
+  return { ok: true };
 }
 
 async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
@@ -319,7 +398,7 @@ export function shouldThrottleWrite(actorUserId: string, operation: 'claim' | 'r
 
 export async function listPublicPartners(db: DbExecutor): Promise<Partner[]> {
   const result = await db.execute(sql`
-    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    SELECT id, slug, display_name, country_id, city_id, atlas_place_id, host_atlas_place_id, status, owner_user_id, created_at, updated_at
     FROM rf_partner
     WHERE status = 'active'
     ORDER BY created_at DESC, id DESC
@@ -329,7 +408,7 @@ export async function listPublicPartners(db: DbExecutor): Promise<Partner[]> {
 
 export async function getPublicPartnerById(db: DbExecutor, partnerId: string): Promise<Partner | null> {
   const result = await db.execute(sql`
-    SELECT id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    SELECT id, slug, display_name, country_id, city_id, atlas_place_id, host_atlas_place_id, status, owner_user_id, created_at, updated_at
     FROM rf_partner
     WHERE id = ${partnerId}
       AND status = 'active'
@@ -366,7 +445,7 @@ export async function getPublicOfferById(db: DbExecutor, offerId: string): Promi
 export async function createPartner(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { displayName: string; countryId: string; cityId: string }
+  input: { displayName: string; countryId: string; cityId: string; atlasPlaceId: string | null; hostAtlasPlaceId: string | null }
 ): Promise<Partner> {
   const id = nextId('rf_partner');
   const result = await db.execute(sql`
@@ -376,6 +455,8 @@ export async function createPartner(
       display_name,
       country_id,
       city_id,
+      atlas_place_id,
+      host_atlas_place_id,
       status,
       owner_user_id,
       created_at,
@@ -387,12 +468,14 @@ export async function createPartner(
       ${input.displayName},
       ${input.countryId},
       ${input.cityId},
+      ${input.atlasPlaceId},
+      ${input.hostAtlasPlaceId},
       'active',
       ${principal.userId},
       now(),
       now()
     )
-    RETURNING id, slug, display_name, country_id, city_id, status, owner_user_id, created_at, updated_at
+    RETURNING id, slug, display_name, country_id, city_id, atlas_place_id, host_atlas_place_id, status, owner_user_id, created_at, updated_at
   `);
   const row = rowsOf<PartnerRow>(result)[0];
   if (!row) {

@@ -9,10 +9,14 @@
 import type { RfPartnerStatus } from "./rfPartnerStatus";
 
 export interface RfPartner {
+  /** @nullable */
+  atlasPlaceId?: string | null;
   cityId: string;
   countryId: string;
   createdAt: string;
   displayName: string;
+  /** @nullable */
+  hostAtlasPlaceId?: string | null;
   id: string;
   ownerUserId: string;
   slug: string;
