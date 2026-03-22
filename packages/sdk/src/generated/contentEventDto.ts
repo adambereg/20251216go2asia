@@ -8,23 +8,56 @@
  */
 
 export interface ContentEventDto {
+  bodyMarkdown: string;
   /** @nullable */
-  category?: string | null;
+  category: string | null;
   /** @nullable */
-  description?: string | null;
+  cityName: string | null;
+  /**
+   * Canonical geo reference key for city-level event linkage in content surfaces.
+   * @nullable
+   */
+  citySlug: string | null;
   /** @nullable */
-  endDate?: string | null;
+  countryName: string | null;
+  /**
+   * Canonical geo reference key for country-level event linkage in content surfaces.
+   * @nullable
+   */
+  countrySlug: string | null;
+  /** @nullable */
+  endDate: string | null;
+  galleryMediaKeys: string[];
+  /**
+   * R2 object key for the event hero image.
+   * @nullable
+   */
+  heroMediaKey: string | null;
   id: string;
-  /** @nullable */
-  imageUrl?: string | null;
   isActive: boolean;
+  isFree: boolean;
+  isVerified: boolean;
   /** @nullable */
-  latitude?: string | null;
+  latitude: string | null;
   /** @nullable */
-  location?: string | null;
+  location: string | null;
   /** @nullable */
-  longitude?: string | null;
+  longitude: string | null;
+  /** @nullable */
+  officialUrl: string | null;
+  /** @nullable */
+  priceAmount: string | null;
+  /** @nullable */
+  priceCurrency: string | null;
+  /** @nullable */
+  seoDescription: string | null;
+  /** @nullable */
+  seoTitle: string | null;
+  /** @nullable */
+  shortDescription: string | null;
   slug: string;
   startDate: string;
   title: string;
+  /** @nullable */
+  year: number | null;
 }

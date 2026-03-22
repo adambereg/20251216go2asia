@@ -8,6 +8,9 @@
  * - Idempotent: UPSERT by events.id (from frontmatter).
  * - SSOT for Pulse media is R2 keys: store hero_media_key (optional) + gallery_media_keys (default 01..03).
  * - No runtime existence checks for hero.jpg / gallery files.
+ * - Geo discipline: country/city slugs are canonical public geo references for imported Pulse events.
+ * - country_name/city_name are denormalized read-model fields; country_id/city_id may remain null for import-only rows.
+ * - coordinates_lat/coordinates_lng anchor map location when present; geo_scope captures coverage semantics.
  *
  * Usage:
  *   pnpm -C packages/db db:import:pulse-md -- --dry-run

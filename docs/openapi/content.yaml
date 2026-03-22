@@ -657,12 +657,21 @@ components:
 
     ListEventsResponse:
       type: object
-      required: [items]
+      required: [items, total, limit, offset]
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/ContentEventDto"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+        offset:
+          type: integer
+          minimum: 0
 
     ListCountriesResponse:
       type: object
@@ -943,7 +952,35 @@ components:
 
     ContentEventDto:
       type: object
-      required: [id, title, slug, startDate, isActive]
+      required:
+        [
+          id,
+          title,
+          slug,
+          shortDescription,
+          bodyMarkdown,
+          category,
+          startDate,
+          endDate,
+          location,
+          latitude,
+          longitude,
+          countrySlug,
+          citySlug,
+          countryName,
+          cityName,
+          year,
+          heroMediaKey,
+          galleryMediaKeys,
+          isActive,
+          isFree,
+          priceAmount,
+          priceCurrency,
+          isVerified,
+          officialUrl,
+          seoTitle,
+          seoDescription,
+        ]
       properties:
         id:
           type: string
@@ -951,9 +988,11 @@ components:
           type: string
         slug:
           type: string
-        description:
+        shortDescription:
           type: string
           nullable: true
+        bodyMarkdown:
+          type: string
         category:
           type: string
           nullable: true
@@ -973,11 +1012,52 @@ components:
         longitude:
           type: string
           nullable: true
-        imageUrl:
+        countrySlug:
           type: string
           nullable: true
+          description: Canonical geo reference key for country-level event linkage in content surfaces.
+        citySlug:
+          type: string
+          nullable: true
+          description: Canonical geo reference key for city-level event linkage in content surfaces.
+        countryName:
+          type: string
+          nullable: true
+        cityName:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        heroMediaKey:
+          type: string
+          nullable: true
+          description: R2 object key for the event hero image.
+        galleryMediaKeys:
+          type: array
+          items:
+            type: string
         isActive:
           type: boolean
+        isFree:
+          type: boolean
+        priceAmount:
+          type: string
+          nullable: true
+        priceCurrency:
+          type: string
+          nullable: true
+        isVerified:
+          type: boolean
+        officialUrl:
+          type: string
+          nullable: true
+        seoTitle:
+          type: string
+          nullable: true
+        seoDescription:
+          type: string
+          nullable: true
 
     ContentCountryDto:
       type: object

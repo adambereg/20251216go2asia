@@ -315,8 +315,8 @@ export async function listEventsForGuideFeed(
       COALESCE(e.end_at, e.end_date::timestamptz) AS end_at,
       e.end_date,
       e.location,
-      co.name AS country_name,
-      ci.name AS city_name,
+      COALESCE(co.name, e.country_name) AS country_name,
+      COALESCE(ci.name, e.city_name) AS city_name,
       COALESCE(e.lat, e.latitude) AS lat,
       COALESCE(e.lng, e.longitude) AS lng,
       COALESCE(m.public_url, e.image_url) AS image_url,
@@ -329,8 +329,8 @@ export async function listEventsForGuideFeed(
     LEFT JOIN cities ci ON e.city_id = ci.id
     LEFT JOIN media_files m ON e.image_media_id = m.id
     WHERE e.status = 'active'
-      AND (${cityIds}::text[] IS NULL OR e.city_id = ANY(${cityIds}::text[]))
-      AND (${countryIds}::text[] IS NULL OR e.country_id = ANY(${countryIds}::text[]))
+      AND (${cityIds}::text[] IS NULL OR e.city_id = ANY(${cityIds}::text[]) OR e.city_slug = ANY(${cityIds}::text[]))
+      AND (${countryIds}::text[] IS NULL OR e.country_id = ANY(${countryIds}::text[]) OR e.country_slug = ANY(${countryIds}::text[]))
       AND (${startAfter}::timestamptz IS NULL OR COALESCE(e.start_at, e.start_date::timestamptz) >= ${startAfter}::timestamptz)
     ${orderBy}
     LIMIT ${limit}
