@@ -101,7 +101,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
 
       <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-          Deferred (phase 1a)
+          Deferred (phase 1 baseline)
         </div>
         <ul className="mt-2 space-y-2">
           {deferredNavItems.map((item) => {

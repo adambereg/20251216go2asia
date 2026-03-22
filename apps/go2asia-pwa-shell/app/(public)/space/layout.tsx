@@ -5,12 +5,12 @@ export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Space Asia | Личный Кабинет | Go2Asia',
+  title: 'Space Asia | Runtime Integration Shell | Go2Asia',
   description:
-    'Личный кабинет Go2Asia. Управляйте профилем, активностью, квестами, балансом и социальными функциями в экосистеме Go2Asia.',
+    'Space Asia phase-1 runtime-backed integration shell with controlled scope and explicit deferred surfaces.',
   openGraph: {
-    title: 'Space Asia | Личный Кабинет | Go2Asia',
-    description: 'Личный центр управления в экосистеме Go2Asia',
+    title: 'Space Asia | Runtime Integration Shell | Go2Asia',
+    description: 'Space phase-1 integration shell with explicit deferred boundaries.',
     type: 'website',
   },
 };

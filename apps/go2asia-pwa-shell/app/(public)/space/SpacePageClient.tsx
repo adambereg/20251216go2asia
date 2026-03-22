@@ -145,7 +145,7 @@ export function SpacePageClient() {
             Space Asia
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Phase 1b: narrow cross-module reference integration.
+            Phase 1 freeze baseline: runtime shell with narrow reference previews.
           </p>
           <div className="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
             {mode === 'home' && 'Live mode: personal home feed'}
