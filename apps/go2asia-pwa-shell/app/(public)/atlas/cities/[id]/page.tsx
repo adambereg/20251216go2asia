@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation';
 import { useGetCityById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { getDataSource } from '@/mocks/dto';
-import { mockRepo } from '@/mocks/repo';
 import { formatNumber } from '@/modules/atlas/utils/number';
 import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
@@ -18,8 +17,7 @@ export default function CityOverviewPage() {
     data: cityData, 
     isLoading 
   } = useGetCityById(dataSource === 'api' ? (cityId || '') : '');
-  const mockCity = dataSource === 'mock' ? mockRepo.atlas.getCityById(cityId || '') : null;
-  const resolved: any = dataSource === 'mock' ? mockCity : (cityData ?? mockCity);
+  const resolved: any = cityData ?? null;
 
   if (isLoading) {
     return (
@@ -29,8 +27,6 @@ export default function CityOverviewPage() {
       </div>
     );
   }
-
-  const isFallback = dataSource === 'api' && !cityData && Boolean(mockCity);
 
   if (!resolved) {
     return (
@@ -45,11 +41,6 @@ export default function CityOverviewPage() {
 
   return (
     <div className="space-y-6">
-      {isFallback ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          DEMO MODE / fallback: показаны мок-данные (API недоступен).
-        </div>
-      ) : null}
       <h2 className="text-xl font-semibold text-slate-900">Обзор</h2>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
