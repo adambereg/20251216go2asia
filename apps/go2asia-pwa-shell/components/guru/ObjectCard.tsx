@@ -370,15 +370,17 @@ const QuestDetails: React.FC<{ quest: QuestObject }> = ({ quest }) => (
 // =============================================================================
 
 function getObjectLink(object: GuruObjectWithDistance): string {
+  if (object.deeplink) return object.deeplink;
+
   switch (object.type) {
     case 'place':
       return `/atlas/places/${object.id}`;
     case 'event':
       return `/pulse/events/${object.id}`;
     case 'housing':
-      return `/housing/${object.id}`;
+      return `/rielt/listings/${object.id}`;
     case 'person':
-      return `/space/profile/${object.id}`;
+      return `/space`;
     case 'quest':
       return `/quest/${object.id}`;
     default:
@@ -498,6 +500,9 @@ export const ObjectCard: React.FC<ObjectCardProps> = ({
           {/* Детали по типу */}
           {!compact && (
             <div className="space-y-1">
+              {object.sourceDomain ? (
+                <p className="text-[11px] text-slate-500">source: {object.sourceDomain}</p>
+              ) : null}
               {isPlaceObject(object) && <PlaceDetails place={object} />}
               {isEventObject(object) && <EventDetails event={object} />}
               {isHousingObject(object) && <HousingDetails housing={object} />}

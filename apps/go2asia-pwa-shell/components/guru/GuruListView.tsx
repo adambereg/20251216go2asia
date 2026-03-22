@@ -18,6 +18,7 @@ import { ObjectCard } from './ObjectCard';
 interface GuruListViewProps {
   objects: GuruObjectWithDistance[];
   selectedObjectId: string | null;
+  radius: number;
   sortMode: SortMode;
   onSortChange: (mode: SortMode) => void;
   onObjectSelect: (objectId: string) => void;
@@ -96,6 +97,7 @@ const LoadingState: React.FC = () => (
 export const GuruListView: React.FC<GuruListViewProps> = ({
   objects,
   selectedObjectId,
+  radius,
   sortMode,
   onSortChange,
   onObjectSelect,
@@ -136,7 +138,7 @@ export const GuruListView: React.FC<GuruListViewProps> = ({
         {loading ? (
           <LoadingState />
         ) : objects.length === 0 ? (
-          <EmptyState radius={1000} />
+          <EmptyState radius={radius} />
         ) : (
           objects.map((object) => (
             <div

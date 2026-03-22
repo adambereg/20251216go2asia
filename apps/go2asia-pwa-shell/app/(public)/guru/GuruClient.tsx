@@ -16,11 +16,11 @@ import {
   List,
   ChevronUp,
   ChevronDown,
-  CloudOff,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@go2asia/ui';
 import { guru } from '@go2asia/sdk';
-import type { GuruEntityCard } from '@go2asia/sdk/guru';
+import type { GuruEntityCard, GuruPartialFailure, GuruResponseMeta } from '@go2asia/sdk/guru';
 
 const GuruMapView = dynamic(() => import('@/components/guru/GuruMapView'), {
   ssr: false,
@@ -43,7 +43,7 @@ import type {
   QuestObject,
 } from '@/components/guru/types';
 import { DEFAULT_FILTERS } from '@/components/guru/types';
-import { mockObjects, DEFAULT_CENTER } from '@/components/guru/mockObjects';
+import { DEFAULT_CENTER } from '@/components/guru/mockObjects';
 import { addDistanceToObjects } from '@/components/guru/utils/geo';
 import { applyFilters, queryStringToFilters, filtersToQueryString } from '@/components/guru/utils/filters';
 import { applySorting } from '@/components/guru/utils/ranking';
@@ -56,7 +56,13 @@ const MapSkeleton: React.FC = () => (
 
 type ViewMode = 'map' | 'list' | 'split';
 
-type DataSourceMode = 'api' | 'fallback';
+type DiscoveryMode = 'nearby' | 'what-to-do';
+
+function pickCardDeeplink(card: GuruEntityCard): string | undefined {
+  const actions = Array.isArray(card.actions) ? card.actions : [];
+  const preferred = actions.find((action) => action.type === 'open');
+  return preferred?.deeplink ?? actions[0]?.deeplink;
+}
 
 function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
   const city = card.city_id;
@@ -85,6 +91,9 @@ function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
       isRF: card.is_rf,
       isVerified: card.is_verified,
       rating: card.rating,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
     };
     return object;
   }
@@ -104,6 +113,9 @@ function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
       rating: card.rating,
       isRF: card.is_rf,
       isVerified: card.is_verified,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
     };
     return object;
   }
@@ -124,6 +136,31 @@ function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
       rating: card.rating,
       isRF: card.is_rf,
       isVerified: card.is_verified,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
+    };
+    return object;
+  }
+
+  if (card.type === 'partner') {
+    const object: PlaceObject = {
+      id: card.id,
+      type: 'place',
+      title: card.title,
+      description: card.description,
+      cover: card.image_url,
+      lat: typeof card.lat === 'number' ? card.lat : 0,
+      lng: typeof card.lng === 'number' ? card.lng : 0,
+      city,
+      categories: ['partner'],
+      isOpen: card.is_open_now,
+      rating: card.rating,
+      isRF: card.is_rf,
+      isVerified: card.is_verified,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
     };
     return object;
   }
@@ -147,6 +184,9 @@ function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
       isRF: card.is_rf,
       isVerified: card.is_verified,
       rating: card.rating,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
     };
     return object;
   }
@@ -172,6 +212,9 @@ function mapCardToGuruObject(card: GuruEntityCard): GuruObject | null {
       isRF: card.is_rf,
       isVerified: card.is_verified,
       rating: card.rating,
+      sourceDomain: card.source?.domain,
+      deeplink: pickCardDeeplink(card),
+      explainReasons: card.explain?.reasons ?? [],
     };
     return object;
   }
@@ -212,57 +255,80 @@ export const GuruClient: React.FC = () => {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<ViewMode>('split');
   const [mapExpanded, setMapExpanded] = useState(false);
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>(() =>
+    searchParams.get('discovery') === 'what-to-do' ? 'what-to-do' : 'nearby'
+  );
 
   const [sourceObjects, setSourceObjects] = useState<GuruObject[]>([]);
-  const [dataSourceMode, setDataSourceMode] = useState<DataSourceMode>('api');
   const [apiLoading, setApiLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [responseMeta, setResponseMeta] = useState<GuruResponseMeta | null>(null);
+  const [partialFailures, setPartialFailures] = useState<GuruPartialFailure[]>([]);
+
+  const urlLat = Number(searchParams.get('lat'));
+  const urlLng = Number(searchParams.get('lng'));
+  const hasUrlCenter = Number.isFinite(urlLat) && Number.isFinite(urlLng);
 
   const mapCenter: Coordinates = useMemo(() => {
+    if (!userPosition && hasUrlCenter) {
+      return { lat: urlLat, lng: urlLng };
+    }
     return userPosition || DEFAULT_CENTER;
-  }, [userPosition]);
+  }, [hasUrlCenter, urlLat, urlLng, userPosition]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadNearby(): Promise<void> {
+    async function loadDiscovery(): Promise<void> {
       setApiLoading(true);
       setApiError(null);
 
       try {
-        const response = await guru.fetchGuruNearby({
-          mode: userPosition ? 'real' : 'virtual',
-          lat: mapCenter.lat,
-          lng: mapCenter.lng,
-          radius_m: filters.radius,
-          limit: 60,
-          types: mapFrontendTypesToApiTypes(filters.types),
-          open_now: filters.time === 'now' ? true : undefined,
-        });
+        const response =
+          discoveryMode === 'nearby'
+            ? await guru.fetchGuruNearby({
+                mode: userPosition ? 'real' : 'virtual',
+                lat: mapCenter.lat,
+                lng: mapCenter.lng,
+                radius_m: filters.radius,
+                limit: 60,
+                types: mapFrontendTypesToApiTypes(filters.types),
+                open_now: filters.time === 'now' ? true : undefined,
+              })
+            : await guru.fetchGuruWhatToDo({
+                mode: userPosition ? 'real' : 'virtual',
+                lat: mapCenter.lat,
+                lng: mapCenter.lng,
+                radius_m: filters.radius,
+                limit: 40,
+                open_now: filters.time === 'now' ? true : undefined,
+              });
 
         if (cancelled) return;
 
         const mapped = mapCardsToGuruObjects(response.data ?? []);
         setSourceObjects(mapped);
-        setDataSourceMode('api');
-      } catch {
+        setResponseMeta(response.meta);
+        setPartialFailures(response.partial_failures ?? []);
+      } catch (error) {
         if (cancelled) return;
-
-        // Fallback for V1 while upstream supply is still limited and during outages.
-        setSourceObjects(mockObjects);
-        setDataSourceMode('fallback');
-        setApiError('API Guru временно недоступно, включён fallback-режим.');
+        const payload = error as { error?: { code?: string; message?: string }; status?: number };
+        const message = payload?.error?.message ?? `Guru API request failed (${payload?.status ?? 'unknown'})`;
+        setSourceObjects([]);
+        setResponseMeta(null);
+        setPartialFailures([]);
+        setApiError(message);
       } finally {
         if (!cancelled) setApiLoading(false);
       }
     }
 
-    void loadNearby();
+    void loadDiscovery();
 
     return () => {
       cancelled = true;
     };
-  }, [mapCenter.lat, mapCenter.lng, filters.radius, filters.types, filters.time, userPosition]);
+  }, [discoveryMode, mapCenter.lat, mapCenter.lng, filters.radius, filters.types, filters.time, userPosition]);
 
   const filteredObjects: GuruObjectWithDistance[] = useMemo(() => {
     const objectsWithDistance = addDistanceToObjects(sourceObjects, mapCenter);
@@ -273,15 +339,21 @@ export const GuruClient: React.FC = () => {
   }, [sourceObjects, mapCenter, filters]);
 
   useEffect(() => {
-    const queryString = filtersToQueryString(filters);
+    const params = new URLSearchParams(filtersToQueryString(filters));
+    if (discoveryMode !== 'nearby') {
+      params.set('discovery', discoveryMode);
+    }
+    params.set('lat', mapCenter.lat.toFixed(5));
+    params.set('lng', mapCenter.lng.toFixed(5));
+    const nextQuery = params.toString();
     const currentQuery = searchParams.toString();
 
-    if (queryString !== currentQuery) {
-      router.replace(`/guru${queryString ? `?${queryString}` : ''}`, {
+    if (nextQuery !== currentQuery) {
+      router.replace(`/guru${nextQuery ? `?${nextQuery}` : ''}`, {
         scroll: false,
       });
     }
-  }, [filters, router, searchParams]);
+  }, [discoveryMode, filters, mapCenter.lat, mapCenter.lng, router, searchParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -333,11 +405,24 @@ export const GuruClient: React.FC = () => {
             )}
             <h1 className="text-xl font-bold text-slate-900">Guru Asia</h1>
             <p className="text-sm text-slate-500">
-              {filteredObjects.length} объектов в радиусе {filters.radius} м
+              {filteredObjects.length} объектов · режим {discoveryMode === 'nearby' ? 'nearby' : 'what-to-do'}
             </p>
-            {dataSourceMode === 'fallback' && apiError ? (
+            {responseMeta ? (
+              <p className="text-xs text-slate-600 mt-1 flex items-center gap-1">
+                <Layers className="w-3 h-3" />
+                active: {responseMeta.sources_active.join(', ') || 'none'}; stub:{' '}
+                {responseMeta.sources_stub.join(', ') || 'none'}
+              </p>
+            ) : null}
+            {partialFailures.length > 0 ? (
               <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-                <CloudOff className="w-3 h-3" />
+                <AlertCircle className="w-3 h-3" />
+                Partial source failures: {partialFailures.map((failure) => failure.domain).join(', ')}
+              </p>
+            ) : null}
+            {apiError ? (
+              <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" />
                 {apiError}
               </p>
             ) : null}
@@ -357,6 +442,27 @@ export const GuruClient: React.FC = () => {
             Центрировать
           </Button>
         </div>
+        <div className="mt-3 flex items-center gap-2">
+          <Button
+            variant={discoveryMode === 'nearby' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setDiscoveryMode('nearby')}
+          >
+            Nearby
+          </Button>
+          <Button
+            variant={discoveryMode === 'what-to-do' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setDiscoveryMode('what-to-do')}
+          >
+            What to do
+          </Button>
+        </div>
+        {discoveryMode === 'what-to-do' ? (
+          <p className="text-xs text-slate-500 mt-2">
+            What-to-do mode is usefulness-oriented aggregation and may include non-nearby-style sources.
+          </p>
+        ) : null}
       </header>
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -415,6 +521,7 @@ export const GuruClient: React.FC = () => {
             <GuruListView
               objects={filteredObjects}
               selectedObjectId={selectedObjectId}
+              radius={filters.radius}
               sortMode={filters.sortMode}
               onSortChange={(mode) => handleFilterChange({ ...filters, sortMode: mode })}
               onObjectSelect={handleObjectSelect}
