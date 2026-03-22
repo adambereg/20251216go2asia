@@ -37,6 +37,9 @@ export interface GuruObjectBase {
   lng: number;
   address?: string;
   city?: string;
+  sourceDomain?: 'atlas' | 'pulse' | 'rielt' | 'rf' | 'quest' | 'space' | 'blog';
+  deeplink?: string;
+  explainReasons?: string[];
   
   // Метаданные
   rating?: number; // 0-5

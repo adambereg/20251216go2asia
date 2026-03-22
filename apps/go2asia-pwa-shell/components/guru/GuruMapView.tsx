@@ -111,15 +111,17 @@ const MapController: React.FC<MapControllerProps> = ({ center, onMapMove }) => {
 // =============================================================================
 
 function getObjectLink(object: GuruObjectWithDistance): string {
+  if (object.deeplink) return object.deeplink;
+
   switch (object.type) {
     case 'place':
       return `/atlas/places/${object.id}`;
     case 'event':
       return `/pulse/events/${object.id}`;
     case 'housing':
-      return `/housing/${object.id}`;
+      return `/rielt/listings/${object.id}`;
     case 'person':
-      return `/space/profile/${object.id}`;
+      return `/space`;
     case 'quest':
       return `/quest/${object.id}`;
     default:
