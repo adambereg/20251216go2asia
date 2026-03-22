@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
@@ -8,6 +9,13 @@ type SpaceShellMode = 'home' | 'public-profile' | 'deferred';
 
 const HOME_FEED_URL = '/v1/space/feed/home?limit=20';
 const PUBLIC_PROFILE_ID = (process.env.NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID ?? '').trim();
+
+type CrossModuleReferencePreview = {
+  title: string;
+  subtitle: string;
+  href: string | null;
+  isDeferred: boolean;
+};
 
 function getErrorStatus(error: unknown): number | null {
   if (!error || typeof error !== 'object') return null;
@@ -20,6 +28,41 @@ function formatDate(value: string): string {
     return new Date(value).toLocaleString('ru-RU');
   } catch {
     return value;
+  }
+}
+
+function toCrossModulePreview(
+  repost: generated.SpacePostRepostRef
+): CrossModuleReferencePreview {
+  switch (repost.targetType) {
+    case 'event':
+      return {
+        title: 'Pulse event reference',
+        subtitle: 'Linked through runtime repost target.',
+        href: `/pulse/${encodeURIComponent(repost.targetId)}`,
+        isDeferred: false,
+      };
+    case 'place':
+      return {
+        title: 'Atlas place reference',
+        subtitle: 'Linked through runtime repost target.',
+        href: `/atlas/places/${encodeURIComponent(repost.targetId)}`,
+        isDeferred: false,
+      };
+    case 'listing':
+      return {
+        title: 'Rielt listing reference',
+        subtitle: 'Linked through runtime repost target.',
+        href: `/rielt/listings/${encodeURIComponent(repost.targetId)}`,
+        isDeferred: false,
+      };
+    default:
+      return {
+        title: `${repost.targetType} reference`,
+        subtitle: 'Deferred in phase 1b: no safe runtime preview mapping on shell path.',
+        href: null,
+        isDeferred: true,
+      };
   }
 }
 
@@ -102,7 +145,7 @@ export function SpacePageClient() {
             Space Asia
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Phase 1a: runtime-backed integration shell activation.
+            Phase 1b: narrow cross-module reference integration.
           </p>
           <div className="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
             {mode === 'home' && 'Live mode: personal home feed'}
@@ -154,17 +197,53 @@ export function SpacePageClient() {
 
                 {item.post.repost && (
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                    <div className="font-medium">
-                      Repost: {item.post.repost.targetType}
-                    </div>
-                    <div className="mt-1">
-                      Target ID: {item.post.repost.targetId}
-                    </div>
-                    {item.post.repost.resolvedPreview?.title && (
-                      <div className="mt-1 text-slate-900">
-                        Preview: {item.post.repost.resolvedPreview.title}
-                      </div>
-                    )}
+                    {(() => {
+                      const reference = toCrossModulePreview(item.post.repost);
+                      return (
+                        <div className="space-y-2">
+                          <div className="font-medium">
+                            {reference.title}
+                          </div>
+                          <div className="text-slate-600">
+                            {reference.subtitle}
+                          </div>
+                          <div className="text-slate-600">
+                            Target ID: {item.post.repost.targetId}
+                          </div>
+
+                          {item.post.repost.resolvedPreview?.title && (
+                            <div className="rounded-md border border-slate-200 bg-white p-2 text-slate-700">
+                              Runtime preview: {item.post.repost.resolvedPreview.title}
+                            </div>
+                          )}
+
+                          {reference.href ? (
+                            <Link
+                              href={reference.href}
+                              className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
+                            >
+                              Open linked module
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                              Reference deferred in phase 1b
+                            </span>
+                          )}
+
+                          <div className="text-[11px] text-slate-500">
+                            {reference.isDeferred
+                              ? 'This reference remains unresolved by design in phase 1b.'
+                              : 'Preview-only integration: source module remains owner of full details.'}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {!item.post.repost && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                    No cross-module reference attached to this post.
                   </div>
                 )}
 
@@ -176,12 +255,32 @@ export function SpacePageClient() {
           </div>
         )}
 
+        <section className="mt-8 rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <h2 className="text-sm font-semibold text-sky-900">
+            Integrated references in phase 1b
+          </h2>
+          <p className="mt-1 text-xs text-sky-800">
+            Runtime shell now provides lightweight cross-module links for safe reference types only.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-sky-300 bg-white px-2.5 py-1 text-xs text-sky-800">
+              Pulse event
+            </span>
+            <span className="rounded-full border border-sky-300 bg-white px-2.5 py-1 text-xs text-sky-800">
+              Atlas place
+            </span>
+            <span className="rounded-full border border-sky-300 bg-white px-2.5 py-1 text-xs text-sky-800">
+              Rielt listing
+            </span>
+          </div>
+        </section>
+
         <footer className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <h2 className="text-sm font-semibold text-amber-900">
-            Deferred in phase 1a
+            Deferred in phase 1b
           </h2>
           <p className="mt-1 text-xs text-amber-800">
-            These sections remain intentionally deferred until next Space phases.
+            RF partner, Quest, Blog and Space-post deep previews stay deferred to avoid unsafe routing assumptions.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {deferredBlocks.map((item) => (
@@ -192,6 +291,18 @@ export function SpacePageClient() {
                 {item}
               </span>
             ))}
+            <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-800">
+              RF partner preview
+            </span>
+            <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-800">
+              Quest preview
+            </span>
+            <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-800">
+              Blog preview
+            </span>
+            <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-800">
+              Space-post deep preview
+            </span>
           </div>
         </footer>
       </section>
