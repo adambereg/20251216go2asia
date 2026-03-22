@@ -74,7 +74,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         <div className="flex items-center gap-1 text-sm text-slate-600 mb-2">
           <MapPin className="w-4 h-4" />
           <span className="line-clamp-1">
-            {listing.address.district || listing.address.city}, {listing.address.country}
+            {listing.address.district || listing.address.city || 'city not specified'}, {listing.address.country}
           </span>
           {showDistance && distance && (
             <span className="ml-1">• {formatDistance(distance)}</span>

@@ -15,7 +15,6 @@ import { AvailabilityCalendar } from '@/components/rielt/ListingDetail/Availabil
 import { LongTermConditions } from '@/components/rielt/ListingDetail/LongTermConditions';
 import { Location } from '@/components/rielt/ListingDetail/Location';
 import { Owner } from '@/components/rielt/ListingDetail/Owner';
-import { Reviews } from '@/components/rielt/ListingDetail/Reviews';
 import { Verification } from '@/components/rielt/ListingDetail/Verification';
 import { CTAPanel } from '@/components/rielt/ListingDetail/CTAPanel';
 import type { Listing } from '@/components/rielt/types';
@@ -65,11 +64,8 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
           {/* Локация */}
           <Location listing={listing} />
 
-          {/* Владелец */}
-          <Owner listing={listing} />
-
-          {/* Отзывы */}
-          <Reviews listing={listing} />
+          {/* Владелец рендерим только если runtime даёт валидный owner id */}
+          {listing.owner.id ? <Owner listing={listing} /> : null}
 
           {/* Проверки */}
           {listing.proVerification && (

@@ -9,7 +9,6 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ListingCard } from '../ListingCard';
 import { MARKER_COLORS } from '../types';
 import type { ListingWithDistance } from '../types';
 
@@ -35,12 +34,28 @@ export function ListingsMap({
   selectedId,
   onSelect,
 }: ListingsMapProps) {
+  void selectedId;
+  const listingsWithCoordinates = listings.filter(
+    (listing) =>
+      listing.address.coordinates &&
+      Number.isFinite(listing.address.coordinates.lat) &&
+      Number.isFinite(listing.address.coordinates.lng)
+  );
+
+  if (listingsWithCoordinates.length === 0) {
+    return (
+      <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center p-6 text-center">
+        <p className="text-slate-600 text-sm">
+          Nearby map is unavailable for current results because listing coordinates are not exposed in public runtime.
+        </p>
+      </div>
+    );
+  }
+
   // Центр карты (первое объявление или геолокация пользователя)
   const mapCenter: [number, number] = userLocation
     ? [userLocation.lat, userLocation.lng]
-    : listings.length > 0
-      ? [listings[0].address.coordinates.lat, listings[0].address.coordinates.lng]
-      : [13.7563, 100.5018]; // Бангкок по умолчанию
+    : [listingsWithCoordinates[0].address.coordinates!.lat, listingsWithCoordinates[0].address.coordinates!.lng]
 
   return (
     <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200">
@@ -57,7 +72,7 @@ export function ListingsMap({
         />
 
         {/* Маркеры объявлений */}
-        {listings.map((listing) => {
+        {listingsWithCoordinates.map((listing) => {
           const color = MARKER_COLORS[listing.type];
           const customIcon = new Icon({
             iconUrl: `data:image/svg+xml;base64,${btoa(
@@ -74,7 +89,7 @@ export function ListingsMap({
           return (
             <Marker
               key={listing.id}
-              position={[listing.address.coordinates.lat, listing.address.coordinates.lng]}
+              position={[listing.address.coordinates!.lat, listing.address.coordinates!.lng]}
               icon={customIcon}
               eventHandlers={{
                 click: () => onSelect?.(listing.id),

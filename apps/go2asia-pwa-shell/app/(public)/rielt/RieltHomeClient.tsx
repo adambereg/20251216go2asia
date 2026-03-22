@@ -6,14 +6,15 @@
  */
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { SearchBar } from '@/components/rielt/SearchBar';
 import { QuickFilters } from '@/components/rielt/QuickFilters';
-import { PopularCities } from '@/components/rielt/PopularCities';
 import { EditorPicks } from '@/components/rielt/EditorPicks';
 import { NewListings } from '@/components/rielt/NewListings';
 import type { SearchFilters } from '@/components/rielt/types';
 
 export function RieltHomeClient() {
+  const router = useRouter();
   const [filters, setFilters] = useState<SearchFilters>({
     rentalType: 'short-term',
   });
@@ -25,7 +26,7 @@ export function RieltHomeClient() {
     // Переход на страницу результатов поиска
     const params = new URLSearchParams();
     if (updatedFilters.location?.city) {
-      params.set('city', updatedFilters.location.city);
+      params.set('city_id', updatedFilters.location.city);
     }
     if (updatedFilters.checkIn) {
       params.set('checkIn', updatedFilters.checkIn);
@@ -40,7 +41,7 @@ export function RieltHomeClient() {
       params.set('rentalType', updatedFilters.rentalType);
     }
     
-    window.location.href = `/rielt/search?${params.toString()}`;
+    router.push(`/rielt/search?${params.toString()}`);
   };
 
   return (
@@ -56,11 +57,6 @@ export function RieltHomeClient() {
           filters={filters}
           onChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
         />
-      </section>
-
-      {/* Популярные города */}
-      <section className="mb-12">
-        <PopularCities />
       </section>
 
       {/* Подборки редакции */}

@@ -8,6 +8,7 @@ import type { Listing, ListingWithDistance, RentalType } from '../types';
 
 function listingTypeToRentalType(listingType: string): RentalType {
   if (listingType === 'rent_long') return 'long-term';
+  if (listingType === 'sale') return 'long-term';
   return 'short-term';
 }
 
@@ -27,10 +28,12 @@ function toAddress(dto: RieltListingDto) {
   return {
     country: dto.geo.countryId,
     city: dto.geo.cityId ?? '',
+    atlasPlaceId: dto.geo.atlasPlaceId ?? null,
+    atlasContainerPlaceId: dto.geo.atlasContainerPlaceId ?? null,
     district: undefined,
     street: undefined,
     building: undefined,
-    coordinates: { lat: 0, lng: 0 },
+    coordinates: null,
   };
 }
 

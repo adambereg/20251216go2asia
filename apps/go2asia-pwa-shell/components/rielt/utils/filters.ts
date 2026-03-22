@@ -113,13 +113,18 @@ export function filterByRadius(
   radiusMeters: number
 ): ListingWithDistance[] {
   return listings.filter((listing) => {
+    const coordinates = listing.address.coordinates;
+    if (!coordinates) {
+      return false;
+    }
+
     if (!listing.distance) {
       // Вычисляем расстояние если его нет
       const distance = calculateDistance(
         center.lat,
         center.lng,
-        listing.address.coordinates.lat,
-        listing.address.coordinates.lng
+        coordinates.lat,
+        coordinates.lng
       );
       listing.distance = distance;
     }

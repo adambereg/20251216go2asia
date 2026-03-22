@@ -26,7 +26,7 @@ const EDITOR_PICKS = [
     description: 'Жильё с рабочими местами и быстрым интернетом',
     icon: Briefcase,
     apiParams: { sort: 'newest' as const, page_size: 3 },
-    searchParams: { workspace: 'true', wifi: 'true' },
+    searchParams: { sortBy: 'newest' },
   },
   {
     id: 'long-term',

@@ -49,11 +49,20 @@ export function addDistancesToListings(
   center: Coordinates
 ): ListingWithDistance[] {
   return listings.map((listing) => {
+    const coordinates = listing.address.coordinates;
+    if (!coordinates) {
+      return {
+        ...listing,
+        distance: undefined,
+        walkingTime: undefined,
+      };
+    }
+
     const distance = calculateDistance(
       center.lat,
       center.lng,
-      listing.address.coordinates.lat,
-      listing.address.coordinates.lng
+      coordinates.lat,
+      coordinates.lng
     );
     return {
       ...listing,
