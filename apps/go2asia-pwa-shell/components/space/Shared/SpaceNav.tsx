@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Users,
-  FileText,
   Trophy,
   Ticket,
   Wallet,
@@ -21,16 +19,17 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const navItems: NavItem[] = [
-  { href: '/space', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/space/community', label: 'Сообщество', icon: Users },
-  { href: '/space/posts', label: 'Мои публикации', icon: FileText },
-  { href: '/space/quests', label: 'Квесты', icon: Trophy },
-  { href: '/space/vouchers', label: 'Ваучеры', icon: Ticket },
-  { href: '/space/balance', label: 'Баланс', icon: Wallet },
-  { href: '/space/nft', label: 'NFT', icon: Award },
-  { href: '/space/referrals', label: 'Рефералы', icon: UserPlus },
-  { href: '/space/settings', label: 'Настройки', icon: Settings },
+const activeNavItems: NavItem[] = [
+  { href: '/space', label: 'Runtime shell', icon: LayoutDashboard },
+];
+
+const deferredNavItems: Array<{ label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { label: 'Квесты', icon: Trophy },
+  { label: 'Ваучеры', icon: Ticket },
+  { label: 'Баланс', icon: Wallet },
+  { label: 'NFT', icon: Award },
+  { label: 'Рефералы', icon: UserPlus },
+  { label: 'Настройки', icon: Settings },
 ];
 
 interface SpaceNavProps {
@@ -44,7 +43,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
   if (variant === 'horizontal') {
     return (
       <nav className={cn('flex gap-2 overflow-x-auto pb-2', className)}>
-        {navItems.map((item) => {
+        {activeNavItems.map((item) => {
           const Icon = item.icon;
           const isActive =
             item.href === '/space'
@@ -75,7 +74,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
 
   return (
     <nav className={cn('space-y-1', className)}>
-      {navItems.map((item) => {
+      {activeNavItems.map((item) => {
         const Icon = item.icon;
         const isActive =
           item.href === '/space'
@@ -99,6 +98,26 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
           </Link>
         );
       })}
+
+      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+          Deferred (phase 1a)
+        </div>
+        <ul className="mt-2 space-y-2">
+          {deferredNavItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <li
+                key={item.label}
+                className="flex items-center gap-2 text-xs text-amber-800"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{item.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }
