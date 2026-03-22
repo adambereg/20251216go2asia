@@ -17,6 +17,7 @@ export { customInstance, getBaseUrl } from './mutator';
 export * as pulse from './pulse';
 export * as referrals from './referrals';
 export * as rielt from './rielt';
+export * as rf from './rf';
 export * as guru from './guru';
 export * as transactions from './transactions';
 

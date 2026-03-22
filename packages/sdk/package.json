@@ -54,7 +54,18 @@
       "types": "./src/media.ts",
       "default": "./src/media.ts"
     },
-    "./rielt": {"types": "./src/rielt.ts","default": "./src/rielt.ts"},"./guru": {"types": "./src/guru.ts","default": "./src/guru.ts"}
+    "./rielt": {
+      "types": "./src/rielt.ts",
+      "default": "./src/rielt.ts"
+    },
+    "./rf": {
+      "types": "./src/rf.ts",
+      "default": "./src/rf.ts"
+    },
+    "./guru": {
+      "types": "./src/guru.ts",
+      "default": "./src/guru.ts"
+    }
   },
   "scripts": {
     "build": "tsc",
