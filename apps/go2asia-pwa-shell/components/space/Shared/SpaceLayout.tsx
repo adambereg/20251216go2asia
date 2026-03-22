@@ -16,7 +16,7 @@ export function SpaceLayout({ children }: SpaceLayoutProps) {
             <div className="sticky top-6">
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                  Личный кабинет
+                  Space shell
                 </h2>
                 <SpaceNav />
               </div>
@@ -27,7 +27,7 @@ export function SpaceLayout({ children }: SpaceLayoutProps) {
           <div className="lg:hidden">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm mb-6">
               <div className="font-semibold text-slate-900 mb-3 text-sm">
-                Личный кабинет
+                Space shell
               </div>
               <div className="overflow-x-auto pb-2 -mx-3 px-3">
                 <SpaceNav variant="horizontal" />
