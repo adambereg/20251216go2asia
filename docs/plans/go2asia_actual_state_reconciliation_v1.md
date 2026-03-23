@@ -147,6 +147,11 @@ Code-only относительно `docs/backend/<service>_service`:
 - `atlas` и `pulse` полно описаны в `docs/backend` и `docs/modules`, но отдельные `apps/atlas-service` и `apps/pulse-service` не подтверждены.
 - `content-service` в коде содержит runtime для части Atlas/Pulse контуров (неэквивалентно полностью выделенным сервисам из docs).
 
+Interpretive note (NQ-011):
+
+- `docs/backend/*` следует читать как модель backend contours/contracts (включая target/deferred/consolidated формы), а не как автоматическое 1:1 доказательство отдельно инстанцированных `apps/*-service`.
+- `pnpm-workspace.yaml` следует читать как include patterns workspace scope, а не как canonical inventory заполненных/активных сервисных директорий.
+
 ## 3. Docs Reliability Map
 
 ### 3.1 By `docs/*` top-level folders

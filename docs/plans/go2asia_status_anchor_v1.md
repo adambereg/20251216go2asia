@@ -32,6 +32,15 @@
 5. `docs/plans/go2asia_next_steps_plan_2026_march_10.md` — **dated execution-plan artifact**, читается через reconciliation/anchor, но не является текущим status anchor.
 6. `docs/plans/go2asia_plan_reconciliation_note_v1.md` — **supporting reconciliation artifact**, который информирует anchor, но не заменяет его.
 
+## 1.2 Repo/Workspace Truth Model (NQ-011)
+
+Для текущего цикла интерпретация repo truth фиксируется так:
+
+1. `docs/backend/*` описывает backend contours/contracts/target shapes и не является автоматическим доказательством отдельно инстанцированного app-level сервиса в `apps/*`.
+2. Отсутствие отдельного `apps/<domain>-service` не отменяет существование doc-defined доменного контура.
+3. `pnpm-workspace.yaml` задаёт include patterns workspace scope и не является canonical inventory “живых” сервисов/директорий.
+4. Canonical repo inventory читается через фактические `apps/*`, `packages/*` и подтвержденный inventory в reconciliation + status anchor.
+
 ## 2. Normalization Rules
 
 1. Прямое code evidence (наличие app/runtime/tests/routes) сильнее обычной плановой формулировки.
@@ -42,6 +51,8 @@
 6. Отсутствие отдельного app не означает отсутствие runtime-контура, если есть подтвержденный consolidated contour.
 7. Если автонормализация невозможна, используется `mixed / unresolved` или `unclear`.
 8. Статус `operational-with-debt` ставится только при наличии одновременно runtime evidence и явного зафиксированного долга.
+9. `docs/backend/*` subtree не трактуется как 1:1 map к `apps/*` без code/runtime evidence.
+10. `pnpm-workspace.yaml` include patterns не трактуются как доказательство populated/active service inventory.
 
 ## 3. Canonical Status Summary
 
