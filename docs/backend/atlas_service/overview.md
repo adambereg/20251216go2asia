@@ -1,5 +1,7 @@
 # Atlas Service — Wiki-энциклопедия локаций
 
+> Normalization note (NQ-007): этот документ описывает Atlas как целевой доменный/сервисный контур (target model). В текущей repo reality отдельный app-level сервис `apps/atlas-service` не подтвержден; это не отменяет Atlas как SSOT-домен и не решает окончательно будущую декомпозицию runtime.
+
 ## Назначение
 
 Atlas Service — это центральный справочник геоданных для всей экосистемы Go2Asia.  

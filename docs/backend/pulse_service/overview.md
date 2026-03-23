@@ -1,5 +1,7 @@
 # Pulse Service — Обзор
 
+> Normalization note (NQ-007): этот документ описывает Pulse как целевой доменный/сервисный контур (target model). В текущей repo reality отдельный app-level сервис `apps/pulse-service` не подтвержден; это не отменяет Pulse как событийный домен и не фиксирует финальную runtime-декомпозицию.
+
 ## Назначение
 
 Pulse Service — микросервис календаря событий для экосистемы Go2Asia (модуль **Pulse Asia**).  

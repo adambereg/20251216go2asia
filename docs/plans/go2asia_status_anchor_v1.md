@@ -58,8 +58,8 @@
 | `reactions-service` | Reactions boundary | app+runtime+tests есть | backend docs есть | baseline claims есть | frontend direct path слабый | `baseline-present` | medium | yes |
 | `feed-service` | Feed read model | app+runtime+tests есть | backend/modules docs слабые | runtime-declared mixed | client-facing path в текущем цикле: `/v1/space/feed/*`; `/v1/feed/*` существует backend-side | `partial-live` | medium | yes |
 | `quest-service` | Quest/progress | app+runtime+tests есть | strong docs/contracts | baseline with deferred surfaces | UI integration strong | `operational-with-debt` | medium | yes |
-| `atlas` | Geo SSOT | отдельного app нет | strong docs | baseline/debt notes есть | frontend+SDK есть, ownership mixed | `mixed / unresolved` | medium | yes |
-| `pulse` | Event truth | отдельного app нет | strong docs | baseline/debt notes есть | frontend+SDK есть, ownership mixed | `mixed / unresolved` | medium | yes |
+| `atlas` | Geo SSOT | отдельный app-level service (`apps/atlas-service`) не подтвержден | strong docs | baseline/debt notes есть | frontend atlas integration strong; dedicated app allocation не подтвержден | `mixed / unresolved` | medium | yes |
+| `pulse` | Event truth | отдельный app-level service (`apps/pulse-service`) не подтвержден | strong docs | baseline/debt notes есть | frontend pulse integration strong; dedicated app allocation не подтвержден | `mixed / unresolved` | medium | yes |
 | `rielt-service` | Listings/inquiry | app+runtime+tests есть | strong docs | baseline + wave2 deferred | UI integration есть | `operational-with-debt` | medium | yes |
 | `rf-service` | Partner/business contour | app+runtime+tests есть | strong docs | baseline + deferred depth | UI integration есть | `operational-with-debt` | medium | yes |
 | `guru-service` | Read aggregator | app+runtime+tests есть | strong docs | baseline + source-limits | UI integration есть | `operational-with-debt` | medium | yes |
@@ -230,9 +230,9 @@
 **B**: отдельный `apps/atlas-service` не подтвержден; frontend atlas usage strong.  
 **C**: docs backend/modules/architecture strong.  
 **D**: runtime-declared: maturity gate + debt notes.  
-**E**: отдельный runtime service contour не подтвержден как app.  
+**E**: frontend integration подтверждена (Atlas SDK в shell), но отдельный app-level `atlas-service` в `apps/*` не подтвержден; runtime allocation читается как частично/возможно consolidated.  
 **F**: `mixed / unresolved`  
-**G**: Документная модель сильная, но runtime allocation частично consolidated; это не позволяет поставить чистый operational статус.  
+**G**: Atlas сейчас следует читать как сильный doc-defined domain с неподтвержденным dedicated app-level выделением; это не отменяет target model и не доказывает финальную декомпозицию runtime.  
 **H**: geo normalization/backfill debt.  
 **I**: full dedicated-service confirmation.  
 **J**: `medium`  
@@ -244,9 +244,9 @@
 **B**: отдельный `apps/pulse-service` не подтвержден; frontend pulse usage strong.  
 **C**: docs backend/modules/architecture strong.  
 **D**: runtime-declared baseline + debt notes.  
-**E**: runtime boundary между dedicated и consolidated контуром не подтвержден однозначно.  
+**E**: frontend integration подтверждена (Pulse SDK/content usage в shell), но отдельный app-level `pulse-service` в `apps/*` не подтвержден; runtime boundary между dedicated и consolidated контуром остается частично неясной.  
 **F**: `mixed / unresolved`  
-**G**: Есть сильное docs-покрытие и UI-факт, но service allocation не нормализован.  
+**G**: Pulse сейчас следует читать как doc-defined domain с подтвержденной frontend-интеграцией и неподтвержденным dedicated app-level выделением; текущая нормализация не решает будущую extraction-декомпозицию.  
 **H**: id/slug and contour allocation debt.  
 **I**: dedicated pulse service confirmation.  
 **J**: `medium`  
