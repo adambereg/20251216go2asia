@@ -4,6 +4,7 @@
 **Дата:** 2025-01-16  
 **Автор:** Planner  
 **Статус:** Draft → на ревью  
+**Normalization note (NQ-001):** документ сохраняется как archival/reference implementation plan и не является current operational status anchor. Для текущей status truth использовать `docs/plans/go2asia_status_anchor_v1.md`.
 **Основа:** 
 - ТЗ MVP v1.1 (APPROVED)
 - Архитектура MVP v1.1 (APPROVED)

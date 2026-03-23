@@ -2,6 +2,7 @@
 
 **Дата:** 2026-03-10  
 **Роль документа:** пошаговый execution-plan после архитектурного аудита  
+**Normalization note (NQ-001):** документ является dated execution-plan artifact на срез 2026-03-10 и не является current canonical status anchor. Текущую status truth читать через `docs/plans/go2asia_status_anchor_v1.md` и `docs/plans/go2asia_plan_reconciliation_note_v1.md`.
 **Основание:**  
 - `docs/architecture/system_status_2026_march_10.md`  
 - `docs/architecture/mvp_plan_revised_2026_march_10.md`  
