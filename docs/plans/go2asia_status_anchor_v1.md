@@ -65,7 +65,7 @@
 | `guru-service` | Read aggregator | app+runtime+tests есть | strong docs | baseline + source-limits | UI integration есть | `operational-with-debt` | medium | yes |
 | `packages/db` | SQL DDL SSOT | package есть + workflow usage | ADR strong | declared operational policy | evidence strong | `baseline-present` | high | no |
 | `openapi/contracts discipline` | API contract governance | specs+bundle есть | ADR-0014 authoritative | declared operational policy | evidence strong | `baseline-present` | high | no |
-| `staging deploy policy` | deployment governance | workflow file есть | docs конфликтуют | runtime-declared conflict | evidence split | `mixed / unresolved` | low | yes |
+| `staging deploy policy` | deployment governance | workflow file есть | ADR-0017 + ops prose aligned | runtime-declared policy consistent | workflow + ADR + normalized ops docs | `baseline-present` | high | no |
 | `frontend shell integration` | integration shell | Next app + routes есть | sequencing/runtime notes mixed | runtime-declared mixed | модульная интеграция неоднородна | `partial-live` | medium | yes |
 
 ## 4. Detailed Status Cards
@@ -325,16 +325,16 @@
 ### 4.19 `staging deploy policy`
 
 **A**: единые правила staging deploy.  
-**B**: workflow файл подтвержден; docs policy конфликтуют.  
-**C**: часть docs говорит `develop`, ADR/workflow — feature-branch/push.  
-**D**: runtime-declared mixed.  
-**E**: фактический workflow есть, но docs SSOT не выровнен.  
-**F**: `mixed / unresolved`  
-**G**: Пока docs не синхронизированы, статус policy не может считаться полностью нормализованным.  
-**H**: ops document drift debt.  
+**B**: workflow файл подтвержден; conflict prose в ключевых ops pages нормализован под ADR-0017.  
+**C**: canonical wording — staging deploy from feature branches/any branch push + workflow dispatch for staging workflow.  
+**D**: runtime-declared policy consistent.  
+**E**: фактический workflow + ADR + normalized ops docs согласованы.  
+**F**: `baseline-present`  
+**G**: Политика staging deploy зафиксирована как единый canonical контур для текущего цикла.  
+**H**: residual debt отсутствует в рамках NQ-002 scope.  
 **I**: n/a.  
-**J**: `low`  
-**K**: `high`
+**J**: `high`  
+**K**: `none`
 
 ### 4.20 `frontend shell integration`
 
@@ -367,7 +367,6 @@
 - `content` vs `space/reactions` ownership drift.
 - `atlas/pulse` doc-defined dedicated services vs отсутствующие одноименные apps.
 - `token-service` vs `blockchain/nft/connect` docs split.
-- Staging deploy policy drift (`ci_cd`/`backend_deploy`/`milestone2` vs `adr_0017` + workflow).
 - Quest prefix drift (`/v1/quest/*` vs `/v1/quests*`) в ops-доках.
 - Gateway backend-doc contract gap.
 - Неоднородная frontend evidence по `media/points/reactions/token`.
