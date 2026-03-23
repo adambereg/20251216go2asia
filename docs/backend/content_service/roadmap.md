@@ -1,12 +1,14 @@
 # Content Service — Roadmap
 
+> Normalization note (NQ-009): этот roadmap содержит исторические формулировки про комментарии. Для текущей canonical interaction policy действует `docs/decisions/adr_0020_no_inline_comments_social_first.md`: inline comments не являются канонической моделью; discussion surfaces social-first в Space, reactions/engagement state — в Reactions.
+
 ## Этап 1 — MVP
 
 - Посты:
   - создание, чтение, обновление, удаление (CRUD).
   - контекст: `module`, `context_entity_type`, `context_entity_id`.
 - Комментарии:
-  - создание, чтение, удаление.
+  - исторический roadmap-пункт (не трактовать как canonical inline-comment policy текущего цикла).
 - Базовая лента по контексту (`/feed/context`).
 - Публичные/зарегистрированные уровни видимости.
 - Простая модерация:
@@ -27,7 +29,7 @@
 
 - PostTag (теги).
 - Тематические хабы/темы (через Topics/Space).
-- Индексация постов/комментариев в Search Service.
+- Индексация постов/контентных записей в Search Service (comment-related legacy references трактовать через policy note выше).
 - Поиск по тексту и тегам.
 
 ## Этап 4 — Расширенная модерация

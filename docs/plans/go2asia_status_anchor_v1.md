@@ -106,8 +106,8 @@
 **D**: runtime declarations mixed (baseline + debt).  
 **E**: фактические вызовы и runtime presence подтверждены.  
 **F**: `partial-live`  
-**G**: Контур реально используется, но ownership с social-контуром не до конца нормализован.  
-**H**: content vs social ownership debt.  
+**G**: Контур реально используется; policy boundary нормализована как publication ownership у Content при social-first discussion в Space и engagement ownership в Reactions (ADR-0020).  
+**H**: runtime completeness и legacy traces по историческим comment-formulations могут оставаться частично unresolved.  
 **I**: полная де-legacy нормализация.  
 **J**: `medium`  
 **K**: `material`
@@ -364,7 +364,7 @@
 
 - `auth-service` vs `user_service` naming drift.
 - client-facing feed path нормализован на `/v1/space/feed/*`, но deeper ownership/decomposition `feed-service` vs `space-service` остается partially unresolved.
-- `content` vs `space/reactions` ownership drift.
+- canonical boundary для `content` vs `space/reactions` нормализована policy-level; полнота runtime de-legacy и остаточные historical traces могут оставаться частично unresolved.
 - `atlas/pulse` doc-defined dedicated services vs отсутствующие одноименные apps.
 - `token-service` vs `blockchain/nft/connect` docs split.
 - Quest prefix drift (`/v1/quest/*` vs `/v1/quests*`) в ops-доках.
