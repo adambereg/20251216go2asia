@@ -58,7 +58,7 @@
 
 | Contour | Target role | Actual app/code presence | Docs-declared status | Runtime-declared status | Actually evidenced status | Current canonical status | Confidence | Manual normalization still needed? |
 |---|---|---|---|---|---|---|---|---|
-| `api-gateway` | Edge perimeter + auth boundary + routing | app+runtime+tests есть | роль задокументирована, backend subtree нет | declared operational | code evidence strong | `baseline-present` | medium | yes |
+| `api-gateway` | Edge perimeter + auth boundary + routing | app+runtime+tests есть | ADR/ops + `docs/backend/api_gateway/overview.md` | declared operational | code evidence strong | `baseline-present` | high | no |
 | `auth-service` | Identity/auth | app+runtime+tests есть | как `user_service` + ADR | baseline/operational формулировки mixed | код+Clerk интеграция есть | `partial-live` | medium | yes |
 | `content-service` | Content core (частично consolidated) | app+runtime+tests есть | strong docs | baseline/operational mixed | API/UI evidence есть | `partial-live` | medium | yes |
 | `media-service` | Media contour | app+runtime+tests есть | docs есть, роль transition в части notes | baseline claims mixed | прямой UI-path слабый | `code-present` | medium | yes |
@@ -85,15 +85,15 @@
 
 **A. Target role**: edge perimeter, JWT verification boundary, service routing.  
 **B. Actual code/app reality**: `apps/api-gateway` есть; `src/index.ts`, `wrangler.toml`, `test/request.test.ts` подтверждены.  
-**C. Docs-declared status**: в `docs/backend` отдельный gateway subtree не подтвержден; роль зафиксирована в ADR/ops.  
+**C. Docs-declared status**: роль зафиксирована в ADR/ops и нормализована минимальным backend boundary-doc в `docs/backend/api_gateway/overview.md`.  
 **D. Runtime-declared status**: declared operational (policy-level).  
 **E. Actually evidenced status**: runtime code + tests подтверждены; полный route ownership map `не подтверждено`.  
 **F. Canonical current status**: `baseline-present`  
-**G. Why this status**: Контур явно существует и выполняет платформенную роль. Но отсутствует единый backend-doc contract-map, поэтому это не full operational certainty.  
-**H. Controlled debt**: gateway contract documentation gap.  
-**I. Deferred / not included**: полная route-to-service матрица.  
-**J. Confidence**: `medium`  
-**K. Remaining normalization need**: `material`
+**G. Why this status**: Контур явно существует и выполняет платформенную роль; auditable boundary-doc surface теперь зафиксирован и ссылается на code/ADR/ops truth. Полная per-route детальность остается вне scope этого anchor.  
+**H. Controlled debt**: deeper per-route ownership/detail mapping не нормализован в одном артефакте.  
+**I. Deferred / not included**: полная route-to-service матрица и per-endpoint contract ownership.  
+**J. Confidence**: `high`  
+**K. Remaining normalization need**: `light`
 
 ### 4.2 `auth-service`
 
@@ -379,7 +379,7 @@
 - `atlas/pulse` doc-defined dedicated services vs отсутствующие одноименные apps.
 - `token-service` vs `blockchain/nft/connect` docs split.
 - Quest prefix drift (`/v1/quest/*` vs `/v1/quests*`) в ops-доках.
-- Gateway backend-doc contract gap.
+- Gateway per-route ownership depth beyond high-level boundary map.
 - Неоднородная frontend evidence по `media/points/reactions/token`.
 
 ## 7. Files Used
