@@ -13,6 +13,12 @@ Prerequisites:
 Feed V1 is implemented as a read/distribution service in `apps/feed-service`.
 This document remains the boundary and runtime-behavior baseline for Step 6 completion checks.
 
+Normalization note (NQ-008):
+
+- Current canonical client-facing feed path for the frontend shell in this cycle is `/v1/space/feed/*`.
+- `feed-service` exists as a separate backend read/distribution contour and exposes `/v1/feed/*`.
+- This note does not settle future decomposition; deeper ownership split between `space-service` and `feed-service` remains implementation-specific outside NQ-008.
+
 ## 1) Feed service boundary
 
 `feed-service` is a distribution/read layer only.

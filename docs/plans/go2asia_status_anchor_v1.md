@@ -56,7 +56,7 @@
 | `token-service` | Token contour / phase-split | app+runtime есть, tests не подтверждены | прямой docs contour слабый | runtime-declared weak | usage evidence limited | `mixed / unresolved` | low | yes |
 | `space-service` | Social publication contour | app+runtime+tests есть | architecture/modules docs есть | freeze/closure: phase1 complete | UI `/space` + API path evidence | `operational-with-debt` | medium | yes |
 | `reactions-service` | Reactions boundary | app+runtime+tests есть | backend docs есть | baseline claims есть | frontend direct path слабый | `baseline-present` | medium | yes |
-| `feed-service` | Feed read model | app+runtime+tests есть | backend/modules docs слабые | runtime-declared mixed | UI ходит через `/v1/space/feed/*` | `mixed / unresolved` | low | yes |
+| `feed-service` | Feed read model | app+runtime+tests есть | backend/modules docs слабые | runtime-declared mixed | client-facing path в текущем цикле: `/v1/space/feed/*`; `/v1/feed/*` существует backend-side | `partial-live` | medium | yes |
 | `quest-service` | Quest/progress | app+runtime+tests есть | strong docs/contracts | baseline with deferred surfaces | UI integration strong | `operational-with-debt` | medium | yes |
 | `atlas` | Geo SSOT | отдельного app нет | strong docs | baseline/debt notes есть | frontend+SDK есть, ownership mixed | `mixed / unresolved` | medium | yes |
 | `pulse` | Event truth | отдельного app нет | strong docs | baseline/debt notes есть | frontend+SDK есть, ownership mixed | `mixed / unresolved` | medium | yes |
@@ -202,13 +202,13 @@
 **B**: app/runtime/tests есть.  
 **C**: backend/modules прямой docs contour слабый; сильнее в architecture notes.  
 **D**: runtime declarations mixed.  
-**E**: UI использует `/v1/space/feed/*`; `/v1/feed` usage не подтвержден.  
-**F**: `mixed / unresolved`  
-**G**: Сервис есть, но route ownership и contract boundary с Space не нормализованы.  
-**H**: feed-vs-space boundary debt.  
+**E**: UI использует `/v1/space/feed/*`; при этом `/v1/feed/*` подтвержден в gateway и `feed-service`, а `feed-service` также читает `/v1/space/feed/*` как upstream.  
+**F**: `partial-live`  
+**G**: Для текущего цикла canonical client-facing contract фиксируется как `/v1/space/feed/*`; deeper backend ownership/decomposition между `space-service` и `feed-service` остается частично unresolved.  
+**H**: feed-vs-space deeper ownership debt (за пределами client-facing path truth).  
 **I**: explicit endpoint ownership closure.  
-**J**: `low`  
-**K**: `high`
+**J**: `medium`  
+**K**: `material`
 
 ### 4.11 `quest-service`
 
@@ -363,7 +363,7 @@
 ## 6. Explicit Non-Normalized Areas
 
 - `auth-service` vs `user_service` naming drift.
-- `feed-service` vs `/v1/space/feed/*` ownership drift.
+- client-facing feed path нормализован на `/v1/space/feed/*`, но deeper ownership/decomposition `feed-service` vs `space-service` остается partially unresolved.
 - `content` vs `space/reactions` ownership drift.
 - `atlas/pulse` doc-defined dedicated services vs отсутствующие одноименные apps.
 - `token-service` vs `blockchain/nft/connect` docs split.
