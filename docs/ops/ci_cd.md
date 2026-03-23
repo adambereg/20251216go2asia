@@ -18,8 +18,8 @@
 - Репозиторий: монорепо Go2Asia.
 - Основные ветки:
   - `main` — production;
-  - `develop` — staging;
-  - feature-ветки `feature/*` — предварительная разработка.
+  - feature-ветки (включая `feature/*`) — допустимый источник staging deploy для Workers;
+  - `develop` может использоваться как рабочая интеграционная ветка команды, но не является единственным staging deploy trigger.
 - CI запускается:
   - при каждом push в любую ветку;
   - при создании/обновлении Pull Request.
@@ -73,7 +73,7 @@
 
 ### 4.2. Staging
 
-Триггер: merge в ветку `develop`.
+Триггер (canonical): `push` в любые ветки + `workflow_dispatch` для `.github/workflows/deploy-workers-staging.yml` (см. `docs/decisions/adr_0017_staging_deploys_from_feature_branches.md`).
 
 - Авто-деплой фронтенда в Netlify **staging-сайт**.
 - Обновление нужных микросервисов в staging-окружении.

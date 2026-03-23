@@ -104,7 +104,7 @@ pnpm --dir apps/token-service exec wrangler dev --env staging
 Workflow: `.github/workflows/deploy-workers-staging.yml`
 
 Требования:
-- deploy запускается на `push` в `main`;
+- deploy запускается на `push` в любые ветки + `workflow_dispatch` (canonical policy; см. `docs/decisions/adr_0017_staging_deploys_from_feature_branches.md`);
 - deploy **не должен** silently-skip отсутствующие папки (если сервис отсутствует в репо — это ошибка);
 - после деплоя выполняется smoke-check на `workers.dev` URL и ожидается HTTP 200.
 

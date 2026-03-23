@@ -1,6 +1,8 @@
 # Go2Asia - Frontend Sequencing Note v1
 
-Status: active sequencing reference
+Status: historical sequencing baseline (wave closed; not current canonical status anchor)
+
+Normalization note (NQ-001): this note remains a sequencing artifact for the completed wave and should be read together with `docs/plans/go2asia_status_anchor_v1.md` and `docs/plans/go2asia_plan_reconciliation_note_v1.md` for current status truth.
 
 ## 1. Purpose
 

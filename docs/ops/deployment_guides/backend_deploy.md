@@ -19,7 +19,7 @@
 Для любого сервиса (например, `atlas_service`):
 
 1. Убедиться, что:
-   - код в ветке `main`/`develop` актуален;
+   - код в ветке, из которой выполняется деплой, актуален;
    - тесты проходят (`pnpm test` в директории сервиса);
    - сборка проходит (`pnpm build`).
 
@@ -89,7 +89,7 @@ docker push go2asia/atlas-service:TAG
 ## 6. Деплой на staging
 
 - Staging-сервисы используют отдельные БД/очереди/хранилища.
-- Могут быть деплоены по merge в `develop`.
+- Для Workers canonical policy: deploy из feature-веток и других веток через staging workflow (`push` any branch + `workflow_dispatch`) согласно `docs/decisions/adr_0017_staging_deploys_from_feature_branches.md`.
 - Используются для:
   - финального тестирования,
   - проверок миграций и API-контрактов.

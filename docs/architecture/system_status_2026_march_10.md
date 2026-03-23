@@ -4,6 +4,8 @@
 **Роль документа:** архитектурная фиксация фактического состояния проекта  
 **Основа оценки:** утверждённые документы в `docs/`, кодовая база, staging/API probes
 
+**Normalization note (NQ-001):** этот документ сохраняется как исторический snapshot по состоянию на 2026-03-10 и не является текущим canonical status anchor. Для текущей status truth использовать `docs/plans/go2asia_status_anchor_v1.md`.
+
 ---
 
 ## 1. Purpose
