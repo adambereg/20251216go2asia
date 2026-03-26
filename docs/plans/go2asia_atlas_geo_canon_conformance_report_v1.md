@@ -119,7 +119,7 @@ Live context in scope:
 
 **What the canon requires**
 
-- district как first-class canonical entity (`id`, `country_id`, `city_id`, `slug`, coords), особенно для intra-city precision use cases.
+- district как first-class canonical local-zone layer (`id`, stable `slug`, coords), где parent может быть `city` или другой явно разрешенный canonical parent при слабом/неоперациональном city-layer.
 
 **What current Atlas has**
 
@@ -136,14 +136,15 @@ Live context in scope:
 
 **Why it matters**
 
-- это ключевой canonical gap для Rielt/RF/Guru/Quest scenarios, где neighborhood precision важна;
+- это ключевой canonical gap для Rielt/RF/Guru/Quest scenarios, где local-zone precision важна;
 - без district layer Atlas остается bridge-compatible, но не full Geo Canon compliant.
 
 ### 4.4 Place
 
 **What the canon requires**
 
-- place как concrete geo-linked object со stable `id/slug`, required `country_id`, city linkage, district linkage where relevant, координаты для map/nearby.
+- place как concrete geo-linked object со stable `id/slug`, required `country_id`, city linkage, district linkage where relevant, координаты для map/nearby;
+- поддержка container-place semantics: place может быть standalone или container, а downstream links могут использовать `place_id` и/или `container_place_id` по use case.
 
 **What current Atlas has**
 
@@ -162,7 +163,7 @@ Live context in scope:
 **Why it matters**
 
 - place layer уже usable для большинства Atlas surfaces и связей;
-- но coord completeness и отсутствие district reference не позволяют считать слой fully canonical.
+- но coord completeness, отсутствие district reference и незафиксированный container-place seam не позволяют считать слой fully canonical.
 
 ### 4.5 Coordinates Policy
 
@@ -248,13 +249,14 @@ Live context in scope:
 
 ### Rielt
 
-- без district layer Atlas не дает full canonical precision, которую Geo Canon ожидает для listings;
+- без district layer Atlas не дает full canonical local-zone precision, которую Geo Canon ожидает для listings;
 - текущий Atlas пригоден как bridge base (`country_id/city_id` + place links), но не как final precision layer.
 
 ### RF
 
 - партнерские location flows могут опираться на country/city/place bridge;
-- отсутствие district canonical layer ограничивает full conformance для multi-location precision.
+- отсутствие district canonical layer ограничивает full conformance для multi-location precision;
+- container-place linkage seam (`container_place_id`) еще не нормализован как явная Atlas-compatible практика.
 
 ### Space
 
@@ -276,7 +278,7 @@ Live context in scope:
 1. Отсутствие district как first-class canonical layer (ключевой gap к Geo Canon v1).
 2. Неполная place coordinate completeness (`20` rows without `lat/lng`).
 3. Atlas metadata-layer не соответствует canon-level минимуму (`canonical_status`, `source_type`, `trust/freshness` на core geo entities не подтверждены в schema).
-4. Place-level canonical contract в текущем Atlas не включает `district_id` даже как nullable enrichment seam.
+4. Place-level canonical contract в текущем Atlas не включает ни `district_id` seam, ни явный container-place seam (`container_place_id`) для downstream-friendly canonical linkage.
 5. Atlas находится в `bridge-compatible / partial` состоянии, а не в full canonical state.
 
 ## 7. Wave A Interpretation

@@ -42,10 +42,12 @@ Scope: Atlas-only canonical alignment, bounded for current cycle
 2. Alignment bounded, staged, execution-cycle realistic.
 3. Structural gaps first, decorative maturity later.
 4. District strategy фиксируется явно, не оставляется implicit.
-5. Place coordinate completion — targeted by impact, не indiscriminate.
-6. Bridge-compatible state допустим, если gap не блокирует текущий execution path.
-7. No giant migration и no forced full-perfection gate.
-8. Atlas alignment не смешивается с Pulse correction execution.
+5. District трактуется как canonical local-zone layer с явно заданным parent rule (не только city, где это оправдано моделью).
+6. Place coordinate completion — targeted by impact, не indiscriminate.
+7. Canonical place contract должен учитывать standalone/container place model без forced global refactor.
+8. Bridge-compatible state допустим, если gap не блокирует текущий execution path.
+9. No giant migration и no forced full-perfection gate.
+10. Atlas alignment не смешивается с Pulse correction execution.
 
 ## 4. Alignment Scope
 
@@ -56,6 +58,7 @@ Scope: Atlas-only canonical alignment, bounded for current cycle
 - Уточнить минимальный canonical Place contract для current cycle:
   - stable `id/slug`,
   - required `country_id/city_id`,
+  - standalone vs container place semantics (`place_id` / `container_place_id` seam where relevant),
   - coords policy и debt marking для missing coords.
 - Зафиксировать Atlas bridge-debt registry как управляемый список, а не implicit drift.
 
@@ -107,7 +110,7 @@ Scope: Atlas-only canonical alignment, bounded for current cycle
 
 - **Objective:** зафиксировать обязательный минимум Place contract для текущего цикла.
 - **Why needed:** удержать consistency при bridge-compatible состоянии.
-- **Relation to Geo Canon:** alignment with Place rules without full redesign.
+- **Relation to Geo Canon:** alignment with Place rules (including container-place semantics) without full redesign.
 - **Downstream impact:** снижает contract drift между Atlas и consumers.
 - **User enrichment needed:** limited (только ambiguous attribution cases).
 - **Implementation complexity:** medium.
@@ -126,7 +129,7 @@ Scope: Atlas-only canonical alignment, bounded for current cycle
 ### Bucket E — Canon Metadata Layer (Bounded)
 
 - **Objective:** определить минимальный metadata seam только для governance utility.
-- **Why needed:** полезно для tracking canonical/bridge states, но не primary structural driver.
+- **Why needed:** полезно для tracking canonical/bridge states, но не primary structural driver; выполняется только если не отвлекает от A/B/C.
 - **Relation to Geo Canon:** partial alignment with metadata section.
 - **Downstream impact:** low/medium (mainly governance observability).
 - **User enrichment needed:** no (mostly policy/field strategy).
