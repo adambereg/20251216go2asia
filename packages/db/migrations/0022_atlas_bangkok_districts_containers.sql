@@ -225,7 +225,7 @@ SET
   container_id = c.id,
   updated_at = now()
 FROM target_city tc
-JOIN place_mapping pm ON pm.place_slug = p.slug
+JOIN place_mapping pm ON TRUE
 JOIN district_map d ON d.slug = pm.district_slug
 LEFT JOIN container_map c ON c.slug = pm.container_slug
 WHERE p.slug = pm.place_slug
