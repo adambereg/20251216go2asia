@@ -169,6 +169,13 @@
       "when": 1774113250000,
       "tag": "0021_atlas_place_foundation_links",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1774300000000,
+      "tag": "0022_atlas_bangkok_districts_containers",
+      "breakpoints": true
     }
   ]
 }

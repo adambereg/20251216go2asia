@@ -112,6 +112,13 @@ export interface PlaceRow {
   lng: string | null;
   hero_url: string | null;
   images: string | null; // JSON
+  district_id: string | null;
+  district_slug: string | null;
+  district_name: string | null;
+  container_id: string | null;
+  container_slug: string | null;
+  container_name: string | null;
+  container_type: string | null;
 }
 
 export interface ArticleRow {
@@ -125,6 +132,37 @@ export interface ArticleRow {
   cover_url: string | null;
   published_at: string | null;
   status: string;
+}
+
+export interface CityDistrictRow {
+  id: string;
+  country_id: string;
+  city_id: string;
+  slug: string;
+  name: string;
+  name_local: string | null;
+  description_short: string | null;
+  body_markdown: string | null;
+  sort_order: number;
+  is_published: boolean;
+  lat: string | null;
+  lng: string | null;
+}
+
+export interface PlaceContainerRow {
+  id: string;
+  country_id: string;
+  city_id: string;
+  district_id: string;
+  district_slug: string | null;
+  district_name: string | null;
+  slug: string;
+  name: string;
+  container_type: string;
+  description_short: string | null;
+  lat: string | null;
+  lng: string | null;
+  is_published: boolean;
 }
 
 export interface ContentBlockRow {
@@ -555,6 +593,85 @@ export async function getCityByIdOrSlug(sql: SqlClient, idOrSlug: string): Promi
   return (rows[0] as CityRow) ?? null;
 }
 
+export async function listCityDistricts(
+  sql: SqlClient,
+  params: { cityId: string; includeUnpublished?: boolean; limit?: number }
+): Promise<CityDistrictRow[]> {
+  const includeUnpublished = Boolean(params.includeUnpublished);
+  const limit = Math.min(300, Math.max(1, params.limit ?? 100));
+
+  const rows = await sql`
+    SELECT
+      d.id,
+      d.country_id,
+      d.city_id,
+      d.slug,
+      d.name,
+      d.name_local,
+      d.description_short,
+      d.body_markdown,
+      d.sort_order,
+      d.is_published,
+      d.lat::text AS lat,
+      d.lng::text AS lng
+    FROM city_districts d
+    WHERE d.city_id = ${params.cityId}
+      AND (${includeUnpublished}::boolean = true OR d.is_published = true)
+    ORDER BY d.sort_order ASC, d.name ASC
+    LIMIT ${limit}
+  `;
+  return rows as CityDistrictRow[];
+}
+
+export async function getCityDistrictIdByIdOrSlug(
+  sql: SqlClient,
+  cityId: string,
+  idOrSlug: string
+): Promise<string | null> {
+  const rows = await sql`
+    SELECT d.id::text AS id
+    FROM city_districts d
+    WHERE d.city_id = ${cityId}
+      AND (d.id::text = ${idOrSlug} OR d.slug = ${idOrSlug})
+    LIMIT 1
+  `;
+  return (rows[0] as { id: string } | undefined)?.id ?? null;
+}
+
+export async function listPlaceContainers(
+  sql: SqlClient,
+  params: { cityId: string; districtId?: string; includeUnpublished?: boolean; limit?: number }
+): Promise<PlaceContainerRow[]> {
+  const includeUnpublished = Boolean(params.includeUnpublished);
+  const districtId = params.districtId ?? null;
+  const limit = Math.min(300, Math.max(1, params.limit ?? 100));
+
+  const rows = await sql`
+    SELECT
+      pc.id,
+      pc.country_id,
+      pc.city_id,
+      pc.district_id,
+      d.slug AS district_slug,
+      d.name AS district_name,
+      pc.slug,
+      pc.name,
+      pc.container_type,
+      pc.description_short,
+      pc.lat::text AS lat,
+      pc.lng::text AS lng,
+      pc.is_published
+    FROM place_containers pc
+    LEFT JOIN city_districts d ON pc.district_id = d.id
+    WHERE pc.city_id = ${params.cityId}
+      AND (${districtId}::text IS NULL OR pc.district_id = ${districtId})
+      AND (${includeUnpublished}::boolean = true OR pc.is_published = true)
+    ORDER BY pc.name ASC
+    LIMIT ${limit}
+  `;
+  return rows as PlaceContainerRow[];
+}
+
 /**
  * List places
  */
@@ -586,6 +703,13 @@ export async function listPlaces(
       ci.name AS city_name,
       p.country_id,
       p.city_id,
+      p.district_id,
+      d.slug AS district_slug,
+      d.name AS district_name,
+      p.container_id,
+      pc.slug AS container_slug,
+      pc.name AS container_name,
+      pc.container_type,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -594,6 +718,8 @@ export async function listPlaces(
     FROM places p
     LEFT JOIN countries co ON p.country_id = co.id
     LEFT JOIN cities ci ON p.city_id = ci.id
+    LEFT JOIN city_districts d ON p.district_id = d.id
+    LEFT JOIN place_containers pc ON p.container_id = pc.id
     LEFT JOIN media_files m ON p.hero_media_id = m.id
     WHERE (${cityId}::text IS NULL OR p.city_id = ${cityId})
       AND (${countryId}::text IS NULL OR p.country_id = ${countryId})
@@ -627,6 +753,13 @@ export async function getPlaceByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       ci.name AS city_name,
       p.country_id,
       p.city_id,
+      p.district_id,
+      d.slug AS district_slug,
+      d.name AS district_name,
+      p.container_id,
+      pc.slug AS container_slug,
+      pc.name AS container_name,
+      pc.container_type,
       p.address,
       COALESCE(p.lat, p.latitude) AS lat,
       COALESCE(p.lng, p.longitude) AS lng,
@@ -635,6 +768,8 @@ export async function getPlaceByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
     FROM places p
     LEFT JOIN countries co ON p.country_id = co.id
     LEFT JOIN cities ci ON p.city_id = ci.id
+    LEFT JOIN city_districts d ON p.district_id = d.id
+    LEFT JOIN place_containers pc ON p.container_id = pc.id
     LEFT JOIN media_files m ON p.hero_media_id = m.id
     WHERE p.id = ${idOrSlug} OR p.slug = ${idOrSlug}
     LIMIT 1
