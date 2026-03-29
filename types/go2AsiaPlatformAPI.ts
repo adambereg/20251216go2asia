@@ -62,12 +62,16 @@ import type {
   ListBlogPostsParams,
   ListCitiesParams,
   ListCitiesResponse,
+  ListCityDistrictsParams,
+  ListCityDistrictsResponse,
+  ListCityPlaceContainersParams,
   ListCityTabsParams,
   ListContentTabsResponse,
   ListCountriesResponse,
   ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
+  ListPlaceContainersResponse,
   ListPlacesParams,
   ListPlacesResponse,
   ListPointsTransactionsParams,
@@ -735,6 +739,130 @@ export const listCities = async (
   options?: RequestInit
 ): Promise<listCitiesResponse> => {
   return customInstance<listCitiesResponse>(getListCitiesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary List city place containers (public)
+ */
+export type listCityPlaceContainersResponse200 = {
+  data: ListPlaceContainersResponse;
+  status: 200;
+};
+
+export type listCityPlaceContainersResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type listCityPlaceContainersResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCityPlaceContainersResponseSuccess = listCityPlaceContainersResponse200 & {
+  headers: Headers;
+};
+export type listCityPlaceContainersResponseError = (
+  | listCityPlaceContainersResponse404
+  | listCityPlaceContainersResponse500
+) & {
+  headers: Headers;
+};
+
+export type listCityPlaceContainersResponse =
+  | listCityPlaceContainersResponseSuccess
+  | listCityPlaceContainersResponseError;
+
+export const getListCityPlaceContainersUrl = (
+  idOrSlug: string,
+  params?: ListCityPlaceContainersParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/cities/${idOrSlug}/containers?${stringifiedParams}`
+    : `/v1/content/cities/${idOrSlug}/containers`;
+};
+
+export const listCityPlaceContainers = async (
+  idOrSlug: string,
+  params?: ListCityPlaceContainersParams,
+  options?: RequestInit
+): Promise<listCityPlaceContainersResponse> => {
+  return customInstance<listCityPlaceContainersResponse>(
+    getListCityPlaceContainersUrl(idOrSlug, params),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
+};
+
+/**
+ * @summary List city districts (public)
+ */
+export type listCityDistrictsResponse200 = {
+  data: ListCityDistrictsResponse;
+  status: 200;
+};
+
+export type listCityDistrictsResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type listCityDistrictsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listCityDistrictsResponseSuccess = listCityDistrictsResponse200 & {
+  headers: Headers;
+};
+export type listCityDistrictsResponseError = (
+  | listCityDistrictsResponse404
+  | listCityDistrictsResponse500
+) & {
+  headers: Headers;
+};
+
+export type listCityDistrictsResponse =
+  | listCityDistrictsResponseSuccess
+  | listCityDistrictsResponseError;
+
+export const getListCityDistrictsUrl = (idOrSlug: string, params?: ListCityDistrictsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/content/cities/${idOrSlug}/districts?${stringifiedParams}`
+    : `/v1/content/cities/${idOrSlug}/districts`;
+};
+
+export const listCityDistricts = async (
+  idOrSlug: string,
+  params?: ListCityDistrictsParams,
+  options?: RequestInit
+): Promise<listCityDistrictsResponse> => {
+  return customInstance<listCityDistrictsResponse>(getListCityDistrictsUrl(idOrSlug, params), {
     ...options,
     method: "GET",
   });

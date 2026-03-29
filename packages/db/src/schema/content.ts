@@ -162,12 +162,65 @@ export const cityAliases = pgTable(
   })
 );
 
+export const cityDistricts = pgTable(
+  'city_districts',
+  {
+    id: text('id').primaryKey(),
+    countryId: text('country_id').notNull().references(() => countries.id),
+    cityId: text('city_id').notNull().references(() => cities.id),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    nameLocal: varchar('name_local', { length: 255 }),
+    descriptionShort: text('description_short'),
+    bodyMarkdown: text('body_markdown'),
+    sortOrder: integer('sort_order').notNull().default(100),
+    isPublished: boolean('is_published').notNull().default(false),
+    lat: numeric('lat', { precision: 9, scale: 6 }),
+    lng: numeric('lng', { precision: 9, scale: 6 }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueCityDistrictSlug: unique('city_districts_city_slug_unique').on(table.cityId, table.slug),
+    idxCityDistrictsCountry: index('idx_city_districts_country_id').on(table.countryId),
+    idxCityDistrictsCity: index('idx_city_districts_city_id').on(table.cityId),
+    idxCityDistrictsPublishedSort: index('idx_city_districts_published_sort').on(table.cityId, table.isPublished, table.sortOrder),
+  })
+);
+
+export const placeContainers = pgTable(
+  'place_containers',
+  {
+    id: text('id').primaryKey(),
+    countryId: text('country_id').notNull().references(() => countries.id),
+    cityId: text('city_id').notNull().references(() => cities.id),
+    districtId: text('district_id').notNull().references(() => cityDistricts.id),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    containerType: varchar('container_type', { length: 100 }).notNull().default('generic'),
+    descriptionShort: text('description_short'),
+    lat: numeric('lat', { precision: 9, scale: 6 }),
+    lng: numeric('lng', { precision: 9, scale: 6 }),
+    isPublished: boolean('is_published').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniquePlaceContainerCitySlug: unique('place_containers_city_slug_unique').on(table.cityId, table.slug),
+    idxPlaceContainersCountry: index('idx_place_containers_country_id').on(table.countryId),
+    idxPlaceContainersCity: index('idx_place_containers_city_id').on(table.cityId),
+    idxPlaceContainersDistrict: index('idx_place_containers_district_id').on(table.districtId),
+  })
+);
+
 export const places = pgTable(
   'places',
   {
     id: text('id').primaryKey(),
     countryId: text('country_id').references(() => countries.id),
     cityId: text('city_id').references(() => cities.id),
+    districtId: text('district_id').references(() => cityDistricts.id),
+    containerId: text('container_id').references(() => placeContainers.id),
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull().unique(),
     type: varchar('type', { length: 100 }).notNull(), // attraction, restaurant, cafe, beach, etc.
@@ -198,6 +251,8 @@ export const places = pgTable(
   (table) => ({
     idxPlacesCountryId: index('idx_places_country_id').on(table.countryId),
     idxPlacesCityId: index('idx_places_city_id').on(table.cityId),
+    idxPlacesDistrictId: index('idx_places_district_id').on(table.districtId),
+    idxPlacesContainerId: index('idx_places_container_id').on(table.containerId),
   })
 );
 

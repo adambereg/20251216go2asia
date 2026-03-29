@@ -11,15 +11,18 @@ import { getBlogPostBySlug as getBlogPostBySlugSql, listBlogPosts as listBlogPos
 import type {
   ArticleRow,
   CityRow,
+  CityDistrictRow,
   ContentBlockRow,
   CountryRow,
   EventRow,
   PlaceRow,
+  PlaceContainerRow,
   SqlClient,
 } from '@go2asia/db/queries/content';
 import {
   createSqlClient,
   getArticleBySlug,
+  getCityDistrictIdByIdOrSlug,
   getEventByIdOrSlug,
   getCityByIdOrSlug,
   getCityIdByIdOrSlug,
@@ -28,9 +31,11 @@ import {
   getPlaceIdByIdOrSlug,
   listContentBlocks,
   listArticles,
+  listCityDistricts,
   listCities,
   listCountries,
   listEvents,
+  listPlaceContainers,
   listPlaces,
 } from '@go2asia/db/queries/content';
 import type { GuideBlockRow, GuideFeedRow, GuideRow, GuideSectionRow } from '@go2asia/db/queries/guides';
@@ -153,6 +158,37 @@ export interface ContentCityDto {
   heroImage: string | null;
 }
 
+export interface ContentCityDistrictDto {
+  id: string;
+  countryId: string;
+  cityId: string;
+  slug: string;
+  name: string;
+  nameLocal: string | null;
+  descriptionShort: string | null;
+  bodyMarkdown: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  latitude: string | null;
+  longitude: string | null;
+}
+
+export interface ContentPlaceContainerDto {
+  id: string;
+  countryId: string;
+  cityId: string;
+  districtId: string;
+  districtSlug: string | null;
+  districtName: string | null;
+  slug: string;
+  name: string;
+  containerType: string;
+  descriptionShort: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  isPublished: boolean;
+}
+
 export interface ContentPlaceDto {
   id: string;
   slug: string;
@@ -168,6 +204,13 @@ export interface ContentPlaceDto {
   priceLevel: string | null;
   countryId: string | null;
   cityId: string | null;
+  districtId: string | null;
+  districtSlug: string | null;
+  districtName: string | null;
+  containerId: string | null;
+  containerSlug: string | null;
+  containerName: string | null;
+  containerType: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -948,6 +991,41 @@ function toContentCity(row: CityRow): ContentCityDto {
   };
 }
 
+function toContentCityDistrict(row: CityDistrictRow): ContentCityDistrictDto {
+  return {
+    id: row.id,
+    countryId: row.country_id,
+    cityId: row.city_id,
+    slug: row.slug,
+    name: row.name,
+    nameLocal: row.name_local,
+    descriptionShort: row.description_short,
+    bodyMarkdown: row.body_markdown,
+    sortOrder: row.sort_order,
+    isPublished: row.is_published,
+    latitude: row.lat,
+    longitude: row.lng,
+  };
+}
+
+function toContentPlaceContainer(row: PlaceContainerRow): ContentPlaceContainerDto {
+  return {
+    id: row.id,
+    countryId: row.country_id,
+    cityId: row.city_id,
+    districtId: row.district_id,
+    districtSlug: row.district_slug,
+    districtName: row.district_name,
+    slug: row.slug,
+    name: row.name,
+    containerType: row.container_type,
+    descriptionShort: row.description_short,
+    latitude: row.lat,
+    longitude: row.lng,
+    isPublished: row.is_published,
+  };
+}
+
 function toContentPlace(row: PlaceRow): ContentPlaceDto {
   let photos: string[] = [];
   let tags: string[] | null = null;
@@ -984,6 +1062,13 @@ function toContentPlace(row: PlaceRow): ContentPlaceDto {
     priceLevel: row.price_level,
     countryId: row.country_id,
     cityId: row.city_id,
+    districtId: row.district_id,
+    districtSlug: row.district_slug,
+    districtName: row.district_name,
+    containerId: row.container_id,
+    containerSlug: row.container_slug,
+    containerName: row.container_name,
+    containerType: row.container_type,
     description: row.description_short,
     country: row.country_name,
     city: row.city_name,
@@ -1423,6 +1508,60 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   } catch (error) {
     logger.error('List places error', error);
     return json({ error: { code: 'InternalError', message: 'Failed to fetch places' } }, 500);
+  }
+}
+
+async function handleListCityDistricts(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const includeUnpublishedRaw = (url.searchParams.get('includeUnpublished') ?? '').trim().toLowerCase();
+  const includeUnpublished = includeUnpublishedRaw === 'true' || includeUnpublishedRaw === '1';
+  const limit = Math.min(300, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const rows = await listCityDistricts(sqlClient, { cityId, includeUnpublished, limit });
+    return json({ items: rows.map(toContentCityDistrict) } satisfies ListResponse<ContentCityDistrictDto>, 200);
+  } catch (error) {
+    logger.error('List city districts error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city districts' } }, 500);
+  }
+}
+
+async function handleListCityContainers(
+  env: Env,
+  url: URL,
+  idOrSlug: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<Response> {
+  const sqlClient = getSqlClient(env, logger);
+  if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
+  const districtIdOrSlug = (url.searchParams.get('district') ?? url.searchParams.get('districtId') ?? '').trim();
+  const includeUnpublishedRaw = (url.searchParams.get('includeUnpublished') ?? '').trim().toLowerCase();
+  const includeUnpublished = includeUnpublishedRaw === 'true' || includeUnpublishedRaw === '1';
+  const limit = Math.min(300, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
+  try {
+    const cityId = await getCityIdByIdOrSlug(sqlClient, idOrSlug);
+    if (!cityId) return json({ error: { code: 'NotFound', message: 'City not found' } }, 404);
+    const districtId = districtIdOrSlug ? await getCityDistrictIdByIdOrSlug(sqlClient, cityId, districtIdOrSlug) : null;
+    if (districtIdOrSlug && !districtId) {
+      return json({ error: { code: 'NotFound', message: 'District not found for city' } }, 404);
+    }
+    const rows = await listPlaceContainers(sqlClient, {
+      cityId,
+      districtId: districtId ?? undefined,
+      includeUnpublished,
+      limit,
+    });
+    return json({ items: rows.map(toContentPlaceContainer) } satisfies ListResponse<ContentPlaceContainerDto>, 200);
+  } catch (error) {
+    logger.error('List city containers error', error, { idOrSlug });
+    return json({ error: { code: 'InternalError', message: 'Failed to fetch city containers' } }, 500);
   }
 }
 
@@ -2877,6 +3016,20 @@ export default {
     if (cityTabsMatch && request.method === 'GET') {
       const idOrSlug = cityTabsMatch[1];
       const res = await handleListCityTabs(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const cityDistrictsMatch = path.match(/^\/v1\/content\/cities\/([^/]+)\/districts$/);
+    if (cityDistrictsMatch && request.method === 'GET') {
+      const idOrSlug = cityDistrictsMatch[1];
+      const res = await handleListCityDistricts(env, url, idOrSlug, logger);
+      res.headers.set('X-Request-ID', requestId);
+      return res;
+    }
+    const cityContainersMatch = path.match(/^\/v1\/content\/cities\/([^/]+)\/containers$/);
+    if (cityContainersMatch && request.method === 'GET') {
+      const idOrSlug = cityContainersMatch[1];
+      const res = await handleListCityContainers(env, url, idOrSlug, logger);
       res.headers.set('X-Request-ID', requestId);
       return res;
     }

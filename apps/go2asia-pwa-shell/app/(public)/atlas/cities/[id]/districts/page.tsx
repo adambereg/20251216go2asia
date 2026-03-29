@@ -1,6 +1,6 @@
-import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
+import { CityDistrictsTab } from '@/modules/atlas/components/CityDistrictsTab';
 
 export default function CityDistrictsPage() {
-  return <AtlasTabContent entityType="city" tabKey="districts" title="Районы" />;
+  return <CityDistrictsTab />;
 }
 

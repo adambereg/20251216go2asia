@@ -321,6 +321,49 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/content/cities/{idOrSlug}/districts:
+    get:
+      tags: [content]
+      operationId: listCityDistricts
+      summary: List city districts (public)
+      parameters:
+        - $ref: "#/components/parameters/CityIdOrSlug"
+        - $ref: "#/components/parameters/IncludeUnpublished"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCityDistrictsResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/content/cities/{idOrSlug}/containers:
+    get:
+      tags: [content]
+      operationId: listCityPlaceContainers
+      summary: List city place containers (public)
+      parameters:
+        - $ref: "#/components/parameters/CityIdOrSlug"
+        - $ref: "#/components/parameters/DistrictIdOrSlug"
+        - $ref: "#/components/parameters/IncludeUnpublished"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPlaceContainersResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /v1/content/places:
     get:
       tags: [content]
@@ -565,6 +608,18 @@ components:
         type: integer
         minimum: 1
         maximum: 200
+    DistrictIdOrSlug:
+      name: district
+      in: query
+      required: false
+      schema:
+        type: string
+    IncludeUnpublished:
+      name: includeUnpublished
+      in: query
+      required: false
+      schema:
+        type: boolean
 
   responses:
     Unauthorized:
@@ -699,6 +754,24 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContentPlaceDto"
+
+    ListCityDistrictsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentCityDistrictDto"
+
+    ListPlaceContainersResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentPlaceContainerDto"
 
     ListArticlesResponse:
       type: object
@@ -1115,6 +1188,76 @@ components:
           type: string
           nullable: true
 
+    ContentCityDistrictDto:
+      type: object
+      required: [id, countryId, cityId, slug, name, sortOrder, isPublished]
+      properties:
+        id:
+          type: string
+        countryId:
+          type: string
+        cityId:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        nameLocal:
+          type: string
+          nullable: true
+        descriptionShort:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        isPublished:
+          type: boolean
+        latitude:
+          type: string
+          nullable: true
+        longitude:
+          type: string
+          nullable: true
+
+    ContentPlaceContainerDto:
+      type: object
+      required: [id, countryId, cityId, districtId, slug, name, containerType, isPublished]
+      properties:
+        id:
+          type: string
+        countryId:
+          type: string
+        cityId:
+          type: string
+        districtId:
+          type: string
+        districtSlug:
+          type: string
+          nullable: true
+        districtName:
+          type: string
+          nullable: true
+        slug:
+          type: string
+        name:
+          type: string
+        containerType:
+          type: string
+        descriptionShort:
+          type: string
+          nullable: true
+        latitude:
+          type: string
+          nullable: true
+        longitude:
+          type: string
+          nullable: true
+        isPublished:
+          type: boolean
+
     ContentPlaceDto:
       type: object
       required: [id, slug, name, type, kind, photos]
@@ -1156,6 +1299,27 @@ components:
           type: string
           nullable: true
         cityId:
+          type: string
+          nullable: true
+        districtId:
+          type: string
+          nullable: true
+        districtSlug:
+          type: string
+          nullable: true
+        districtName:
+          type: string
+          nullable: true
+        containerId:
+          type: string
+          nullable: true
+        containerSlug:
+          type: string
+          nullable: true
+        containerName:
+          type: string
+          nullable: true
+        containerType:
           type: string
           nullable: true
         description:

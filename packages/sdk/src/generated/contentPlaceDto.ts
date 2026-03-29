@@ -17,11 +17,25 @@ export interface ContentPlaceDto {
   /** @nullable */
   cityId?: string | null;
   /** @nullable */
+  containerId?: string | null;
+  /** @nullable */
+  containerName?: string | null;
+  /** @nullable */
+  containerSlug?: string | null;
+  /** @nullable */
+  containerType?: string | null;
+  /** @nullable */
   country?: string | null;
   /** @nullable */
   countryId?: string | null;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  districtId?: string | null;
+  /** @nullable */
+  districtName?: string | null;
+  /** @nullable */
+  districtSlug?: string | null;
   /** @nullable */
   googleMapsUrl?: string | null;
   /** @nullable */

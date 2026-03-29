@@ -80,6 +80,37 @@ export interface ContentCityDto {
   heroImage: string | null;
 }
 
+export interface ContentCityDistrictDto {
+  id: string;
+  countryId: string;
+  cityId: string;
+  slug: string;
+  name: string;
+  nameLocal: string | null;
+  descriptionShort: string | null;
+  bodyMarkdown: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  latitude: string | null;
+  longitude: string | null;
+}
+
+export interface ContentPlaceContainerDto {
+  id: string;
+  countryId: string;
+  cityId: string;
+  districtId: string;
+  districtSlug: string | null;
+  districtName: string | null;
+  slug: string;
+  name: string;
+  containerType: string;
+  descriptionShort: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  isPublished: boolean;
+}
+
 export interface ContentPlaceDto {
   id: string;
   slug: string;
@@ -95,6 +126,13 @@ export interface ContentPlaceDto {
   priceLevel: string | null;
   countryId: string | null;
   cityId: string | null;
+  districtId: string | null;
+  districtSlug: string | null;
+  districtName: string | null;
+  containerId: string | null;
+  containerSlug: string | null;
+  containerName: string | null;
+  containerType: string | null;
   description: string | null;
   country: string | null;
   city: string | null;
@@ -283,6 +321,45 @@ export async function listCityTabs(
   if (params?.tabKey) sp.set('tabKey', params.tabKey);
   const qs = sp.toString() ? `?${sp.toString()}` : '';
   return customInstance<ListResponse<ContentTabDto>>({ method: 'GET' }, `/v1/content/cities/${idOrSlug}/tabs${qs}`);
+}
+
+/**
+ * Atlas: list city districts (public)
+ */
+export async function listCityDistricts(
+  idOrSlug: string,
+  params?: { includeUnpublished?: boolean; limit?: number }
+): Promise<ListResponse<ContentCityDistrictDto>> {
+  const sp = new URLSearchParams();
+  if (typeof params?.includeUnpublished === 'boolean') {
+    sp.set('includeUnpublished', String(params.includeUnpublished));
+  }
+  if (params?.limit) sp.set('limit', String(params.limit));
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentCityDistrictDto>>(
+    { method: 'GET' },
+    `/v1/content/cities/${idOrSlug}/districts${qs}`
+  );
+}
+
+/**
+ * Atlas: list city place containers (public)
+ */
+export async function listCityPlaceContainers(
+  idOrSlug: string,
+  params?: { district?: string; includeUnpublished?: boolean; limit?: number }
+): Promise<ListResponse<ContentPlaceContainerDto>> {
+  const sp = new URLSearchParams();
+  if (params?.district) sp.set('district', params.district);
+  if (typeof params?.includeUnpublished === 'boolean') {
+    sp.set('includeUnpublished', String(params.includeUnpublished));
+  }
+  if (params?.limit) sp.set('limit', String(params.limit));
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return customInstance<ListResponse<ContentPlaceContainerDto>>(
+    { method: 'GET' },
+    `/v1/content/cities/${idOrSlug}/containers${qs}`
+  );
 }
 
 /**
