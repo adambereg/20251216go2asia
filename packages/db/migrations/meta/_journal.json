@@ -218,6 +218,13 @@
       "when": 1775200000000,
       "tag": "0028_krabi_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1775300000000,
+      "tag": "0029_pattaya_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,8 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'phuket',
   'kbi',
   'krabi',
+  'pty',
+  'pattaya',
 ]);
 
 export default function CityPlacesPage() {
