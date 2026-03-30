@@ -190,6 +190,13 @@
       "when": 1774850000000,
       "tag": "0024_bangkok_district_editorial_content_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1774940000000,
+      "tag": "0025_chiang_mai_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }
