@@ -677,10 +677,11 @@ export async function listPlaceContainers(
  */
 export async function listPlaces(
   sql: SqlClient,
-  params?: { cityId?: string; countryId?: string; kind?: string; limit?: number }
+  params?: { cityId?: string; countryId?: string; districtId?: string; kind?: string; limit?: number }
 ): Promise<PlaceRow[]> {
   const cityId = params?.cityId ?? null;
   const countryId = params?.countryId ?? null;
+  const districtId = params?.districtId ?? null;
   const kind = params?.kind ?? null;
   const limit = Math.min(500, Math.max(1, params?.limit ?? 100));
 
@@ -723,6 +724,7 @@ export async function listPlaces(
     LEFT JOIN media_files m ON p.hero_media_id = m.id
     WHERE (${cityId}::text IS NULL OR p.city_id = ${cityId})
       AND (${countryId}::text IS NULL OR p.country_id = ${countryId})
+      AND (${districtId}::text IS NULL OR p.district_id = ${districtId})
       AND (${kind}::text IS NULL OR p.place_kind = ${kind})
     ORDER BY p.name
     LIMIT ${limit}

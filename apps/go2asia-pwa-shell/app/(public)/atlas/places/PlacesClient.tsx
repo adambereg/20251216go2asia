@@ -8,6 +8,7 @@ import { Globe, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { AtlasMainNav } from '@/modules/atlas';
 import { AtlasSearchBar } from '@/modules/atlas';
 import { useGetPlaces, useGetCountries, useGetCities } from '@go2asia/sdk/atlas';
+import { listCityDistricts, type ContentCityDistrictDto } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
@@ -26,6 +27,7 @@ const MAX_LIMIT = 500; // API max limit
 type KindFilter = 'all' | 'showplace' | 'business';
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'photo_first';
 type CategoryFilter = '' | CategoryKey;
+const BANGKOK_CITY_KEYS = new Set(['bkk', 'bangkok']);
 
 export function PlacesClient() {
   const dataSource = getDataSource();
@@ -40,6 +42,7 @@ export function PlacesClient() {
     const kindParam = searchParams.get('kind') || 'all';
     const countryId = searchParams.get('countryId') || '';
     const cityId = searchParams.get('cityId') || '';
+    const district = searchParams.get('district') || '';
     const withPhotos = searchParams.get('withPhotos') === '1';
     
     // Парсим tags из CSV формата
@@ -53,6 +56,7 @@ export function PlacesClient() {
       kind: (kindParam === 'showplace' || kindParam === 'business' ? kindParam : 'all') as KindFilter,
       countryId,
       cityId,
+      district,
       withPhotos,
     };
   }, [searchParams]);
@@ -65,6 +69,9 @@ export function PlacesClient() {
   // Фильтры - инициализируем из URL
   const [selectedCountryId, setSelectedCountryId] = useState<string>(urlFilters.countryId);
   const [selectedCityId, setSelectedCityId] = useState<string>(urlFilters.cityId);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>(urlFilters.district);
+  const [cityDistricts, setCityDistricts] = useState<ContentCityDistrictDto[]>([]);
+  const [isCityDistrictsLoading, setIsCityDistrictsLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(urlFilters.tags);
   const [isTagsExpanded, setIsTagsExpanded] = useState<boolean>(false);
   const [onlyWithPhotos, setOnlyWithPhotos] = useState<boolean>(urlFilters.withPhotos);
@@ -77,6 +84,7 @@ export function PlacesClient() {
     setKind(urlFilters.kind);
     setSelectedCountryId(urlFilters.countryId);
     setSelectedCityId(urlFilters.cityId);
+    setSelectedDistrict(urlFilters.district);
     setSelectedTags(urlFilters.tags);
     setOnlyWithPhotos(urlFilters.withPhotos);
     setSelectedCategory(urlFilters.categoryKey);
@@ -88,6 +96,33 @@ export function PlacesClient() {
     countryId: selectedCountryId || undefined, // Если страна не выбрана, загружаем все города
     enabled: dataSource === 'api',
   });
+  const isBangkokCitySelected = BANGKOK_CITY_KEYS.has((selectedCityId || '').toLowerCase());
+
+  useEffect(() => {
+    if (dataSource !== 'api' || !selectedCityId || !isBangkokCitySelected) {
+      setCityDistricts([]);
+      setIsCityDistrictsLoading(false);
+      return;
+    }
+    let active = true;
+    setIsCityDistrictsLoading(true);
+    const loadDistricts = async () => {
+      try {
+        const response = await listCityDistricts(selectedCityId, { limit: 100 });
+        if (!active) return;
+        setCityDistricts(response.items ?? []);
+      } catch {
+        if (!active) return;
+        setCityDistricts([]);
+      } finally {
+        if (active) setIsCityDistrictsLoading(false);
+      }
+    };
+    loadDistricts();
+    return () => {
+      active = false;
+    };
+  }, [dataSource, selectedCityId, isBangkokCitySelected]);
   
   // Загружаем места из API с текущим лимитом и фильтрами
   const { 
@@ -97,6 +132,7 @@ export function PlacesClient() {
   } = useGetPlaces({
     countryId: selectedCountryId || undefined,
     cityId: selectedCityId || undefined,
+    district: selectedCityId && isBangkokCitySelected && selectedDistrict ? selectedDistrict : undefined,
     kind: dataSource === 'api' && kind !== 'all' ? kind : undefined,
     limit: displayLimit,
     enabled: dataSource === 'api',
@@ -119,6 +155,7 @@ export function PlacesClient() {
     tags?: Set<string>;
     countryId?: string;
     cityId?: string;
+    district?: string;
     withPhotos?: boolean;
   }) => {
     const params = new URLSearchParams();
@@ -137,6 +174,9 @@ export function PlacesClient() {
     }
     if (filters.cityId) {
       params.set('cityId', filters.cityId);
+    }
+    if (filters.district) {
+      params.set('district', filters.district);
     }
     if (filters.withPhotos) {
       params.set('withPhotos', '1');
@@ -158,14 +198,16 @@ export function PlacesClient() {
       tags: selectedTags,
       countryId: selectedCountryId,
       cityId: selectedCityId,
+      district: selectedDistrict,
       withPhotos: onlyWithPhotos,
     });
-  }, [selectedCategory, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
+  }, [selectedCategory, selectedTags, selectedCountryId, selectedCityId, selectedDistrict, onlyWithPhotos, updateURLWithFilters]);
 
   // Обработчики фильтров
   const handleCountryChange = useCallback((countryId: string) => {
     setSelectedCountryId(countryId);
     setSelectedCityId(''); // Сбрасываем город при смене страны
+    setSelectedDistrict('');
     setDisplayLimit(INITIAL_LIMIT);
     updateURLWithFilters({ 
       kind,
@@ -173,12 +215,14 @@ export function PlacesClient() {
       tags: selectedTags,
       countryId,
       cityId: '', // Сбрасываем город
+      district: '',
       withPhotos: onlyWithPhotos,
     });
   }, [kind, selectedCategory, selectedTags, onlyWithPhotos, updateURLWithFilters]);
 
   const handleCityChange = useCallback((cityId: string) => {
     setSelectedCityId(cityId);
+    setSelectedDistrict('');
     setDisplayLimit(INITIAL_LIMIT);
     updateURLWithFilters({ 
       kind,
@@ -186,9 +230,24 @@ export function PlacesClient() {
       tags: selectedTags,
       countryId: selectedCountryId,
       cityId,
+      district: '',
       withPhotos: onlyWithPhotos,
     });
   }, [kind, selectedCategory, selectedTags, selectedCountryId, onlyWithPhotos, updateURLWithFilters]);
+
+  const handleDistrictChange = useCallback((district: string) => {
+    setSelectedDistrict(district);
+    setDisplayLimit(INITIAL_LIMIT);
+    updateURLWithFilters({
+      kind,
+      categoryKey: selectedCategory,
+      tags: selectedTags,
+      countryId: selectedCountryId,
+      cityId: selectedCityId,
+      district,
+      withPhotos: onlyWithPhotos,
+    });
+  }, [kind, selectedCategory, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
 
   const handleTagToggle = useCallback((tag: string) => {
     setSelectedTags((prev) => {
@@ -205,11 +264,12 @@ export function PlacesClient() {
         tags: next,
         countryId: selectedCountryId,
         cityId: selectedCityId,
+        district: selectedDistrict,
         withPhotos: onlyWithPhotos,
       });
       return next;
     });
-  }, [kind, selectedCategory, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
+  }, [kind, selectedCategory, selectedCountryId, selectedCityId, selectedDistrict, onlyWithPhotos, updateURLWithFilters]);
 
   const handleCategoryChange = useCallback((category: CategoryFilter) => {
     setSelectedCategory(category);
@@ -220,13 +280,15 @@ export function PlacesClient() {
       tags: selectedTags,
       countryId: selectedCountryId,
       cityId: selectedCityId,
+      district: selectedDistrict,
       withPhotos: onlyWithPhotos,
     });
-  }, [kind, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
+  }, [kind, selectedTags, selectedCountryId, selectedCityId, selectedDistrict, onlyWithPhotos, updateURLWithFilters]);
 
   const handleClearFilters = useCallback(() => {
     setSelectedCountryId('');
     setSelectedCityId('');
+    setSelectedDistrict('');
     setSelectedTags(new Set());
     setOnlyWithPhotos(false);
     setSortBy('default');
@@ -245,9 +307,10 @@ export function PlacesClient() {
       tags: selectedTags,
       countryId: selectedCountryId,
       cityId: selectedCityId,
+      district: selectedDistrict,
       withPhotos: newValue,
     });
-  }, [kind, selectedCategory, selectedTags, selectedCountryId, selectedCityId, onlyWithPhotos, updateURLWithFilters]);
+  }, [kind, selectedCategory, selectedTags, selectedCountryId, selectedCityId, selectedDistrict, onlyWithPhotos, updateURLWithFilters]);
 
   const handleSortChange = useCallback((next: SortOption) => {
     setSortBy(next);
@@ -566,6 +629,33 @@ export function PlacesClient() {
           </div>
 
           <div className="flex items-center gap-2">
+            <label htmlFor="district-filter" className="text-sm font-medium text-slate-700">
+              Район:
+            </label>
+            <select
+              id="district-filter"
+              value={selectedDistrict}
+              onChange={(e) => handleDistrictChange(e.target.value)}
+              disabled={!selectedCityId || !isBangkokCitySelected || isCityDistrictsLoading}
+              className="px-3 py-1.5 text-sm border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {!selectedCityId ? (
+                <option value="">Сначала выберите город</option>
+              ) : !isBangkokCitySelected ? (
+                <option value="">Доступно только для Bangkok pilot</option>
+              ) : (
+                <option value="">{isCityDistrictsLoading ? 'Загрузка районов...' : 'Все районы'}</option>
+              )}
+              {isBangkokCitySelected &&
+                cityDistricts.map((district) => (
+                  <option key={district.id} value={district.slug}>
+                    {district.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
             <label htmlFor="category-filter" className="text-sm font-medium text-slate-700">
               Категория:
             </label>
@@ -626,6 +716,7 @@ export function PlacesClient() {
           {(kind !== 'all' ||
             selectedCountryId ||
             selectedCityId ||
+            selectedDistrict ||
             selectedCategory ||
             selectedTags.size > 0 ||
             onlyWithPhotos ||

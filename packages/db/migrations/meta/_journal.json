@@ -183,6 +183,13 @@
       "when": 1774700000000,
       "tag": "0023_atlas_bangkok_backfill_target_hotfix",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1774850000000,
+      "tag": "0024_bangkok_district_editorial_content_sync",
+      "breakpoints": true
     }
   ]
 }

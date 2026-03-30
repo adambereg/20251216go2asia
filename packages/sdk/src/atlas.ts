@@ -140,6 +140,7 @@ export const useGetCityById = (idOrSlug: string) => {
 export const useGetPlaces = (_params?: {
   cityId?: string;
   countryId?: string;
+  district?: string;
   kind?: 'showplace' | 'business';
   limit?: number;
   cursor?: string;
@@ -148,6 +149,7 @@ export const useGetPlaces = (_params?: {
   const sp = new URLSearchParams();
   if (_params?.cityId) sp.set('cityId', _params.cityId);
   if (_params?.countryId) sp.set('countryId', _params.countryId);
+  if (_params?.district) sp.set('district', _params.district);
   if (_params?.kind) sp.set('kind', _params.kind);
   if (_params?.limit) sp.set('limit', String(_params.limit));
   const enabled = typeof _params?.enabled === 'boolean' ? _params.enabled : true;
@@ -159,6 +161,7 @@ export const useGetPlaces = (_params?: {
       {
         cityId: _params?.cityId ?? null,
         countryId: _params?.countryId ?? null,
+        district: _params?.district ?? null,
         kind: _params?.kind ?? null,
         limit: _params?.limit ?? null,
       },

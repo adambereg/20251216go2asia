@@ -57,6 +57,8 @@ export default function PlaceOverviewPage() {
     photos: allPhotos,
     cityName: placeData.city ?? null,
     countryName: placeData.country ?? null,
+    districtName: placeData.districtName ?? null,
+    containerName: placeData.containerName ?? null,
     category: placeData.category ?? null,
     tags: placeData.tags ?? [],
     address: placeData.address ?? null,

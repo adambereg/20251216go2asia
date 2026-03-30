@@ -20,6 +20,8 @@ export interface PlaceLandingData {
   photos: string[];
   cityName: string | null;
   countryName: string | null;
+  districtName: string | null;
+  containerName: string | null;
   category: string | null;
   tags: string[];
   address: string | null;
@@ -284,6 +286,27 @@ function CategoryBadge({ categoryKey, kind }: { categoryKey: string | null; kind
   );
 }
 
+function DistrictContextRow({ data }: { data: PlaceLandingData }) {
+  if (!data.districtName && !data.containerName) return null;
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+        {data.districtName ? (
+          <span className="rounded-full bg-slate-100 px-3 py-1">
+            Район: <span className="font-medium text-slate-900">{data.districtName}</span>
+          </span>
+        ) : null}
+        {data.containerName ? (
+          <span className="rounded-full bg-slate-100 px-3 py-1">
+            Контейнер: <span className="font-medium text-slate-900">{data.containerName}</span>
+          </span>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 function MetaRow({ data }: { data: PlaceLandingData }) {
   // Prefer lat/lng (new), fallback to latitude/longitude (legacy) for backward compatibility
   const coords = (data.lat && data.lng) 
@@ -430,6 +453,7 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
       <PhotoStrip data={data} />
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
+      <DistrictContextRow data={data} />
       <MetaRow data={data} />
       <LeadDescription text={data.description} />
       {sections.length === 0 && hasOverview ? (
@@ -504,6 +528,7 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
       <PhotoStrip data={data} />
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
+      <DistrictContextRow data={data} />
       <MetaRow data={data} />
       <LeadDescription text={data.description} />
       {sections.length === 0 && hasOverview ? (
