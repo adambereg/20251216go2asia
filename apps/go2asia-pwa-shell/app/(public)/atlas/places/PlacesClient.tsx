@@ -27,7 +27,7 @@ const MAX_LIMIT = 500; // API max limit
 type KindFilter = 'all' | 'showplace' | 'business';
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'photo_first';
 type CategoryFilter = '' | CategoryKey;
-const BANGKOK_CITY_KEYS = new Set(['bkk', 'bangkok']);
+const DISTRICT_PILOT_CITY_KEYS = new Set(['bkk', 'bangkok', 'cnx', 'chiang-mai', 'chiangmai']);
 
 export function PlacesClient() {
   const dataSource = getDataSource();
@@ -96,10 +96,10 @@ export function PlacesClient() {
     countryId: selectedCountryId || undefined, // Если страна не выбрана, загружаем все города
     enabled: dataSource === 'api',
   });
-  const isBangkokCitySelected = BANGKOK_CITY_KEYS.has((selectedCityId || '').toLowerCase());
+  const isDistrictPilotCitySelected = DISTRICT_PILOT_CITY_KEYS.has((selectedCityId || '').toLowerCase());
 
   useEffect(() => {
-    if (dataSource !== 'api' || !selectedCityId || !isBangkokCitySelected) {
+    if (dataSource !== 'api' || !selectedCityId || !isDistrictPilotCitySelected) {
       setCityDistricts([]);
       setIsCityDistrictsLoading(false);
       return;
@@ -122,7 +122,7 @@ export function PlacesClient() {
     return () => {
       active = false;
     };
-  }, [dataSource, selectedCityId, isBangkokCitySelected]);
+  }, [dataSource, selectedCityId, isDistrictPilotCitySelected]);
   
   // Загружаем места из API с текущим лимитом и фильтрами
   const { 
@@ -132,7 +132,7 @@ export function PlacesClient() {
   } = useGetPlaces({
     countryId: selectedCountryId || undefined,
     cityId: selectedCityId || undefined,
-    district: selectedCityId && isBangkokCitySelected && selectedDistrict ? selectedDistrict : undefined,
+    district: selectedCityId && isDistrictPilotCitySelected && selectedDistrict ? selectedDistrict : undefined,
     kind: dataSource === 'api' && kind !== 'all' ? kind : undefined,
     limit: displayLimit,
     enabled: dataSource === 'api',
@@ -636,17 +636,17 @@ export function PlacesClient() {
               id="district-filter"
               value={selectedDistrict}
               onChange={(e) => handleDistrictChange(e.target.value)}
-              disabled={!selectedCityId || !isBangkokCitySelected || isCityDistrictsLoading}
+              disabled={!selectedCityId || !isDistrictPilotCitySelected || isCityDistrictsLoading}
               className="px-3 py-1.5 text-sm border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-70"
             >
               {!selectedCityId ? (
                 <option value="">Сначала выберите город</option>
-              ) : !isBangkokCitySelected ? (
-                <option value="">Доступно только для Bangkok pilot</option>
+              ) : !isDistrictPilotCitySelected ? (
+                <option value="">Доступно только для pilot cities</option>
               ) : (
                 <option value="">{isCityDistrictsLoading ? 'Загрузка районов...' : 'Все районы'}</option>
               )}
-              {isBangkokCitySelected &&
+              {isDistrictPilotCitySelected &&
                 cityDistricts.map((district) => (
                   <option key={district.id} value={district.slug}>
                     {district.name}
