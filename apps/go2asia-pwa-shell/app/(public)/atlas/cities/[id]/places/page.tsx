@@ -25,6 +25,8 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'krabi',
   'pty',
   'pattaya',
+  'usm',
+  'samui',
 ]);
 
 export default function CityPlacesPage() {
