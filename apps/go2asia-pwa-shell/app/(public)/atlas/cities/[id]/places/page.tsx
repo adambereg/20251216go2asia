@@ -27,6 +27,23 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'pattaya',
   'usm',
   'samui',
+  'pnh',
+  'phnom-penh',
+  'phnompenh',
+  'bat',
+  'battambang',
+  'kch',
+  'kampong-cham',
+  'kampongcham',
+  'kmp',
+  'kampot',
+  'kps',
+  'sihanoukville',
+  'kra',
+  'kratie',
+  'rep',
+  'siem-reap',
+  'siemreap',
 ]);
 
 export default function CityPlacesPage() {
