@@ -44,6 +44,18 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'rep',
   'siem-reap',
   'siemreap',
+  'jkt',
+  'jakarta',
+  'bali',
+  'denpasar',
+  'jog',
+  'yog',
+  'yogyakarta',
+  'lbj',
+  'labuan-bajo',
+  'labuanbajo',
+  'lom',
+  'lombok',
 ]);
 
 export default function CityPlacesPage() {
