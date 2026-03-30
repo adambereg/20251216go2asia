@@ -197,6 +197,13 @@
       "when": 1774940000000,
       "tag": "0025_chiang_mai_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1775030000000,
+      "tag": "0026_hua_hin_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }

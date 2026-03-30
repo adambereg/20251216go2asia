@@ -10,7 +10,16 @@ import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
 
-const DISTRICT_PILOT_CITY_KEYS = new Set(['bkk', 'bangkok', 'cnx', 'chiang-mai', 'chiangmai']);
+const DISTRICT_PILOT_CITY_KEYS = new Set([
+  'bkk',
+  'bangkok',
+  'cnx',
+  'chiang-mai',
+  'chiangmai',
+  'hhn',
+  'hua-hin',
+  'huahin',
+]);
 
 export default function CityPlacesPage() {
   const params = useParams();

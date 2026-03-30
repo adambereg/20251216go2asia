@@ -27,7 +27,16 @@ const MAX_LIMIT = 500; // API max limit
 type KindFilter = 'all' | 'showplace' | 'business';
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'photo_first';
 type CategoryFilter = '' | CategoryKey;
-const DISTRICT_PILOT_CITY_KEYS = new Set(['bkk', 'bangkok', 'cnx', 'chiang-mai', 'chiangmai']);
+const DISTRICT_PILOT_CITY_KEYS = new Set([
+  'bkk',
+  'bangkok',
+  'cnx',
+  'chiang-mai',
+  'chiangmai',
+  'hhn',
+  'hua-hin',
+  'huahin',
+]);
 
 export function PlacesClient() {
   const dataSource = getDataSource();
