@@ -276,12 +276,14 @@ export async function listCities(params?: { countryId?: string }): Promise<ListR
 export async function listPlaces(params?: {
   cityId?: string;
   countryId?: string;
+  district?: string;
   kind?: 'showplace' | 'business';
   limit?: number;
 }): Promise<ListResponse<ContentPlaceDto>> {
   const sp = new URLSearchParams();
   if (params?.cityId) sp.set('cityId', params.cityId);
   if (params?.countryId) sp.set('countryId', params.countryId);
+  if (params?.district) sp.set('district', params.district);
   if (params?.kind) sp.set('kind', params.kind);
   if (params?.limit) sp.set('limit', String(params.limit));
   const qs = sp.toString() ? `?${sp.toString()}` : '';

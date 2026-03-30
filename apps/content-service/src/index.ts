@@ -1499,10 +1499,19 @@ async function handleListPlaces(env: Env, url: URL, logger: ReturnType<typeof cr
   if (!sqlClient) return json({ error: { code: 'ServiceUnavailable', message: 'Database not configured' } }, 503);
   const cityId = url.searchParams.get('cityId') ?? undefined;
   const countryId = url.searchParams.get('countryId') ?? undefined;
+  const districtIdOrSlug = (url.searchParams.get('district') ?? url.searchParams.get('districtId') ?? '').trim();
   const kind = url.searchParams.get('kind') ?? undefined;
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') ?? '100') || 100));
   try {
-    const rows = await listPlaces(sqlClient, { cityId, countryId, kind, limit });
+    if (districtIdOrSlug && !cityId) {
+      return json({ error: { code: 'BadRequest', message: 'cityId is required when district filter is set' } }, 400);
+    }
+    const districtId =
+      districtIdOrSlug && cityId ? await getCityDistrictIdByIdOrSlug(sqlClient, cityId, districtIdOrSlug) : null;
+    if (districtIdOrSlug && !districtId) {
+      return json({ error: { code: 'NotFound', message: 'District not found for city' } }, 404);
+    }
+    const rows = await listPlaces(sqlClient, { cityId, countryId, districtId: districtId ?? undefined, kind, limit });
     const items = await Promise.all(rows.map((r) => toContentPlaceWithMedia(env, r)));
     return json({ items } satisfies ListResponse<ContentPlaceDto>, 200);
   } catch (error) {
