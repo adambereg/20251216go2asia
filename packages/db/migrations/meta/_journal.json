@@ -246,6 +246,13 @@
       "when": 1775600000000,
       "tag": "0032_indonesia_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1775700000000,
+      "tag": "0033_laos_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }

@@ -56,6 +56,19 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'labuanbajo',
   'lom',
   'lombok',
+  'vte',
+  'vientiane',
+  'lpq',
+  'luang-prabang',
+  'luangprabang',
+  'pkz',
+  'pakse',
+  'svn',
+  'svk',
+  'savannakhet',
+  'vvg',
+  'vang-vieng',
+  'vangvieng',
 ]);
 
 export default function CityPlacesPage() {
