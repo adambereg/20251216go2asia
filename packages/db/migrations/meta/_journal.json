@@ -190,6 +190,48 @@
       "when": 1774850000000,
       "tag": "0024_bangkok_district_editorial_content_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1774940000000,
+      "tag": "0025_chiang_mai_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1775030000000,
+      "tag": "0026_hua_hin_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1775120000000,
+      "tag": "0027_phuket_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1775200000000,
+      "tag": "0028_krabi_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1775300000000,
+      "tag": "0029_pattaya_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1775400000000,
+      "tag": "0030_samui_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }

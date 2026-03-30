@@ -10,7 +10,24 @@ import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
 
-const BANGKOK_CITY_KEYS = new Set(['bkk', 'bangkok']);
+const DISTRICT_PILOT_CITY_KEYS = new Set([
+  'bkk',
+  'bangkok',
+  'cnx',
+  'chiang-mai',
+  'chiangmai',
+  'hhn',
+  'hua-hin',
+  'huahin',
+  'hkt',
+  'phuket',
+  'kbi',
+  'krabi',
+  'pty',
+  'pattaya',
+  'usm',
+  'samui',
+]);
 
 export default function CityPlacesPage() {
   const params = useParams();
@@ -23,10 +40,10 @@ export default function CityPlacesPage() {
   const [isDistrictsLoading, setIsDistrictsLoading] = useState(false);
 
   const districtFromUrl = (searchParams.get('district') ?? '').trim();
-  const isBangkokScope = BANGKOK_CITY_KEYS.has((cityId ?? '').toLowerCase());
+  const isDistrictPilotCity = DISTRICT_PILOT_CITY_KEYS.has((cityId ?? '').toLowerCase());
 
   useEffect(() => {
-    if (dataSource !== 'api' || !isBangkokScope || !cityId) {
+    if (dataSource !== 'api' || !isDistrictPilotCity || !cityId) {
       setDistricts([]);
       setIsDistrictsLoading(false);
       return;
@@ -50,7 +67,7 @@ export default function CityPlacesPage() {
     return () => {
       active = false;
     };
-  }, [cityId, dataSource, isBangkokScope]);
+  }, [cityId, dataSource, isDistrictPilotCity]);
 
   const selectedDistrict = useMemo(
     () => districts.find((district) => district.slug === districtFromUrl || district.id === districtFromUrl) ?? null,
@@ -74,7 +91,7 @@ export default function CityPlacesPage() {
 
   const { data: placesData, isLoading } = useGetPlaces({
     cityId: dataSource === 'api' ? cityId : undefined,
-    district: dataSource === 'api' && isBangkokScope ? selectedDistrict?.id ?? undefined : undefined,
+    district: dataSource === 'api' && isDistrictPilotCity ? selectedDistrict?.id ?? undefined : undefined,
     kind: dataSource === 'api' ? kind : undefined,
     limit: 50,
     enabled: dataSource === 'api',
@@ -113,7 +130,7 @@ export default function CityPlacesPage() {
           Заведения
         </Chip>
       </div>
-      {dataSource === 'api' && isBangkokScope ? (
+      {dataSource === 'api' && isDistrictPilotCity ? (
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="city-district-filter" className="text-sm font-medium text-slate-700">
             Район:
