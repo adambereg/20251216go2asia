@@ -4746,6 +4746,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/CityId"
         - $ref: "#/components/parameters/CountryId"
+        - $ref: "#/components/parameters/DistrictIdOrSlug"
         - $ref: "#/components/parameters/PlaceKind"
         - $ref: "#/components/parameters/Limit"
       responses:

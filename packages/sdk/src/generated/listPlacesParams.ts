@@ -8,12 +8,14 @@
  */
 import type { CityIdParameter } from "./cityIdParameter";
 import type { CountryIdParameter } from "./countryIdParameter";
+import type { DistrictIdOrSlugParameter } from "./districtIdOrSlugParameter";
 import type { PlaceKindParameter } from "./placeKindParameter";
 import type { LimitParameter } from "./limitParameter";
 
 export type ListPlacesParams = {
   cityId?: CityIdParameter;
   countryId?: CountryIdParameter;
+  district?: DistrictIdOrSlugParameter;
   kind?: PlaceKindParameter;
   /**
    * @minimum 1
