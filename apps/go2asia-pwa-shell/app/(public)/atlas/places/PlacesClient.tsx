@@ -38,6 +38,8 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'huahin',
   'hkt',
   'phuket',
+  'kbi',
+  'krabi',
 ]);
 
 export function PlacesClient() {

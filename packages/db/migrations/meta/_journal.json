@@ -211,6 +211,13 @@
       "when": 1775120000000,
       "tag": "0027_phuket_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1775200000000,
+      "tag": "0028_krabi_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }
