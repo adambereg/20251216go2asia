@@ -19,6 +19,8 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'hhn',
   'hua-hin',
   'huahin',
+  'hkt',
+  'phuket',
 ]);
 
 export default function CityPlacesPage() {
