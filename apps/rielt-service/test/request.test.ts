@@ -1107,6 +1107,8 @@ describe('rielt-service scaffold', () => {
             listing_title: 'Listing Two',
             listing_country_id: 'th',
             listing_city_id: 'bangkok',
+            listing_atlas_place_id: 'atlas_place_1',
+            listing_atlas_container_place_id: null,
           },
         ],
       })
@@ -1121,7 +1123,10 @@ describe('rielt-service scaffold', () => {
       { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: authSecret }
     );
     const body = await readJson<{
-      items: Array<{ id: string; listing: { slug: string; geo: { countryId: string } } }>;
+      items: Array<{
+        id: string;
+        listing: { slug: string; geo: { countryId: string; atlasPlaceId: string | null; atlasContainerPlaceId: string | null } };
+      }>;
       pagination: { total: number };
     }>(response);
 
@@ -1129,6 +1134,8 @@ describe('rielt-service scaffold', () => {
     expect(body.items[0]?.id).toBe('inq_2');
     expect(body.items[0]?.listing.slug).toBe('listing-two');
     expect(body.items[0]?.listing.geo.countryId).toBe('th');
+    expect(body.items[0]?.listing.geo.atlasPlaceId).toBe('atlas_place_1');
+    expect(body.items[0]?.listing.geo.atlasContainerPlaceId).toBeNull();
     expect(body.pagination.total).toBe(1);
   });
 

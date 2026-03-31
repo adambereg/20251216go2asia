@@ -281,6 +281,13 @@
       "when": 1776100000000,
       "tag": "0037_vietnam_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1776200000000,
+      "tag": "0038_rielt_rf_refs_optional_v1",
+      "breakpoints": true
     }
   ]
 }

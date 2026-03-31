@@ -3310,6 +3310,14 @@ components:
             - day
             - total
           type: string
+        rf_offer_id:
+          maxLength: 80
+          nullable: true
+          type: string
+        rf_partner_id:
+          maxLength: 80
+          nullable: true
+          type: string
         slug:
           type: string
         title:
@@ -3646,6 +3654,8 @@ components:
           format: date-time
           nullable: true
           type: string
+        rfContext:
+          $ref: "#/components/schemas/RieltRfContext"
         slug:
           type: string
         specs:
@@ -3769,6 +3779,14 @@ components:
             - day
             - total
           type: string
+        rf_offer_id:
+          maxLength: 80
+          nullable: true
+          type: string
+        rf_partner_id:
+          maxLength: 80
+          nullable: true
+          type: string
         slug:
           type: string
         status:
@@ -3820,6 +3838,18 @@ components:
         - version
         - checks
         - missing
+      type: object
+    RieltRfContext:
+      properties:
+        rfOfferId:
+          nullable: true
+          type: string
+        rfPartnerId:
+          nullable: true
+          type: string
+      required:
+        - rfPartnerId
+        - rfOfferId
       type: object
     SpaceActivityFeedItem:
       properties:

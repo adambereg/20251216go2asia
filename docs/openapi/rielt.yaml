@@ -682,6 +682,17 @@ components:
           items:
             type: string
 
+    RieltRfContext:
+      type: object
+      required: [rfPartnerId, rfOfferId]
+      properties:
+        rfPartnerId:
+          type: string
+          nullable: true
+        rfOfferId:
+          type: string
+          nullable: true
+
     RieltOwnerListing:
       type: object
       required: [id, slug, title, listingType, status, price, geo, specs]
@@ -704,6 +715,8 @@ components:
           $ref: "#/components/schemas/RieltPrice"
         geo:
           $ref: "#/components/schemas/RieltOwnerGeo"
+        rfContext:
+          $ref: "#/components/schemas/RieltRfContext"
         specs:
           $ref: "#/components/schemas/RieltOwnerSpecs"
         createdAt:
@@ -948,6 +961,14 @@ components:
         atlas_container_place_id:
           type: string
           nullable: true
+        rf_partner_id:
+          type: string
+          maxLength: 80
+          nullable: true
+        rf_offer_id:
+          type: string
+          maxLength: 80
+          nullable: true
         area_text:
           type: string
           nullable: true
@@ -1010,6 +1031,14 @@ components:
           nullable: true
         atlas_container_place_id:
           type: string
+          nullable: true
+        rf_partner_id:
+          type: string
+          maxLength: 80
+          nullable: true
+        rf_offer_id:
+          type: string
+          maxLength: 80
           nullable: true
         area_text:
           type: string
