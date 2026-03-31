@@ -1,7 +1,7 @@
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { requireGatewayOrigin, type GatewayPrincipal } from './middleware/auth';
-import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
+import { errorResponse, getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
 import { handleRfRoute } from './routes/rf';
 
 export interface Env {
@@ -86,7 +86,15 @@ export default {
         }
       }
 
-      response = (await handleRfRoute(request, env, requestId, principal)) ?? handleNotFound(path, requestId);
+      const rfResponse = await handleRfRoute(request, env, requestId, principal);
+      if (rfResponse) {
+        response = rfResponse;
+      } else if (path.startsWith('/v1/rf/')) {
+        // Keep RF route misses machine-readable for downstream consumers.
+        response = errorResponse('RF_ROUTE_NOT_FOUND', 'RF route not found', requestId, 404);
+      } else {
+        response = handleNotFound(path, requestId);
+      }
       return withRequestId(response, requestId);
     } catch (error) {
       logger.error('Unhandled error', error, { method: request.method, path });

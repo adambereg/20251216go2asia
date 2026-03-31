@@ -5,7 +5,11 @@ info:
   version: 0.1.0
   description: >
     Downstream API contract for RF runtime baseline (Step 11).
-    Covers live partner/offer/voucher/pro-link practical surfaces.
+    Covers implemented partner/offer/voucher/pro-link practical surfaces only.
+    Planned/extended RF API surface is tracked in docs/architecture/rf/rf_openapi_outline_v1.md
+    and is not implied as implemented by this file.
+    Note: root health paths (/health, /version, /ready) are intentionally excluded from
+    docs/openapi/openapi.bundle.yaml by bundle rules (only /v1/* and /internal/*).
 
 servers:
   - url: https://staging.api.go2asia.space
@@ -19,6 +23,52 @@ servers:
 tags:
   - name: health
   - name: rf
+    description: >
+      Runtime-implemented RF baseline for downstream consumption.
+      Use this tag contract for integration; treat outline-only endpoints as planned.
+    x-go2asia-rf:
+      contractClass: runtime-implemented
+      plannedSurfaceDoc: docs/architecture/rf/rf_openapi_outline_v1.md
+      stableRefPolicy:
+        partnerId:
+          wireFormat: string
+          opaque: true
+          assignedBy: rf-service
+        offerId:
+          wireFormat: string
+          opaque: true
+          assignedBy: rf-service
+        voucherId:
+          wireFormat: string
+          opaque: true
+          assignedBy: rf-service
+        proLinkId:
+          wireFormat: string
+          opaque: true
+          assignedBy: rf-service
+        branchId:
+          presentInThisContract: false
+          firstSlicePolicy: >
+            Downstream first-slice integrations must not require branchId until
+            branch runtime surface is explicitly added to this OpenAPI contract.
+      consumerSeam:
+        normativeHttpPaths:
+          - /v1/rf/partners
+          - /v1/rf/partners/{partnerId}
+          - /v1/rf/offers
+          - /v1/rf/offers/{offerId}
+          - /v1/rf/business/partners
+          - /v1/rf/business/partners/{partnerId}/offers
+          - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
+          - /v1/rf/offers/{offerId}/claim
+          - /v1/rf/me/vouchers
+          - /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem
+          - /v1/rf/pro/links
+          - /v1/rf/pro/links/{proLinkId}/accept
+        explicitlyOutOfScopeInThisSpec:
+          - /v1/rf/branches
+          - /v1/rf/internal/*
+          - moderation and verification workflow endpoints beyond current baseline
 
 paths:
   /health:

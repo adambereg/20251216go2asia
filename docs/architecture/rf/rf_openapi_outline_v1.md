@@ -2,9 +2,13 @@
 
 **Project:** Go2Asia  
 **Domain:** Russian Friendly / RF  
-**Document role:** SSOT API outline for `rf-service`  
+**Document role:** target API outline for `rf-service` (planned surface)  
 **Status:** Draft v1  
 **Purpose:** Define the canonical API surface, endpoint groups, DTO direction, lifecycle operations, and boundary rules for `rf-service`.
+
+> Contract position note: this outline is broader than the currently implemented runtime API.
+> For machine-readable implemented contract use `docs/openapi/rf.yaml`.
+> `docs/openapi/openapi.bundle.yaml` includes only paths allowed by bundle rules.
 
 ---
 
