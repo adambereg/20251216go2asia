@@ -69,6 +69,20 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'vvg',
   'vang-vieng',
   'vangvieng',
+  'kll',
+  'kul',
+  'kuala-lumpur',
+  'kualalumpur',
+  'lgk',
+  'langkawi',
+  'mkz',
+  'mlk',
+  'malacca',
+  'melaka',
+  'png',
+  'penang',
+  'george-town',
+  'georgetown',
 ]);
 
 export default function CityPlacesPage() {
