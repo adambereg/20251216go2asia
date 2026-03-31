@@ -177,46 +177,52 @@ Used for:
 
 ## 3. District
 
-`District` is the canonical intra-city geo layer **where district-level precision is meaningful** for routing, filtering, nearby logic, partner placement, listings, and social geo-tagging.
+`District` is the canonical **sub-city or sub-region geo layer** used to represent meaningful localized zones inside a broader geo parent.
 
-District is a first-class geo entity in the canon, but its adoption may be **partial during bridge-compatible stages** of migration and enrichment.
+A district is **not limited to an official administrative city district**.  
+In Go2Asia, `District` may represent any stable, user-meaningful, geo-coherent zone that is smaller than its parent geo entity and useful for navigation, filtering, nearby logic, listings, partner placement, recommendations, and social geo-tagging.
+
+### A district may represent:
+- an intra-city district or neighborhood,
+- a named urban zone,
+- a waterfront / old town / business / nightlife / expat area,
+- a resort zone,
+- a beach area,
+- a peninsula / bay-side zone,
+- a meaningful sub-island area,
+- another stable local area that functions as a practical geographic unit for the product.
+
+### Parent rule
+A district must belong to exactly one canonical parent geo entity.
+
+Its parent may be:
+- a `city`, where city-level structure exists and is meaningful;
+- or another canonical geo container explicitly allowed by the model (for example an island-level or territory-like parent), where city structure is weak, absent, or not the most useful operational layer.
 
 ### District rules
-- A district belongs to exactly one city.
-- A district must have a stable `id`.
-- A district should have a stable public `slug`.
-- A district should have coordinates (centroid is acceptable if exact boundary geometry is not yet available).
-- Other modules must not invent free-text district identities if a canonical district exists.
-- If district-level precision is required by the use case, downstream modules must reference `district_id`.
-- If district data is not yet enriched for a given record, this must be treated as **explicit enrichment debt**, not as permission to create competing free-text geography.
+- `district.id` must be stable.
+- `district.slug` should be stable for routing.
+- `district.title` must be human-readable.
+- `district` should have coordinates (centroid acceptable during bridge-compatible stages).
+- `district` must not be invented ad hoc in downstream modules.
+- free-text local area labels must not compete with canonical district entities once a district exists.
+- if district-level precision is operationally important for a use case, downstream modules should reference `district_id`.
 
-### Role
-Used for:
-- precise neighborhood-level geography;
-- Rielt listing precision;
-- partner location precision;
-- place organization inside cities;
-- later KG relation quality and nearby relevance.
+### Product meaning
+`District` is a **canonical local zone layer**, not merely an administrative label.
 
-### Required fields
-- `id`
-- `country_id`
-- `city_id`
-- `slug`
-- `name_ru`
-- `name_en`
-- `coordinates_lat`
-- `coordinates_lng`
-- `canonical_status`
-- `updated_at`
+Its purpose is to make the ecosystem geographically consistent and operationally useful across:
+- Atlas,
+- Pulse,
+- Rielt,
+- RF,
+- Space,
+- Guru,
+- Quest.
 
-### Optional fields
-- `alt_names_json`
-- `viewport_json`
-- `source_type`
-- `trust_score`
-- `freshness_score`
-- `created_by`
+### Bridge-compatible note
+During migration or enrichment, some records may still lack district linkage.
+That state should be treated as **explicit geo-enrichment debt**, not as permission to recreate competing free-text geography.
 
 ---
 
