@@ -232,6 +232,55 @@
       "when": 1775400000000,
       "tag": "0030_samui_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1775500000000,
+      "tag": "0031_cambodia_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1775600000000,
+      "tag": "0032_indonesia_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1775700000000,
+      "tag": "0033_laos_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1775800000000,
+      "tag": "0034_malaysia_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1775900000000,
+      "tag": "0035_philippines_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1776000000000,
+      "tag": "0036_singapore_districts_containers_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1776100000000,
+      "tag": "0037_vietnam_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }
