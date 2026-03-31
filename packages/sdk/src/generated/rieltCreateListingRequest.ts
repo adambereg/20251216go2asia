@@ -48,6 +48,16 @@ export interface RieltCreateListingRequest {
   /** @pattern ^[A-Z]{3}$ */
   price_currency: string;
   price_period: RieltCreateListingRequestPricePeriod;
+  /**
+   * @maxLength 80
+   * @nullable
+   */
+  rf_offer_id?: string | null;
+  /**
+   * @maxLength 80
+   * @nullable
+   */
+  rf_partner_id?: string | null;
   slug: string;
   title: string;
 }

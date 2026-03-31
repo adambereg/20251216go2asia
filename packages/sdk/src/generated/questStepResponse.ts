@@ -7,6 +7,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestStepRequirement } from "./questStepRequirement";
+import type { QuestStepTargetType } from "./questStepTargetType";
 import type { QuestStepType } from "./questStepType";
 import type { QuestVerificationType } from "./questVerificationType";
 
@@ -24,7 +25,7 @@ export interface QuestStepResponse {
   /** @nullable */
   targetId?: string | null;
   /** @nullable */
-  targetType?: string | null;
+  targetType?: QuestStepTargetType;
   type: QuestStepType;
   verificationType: QuestVerificationType;
 }

@@ -7,10 +7,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestStepRequirement } from "./questStepRequirement";
+import type { QuestStepTargetType } from "./questStepTargetType";
 import type { QuestStepType } from "./questStepType";
 import type { QuestVerificationType } from "./questVerificationType";
 
-export interface AddQuestStepRequest {
+export type AddQuestStepRequest = unknown & {
   /** @minimum 1 */
   order: number;
   requirements?: QuestStepRequirement;
@@ -22,7 +23,27 @@ export interface AddQuestStepRequest {
   /** @nullable */
   targetId?: string | null;
   /** @nullable */
-  targetType?: string | null;
+  targetType?: QuestStepTargetType;
   type: QuestStepType;
   verificationType: QuestVerificationType;
-}
+} & Required<
+    Pick<
+      unknown & {
+        /** @minimum 1 */
+        order: number;
+        requirements?: QuestStepRequirement;
+        /**
+         * @minimum 0
+         * @nullable
+         */
+        rewardPoints?: number | null;
+        /** @nullable */
+        targetId?: string | null;
+        /** @nullable */
+        targetType?: QuestStepTargetType;
+        type: QuestStepType;
+        verificationType: QuestVerificationType;
+      },
+      "order" | "type" | "verificationType"
+    >
+  >;
