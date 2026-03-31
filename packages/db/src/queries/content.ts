@@ -34,6 +34,8 @@ export interface EventRow {
   category: string | null;
   country_slug: string | null;
   city_slug: string | null;
+  country_id: string | null;
+  city_id: string | null;
   country_name: string | null;
   city_name: string | null;
   year: number | null;
@@ -268,6 +270,8 @@ export async function listEvents(
       e.category,
       e.country_slug,
       e.city_slug,
+      e.country_id,
+      e.city_id,
       COALESCE(e.country_name, co.name) AS country_name,
       COALESCE(e.city_name, ci.name) AS city_name,
       e.year,
@@ -347,6 +351,8 @@ export async function getEventByIdOrSlug(sql: SqlClient, idOrSlug: string): Prom
       e.category,
       e.country_slug,
       e.city_slug,
+      e.country_id,
+      e.city_id,
       COALESCE(e.country_name, co.name) AS country_name,
       COALESCE(e.city_name, ci.name) AS city_name,
       e.year,

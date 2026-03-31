@@ -1124,11 +1124,19 @@ components:
         category:
           nullable: true
           type: string
+        cityId:
+          description: Canonical Atlas city identifier for event geography grounding.
+          nullable: true
+          type: string
         cityName:
           nullable: true
           type: string
         citySlug:
           description: Canonical geo reference key for city-level event linkage in content surfaces.
+          nullable: true
+          type: string
+        countryId:
+          description: Canonical Atlas country identifier for event geography grounding.
           nullable: true
           type: string
         countryName:
@@ -1146,6 +1154,11 @@ components:
           items:
             type: string
           type: array
+        geoScope:
+          description: |
+            Machine-readable location scope from event source/import semantics (for example point, city, country, regional). Used to distinguish place-bound vs area/city/diffuse scenarios without forcing fake place assignment.
+          nullable: true
+          type: string
         heroMediaKey:
           description: R2 object key for the event hero image.
           nullable: true
@@ -1159,12 +1172,14 @@ components:
         isVerified:
           type: boolean
         latitude:
+          description: Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
           nullable: true
           type: string
         location:
           nullable: true
           type: string
         longitude:
+          description: Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
           nullable: true
           type: string
         officialUrl:
@@ -1174,6 +1189,14 @@ components:
           nullable: true
           type: string
         priceCurrency:
+          nullable: true
+          type: string
+        primaryType:
+          description: Source-level primary event type classification.
+          nullable: true
+          type: string
+        secondaryType:
+          description: Source-level secondary event type classification.
           nullable: true
           type: string
         seoDescription:
@@ -1207,10 +1230,15 @@ components:
         - location
         - latitude
         - longitude
+        - countryId
+        - cityId
         - countrySlug
         - citySlug
         - countryName
         - cityName
+        - geoScope
+        - primaryType
+        - secondaryType
         - year
         - heroMediaKey
         - galleryMediaKeys
@@ -4733,6 +4761,96 @@ paths:
       operationId: listEvents
       parameters:
         - $ref: "#/components/parameters/Limit"
+        - description: Zero-based offset for pagination.
+          in: query
+          name: offset
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+        - description: 1-based page alias. Ignored when `offset` is provided.
+          in: query
+          name: page
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+        - description: Country slug or country id (alias of `country_id`).
+          in: query
+          name: country
+          required: false
+          schema:
+            type: string
+        - description: Country id alias for `country`.
+          in: query
+          name: country_id
+          required: false
+          schema:
+            type: string
+        - description: City slug or city id (alias of `city_id`).
+          in: query
+          name: city
+          required: false
+          schema:
+            type: string
+        - description: City id alias for `city`.
+          in: query
+          name: city_id
+          required: false
+          schema:
+            type: string
+        - description: Event category filter.
+          in: query
+          name: category
+          required: false
+          schema:
+            type: string
+        - description: Include events whose active window ends after this timestamp.
+          in: query
+          name: date_from
+          required: false
+          schema:
+            format: date-time
+            type: string
+        - description: Include events whose start is before this timestamp.
+          in: query
+          name: date_to
+          required: false
+          schema:
+            format: date-time
+            type: string
+        - description: Price filter. Defaults to `any`.
+          in: query
+          name: price
+          required: false
+          schema:
+            enum:
+              - free
+              - paid
+              - any
+            type: string
+        - description: Verification filter. Defaults to `any`.
+          in: query
+          name: verified
+          required: false
+          schema:
+            enum:
+              - "true"
+              - "false"
+              - any
+            type: string
+        - description: Search query over event title and description.
+          in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - description: Legacy alias for `q`.
+          in: query
+          name: search
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           content:

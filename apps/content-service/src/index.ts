@@ -104,10 +104,15 @@ export interface ContentEventDto {
   location: string | null;
   latitude: string | null;
   longitude: string | null;
+  countryId: string | null;
+  cityId: string | null;
   countrySlug: string | null;
   citySlug: string | null;
   countryName: string | null;
   cityName: string | null;
+  geoScope: string | null;
+  primaryType: string | null;
+  secondaryType: string | null;
   year: number | null;
   heroMediaKey: string | null; // R2 object key (relative path)
   galleryMediaKeys: string[]; // R2 object keys (never JSON string)
@@ -868,10 +873,15 @@ function toContentEvent(row: EventRow): ContentEventDto {
     location: row.location ?? (locationParts.length > 0 ? locationParts : null),
     latitude: row.lat,
     longitude: row.lng,
+    countryId: row.country_id ?? null,
+    cityId: row.city_id ?? null,
     countrySlug: row.country_slug ?? null,
     citySlug: row.city_slug ?? null,
     countryName: row.country_name ?? null,
     cityName: row.city_name ?? null,
+    geoScope: row.geo_scope ?? null,
+    primaryType: row.primary_type ?? null,
+    secondaryType: row.secondary_type ?? null,
     year: row.year ?? null,
     heroMediaKey,
     galleryMediaKeys,

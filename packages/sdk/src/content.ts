@@ -19,10 +19,15 @@ export interface ContentEventDto {
   location: string | null;
   latitude: string | null;
   longitude: string | null;
+  countryId: string | null;
+  cityId: string | null;
   countrySlug: string | null;
   citySlug: string | null;
   countryName: string | null;
   cityName: string | null;
+  geoScope: string | null;
+  primaryType: string | null;
+  secondaryType: string | null;
   year: number | null;
   heroMediaKey: string | null;
   galleryMediaKeys: string[];
