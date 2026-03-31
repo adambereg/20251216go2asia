@@ -96,6 +96,9 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'tag',
   'bohol',
   'tagbilaran',
+  'sgp',
+  'sin',
+  'singapore',
 ]);
 
 export default function CityPlacesPage() {

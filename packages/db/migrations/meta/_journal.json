@@ -267,6 +267,13 @@
       "when": 1775900000000,
       "tag": "0035_philippines_districts_containers_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1776000000000,
+      "tag": "0036_singapore_districts_containers_foundation",
+      "breakpoints": true
     }
   ]
 }
