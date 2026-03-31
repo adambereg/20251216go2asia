@@ -83,6 +83,19 @@ const DISTRICT_PILOT_CITY_KEYS = new Set([
   'penang',
   'george-town',
   'georgetown',
+  'mnl',
+  'manila',
+  'boracay',
+  'ceb',
+  'cebu',
+  'dumaguete',
+  'pps',
+  'palawan',
+  'puerto-princesa',
+  'puertoprincesa',
+  'tag',
+  'bohol',
+  'tagbilaran',
 ]);
 
 export default function CityPlacesPage() {
