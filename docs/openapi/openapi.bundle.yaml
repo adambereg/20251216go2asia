@@ -746,6 +746,21 @@ components:
         - balance
       type: object
     AddQuestStepRequest:
+      allOf:
+        - if:
+            properties:
+              type:
+                const: visit_partner
+          then:
+            properties:
+              targetId:
+                minLength: 1
+                type: string
+              targetType:
+                const: partner
+            required:
+              - targetType
+              - targetId
       properties:
         order:
           minimum: 1
@@ -760,8 +775,8 @@ components:
           nullable: true
           type: string
         targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
-          type: string
         type:
           $ref: "#/components/schemas/QuestStepType"
         verificationType:
@@ -2376,8 +2391,8 @@ components:
           nullable: true
           type: string
         targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
-          type: string
         type:
           $ref: "#/components/schemas/QuestStepType"
         verificationType:
@@ -2389,6 +2404,13 @@ components:
         - type
         - verificationType
       type: object
+    QuestStepTargetType:
+      enum:
+        - place
+        - event
+        - partner
+        - space_post
+      type: string
     QuestStepType:
       enum:
         - visit_place
@@ -6786,7 +6808,17 @@ tags:
     name: points
   - description: Service-to-service APIs (authenticated)
     name: internal
-  - name: quests
+  - description: Quest runtime baseline contract.
+    name: quests
+    x-go2asia-quest-rf:
+      visitPartnerSeam:
+        stepType: visit_partner
+        targetIdPolicy:
+          opaque: true
+          requiredForVisitPartner: true
+          stableRefSource: docs/openapi/rf.yaml#/tags/rf/x-go2asia-rf/stableRefPolicy/partnerId
+          wireFormat: string
+        targetType: partner
   - description: |
       Runtime-implemented RF baseline for downstream consumption. Use this tag contract for integration; treat outline-only endpoints as planned.
     name: rf

@@ -823,4 +823,68 @@ describe('quest-service v1', () => {
       })
     );
   });
+
+  it('rejects addQuestStep with unsupported targetType', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const proJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/steps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': proJwt,
+        },
+        body: JSON.stringify({
+          order: 1,
+          type: 'visit_partner',
+          targetType: 'business',
+          targetId: 'rf_partner_1',
+          verificationType: 'manual',
+          requirements: {},
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects visit_partner step when targetId is not stable opaque ref', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const proJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/steps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': proJwt,
+        },
+        body: JSON.stringify({
+          order: 1,
+          type: 'visit_partner',
+          targetType: 'partner',
+          targetId: 'rf partner 1',
+          verificationType: 'manual',
+          requirements: {},
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
 });

@@ -27,6 +27,7 @@ import {
   type QuestProofType,
   type QuestRow,
   type QuestStepRow,
+  type QuestTargetType,
   type QuestStepType,
   type QuestSubmissionRow,
   type QuestVerificationType,
@@ -57,7 +58,7 @@ type CreateQuestInput = {
 type AddQuestStepInput = {
   order: number;
   type: QuestStepType;
-  targetType: string | null;
+  targetType: QuestTargetType | null;
   targetId: string | null;
   verificationType: QuestVerificationType;
   requirements: Record<string, unknown>;
@@ -88,6 +89,7 @@ const QUEST_STEP_TYPES: QuestStepType[] = [
 ];
 const QUEST_VERIFICATION_TYPES: QuestVerificationType[] = ['auto', 'geo', 'qr', 'manual', 'space_post'];
 const QUEST_PROOF_TYPES: QuestProofType[] = ['photo', 'geo', 'qr', 'space_post', 'text'];
+const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'space_post'];
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -182,6 +184,13 @@ function parseOptionalString(value: unknown, maxLength: number): string | null |
   return trimmed.slice(0, maxLength);
 }
 
+function parseOptionalOpaqueRef(value: unknown, maxLength: number): string | null | undefined {
+  const parsed = parseOptionalString(value, maxLength);
+  if (parsed === undefined || parsed === null) return parsed;
+  if (!/^\S+$/.test(parsed)) return undefined;
+  return parsed;
+}
+
 function parseOptionalNonNegativeInt(value: unknown): number | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
@@ -269,8 +278,14 @@ function parseAddQuestStepInput(body: Record<string, unknown> | null): AddQuestS
   ) {
     return null;
   }
-  const targetType = parseOptionalString(body.targetType, 80);
-  const targetId = parseOptionalString(body.targetId, 160);
+  const targetTypeRaw = parseOptionalString(body.targetType, 80);
+  const targetType =
+    targetTypeRaw === null || targetTypeRaw === undefined
+      ? targetTypeRaw
+      : QUEST_TARGET_TYPES.includes(targetTypeRaw as QuestTargetType)
+        ? (targetTypeRaw as QuestTargetType)
+        : undefined;
+  const targetId = parseOptionalOpaqueRef(body.targetId, 80);
   const requirements = body.requirements === undefined ? {} : parseOptionalObject(body.requirements);
   const rewardPoints = body.rewardPoints === undefined ? null : parseOptionalNonNegativeInt(body.rewardPoints);
   if (targetType === undefined || targetId === undefined || requirements === undefined || requirements === null || rewardPoints === undefined) {
@@ -316,6 +331,7 @@ function validateStepDefinition(input: AddQuestStepInput): string | null {
   if (input.type === 'visit_place' && input.targetType !== 'place') return 'visit_place step requires targetType=place';
   if (input.type === 'attend_event' && input.targetType !== 'event') return 'attend_event step requires targetType=event';
   if (input.type === 'visit_partner' && input.targetType !== 'partner') return 'visit_partner step requires targetType=partner';
+  if (input.type === 'visit_partner' && !input.targetId) return 'visit_partner step requires targetId as stable RF partner reference';
   if (input.type === 'space_action' && input.targetType !== 'space_post') return 'space_action step requires targetType=space_post';
 
   if (input.type === 'space_action' && input.verificationType !== 'space_post') {
