@@ -126,6 +126,10 @@ function toOwnerListingDto(row: OwnerListingRow) {
       lng: toNumber(row.lng),
       areaText: row.area_text,
     },
+    rfContext: {
+      rfPartnerId: row.rf_partner_id ?? null,
+      rfOfferId: row.rf_offer_id ?? null,
+    },
     specs: {
       bedrooms: row.bedrooms,
       bathrooms: row.bathrooms,
@@ -167,6 +171,8 @@ function toMyInquiryDto(row: MyInquiryRow) {
       geo: {
         countryId: row.listing_country_id,
         cityId: row.listing_city_id,
+        atlasPlaceId: row.listing_atlas_place_id ?? null,
+        atlasContainerPlaceId: row.listing_atlas_container_place_id ?? null,
       },
     },
   };
@@ -196,6 +202,10 @@ function toPatchPayload(input: PatchListingInput): PatchOwnerListingInput {
     atlasPlaceId: input.atlasPlaceId ?? null,
     atlasContainerPlaceIdSet: input.atlasContainerPlaceId !== undefined,
     atlasContainerPlaceId: input.atlasContainerPlaceId ?? null,
+    rfPartnerIdSet: input.rfPartnerId !== undefined,
+    rfPartnerId: input.rfPartnerId ?? null,
+    rfOfferIdSet: input.rfOfferId !== undefined,
+    rfOfferId: input.rfOfferId ?? null,
     areaTextSet: input.areaText !== undefined,
     areaText: input.areaText ?? null,
     latSet: input.lat !== undefined,
@@ -375,6 +385,8 @@ export async function createOwnedListing(
       cityId: input.cityId,
       atlasPlaceId: input.atlasPlaceId,
       atlasContainerPlaceId: input.atlasContainerPlaceId,
+      rfPartnerId: input.rfPartnerId,
+      rfOfferId: input.rfOfferId,
       areaText: input.areaText,
       lat: input.lat,
       lng: input.lng,
@@ -436,6 +448,8 @@ export async function patchOwnedListing(
     patchInput.atlasContainerPlaceId !== undefined
       ? patchInput.atlasContainerPlaceId
       : (listing.atlas_container_place_id ?? null);
+  const nextRfPartnerId = patchInput.rfPartnerId !== undefined ? patchInput.rfPartnerId : (listing.rf_partner_id ?? null);
+  const nextRfOfferId = patchInput.rfOfferId !== undefined ? patchInput.rfOfferId : (listing.rf_offer_id ?? null);
   const geoValidation = await validateAtlasGeoLinks(db, {
     countryId: nextCountryId,
     cityId: nextCityId,
@@ -444,6 +458,9 @@ export async function patchOwnedListing(
   });
   if (!geoValidation.ok) {
     return errorResponse(geoValidation.code, geoValidation.message, requestId, 400);
+  }
+  if (nextRfOfferId !== null && nextRfPartnerId === null) {
+    return errorResponse('VALIDATION_ERROR', 'rf_offer_id requires rf_partner_id', requestId, 400);
   }
 
   const isAdmin = hasAnyRole(principal, ADMIN_ROLES);

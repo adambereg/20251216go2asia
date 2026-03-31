@@ -47,6 +47,16 @@ export interface RieltPatchListingRequest {
   /** @pattern ^[A-Z]{3}$ */
   price_currency?: string;
   price_period?: RieltPatchListingRequestPricePeriod;
+  /**
+   * @maxLength 80
+   * @nullable
+   */
+  rf_offer_id?: string | null;
+  /**
+   * @maxLength 80
+   * @nullable
+   */
+  rf_partner_id?: string | null;
   slug?: string;
   status?: RieltPatchListingRequestStatus;
   title?: string;

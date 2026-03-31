@@ -51,6 +51,8 @@ export type OwnerListingRow = {
   city_id: string | null;
   atlas_place_id: string | null;
   atlas_container_place_id: string | null;
+  rf_partner_id: string | null;
+  rf_offer_id: string | null;
   area_text: string | null;
   lat: number | string | null;
   lng: number | string | null;
@@ -89,6 +91,8 @@ export type MyInquiryRow = InquiryRow & {
   listing_title: string;
   listing_country_id: string;
   listing_city_id: string | null;
+  listing_atlas_place_id: string | null;
+  listing_atlas_container_place_id: string | null;
 };
 
 type CountRow = { total: number };
@@ -217,6 +221,8 @@ export interface CreateOwnerListingInput {
   cityId: string | null;
   atlasPlaceId: string | null;
   atlasContainerPlaceId: string | null;
+  rfPartnerId: string | null;
+  rfOfferId: string | null;
   areaText: string | null;
   lat: number | null;
   lng: number | null;
@@ -258,6 +264,10 @@ export interface PatchOwnerListingInput {
   atlasPlaceId: string | null;
   atlasContainerPlaceIdSet: boolean;
   atlasContainerPlaceId: string | null;
+  rfPartnerIdSet: boolean;
+  rfPartnerId: string | null;
+  rfOfferIdSet: boolean;
+  rfOfferId: string | null;
   areaTextSet: boolean;
   areaText: string | null;
   latSet: boolean;
@@ -343,6 +353,8 @@ export async function createOwnerListing(
         city_id,
         atlas_place_id,
         atlas_container_place_id,
+        rf_partner_id,
+        rf_offer_id,
         area_text,
         lat,
         lng,
@@ -368,6 +380,8 @@ export async function createOwnerListing(
         ${input.cityId},
         ${input.atlasPlaceId},
         ${input.atlasContainerPlaceId},
+        ${input.rfPartnerId},
+        ${input.rfOfferId},
         ${input.areaText},
         ${input.lat},
         ${input.lng},
@@ -436,6 +450,8 @@ export async function createOwnerListing(
       l.city_id,
       l.atlas_place_id,
       l.atlas_container_place_id,
+      l.rf_partner_id,
+      l.rf_offer_id,
       l.area_text,
       l.lat,
       l.lng,
@@ -472,6 +488,8 @@ export async function getListingByIdForManage(db: DbExecutor, listingId: string)
       city_id,
       atlas_place_id,
       atlas_container_place_id,
+      rf_partner_id,
+      rf_offer_id,
       area_text,
       lat,
       lng,
@@ -530,6 +548,8 @@ export async function patchOwnerListingById(
       city_id = CASE WHEN ${p.cityIdSet}::boolean THEN ${p.cityId} ELSE city_id END,
       atlas_place_id = CASE WHEN ${p.atlasPlaceIdSet}::boolean THEN ${p.atlasPlaceId} ELSE atlas_place_id END,
       atlas_container_place_id = CASE WHEN ${p.atlasContainerPlaceIdSet}::boolean THEN ${p.atlasContainerPlaceId} ELSE atlas_container_place_id END,
+      rf_partner_id = CASE WHEN ${p.rfPartnerIdSet}::boolean THEN ${p.rfPartnerId} ELSE rf_partner_id END,
+      rf_offer_id = CASE WHEN ${p.rfOfferIdSet}::boolean THEN ${p.rfOfferId} ELSE rf_offer_id END,
       area_text = CASE WHEN ${p.areaTextSet}::boolean THEN ${p.areaText} ELSE area_text END,
       lat = CASE WHEN ${p.latSet}::boolean THEN ${p.lat} ELSE lat END,
       lng = CASE WHEN ${p.lngSet}::boolean THEN ${p.lng} ELSE lng END,
@@ -560,6 +580,8 @@ export async function patchOwnerListingById(
       city_id,
       atlas_place_id,
       atlas_container_place_id,
+      rf_partner_id,
+      rf_offer_id,
       area_text,
       lat,
       lng,
@@ -601,6 +623,8 @@ export async function archiveListingById(db: DbExecutor, listingId: string): Pro
       city_id,
       atlas_place_id,
       atlas_container_place_id,
+      rf_partner_id,
+      rf_offer_id,
       area_text,
       lat,
       lng,
@@ -645,6 +669,8 @@ export async function listActorVisibleListings(
       l.city_id,
       l.atlas_place_id,
       l.atlas_container_place_id,
+      l.rf_partner_id,
+      l.rf_offer_id,
       l.area_text,
       l.lat,
       l.lng,
@@ -1029,6 +1055,9 @@ export async function listMyInquiries(db: DbExecutor, input: ListMyInquiriesInpu
       l.title AS listing_title,
       l.country_id AS listing_country_id,
       l.city_id AS listing_city_id
+      ,
+      l.atlas_place_id AS listing_atlas_place_id,
+      l.atlas_container_place_id AS listing_atlas_container_place_id
     FROM rielt_listing_inquiry q
     JOIN rielt_listing l
       ON l.id = q.listing_id

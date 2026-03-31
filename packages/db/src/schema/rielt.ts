@@ -36,6 +36,8 @@ export const rieltListings = pgTable(
     cityId: text('city_id'),
     atlasPlaceId: text('atlas_place_id').references(() => places.id),
     atlasContainerPlaceId: text('atlas_container_place_id').references(() => places.id),
+    rfPartnerId: varchar('rf_partner_id', { length: 80 }),
+    rfOfferId: varchar('rf_offer_id', { length: 80 }),
     areaText: text('area_text'),
     lat: numeric('lat', { precision: 9, scale: 6 }),
     lng: numeric('lng', { precision: 9, scale: 6 }),
@@ -97,6 +99,18 @@ export const rieltListings = pgTable(
     atlasContainerDiffersFromPlaceCheck: check(
       'rielt_listing_atlas_container_differs_check',
       sql`(${table.atlasPlaceId} IS NULL OR ${table.atlasContainerPlaceId} IS NULL OR ${table.atlasPlaceId} <> ${table.atlasContainerPlaceId})`
+    ),
+    rfPartnerIdFormatCheck: check(
+      'rielt_listing_rf_partner_id_format_check',
+      sql`(${table.rfPartnerId} IS NULL OR (length(trim(${table.rfPartnerId})) > 0 AND position(' ' in ${table.rfPartnerId}) = 0))`
+    ),
+    rfOfferIdFormatCheck: check(
+      'rielt_listing_rf_offer_id_format_check',
+      sql`(${table.rfOfferId} IS NULL OR (length(trim(${table.rfOfferId})) > 0 AND position(' ' in ${table.rfOfferId}) = 0))`
+    ),
+    rfOfferRequiresPartnerCheck: check(
+      'rielt_listing_rf_offer_requires_partner_check',
+      sql`(${table.rfOfferId} IS NULL OR ${table.rfPartnerId} IS NOT NULL)`
     ),
     idxStatusCountryCityUpdatedAt: index('idx_rielt_listing_status_country_city_updated_at').on(
       table.status,

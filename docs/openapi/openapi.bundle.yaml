@@ -746,6 +746,21 @@ components:
         - balance
       type: object
     AddQuestStepRequest:
+      allOf:
+        - if:
+            properties:
+              type:
+                const: visit_partner
+          then:
+            properties:
+              targetId:
+                minLength: 1
+                type: string
+              targetType:
+                const: partner
+            required:
+              - targetType
+              - targetId
       properties:
         order:
           minimum: 1
@@ -760,8 +775,8 @@ components:
           nullable: true
           type: string
         targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
-          type: string
         type:
           $ref: "#/components/schemas/QuestStepType"
         verificationType:
@@ -2376,8 +2391,8 @@ components:
           nullable: true
           type: string
         targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
-          type: string
         type:
           $ref: "#/components/schemas/QuestStepType"
         verificationType:
@@ -2389,6 +2404,13 @@ components:
         - type
         - verificationType
       type: object
+    QuestStepTargetType:
+      enum:
+        - place
+        - event
+        - partner
+        - space_post
+      type: string
     QuestStepType:
       enum:
         - visit_place
@@ -3310,6 +3332,14 @@ components:
             - day
             - total
           type: string
+        rf_offer_id:
+          maxLength: 80
+          nullable: true
+          type: string
+        rf_partner_id:
+          maxLength: 80
+          nullable: true
+          type: string
         slug:
           type: string
         title:
@@ -3646,6 +3676,8 @@ components:
           format: date-time
           nullable: true
           type: string
+        rfContext:
+          $ref: "#/components/schemas/RieltRfContext"
         slug:
           type: string
         specs:
@@ -3769,6 +3801,14 @@ components:
             - day
             - total
           type: string
+        rf_offer_id:
+          maxLength: 80
+          nullable: true
+          type: string
+        rf_partner_id:
+          maxLength: 80
+          nullable: true
+          type: string
         slug:
           type: string
         status:
@@ -3820,6 +3860,18 @@ components:
         - version
         - checks
         - missing
+      type: object
+    RieltRfContext:
+      properties:
+        rfOfferId:
+          nullable: true
+          type: string
+        rfPartnerId:
+          nullable: true
+          type: string
+      required:
+        - rfPartnerId
+        - rfOfferId
       type: object
     SpaceActivityFeedItem:
       properties:
@@ -6756,8 +6808,62 @@ tags:
     name: points
   - description: Service-to-service APIs (authenticated)
     name: internal
-  - name: quests
-  - name: rf
+  - description: Quest runtime baseline contract.
+    name: quests
+    x-go2asia-quest-rf:
+      visitPartnerSeam:
+        stepType: visit_partner
+        targetIdPolicy:
+          opaque: true
+          requiredForVisitPartner: true
+          stableRefSource: docs/openapi/rf.yaml#/tags/rf/x-go2asia-rf/stableRefPolicy/partnerId
+          wireFormat: string
+        targetType: partner
+  - description: |
+      Runtime-implemented RF baseline for downstream consumption. Use this tag contract for integration; treat outline-only endpoints as planned.
+    name: rf
+    x-go2asia-rf:
+      consumerSeam:
+        explicitlyOutOfScopeInThisSpec:
+          - /v1/rf/branches
+          - /v1/rf/internal/*
+          - moderation and verification workflow endpoints beyond current baseline
+        normativeHttpPaths:
+          - /v1/rf/partners
+          - /v1/rf/partners/{partnerId}
+          - /v1/rf/offers
+          - /v1/rf/offers/{offerId}
+          - /v1/rf/business/partners
+          - /v1/rf/business/partners/{partnerId}/offers
+          - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
+          - /v1/rf/offers/{offerId}/claim
+          - /v1/rf/me/vouchers
+          - /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem
+          - /v1/rf/pro/links
+          - /v1/rf/pro/links/{proLinkId}/accept
+      contractClass: runtime-implemented
+      plannedSurfaceDoc: docs/architecture/rf/rf_openapi_outline_v1.md
+      stableRefPolicy:
+        branchId:
+          firstSlicePolicy: |
+            Downstream first-slice integrations must not require branchId until branch runtime surface is explicitly added to this OpenAPI contract.
+          presentInThisContract: false
+        offerId:
+          assignedBy: rf-service
+          opaque: true
+          wireFormat: string
+        partnerId:
+          assignedBy: rf-service
+          opaque: true
+          wireFormat: string
+        proLinkId:
+          assignedBy: rf-service
+          opaque: true
+          wireFormat: string
+        voucherId:
+          assignedBy: rf-service
+          opaque: true
+          wireFormat: string
   - name: reactions
   - name: rielt
   - name: feed

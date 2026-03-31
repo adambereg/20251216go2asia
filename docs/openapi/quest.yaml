@@ -19,6 +19,16 @@ servers:
 tags:
   - name: health
   - name: quests
+    description: Quest runtime baseline contract.
+    x-go2asia-quest-rf:
+      visitPartnerSeam:
+        stepType: visit_partner
+        targetType: partner
+        targetIdPolicy:
+          stableRefSource: docs/openapi/rf.yaml#/tags/rf/x-go2asia-rf/stableRefPolicy/partnerId
+          wireFormat: string
+          opaque: true
+          requiredForVisitPartner: true
 
 paths:
   /health:
@@ -578,6 +588,10 @@ components:
         - qr_code
         - space_action
 
+    QuestStepTargetType:
+      type: string
+      enum: [place, event, partner, space_post]
+
     QuestVerificationType:
       type: string
       enum: [auto, geo, qr, manual, space_post]
@@ -630,7 +644,7 @@ components:
         type:
           $ref: "#/components/schemas/QuestStepType"
         targetType:
-          type: string
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
         targetId:
           type: string
@@ -825,6 +839,19 @@ components:
     AddQuestStepRequest:
       type: object
       required: [order, type, verificationType]
+      allOf:
+        - if:
+            properties:
+              type:
+                const: visit_partner
+          then:
+            required: [targetType, targetId]
+            properties:
+              targetType:
+                const: partner
+              targetId:
+                type: string
+                minLength: 1
       properties:
         order:
           type: integer
@@ -832,7 +859,7 @@ components:
         type:
           $ref: "#/components/schemas/QuestStepType"
         targetType:
-          type: string
+          $ref: "#/components/schemas/QuestStepTargetType"
           nullable: true
         targetId:
           type: string

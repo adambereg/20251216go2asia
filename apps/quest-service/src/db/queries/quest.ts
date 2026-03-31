@@ -16,6 +16,7 @@ export type QuestStepType =
   | 'qr_code'
   | 'space_action';
 export type QuestVerificationType = 'auto' | 'geo' | 'qr' | 'manual' | 'space_post';
+export type QuestTargetType = 'place' | 'event' | 'partner' | 'space_post';
 export type QuestProgressStatus = 'not_started' | 'in_progress' | 'pending_review' | 'completed' | 'failed' | 'expired';
 export type QuestSubmissionStatus = 'pending' | 'approved' | 'rejected';
 export type QuestProofType = 'photo' | 'geo' | 'qr' | 'space_post' | 'text';
@@ -44,7 +45,7 @@ export type QuestStepRow = {
   quest_id: string;
   order: number;
   type: QuestStepType;
-  target_type: string | null;
+  target_type: QuestTargetType | null;
   target_id: string | null;
   verification_type: QuestVerificationType;
   requirements_json: Record<string, unknown>;
@@ -326,7 +327,7 @@ export async function insertQuestStep(
     questId: string;
     order: number;
     type: QuestStepType;
-    targetType: string | null;
+    targetType: QuestTargetType | null;
     targetId: string | null;
     verificationType: QuestVerificationType;
     requirementsJson: Record<string, unknown>;

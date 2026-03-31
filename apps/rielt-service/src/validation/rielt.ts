@@ -48,6 +48,8 @@ export interface CreateListingInput {
   cityId: string | null;
   atlasPlaceId: string | null;
   atlasContainerPlaceId: string | null;
+  rfPartnerId: string | null;
+  rfOfferId: string | null;
   areaText: string | null;
   lat: number | null;
   lng: number | null;
@@ -70,6 +72,8 @@ export interface PatchListingInput {
   cityId?: string | null;
   atlasPlaceId?: string | null;
   atlasContainerPlaceId?: string | null;
+  rfPartnerId?: string | null;
+  rfOfferId?: string | null;
   areaText?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -160,6 +164,13 @@ function parseOptionalTrimmedString(value: unknown, maxLength: number): string |
   const trimmed = value.trim();
   if (trimmed.length === 0) return null;
   return trimmed.slice(0, maxLength);
+}
+
+function parseOptionalRfRef(value: unknown): string | null | undefined {
+  const normalized = parseOptionalTrimmedString(value, 80);
+  if (normalized === undefined || normalized === null) return normalized;
+  if (!/^\S+$/.test(normalized)) return undefined;
+  return normalized;
 }
 
 function parseRequiredTrimmedString(value: unknown, maxLength: number): string | undefined {
@@ -340,6 +351,8 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
   const atlasPlaceId = body.atlas_place_id === undefined ? null : parseOptionalTrimmedString(body.atlas_place_id, 128);
   const atlasContainerPlaceId =
     body.atlas_container_place_id === undefined ? null : parseOptionalTrimmedString(body.atlas_container_place_id, 128);
+  const rfPartnerId = body.rf_partner_id === undefined ? null : parseOptionalRfRef(body.rf_partner_id);
+  const rfOfferId = body.rf_offer_id === undefined ? null : parseOptionalRfRef(body.rf_offer_id);
   const areaText = body.area_text === undefined ? null : parseOptionalTrimmedString(body.area_text, 160);
   const lat = body.lat === undefined ? null : parseOptionalNumber(body.lat);
   const lng = body.lng === undefined ? null : parseOptionalNumber(body.lng);
@@ -363,6 +376,8 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
     cityId === undefined ||
     atlasPlaceId === undefined ||
     atlasContainerPlaceId === undefined ||
+    rfPartnerId === undefined ||
+    rfOfferId === undefined ||
     areaText === undefined ||
     lat === undefined ||
     lng === undefined ||
@@ -378,6 +393,7 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
 
   if (!hasValidLatLngPair(lat, lng)) return null;
   if (atlasPlaceId !== null && atlasContainerPlaceId !== null && atlasPlaceId === atlasContainerPlaceId) return null;
+  if (rfOfferId !== null && rfPartnerId === null) return null;
 
   return {
     slug,
@@ -391,6 +407,8 @@ export function parseCreateListingInput(body: Record<string, unknown> | null): C
     cityId,
     atlasPlaceId,
     atlasContainerPlaceId,
+    rfPartnerId,
+    rfOfferId,
     areaText,
     lat,
     lng,
@@ -475,6 +493,18 @@ export function parsePatchListingInput(body: Record<string, unknown> | null): Pa
     updates.atlasContainerPlaceId = atlasContainerPlaceId;
     touched = true;
   }
+  if (body.rf_partner_id !== undefined) {
+    const rfPartnerId = parseOptionalRfRef(body.rf_partner_id);
+    if (rfPartnerId === undefined) return null;
+    updates.rfPartnerId = rfPartnerId;
+    touched = true;
+  }
+  if (body.rf_offer_id !== undefined) {
+    const rfOfferId = parseOptionalRfRef(body.rf_offer_id);
+    if (rfOfferId === undefined) return null;
+    updates.rfOfferId = rfOfferId;
+    touched = true;
+  }
   if (body.area_text !== undefined) {
     const areaText = parseOptionalTrimmedString(body.area_text, 160);
     if (areaText === undefined) return null;
@@ -534,6 +564,14 @@ export function parsePatchListingInput(body: Record<string, unknown> | null): Pa
     updates.atlasContainerPlaceId !== undefined &&
     updates.atlasPlaceId !== null &&
     updates.atlasPlaceId === updates.atlasContainerPlaceId
+  ) {
+    return null;
+  }
+  if (
+    updates.rfPartnerId !== undefined &&
+    updates.rfOfferId !== undefined &&
+    updates.rfOfferId !== null &&
+    updates.rfPartnerId === null
   ) {
     return null;
   }

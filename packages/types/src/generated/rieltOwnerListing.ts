@@ -8,6 +8,7 @@
  */
 import type { RieltOwnerGeo } from "./rieltOwnerGeo";
 import type { RieltPrice } from "./rieltPrice";
+import type { RieltRfContext } from "./rieltRfContext";
 import type { RieltOwnerSpecs } from "./rieltOwnerSpecs";
 import type { RieltOwnerListingStatus } from "./rieltOwnerListingStatus";
 
@@ -24,6 +25,7 @@ export interface RieltOwnerListing {
   price: RieltPrice;
   /** @nullable */
   publishedAt?: string | null;
+  rfContext?: RieltRfContext;
   slug: string;
   specs: RieltOwnerSpecs;
   status: RieltOwnerListingStatus;
