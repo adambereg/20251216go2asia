@@ -80,6 +80,90 @@ paths:
       summary: List events (public)
       parameters:
         - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: Zero-based offset for pagination.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: 1-based page alias. Ignored when `offset` is provided.
+        - name: country
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Country slug or country id (alias of `country_id`).
+        - name: country_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Country id alias for `country`.
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+          description: City slug or city id (alias of `city_id`).
+        - name: city_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: City id alias for `city`.
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Event category filter.
+        - name: date_from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include events whose active window ends after this timestamp.
+        - name: date_to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include events whose start is before this timestamp.
+        - name: price
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [free, paid, any]
+          description: Price filter. Defaults to `any`.
+        - name: verified
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false", any]
+          description: Verification filter. Defaults to `any`.
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search query over event title and description.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Legacy alias for `q`.
       responses:
         "200":
           description: OK
@@ -1039,10 +1123,15 @@ components:
           location,
           latitude,
           longitude,
+          countryId,
+          cityId,
           countrySlug,
           citySlug,
           countryName,
           cityName,
+          geoScope,
+          primaryType,
+          secondaryType,
           year,
           heroMediaKey,
           galleryMediaKeys,
@@ -1083,9 +1172,19 @@ components:
         latitude:
           type: string
           nullable: true
+          description: Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
         longitude:
           type: string
           nullable: true
+          description: Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
+        countryId:
+          type: string
+          nullable: true
+          description: Canonical Atlas country identifier for event geography grounding.
+        cityId:
+          type: string
+          nullable: true
+          description: Canonical Atlas city identifier for event geography grounding.
         countrySlug:
           type: string
           nullable: true
@@ -1100,6 +1199,20 @@ components:
         cityName:
           type: string
           nullable: true
+        geoScope:
+          type: string
+          nullable: true
+          description: >
+            Machine-readable location scope from event source/import semantics (for example point, city, country, regional).
+            Used to distinguish place-bound vs area/city/diffuse scenarios without forcing fake place assignment.
+        primaryType:
+          type: string
+          nullable: true
+          description: Source-level primary event type classification.
+        secondaryType:
+          type: string
+          nullable: true
+          description: Source-level secondary event type classification.
         year:
           type: integer
           nullable: true

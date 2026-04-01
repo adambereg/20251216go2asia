@@ -11,6 +11,11 @@ export interface ContentEventDto {
   bodyMarkdown: string;
   /** @nullable */
   category: string | null;
+  /**
+   * Canonical Atlas city identifier for event geography grounding.
+   * @nullable
+   */
+  cityId: string | null;
   /** @nullable */
   cityName: string | null;
   /**
@@ -18,6 +23,11 @@ export interface ContentEventDto {
    * @nullable
    */
   citySlug: string | null;
+  /**
+   * Canonical Atlas country identifier for event geography grounding.
+   * @nullable
+   */
+  countryId: string | null;
   /** @nullable */
   countryName: string | null;
   /**
@@ -29,6 +39,12 @@ export interface ContentEventDto {
   endDate: string | null;
   galleryMediaKeys: string[];
   /**
+   * Machine-readable location scope from event source/import semantics (for example point, city, country, regional). Used to distinguish place-bound vs area/city/diffuse scenarios without forcing fake place assignment.
+
+   * @nullable
+   */
+  geoScope: string | null;
+  /**
    * R2 object key for the event hero image.
    * @nullable
    */
@@ -37,11 +53,17 @@ export interface ContentEventDto {
   isActive: boolean;
   isFree: boolean;
   isVerified: boolean;
-  /** @nullable */
+  /**
+   * Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
+   * @nullable
+   */
   latitude: string | null;
   /** @nullable */
   location: string | null;
-  /** @nullable */
+  /**
+   * Nullable for city-wide and diffuse/distributed events where point coordinates are not canonical.
+   * @nullable
+   */
   longitude: string | null;
   /** @nullable */
   officialUrl: string | null;
@@ -49,6 +71,16 @@ export interface ContentEventDto {
   priceAmount: string | null;
   /** @nullable */
   priceCurrency: string | null;
+  /**
+   * Source-level primary event type classification.
+   * @nullable
+   */
+  primaryType: string | null;
+  /**
+   * Source-level secondary event type classification.
+   * @nullable
+   */
+  secondaryType: string | null;
   /** @nullable */
   seoDescription: string | null;
   /** @nullable */

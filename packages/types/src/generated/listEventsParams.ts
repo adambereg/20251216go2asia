@@ -7,6 +7,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LimitParameter } from "./limitParameter";
+import type { ListEventsPrice } from "./listEventsPrice";
+import type { ListEventsVerified } from "./listEventsVerified";
 
 export type ListEventsParams = {
   /**
@@ -14,4 +16,58 @@ export type ListEventsParams = {
    * @maximum 200
    */
   limit?: LimitParameter;
+  /**
+   * Zero-based offset for pagination.
+   * @minimum 0
+   */
+  offset?: number;
+  /**
+   * 1-based page alias. Ignored when `offset` is provided.
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * Country slug or country id (alias of `country_id`).
+   */
+  country?: string;
+  /**
+   * Country id alias for `country`.
+   */
+  country_id?: string;
+  /**
+   * City slug or city id (alias of `city_id`).
+   */
+  city?: string;
+  /**
+   * City id alias for `city`.
+   */
+  city_id?: string;
+  /**
+   * Event category filter.
+   */
+  category?: string;
+  /**
+   * Include events whose active window ends after this timestamp.
+   */
+  date_from?: string;
+  /**
+   * Include events whose start is before this timestamp.
+   */
+  date_to?: string;
+  /**
+   * Price filter. Defaults to `any`.
+   */
+  price?: ListEventsPrice;
+  /**
+   * Verification filter. Defaults to `any`.
+   */
+  verified?: ListEventsVerified;
+  /**
+   * Search query over event title and description.
+   */
+  q?: string;
+  /**
+   * Legacy alias for `q`.
+   */
+  search?: string;
 };
