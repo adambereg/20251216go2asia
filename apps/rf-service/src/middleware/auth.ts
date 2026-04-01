@@ -6,8 +6,11 @@ type JwtVerifyResult = { ok: true; payload: Record<string, unknown> } | { ok: fa
 
 export type GatewayPrincipal = {
   userId: string;
+  platformRole: CanonicalPlatformRole;
   roles: string[];
 };
+
+type CanonicalPlatformRole = 'spacer' | 'vip_spacer' | 'pro' | 'admin';
 
 export interface AuthEnv {
   SERVICE_JWT_SECRET?: string;
@@ -40,6 +43,27 @@ function getStringArrayClaim(payload: Record<string, unknown>, key: string): str
     return [value.trim()];
   }
   return [];
+}
+
+function normalizeCanonicalPlatformRole(value: string | null): CanonicalPlatformRole | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'pro') return 'pro';
+  if (normalized === 'vip_spacer' || normalized === 'vip-spacer' || normalized === 'vip') return 'vip_spacer';
+  if (normalized === 'spacer' || normalized === 'member' || normalized === 'user') return 'spacer';
+  return null;
+}
+
+function derivePlatformRole(payload: Record<string, unknown>, roles: string[]): CanonicalPlatformRole {
+  const fromRoleClaim = normalizeCanonicalPlatformRole(getStringClaim(payload, 'role'));
+  if (fromRoleClaim) return fromRoleClaim;
+  for (const role of roles) {
+    const normalizedRole = normalizeCanonicalPlatformRole(role);
+    if (normalizedRole) return normalizedRole;
+  }
+  return 'spacer';
 }
 
 function validateServiceJwtClaims(
@@ -130,11 +154,13 @@ async function verifyGatewayToken(
     return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing user subject in X-Gateway-Auth', requestId, 401) };
   }
 
+  const roles = getStringArrayClaim(verified.payload, 'roles');
   return {
     ok: true,
     principal: {
       userId,
-      roles: getStringArrayClaim(verified.payload, 'roles'),
+      roles,
+      platformRole: derivePlatformRole(verified.payload, roles),
     },
   };
 }

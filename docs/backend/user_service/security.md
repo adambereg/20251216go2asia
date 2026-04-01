@@ -1,5 +1,15 @@
 # User Service — Security
 
+## Runtime baseline (identity/roles stabilization)
+
+- Канонический минимальный набор platform-ролей: `spacer`, `vip_spacer`, `pro`, `admin`.
+- Runtime-источник identity: `sub` из верифицированного gateway JWT (`X-Gateway-Auth`).
+- Runtime-источник platform role:
+  - gateway claim `role` (канонический),
+  - `roles` допускается как расширенный набор для domain-specific проверок.
+- `users.role` — backend materialized mirror канонической platform role.
+- Display-поля (например, `space_profile_projection.role_label`) не являются источником авторизации.
+
 ## Аутентификация
 
 - JWT access-токен:

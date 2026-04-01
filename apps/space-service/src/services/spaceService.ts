@@ -38,6 +38,20 @@ type ServiceEnv = {
   SPACE_MAX_TEXT_LENGTH?: string;
 };
 
+function toDisplayRoleLabel(platformRole: GatewayPrincipal['platformRole']): string {
+  switch (platformRole) {
+    case 'vip_spacer':
+      return 'VIP Spacer';
+    case 'pro':
+      return 'PRO';
+    case 'admin':
+      return 'Admin';
+    case 'spacer':
+    default:
+      return 'Spacer';
+  }
+}
+
 const REPOST_TARGET_TYPES = new Set(['space_post', 'blog_post', 'place', 'event', 'partner', 'listing', 'quest']);
 
 function toIso(value: string | Date): string {
@@ -287,7 +301,7 @@ export async function createPost(
     }
   }
 
-  await ensureProfileProjection(db, principal.userId);
+  await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));
 
   const postId = `spost_${crypto.randomUUID()}`;
   await insertSpacePost(db, {
@@ -557,7 +571,7 @@ export async function createGroup(
     return errorResponse('VALIDATION_ERROR', 'slug, title and visibility are required', requestId, 400);
   }
 
-  await ensureProfileProjection(db, principal.userId);
+  await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));
 
   const groupId = `sgroup_${crypto.randomUUID()}`;
   try {

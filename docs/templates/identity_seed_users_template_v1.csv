@@ -1,0 +1,6 @@
+seed_key,email,platform_role,clerk_external_id_hint,must_materialize_via_users_ensure,display_name,space_role_label_hint,rf_owner_candidate,rf_pro_candidate,notes
+usr_spacer_001,spacer.seed1@example.com,spacer,clerk_usr_spacer_001,yes,Spacer Seed 001,Spacer,no,no,Base spacer account
+usr_vip_001,vip.seed1@example.com,vip_spacer,clerk_usr_vip_001,yes,VIP Seed 001,VIP Spacer,no,no,VIP account for offer visibility checks
+usr_pro_001,pro.seed1@example.com,pro,clerk_usr_pro_001,yes,PRO Seed 001,PRO,no,yes,PRO account for rf_pro_link
+usr_admin_001,admin.seed1@example.com,admin,clerk_usr_admin_001,yes,Admin Seed 001,Admin,no,no,Platform admin account
+usr_owner_001,owner.seed1@example.com,spacer,clerk_usr_owner_001,yes,Owner Seed 001,Spacer,yes,no,RF business partner owner candidate

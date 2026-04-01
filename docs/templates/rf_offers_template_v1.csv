@@ -1,0 +1,4 @@
+offer_seed_key,partner_seed_key,created_by_seed_key,title,offer_type,visibility,activate_after_create,runtime_critical_fields_checked,display_only_fields,notes
+rf_offer_001,rf_partner_001,usr_owner_001,10% off lunch set,discount,public,yes,yes,,Public offer for baseline browse/claim
+rf_offer_002,rf_partner_001,usr_owner_001,Curated tasting menu,bundle,pro_only,yes,yes,,PRO-only visibility sanity case
+rf_offer_003,rf_partner_002,usr_owner_001,Welcome drink gift,gift,invite_only,no,yes,,Draft invite-only offer case

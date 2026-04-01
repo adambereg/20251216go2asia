@@ -42,8 +42,11 @@ export interface Env {
 
 type GatewayUserContext = {
   userId: string;
+  platformRole?: CanonicalPlatformRole;
   roles: string[];
 };
+
+type CanonicalPlatformRole = 'spacer' | 'vip_spacer' | 'pro' | 'admin';
 
 export type RouteGroup =
   | 'platform'
@@ -473,6 +476,39 @@ function getStringArrayClaim(payload: Record<string, unknown>, key: string): str
   return [];
 }
 
+function getObjectClaim(payload: Record<string, unknown>, key: string): Record<string, unknown> | null {
+  const value = payload[key];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function normalizeCanonicalPlatformRole(value: string | null): CanonicalPlatformRole | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'pro') return 'pro';
+  if (normalized === 'vip_spacer' || normalized === 'vip-spacer' || normalized === 'vip') return 'vip_spacer';
+  if (normalized === 'spacer' || normalized === 'member' || normalized === 'user') return 'spacer';
+  return null;
+}
+
+function extractCanonicalRole(payload: Record<string, unknown>, roles: string[]): CanonicalPlatformRole {
+  const roleFromClaims = normalizeCanonicalPlatformRole(
+    getStringClaim(payload, 'role') ??
+      getStringClaim(payload, 'go2_role') ??
+      getStringClaim(getObjectClaim(payload, 'public_metadata') ?? {}, 'role') ??
+      getStringClaim(getObjectClaim(payload, 'publicMetadata') ?? {}, 'role')
+  );
+  if (roleFromClaims) return roleFromClaims;
+
+  for (const role of roles) {
+    const normalizedRole = normalizeCanonicalPlatformRole(role);
+    if (normalizedRole) return normalizedRole;
+  }
+  return 'spacer';
+}
+
 function getJwtPayloadUnsafe(token: string): Record<string, unknown> | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -535,7 +571,9 @@ function extractGatewayUserContext(payload: Record<string, unknown>): GatewayUse
   const userId = getStringClaim(payload, 'sub');
   if (!userId) return null;
   const roles = getStringArrayClaim(payload, 'roles');
-  return { userId, roles };
+  const platformRole = extractCanonicalRole(payload, roles);
+  const normalizedRoles = roles.length > 0 ? roles : [platformRole];
+  return { userId, platformRole, roles: normalizedRoles };
 }
 
 async function mintInternalGatewayToken(
@@ -552,6 +590,7 @@ async function mintInternalGatewayToken(
     iat: now,
     exp: now + 300,
     rid: requestId,
+    role: user.platformRole ?? 'spacer',
   };
   if (user.roles.length > 0) {
     payload.roles = user.roles;

@@ -1,0 +1,3 @@
+pro_link_seed_key,partner_seed_key,pro_user_seed_key,role_scope,accept_by_owner,runtime_critical_fields_checked,optional_fields,notes
+rf_pro_link_001,rf_partner_001,usr_pro_001,onboarding,yes,yes,,Core PRO onboarding link
+rf_pro_link_002,rf_partner_001,usr_pro_001,curation,no,yes,,Pending link scenario

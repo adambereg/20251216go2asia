@@ -1,0 +1,3 @@
+case_key,offer_seed_key,claim_user_seed_key,idempotency_key,expect_claim_status,redeem_by_owner,expected_terminal_status,runtime_critical_fields_checked,notes
+rf_voucher_case_001,rf_offer_001,usr_spacer_001,seed-claim-001,claimed,yes,redeemed,yes,Happy path claim/redeem
+rf_voucher_case_002,rf_offer_001,usr_vip_001,seed-claim-002,claimed,no,claimed,yes,Claim only, no redeem

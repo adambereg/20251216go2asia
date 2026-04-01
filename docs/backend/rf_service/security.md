@@ -1,5 +1,12 @@
 # RF Service — Security
 
+## Runtime note (current baseline)
+
+- RF runtime в текущем slice авторизует через `X-Gateway-Auth` (`iss=api-gateway`, `aud=internal`, `sub=userId`).
+- В write-сценариях RF v1 primary enforcement сейчас ownership-driven (`owner_user_id`), а не полноценный platform-RBAC.
+- Domain relationships (`rf_pro_link`, partner ownership scopes) не являются глобальной platform role.
+- Platform role (`role` / `roles`) может приходить в principal, но трактуется как вспомогательный контекст, пока не введён отдельный усиленный RBAC слой.
+
 ## Аутентификация
 
 - Основной метод — JWT-токен от User Service:
