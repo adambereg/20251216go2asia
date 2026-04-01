@@ -31,6 +31,17 @@
 - partner verification/visibility semantics;
 - partner/pro operational linkage.
 
+### RF owner account rule (normative)
+
+- RF owner requires platform account.
+- RF owner ownership binding is attached to platform identity (`ownerUserId`), not to Space social participation.
+- Space participation for RF owner is optional and must not be treated as RF prerequisite.
+- RF owner is not required to publish in Space, maintain social graph, or complete Space-oriented social onboarding.
+- Platform role/tier (`spacer|vip_spacer|pro|admin`) and RF ownership are different layers:
+  - platform role/tier = global auth/identity tier;
+  - RF owner = domain ownership relationship in RF.
+- PRO can also be RF owner, but PRO role is not mandatory for RF owner existence.
+
 ### Downstream modules own their own cores
 
 - Pulse: event lifecycle;

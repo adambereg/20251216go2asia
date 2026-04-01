@@ -18,6 +18,16 @@
 - `space_profile_projection.role_label` = display-only.
 - RF domain relationship (`rf_pro_link`, owner partner) != platform role.
 
+### RF owner account rule
+
+- RF owner обязан иметь platform account в Go2Asia.
+- RF ownership связывается с platform identity (`ownerUserId`) через auth/user contour.
+- Участие в Space Asia для RF owner optional:
+  - не требуется публикация постов;
+  - не требуется social graph участие;
+  - не требуется Space-oriented social onboarding.
+- `pro` может совпадать с RF owner, но это не обязательное условие RF ownership.
+
 ## 3) Создание seed user (практический шаг)
 
 1. Создайте пользователя в Clerk (email/password или magic link).
@@ -95,6 +105,8 @@ WHERE id = '<clerk_sub>';
 - `users/ensure` не вызывался -> user не materialized в backend таблице.
 - Путают platform role и RF relationship:
   - `pro` (platform) != `rf_pro_link` (domain link).
+- Путают RF owner и Space social participant:
+  - RF owner requires platform account, but Space participation is optional.
 - Путают `role_label` и auth:
   - `role_label` только display.
 - Невалидные `countryId/cityId` при создании partner.

@@ -8,6 +8,12 @@
 - source-of-truth для platform tier в backend: `users.role`;
 - display-поля (например, profile role labels) используются только для UI и не участвуют в авторизации.
 
+RF owner account rule (identity vs social separation):
+- RF owner requires platform account.
+- RF owner ownership (`ownerUserId`) относится к RF domain relationship, а не к Space social participation.
+- Space participation для RF owner optional: не требуется публикация в Space, social graph или полноценный social onboarding.
+- PRO может быть RF owner, но RF owner не обязан быть PRO.
+
 ---
 
 # Спейсер (Spacer)
