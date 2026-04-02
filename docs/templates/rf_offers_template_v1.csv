@@ -1,4 +1,8 @@
-offer_seed_key,partner_seed_key,created_by_seed_key,title,offer_type,visibility,activate_after_create,runtime_critical_fields_checked,display_only_fields,notes
-rf_offer_001,rf_partner_001,usr_owner_001,10% off lunch set,discount,public,yes,yes,,Public offer for baseline browse/claim
-rf_offer_002,rf_partner_001,usr_owner_001,Curated tasting menu,bundle,pro_only,yes,yes,,PRO-only visibility sanity case
-rf_offer_003,rf_partner_002,usr_owner_001,Welcome drink gift,gift,invite_only,no,yes,,Draft invite-only offer case
+﻿offer_seed_key,partner_seed_key,created_by_seed_key,title,offer_type,visibility,activate_after_create,notes
+offer_001,partner_001,user_003,10 percent off breakfast set,discount_percent,public,yes,Starter public offer for coffee/brunch scenario in Phuket
+offer_002,partner_001,user_003,Free coffee with any brunch order,bonus_item,public,yes,Second public offer for same partner to test multi-offer display
+offer_003,partner_002,user_005,15 percent off dinner bill,discount_percent,public,yes,Public restaurant offer for second food scenario
+offer_004,partner_002,user_005,Welcome dessert for evening guests,bonus_item,invite_only,yes,Invite-only restaurant offer for restricted visibility test
+offer_005,partner_003,user_010,200 THB off premium service package,discount_fixed,public,yes,Public service/beauty offer for non-food partner scenario
+offer_006,partner_003,user_010,PRO curated priority booking bonus,bonus_access,pro_only,yes,PRO-only offer for platform-role and visibility sanity checks
+offer_007,partner_004,user_011,12 percent off two-night stay,discount_percent,pro_only,yes,Second-city stay/travel offer for Da Nang partner

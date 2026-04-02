@@ -11,7 +11,15 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "test:ci": "vitest run --config ./vitest.config.ts"
+    "test:ci": "vitest run --config ./vitest.config.ts",
+    "clerk:seed-users": "node ./scripts/clerk_seed_users_from_csv.mjs",
+    "identity:materialize-verify": "node ./scripts/identity_materialize_verify_batch.mjs",
+    "rf:first-batch": "node ./scripts/rf_first_batch_tool_v1.mjs",
+    "rf:first-batch:partners": "node ./scripts/rf_first_batch_tool_v1.mjs --step partners",
+    "rf:first-batch:offers": "node ./scripts/rf_first_batch_tool_v1.mjs --step offers",
+    "rf:first-batch:pro-links": "node ./scripts/rf_first_batch_tool_v1.mjs --step pro-links",
+    "rf:first-batch:verify": "node ./scripts/rf_first_batch_tool_v1.mjs --step verify",
+    "rf:first-batch:voucher-cases": "node ./scripts/rf_first_batch_tool_v1.mjs --step voucher-cases"
   },
   "dependencies": {
     "@clerk/backend": "^3.0.2",

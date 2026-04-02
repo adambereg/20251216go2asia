@@ -1,3 +1,5 @@
-partner_seed_key,owner_seed_key,display_name,country_id,city_id,atlas_place_id,host_atlas_place_id,runtime_critical_fields_checked,notes
-rf_partner_001,usr_owner_001,Bangkok Friendly Bistro,country_th,city_bangkok,,,yes,Minimal partner seed
-rf_partner_002,usr_owner_001,Phuket Family Stay,country_th,city_phuket,place_phuket_old_town,,yes,Partner with atlas_place_id
+﻿partner_seed_key,owner_seed_key,display_name,country_id,city_id,atlas_place_id,host_atlas_place_id,notes
+"partner_001,user_003,Siberia Brew Phuket,country_th,city_phuket,,,Coffee/brunch partner for public starter offers; spacer-owner without PRO role"
+"partner_002,user_005,Baikal Kitchen Phuket,country_th,city_phuket,,,Restaurant/bar partner for second food scenario; spacer-owner without PRO role"
+partner_003,user_010,Lotus Care Phuket,country_th,city_phuket,,,Service/beauty/rental style partner owned by PRO user
+"partner_004,user_011,Mekong Stay Da Nang,country_vn,city_da_nang,,,Stay/local travel service partner in second city; PRO-owner scenario"

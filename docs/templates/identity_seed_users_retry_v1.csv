@@ -1,0 +1,3 @@
+﻿seed_key,email,platform_role,clerk_external_id_hint,must_materialize_via_users_ensure,display_name,space_role_label_hint,rf_owner_candidate,rf_pro_candidate,notes
+user_005,pavel.zorin.seed@example.com,spacer,clerk_seed_user_005,yes,Pavel Zorin,Spacer,yes,no,Spacer-owner candidate for second RF partner without PRO role
+user_010,natalia.kim.seed@example.com,pro,clerk_seed_user_010,yes,Natalia Kim,PRO,yes,yes,PRO user who is also RF owner candidate
