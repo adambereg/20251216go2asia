@@ -2,16 +2,22 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchRfOffers, fetchRfPartners } from '@go2asia/sdk/rf';
 import { RFHero, RFMainNav } from '@/components/rf/Shared';
-import { getOfferBadge, getVisibilityBadge, rfMicrocopy } from '@/lib/rfFirstSliceContent';
+import {
+  getOfferBadge,
+  getOfferGuardText,
+  getOfferSummaryLine,
+  getVisibilityBadge,
+  rfMicrocopy,
+} from '@/lib/rfFirstSliceContent';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Ваучеры | Russian Friendly | Go2Asia',
-  description: 'Специальные предложения и ваучеры от партнёров Russian Friendly в Юго-Восточной Азии',
+  title: 'Предложения | Russian Friendly | Go2Asia',
+  description: 'Публичные предложения партнёров Russian Friendly Asia',
   openGraph: {
-    title: 'Ваучеры | Russian Friendly',
-    description: 'Специальные предложения от партнёров Russian Friendly',
+    title: 'Предложения | Russian Friendly',
+    description: 'Публичные предложения партнёров Russian Friendly Asia',
     type: 'website',
   },
 };
@@ -40,8 +46,7 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-semibold text-slate-900">Публичные предложения RF</h1>
         <p className="text-sm text-slate-600 mt-2">
-          Витрина показывает live офферы из RF runtime. Claim остаётся аутентифицированным действием и может возвращать
-          replay/temporary failure без изменения dataset truth.
+          Выберите подходящий оффер, проверьте условия доступа и перейдите в карточку партнёра для деталей.
         </p>
         <form method="get" className="mt-4 max-w-lg">
           <label className="mb-1 block text-xs text-slate-600" htmlFor="rf-offers-q">
@@ -53,7 +58,7 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
               name="q"
               defaultValue={q}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900"
-              placeholder="Например: скидка, dinner, wellness"
+              placeholder="Например: скидка, семейный, wellness"
             />
             <button
               type="submit"
@@ -80,7 +85,6 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
               const partner = partnerById.get(offer.partnerId);
               const offerBadge = getOfferBadge(offer);
               const visibilityBadge = getVisibilityBadge(offer.visibility);
-              const isRestricted = offer.visibility !== 'public';
               return (
                 <li key={offer.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -95,7 +99,7 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
                     </div>
                   </div>
                   <p className="text-sm text-slate-600 mt-2">
-                    Partner:{' '}
+                    Партнёр:{' '}
                     {partner ? (
                       <Link href={`/rf/${encodeURIComponent(partner.id)}`} className="text-blue-700 hover:text-blue-800">
                         {partner.displayName}
@@ -104,15 +108,9 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
                       <span className="font-mono">{offer.partnerId}</span>
                     )}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    type: {offer.offerType} · visibility: {offer.visibility} · status: {offer.status}
-                  </p>
+                  <p className="text-xs text-slate-500 mt-1">{getOfferSummaryLine(offer)}</p>
                   <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                    {isRestricted
-                      ? offer.visibility === 'pro_only'
-                        ? rfMicrocopy.proOnly
-                        : rfMicrocopy.inviteOnly
-                      : 'Для получения ваучера нужен вход в аккаунт. Повторный claim может вернуть replay-ответ.'}
+                    {getOfferGuardText(offer)}
                   </div>
                 </li>
               );
@@ -121,7 +119,7 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
         )}
 
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Voucher UX note</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Статус и доступ</h2>
           <p className="mt-2 text-sm text-slate-600">
             {rfMicrocopy.claimTemporary} {rfMicrocopy.replayInfo}
           </p>

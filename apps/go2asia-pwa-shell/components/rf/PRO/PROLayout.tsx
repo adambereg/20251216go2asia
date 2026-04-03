@@ -26,7 +26,7 @@ export function PROLayout({ children }: PROLayoutProps) {
           <Link href="/rf">
             <Button variant="secondary" size="sm">
               <ArrowLeft size={16} className="mr-2" />
-              Вернуться в каталог
+              Вернуться в RF-хаб
             </Button>
           </Link>
         </div>
@@ -38,7 +38,7 @@ export function PROLayout({ children }: PROLayoutProps) {
             <div className="sticky top-6">
               <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-purple-900 mb-4">
-                  PRO Dashboard
+                  PRO кабинет (beta)
                 </h2>
                 <PRONav />
               </div>
@@ -49,7 +49,7 @@ export function PROLayout({ children }: PROLayoutProps) {
           <div className="lg:hidden">
             <div className="rounded-2xl border border-purple-200 bg-white p-3 shadow-sm mb-6">
               <div className="font-semibold text-purple-900 mb-3 text-sm">
-                PRO Dashboard
+                PRO кабинет (beta)
               </div>
               <PRONav variant="horizontal" />
             </div>

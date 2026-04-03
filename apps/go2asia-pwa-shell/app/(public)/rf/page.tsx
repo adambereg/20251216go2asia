@@ -5,7 +5,10 @@ import { RFHero, RFMainNav } from '@/components/rf/Shared';
 import {
   getOfferBadge,
   getPartnerHighlights,
+  getPartnerPresentation,
   getPartnerTrust,
+  getPartnerLocation,
+  getOfferSummaryLine,
   rfFeaturedCategories,
   rfLandingContent,
   rfMicrocopy,
@@ -69,7 +72,7 @@ export default async function RFPage() {
             </Link>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            Live данные загружаются из RF runtime. Категории, микрокопирайт и UX-сценарии берутся из RF asset pack.
+            {rfMicrocopy.supportDataNote}
           </p>
         </section>
 
@@ -100,7 +103,7 @@ export default async function RFPage() {
             <div className="mb-4">
               <h2 className="text-xl font-semibold text-slate-900">Рекомендованные партнёры</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Подборка live-партнёров с trust-метками, featured/non-featured состояниями и быстрым переходом в карточку.
+                {rfLandingContent.featuredPartnersLead}
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -108,15 +111,18 @@ export default async function RFPage() {
                 const offerCount = offersByPartner.get(partner.id) ?? 0;
                 const trust = getPartnerTrust(partner);
                 const highlights = getPartnerHighlights(partner, offerCount);
+                const profile = getPartnerPresentation(partner);
                 const isFeatured = index < 3;
                 return (
-                  <article key={partner.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <article
+                    key={partner.id}
+                    className={`rounded-2xl border border-slate-200 bg-gradient-to-br ${profile.cardTone} p-5 shadow-sm`}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">{partner.displayName}</h3>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {partner.countryId} · {partner.cityId}
-                        </p>
+                        <p className="mt-1 text-xs text-slate-500">{getPartnerLocation(partner)}</p>
+                        <p className="mt-2 text-sm text-slate-700">{profile.tagline}</p>
                       </div>
                       {isFeatured ? (
                         <span className="rounded-full bg-violet-100 px-2 py-1 text-xs font-medium text-violet-700">
@@ -138,7 +144,8 @@ export default async function RFPage() {
                       ))}
                     </ul>
 
-                    <p className="mt-3 text-xs text-slate-500">{trust.note}</p>
+                    <p className="mt-3 text-sm text-slate-600">{profile.story}</p>
+                    <p className="mt-2 text-xs text-slate-500">{trust.note}</p>
                     <Link
                       href={`/rf/${encodeURIComponent(partner.id)}`}
                       className="mt-4 inline-flex text-sm font-medium text-blue-700 hover:text-blue-800"
@@ -155,9 +162,7 @@ export default async function RFPage() {
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4">
             <h2 className="text-xl font-semibold text-slate-900">Лучшие предложения</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Публичные офферы из live runtime. Ограниченные сценарии (`PRO` / `invite`) помечаются guard-состояниями.
-            </p>
+            <p className="mt-1 text-sm text-slate-600">{rfLandingContent.bestOffersLead}</p>
           </div>
           {offersResponse === null ? (
             <p className="text-sm text-amber-700">{rfMicrocopy.temporaryUnavailable}</p>
@@ -173,9 +178,7 @@ export default async function RFPage() {
                       <h3 className="text-sm font-semibold text-slate-900">{offer.title}</h3>
                       <span className={`rounded-full px-2 py-1 text-xs font-medium ${badge.tone}`}>{badge.label}</span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-600">
-                      visibility: {offer.visibility} · status: {offer.status}
-                    </p>
+                    <p className="mt-2 text-xs text-slate-600">{getOfferSummaryLine(offer)}</p>
                   </article>
                 );
               })}
@@ -196,14 +199,12 @@ export default async function RFPage() {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Надёжность live-среза</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Прозрачность модуля</h2>
           <p className="mt-2 text-sm text-slate-600">
-            В first-batch validation встречались отдельные `terminated` / `fetch failed` события. Они классифицированы как
-            reliability noise, не как data-blocker.
+            Публичная витрина уже работает на живом RF-контуре. Расширенные сценарии кабинетов отмечены как beta и
+            развиваются отдельно.
           </p>
-          <p className="mt-2 text-xs text-slate-500">
-            Этот UI отражает bounded live surface и не маскирует deferred зоны как fully-live.
-          </p>
+          <p className="mt-2 text-xs text-slate-500">{rfMicrocopy.betaZonesNote}</p>
         </section>
       </main>
     </div>
