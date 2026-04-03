@@ -87,6 +87,10 @@ jobs:
             extra_vars: >-
               --var SPACE_SERVICE_URL:https://go2asia-space-service-staging.fred89059599296.workers.dev
               --var REACTIONS_SERVICE_URL:https://go2asia-reactions-service-staging.fred89059599296.workers.dev
+          - service: rf-service
+            path: apps/rf-service
+            url: https://go2asia-rf-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -181,7 +185,8 @@ jobs:
             --var REFERRAL_SERVICE_URL:https://go2asia-referral-service-staging.fred89059599296.workers.dev \
             --var SPACE_SERVICE_URL:https://go2asia-space-service-staging.fred89059599296.workers.dev \
             --var REACTIONS_SERVICE_URL:https://go2asia-reactions-service-staging.fred89059599296.workers.dev \
-            --var FEED_SERVICE_URL:https://go2asia-feed-service-staging.fred89059599296.workers.dev
+            --var FEED_SERVICE_URL:https://go2asia-feed-service-staging.fred89059599296.workers.dev \
+            --var RF_SERVICE_URL:https://go2asia-rf-service-staging.fred89059599296.workers.dev
       - name: Smoke check gateway
         run: |
           set -euo pipefail
