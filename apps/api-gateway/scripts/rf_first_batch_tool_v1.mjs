@@ -210,7 +210,7 @@ function parseCsvRecordWithFallback(line, expectedColumns) {
     const fallback = unwrapped.split(',').map((entry) => entry.trim());
     if (fallback.length === expectedColumns) return fallback;
   }
-  throw new Error(`CSV row has unexpected column count (expected ${expectedColumns}, got ${first.length}): ${line}`);
+  throw new Error(`CSV row has unexpected column count (expected ${expectedColumns}, got ${first.length})`);
 }
 
 function toRecord(headers, cells) {
@@ -220,7 +220,16 @@ function toRecord(headers, cells) {
 }
 
 async function readCsv(pathValue, requiredColumns) {
-  const raw = await fs.readFile(pathValue, 'utf8');
+  let raw = '';
+  try {
+    raw = await fs.readFile(pathValue, 'utf8');
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      throw new Error(`CSV file not found: ${pathValue}`, { cause: error });
+    }
+    throw new Error(`CSV read failed: ${pathValue}: ${error?.message || 'unknown error'}`, { cause: error });
+  }
+
   const lines = raw
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -231,11 +240,19 @@ async function readCsv(pathValue, requiredColumns) {
   if (missing.length > 0) {
     throw new Error(`CSV missing required columns [${missing.join(', ')}] in ${pathValue}`);
   }
+
   return lines.slice(1).map((line, index) => {
-    const cells = parseCsvRecordWithFallback(line, headers.length);
-    const row = toRecord(headers, cells);
-    row.__line = String(index + 2);
-    return row;
+    try {
+      const cells = parseCsvRecordWithFallback(line, headers.length);
+      const row = toRecord(headers, cells);
+      row.__line = String(index + 2);
+      return row;
+    } catch (error) {
+      throw new Error(
+        `CSV parse failed in ${pathValue} at line ${index + 2}: ${error?.message || 'unknown parse error'}`,
+        { cause: error },
+      );
+    }
   });
 }
 
@@ -260,21 +277,29 @@ async function loadState(stateFilePath) {
         meta: {},
       };
     }
-    throw error;
+    throw new Error(`State file read/parse failed: ${stateFilePath}: ${error?.message || 'unknown error'}`, {
+      cause: error,
+    });
   }
 }
 
 async function saveState(stateFilePath, state) {
-  await fs.mkdir(path.dirname(stateFilePath), { recursive: true });
-  const payload = {
-    ...state,
-    meta: {
-      ...state.meta,
-      updatedAt: new Date().toISOString(),
-      version: 'rf_first_batch_v1',
-    },
-  };
-  await fs.writeFile(stateFilePath, JSON.stringify(payload, null, 2), 'utf8');
+  try {
+    await fs.mkdir(path.dirname(stateFilePath), { recursive: true });
+    const payload = {
+      ...state,
+      meta: {
+        ...state.meta,
+        updatedAt: new Date().toISOString(),
+        version: 'rf_first_batch_v1',
+      },
+    };
+    await fs.writeFile(stateFilePath, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (error) {
+    throw new Error(`State file write failed: ${stateFilePath}: ${error?.message || 'unknown error'}`, {
+      cause: error,
+    });
+  }
 }
 
 function yesNoToBool(value) {
@@ -296,6 +321,36 @@ function safeJson(value) {
     },
     2,
   );
+}
+
+function debugPhase(enabled, phase, details = {}) {
+  if (!enabled) return;
+  console.error(
+    safeJson({
+      kind: 'rf_first_batch_phase',
+      phase,
+      ...details,
+    }),
+  );
+}
+
+function safeErrorDetails(error) {
+  const err = error || {};
+  return {
+    name: err?.name || 'Error',
+    message: err?.message || '',
+    status: err?.status ?? err?.statusCode ?? err?.response?.status ?? null,
+    code: err?.code ?? null,
+    clerkTraceId: err?.clerkTraceId ?? err?.clerk_trace_id ?? err?.data?.clerkTraceId ?? err?.data?.clerk_trace_id ?? null,
+    errors: Array.isArray(err?.errors)
+      ? err.errors.map((entry) => ({
+          code: entry?.code ?? null,
+          message: entry?.message ?? null,
+          longMessage: entry?.longMessage ?? entry?.long_message ?? null,
+          meta: entry?.meta ?? null,
+        }))
+      : null,
+  };
 }
 
 async function callGateway({ apiBase, endpoint, method, jwt, body, extraHeaders }) {
@@ -350,13 +405,15 @@ function entityWriteStep(step) {
   return step === 'partners' || step === 'offers' || step === 'pro-links' || step === 'voucher-cases';
 }
 
-async function buildIdentityContext(identityRows, clerk) {
+async function buildIdentityContext(identityRows, clerk, debug, requiredSeedKeys = null) {
+  const required = requiredSeedKeys instanceof Set ? requiredSeedKeys : null;
   const bySeed = new Map();
   for (const row of identityRows) {
     const seedKey = String(row.seed_key || '').trim();
     const email = String(row.email || '').trim().toLowerCase();
     const platformRole = String(row.platform_role || '').trim();
     if (!seedKey || !email || !platformRole) continue;
+    if (required && !required.has(seedKey)) continue;
     if (!CANONICAL_ROLES.has(platformRole)) {
       throw new Error(`identity CSV has non-canonical platform_role for ${seedKey}: ${platformRole}`);
     }
@@ -369,13 +426,40 @@ async function buildIdentityContext(identityRows, clerk) {
     });
   }
 
+  if (required) {
+    const missing = Array.from(required).filter((seedKey) => !bySeed.has(seedKey));
+    if (missing.length > 0) {
+      throw new Error(`Required identity seed_key is missing in identity CSV: ${missing.join(', ')}`);
+    }
+  }
+
   for (const identity of bySeed.values()) {
-    const users = await clerk.users.getUserList({
-      emailAddress: [identity.email],
-      limit: 2,
-    });
+    let users;
+    try {
+      users = await clerk.users.getUserList({
+        emailAddress: [identity.email],
+        limit: 2,
+      });
+    } catch (error) {
+      debugPhase(debug, 'lookup_clerk_user_failed', {
+        seedKey: identity.seedKey,
+        email: identity.email,
+        stage: 'lookup_clerk_user',
+        error: safeErrorDetails(error),
+      });
+      throw new Error(
+        `Clerk lookup failed for seed_key=${identity.seedKey}, email=${identity.email}: ${error?.message || 'unknown error'}`,
+        { cause: error },
+      );
+    }
     const list = users?.data || [];
     if (list.length !== 1) {
+      debugPhase(debug, 'lookup_clerk_user_ambiguous', {
+        seedKey: identity.seedKey,
+        email: identity.email,
+        stage: 'lookup_clerk_user',
+        matchCount: list.length,
+      });
       throw new Error(
         list.length === 0
           ? `Identity seed user not found in Clerk: ${identity.seedKey} (${identity.email})`
@@ -396,6 +480,80 @@ async function buildIdentityContext(identityRows, clerk) {
       return item.jwt;
     },
   };
+}
+
+function addIdentitySeed(seedSet, reasonMap, seedKey, reason) {
+  const normalized = String(seedKey || '').trim();
+  if (!normalized) return;
+  seedSet.add(normalized);
+  if (!reasonMap[normalized]) reasonMap[normalized] = [];
+  reasonMap[normalized].push(reason);
+}
+
+function resolveRequiredIdentitySeedKeys({
+  step,
+  selectedPartnersRows,
+  selectedOffersRows,
+  selectedProLinksRows,
+  selectedVoucherCasesRows,
+  allPartnersRows,
+  allOffersRows,
+}) {
+  const required = new Set();
+  const reasons = {};
+
+  const partnerBySeed = new Map(
+    allPartnersRows.map((row) => [String(row.partner_seed_key || '').trim(), row]),
+  );
+  const offerBySeed = new Map(
+    allOffersRows.map((row) => [String(row.offer_seed_key || '').trim(), row]),
+  );
+
+  if (step === 'partners') {
+    for (const row of selectedPartnersRows) {
+      addIdentitySeed(required, reasons, row.owner_seed_key, 'partners.owner_seed_key');
+    }
+  } else if (step === 'offers') {
+    for (const row of selectedOffersRows) {
+      addIdentitySeed(required, reasons, row.created_by_seed_key, 'offers.created_by_seed_key');
+    }
+  } else if (step === 'pro-links') {
+    for (const row of selectedProLinksRows) {
+      addIdentitySeed(required, reasons, row.pro_user_seed_key, 'pro_links.pro_user_seed_key');
+      if (yesNoToBool(row.accept_by_owner)) {
+        const partnerSeedKey = String(row.partner_seed_key || '').trim();
+        const partnerRow = partnerBySeed.get(partnerSeedKey);
+        if (partnerRow) {
+          addIdentitySeed(required, reasons, partnerRow.owner_seed_key, 'pro_links.accept_by_owner.partner_owner_seed_key');
+        }
+      }
+    }
+  } else if (step === 'voucher-cases') {
+    for (const row of selectedVoucherCasesRows) {
+      addIdentitySeed(required, reasons, row.claim_user_seed_key, 'voucher_cases.claim_user_seed_key');
+      if (yesNoToBool(row.redeem_by_owner)) {
+        const offerSeedKey = String(row.offer_seed_key || '').trim();
+        const offerRow = offerBySeed.get(offerSeedKey);
+        const partnerSeedKey = String(offerRow?.partner_seed_key || '').trim();
+        const partnerRow = partnerBySeed.get(partnerSeedKey);
+        if (partnerRow) {
+          addIdentitySeed(required, reasons, partnerRow.owner_seed_key, 'voucher_cases.redeem_by_owner.partner_owner_seed_key');
+        }
+      }
+    }
+  } else if (step === 'verify') {
+    for (const row of selectedPartnersRows) {
+      addIdentitySeed(required, reasons, row.owner_seed_key, 'verify.partners.owner_seed_key');
+    }
+    for (const row of selectedOffersRows) {
+      addIdentitySeed(required, reasons, row.created_by_seed_key, 'verify.offers.created_by_seed_key');
+    }
+    for (const row of selectedProLinksRows) {
+      addIdentitySeed(required, reasons, row.pro_user_seed_key, 'verify.pro_links.pro_user_seed_key');
+    }
+  }
+
+  return { requiredSeedKeys: required, reasons };
 }
 
 function applyFilterAndLimit(rows, filterSet, field, limit) {
@@ -1209,13 +1367,35 @@ function printSummary(step, rows, isVerify = false) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const step = args.step;
+  debugPhase(args.debug, 'args_parsed', {
+    step,
+    dryRun: args.dryRun,
+    limit: args.limit ?? null,
+    partnerSeedKeyFilters: args.partnerSeedKeys.length,
+    offerSeedKeyFilters: args.offerSeedKeys.length,
+    proLinkSeedKeyFilters: args.proLinkSeedKeys.length,
+    caseKeyFilters: args.caseKeys.length,
+  });
+
   const apiBase = normalizeApiBase(args.apiBase);
+  debugPhase(args.debug, 'api_base_normalized', {
+    hasApiBase: Boolean(apiBase),
+  });
+
   const stateFilePath = path.resolve(process.cwd(), args.stateFile);
   const identityCsvPath = path.resolve(process.cwd(), args.identityCsv);
   const partnersCsvPath = path.resolve(process.cwd(), args.partnersCsv);
   const offersCsvPath = path.resolve(process.cwd(), args.offersCsv);
   const proLinksCsvPath = path.resolve(process.cwd(), args.proLinksCsv);
   const voucherCasesCsvPath = path.resolve(process.cwd(), args.voucherCasesCsv);
+  debugPhase(args.debug, 'paths_resolved', {
+    stateFilePath,
+    identityCsvPath,
+    partnersCsvPath,
+    offersCsvPath,
+    proLinksCsvPath,
+    voucherCasesCsvPath,
+  });
 
   const clerkSecret = (process.env.CLERK_SECRET_KEY || '').trim();
   if (!clerkSecret) throw new Error('Missing env: CLERK_SECRET_KEY');
@@ -1227,25 +1407,95 @@ async function main() {
       throw new Error('Missing API base URL (--api-base or env API_BASE)');
     }
   }
+  debugPhase(args.debug, 'env_validated', {
+    step,
+    requiresWriteAuth: entityWriteStep(step) && !args.dryRun,
+    hasClerkSecret: Boolean(clerkSecret),
+    hasClerkInstanceUrl: Boolean((process.env.CLERK_INSTANCE_URL || '').trim()),
+    hasApiBase: Boolean(apiBase),
+  });
 
   const identityRows = await readCsv(identityCsvPath, ['seed_key', 'email', 'platform_role']);
+  debugPhase(args.debug, 'identity_csv_loaded', { rows: identityRows.length, path: identityCsvPath });
   const partnersRows = await readCsv(partnersCsvPath, ['partner_seed_key', 'owner_seed_key', 'display_name', 'country_id', 'city_id']);
+  debugPhase(args.debug, 'partners_csv_loaded', { rows: partnersRows.length, path: partnersCsvPath });
   const offersRows = await readCsv(offersCsvPath, ['offer_seed_key', 'partner_seed_key', 'created_by_seed_key', 'title', 'offer_type', 'visibility', 'activate_after_create']);
+  debugPhase(args.debug, 'offers_csv_loaded', { rows: offersRows.length, path: offersCsvPath });
   const proLinksRows = await readCsv(proLinksCsvPath, ['pro_link_seed_key', 'partner_seed_key', 'pro_user_seed_key', 'role_scope', 'accept_by_owner']);
+  debugPhase(args.debug, 'pro_links_csv_loaded', { rows: proLinksRows.length, path: proLinksCsvPath });
   const voucherCasesRows = await readCsv(voucherCasesCsvPath, ['case_key', 'offer_seed_key', 'claim_user_seed_key', 'idempotency_key', 'expect_claim_status', 'redeem_by_owner']);
+  debugPhase(args.debug, 'voucher_cases_csv_loaded', { rows: voucherCasesRows.length, path: voucherCasesCsvPath });
 
   const state = await loadState(stateFilePath);
+  debugPhase(args.debug, 'state_loaded', {
+    path: stateFilePath,
+    partnersTracked: Object.keys(state.partners || {}).length,
+    offersTracked: Object.keys(state.offers || {}).length,
+    proLinksTracked: Object.keys(state.proLinks || {}).length,
+    vouchersTracked: Object.keys(state.vouchers || {}).length,
+  });
   const clerk = createClerkClient({ secretKey: clerkSecret });
-  const identityContext = await buildIdentityContext(identityRows, clerk);
+  debugPhase(args.debug, 'clerk_client_created', { step });
+
+  const selectedPartnersRows = applyFilterAndLimit(
+    partnersRows,
+    new Set(args.partnerSeedKeys.filter(Boolean)),
+    'partner_seed_key',
+    args.limit,
+  );
+  const selectedOffersRows = applyFilterAndLimit(
+    offersRows,
+    new Set(args.offerSeedKeys.filter(Boolean)),
+    'offer_seed_key',
+    args.limit,
+  );
+  const selectedProLinksRows = applyFilterAndLimit(
+    proLinksRows,
+    new Set(args.proLinkSeedKeys.filter(Boolean)),
+    'pro_link_seed_key',
+    args.limit,
+  );
+  const selectedVoucherCasesRows = applyFilterAndLimit(
+    voucherCasesRows,
+    new Set(args.caseKeys.filter(Boolean)),
+    'case_key',
+    args.limit,
+  );
+
+  const identitySeedSubset = resolveRequiredIdentitySeedKeys({
+    step,
+    selectedPartnersRows,
+    selectedOffersRows,
+    selectedProLinksRows,
+    selectedVoucherCasesRows,
+    allPartnersRows: partnersRows,
+    allOffersRows: offersRows,
+  });
+  debugPhase(args.debug, 'identity_seed_subset_resolved', {
+    step,
+    count: identitySeedSubset.requiredSeedKeys.size,
+    seedKeys: Array.from(identitySeedSubset.requiredSeedKeys),
+    reasons: identitySeedSubset.reasons,
+    selectedRowCounts: {
+      partners: selectedPartnersRows.length,
+      offers: selectedOffersRows.length,
+      proLinks: selectedProLinksRows.length,
+      voucherCases: selectedVoucherCasesRows.length,
+    },
+  });
+
+  debugPhase(args.debug, 'identity_context_build_started', { identityRows: identityRows.length });
+  const identityContext = await buildIdentityContext(
+    identityRows,
+    clerk,
+    args.debug,
+    identitySeedSubset.requiredSeedKeys,
+  );
+  debugPhase(args.debug, 'identity_context_build_finished', { identitySeeds: identityContext.bySeed.size });
 
   if (step === 'partners') {
-    const filtered = applyFilterAndLimit(
-      partnersRows,
-      new Set(args.partnerSeedKeys.filter(Boolean)),
-      'partner_seed_key',
-      args.limit,
-    );
-    const results = await runPartnersStep({ rows: filtered, identityContext, state, args, apiBase });
+    debugPhase(args.debug, 'step_entered', { step: 'partners' });
+    const results = await runPartnersStep({ rows: selectedPartnersRows, identityContext, state, args, apiBase });
     if (!args.dryRun) await saveState(stateFilePath, state);
     printStepTable('partners', results);
     const ok = printSummary('partners', results);
@@ -1254,8 +1504,8 @@ async function main() {
   }
 
   if (step === 'offers') {
-    const filtered = applyFilterAndLimit(offersRows, new Set(args.offerSeedKeys.filter(Boolean)), 'offer_seed_key', args.limit);
-    const results = await runOffersStep({ rows: filtered, identityContext, state, args, apiBase });
+    debugPhase(args.debug, 'step_entered', { step: 'offers' });
+    const results = await runOffersStep({ rows: selectedOffersRows, identityContext, state, args, apiBase });
     if (!args.dryRun) await saveState(stateFilePath, state);
     printStepTable('offers', results);
     const ok = printSummary('offers', results);
@@ -1264,13 +1514,8 @@ async function main() {
   }
 
   if (step === 'pro-links') {
-    const filtered = applyFilterAndLimit(
-      proLinksRows,
-      new Set(args.proLinkSeedKeys.filter(Boolean)),
-      'pro_link_seed_key',
-      args.limit,
-    );
-    const results = await runProLinksStep({ rows: filtered, identityContext, state, args, apiBase });
+    debugPhase(args.debug, 'step_entered', { step: 'pro-links' });
+    const results = await runProLinksStep({ rows: selectedProLinksRows, identityContext, state, args, apiBase });
     if (!args.dryRun) await saveState(stateFilePath, state);
     printStepTable('pro-links', results);
     const ok = printSummary('pro-links', results);
@@ -1279,13 +1524,8 @@ async function main() {
   }
 
   if (step === 'voucher-cases') {
-    const filtered = applyFilterAndLimit(
-      voucherCasesRows,
-      new Set(args.caseKeys.filter(Boolean)),
-      'case_key',
-      args.limit,
-    );
-    const results = await runVoucherCasesStep({ rows: filtered, identityContext, state, args, apiBase });
+    debugPhase(args.debug, 'step_entered', { step: 'voucher-cases' });
+    const results = await runVoucherCasesStep({ rows: selectedVoucherCasesRows, identityContext, state, args, apiBase });
     if (!args.dryRun) await saveState(stateFilePath, state);
     printStepTable('voucher-cases', results);
     const failed = results.filter((row) => row.claim_status === 'failed' || row.redeem_status === 'failed').length;
@@ -1297,29 +1537,12 @@ async function main() {
   }
 
   if (step === 'verify') {
+    debugPhase(args.debug, 'step_entered', { step: 'verify' });
     const dbUrl = requireDbUrl();
-    const partnerFiltered = applyFilterAndLimit(
-      partnersRows,
-      new Set(args.partnerSeedKeys.filter(Boolean)),
-      'partner_seed_key',
-      args.limit,
-    );
-    const offerFiltered = applyFilterAndLimit(
-      offersRows,
-      new Set(args.offerSeedKeys.filter(Boolean)),
-      'offer_seed_key',
-      args.limit,
-    );
-    const proLinkFiltered = applyFilterAndLimit(
-      proLinksRows,
-      new Set(args.proLinkSeedKeys.filter(Boolean)),
-      'pro_link_seed_key',
-      args.limit,
-    );
     const results = await runVerifyStep({
-      partnersRows: partnerFiltered,
-      offersRows: offerFiltered,
-      proLinksRows: proLinkFiltered,
+      partnersRows: selectedPartnersRows,
+      offersRows: selectedOffersRows,
+      proLinksRows: selectedProLinksRows,
       dbUrl,
       identityContext,
       state,
@@ -1332,7 +1555,26 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`Error: ${error.message}`);
+  const details = {
+    name: error?.name || 'Error',
+    message: error?.message || '(empty message)',
+    stack: error?.stack || '(no stack)',
+    cause: error?.cause
+      ? {
+          name: error.cause?.name || 'Error',
+          message: error.cause?.message || '(empty message)',
+        }
+      : null,
+    errorObject: safeErrorDetails(error),
+  };
+  console.error('[rf_first_batch] fatal error');
+  console.error(`name: ${details.name}`);
+  console.error(`message: ${details.message}`);
+  console.error(`stack: ${details.stack}`);
+  if (details.cause) {
+    console.error(`cause: ${details.cause.name}: ${details.cause.message}`);
+  }
+  console.error(`diagnostics: ${safeJson(details)}`);
   process.exit(1);
 });
 
