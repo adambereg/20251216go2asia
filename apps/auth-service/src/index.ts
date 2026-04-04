@@ -87,8 +87,11 @@ type JwtVerifyResult = { ok: true; payload: Record<string, unknown> } | { ok: fa
 
 type GatewayPrincipal = {
   userId: string;
+  platformRole: CanonicalPlatformRole;
   roles: string[];
 };
+
+type CanonicalPlatformRole = 'spacer' | 'vip_spacer' | 'pro' | 'admin';
 
 function base64UrlToBytes(input: string): Uint8Array {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
@@ -177,6 +180,27 @@ function getStringArrayClaim(payload: Record<string, unknown>, key: string): str
     return [value.trim()];
   }
   return [];
+}
+
+function normalizeCanonicalPlatformRole(value: string | null): CanonicalPlatformRole | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'pro') return 'pro';
+  if (normalized === 'vip_spacer' || normalized === 'vip-spacer' || normalized === 'vip') return 'vip_spacer';
+  if (normalized === 'spacer' || normalized === 'member' || normalized === 'user') return 'spacer';
+  return null;
+}
+
+function derivePlatformRole(payload: Record<string, unknown>, roles: string[]): CanonicalPlatformRole {
+  const fromRoleClaim = normalizeCanonicalPlatformRole(getStringClaim(payload, 'role'));
+  if (fromRoleClaim) return fromRoleClaim;
+  for (const role of roles) {
+    const normalizedRole = normalizeCanonicalPlatformRole(role);
+    if (normalizedRole) return normalizedRole;
+  }
+  return 'spacer';
 }
 
 function validateServiceJwtClaims(
@@ -302,6 +326,7 @@ async function requireGatewayOrigin(
     principal: {
       userId,
       roles: getStringArrayClaim(verified.payload, 'roles'),
+      platformRole: derivePlatformRole(verified.payload, getStringArrayClaim(verified.payload, 'roles')),
     },
   };
 }
@@ -327,24 +352,19 @@ async function handleEnsureUser(
     request.headers.get('X-User-Email')?.trim() ||
     null;
 
-  if (!email) {
-    return json(
-      { error: { code: 'BAD_REQUEST', message: 'Missing email (send body.email)' }, requestId },
-      400
-    );
-  }
-
   const db = createDb(requireDatabase(env));
 
   // Gateway token subject is the single trust source for the current user identity.
   const userId = auth.principal.userId;
   const clerkId = userId;
+  const resolvedEmail = email ?? `${userId}@clerk.local`;
 
   const result = await db.execute(sql`
     INSERT INTO users (id, clerk_id, email, role, created_at, updated_at)
-    VALUES (${userId}, ${clerkId}, ${email}, 'spacer', now(), now())
+    VALUES (${userId}, ${clerkId}, ${resolvedEmail}, ${auth.principal.platformRole}, now(), now())
     ON CONFLICT (clerk_id) DO UPDATE
       SET email = EXCLUDED.email,
+          role = EXCLUDED.role,
           updated_at = now()
     RETURNING id, clerk_id, email, role, created_at, updated_at
   `);

@@ -1,5 +1,15 @@
 # User Service — Модель данных
 
+## Runtime baseline (identity/roles stabilization)
+
+- Для текущего executable baseline используется канонический `users.role`:
+  - `spacer`
+  - `vip_spacer`
+  - `pro`
+  - `admin`
+- Источник записи в `users.role`: gateway-validated user context (`X-Gateway-Auth`) при `POST /v1/users/ensure`.
+- Любые display labels и доменные связи (например, RF pro-link) не заменяют `users.role` как platform tier.
+
 ## 1. User
 
 Базовая учётная запись.

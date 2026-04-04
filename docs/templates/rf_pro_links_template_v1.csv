@@ -1,0 +1,5 @@
+﻿pro_link_seed_key,partner_seed_key,pro_user_seed_key,role_scope,accept_by_owner,notes
+pro_link_001,partner_001,user_009,curation,yes,Primary accepted PRO link: standalone PRO curator linked to coffee/brunch partner
+pro_link_002,partner_002,user_009,curation,no,Pending PRO link: standalone PRO curator linked to restaurant partner
+pro_link_003,partner_004,user_010,promotion,yes,Accepted PRO-owner mixed scenario: PRO user linked to second-city stay/travel partner
+pro_link_004,partner_003,user_011,curation,no,Pending PRO-owner mixed scenario: PRO user linked to service partner

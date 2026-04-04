@@ -2,6 +2,18 @@
 
 В цифровой экосистеме Go2Asia предусмотрено несколько ключевых ролей пользователей, отражающих разный уровень участия и вклада. Основные роли – это Спейсер, VIP-спейсер и PRO-спейсер (куратор), а также специальные роли для бизнес-партнёров и функции организатора событий/автора квестов. Кроме того, в экосистеме действует реферальная модель, где участвуют роли реферера (пригласившего) и реферала (приглашённого). Ниже приведено подробное описание каждой роли – кто может ей стать, какими правами и возможностями она обладает, как происходит рост до этой роли, взаимодействие с другими участниками, участие в системе вознаграждений (Points, NFT, токены G2A), вовлечённость в реферальную программу и влияние на развитие экосистемы.
 
+Технический baseline для runtime identity/roles (v1 stabilization slice):
+- канонические platform role коды: `spacer`, `vip_spacer`, `pro`, `admin`;
+- source-of-truth для identity: gateway-validated `sub`;
+- source-of-truth для platform tier в backend: `users.role`;
+- display-поля (например, profile role labels) используются только для UI и не участвуют в авторизации.
+
+RF owner account rule (identity vs social separation):
+- RF owner requires platform account.
+- RF owner ownership (`ownerUserId`) относится к RF domain relationship, а не к Space social participation.
+- Space participation для RF owner optional: не требуется публикация в Space, social graph или полноценный social onboarding.
+- PRO может быть RF owner, но RF owner не обязан быть PRO.
+
 ---
 
 # Спейсер (Spacer)

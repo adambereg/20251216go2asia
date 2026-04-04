@@ -1,0 +1,13 @@
+﻿seed_key,email,platform_role,clerk_external_id_hint,must_materialize_via_users_ensure,display_name,space_role_label_hint,rf_owner_candidate,rf_pro_candidate,notes
+user_001,anton.sokolov.seed@example.com,spacer,clerk_seed_user_001,yes,Anton Sokolov,Spacer,no,no,Basic consumer user for public RF claim/browse flows
+user_002,elena.morozova.seed@example.com,spacer,clerk_seed_user_002,yes,Elena Morozova,Spacer,no,no,Basic consumer user and future review/test user
+user_003,dmitry.volkov.seed@example.com,spacer,clerk_seed_user_003,yes,Dmitry Volkov,Spacer,yes,no,Spacer-owner candidate for RF partner without PRO role
+user_004,marina.lebedeva.seed@example.com,spacer,clerk_seed_user_004,yes,Marina Lebedeva,Spacer,no,no,Consumer user for additional offer visibility tests
+user_005,pavel.zorin.seed@example.com,spacer,clerk_seed_user_005,yes,Pavel Zorin,Spacer,yes,no,Spacer-owner candidate for second RF partner without PRO role
+user_006,irina.belova.seed@example.com,spacer,clerk_seed_user_006,yes,Irina Belova,Spacer,no,no,Reserve consumer user for runtime RF scenarios
+user_007,svetlana.orlova.seed@example.com,vip_spacer,clerk_seed_user_007,yes,Svetlana Orlova,VIP Spacer,no,no,VIP user for platform tier verification
+user_008,kirill.denisov.seed@example.com,vip_spacer,clerk_seed_user_008,yes,Kirill Denisov,VIP Spacer,no,no,VIP user for claim and visibility sanity scenarios
+user_009,alexey.chernov.seed@example.com,pro,clerk_seed_user_009,yes,Alexey Chernov,PRO,no,yes,PRO curator user for RF pro links without ownership
+user_010,natalia.kim.seed@example.com,pro,clerk_seed_user_010,yes,Natalia Kim,PRO,yes,yes,PRO user who is also RF owner candidate
+user_011,oleg.tran.seed@example.com,pro,clerk_seed_user_011,yes,Oleg Tran,PRO,yes,yes,Second PRO user who is also RF owner candidate
+user_012,admin.operator.seed@example.com,admin,clerk_seed_user_012,yes,Admin Operator,Admin,no,no,Admin account for operational checks and controlled access verification

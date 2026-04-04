@@ -35,10 +35,12 @@ export function ClerkAuthSetup() {
     // After successful auth: ensure user exists in Neon and claim referral code if present.
     if (!isLoaded || !isSignedIn || !user?.id) return;
 
-    const key = `go2asia_users_ensure_done:${user.id}`;
+    const doneKey = `go2asia_users_ensure_done:${user.id}`;
+    const inFlightKey = `go2asia_users_ensure_inflight:${user.id}`;
     try {
-      if (sessionStorage.getItem(key) === '1') return;
-      sessionStorage.setItem(key, '1');
+      if (sessionStorage.getItem(doneKey) === '1') return;
+      if (sessionStorage.getItem(inFlightKey) === '1') return;
+      sessionStorage.setItem(inFlightKey, '1');
     } catch {
       // ignore sessionStorage errors
     }
@@ -60,10 +62,21 @@ export function ClerkAuthSetup() {
           },
           '/v1/users/ensure'
         );
+        try {
+          sessionStorage.setItem(doneKey, '1');
+        } catch {
+          // ignore
+        }
       } catch (error) {
+        try {
+          sessionStorage.removeItem(inFlightKey);
+        } catch {
+          // ignore
+        }
         if (process.env.NODE_ENV === 'development') {
           console.warn('users/ensure failed', error);
         }
+        return;
       }
 
       // 2) Claim referral code (if we captured ?ref=CODE earlier)
@@ -106,7 +119,13 @@ export function ClerkAuthSetup() {
       }
     };
 
-    void run();
+    void run().finally(() => {
+      try {
+        sessionStorage.removeItem(inFlightKey);
+      } catch {
+        // ignore
+      }
+    });
   }, [isLoaded, isSignedIn, user?.id]);
 
   // Компонент не рендерит ничего

@@ -82,12 +82,18 @@ function applyCursorCondition(cursor: FeedCursor | null) {
   return sql`AND (sp.published_at < ${cursor.publishedAt} OR (sp.published_at = ${cursor.publishedAt} AND sp.id < ${cursor.id}))`;
 }
 
-export async function ensureProfileProjection(db: DbExecutor, userId: string): Promise<void> {
+export async function ensureProfileProjection(
+  db: DbExecutor,
+  userId: string,
+  roleLabel: string | null = null
+): Promise<void> {
   await db.execute(sql`
-    INSERT INTO space_profile_projection (user_id, display_name, updated_at)
-    VALUES (${userId}, ${userId}, now())
+    INSERT INTO space_profile_projection (user_id, display_name, role_label, updated_at)
+    VALUES (${userId}, ${userId}, ${roleLabel}, now())
     ON CONFLICT (user_id)
-    DO UPDATE SET updated_at = now()
+    DO UPDATE SET
+      role_label = COALESCE(EXCLUDED.role_label, space_profile_projection.role_label),
+      updated_at = now()
   `);
 }
 

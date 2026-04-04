@@ -1,0 +1,5 @@
+﻿case_key,offer_seed_key,claim_user_seed_key,idempotency_key,expect_claim_status,redeem_by_owner,notes
+voucher_case_001,offer_001,user_001,claim-offer001-user001-v1,claimed,no,Basic public claim case without redeem
+voucher_case_002,offer_006,user_009,claim-offer006-user009-v1,claimed,no,PRO-only claim case by PRO user without redeem
+voucher_case_003,offer_003,user_008,claim-offer003-user008-v1,claimed,yes,Public claim and redeem case by VIP user on restaurant offer
+voucher_case_004,offer_004,user_007,claim-offer004-user007-v1,claimed,yes,Invite-only restricted visibility case for manual claim and redeem verification

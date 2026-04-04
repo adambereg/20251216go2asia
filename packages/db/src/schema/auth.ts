@@ -10,7 +10,7 @@ export const users = pgTable('users', {
   id: text('id').primaryKey(), // Clerk user ID
   clerkId: text('clerk_id').notNull().unique(),
   email: varchar('email', { length: 255 }).notNull(),
-  role: varchar('role', { length: 50 }).notNull().default('spacer'), // spacer, vip_spacer, admin
+  role: varchar('role', { length: 50 }).notNull().default('spacer'), // spacer, vip_spacer, pro, admin
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

@@ -16,7 +16,7 @@ interface MerchantNavProps {
 }
 
 const navItems = [
-  { href: '/rf/merchant', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/rf/merchant', label: 'Обзор', icon: LayoutDashboard },
   { href: '/rf/merchant/profile', label: 'Профиль', icon: Store },
   { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket },
   { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare },

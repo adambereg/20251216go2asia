@@ -54,6 +54,10 @@ async function mintForUser(userId) {
   return jwt;
 }
 
+export async function mintClerkJwtForUser(userId) {
+  return mintForUser(userId);
+}
+
 export async function mintTestTokens() {
   const ownerUserId = required('CLERK_TEST_USER_OWNER');
   const altUserId = required('CLERK_TEST_USER_ALT');

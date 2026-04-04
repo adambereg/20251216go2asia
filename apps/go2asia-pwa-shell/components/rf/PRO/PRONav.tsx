@@ -2,21 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Store,
-  UserPlus,
-  CheckSquare,
-  Award,
-  ArrowLeft,
-} from 'lucide-react';
+import { LayoutDashboard, Store, UserPlus, CheckSquare, Award } from 'lucide-react';
 
 interface PRONavProps {
   variant?: 'vertical' | 'horizontal';
 }
 
 const navItems = [
-  { href: '/rf/pro', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/rf/pro', label: 'Обзор', icon: LayoutDashboard },
   { href: '/rf/pro/partners', label: 'Мои партнёры', icon: Store },
   { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus },
   { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare },
