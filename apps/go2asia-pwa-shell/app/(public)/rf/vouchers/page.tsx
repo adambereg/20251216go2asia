@@ -38,7 +38,7 @@ export default async function VouchersPage({ searchParams }: VouchersPageProps) 
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero subtitle="Загружаем актуальные предложения…" />
+      <RFHero compact subtitle="Публичные предложения и бонусы партнёров Russian Friendly." />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <RFMainNav />
       </div>

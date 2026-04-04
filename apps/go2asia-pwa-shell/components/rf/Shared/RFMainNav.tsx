@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Store, Ticket, Handshake, Briefcase } from 'lucide-react';
+import { Store, Ticket, MapPinned, Briefcase } from 'lucide-react';
 import { Button } from '@go2asia/ui';
 
 export function RFMainNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/rf', label: 'RF Хаб', icon: Handshake, isLive: true },
+    { href: '/rf', label: 'Каталог мест', icon: MapPinned, isLive: true },
     { href: '/rf/vouchers', label: 'Предложения', icon: Ticket, isLive: true },
     { href: '/rf/merchant', label: 'Кабинет партнёра (beta)', icon: Store, isLive: false },
     { href: '/rf/pro', label: 'PRO кабинет (beta)', icon: Briefcase, isLive: false },
@@ -37,7 +37,7 @@ export function RFMainNav() {
         })}
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Публичные разделы RF уже доступны. Кабинеты партнёра и PRO развиваются как beta-сценарии.
+        Основной сценарий — подбор мест; предложения и ваучеры доступны отдельной вкладкой. Кабинеты в beta.
       </p>
     </div>
   );

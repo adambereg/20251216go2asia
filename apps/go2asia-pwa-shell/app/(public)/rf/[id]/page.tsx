@@ -44,7 +44,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
   if (!partner) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <RFHero subtitle="Открываем карточку партнёра…" />
+        <RFHero compact subtitle="Карточка места в каталоге Russian Friendly." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <RFMainNav />
         </div>
@@ -54,7 +54,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
             <p className="mt-2 text-sm text-slate-600">{rfMicrocopy.temporaryUnavailable}</p>
             <div className="mt-4 flex gap-2">
               <Link href="/rf" className="text-sm font-medium text-blue-700 hover:text-blue-800">
-                Вернуться в RF-хаб
+                {rfMicrocopy.backToHub}
               </Link>
               <Link href="/rf/vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
                 Открыть предложения
@@ -73,7 +73,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero subtitle="Открываем карточку партнёра…" />
+      <RFHero compact subtitle="Карточка места в каталоге Russian Friendly." />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <RFMainNav />
       </div>

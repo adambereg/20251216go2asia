@@ -1,5 +1,30 @@
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
 
+/** Тексты для task-first входа: каталог мест */
+export const rfCatalogContent = {
+  pageTitle: 'Каталог мест',
+  pageSubtitle:
+    'Заведения и сервисы партнёров Russian Friendly в ЮВА. Фильтруйте по городу и формату, сразу видно, где есть активные бонусы и предложения.',
+  searchPlaceholder: 'Название места, категория или район',
+  sortLabel: 'Сортировка',
+  viewGrid: 'Сетка',
+  viewList: 'Список',
+  filterCountry: 'Страна',
+  filterCity: 'Город',
+  filterDistrict: 'Район / зона',
+  filterCategory: 'Категория',
+  filterOffers: 'Предложения',
+  filterOfferType: 'Тип предложения',
+  filterVibe: 'Формат / атмосфера',
+  filterVerified: 'Расширенная привязка к точке на карте',
+  chipAll: 'Все',
+  chipWithOffers: 'Есть публичные предложения',
+  chipNoOffers: 'Без публичных предложений',
+  resetFilters: 'Сбросить фильтры',
+  resultsCount: (n: number) => `Найдено мест: ${n}`,
+  offersAnchoredNote: 'Скидки и ваучеры встроены в карточки; полный список — во вкладке «Предложения».',
+} as const;
+
 export const rfLandingContent = {
   headline: 'Russian Friendly Asia',
   subheadline:
@@ -45,8 +70,18 @@ export const rfMicrocopy = {
   missingMedia: 'Изображение скоро появится',
   supportDataNote: 'Часть контентных описаний собрана из RF asset pack и обновляется по мере развития модуля.',
   betaZonesNote: 'Публичная витрина уже live. Кабинеты партнёра и PRO остаются в beta и развиваются отдельно.',
-  backToHub: 'Вернуться в RF-хаб',
-  backToCatalog: 'К каталогу RF',
+  backToHub: 'К каталогу мест',
+  backToCatalog: 'К каталогу мест',
+} as const;
+
+/** Подписи к тегам атмосферы (frontend / asset pack); фильтрация только по известным партнёрам */
+export const rfAtmosphereTagLabels: Record<string, string> = {
+  work_friendly: 'Для работы',
+  family: 'Семья',
+  breakfast: 'Завтраки',
+  quiet: 'Спокойно',
+  evening: 'Вечер',
+  stay: 'Проживание',
 } as const;
 
 const trustByRuntimeStatus: Record<string, { label: string; tone: string }> = {
@@ -82,6 +117,12 @@ const cityLabels: Record<string, string> = {
 type PartnerSupportProfile = {
   tagline: string;
   categoryLabel: string;
+  /** Ключ для фильтра категории в каталоге */
+  catalogCategoryKey: string;
+  /** Район / зона (пока support-слой; в API отдельного поля нет) */
+  districtLabel: string;
+  /** Теги сценария использования места */
+  atmosphereTags: string[];
   story: string;
   cardTone: string;
 };
@@ -90,28 +131,84 @@ const partnerProfilesByName: Record<string, PartnerSupportProfile> = {
   'Siberia Brew Phuket': {
     tagline: 'Кофе и комфортный старт дня',
     categoryLabel: 'Кофейни',
+    catalogCategoryKey: 'coffee_shops',
+    districtLabel: 'Патонг, у моря',
+    atmosphereTags: ['breakfast', 'work_friendly', 'quiet'],
     story: 'Подходит для спокойных встреч, завтраков и коротких рабочих сессий.',
     cardTone: 'from-amber-50 to-white',
   },
   'Baikal Kitchen Phuket': {
     tagline: 'Семейный формат и понятное меню',
     categoryLabel: 'Рестораны',
+    catalogCategoryKey: 'restaurants',
+    districtLabel: 'Патонг, центр',
+    atmosphereTags: ['family', 'evening', 'breakfast'],
     story: 'Удобный формат для обеда и ужина, особенно для семейных сценариев.',
     cardTone: 'from-rose-50 to-white',
   },
   'Lotus Care Phuket': {
     tagline: 'Велнес и восстановление',
     categoryLabel: 'Велнес',
+    catalogCategoryKey: 'wellness',
+    districtLabel: 'Патонг',
+    atmosphereTags: ['quiet', 'evening'],
     story: 'Спокойный формат сервиса для восстановительного и расслабляющего сценария.',
     cardTone: 'from-emerald-50 to-white',
   },
   'Mekong Stay Da Nang': {
     tagline: 'Локальное размещение и городской ритм',
     categoryLabel: 'Сервисы',
+    catalogCategoryKey: 'services',
+    districtLabel: 'Дананг, город',
+    atmosphereTags: ['stay', 'work_friendly', 'quiet'],
     story: 'Подходит как базовая точка для повседневных и travel-сценариев в городе.',
     cardTone: 'from-sky-50 to-white',
   },
 };
+
+const defaultPartnerProfile: PartnerSupportProfile = {
+  tagline: 'Партнёр из каталога RF Asia',
+  categoryLabel: 'Локальные сервисы',
+  catalogCategoryKey: 'other',
+  districtLabel: 'Район уточняется',
+  atmosphereTags: [],
+  story: 'Карточка места и предложения доступны в рамках текущего публичного среза RF Asia.',
+  cardTone: 'from-slate-50 to-white',
+};
+
+export function buildPublicActiveOffersByPartner(offers: RfOfferDto[]): Map<string, RfOfferDto[]> {
+  const map = new Map<string, RfOfferDto[]>();
+  for (const offer of offers) {
+    if (offer.visibility !== 'public' || offer.status !== 'active') continue;
+    const list = map.get(offer.partnerId) ?? [];
+    list.push(offer);
+    map.set(offer.partnerId, list);
+  }
+  return map;
+}
+
+export function partnerFeaturedScore(partner: RfPartnerDto, publicActiveByPartner: Map<string, RfOfferDto[]>): number {
+  const n = publicActiveByPartner.get(partner.id)?.length ?? 0;
+  return (partner.atlasPlaceId || partner.hostAtlasPlaceId ? 2 : 0) + n;
+}
+
+const catalogCategoryFilterOptions: { key: string; label: string }[] = [
+  { key: 'coffee_shops', label: 'Кофейни' },
+  { key: 'restaurants', label: 'Рестораны' },
+  { key: 'family_places', label: 'Для семьи' },
+  { key: 'wellness', label: 'Велнес' },
+  { key: 'coworking', label: 'Коворкинг' },
+  { key: 'services', label: 'Сервисы и жильё' },
+  { key: 'other', label: 'Другое' },
+];
+
+export function getCatalogCategoryFilterOptions(): readonly { key: string; label: string }[] {
+  return catalogCategoryFilterOptions;
+}
+
+export function getOfferTypePresentation(offerType: RfOfferDto['offerType']): { label: string; tone: string } {
+  return badgeByOfferType[offerType] ?? { label: offerType, tone: 'bg-slate-100 text-slate-700' };
+}
 
 export function getOfferBadge(offer: RfOfferDto): { label: string; tone: string } {
   if (offer.visibility === 'pro_only') return visibilityBadge.pro_only;
@@ -147,14 +244,7 @@ export function getPartnerLocation(partner: RfPartnerDto): string {
 }
 
 export function getPartnerPresentation(partner: RfPartnerDto): PartnerSupportProfile {
-  return (
-    partnerProfilesByName[partner.displayName] ?? {
-      tagline: 'Партнёр из каталога RF Asia',
-      categoryLabel: 'Локальные сервисы',
-      story: 'Карточка места и предложения доступны в рамках текущего публичного среза RF Asia.',
-      cardTone: 'from-slate-50 to-white',
-    }
-  );
+  return partnerProfilesByName[partner.displayName] ?? defaultPartnerProfile;
 }
 
 export function getPartnerHighlights(partner: RfPartnerDto, offersCount: number): string[] {
