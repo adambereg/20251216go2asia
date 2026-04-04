@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Профиль заведения | Кабинет партнёра | Russian Friendly',
-  description: 'Редактирование информации о заведении',
-};
-
+/**
+ * Профиль сведён к секции #mw-profile в общей сводке кабинета.
+ */
 export default function MerchantProfilePage() {
+  useEffect(() => {
+    window.location.replace('/rf/merchant#mw-profile');
+  }, []);
+
   return (
-    <main className="container mx-auto py-10">
-      <h1 className="text-2xl font-semibold mb-4">
-        Профиль заведения
-      </h1>
-      <p className="text-muted-foreground max-w-2xl">
-        Раздел в разработке. Скоро здесь появится редактирование информации
-        о заведении для партнёров Russian Friendly.
-      </p>
-    </main>
+    <p className="text-sm text-slate-600">
+      Перенаправляем в кабинет, раздел «Профиль»…
+    </p>
   );
 }
