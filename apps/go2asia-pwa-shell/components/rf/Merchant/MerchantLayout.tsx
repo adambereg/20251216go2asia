@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@go2asia/ui';
 import { ArrowLeft } from 'lucide-react';
 import { MerchantNav } from './MerchantNav';
+import { rfMicrocopy } from '@/lib/rfFirstSliceContent';
 import { RFHero, RFMainNav } from '../Shared';
 
 interface MerchantLayoutProps {
@@ -13,7 +14,10 @@ interface MerchantLayoutProps {
 export function MerchantLayout({ children }: MerchantLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero subtitle="Каталог проверенных Russian Friendly мест и сервисов в Юго-Восточной Азии" />
+      <RFHero
+        compact
+        subtitle="Каталог мест и сервисов партнёров Russian Friendly в Юго-Восточной Азии."
+      />
 
       {/* Навигация */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
@@ -26,7 +30,7 @@ export function MerchantLayout({ children }: MerchantLayoutProps) {
           <Link href="/rf">
             <Button variant="secondary" size="sm">
               <ArrowLeft size={16} className="mr-2" />
-              Вернуться в RF-хаб
+              {rfMicrocopy.backToHub}
             </Button>
           </Link>
         </div>

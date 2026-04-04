@@ -1,3 +1,4 @@
+export { RfPlacesCatalog } from './RfPlacesCatalog';
 export { CatalogView } from './CatalogView';
 export { PartnerCard } from './PartnerCard';
 export { PartnerGrid } from './PartnerGrid';
