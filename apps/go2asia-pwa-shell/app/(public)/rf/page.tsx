@@ -62,10 +62,7 @@ export default async function RFPage() {
               <h2 className="text-lg font-semibold text-slate-900">Лучшие предложения</h2>
               <p className="mt-1 text-sm text-slate-600">{rfLandingContent.bestOffersLead}</p>
             </div>
-            <Link
-              href="/rf/vouchers"
-              className="text-sm font-medium text-blue-700 hover:text-blue-800"
-            >
+            <Link href="/rf/vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
               Все предложения →
             </Link>
           </div>
@@ -87,6 +84,12 @@ export default async function RFPage() {
                         </span>
                       </div>
                       <p className="mt-2 text-xs text-slate-600">{getOfferSummaryLine(offer)}</p>
+                      <Link
+                        href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
+                        className="mt-2 inline-block text-xs font-medium text-blue-700 hover:text-blue-800"
+                      >
+                        Смотреть в каталоге предложений →
+                      </Link>
                     </article>
                   </li>
                 );
@@ -95,27 +98,29 @@ export default async function RFPage() {
           )}
         </section>
 
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm sm:p-6">
-          <h2 className="text-base font-semibold text-slate-900">Как это работает</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            {rfLandingContent.howItWorks.map((step) => (
-              <article key={step.title} className="rounded-lg border border-slate-200 bg-white p-3">
-                <h3 className="text-xs font-semibold text-slate-900">{step.title}</h3>
-                <p className="mt-1 text-xs text-slate-600">{step.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-slate-600">
+          <Link href="/rf/map" className="font-medium text-blue-700 hover:text-blue-800">
+            Карта
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
+            Все предложения
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/favorites" className="font-medium text-blue-700 hover:text-blue-800">
+            Избранное
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/my-vouchers" className="font-medium text-blue-700 hover:text-blue-800">
+            Мои ваучеры
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/how-it-works" className="font-medium text-blue-700 hover:text-blue-800">
+            Как это работает
+          </Link>
+        </nav>
 
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-900">Прозрачность модуля</h2>
-          <p className="mt-1 text-xs leading-relaxed">
-            Каталог и предложения работают на живом RF-контуре. Кабинеты партнёра и PRO — beta и развиваются отдельно.
-          </p>
-          <p className="mt-1 text-[11px] text-slate-500">{rfMicrocopy.betaZonesNote}</p>
-        </section>
-
-        <p className="mt-6 text-center text-[11px] text-slate-400">{rfMicrocopy.supportDataNote}</p>
+        <p className="mt-8 text-center text-[11px] text-slate-400">{rfMicrocopy.supportDataNote}</p>
       </main>
     </div>
   );

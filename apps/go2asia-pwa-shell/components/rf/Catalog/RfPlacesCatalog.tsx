@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LayoutGrid, List, Search } from 'lucide-react';
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
+import { FavoritePlaceButton } from '@/components/rf/Shared/FavoritePlaceButton';
 import {
   buildPublicActiveOffersByPartner,
   getCatalogCategoryFilterOptions,
@@ -215,6 +216,27 @@ export function RfPlacesCatalog({
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{rfCatalogContent.pageTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">{rfCatalogContent.pageSubtitle}</p>
+        <nav className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+          <Link href="/rf/map" className="font-medium text-blue-700 hover:text-blue-800">
+            {rfCatalogContent.crossLinkMap}
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
+            {rfCatalogContent.crossLinkOffers}
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/favorites" className="font-medium text-blue-700 hover:text-blue-800">
+            Избранное
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/my-vouchers" className="font-medium text-blue-700 hover:text-blue-800">
+            Мои ваучеры
+          </Link>
+          <span className="text-slate-300">·</span>
+          <Link href="/rf/how-it-works" className="font-medium text-blue-700 hover:text-blue-800">
+            {rfCatalogContent.crossLinkHow}
+          </Link>
+        </nav>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
@@ -500,17 +522,32 @@ function PlaceCard({
   );
 
   const cta = (
-    <Link
-      href={`/rf/${encodeURIComponent(partner.id)}`}
-      className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-    >
-      Подробнее
-    </Link>
+    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <Link
+        href={`/rf/${encodeURIComponent(partner.id)}`}
+        className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        Подробнее
+      </Link>
+      <Link
+        href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+        className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
+      >
+        Предложения
+      </Link>
+      <Link
+        href={`/rf/map?city=${encodeURIComponent(partner.cityId)}`}
+        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        На карте
+      </Link>
+      <FavoritePlaceButton partnerId={partner.id} label={partner.displayName} />
+    </div>
   );
 
   if (layout === 'list') {
     return (
-      <article className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <article className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
         {body}
         {cta}
       </article>

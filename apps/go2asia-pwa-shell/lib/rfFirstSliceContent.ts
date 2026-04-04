@@ -23,6 +23,104 @@ export const rfCatalogContent = {
   resetFilters: 'Сбросить фильтры',
   resultsCount: (n: number) => `Найдено мест: ${n}`,
   offersAnchoredNote: 'Скидки и ваучеры встроены в карточки; полный список — во вкладке «Предложения».',
+  crossLinkMap: 'Карта',
+  crossLinkOffers: 'Все предложения',
+  crossLinkHow: 'Как это работает',
+} as const;
+
+export const rfOffersCatalogContent = {
+  pageTitle: 'Предложения',
+  pageSubtitle:
+    'Какую выгоду можно получить и у какого места: фильтруйте по городу, типу оффера и доступности. Данные — из живого RF runtime; получение ваучера в приложении пока требует отдельного сценария входа.',
+  searchPlaceholder: 'Название оффера, партнёр, ключевые слова',
+  sortLabel: 'Сортировка',
+  filterStatus: 'Статус на витрине',
+  filterVisibility: 'Доступность',
+  filterPartner: 'Партнёр',
+  resultsCount: (n: number) => `Найдено предложений: ${n}`,
+  ctaOpenPlace: 'Открыть место',
+  ctaAllOffersForPlace: 'Все офферы места',
+  claimNotReadyTitle: 'Получить ваучер',
+  claimNotReadyBody:
+    'Онлайн-выдача ваучера в этом публичном срезе ещё не подключена как самостоятельный шаг. Сохраните оффер в «Мои ваучеры» (локально в браузере) или откройте карточку места.',
+} as const;
+
+export const rfMapPageContent = {
+  pageTitle: 'Карта',
+  pageSubtitle:
+    'Пространственный обзор: где сосредоточены партнёры RF и в каких зонах города их проще искать. Полноценные координаты для интерактивной карты в публичном API пока не обязательны — ниже честная группировка по городу и зоне (support-слой).',
+  cityLabel: 'Город / область',
+  zoneHint: 'Зоны ориентировочные; точная геометрия появится с развитием Atlas + RF.',
+  listTitle: 'Места на выбранной территории',
+  openCatalog: 'Открыть каталог мест',
+  openOffers: 'Предложения в городе',
+  partnerCount: (n: number) => `${n} мест`,
+} as const;
+
+export const rfFavoritesPageContent = {
+  pageTitle: 'Избранное',
+  pageSubtitle:
+    'Сохранённые места и предложения. Сейчас список хранится только в этом браузере (localStorage) и не привязан к аккаунту.',
+  localWarning:
+    'Это не облачная синхронизация: очистка данных сайта или другой браузер — без этих сохранений.',
+  placesTab: 'Места',
+  offersTab: 'Предложения',
+  emptyPlaces: 'Вы ещё не сохранили места. Добавляйте сердце на карточках в каталоге.',
+  emptyOffers: 'Нет сохранённых предложений. Отметьте оффер в каталоге предложений.',
+  removeHint: 'Убрать из избранного можно снова нажать на сердце в каталоге.',
+} as const;
+
+export const rfMyVouchersPageContent = {
+  pageTitle: 'Мои ваучеры',
+  pageSubtitle:
+    'Сюда можно отложить офферы, которыми планируете воспользоваться. Это локальный список в браузере: не путать с серверным claim / redeem.',
+  localWarning:
+    'Реальная выдача и погашение ваучеров идёт через RF backend и авторизацию — здесь только честный planning-слой Phase 2.',
+  empty: 'Пока пусто. Добавьте оффер из каталога предложений кнопкой «В список». Серверный статус ваучера здесь не отображается.',
+  statusLocal: 'Локально сохранено',
+  remove: 'Убрать из списка',
+  addedAt: 'Добавлено',
+} as const;
+
+export const rfHowItWorksPageContent = {
+  pageTitle: 'Как это работает',
+  pageSubtitle: 'Короткий onboarding по публичному контуру Russian Friendly Asia — без маркетинговой «воды».',
+  sections: [
+    {
+      title: 'Найти место',
+      body: 'Откройте «Каталог мест», воспользуйтесь поиском и фильтрами или переключитесь на «Карту» для географического обзора.',
+      links: [
+        { href: '/rf', label: 'Каталог мест' },
+        { href: '/rf/map', label: 'Карта' },
+      ],
+    },
+    {
+      title: 'Найти выгоду',
+      body: 'В разделе «Предложения» те же партнёры показаны через призму офферов: тип скидки/бонуса, доступность (public / PRO / invite), статус active/draft.',
+      links: [{ href: '/rf/vouchers', label: 'Предложения' }],
+    },
+    {
+      title: 'Сохранить',
+      body: 'Избранное и «Мои ваучеры» на текущем этапе работают локально в браузере — удобно для планирования поездки, пока нет облачной синхронизации.',
+      links: [
+        { href: '/rf/favorites', label: 'Избранное' },
+        { href: '/rf/my-vouchers', label: 'Мои ваучеры' },
+      ],
+    },
+    {
+      title: 'Использовать у партнёра',
+      body: 'Показ ваучера и погашение — это сценарий с авторизацией и RF backend. Публичная витрина показывает условия; не ожидайте полного redemption flow только из гостевого режима.',
+      links: [{ href: '/rf/vouchers', label: 'Смотреть предложения' }],
+    },
+    {
+      title: 'Что уже live, что beta',
+      body: 'Каталог мест, предложения и карта-обзор опираются на живой RF runtime там, где API доступен. Кабинеты партнёра и PRO — отдельные beta-поверхности. Часть описаний мест — support-layer из контент-пака.',
+      links: [
+        { href: '/rf/merchant', label: 'Кабинет партнёра (beta)' },
+        { href: '/rf/pro', label: 'PRO кабинет (beta)' },
+      ],
+    },
+  ],
 } as const;
 
 export const rfLandingContent = {
@@ -237,14 +335,38 @@ export function getPartnerTrust(partner: RfPartnerDto): { label: string; tone: s
   };
 }
 
+export function getRfCountryLabel(countryId: string): string {
+  return countryLabels[countryId] ?? countryId;
+}
+
+export function getRfCityLabel(cityId: string): string {
+  return cityLabels[cityId] ?? cityId;
+}
+
 export function getPartnerLocation(partner: RfPartnerDto): string {
-  const country = countryLabels[partner.countryId] ?? partner.countryId;
-  const city = cityLabels[partner.cityId] ?? partner.cityId;
+  const country = getRfCountryLabel(partner.countryId);
+  const city = getRfCityLabel(partner.cityId);
   return `${city}, ${country}`;
 }
 
 export function getPartnerPresentation(partner: RfPartnerDto): PartnerSupportProfile {
   return partnerProfilesByName[partner.displayName] ?? defaultPartnerProfile;
+}
+
+/** Фильтр категории места: совпадает с логикой каталога мест (включая «Для семьи» по тегу) */
+export function partnerMatchesCatalogCategoryKey(partner: RfPartnerDto, key: string): boolean {
+  if (key === 'all') return true;
+  const profile = getPartnerPresentation(partner);
+  if (key === 'family_places') {
+    return profile.catalogCategoryKey === 'family_places' || profile.atmosphereTags.includes('family');
+  }
+  return profile.catalogCategoryKey === key;
+}
+
+/** Короткая потребительская строка без выдуманных полей API */
+export function getOfferValueLine(offer: RfOfferDto): string {
+  const typeLabel = getOfferTypePresentation(offer.offerType).label;
+  return `${typeLabel} · ${offer.title}`;
 }
 
 export function getPartnerHighlights(partner: RfPartnerDto, offersCount: number): string[] {

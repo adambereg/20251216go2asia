@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchRfOffers, fetchRfPartner } from '@go2asia/sdk/rf';
+import { AddToMyVouchersButton } from '@/components/rf/Shared/AddToMyVouchersButton';
+import { FavoriteOfferButton } from '@/components/rf/Shared/FavoriteOfferButton';
+import { FavoritePlaceButton } from '@/components/rf/Shared/FavoritePlaceButton';
 import { RFHero, RFMainNav } from '@/components/rf/Shared';
 import {
   getOfferBadge,
@@ -8,6 +11,7 @@ import {
   getPartnerLocation,
   getPartnerPresentation,
   getPartnerTrust,
+  getRfCityLabel,
   getVisibilityBadge,
   rfMicrocopy,
 } from '@/lib/rfFirstSliceContent';
@@ -79,9 +83,22 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <Link href="/rf" className="text-sm text-blue-700 hover:text-blue-800">
             ← {rfMicrocopy.backToCatalog}
+          </Link>
+          <FavoritePlaceButton partnerId={partner.id} label={partner.displayName} />
+          <Link
+            href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+            className="text-sm font-medium text-blue-700 hover:text-blue-800"
+          >
+            Предложения в каталоге
+          </Link>
+          <Link
+            href={`/rf/map?city=${encodeURIComponent(partner.cityId)}`}
+            className="text-sm font-medium text-slate-700 hover:text-slate-900"
+          >
+            На карте · {getRfCityLabel(partner.cityId)}
           </Link>
         </div>
 
@@ -128,10 +145,20 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mt-6">
-          <h2 className="text-lg font-semibold text-slate-900">Предложения партнёра</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Live офферы загружаются из RF runtime и фильтруются по текущему `partnerId`.
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Предложения партнёра</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                Оферы из RF runtime для этого места. Избранное и «Мои ваучеры» сохраняются локально в браузере.
+              </p>
+            </div>
+            <Link
+              href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+              className="text-sm font-medium text-blue-700 hover:text-blue-800"
+            >
+              Открыть в каталоге предложений →
+            </Link>
+          </div>
           {offersResponse === null ? (
             <p className="mt-4 text-sm text-amber-700">{rfMicrocopy.temporaryUnavailable}</p>
           ) : offers.length === 0 ? (
@@ -147,12 +174,27 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-2">{getOfferSummaryLine(offer)}</p>
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getVisibilityBadge(offer.visibility).tone}`}
                     >
                       {getVisibilityBadge(offer.visibility).label}
                     </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <FavoriteOfferButton offerId={offer.id} />
+                    <AddToMyVouchersButton
+                      offerId={offer.id}
+                      partnerId={partner.id}
+                      title={offer.title}
+                      partnerDisplayName={partner.displayName}
+                    />
+                    <Link
+                      href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+                      className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      В общем каталоге
+                    </Link>
                   </div>
                 </li>
               ))}

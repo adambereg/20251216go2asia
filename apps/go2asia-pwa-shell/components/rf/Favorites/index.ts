@@ -1,0 +1,1 @@
+export { RfFavoritesView } from './RfFavoritesView';
