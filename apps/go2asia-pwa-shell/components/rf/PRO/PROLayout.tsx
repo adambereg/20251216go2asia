@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from '@go2asia/ui';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { PRONav } from './PRONav';
 import { rfMicrocopy } from '@/lib/rfFirstSliceContent';
 import { RFHero, RFMainNav } from '../Shared';
@@ -12,21 +13,35 @@ interface PROLayoutProps {
 }
 
 export function PROLayout({ children }: PROLayoutProps) {
+  const pathname = usePathname();
+  const isOverview = pathname === '/rf/pro';
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-100">
       <RFHero
         compact
-        subtitle="Каталог мест и сервисов партнёров Russian Friendly в Юго-Восточной Азии."
+        subtitle="Публичный RF сверху; ниже — отдельный RF PRO workspace для сопровождения партнёрского контура."
       />
 
-      {/* Навигация */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+      <div className="mx-auto max-w-7xl px-4 pb-2 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>
 
-      {/* Навигация назад к публичному каталогу */}
-      <div className="bg-white border-b border-purple-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div className="border-b border-purple-950 bg-purple-950 text-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
+          <Sparkles className="h-4 w-4 shrink-0 text-purple-200" aria-hidden />
+          <p className="text-sm font-semibold tracking-tight">RF · PRO workspace</p>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-200">
+            beta
+          </span>
+          <span className="text-xs text-purple-200">
+            Сопровождение партнёров и видимости в public RF, без mutation-heavy инструментов.
+          </span>
+        </div>
+      </div>
+
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
           <Link href="/rf">
             <Button variant="secondary" size="sm">
               <ArrowLeft size={16} className="mr-2" />
@@ -35,32 +50,36 @@ export function PROLayout({ children }: PROLayoutProps) {
           </Link>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
-          {/* Боковое меню для десктопа */}
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
             <div className="sticky top-6">
               <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-semibold text-purple-900 mb-4">
-                  PRO кабинет (beta)
-                </h2>
+                <h2 className="mb-1 text-sm font-semibold text-purple-950">Разделы PRO кабинета</h2>
+                <p className="mb-4 text-[11px] leading-snug text-slate-500">
+                  Сводка и фокус — на главной. Остальные разделы остаются как beta surfaces.
+                </p>
                 <PRONav />
               </div>
             </div>
           </aside>
 
-          {/* Горизонтальное меню для мобильных */}
           <div className="lg:hidden">
-            <div className="rounded-2xl border border-purple-200 bg-white p-3 shadow-sm mb-6">
-              <div className="font-semibold text-purple-900 mb-3 text-sm">
-                PRO кабинет (beta)
-              </div>
+            <div className="mb-6 rounded-2xl border border-purple-200 bg-white p-3 shadow-sm">
+              <div className="mb-3 text-sm font-semibold text-purple-950">Разделы PRO кабинета</div>
               <PRONav variant="horizontal" />
             </div>
           </div>
 
-          {/* Основной контент */}
-          <main className="min-w-0">{children}</main>
+          <main className="min-w-0">
+            {isOverview ? (
+              <p className="mb-6 rounded-lg border border-purple-100 bg-white px-3 py-2 text-xs text-slate-600">
+                Метрики и scope в этом экране могут быть derived/support-layer, если live assignment logic ещё не
+                подтверждён в API.
+              </p>
+            ) : null}
+            {children}
+          </main>
         </div>
       </div>
     </div>
