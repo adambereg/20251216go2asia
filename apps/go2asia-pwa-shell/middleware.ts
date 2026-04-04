@@ -108,7 +108,11 @@ export default isClerkConfigured
   if (isPRORoute(req)) {
     const role = (sessionClaims as any)?.publicMetadata?.role as string | undefined;
     if (role !== 'pro' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
+      // Не отправляем пользователя "молча" на главную.
+      // Честный fallback: в публичный RF-контур с явной причиной.
+      const rfUrl = new URL('/rf', req.url);
+      rfUrl.searchParams.set('access', 'pro_required');
+      return NextResponse.redirect(rfUrl);
     }
   }
 
