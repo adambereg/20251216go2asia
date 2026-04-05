@@ -14,7 +14,7 @@ interface PROLayoutProps {
 
 export function PROLayout({ children }: PROLayoutProps) {
   const pathname = usePathname();
-  const isOverview = pathname === '/rf/pro';
+  const isOpsSurface = pathname?.startsWith('/rf/pro/partners') || pathname?.startsWith('/rf/pro/verifications');
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -57,7 +57,7 @@ export function PROLayout({ children }: PROLayoutProps) {
               <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-sm">
                 <h2 className="mb-1 text-sm font-semibold text-purple-950">Разделы PRO кабинета</h2>
                 <p className="mb-4 text-[11px] leading-snug text-slate-500">
-                  Сводка и фокус — на главной. Остальные разделы остаются как beta surfaces.
+                  Сводка и фокус — на главной. Операционные маршруты помечены как legacy/demo/soon.
                 </p>
                 <PRONav />
               </div>
@@ -72,10 +72,13 @@ export function PROLayout({ children }: PROLayoutProps) {
           </div>
 
           <main className="min-w-0">
-            {isOverview ? (
-              <p className="mb-6 rounded-lg border border-purple-100 bg-white px-3 py-2 text-xs text-slate-600">
-                Метрики и scope в этом экране могут быть derived/support-layer, если live assignment logic ещё не
-                подтверждён в API.
+            <p className="mb-6 rounded-lg border border-purple-100 bg-white px-3 py-2 text-xs text-slate-600">
+              PRO scope в этом контуре может быть derived/support-layer, пока assignment logic не подтверждён отдельным
+              live контрактом API.
+            </p>
+            {isOpsSurface ? (
+              <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Этот раздел — legacy/demo слой для операционного baseline. Не воспринимайте его как полностью live workflow.
               </p>
             ) : null}
             {children}

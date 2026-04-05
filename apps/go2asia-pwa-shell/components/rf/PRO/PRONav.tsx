@@ -30,10 +30,10 @@ const workspaceSections = [
 ];
 
 const operations = [
-  { href: '/rf/pro/partners', label: 'Партнёры (legacy)', icon: BarChart3, prefix: '/rf/pro/partners' },
-  { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare, prefix: '/rf/pro/verifications' },
-  { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus, prefix: '/rf/pro/onboarding' },
-  { href: '/rf/pro/rewards', label: 'Вознаграждения', icon: Award, prefix: '/rf/pro/rewards' },
+  { href: '/rf/pro/partners', label: 'Партнёры', icon: BarChart3, prefix: '/rf/pro/partners', badge: 'legacy' },
+  { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare, prefix: '/rf/pro/verifications', badge: 'demo' },
+  { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus, prefix: '/rf/pro/onboarding', badge: 'soon' },
+  { href: '/rf/pro/rewards', label: 'Вознаграждения', icon: Award, prefix: '/rf/pro/rewards', badge: 'soon' },
 ];
 
 export function PRONav({ variant = 'vertical' }: PRONavProps) {
@@ -73,6 +73,11 @@ export function PRONav({ variant = 'vertical' }: PRONavProps) {
               <Link key={item.href} href={item.href} className={baseLinkClass(Boolean(isActive), 'whitespace-nowrap')}>
                 <Icon size={16} />
                 <span>{item.label}</span>
+                {item.badge ? (
+                  <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+                    {item.badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -111,6 +116,11 @@ export function PRONav({ variant = 'vertical' }: PRONavProps) {
             >
             <Icon size={18} />
             <span>{item.label}</span>
+            {item.badge ? (
+              <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+                {item.badge}
+              </span>
+            ) : null}
           </Link>
         );
       })}

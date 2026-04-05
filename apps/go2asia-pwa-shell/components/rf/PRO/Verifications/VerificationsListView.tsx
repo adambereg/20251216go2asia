@@ -1,11 +1,10 @@
 'use client';
 
 import { Card, CardContent, Button, Badge } from '@go2asia/ui';
-import { CheckSquare, Clock, CheckCircle2 } from 'lucide-react';
+import { CheckSquare, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { mockVerifications, mockPartners } from '../../mockData';
-import { VerifiedBadge } from '../../Shared';
 
 export function VerificationsListView() {
   const [verifications] = useState(mockVerifications);
@@ -27,8 +26,11 @@ export function VerificationsListView() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Проверки</h1>
         <p className="text-slate-600">
-          Проводите проверки партнёров по стандарту Russian Friendly
+          Demo-слой проверки партнёров. Полный verification workflow в PRO пока не подключён.
         </p>
+      </div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        Чек-листы на этом экране демонстрационные. Действия проверки не записываются в live backend.
       </div>
 
       {/* Список проверок */}
@@ -59,12 +61,10 @@ export function VerificationsListView() {
                     </div>
                   </div>
                   {verification.status === 'pending' && (
-                    <Link href={`/rf/pro/verifications/${verification.id}`}>
-                      <Button variant="primary" size="sm">
+                    <Button variant="primary" size="sm" disabled className="opacity-70">
                         <CheckSquare size={16} className="mr-2" />
-                        Провести проверку
-                      </Button>
-                    </Link>
+                        Провести проверку (soon)
+                    </Button>
                   )}
                 </div>
 

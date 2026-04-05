@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Онбординг бизнесов | PRO Dashboard | Russian Friendly',
-  description: 'Приглашение и обработка заявок новых бизнесов',
+  title: 'Онбординг (soon) | PRO Dashboard | Russian Friendly',
+  description: 'Placeholder-раздел онбординга для будущего PRO workflow',
 };
 
 export default function PROOnboardingPage() {

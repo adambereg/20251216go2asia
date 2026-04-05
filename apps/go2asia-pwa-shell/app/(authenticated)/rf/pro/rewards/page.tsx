@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: 'Вознаграждения | PRO Dashboard | Russian Friendly',
-  description: 'История вознаграждений PRO-куратора',
+  title: 'Вознаграждения (soon) | PRO Dashboard | Russian Friendly',
+  description: 'Placeholder-раздел вознаграждений для будущего PRO incentives workflow',
 };
 
 export default function PRORewardsPage() {

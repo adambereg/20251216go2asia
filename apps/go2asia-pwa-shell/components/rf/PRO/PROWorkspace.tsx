@@ -79,7 +79,7 @@ export function PROWorkspace() {
         </div>
       ) : (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900">
-          Scope собран из live-связей в офферах по `createdByUserId`.
+          Scope собран из прокси-связей по авторам офферов (`createdByUserId`) и остаётся read-only baseline.
         </div>
       )}
 
@@ -120,10 +120,13 @@ export function PROWorkspace() {
             <p className="mt-1 text-sm text-slate-600">
               Партнёры из текущего PRO scope. Это не owner-кабинет; фокус на сопровождение и публичный результат.
             </p>
+            {scope.isDerivedScope ? (
+              <p className="mt-1 text-xs text-purple-700">Сейчас это fallback scope (derived), а не подтверждённое assignment-распределение.</p>
+            ) : null}
           </div>
           <Link href="/rf/pro/partners">
             <Button variant="secondary" size="sm" className="gap-1">
-              Детальный список (legacy)
+              Детальный список (legacy/demo)
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </Link>
