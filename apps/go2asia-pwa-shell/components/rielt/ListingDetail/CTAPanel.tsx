@@ -32,6 +32,9 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
     : listing.pricing.perNight;
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
+  const primaryVoucherCta = listing.presentation?.primaryCtaLabel || listing.rfVoucher?.title;
+  const secondaryVoucherCta = listing.presentation?.secondaryCtaLabel;
+  const voucherFirst = listing.presentation?.voucherEntryMode === 'voucher_first';
 
   const buildIdempotencyKey = () => {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -109,13 +112,43 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
       <div className="rounded-lg border border-slate-200 p-3 mb-5">
         <p className="text-xs text-slate-600">
-          Booking and payment flows are intentionally out of scope for this pass. The live action below sends an
-          inquiry request to the listing owner.
+          Booking, payment, chat and CRM flows intentionally remain out of Step 8 scope. Public voucher presentation is
+          shown as a seed extension layer; live action below keeps the real inquiry path.
         </p>
       </div>
 
+      {listing.rfVoucher ? (
+        <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">Voucher</span>
+            <span className="text-sm font-semibold text-emerald-900">{listing.rfVoucher.title}</span>
+          </div>
+          <p className="text-sm text-emerald-800 mb-3">{listing.rfVoucher.description}</p>
+          {primaryVoucherCta ? (
+            <button
+              type="button"
+              className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors"
+            >
+              {primaryVoucherCta}
+            </button>
+          ) : null}
+          {secondaryVoucherCta ? (
+            <button
+              type="button"
+              className="w-full mt-2 px-4 py-2 border border-emerald-300 text-emerald-800 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
+            >
+              {secondaryVoucherCta}
+            </button>
+          ) : null}
+          <p className="text-xs text-emerald-800 mt-2">Voucher CTA в этом проходе работает как presentation/meta слой.</p>
+        </div>
+      ) : null}
+
       {/* Кнопки действий */}
       <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-slate-900">
+          {voucherFirst ? 'Или отправьте live inquiry владельцу' : 'Отправьте live inquiry владельцу'}
+        </h3>
         <div className="space-y-2">
           <textarea
             value={message}
@@ -178,25 +211,9 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         </div>
       </div>
 
-      {/* RF-ваучер */}
-      {listing.rfVoucher && (
-        <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">
-              RF
-            </span>
-            <span className="font-semibold text-emerald-900">
-              {listing.rfVoucher.title}
-            </span>
-          </div>
-          <p className="text-sm text-emerald-800 mb-2">
-            {listing.rfVoucher.description}
-          </p>
-          <button className="text-sm text-emerald-700 font-medium hover:text-emerald-800">
-            Показать условия →
-          </button>
-        </div>
-      )}
+      {listing.presentation?.trustLabel ? (
+        <div className="mt-4 text-xs text-slate-600">{listing.presentation.trustLabel}</div>
+      ) : null}
     </div>
   );
 }

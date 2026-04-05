@@ -26,13 +26,19 @@ export function Summary({ listing }: SummaryProps) {
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
           {listing.title}
         </h1>
+        {listing.presentation?.subtitle ? (
+          <p className="text-sm text-slate-600 mb-2">{listing.presentation.subtitle}</p>
+        ) : null}
         <div className="flex items-center gap-2 text-slate-600">
           <MapPin className="w-5 h-5" />
           <span>
             {listing.address.district && `${listing.address.district}, `}
-            {listing.address.city}, {listing.address.country}
+            {listing.address.city || 'city_id not specified'}, {listing.address.country}
           </span>
         </div>
+        {listing.presentation?.trustLabel ? (
+          <div className="text-xs text-slate-500 mt-2">{listing.presentation.trustLabel}</div>
+        ) : null}
       </div>
 
       {/* Рейтинг и отзывы */}

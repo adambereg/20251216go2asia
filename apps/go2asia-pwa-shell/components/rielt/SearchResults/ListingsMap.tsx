@@ -35,6 +35,7 @@ export function ListingsMap({
   onSelect,
 }: ListingsMapProps) {
   void selectedId;
+  const hasSeedOverlay = listings.some((listing) => listing.presentation?.source === 'seed');
   const listingsWithCoordinates = listings.filter(
     (listing) =>
       listing.address.coordinates &&
@@ -59,6 +60,11 @@ export function ListingsMap({
 
   return (
     <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200">
+      {hasSeedOverlay ? (
+        <div className="px-3 py-2 text-xs text-blue-800 bg-blue-50 border-b border-blue-200">
+          Координаты и маркеры в этом режиме идут из seed presentation overlay, а не из канонического Step 8 public DTO.
+        </div>
+      ) : null}
       <MapContainer
         center={mapCenter}
         zoom={13}

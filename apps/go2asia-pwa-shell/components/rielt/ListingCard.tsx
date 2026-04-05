@@ -71,6 +71,9 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         <h3 className="font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-emerald-600 transition-colors">
           {listing.title}
         </h3>
+        {listing.presentation?.subtitle ? (
+          <p className="text-xs text-slate-500 mb-1 line-clamp-1">{listing.presentation.subtitle}</p>
+        ) : null}
         <div className="flex items-center gap-1 text-sm text-slate-600 mb-2">
           <MapPin className="w-4 h-4" />
           <span className="line-clamp-1">
@@ -127,7 +130,15 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
             </span>
             <span className="text-sm text-slate-600 ml-1">/ {priceLabel}</span>
           </div>
+          {listing.presentation?.vouchersCount ? (
+            <span className="text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ваучеров: {listing.presentation.vouchersCount}
+            </span>
+          ) : null}
         </div>
+        {listing.presentation?.trustLabel ? (
+          <p className="mt-2 text-xs text-slate-500 line-clamp-1">{listing.presentation.trustLabel}</p>
+        ) : null}
       </div>
     </Link>
   );

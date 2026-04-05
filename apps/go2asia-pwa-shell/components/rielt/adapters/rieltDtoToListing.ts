@@ -82,6 +82,9 @@ export function rieltDtoToListing(dto: RieltListingDto): Listing {
     status: 'approved',
     createdAt: dto.createdAt ?? '',
     updatedAt: dto.updatedAt ?? '',
+    presentation: {
+      source: 'runtime',
+    },
   };
 }
 

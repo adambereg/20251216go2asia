@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
 import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { useRieltSeedListings } from './hooks/useRieltSeed';
 
 const EDITOR_PICKS = [
   {
@@ -45,7 +46,16 @@ function EditorPickRow({
 }) {
   const Icon = pick.icon;
   const { data, isLoading } = useListListings(pick.apiParams);
-  const listings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const seed = useRieltSeedListings({
+    bedrooms_min: pick.apiParams.bedrooms_min,
+    listing_type: pick.apiParams.listing_type,
+    sort: pick.apiParams.sort,
+    page_size: pick.apiParams.page_size,
+  });
+  const seedListings = seed.data?.items ?? [];
+  const apiListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const listings = seedListings.length > 0 ? seedListings : apiListings;
+  const loading = isLoading && seed.isLoading;
 
   return (
     <div>
@@ -59,18 +69,26 @@ function EditorPickRow({
         </div>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        <>
+          {listings.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+              Для этой подборки пока нет доступных объявлений.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {listings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-4">

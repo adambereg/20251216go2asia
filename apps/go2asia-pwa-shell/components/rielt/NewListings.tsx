@@ -10,15 +10,23 @@ import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
 import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { useRieltSeedListings } from './hooks/useRieltSeed';
 
 export function NewListings() {
   const { data, isLoading } = useListListings({
     sort: 'newest',
     page_size: 6,
   });
-  const newListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const seed = useRieltSeedListings({
+    sort: 'newest',
+    page_size: 6,
+  });
+  const seedListings = seed.data?.items ?? [];
+  const apiListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const newListings = seedListings.length > 0 ? seedListings : apiListings;
+  const loading = isLoading && seed.isLoading;
 
-  if (isLoading) {
+  if (loading) {
     return (
       <section>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
@@ -34,7 +42,16 @@ export function NewListings() {
   }
 
   if (newListings.length === 0) {
-    return null;
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Новое на этой неделе
+        </h2>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+          Публичная витрина пока не получила новые объявления.
+        </div>
+      </section>
+    );
   }
 
   return (

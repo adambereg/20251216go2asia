@@ -14,6 +14,23 @@ interface HouseRulesProps {
 
 export function HouseRules({ listing }: HouseRulesProps) {
   const rules = listing.houseRules;
+  const hasRules =
+    rules.smoking !== undefined ||
+    rules.pets !== undefined ||
+    rules.parties !== undefined ||
+    rules.deposit !== undefined ||
+    rules.prepayment !== undefined;
+
+  if (!hasRules) {
+    return (
+      <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
+        <h2 className="text-2xl font-bold text-slate-900 mb-4">Домашние правила</h2>
+        <p className="text-sm text-slate-600">
+          Домашние правила пока не опубликованы для этого объявления.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">

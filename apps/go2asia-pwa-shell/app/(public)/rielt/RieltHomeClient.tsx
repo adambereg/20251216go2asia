@@ -40,6 +40,12 @@ export function RieltHomeClient() {
     if (updatedFilters.rentalType) {
       params.set('rentalType', updatedFilters.rentalType);
     }
+    if (updatedFilters.onlyRF) {
+      params.set('onlyRF', '1');
+    }
+    if (updatedFilters.onlyPROVerified) {
+      params.set('onlyPROVerified', '1');
+    }
     
     router.push(`/rielt/search?${params.toString()}`);
   };
@@ -55,7 +61,11 @@ export function RieltHomeClient() {
       <section className="mb-8">
         <QuickFilters
           filters={filters}
-          onChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
+          onChange={(newFilters) => {
+            const updated = { ...filters, ...newFilters };
+            setFilters(updated);
+            handleSearch(updated);
+          }}
         />
       </section>
 

@@ -1,0 +1,9 @@
+inquiry_id,listing_id,requester_user_id,message,contact_name,contact_phone,contact_telegram,status,idempotency_key,created_at,closed_at,deleted_at
+inquiry_001,rielt_phuket_kata_001,user_requester_001,"Интересует проживание, можно ли заселиться в ближайшие дни?",Тестовый пользователь 1,+79990000001,@testvip1,new,idem_001,2026-04-04T12:00:00Z,,
+inquiry_002,rielt_phuket_karon_002,user_requester_002,"Нужен вариант на месяц+, есть ли гибкость по условиям?",Тестовый пользователь 2,+79990000002,@testvip2,new,idem_002,2026-04-03T12:00:00Z,,
+inquiry_003,rielt_phuket_rawai_003,user_requester_003,"Интересует проживание, можно ли заселиться в ближайшие дни?",Тестовый пользователь 3,+79990000003,@testvip3,new,idem_003,2026-04-02T12:00:00Z,,
+inquiry_004,rielt_bkk_sathon_004,user_requester_004,"Нужен вариант на месяц+, есть ли гибкость по условиям?",Тестовый пользователь 4,+79990000004,@testvip4,new,idem_004,2026-04-01T12:00:00Z,,
+inquiry_005,rielt_bkk_ari_005,user_requester_005,"Интересует проживание, можно ли заселиться в ближайшие дни?",Тестовый пользователь 5,+79990000005,@testvip5,viewed,idem_005,2026-03-31T12:00:00Z,,
+inquiry_006,rielt_bkk_ari_006,user_requester_006,"Нужен вариант на месяц+, есть ли гибкость по условиям?",Тестовый пользователь 6,+79990000006,@testvip6,viewed,idem_006,2026-03-30T12:00:00Z,,
+inquiry_007,rielt_danang_myan_007,user_requester_007,"Интересует проживание, можно ли заселиться в ближайшие дни?",Тестовый пользователь 7,+79990000007,@testvip7,viewed,idem_007,2026-03-29T12:00:00Z,,
+inquiry_008,rielt_danang_myan_008,user_requester_008,"Нужен вариант на месяц+, есть ли гибкость по условиям?",Тестовый пользователь 8,+79990000008,@testvip8,viewed,idem_008,2026-03-28T12:00:00Z,2026-04-05T12:00:00Z,

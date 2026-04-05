@@ -4,9 +4,10 @@
  */
 
 import { notFound } from 'next/navigation';
-import { fetchListing } from '@go2asia/sdk/rielt';
+import { fetchListingStrict } from '@go2asia/sdk/rielt';
 import { ListingDetailClient } from './ListingDetailClient';
 import { rieltDtoToListing } from '@/components/rielt/adapters/rieltDtoToListing';
+import { getSeedListingByIdOrSlug } from '@/lib/rieltSeedRepo';
 
 export default async function ListingDetailPage({
   params,
@@ -14,13 +15,31 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const res = await fetchListing(id);
-
-  if (!res?.listing) {
-    notFound();
+  const seedListing = getSeedListingByIdOrSlug(id);
+  if (seedListing) {
+    return <ListingDetailClient listing={seedListing} />;
   }
 
-  const listing = rieltDtoToListing(res.listing);
-  return <ListingDetailClient listing={listing} />;
+  try {
+    const res = await fetchListingStrict(id);
+    const listing = rieltDtoToListing(res.listing);
+    return <ListingDetailClient listing={listing} />;
+  } catch (error) {
+    const status = (error as { status?: number })?.status;
+    if (status === 404) {
+      notFound();
+    }
+
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-6">
+          <h1 className="text-xl font-semibold text-amber-900 mb-2">Деталь объявления временно недоступна</h1>
+          <p className="text-amber-800">
+            Не удалось загрузить данные из live runtime, а seed-слой для этого идентификатора не найден.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }
 
