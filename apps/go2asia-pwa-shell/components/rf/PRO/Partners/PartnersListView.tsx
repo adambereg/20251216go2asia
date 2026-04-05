@@ -42,7 +42,10 @@ export function PartnersListView() {
       {/* Заголовок */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Мои партнёры</h1>
-        <p className="text-slate-600">Управляйте партнёрами и отслеживайте их статус</p>
+        <p className="text-slate-600">Legacy/demo список партнёров для операционного baseline PRO</p>
+      </div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        Этот экран использует demo-данные и не отражает live assignment PRO-контур в API.
       </div>
 
       {/* Поиск и фильтры */}
@@ -126,9 +129,9 @@ export function PartnersListView() {
                 </div>
                 <div className="flex items-center gap-2">
                   {!partner.rfStatus.verified && (
-                    <Link href={`/rf/pro/verifications?partner=${partner.id}`}>
+                    <Link href="/rf/pro/verifications">
                       <Button variant="primary" size="sm">
-                        Проверить
+                        К проверкам (demo)
                       </Button>
                     </Link>
                   )}

@@ -55,11 +55,11 @@ export function VouchersListView() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Ваучеры</h1>
-          <p className="text-slate-600">Управляйте специальными предложениями для клиентов</p>
+          <p className="text-slate-600">Demo-слой специальных предложений для merchant baseline</p>
         </div>
-        <Button variant="primary">
+        <Button variant="primary" disabled className="opacity-70">
           <Plus size={18} className="mr-2" />
-          Создать ваучер
+          Создать ваучер (soon)
         </Button>
       </div>
 
@@ -114,14 +114,14 @@ export function VouchersListView() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="secondary" size="sm">
+                    <Button variant="secondary" size="sm" disabled className="opacity-70">
                       <Edit size={16} className="mr-1" />
-                      Редактировать
+                      Редактировать (soon)
                     </Button>
                     {isActive && (
-                      <Button variant="secondary" size="sm">
+                      <Button variant="secondary" size="sm" disabled className="opacity-70">
                         <Archive size={16} className="mr-1" />
-                        Архивировать
+                        Архивировать (soon)
                       </Button>
                     )}
                   </div>
