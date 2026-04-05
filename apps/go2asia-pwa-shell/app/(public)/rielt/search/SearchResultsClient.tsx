@@ -9,9 +9,13 @@ import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchResultsView } from '@/components/rielt/SearchResults/SearchResultsView';
 import { useListListings, useListNearbyListings, type RieltListParams } from '@go2asia/sdk/rielt';
-import { rieltDtoToListing, rieltNearbyDtoToListingWithDistance } from '@/components/rielt/adapters/rieltDtoToListing';
+import {
+  rieltDtoToListing,
+  rieltNearbyDtoToListingWithDistance,
+  mergeSeedPresentationOverlay,
+} from '@/components/rielt/adapters/rieltDtoToListing';
 import type { SearchFilters, ListingWithDistance } from '@/components/rielt/types';
-import { useRieltSeedListings, useRieltSeedNearbyListings } from '@/components/rielt/hooks/useRieltSeed';
+import { useRieltSeedListings } from '@/components/rielt/hooks/useRieltSeed';
 
 function mapUrlToApiParams(searchParams: URLSearchParams): RieltListParams {
   const cityId = searchParams.get('city_id');
@@ -53,20 +57,7 @@ export function SearchResultsClient() {
   const nearbyMode = searchParams.get('nearby') === '1';
 
   const listingsQuery = useListListings(apiParams, !nearbyMode);
-  const seedListingsQuery = useRieltSeedListings(
-    {
-      city_id: apiParams.city_id,
-      listing_type: apiParams.listing_type,
-      bedrooms_min: apiParams.bedrooms_min,
-      bedrooms_max: apiParams.bedrooms_max,
-      sort: apiParams.sort,
-      page: apiParams.page,
-      page_size: apiParams.page_size,
-      only_rf: searchParams.get('onlyRF') === '1',
-      only_pro_verified: searchParams.get('onlyPROVerified') === '1',
-    },
-    true
-  );
+  const seedListingsQuery = useRieltSeedListings({ page: 1, page_size: 200 }, true);
   const nearbyQuery = useListNearbyListings(
     nearbyMode && userLocation
       ? {
@@ -81,22 +72,6 @@ export function SearchResultsClient() {
         }
       : null
   );
-  const seedNearbyQuery = useRieltSeedNearbyListings(
-    nearbyMode && userLocation
-      ? {
-          lat: userLocation.lat,
-          lng: userLocation.lng,
-          radius_km: 10,
-          city_id: apiParams.city_id,
-          listing_type: apiParams.listing_type,
-          page: apiParams.page,
-          page_size: apiParams.page_size,
-          only_rf: searchParams.get('onlyRF') === '1',
-          only_pro_verified: searchParams.get('onlyPROVerified') === '1',
-        }
-      : null
-  );
-
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -131,31 +106,29 @@ export function SearchResultsClient() {
   if (guests != null) filtersFromURL.guests = guests;
 
   let listings: ListingWithDistance[] = [];
+  const seedById = new Map((seedListingsQuery.data?.items ?? []).map((item) => [item.id, item]));
+
   if (nearbyMode) {
-    const seedItems = seedNearbyQuery.data?.items ?? [];
-    if (seedItems.length > 0) {
-      listings = seedItems;
-    } else if (nearbyQuery.data?.items) {
-      listings = nearbyQuery.data.items.map((dto) => rieltNearbyDtoToListingWithDistance(dto));
+    if (nearbyQuery.data?.items) {
+      listings = nearbyQuery.data.items.map((dto) => {
+        const runtimeListing = rieltNearbyDtoToListingWithDistance(dto);
+        const overlay = seedById.get(runtimeListing.id);
+        return mergeSeedPresentationOverlay(runtimeListing, overlay) as ListingWithDistance;
+      });
     }
   } else {
-    const seedItems = seedListingsQuery.data?.items ?? [];
-    if (seedItems.length > 0) {
-      listings = seedItems as ListingWithDistance[];
-    } else if (listingsQuery.data?.items) {
-      listings = listingsQuery.data.items.map((dto) => rieltDtoToListing(dto)) as ListingWithDistance[];
+    if (listingsQuery.data?.items) {
+      listings = listingsQuery.data.items.map((dto) => {
+        const runtimeListing = rieltDtoToListing(dto);
+        const overlay = seedById.get(runtimeListing.id);
+        return mergeSeedPresentationOverlay(runtimeListing, overlay) as ListingWithDistance;
+      });
     }
   }
 
-  const isLoading = nearbyMode
-    ? nearbyQuery.isLoading && seedNearbyQuery.isLoading
-    : listingsQuery.isLoading && seedListingsQuery.isLoading;
-  const isError = nearbyMode
-    ? nearbyQuery.isError && seedNearbyQuery.isError
-    : listingsQuery.isError && seedListingsQuery.isError;
-  const error = nearbyMode
-    ? (seedNearbyQuery.error ?? nearbyQuery.error)
-    : (seedListingsQuery.error ?? listingsQuery.error);
+  const isLoading = nearbyMode ? nearbyQuery.isLoading : listingsQuery.isLoading;
+  const isError = nearbyMode ? nearbyQuery.isError : listingsQuery.isError;
+  const error = nearbyMode ? nearbyQuery.error : listingsQuery.error;
 
   const handleSortChange = (sortBy: SearchFilters['sortBy']) => {
     const next = new URLSearchParams(searchParams.toString());

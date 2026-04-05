@@ -30,5 +30,9 @@
 
 Правило при конфликте: Step 8 SSOT runtime truth приоритетнее extension semantics.
 
+Rielt media key canon note:
+- `docs/architecture/rielt/rielt_media_r2_key_canon_v1.md`
+- canonical key pattern: `rielt/listings/{country_slug}/{city_slug}/{listing_slug}/01.jpg`
+
 Примечание по search semantics:
 - `guests` в публичном UI сохраняется как контекст выбора пользователя и не трактуется как каноническая server-side list filter из Step 8.

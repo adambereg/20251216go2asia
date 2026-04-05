@@ -6,7 +6,7 @@
 import { notFound } from 'next/navigation';
 import { fetchListingStrict } from '@go2asia/sdk/rielt';
 import { ListingDetailClient } from './ListingDetailClient';
-import { rieltDtoToListing } from '@/components/rielt/adapters/rieltDtoToListing';
+import { mergeSeedPresentationOverlay, rieltDtoToListing } from '@/components/rielt/adapters/rieltDtoToListing';
 import { getSeedListingByIdOrSlug } from '@/lib/rieltSeedRepo';
 
 export default async function ListingDetailPage({
@@ -15,14 +15,12 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const seedListing = getSeedListingByIdOrSlug(id);
-  if (seedListing) {
-    return <ListingDetailClient listing={seedListing} />;
-  }
 
   try {
     const res = await fetchListingStrict(id);
-    const listing = rieltDtoToListing(res.listing);
+    const runtimeListing = rieltDtoToListing(res.listing);
+    const seedOverlay = getSeedListingByIdOrSlug(res.listing.id) ?? getSeedListingByIdOrSlug(res.listing.slug);
+    const listing = mergeSeedPresentationOverlay(runtimeListing, seedOverlay);
     return <ListingDetailClient listing={listing} />;
   } catch (error) {
     const status = (error as { status?: number })?.status;

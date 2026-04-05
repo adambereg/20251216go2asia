@@ -9,7 +9,7 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
-import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/rieltDtoToListing';
 import { useRieltSeedListings } from './hooks/useRieltSeed';
 
 export function NewListings() {
@@ -17,16 +17,14 @@ export function NewListings() {
     sort: 'newest',
     page_size: 6,
   });
-  const seed = useRieltSeedListings({
-    sort: 'newest',
-    page_size: 6,
+  const seedOverlay = useRieltSeedListings({ page: 1, page_size: 200 }, true);
+  const seedById = new Map((seedOverlay.data?.items ?? []).map((item) => [item.id, item]));
+  const newListings = (data?.items ?? []).map((dto) => {
+    const base = rieltDtoToListing(dto);
+    return mergeSeedPresentationOverlay(base, seedById.get(base.id));
   });
-  const seedListings = seed.data?.items ?? [];
-  const apiListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
-  const newListings = seedListings.length > 0 ? seedListings : apiListings;
-  const loading = isLoading && seed.isLoading;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">

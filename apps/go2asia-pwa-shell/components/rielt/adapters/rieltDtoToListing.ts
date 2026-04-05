@@ -100,3 +100,30 @@ export function rieltNearbyDtoToListingWithDistance(dto: RieltNearbyListingDto):
     walkingTime: distance != null ? Math.round(distance / 80) : undefined,
   };
 }
+
+/**
+ * Merge forward-compatible seed presentation overlay into runtime listing.
+ * Keeps Step 8 listing truth from API as primary source.
+ */
+export function mergeSeedPresentationOverlay(base: Listing, overlay: Listing | null | undefined): Listing {
+  if (!overlay || overlay.id !== base.id) return base;
+
+  return {
+    ...base,
+    isRF: base.isRF ?? overlay.isRF,
+    rfVoucher: base.rfVoucher ?? overlay.rfVoucher,
+    proVerification: base.proVerification ?? overlay.proVerification,
+    isInstant: base.isInstant ?? overlay.isInstant,
+    isNew: base.isNew ?? overlay.isNew,
+    owner: {
+      ...base.owner,
+      isRFPartner: base.owner.isRFPartner ?? overlay.owner.isRFPartner,
+      isPRO: base.owner.isPRO ?? overlay.owner.isPRO,
+    },
+    presentation: {
+      ...(base.presentation ?? { source: 'runtime' as const }),
+      ...(overlay.presentation ?? {}),
+      source: overlay.presentation?.source ?? base.presentation?.source ?? 'runtime',
+    },
+  };
+}

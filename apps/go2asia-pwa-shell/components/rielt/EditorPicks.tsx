@@ -9,8 +9,9 @@ import { Users, Briefcase, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
-import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/rieltDtoToListing';
 import { useRieltSeedListings } from './hooks/useRieltSeed';
+import type { Listing } from './types';
 
 const EDITOR_PICKS = [
   {
@@ -41,21 +42,17 @@ const EDITOR_PICKS = [
 
 function EditorPickRow({
   pick,
+  seedById,
 }: {
   pick: (typeof EDITOR_PICKS)[number];
+  seedById: Map<string, Listing>;
 }) {
   const Icon = pick.icon;
   const { data, isLoading } = useListListings(pick.apiParams);
-  const seed = useRieltSeedListings({
-    bedrooms_min: pick.apiParams.bedrooms_min,
-    listing_type: pick.apiParams.listing_type,
-    sort: pick.apiParams.sort,
-    page_size: pick.apiParams.page_size,
+  const listings = (data?.items ?? []).map((dto) => {
+    const base = rieltDtoToListing(dto);
+    return mergeSeedPresentationOverlay(base, seedById.get(base.id));
   });
-  const seedListings = seed.data?.items ?? [];
-  const apiListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
-  const listings = seedListings.length > 0 ? seedListings : apiListings;
-  const loading = isLoading && seed.isLoading;
 
   return (
     <div>
@@ -69,7 +66,7 @@ function EditorPickRow({
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
@@ -105,6 +102,9 @@ function EditorPickRow({
 }
 
 export function EditorPicks() {
+  const seedOverlay = useRieltSeedListings({ page: 1, page_size: 200 }, true);
+  const seedById = new Map((seedOverlay.data?.items ?? []).map((item) => [item.id, item]));
+
   return (
     <section>
       <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
@@ -113,7 +113,7 @@ export function EditorPicks() {
 
       <div className="space-y-8">
         {EDITOR_PICKS.map((pick) => (
-          <EditorPickRow key={pick.id} pick={pick} />
+          <EditorPickRow key={pick.id} pick={pick} seedById={seedById} />
         ))}
       </div>
     </section>
