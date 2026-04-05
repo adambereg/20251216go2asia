@@ -7,7 +7,7 @@ import { mockReviews } from '../../mockData';
 import { mockPartners } from '../../mockData';
 
 export function ReviewsListView() {
-  // В реальном приложении здесь будет загрузка отзывов текущего партнёра
+  // Demo baseline: пока используем фиктивный набор отзывов.
   const partnerId = mockPartners[0].id;
   const reviews = mockReviews.filter((r) => r.partnerId === partnerId);
 
@@ -17,7 +17,7 @@ export function ReviewsListView() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Отзывы</h1>
         <p className="text-slate-600">
-          Управляйте отзывами клиентов и отвечайте на них
+          Demo-слой просмотра отзывов (ответы и live moderation flow пока не подключены)
         </p>
       </div>
 
@@ -70,9 +70,9 @@ export function ReviewsListView() {
               <ReviewCard review={review} />
               {!review.reply && (
                 <div className="mt-4 pt-4 border-t border-slate-200">
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" disabled className="opacity-70">
                     <Reply size={16} className="mr-2" />
-                    Ответить на отзыв
+                    Ответить на отзыв (soon)
                   </Button>
                 </div>
               )}

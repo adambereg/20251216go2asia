@@ -173,6 +173,29 @@ export function MerchantWorkspace() {
       </section>
 
       {!activePartner && user?.id && !loading ? (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section id="mw-profile" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Профиль партнёра</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Этот раздел станет доступен после привязки партнёра к аккаунту. Сейчас показываем только структуру кабинета.
+            </p>
+          </section>
+          <section id="mw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Предложения</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Когда появится партнёр, здесь отобразится read-only список его офферов из RF API.
+            </p>
+          </section>
+          <section id="mw-public" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Публичное представление</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Ссылки в публичный контур (`/rf`, `/rf/vouchers`, `/rf/map`) появятся после назначения партнёра.
+            </p>
+          </section>
+        </div>
+      ) : null}
+
+      {!activePartner && user?.id && !loading ? (
         <div className="grid gap-6 lg:grid-cols-2">
           <section id="mw-readiness" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Статус и готовность</h2>

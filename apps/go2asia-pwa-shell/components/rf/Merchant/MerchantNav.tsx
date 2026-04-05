@@ -20,7 +20,6 @@ interface MerchantNavProps {
 }
 
 const dashboardSections = [
-  { href: '/rf/merchant#mw-overview', label: 'Обзор', icon: LayoutDashboard },
   { href: '/rf/merchant#mw-profile', label: 'Профиль', icon: Store },
   { href: '/rf/merchant#mw-offers', label: 'Предложения', icon: ListOrdered },
   { href: '/rf/merchant#mw-readiness', label: 'Статус', icon: ClipboardCheck },
@@ -29,10 +28,10 @@ const dashboardSections = [
 ];
 
 const opsRoutes = [
-  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers' },
-  { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare, prefix: '/rf/merchant/reviews' },
-  { href: '/rf/merchant/stats', label: 'Статистика', icon: BarChart3, prefix: '/rf/merchant/stats' },
-  { href: '/rf/merchant/settings', label: 'Настройки', icon: Settings, prefix: '/rf/merchant/settings' },
+  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers', badge: 'demo' },
+  { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare, prefix: '/rf/merchant/reviews', badge: 'demo' },
+  { href: '/rf/merchant/stats', label: 'Статистика', icon: BarChart3, prefix: '/rf/merchant/stats', badge: 'soon' },
+  { href: '/rf/merchant/settings', label: 'Настройки', icon: Settings, prefix: '/rf/merchant/settings', badge: 'soon' },
 ];
 
 function isOpsActive(pathname: string | null, prefix: string): boolean {
@@ -87,6 +86,11 @@ export function MerchantNav({ variant = 'vertical' }: MerchantNavProps) {
           <Link key={item.href} href={item.href} className={linkClass(active, horizontal ? 'whitespace-nowrap' : '')}>
             <Icon size={horizontal ? 16 : 18} />
             <span>{item.label}</span>
+            {item.badge ? (
+              <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+                {item.badge}
+              </span>
+            ) : null}
           </Link>
         );
       })}
