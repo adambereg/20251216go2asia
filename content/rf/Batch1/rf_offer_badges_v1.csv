@@ -1,0 +1,11 @@
+﻿offer_badge_key,label_ru,label_en,badge_tone,icon_name,priority,description_short
+discount,Скидка,Discount,success,percent,10,Прямое ценовое предложение со скидкой.
+gift,Подарок,Gift,accent,gift,20,Бонус или подарок при выполнении условий предложения.
+bundle,Набор,Bundle,primary,package,30,Комбинированное предложение из нескольких позиций или услуг.
+access,Доступ,Access,info,key-round,40,Доступ к услуге, пространству или специальной опции.
+invite_only,По приглашению,Invite Only,warning,mail,50,Предложение доступно только по приглашению или через закрытый сценарий.
+pro_only,Только PRO,PRO Only,secondary,badge-plus,60,Предложение ориентировано на PRO-сценарии.
+featured,Хит,Featured,accent,flame,70,Выделенное предложение для промо-блоков и витрины.
+new,Новое,New,primary,sparkles,80,Недавно добавленное предложение.
+limited,Лимитировано,Limited,warning,timer,90,Ограниченное по времени или количеству предложение.
+hot,Горячее предложение,Hot Deal,danger,bolt,100,Акция с повышенным вниманием и сильным CTA.

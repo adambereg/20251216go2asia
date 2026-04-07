@@ -1,0 +1,6 @@
+﻿verification_status_key,label_ru,label_en,badge_text,badge_tone,icon_name,sort_order,description_short
+not_verified,Не подтверждён,Not Verified,Не подтверждён,neutral,shield-off,10,Партнёр отображается без подтверждённого статуса.
+pending,На проверке,Pending,На проверке,warning,clock-3,20,Партнёр отправлен на проверку и ожидает подтверждения.
+verified_basic,Подтверждён,Verified,Подтверждён,success,shield-check,30,Базовая проверка партнёра пройдена.
+verified_plus,Проверенный партнёр,Verified Plus,Проверенный партнёр,primary,badge-check,40,Расширенная проверка и повышенный уровень доверия.
+featured_partner,Рекомендованный партнёр,Featured Partner,Рекомендуем,accent,star,50,Партнёр выделен как один из рекомендованных в каталоге.

@@ -1,0 +1,9 @@
+﻿voucher_status_key,label_ru,label_en,badge_text,badge_tone,icon_name,sort_order,description_short
+available,Доступен,Available,Доступен,primary,ticket,10,Ваучер доступен для использования или показа в интерфейсе.
+claimed,Получен,Claimed,Получен,success,badge-check,20,Ваучер успешно получен пользователем и закреплён за ним.
+redeemed,Использован,Redeemed,Использован,neutral,check-check,30,Ваучер уже погашен у партнёра и не требует повторного действия.
+expired,Истёк,Expired,Истёк,warning,clock-3,40,Срок действия ваучера закончился.
+cancelled,Отменён,Cancelled,Отменён,danger,x-circle,50,Ваучер отменён и более не может быть использован.
+replayed,Повторный ответ,Replay,Повторный ответ,info,repeat,60,Повторный ответ по idempotency-сценарию без нового создания ваучера.
+pending,В обработке,Pending,В обработке,secondary,loader-circle,70,Промежуточный статус для сценариев, где результат ещё подтверждается.
+temporarily_unavailable,Временно недоступен,Temporarily Unavailable,Временно недоступен,warning,alert-circle,80,Временный технический статус для нестабильных execution paths или повторных запросов.

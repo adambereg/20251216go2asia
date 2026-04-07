@@ -10,16 +10,9 @@ import type { SearchFilters } from '../types';
 
 interface FiltersPanelProps {
   filters: Partial<SearchFilters>;
-  onChange: (filters: Partial<SearchFilters>) => void;
 }
 
-export function FiltersPanel({ filters, onChange }: FiltersPanelProps) {
-  const handleRemoveFilter = (key: keyof SearchFilters) => {
-    const newFilters = { ...filters };
-    delete newFilters[key];
-    onChange(newFilters);
-  };
-
+export function FiltersPanel({ filters }: FiltersPanelProps) {
   const activeFilters: Array<{ key: keyof SearchFilters; label: string }> = [];
 
   if (filters.location?.city) {
@@ -31,15 +24,8 @@ export function FiltersPanel({ filters, onChange }: FiltersPanelProps) {
       label: filters.rentalType === 'short-term' ? 'Краткосрочно' : 'Долгосрочно',
     });
   }
-  if (filters.amenities?.workspace) {
-    activeFilters.push({ key: 'amenities', label: 'Рабочее место' });
-  }
-  if (filters.amenities?.wifi) {
-    activeFilters.push({ key: 'amenities', label: 'Wi-Fi' });
-  }
-  if (filters.amenities?.childFriendly) {
-    activeFilters.push({ key: 'amenities', label: 'Для детей' });
-  }
+  if (filters.onlyRF) activeFilters.push({ key: 'onlyRF', label: 'Только RF' });
+  if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'Проверено PRO' });
 
   if (activeFilters.length === 0) {
     return null;
@@ -48,14 +34,13 @@ export function FiltersPanel({ filters, onChange }: FiltersPanelProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {activeFilters.map((filter, index) => (
-        <button
+        <span
           key={index}
-          onClick={() => handleRemoveFilter(filter.key)}
-          className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-200 transition-colors"
+          className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg font-medium flex items-center gap-2"
         >
           {filter.label}
-          <X className="w-3 h-3" />
-        </button>
+          <X className="w-3 h-3 opacity-50" />
+        </span>
       ))}
     </div>
   );

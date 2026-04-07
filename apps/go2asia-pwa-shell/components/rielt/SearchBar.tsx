@@ -129,6 +129,9 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
           Найти жильё
           <ArrowRight className="w-5 h-5" />
         </button>
+        <p className="text-xs text-slate-500">
+          Даты сейчас используются как контекст запроса на витрине; финальная availability-проверка остаётся на шаге inquiry.
+        </p>
       </form>
     </div>
   );

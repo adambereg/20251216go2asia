@@ -1,0 +1,25 @@
+scenario_id,listing_id,scenario_name,scenario_group,expected_surface,expected_cta,expected_visual_state,expected_runtime_note
+scenario_001,rielt_phuket_kata_001,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_002,rielt_phuket_karon_002,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_003,rielt_phuket_rawai_003,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_004,rielt_bkk_sathon_004,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_005,rielt_bkk_ari_005,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_006,rielt_bkk_ari_006,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_007,rielt_danang_myan_007,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_008,rielt_danang_myan_008,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_009,rielt_hcmc_d1_009,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_010,rielt_hcmc_d1_010,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_011,rielt_phuket_karon_011,archived_listing_not_public,negative_state,owner/internal only,none,hidden,Must not appear in public list/detail.
+scenario_012,rielt_bkk_hidden_012,draft_listing_hidden_from_public,negative_state,owner/internal only,none,hidden,Must not appear in public list/detail.
+scenario_013,rielt_phuket_bangtao_013,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_014,rielt_phuket_bangtao_014,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_015,rielt_phuket_surin_015,published_listing_with_active_vouchers,sparse_media,"search,detail",Получить ваучер,sparse_media,Public endpoints should work normally.
+scenario_016,rielt_bkk_phromphong_016,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_017,rielt_bkk_phromphong_017,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_018,rielt_bkk_ekkamai_018,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_019,rielt_danang_haichau_019,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_020,rielt_danang_haichau_020,published_listing_with_active_vouchers,sparse_media,"search,detail",Получить ваучер,sparse_media,Public endpoints should work normally.
+scenario_021,rielt_danang_sontra_021,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_022,rielt_hcmc_thaodien_022,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.
+scenario_023,rielt_hcmc_thaodien_023,published_listing_with_active_vouchers,sparse_media,"search,detail",Получить ваучер,sparse_media,Public endpoints should work normally.
+scenario_024,rielt_hcmc_d3_024,published_listing_with_active_vouchers,voucher_claim,"search,detail",Получить ваучер,normal,Public endpoints should work normally.

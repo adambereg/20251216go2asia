@@ -134,6 +134,11 @@ export const customInstance = async <T>(
       ...errorData,
       status: response.status,
       requestId,
+      message:
+        (errorData as any)?.error?.message ||
+        (errorData as any)?.message ||
+        response.statusText ||
+        `Request failed (${response.status})`,
     };
     
     throw error;

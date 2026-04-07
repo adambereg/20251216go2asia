@@ -29,18 +29,20 @@ interface SearchResultsViewProps {
   onSortChange: (sortBy: SearchFilters['sortBy']) => void;
   nearbyMode: boolean;
   onToggleNearbyMode: () => void;
+  usingFallbackLocation?: boolean;
 }
 
 export function SearchResultsView({
   listings,
-  filters: initialFilters,
+  filters,
   userLocation,
   onSortChange,
   nearbyMode,
   onToggleNearbyMode,
+  usingFallbackLocation = false,
 }: SearchResultsViewProps) {
-  const [filters, setFilters] = useState<Partial<SearchFilters>>(initialFilters);
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const hasSeedOverlay = listings.some((listing) => listing.presentation?.source === 'seed');
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -68,17 +70,27 @@ export function SearchResultsView({
           </button>
           <SortDropdown
             value={filters.sortBy || 'recommended'}
-            onChange={(sortBy) => {
-              setFilters({ ...filters, sortBy });
-              onSortChange(sortBy);
-            }}
+            onChange={(sortBy) => onSortChange(sortBy)}
           />
         </div>
       </div>
 
+      {nearbyMode && usingFallbackLocation ? (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          Геолокация недоступна: nearby выдача сейчас построена от fallback-точки (Bangkok), а не от вашей текущей позиции.
+        </div>
+      ) : null}
+
+      {hasSeedOverlay ? (
+        <div className="mb-4 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+          Включён seed overlay mode: часть карточек и trust/voucher presentation идёт из repo seed data. Канонический
+          Step 8 API-контракт при этом не расширяется.
+        </div>
+      ) : null}
+
       {/* Фильтры (sticky сверху) */}
       <div className="sticky top-16 z-10 bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 mb-6">
-        <FiltersPanel filters={filters} onChange={setFilters} />
+        <FiltersPanel filters={filters} />
       </div>
 
       {/* Split layout: List + Map */}

@@ -16,8 +16,6 @@ interface QuickFiltersProps {
 const QUICK_FILTERS = [
   { key: 'onlyRF', label: 'Только RF', icon: CheckCircle },
   { key: 'onlyPROVerified', label: 'Проверено PRO', icon: CheckCircle },
-  { key: 'availableToday', label: 'Сегодня заселение', icon: CheckCircle },
-  { key: 'instantBooking', label: 'Мгновенное бронирование', icon: CheckCircle },
 ] as const;
 
 export function QuickFilters({ filters, onChange }: QuickFiltersProps) {

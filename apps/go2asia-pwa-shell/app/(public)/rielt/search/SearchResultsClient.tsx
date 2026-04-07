@@ -9,15 +9,19 @@ import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchResultsView } from '@/components/rielt/SearchResults/SearchResultsView';
 import { useListListings, useListNearbyListings, type RieltListParams } from '@go2asia/sdk/rielt';
-import { rieltDtoToListing, rieltNearbyDtoToListingWithDistance } from '@/components/rielt/adapters/rieltDtoToListing';
+import {
+  rieltDtoToListing,
+  rieltNearbyDtoToListingWithDistance,
+  mergeSeedPresentationOverlay,
+} from '@/components/rielt/adapters/rieltDtoToListing';
 import type { SearchFilters, ListingWithDistance } from '@/components/rielt/types';
+import { useRieltSeedListings } from '@/components/rielt/hooks/useRieltSeed';
 
 function mapUrlToApiParams(searchParams: URLSearchParams): RieltListParams {
   const cityId = searchParams.get('city_id');
   const rentalType = searchParams.get('rentalType');
   const sortBy = searchParams.get('sortBy');
   const bedrooms = searchParams.get('bedrooms');
-
   const listing_type =
     rentalType === 'long-term' ? 'rent_long' : rentalType === 'short-term' ? 'rent_short' : undefined;
   const sort: 'newest' | 'price_asc' | 'price_desc' =
@@ -27,25 +31,36 @@ function mapUrlToApiParams(searchParams: URLSearchParams): RieltListParams {
         ? 'price_desc'
         : 'newest';
 
+  const parsedBedrooms = bedrooms ? parseInt(bedrooms, 10) : NaN;
+  const bedroomsMin = Number.isFinite(parsedBedrooms) ? parsedBedrooms : undefined;
+
   return {
     city_id: cityId || undefined,
     listing_type,
     sort,
-    bedrooms_min: bedrooms ? parseInt(bedrooms, 10) : undefined,
+    bedrooms_min: bedroomsMin,
     page: 1,
     page_size: 50,
   };
+}
+
+function toOptionalInt(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 export function SearchResultsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [usingFallbackLocation, setUsingFallbackLocation] = useState(false);
 
   const apiParams = useMemo(() => mapUrlToApiParams(searchParams), [searchParams]);
   const nearbyMode = searchParams.get('nearby') === '1';
 
   const listingsQuery = useListListings(apiParams, !nearbyMode);
+  const seedListingsQuery = useRieltSeedListings({ page: 1, page_size: 200 }, true);
   const nearbyQuery = useListNearbyListings(
     nearbyMode && userLocation
       ? {
@@ -60,21 +75,23 @@ export function SearchResultsClient() {
         }
       : null
   );
-
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          setUsingFallbackLocation(false);
           setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
         },
         () => {
+          setUsingFallbackLocation(true);
           setUserLocation({ lat: 13.7563, lng: 100.5018 });
         }
       );
     } else {
+      setUsingFallbackLocation(true);
       setUserLocation({ lat: 13.7563, lng: 100.5018 });
     }
   }, []);
@@ -86,12 +103,30 @@ export function SearchResultsClient() {
   if (rentalType) filtersFromURL.rentalType = rentalType;
   const sortBy = searchParams.get('sortBy') as SearchFilters['sortBy'];
   if (sortBy) filtersFromURL.sortBy = sortBy;
+  if (searchParams.get('onlyRF') === '1') filtersFromURL.onlyRF = true;
+  if (searchParams.get('onlyPROVerified') === '1') filtersFromURL.onlyPROVerified = true;
+  const guests = toOptionalInt(searchParams.get('guests'));
+  if (guests != null) filtersFromURL.guests = guests;
 
   let listings: ListingWithDistance[] = [];
-  if (nearbyMode && nearbyQuery.data?.items) {
-    listings = nearbyQuery.data.items.map((dto) => rieltNearbyDtoToListingWithDistance(dto));
-  } else if (!nearbyMode && listingsQuery.data?.items) {
-    listings = listingsQuery.data.items.map((dto) => rieltDtoToListing(dto)) as ListingWithDistance[];
+  const seedById = new Map((seedListingsQuery.data?.items ?? []).map((item) => [item.id, item]));
+
+  if (nearbyMode) {
+    if (nearbyQuery.data?.items) {
+      listings = nearbyQuery.data.items.map((dto) => {
+        const runtimeListing = rieltNearbyDtoToListingWithDistance(dto);
+        const overlay = seedById.get(runtimeListing.id);
+        return mergeSeedPresentationOverlay(runtimeListing, overlay) as ListingWithDistance;
+      });
+    }
+  } else {
+    if (listingsQuery.data?.items) {
+      listings = listingsQuery.data.items.map((dto) => {
+        const runtimeListing = rieltDtoToListing(dto);
+        const overlay = seedById.get(runtimeListing.id);
+        return mergeSeedPresentationOverlay(runtimeListing, overlay) as ListingWithDistance;
+      });
+    }
   }
 
   const isLoading = nearbyMode ? nearbyQuery.isLoading : listingsQuery.isLoading;
@@ -134,13 +169,22 @@ export function SearchResultsClient() {
   }
 
   if (isError) {
+    const errorPayload = error as { error?: { code?: string; message?: string }; status?: number; message?: string };
+    const errorMessage =
+      errorPayload?.error?.message ??
+      errorPayload?.message ??
+      `Не удалось загрузить объявления (status: ${errorPayload?.status ?? 'unknown'})`;
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-amber-900 mb-2">Ошибка загрузки</h2>
-          <p className="text-amber-800 mb-4">
-            {error?.message ?? 'Не удалось загрузить объявления. Попробуйте позже.'}
-          </p>
+          <p className="text-amber-800 mb-4">{errorMessage}</p>
+          {errorPayload?.error?.code === 'ROUTE_RESERVED_NOT_ENABLED' ? (
+            <p className="text-xs text-amber-700 mb-4">
+              Runtime path закрыт на gateway: для `/v1/rielt/*` должен быть настроен `RIELT_SERVICE_URL`.
+            </p>
+          ) : null}
           <a
             href="/rielt/search"
             className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium"
@@ -160,6 +204,7 @@ export function SearchResultsClient() {
       onSortChange={handleSortChange}
       nearbyMode={nearbyMode}
       onToggleNearbyMode={toggleNearbyMode}
+      usingFallbackLocation={usingFallbackLocation}
     />
   );
 }

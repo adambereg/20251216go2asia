@@ -1,0 +1,7 @@
+pro_id,user_id,pro_slug,public_name,home_city_id,languages,specialization,public_bio_short,years_in_region,trust_badge,is_active
+pro_phuket_anton,user_pro_anton,anton-phuket-curator,"Антон, куратор Пхукета",phuket,"ru,en",short_stay,Проверенное жильё и быстрые заселения на Пхукете.,6,Проверено PRO,true
+pro_bangkok_maya,user_pro_maya,maya-bangkok-living,"Maya, Bangkok curator",bangkok,"en,th",long_stay,Curated Bangkok apartments for long stays.,8,Локальный куратор Бангкока,true
+pro_danang_ivan,user_pro_ivan,ivan-danang-nomad,"Иван, куратор Дананга",da_nang,"ru,en",digital_nomads,Жильё для удалёнщиков и зимовщиков.,4,PRO для digital nomads,true
+pro_hcmc_linh,user_pro_linh,linh-hcmc-curator,"Linh, HCMC housing guide",ho_chi_minh_city,"en,vi",budget_stays,Affordable and verified partner stays in HCMC.,7,Verified local curator,true
+pro_phuket_elena,user_pro_elena,elena-phuket-family,"Елена, семейный куратор Пхукета",phuket,"ru,en",family_housing,Семейные и спокойные варианты на Пхукете.,5,Family stay curator,true
+pro_hcmc_artem,user_pro_artem,artem-hcmc-relocation,"Артём, куратор релокации в HCMC",ho_chi_minh_city,"ru,en",long_stay,Варианты на месяц+ для первой релокации во Вьетнам.,3,Relocation PRO,true

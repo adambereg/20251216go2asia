@@ -15,7 +15,7 @@ const nextConfig = {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },
   images: {
-    domains: ['cdn.go2asia.space', 'images.unsplash.com'],
+    domains: ['cdn.go2asia.space', 'media.go2asia.space', 'images.unsplash.com'],
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {

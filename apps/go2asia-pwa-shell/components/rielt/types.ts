@@ -137,6 +137,23 @@ export interface RFVoucher {
   usedCount?: number;      // Сколько раз использовано
 }
 
+/** Presentation/meta слой seed extension (не backend ownership) */
+export interface ListingPresentationMeta {
+  source: 'runtime' | 'seed';
+  subtitle?: string;
+  trustLabel?: string;
+  primaryCtaLabel?: string;
+  secondaryCtaLabel?: string;
+  voucherEntryMode?: string;
+  partnerName?: string;
+  curatorName?: string;
+  vouchersCount?: number;
+  sparseMedia?: boolean;
+  scenarioName?: string;
+  runtimeNote?: string;
+  showPublicCoordinates?: boolean;
+}
+
 // =============================================================================
 // Владелец и отзывы
 // =============================================================================
@@ -213,6 +230,7 @@ export interface Listing {
   isRF?: boolean;                          // Russian Friendly
   rfVoucher?: RFVoucher;                    // RF-ваучер
   proVerification?: PROVerification;       // PRO-проверка
+  presentation?: ListingPresentationMeta;   // Forward-compatible presentation/meta
   isNew?: boolean;                         // Новое объявление
   isInstant?: boolean;                     // Мгновенное бронирование
   

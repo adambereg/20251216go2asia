@@ -126,6 +126,12 @@ export function Gallery({ listing }: GalleryProps) {
           ))}
         </div>
       )}
+
+      {listing.presentation?.sparseMedia ? (
+        <div className="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-t border-slate-200">
+          Для этого объявления доступен ограниченный медиа-набор (sparse-media scenario).
+        </div>
+      ) : null}
     </div>
   );
 }

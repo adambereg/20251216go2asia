@@ -1,0 +1,13 @@
+﻿business_category_key,label_ru,label_en,short_label,icon_name,color_hint,sort_order,is_featured_category,description_short
+cafes,Кафе,Cafes,Кафе,coffee,warm-brown,10,true,Небольшие городские кафе для повседневных встреч и быстрых остановок.
+coffee_shops,Кофейни,Coffee Shops,Кофейни,coffee,copper,20,true,Специализированные кофейни с напитками и десертами.
+restaurants,Рестораны,Restaurants,Рестораны,utensils,deep-red,30,true,Рестораны для обеда, ужина и специальных предложений.
+bars,Бары,Bars,Бары,wine,plum,40,false,Бары и вечерние заведения с напитками и акциями.
+coworking,Коворкинги,Coworking,Коворкинг,briefcase,slate,50,false,Рабочие пространства, удобные для удалённой работы и встреч.
+wellness,Велнес,Wellness,Велнес,leaf,emerald,60,false,Велнес-форматы: массаж, спа, восстановление и расслабление.
+beauty,Красота,Beauty,Красота,sparkles,pink,70,false,Салоны красоты, уходовые услуги и бьюти-предложения.
+fitness,Фитнес,Fitness,Фитнес,dumbbell,blue,80,false,Тренировки, студии и фитнес-предложения.
+family_places,Для семьи,Family Places,Семья,users,teal,90,true,Места, удобные для семейных посещений и совместного отдыха.
+attractions,Достопримечательности,Attractions,Места,map-pin,amber,100,false,Интересные точки посещения, экскурсионные и туристические места.
+shopping,Шопинг,Shopping,Шопинг,shopping-bag,indigo,110,false,Магазины и торговые точки с акциями и бонусами.
+services,Сервисы,Services,Сервисы,tool,gray,120,false,Полезные городские сервисы и бытовые услуги.

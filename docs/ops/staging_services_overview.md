@@ -12,6 +12,7 @@
 | points-service | `go2asia-points-service-staging` | `https://go2asia-points-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` (+ опционально `POINTS_VELOCITY_CAP`, `POINTS_VELOCITY_WINDOW_SECONDS`) | В репо: `apps/points-service`. Требует gateway-origin auth (`X-Gateway-Auth`) для user endpoints. Health: `GET /health`. |
 | referral-service | `go2asia-referral-service-staging` | `https://go2asia-referral-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` | В репо: `apps/referral-service`. Требует gateway-origin auth (`X-Gateway-Auth`) для user endpoints. Health: `GET /health`. |
 | token-service | `go2asia-token-service-staging` | `https://go2asia-token-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION` | В репо: `apps/token-service` (пока skeleton). Health: `GET /health`. |
+| rielt-service | `go2asia-rielt-service-staging` | `https://go2asia-rielt-service-staging.fred89059599296.workers.dev` | `ENVIRONMENT`, `VERSION`, `DATABASE_URL`, `SERVICE_JWT_SECRET` | В репо: `apps/rielt-service`. Публичный listing-first runtime для `/v1/rielt/*`. Health/readiness: `GET /health`, `GET /ready`. |
 
 ### API Gateway → downstream proxy (staging)
 
@@ -22,7 +23,7 @@
 - `/v1/media/*` → `MEDIA_SERVICE_URL` (fallback: `CONTENT_SERVICE_URL`)
 - `/v1/referral/*` → `REFERRAL_SERVICE_URL`
 - `/v1/points/*` → `POINTS_SERVICE_URL`
-- Phase 2 reserved: `/v1/space/*`, `/v1/reactions*`, `/v1/feed/*`, `/v1/quests*`, `/v1/submissions/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` — `501` until `*_SERVICE_URL` configured
+- Phase 2 reserved: `/v1/space/*`, `/v1/reactions*`, `/v1/feed/*`, `/v1/quests*`, `/v1/submissions/*`, `/v1/guru/*`, `/v1/rf/*` — `501` until `*_SERVICE_URL` configured
 
 ### Smoke check policy (GitHub Actions)
 

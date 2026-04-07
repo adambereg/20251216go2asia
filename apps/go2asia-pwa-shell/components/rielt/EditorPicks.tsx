@@ -9,7 +9,9 @@ import { Users, Briefcase, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
-import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { useRieltSeedListings } from './hooks/useRieltSeed';
+import type { Listing } from './types';
 
 const EDITOR_PICKS = [
   {
@@ -40,12 +42,17 @@ const EDITOR_PICKS = [
 
 function EditorPickRow({
   pick,
+  seedById,
 }: {
   pick: (typeof EDITOR_PICKS)[number];
+  seedById: Map<string, Listing>;
 }) {
   const Icon = pick.icon;
-  const { data, isLoading } = useListListings(pick.apiParams);
-  const listings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const { data, isLoading, isError, error } = useListListings(pick.apiParams);
+  const listings = (data?.items ?? []).map((dto) => {
+    const base = rieltDtoToListing(dto);
+    return mergeSeedPresentationOverlay(base, seedById.get(base.id));
+  });
 
   return (
     <div>
@@ -65,12 +72,24 @@ function EditorPickRow({
             <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
+      ) : isError ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-800">
+          Не удалось загрузить подборку: {(error as { message?: string })?.message ?? 'runtime request failed'}.
         </div>
+      ) : (
+        <>
+          {listings.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+              Для этой подборки пока нет доступных объявлений.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {listings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-4">
@@ -87,6 +106,9 @@ function EditorPickRow({
 }
 
 export function EditorPicks() {
+  const seedOverlay = useRieltSeedListings({ page: 1, page_size: 200 }, true);
+  const seedById = new Map((seedOverlay.data?.items ?? []).map((item) => [item.id, item]));
+
   return (
     <section>
       <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
@@ -95,7 +117,7 @@ export function EditorPicks() {
 
       <div className="space-y-8">
         {EDITOR_PICKS.map((pick) => (
-          <EditorPickRow key={pick.id} pick={pick} />
+          <EditorPickRow key={pick.id} pick={pick} seedById={seedById} />
         ))}
       </div>
     </section>

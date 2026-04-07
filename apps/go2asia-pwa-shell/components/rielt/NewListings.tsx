@@ -9,14 +9,20 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
-import { rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/rieltDtoToListing';
+import { useRieltSeedListings } from './hooks/useRieltSeed';
 
 export function NewListings() {
-  const { data, isLoading } = useListListings({
+  const { data, isLoading, isError, error } = useListListings({
     sort: 'newest',
     page_size: 6,
   });
-  const newListings = (data?.items ?? []).map((dto) => rieltDtoToListing(dto));
+  const seedOverlay = useRieltSeedListings({ page: 1, page_size: 200 }, true);
+  const seedById = new Map((seedOverlay.data?.items ?? []).map((item) => [item.id, item]));
+  const newListings = (data?.items ?? []).map((dto) => {
+    const base = rieltDtoToListing(dto);
+    return mergeSeedPresentationOverlay(base, seedById.get(base.id));
+  });
 
   if (isLoading) {
     return (
@@ -33,8 +39,30 @@ export function NewListings() {
     );
   }
 
+  if (isError) {
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Новое на этой неделе
+        </h2>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-800">
+          Не удалось загрузить новые объявления: {(error as { message?: string })?.message ?? 'runtime request failed'}.
+        </div>
+      </section>
+    );
+  }
+
   if (newListings.length === 0) {
-    return null;
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Новое на этой неделе
+        </h2>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+          Публичная витрина пока не получила новые объявления.
+        </div>
+      </section>
+    );
   }
 
   return (

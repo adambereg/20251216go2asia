@@ -39,9 +39,13 @@ export function Description({ listing }: DescriptionProps) {
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
       <h2 className="text-2xl font-bold text-slate-900 mb-4">Описание</h2>
-      <p className="text-slate-700 leading-relaxed whitespace-pre-line">
-        {listing.description}
-      </p>
+      {listing.description ? (
+        <p className="text-slate-700 leading-relaxed whitespace-pre-line">{listing.description}</p>
+      ) : (
+        <p className="text-sm text-slate-600">
+          Подробное описание пока не опубликовано в текущем runtime-контуре для этого объявления.
+        </p>
+      )}
 
       {/* Для кого подходит */}
       {suitableFor.length > 0 && (

@@ -232,13 +232,17 @@ export async function createListingInquiry(
 
 export async function fetchListing(idOrSlug: string): Promise<RieltDetailResponse | null> {
   try {
-    return await customInstance<RieltDetailResponse>(
-      { method: 'GET' },
-      `/v1/rielt/listings/${encodeURIComponent(idOrSlug)}`
-    );
+    return await fetchListingStrict(idOrSlug);
   } catch {
     return null;
   }
+}
+
+export async function fetchListingStrict(idOrSlug: string): Promise<RieltDetailResponse> {
+  return customInstance<RieltDetailResponse>(
+    { method: 'GET' },
+    `/v1/rielt/listings/${encodeURIComponent(idOrSlug)}`
+  );
 }
 
 export async function fetchListings(params?: RieltListParams): Promise<RieltListResponse | null> {

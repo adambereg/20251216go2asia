@@ -10,6 +10,7 @@ import {
   getDb,
   getListingByIdForManage,
   getPublishedListingByIdOrSlug,
+  listPublishedListingMediaByIds,
   listMyInquiries,
   listActorVisibleListings,
   listPublishedListingsNearby,
@@ -21,6 +22,7 @@ import {
   type NearbyListingRow,
   type OwnerListingRow,
   type PatchOwnerListingInput,
+  type PublicListingMediaRow,
   type PublicListingRow,
 } from '../db/queries/listingQueries';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -67,7 +69,32 @@ function isUniqueViolation(error: unknown, constraintName?: string): boolean {
   return false;
 }
 
-function toPublicListingDto(row: PublicListingRow) {
+type ListingPublicMedia = {
+  coverUrl: string | null;
+  photos: string[];
+};
+
+function buildPublicMediaMap(rows: PublicListingMediaRow[]): Map<string, ListingPublicMedia> {
+  const byListing = new Map<string, ListingPublicMedia>();
+  for (const row of rows) {
+    const current = byListing.get(row.listing_id) ?? { coverUrl: null, photos: [] };
+    if (!current.photos.includes(row.public_url)) {
+      current.photos.push(row.public_url);
+    }
+    if (row.is_cover && !current.coverUrl) {
+      current.coverUrl = row.public_url;
+    }
+    byListing.set(row.listing_id, current);
+  }
+  for (const media of byListing.values()) {
+    if (!media.coverUrl) {
+      media.coverUrl = media.photos[0] ?? null;
+    }
+  }
+  return byListing;
+}
+
+function toPublicListingDto(row: PublicListingRow, media?: ListingPublicMedia) {
   return {
     id: row.id,
     slug: row.slug,
@@ -88,8 +115,8 @@ function toPublicListingDto(row: PublicListingRow) {
       atlasContainerPlaceId: row.atlas_container_place_id ?? null,
     },
     media: {
-      coverUrl: null as string | null,
-      photos: [] as string[],
+      coverUrl: media?.coverUrl ?? null,
+      photos: media?.photos ?? [],
     },
     createdAt: asIso(row.created_at),
     updatedAt: asIso(row.updated_at),
@@ -97,9 +124,9 @@ function toPublicListingDto(row: PublicListingRow) {
   };
 }
 
-function toPublicNearbyListingDto(row: NearbyListingRow) {
+function toPublicNearbyListingDto(row: NearbyListingRow, media?: ListingPublicMedia) {
   return {
-    ...toPublicListingDto(row),
+    ...toPublicListingDto(row, media),
     distanceMeters: Math.round(toNumber(row.distance_meters) ?? 0),
   };
 }
@@ -261,9 +288,14 @@ export async function listPublicListings(env: Env, url: URL, requestId: string):
       bedroomsMax: query.bedroomsMax,
     }),
   ]);
+  const mediaRows = await listPublishedListingMediaByIds(
+    db,
+    items.map((item) => item.id)
+  );
+  const mediaByListingId = buildPublicMediaMap(mediaRows);
 
   return json({
-    items: items.map(toPublicListingDto),
+    items: items.map((item) => toPublicListingDto(item, mediaByListingId.get(item.id))),
     pagination: {
       page: query.page,
       pageSize: query.pageSize,
@@ -284,8 +316,9 @@ export async function getPublicListing(env: Env, idOrSlug: string, requestId: st
   if (!row) {
     return errorResponse('NOT_FOUND', 'Listing not found', requestId, 404);
   }
-
-  return json({ listing: toPublicListingDto(row) });
+  const mediaRows = await listPublishedListingMediaByIds(db, [row.id]);
+  const mediaByListingId = buildPublicMediaMap(mediaRows);
+  return json({ listing: toPublicListingDto(row, mediaByListingId.get(row.id)) });
 }
 
 export async function listNearbyPublicListings(env: Env, url: URL, requestId: string): Promise<Response> {
@@ -321,6 +354,11 @@ export async function listNearbyPublicListings(env: Env, url: URL, requestId: st
       listingType: query.listingType,
     }),
   ]);
+  const mediaRows = await listPublishedListingMediaByIds(
+    db,
+    items.map((item) => item.id)
+  );
+  const mediaByListingId = buildPublicMediaMap(mediaRows);
 
   return json({
     anchor: {
@@ -328,7 +366,7 @@ export async function listNearbyPublicListings(env: Env, url: URL, requestId: st
       lng: query.lng,
       radiusKm: query.radiusKm,
     },
-    items: items.map(toPublicNearbyListingDto),
+    items: items.map((item) => toPublicNearbyListingDto(item, mediaByListingId.get(item.id))),
     pagination: {
       page: query.page,
       pageSize: query.pageSize,

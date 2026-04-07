@@ -1,0 +1,35 @@
+﻿scenario_key,surface,actor_type,state_type,entity_seed_key,expected_ui_behavior,notes
+rf_public_catalog_default,public_catalog,guest,default,,Показать каталог партнёров с featured блоком и категориями,Базовый публичный RF hub
+rf_public_catalog_empty,public_catalog,guest,empty,,Показать empty state empty_partners_catalog с CTA,Нужен для graceful fallback
+rf_public_catalog_search_no_results,public_catalog,guest,no_results,,Показать no_search_results и CTA на сброс фильтров,Проверка поискового UX
+rf_partner_detail_featured,partner_detail,guest,featured_partner,partner_001,Показать hero cover logo highlights featured badge и offers,Главная detail card для polished UI
+rf_partner_detail_family,partner_detail,guest,family_partner,partner_002,Показать family-friendly indicators booking CTA и restaurant offers,Family-oriented detail page
+rf_partner_detail_coworking,partner_detail,guest,work_friendly,partner_003,Показать work-friendly chips coworking features и day pass offer,Проверка work-friendly layout
+rf_partner_detail_pending_verification,partner_detail,guest,pending_verification,partner_006,Показать pending verification badge без overclaim доверия,Важно для trust UI
+rf_partner_detail_no_active_offers,partner_detail,guest,no_active_offers,partner_008,Показать карточку партнёра и empty partner offers state,Если нужен сценарий без offer cards
+rf_offers_catalog_default,offers_catalog,guest,default,,Показать список публичных offers с featured и badge logic,Базовый offers catalog
+rf_offers_catalog_hot_deal,offers_catalog,guest,hot_offer,offer_007,Подсветить hot/limited style и быстрый CTA на claim,Импульсный offer card UX
+rf_offers_catalog_family,offers_catalog,guest,family_offer,offer_003,Показать family copy и softer CTA,Family card behavior
+rf_offers_catalog_wellness,offers_catalog,guest,premium_offer,offer_005,Показать calm premium card with booking-oriented CTA,Wellness presentation
+rf_offers_catalog_pro_only_guard,offers_catalog,guest,restricted_pro_only,offer_008,Не показывать как обычный public claim или вести в guard state pro_only_guard,Auth-aware UX
+rf_offers_catalog_invite_only_guard,offers_catalog,guest,restricted_invite_only,offer_009,Показать invite_only guard state вместо обычного claim,Restricted UX
+rf_claim_success,offer_detail,authenticated_user,claim_success,offer_001,Показать success toast и переход в vouchers,Первый живой voucher flow
+rf_claim_replay,offer_detail,authenticated_user,replay_claim,offer_001,Показать info replay state без дублирования нового ваучера,Idempotency UX
+rf_claim_temporary_failure,offer_detail,authenticated_user,temporary_failure,offer_007,Показать temporary_unavailable copy и retry CTA,Transient execution noise UX
+rf_vouchers_default,vouchers_page,authenticated_user,has_claimed_voucher,voucher_case_001,Показать voucher card со статусом claimed и понятным CTA,Базовый voucher wallet
+rf_vouchers_redeemed,vouchers_page,authenticated_user,redeemed_voucher,voucher_case_003,Показать redeemed badge/history state без CTA на claim,Post-redeem UX
+rf_vouchers_empty,vouchers_page,authenticated_user,empty,,Показать empty_vouchers state с CTA на offers catalog,Empty wallet UX
+rf_merchant_dashboard_default,merchant_dashboard,merchant,default,partner_001,Показать карточку партнёра stats teaser create-offer CTA и vouchers summary,Первый merchant shell
+rf_merchant_offers_default,merchant_offers,merchant,has_offers,partner_001,Показать список offers партнёра и activation/status chips,Основной merchant offers UI
+rf_merchant_offers_empty,merchant_offers,merchant,empty,partner_008,Показать empty_merchant_offers state и CTA на create offer,Empty merchant state
+rf_merchant_vouchers_pending,merchant_vouchers,merchant,has_pending_vouchers,voucher_case_004,Показать voucher ready for redeem или related anomaly state,Подходит для merchant redeem surface
+rf_merchant_vouchers_empty,merchant_vouchers,merchant,empty,,Показать merchant vouchers empty state,Проверка empty merchant queue
+rf_pro_dashboard_pending,pro_dashboard,pro,pending_link,pro_link_001,Показать pending PRO link state и informative copy,Pending pro flow
+rf_pro_dashboard_accepted,pro_dashboard,pro,accepted_link,pro_link_002,Показать accepted connection и partner relation card,Accepted pro flow
+rf_pro_dashboard_empty,pro_dashboard,pro,empty,,Показать empty_pro_links state и CTA в каталог партнёров,Empty pro dashboard
+rf_landing_default,landing,guest,default,,Показать hero featured categories featured partners best offers how-it-works,Главная посадочная RF Asia
+rf_landing_guest_cta,landing,guest,auth_prompt,,Показать понятные CTA без завязки на hidden auth requirements,Проверка public-first landing UX
+rf_not_found_partner,partner_detail,guest,not_found,partner_missing,Показать partner not found state без поломанной страницы,404-like UX
+rf_not_found_offer,offer_detail,guest,not_found,offer_missing,Показать offer not found state и возврат в каталог,404-like UX
+rf_media_fallback_partner,partner_detail,guest,missing_media,partner_007,Показать fallback image/placeholder если cover недоступен,Media resilience UX
+rf_network_error_catalog,public_catalog,guest,temporary_error,,Показать generic temporary error и retry action,Network resilience UX

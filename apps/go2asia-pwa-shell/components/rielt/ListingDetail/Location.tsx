@@ -17,6 +17,7 @@ export function Location({ listing }: LocationProps) {
   const atlasPlaceId = listing.address.atlasPlaceId ?? null;
   const atlasContainerPlaceId = listing.address.atlasContainerPlaceId ?? null;
   const hasAnyAtlasLink = Boolean(atlasPlaceId || atlasContainerPlaceId);
+  const hasCoordinates = Boolean(listing.address.coordinates);
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
@@ -31,8 +32,9 @@ export function Location({ listing }: LocationProps) {
               {listing.address.city || 'city_id is not specified'}, {listing.address.country}
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Runtime does not expose public listing coordinates; location is shown from country/city IDs and Atlas links
-              when available.
+              {hasCoordinates
+                ? 'Публичные координаты доступны для этого seed-backed listing.'
+                : 'Публичные координаты не опубликованы; локация показана через country/city и Atlas links.'}
             </p>
           </div>
         </div>
