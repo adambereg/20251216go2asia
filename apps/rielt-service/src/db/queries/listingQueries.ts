@@ -72,6 +72,13 @@ export type NearbyListingRow = PublicListingRow & {
   distance_meters: number | string;
 };
 
+export type PublicListingMediaRow = {
+  listing_id: string;
+  is_cover: boolean;
+  sort_order: number;
+  public_url: string;
+};
+
 export type InquiryRow = {
   id: string;
   listing_id: string;
@@ -828,6 +835,32 @@ export async function getPublishedListingByIdOrSlug(
   `);
 
   return rowsOf<PublicListingRow>(result)[0] ?? null;
+}
+
+export async function listPublishedListingMediaByIds(
+  db: DbExecutor,
+  listingIds: string[]
+): Promise<PublicListingMediaRow[]> {
+  if (listingIds.length === 0) return [];
+  const listingIdsJson = JSON.stringify(listingIds);
+  const result = await db.execute(sql`
+    SELECT
+      lm.listing_id,
+      lm.is_cover,
+      lm.sort_order,
+      mf.public_url
+    FROM rielt_listing_media lm
+    JOIN media_files mf
+      ON mf.id = lm.media_id
+    WHERE lm.deleted_at IS NULL
+      AND lm.listing_id IN (
+        SELECT value::text
+        FROM jsonb_array_elements_text(${listingIdsJson}::jsonb) AS value
+      )
+      AND mf.public_url IS NOT NULL
+    ORDER BY lm.listing_id ASC, lm.is_cover DESC, lm.sort_order ASC, lm.id ASC
+  `);
+  return rowsOf<PublicListingMediaRow>(result);
 }
 
 export async function listPublishedListingsNearby(
