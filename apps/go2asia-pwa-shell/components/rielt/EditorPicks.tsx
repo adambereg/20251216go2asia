@@ -48,7 +48,7 @@ function EditorPickRow({
   seedById: Map<string, Listing>;
 }) {
   const Icon = pick.icon;
-  const { data, isLoading } = useListListings(pick.apiParams);
+  const { data, isLoading, isError, error } = useListListings(pick.apiParams);
   const listings = (data?.items ?? []).map((dto) => {
     const base = rieltDtoToListing(dto);
     return mergeSeedPresentationOverlay(base, seedById.get(base.id));
@@ -71,6 +71,10 @@ function EditorPickRow({
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
           ))}
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-800">
+          Не удалось загрузить подборку: {(error as { message?: string })?.message ?? 'runtime request failed'}.
         </div>
       ) : (
         <>

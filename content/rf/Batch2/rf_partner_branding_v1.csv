@@ -1,0 +1,9 @@
+﻿partner_seed_key,brand_color_primary,brand_color_secondary,brand_color_accent,logo_style_hint,visual_tone,card_theme_hint
+partner_001,#6F4E37,#E9D8C3,#C98A3D,wordmark_minimal,warm_editorial,coffee_featured
+partner_002,#B6463A,#F3E6D8,#D9A441,round_badge,family_warm,restaurant_family
+partner_003,#334155,#CBD5E1,#0EA5E9,geometric_modern,clean_productive,coworking_modern
+partner_004,#3F6F5A,#DDEEE7,#D4A373,soft_emblem,calm_premium,wellness_soft
+partner_005,#1D4ED8,#DBEAFE,#F97316,bold_sport,energetic_active,fitness_dynamic
+partner_006,#0F766E,#CCFBF1,#F59E0B,friendly_playful,family_bright,family_playful
+partner_007,#7C2D12,#FED7AA,#FACC15,street_stamp,bold_fast,budget_hotdeal
+partner_008,#BE185D,#FCE7F3,#7C3AED,elegant_script,soft_beauty,beauty_clean

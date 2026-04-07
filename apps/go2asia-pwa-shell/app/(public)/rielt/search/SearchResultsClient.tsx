@@ -31,11 +31,14 @@ function mapUrlToApiParams(searchParams: URLSearchParams): RieltListParams {
         ? 'price_desc'
         : 'newest';
 
+  const parsedBedrooms = bedrooms ? parseInt(bedrooms, 10) : NaN;
+  const bedroomsMin = Number.isFinite(parsedBedrooms) ? parsedBedrooms : undefined;
+
   return {
     city_id: cityId || undefined,
     listing_type,
     sort,
-    bedrooms_min: bedrooms ? parseInt(bedrooms, 10) : undefined,
+    bedrooms_min: bedroomsMin,
     page: 1,
     page_size: 50,
   };
@@ -166,13 +169,22 @@ export function SearchResultsClient() {
   }
 
   if (isError) {
+    const errorPayload = error as { error?: { code?: string; message?: string }; status?: number; message?: string };
+    const errorMessage =
+      errorPayload?.error?.message ??
+      errorPayload?.message ??
+      `Не удалось загрузить объявления (status: ${errorPayload?.status ?? 'unknown'})`;
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-amber-900 mb-2">Ошибка загрузки</h2>
-          <p className="text-amber-800 mb-4">
-            {error?.message ?? 'Не удалось загрузить объявления. Попробуйте позже.'}
-          </p>
+          <p className="text-amber-800 mb-4">{errorMessage}</p>
+          {errorPayload?.error?.code === 'ROUTE_RESERVED_NOT_ENABLED' ? (
+            <p className="text-xs text-amber-700 mb-4">
+              Runtime path закрыт на gateway: для `/v1/rielt/*` должен быть настроен `RIELT_SERVICE_URL`.
+            </p>
+          ) : null}
           <a
             href="/rielt/search"
             className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium"

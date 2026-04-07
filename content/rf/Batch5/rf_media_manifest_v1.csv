@@ -1,0 +1,43 @@
+﻿asset_key,entity_type,entity_seed_key,asset_role,file_name,file_path,public_url,alt_text,width,height,dominant_color,notes
+partner_001_logo,partner,partner_001,logo,partner_001_logo.png,assets/rf/partners/partner_001/logo.png,,Логотип Siberia Brew Phuket,512,512,#6F4E37,Основной logo asset для partner_001
+partner_001_cover,partner,partner_001,cover,partner_001_cover.jpg,assets/rf/partners/partner_001/cover.jpg,,Фасад и посадка Siberia Brew Phuket,1600,900,#C9A27E,Hero cover для detail page
+partner_001_gallery_01,partner,partner_001,gallery_01,partner_001_gallery_01.jpg,assets/rf/partners/partner_001/gallery_01.jpg,,Кофе и десерт в Siberia Brew Phuket,1600,900,#8B5E3C,Gallery image
+partner_002_logo,partner,partner_002,logo,partner_002_logo.png,assets/rf/partners/partner_002/logo.png,,Логотип Andaman Family Eatery,512,512,#B6463A,Основной logo asset для family restaurant
+partner_002_cover,partner,partner_002,cover,partner_002_cover.jpg,assets/rf/partners/partner_002/cover.jpg,,Семейный зал Andaman Family Eatery,1600,900,#D8A47F,Hero cover для partner_002
+partner_003_logo,partner,partner_003,logo,partner_003_logo.png,assets/rf/partners/partner_003/logo.png,,Логотип Phuket Work Point,512,512,#334155,Основной logo asset для coworking
+partner_003_cover,partner,partner_003,cover,partner_003_cover.jpg,assets/rf/partners/partner_003/cover.jpg,,Рабочая зона Phuket Work Point,1600,900,#7AA6C2,Hero cover для coworking detail
+partner_004_logo,partner,partner_004,logo,partner_004_logo.png,assets/rf/partners/partner_004/logo.png,,Логотип Lotus Wellness Studio,512,512,#3F6F5A,Основной logo asset для wellness
+partner_004_cover,partner,partner_004,cover,partner_004_cover.jpg,assets/rf/partners/partner_004/cover.jpg,,Интерьер Lotus Wellness Studio,1600,900,#A8C8B8,Hero cover для wellness card/detail
+partner_005_logo,partner,partner_005,logo,partner_005_logo.png,assets/rf/partners/partner_005/logo.png,,Логотип Sunset Fit Club,512,512,#1D4ED8,Основной logo asset для fitness
+partner_005_cover,partner,partner_005,cover,partner_005_cover.jpg,assets/rf/partners/partner_005/cover.jpg,,Тренировочная зона Sunset Fit Club,1600,900,#4C7FD9,Hero cover для fitness
+partner_006_logo,partner,partner_006,logo,partner_006_logo.png,assets/rf/partners/partner_006/logo.png,,Логотип Coastal Kids Corner,512,512,#0F766E,Основной logo asset для family place
+partner_006_cover,partner,partner_006,cover,partner_006_cover.jpg,assets/rf/partners/partner_006/cover.jpg,,Игровая зона Coastal Kids Corner,1600,900,#77C9C0,Hero cover для family place
+partner_007_logo,partner,partner_007,logo,partner_007_logo.png,assets/rf/partners/partner_007/logo.png,,Логотип Night Market Bites,512,512,#7C2D12,Основной logo asset для street food
+partner_007_cover,partner,partner_007,cover,partner_007_cover.jpg,assets/rf/partners/partner_007/cover.jpg,,Вечерняя точка Night Market Bites,1600,900,#C66A2B,Hero cover для budget/hot deal surface
+partner_008_logo,partner,partner_008,logo,partner_008_logo.png,assets/rf/partners/partner_008/logo.png,,Логотип Blue Harbor Beauty,512,512,#BE185D,Основной logo asset для beauty
+partner_008_cover,partner,partner_008,cover,partner_008_cover.jpg,assets/rf/partners/partner_008/cover.jpg,,Интерьер Blue Harbor Beauty,1600,900,#E8A7C7,Hero cover для beauty detail
+offer_001_card,offer,offer_001,card,offer_001_card.jpg,assets/rf/offers/offer_001/card.jpg,,Кофе со скидкой в Siberia Brew Phuket,1200,800,#8B5E3C,Card image для public discount offer
+offer_002_card,offer,offer_002,card,offer_002_card.jpg,assets/rf/offers/offer_002/card.jpg,,Десерт в подарок к напиткам,1200,800,#C98A3D,Card image для gift offer
+offer_003_card,offer,offer_003,card,offer_003_card.jpg,assets/rf/offers/offer_003/card.jpg,,Семейное предложение с детским меню,1200,800,#D9A441,Card image для family offer
+offer_004_card,offer,offer_004,card,offer_004_card.jpg,assets/rf/offers/offer_004/card.jpg,,Day pass для coworking,1200,800,#4F83A1,Card image для coworking offer
+offer_005_card,offer,offer_005,card,offer_005_card.jpg,assets/rf/offers/offer_005/card.jpg,,Скидка на массаж,1200,800,#9DBDAE,Card image для wellness offer
+offer_006_card,offer,offer_006,card,offer_006_card.jpg,assets/rf/offers/offer_006/card.jpg,,Trial-тренировка в фитнес-клубе,1200,800,#4C7FD9,Card image для fitness offer
+offer_007_card,offer,offer_007,card,offer_007_card.jpg,assets/rf/offers/offer_007/card.jpg,,Ночной комбо-набор по спеццене,1200,800,#D97706,Card image для hot deal
+offer_008_card,offer,offer_008,card,offer_008_card.jpg,assets/rf/offers/offer_008/card.jpg,,PRO meeting room access,1200,800,#64748B,Card image для pro_only offer
+offer_009_card,offer,offer_009,card,offer_009_card.jpg,assets/rf/offers/offer_009/card.jpg,,Private recovery session по приглашению,1200,800,#C08497,Card image для invite_only offer
+offer_010_card,offer,offer_010,card,offer_010_card.jpg,assets/rf/offers/offer_010/card.jpg,,Будничная скидка в beauty-студии,1200,800,#DB2777,Card image для weekday beauty offer
+offer_011_card,offer,offer_011,card,offer_011_card.jpg,assets/rf/offers/offer_011/card.jpg,,Family play hour по спецусловиям,1200,800,#14B8A6,Card image для family offer
+offer_012_card,offer,offer_012,card,offer_012_card.jpg,assets/rf/offers/offer_012/card.jpg,,Бонус к ужин-сету,1200,800,#B45309,Card image для restaurant secondary offer
+category_coffee_shops_icon,category,coffee_shops,icon,category_coffee_shops_icon.svg,assets/rf/categories/coffee_shops/icon.svg,,Иконка категории Кофейни,64,64,#6F4E37,Category icon
+category_restaurants_icon,category,restaurants,icon,category_restaurants_icon.svg,assets/rf/categories/restaurants/icon.svg,,Иконка категории Рестораны,64,64,#B6463A,Category icon
+category_coworking_icon,category,coworking,icon,category_coworking_icon.svg,assets/rf/categories/coworking/icon.svg,,Иконка категории Коворкинги,64,64,#334155,Category icon
+category_wellness_icon,category,wellness,icon,category_wellness_icon.svg,assets/rf/categories/wellness/icon.svg,,Иконка категории Велнес,64,64,#3F6F5A,Category icon
+category_family_places_icon,category,family_places,icon,category_family_places_icon.svg,assets/rf/categories/family_places/icon.svg,,Иконка категории Для семьи,64,64,#0F766E,Category icon
+empty_partners_catalog,empty_state,,illustration,empty_partners_catalog.png,assets/rf/empty/empty_partners_catalog.png,,Иллюстрация пустого каталога партнёров,1200,900,#CBD5E1,Empty state illustration
+empty_offers_catalog,empty_state,,illustration,empty_offers_catalog.png,assets/rf/empty/empty_offers_catalog.png,,Иллюстрация пустого каталога предложений,1200,900,#E2E8F0,Empty state illustration
+empty_vouchers,empty_state,,illustration,empty_vouchers.png,assets/rf/empty/empty_vouchers.png,,Иллюстрация пустого раздела ваучеров,1200,900,#D1FAE5,Empty state illustration
+empty_pro_links,empty_state,,illustration,empty_pro_links.png,assets/rf/empty/empty_pro_links.png,,Иллюстрация пустого раздела PRO-связей,1200,900,#DBEAFE,Empty state illustration
+empty_temporary_unavailable,empty_state,,illustration,empty_temporary_unavailable.png,assets/rf/empty/empty_temporary_unavailable.png,,Иллюстрация временной недоступности,1200,900,#FDE68A,Error/temporary state illustration
+landing_rf_hero,landing,,hero,landing_rf_hero.jpg,assets/rf/landing/landing_rf_hero.jpg,,Главный hero-баннер RF Asia,1920,1080,#0F172A,Главный визуал для landing
+landing_featured_partners,landing,,section_cover,landing_featured_partners.jpg,assets/rf/landing/landing_featured_partners.jpg,,Визуал блока рекомендованных партнёров,1600,900,#475569,Section cover
+landing_best_offers,landing,,section_cover,landing_best_offers.jpg,assets/rf/landing/landing_best_offers.jpg,,Визуал блока лучших предложений,1600,900,#7C3AED,Section cover

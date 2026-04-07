@@ -13,7 +13,7 @@ import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/riel
 import { useRieltSeedListings } from './hooks/useRieltSeed';
 
 export function NewListings() {
-  const { data, isLoading } = useListListings({
+  const { data, isLoading, isError, error } = useListListings({
     sort: 'newest',
     page_size: 6,
   });
@@ -34,6 +34,19 @@ export function NewListings() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-64 bg-slate-200 rounded-xl animate-pulse" />
           ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Новое на этой неделе
+        </h2>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-800">
+          Не удалось загрузить новые объявления: {(error as { message?: string })?.message ?? 'runtime request failed'}.
         </div>
       </section>
     );
