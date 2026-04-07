@@ -1,0 +1,157 @@
+{
+  "partners": {
+    "partner_002": {
+      "partnerId": "rf_partner_e4c9bf3f-9f50-42ac-9dbd-fa7e62a22ef4",
+      "ownerSeedKey": "user_005",
+      "ownerUserId": "user_3BlKqpPMQb9Bms1GDpqSYftwzAc",
+      "displayName": "Baikal Kitchen Phuket"
+    },
+    "partner_003": {
+      "partnerId": "rf_partner_0adabec6-c415-432a-b51a-9fba182c9822",
+      "ownerSeedKey": "user_010",
+      "ownerUserId": "user_3BlJzMofRZwsapgjk3Ond72ESn1",
+      "displayName": "Lotus Care Phuket"
+    },
+    "partner_004": {
+      "partnerId": "rf_partner_8efe09a7-ea85-48fb-afe4-ef05c9bdd256",
+      "ownerSeedKey": "user_011",
+      "ownerUserId": "user_3BlK8FjaNuSTgxcgX8Lnkeot3Wy",
+      "displayName": "Mekong Stay Da Nang"
+    },
+    "partner_001": {
+      "partnerId": "rf_partner_a81923a4-e170-423c-b58c-23b4c70d1de9",
+      "ownerSeedKey": "user_003",
+      "ownerUserId": "user_3BlJq7WcPpP0wWcEE8MVCEn7ebg",
+      "displayName": "Siberia Brew Phuket"
+    }
+  },
+  "offers": {
+    "offer_002": {
+      "offerId": "rf_offer_3282845b-6ec1-473b-9f13-673314f5d0ce",
+      "partnerSeedKey": "partner_001",
+      "createdBySeedKey": "user_003",
+      "title": "Free coffee with any brunch order",
+      "visibility": "public",
+      "offerType": "gift",
+      "shouldBeActive": true
+    },
+    "offer_003": {
+      "offerId": "rf_offer_d8c7c3ed-fcaf-4a75-b51e-6d1fd16b5d06",
+      "partnerSeedKey": "partner_002",
+      "createdBySeedKey": "user_005",
+      "title": "15 percent off dinner bill",
+      "visibility": "public",
+      "offerType": "discount",
+      "shouldBeActive": true
+    },
+    "offer_004": {
+      "offerId": "rf_offer_0aa1b4ad-55f0-49d2-9b87-8729799fcbcb",
+      "partnerSeedKey": "partner_002",
+      "createdBySeedKey": "user_005",
+      "title": "Welcome dessert for evening guests",
+      "visibility": "invite_only",
+      "offerType": "gift",
+      "shouldBeActive": true
+    },
+    "offer_005": {
+      "offerId": "rf_offer_c69a19f3-f1e5-4b42-a893-db2bd13c4279",
+      "partnerSeedKey": "partner_003",
+      "createdBySeedKey": "user_010",
+      "title": "200 THB off premium service package",
+      "visibility": "public",
+      "offerType": "discount",
+      "shouldBeActive": true
+    },
+    "offer_006": {
+      "offerId": "rf_offer_3a04e31f-0495-47e0-9195-3efba9f579ce",
+      "partnerSeedKey": "partner_003",
+      "createdBySeedKey": "user_010",
+      "title": "PRO curated priority booking bonus",
+      "visibility": "pro_only",
+      "offerType": "access",
+      "shouldBeActive": true
+    },
+    "offer_001": {
+      "offerId": "rf_offer_3056ea09-c80f-40c1-93c3-ed2141623b85",
+      "partnerSeedKey": "partner_001",
+      "createdBySeedKey": "user_003",
+      "title": "10 percent off breakfast set",
+      "visibility": "public",
+      "offerType": "discount",
+      "shouldBeActive": true
+    },
+    "offer_007": {
+      "offerId": "rf_offer_4a302d93-acc1-4ca3-88aa-45b86da0d1dd",
+      "partnerSeedKey": "partner_004",
+      "createdBySeedKey": "user_011",
+      "title": "12 percent off two-night stay",
+      "visibility": "pro_only",
+      "offerType": "discount",
+      "shouldBeActive": true
+    }
+  },
+  "proLinks": {
+    "pro_link_002": {
+      "proLinkId": "rf_pro_link_4ed08e73-5288-4084-b9dd-7527650bc697",
+      "partnerSeedKey": "partner_002",
+      "proUserSeedKey": "user_009",
+      "roleScope": "curation",
+      "shouldBeAccepted": false
+    },
+    "pro_link_003": {
+      "proLinkId": "rf_pro_link_ae25a49c-10a1-4a28-8343-f1333f27255c",
+      "partnerSeedKey": "partner_004",
+      "proUserSeedKey": "user_010",
+      "roleScope": "promotion",
+      "shouldBeAccepted": true
+    },
+    "pro_link_004": {
+      "proLinkId": "rf_pro_link_646d181e-64f0-4129-ad26-86b12ddc2fbd",
+      "partnerSeedKey": "partner_003",
+      "proUserSeedKey": "user_011",
+      "roleScope": "curation",
+      "shouldBeAccepted": false
+    },
+    "pro_link_001": {
+      "proLinkId": "rf_pro_link_25150a5b-acf9-4d4d-9dbf-f4c4f27e5d7a",
+      "partnerSeedKey": "partner_001",
+      "proUserSeedKey": "user_009",
+      "roleScope": "curation",
+      "shouldBeAccepted": true
+    }
+  },
+  "vouchers": {
+    "voucher_case_002": {
+      "voucherId": "rf_voucher_c0755cde-7a21-4b74-a7c1-4e66f29fbbae",
+      "offerSeedKey": "offer_006",
+      "partnerSeedKey": "partner_003",
+      "claimUserSeedKey": "user_009",
+      "idempotencyKey": "claim-offer006-user009-v1"
+    },
+    "voucher_case_003": {
+      "voucherId": "rf_voucher_926a9244-d3d3-4ced-9fe9-c9b503c318a2",
+      "offerSeedKey": "offer_003",
+      "partnerSeedKey": "partner_002",
+      "claimUserSeedKey": "user_008",
+      "idempotencyKey": "claim-offer003-user008-v1"
+    },
+    "voucher_case_004": {
+      "voucherId": "rf_voucher_318f7001-f402-4bcc-908e-92dcb04626ee",
+      "offerSeedKey": "offer_004",
+      "partnerSeedKey": "partner_002",
+      "claimUserSeedKey": "user_007",
+      "idempotencyKey": "claim-offer004-user007-v1"
+    },
+    "voucher_case_001": {
+      "voucherId": "rf_voucher_bcf5283c-f5e7-4078-bf59-7a5da0f4a582",
+      "offerSeedKey": "offer_001",
+      "partnerSeedKey": "partner_001",
+      "claimUserSeedKey": "user_001",
+      "idempotencyKey": "claim-offer001-user001-v1"
+    }
+  },
+  "meta": {
+    "updatedAt": "2026-04-03T12:42:22.811Z",
+    "version": "rf_first_batch_v1"
+  }
+}
