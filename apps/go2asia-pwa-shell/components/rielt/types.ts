@@ -273,6 +273,9 @@ export interface SearchFilters {
   
   // Тип жилья
   types?: ListingType[];
+  bedroomsMin?: number;
+  bedroomsMax?: number;
+  propertyType?: ListingType | 'any';
   
   // Цена
   priceRange?: {
@@ -295,6 +298,19 @@ export interface SearchFilters {
   // Надёжность
   onlyRF?: boolean;
   onlyPROVerified?: boolean;
+  concierge?: boolean;
+
+  // Curated discovery context (Phase 1 IA, frontend-only)
+  moveInMonth?: string;
+  furnished?: boolean;
+  serviced?: boolean;
+  familyFriendly?: boolean;
+  nomadFriendly?: boolean;
+  nearSea?: boolean;
+  nearCenter?: boolean;
+  quietArea?: boolean;
+  expatArea?: boolean;
+  readyToMove?: boolean;
   
   // Долгосрок
   minMonths?: number;      // Минимум месяцев для долгосрока

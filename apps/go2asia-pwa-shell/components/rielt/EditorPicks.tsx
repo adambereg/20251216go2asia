@@ -7,6 +7,7 @@
 
 import { Users, Briefcase, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useListListings } from '@go2asia/sdk/rielt';
 import { ListingCard } from './ListingCard';
 import { mergeSeedPresentationOverlay, rieltDtoToListing } from './adapters/rieltDtoToListing';
@@ -106,19 +107,39 @@ function EditorPickRow({
 }
 
 export function EditorPicks() {
+  const [activePickId, setActivePickId] = useState<(typeof EDITOR_PICKS)[number]['id']>('families');
   const seedOverlay = useRieltSeedListings({ page: 1, page_size: 200 }, true);
   const seedById = new Map((seedOverlay.data?.items ?? []).map((item) => [item.id, item]));
+  const activePick = EDITOR_PICKS.find((pick) => pick.id === activePickId) ?? EDITOR_PICKS[0];
 
   return (
     <section>
       <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-        Подборки редакции
+        Curated подборки
       </h2>
+      <p className="text-sm text-slate-600 mb-4">
+        Короткие сценарии вместо длинной ленты: выберите один режим и перейдите к детальному каталогу.
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        {EDITOR_PICKS.map((pick) => (
+          <button
+            key={pick.id}
+            type="button"
+            onClick={() => setActivePickId(pick.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              pick.id === activePickId
+                ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
+                : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300'
+            }`}
+          >
+            {pick.title}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-8">
-        {EDITOR_PICKS.map((pick) => (
-          <EditorPickRow key={pick.id} pick={pick} seedById={seedById} />
-        ))}
+        <EditorPickRow pick={activePick} seedById={seedById} />
       </div>
     </section>
   );

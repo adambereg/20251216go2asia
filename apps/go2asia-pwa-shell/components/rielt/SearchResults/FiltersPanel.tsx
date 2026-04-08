@@ -5,7 +5,6 @@
  * Панель фильтров (sticky сверху)
  */
 
-import { X } from 'lucide-react';
 import type { SearchFilters } from '../types';
 
 interface FiltersPanelProps {
@@ -18,14 +17,35 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   if (filters.location?.city) {
     activeFilters.push({ key: 'location', label: `Город: ${filters.location.city}` });
   }
+  if (filters.location?.country) {
+    activeFilters.push({ key: 'location', label: `Страна: ${filters.location.country}` });
+  }
+  if (filters.location?.district) {
+    activeFilters.push({ key: 'location', label: `Район: ${filters.location.district}` });
+  }
   if (filters.rentalType) {
     activeFilters.push({
       key: 'rentalType',
       label: filters.rentalType === 'short-term' ? 'Краткосрочно' : 'Долгосрочно',
     });
   }
+  if (filters.moveInMonth) activeFilters.push({ key: 'moveInMonth', label: `Переезд: ${filters.moveInMonth}` });
+  if (filters.priceRange?.min != null) activeFilters.push({ key: 'priceRange', label: `Бюджет от: ${filters.priceRange.min}` });
+  if (filters.priceRange?.max != null) activeFilters.push({ key: 'priceRange', label: `Бюджет до: ${filters.priceRange.max}` });
+  if (filters.bedroomsMin != null) activeFilters.push({ key: 'bedroomsMin', label: `Спальни от: ${filters.bedroomsMin}` });
+  if (filters.bedroomsMax != null) activeFilters.push({ key: 'bedroomsMax', label: `Спальни до: ${filters.bedroomsMax}` });
   if (filters.onlyRF) activeFilters.push({ key: 'onlyRF', label: 'Только RF' });
   if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'Проверено PRO' });
+  if (filters.concierge) activeFilters.push({ key: 'concierge', label: 'С сопровождением' });
+  if (filters.furnished) activeFilters.push({ key: 'furnished', label: 'С мебелью' });
+  if (filters.serviced) activeFilters.push({ key: 'serviced', label: 'Serviced' });
+  if (filters.familyFriendly) activeFilters.push({ key: 'familyFriendly', label: 'Для семьи' });
+  if (filters.nomadFriendly) activeFilters.push({ key: 'nomadFriendly', label: 'Для nomad/work' });
+  if (filters.nearSea) activeFilters.push({ key: 'nearSea', label: 'У моря' });
+  if (filters.nearCenter) activeFilters.push({ key: 'nearCenter', label: 'В центре' });
+  if (filters.quietArea) activeFilters.push({ key: 'quietArea', label: 'Тихий район' });
+  if (filters.expatArea) activeFilters.push({ key: 'expatArea', label: 'Expat area' });
+  if (filters.readyToMove) activeFilters.push({ key: 'readyToMove', label: 'Ready to move' });
 
   if (activeFilters.length === 0) {
     return null;
@@ -39,7 +59,6 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
           className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg font-medium flex items-center gap-2"
         >
           {filter.label}
-          <X className="w-3 h-3 opacity-50" />
         </span>
       ))}
     </div>

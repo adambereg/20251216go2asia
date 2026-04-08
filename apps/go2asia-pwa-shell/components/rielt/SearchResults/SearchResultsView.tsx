@@ -43,6 +43,17 @@ export function SearchResultsView({
 }: SearchResultsViewProps) {
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const hasSeedOverlay = listings.some((listing) => listing.presentation?.source === 'seed');
+  const hasGuidedContext =
+    Boolean(filters.furnished) ||
+    Boolean(filters.serviced) ||
+    Boolean(filters.familyFriendly) ||
+    Boolean(filters.nomadFriendly) ||
+    Boolean(filters.nearSea) ||
+    Boolean(filters.nearCenter) ||
+    Boolean(filters.quietArea) ||
+    Boolean(filters.expatArea) ||
+    Boolean(filters.concierge) ||
+    Boolean(filters.readyToMove);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -85,6 +96,11 @@ export function SearchResultsView({
         <div className="mb-4 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
           Включён seed overlay mode: часть карточек и trust/voucher presentation идёт из repo seed data. Канонический
           Step 8 API-контракт при этом не расширяется.
+        </div>
+      ) : null}
+      {hasGuidedContext ? (
+        <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
+          Часть selected criteria работает как guided inquiry context для curated-подбора и не расширяет runtime API-контракт.
         </div>
       ) : null}
 
