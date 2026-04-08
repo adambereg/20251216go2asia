@@ -3420,6 +3420,10 @@ components:
           type: string
         countryId:
           type: string
+        public:
+          allOf:
+            - $ref: "#/components/schemas/RieltPublicGeo"
+          nullable: true
       required:
         - countryId
       type: object
@@ -3640,6 +3644,8 @@ components:
         - $ref: "#/components/schemas/RieltListing"
         - properties:
             distanceMeters:
+              description: |
+                Distance to query anchor calculated by service runtime coordinates. Public geo representation may be less precise than this distance value.
               type: integer
           type: object
     RieltOwnerGeo:
@@ -3859,6 +3865,34 @@ components:
         - amount
         - currency
         - period
+      type: object
+    RieltPublicGeo:
+      properties:
+        accuracyRadiusM:
+          nullable: true
+          type: integer
+        areaLabel:
+          nullable: true
+          type: string
+        cityLabel:
+          nullable: true
+          type: string
+        lat:
+          nullable: true
+          type: number
+        lng:
+          nullable: true
+          type: number
+        precision:
+          enum:
+            - exact
+            - approximate
+            - area
+            - city
+            - none
+          type: string
+      required:
+        - precision
       type: object
     RieltReadyResponse:
       properties:

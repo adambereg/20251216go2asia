@@ -6,9 +6,9 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RieltPublicGeo } from "./rieltPublicGeo";
 
-export type RieltNearbyListingAllOf = {
-  /** Distance to query anchor calculated by service runtime coordinates. Public geo representation may be less precise than this distance value.
-   */
-  distanceMeters?: number;
-};
+/**
+ * @nullable
+ */
+export type RieltGeoPublic = RieltPublicGeo | null;

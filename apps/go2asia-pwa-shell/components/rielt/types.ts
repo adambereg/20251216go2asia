@@ -13,16 +13,21 @@ export interface Coordinates {
   lng: number;
 }
 
+export type GeoPrecision = 'exact' | 'approximate' | 'area' | 'city' | 'none';
+
 /** Адрес */
 export interface Address {
   country: string;      // Из Atlas
-  city: string;         // Из Atlas
+  city: string;         // Public label
+  cityId?: string | null;
   atlasPlaceId?: string | null;
   atlasContainerPlaceId?: string | null;
   district?: string;    // Район из Atlas
   street?: string;
   building?: string;
   coordinates?: Coordinates | null;
+  geoPrecision?: GeoPrecision;
+  geoAccuracyRadiusM?: number | null;
 }
 
 // =============================================================================

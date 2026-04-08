@@ -5,12 +5,13 @@
  * Карта с маркерами объявлений
  */
 
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Fragment, useEffect } from 'react';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MARKER_COLORS } from '../types';
 import type { ListingWithDistance } from '../types';
+import { getGeoPrecisionHint, getGeoPrecisionLabel, getMapRadiusByPrecision, resolveMapPoint } from '../utils/geo';
 
 interface ListingsMapProps {
   listings: ListingWithDistance[];
@@ -35,20 +36,35 @@ export function ListingsMap({
   onSelect,
 }: ListingsMapProps) {
   void selectedId;
-  const hasSeedOverlay = listings.some((listing) => listing.presentation?.source === 'seed');
-  const listingsWithCoordinates = listings.filter(
-    (listing) =>
-      listing.address.coordinates &&
-      Number.isFinite(listing.address.coordinates.lat) &&
-      Number.isFinite(listing.address.coordinates.lng)
-  );
+  const mappedListings = listings
+    .map((listing) => {
+      const geo = resolveMapPoint(listing);
+      if (!geo.coordinates) return null;
+      return {
+        listing,
+        coordinates: geo.coordinates,
+        precision: geo.precision,
+        radiusM: geo.radiusM,
+        source: geo.source,
+      };
+    })
+    .filter(Boolean) as Array<{
+    listing: ListingWithDistance;
+    coordinates: { lat: number; lng: number };
+    precision: ReturnType<typeof resolveMapPoint>['precision'];
+    radiusM: number | null;
+    source: ReturnType<typeof resolveMapPoint>['source'];
+  }>;
+  const hiddenCount = listings.length - mappedListings.length;
+  const hasNonExact = mappedListings.some((item) => item.precision !== 'exact');
 
-  if (listingsWithCoordinates.length === 0) {
+  if (mappedListings.length === 0) {
     return (
       <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center p-6 text-center">
-        <p className="text-slate-600 text-sm">
-          Карта сейчас недоступна: для этих объявлений нет координат.
-        </p>
+        <div>
+          <p className="text-slate-700 text-sm font-medium">На карте пока нечего отметить</p>
+          <p className="text-slate-500 text-xs mt-1">У объявлений в этой выдаче нет доступного геопредставления.</p>
+        </div>
       </div>
     );
   }
@@ -56,13 +72,13 @@ export function ListingsMap({
   // Центр карты (первое объявление или геолокация пользователя)
   const mapCenter: [number, number] = userLocation
     ? [userLocation.lat, userLocation.lng]
-    : [listingsWithCoordinates[0].address.coordinates!.lat, listingsWithCoordinates[0].address.coordinates!.lng]
+    : [mappedListings[0].coordinates.lat, mappedListings[0].coordinates.lng];
 
   return (
     <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200">
-      {hasSeedOverlay ? (
+      {hasNonExact ? (
         <div className="px-3 py-2 text-xs text-blue-800 bg-blue-50 border-b border-blue-200">
-          Точки на карте могут отличаться от финального адреса — уточняйте локацию у владельца.
+          Для части объявлений показано ориентировочное расположение или район.
         </div>
       ) : null}
       <MapContainer
@@ -78,8 +94,9 @@ export function ListingsMap({
         />
 
         {/* Маркеры объявлений */}
-        {listingsWithCoordinates.map((listing) => {
+        {mappedListings.map(({ listing, coordinates, precision, radiusM }) => {
           const color = MARKER_COLORS[listing.type];
+          const radius = radiusM ?? getMapRadiusByPrecision(precision);
           const customIcon = new Icon({
             iconUrl: `data:image/svg+xml;base64,${btoa(
               `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="35" viewBox="0 0 25 35">
@@ -93,36 +110,48 @@ export function ListingsMap({
           });
 
           return (
-            <Marker
-              key={listing.id}
-              position={[listing.address.coordinates!.lat, listing.address.coordinates!.lng]}
-              icon={customIcon}
-              eventHandlers={{
-                click: () => onSelect?.(listing.id),
-              }}
-            >
-              <Popup>
-                <div className="w-64 -m-2">
-                  <a
-                    href={`/rielt/listings/${listing.id}`}
-                    className="block"
-                  >
-                    <div className="text-sm font-semibold text-slate-900 mb-1 line-clamp-1">
-                      {listing.title}
-                    </div>
-                    <div className="text-xs text-slate-600 mb-2">
-                      {listing.address.city}, {listing.address.country}
-                    </div>
-                    <div className="text-sm font-bold text-emerald-600">
-                      ${listing.rentalType === 'long-term' ? listing.pricing.perMonth : listing.pricing.perNight}
-                      <span className="text-xs font-normal text-slate-600">
-                        {' '}/ {listing.rentalType === 'long-term' ? 'месяц' : 'ночь'}
-                      </span>
-                    </div>
-                  </a>
-                </div>
-              </Popup>
-            </Marker>
+            <Fragment key={listing.id}>
+              <Marker
+                position={[coordinates.lat, coordinates.lng]}
+                icon={customIcon}
+                eventHandlers={{
+                  click: () => onSelect?.(listing.id),
+                }}
+              >
+                <Popup>
+                  <div className="w-64 -m-2">
+                    <a
+                      href={`/rielt/listings/${listing.id}`}
+                      className="block"
+                    >
+                      <div className="text-sm font-semibold text-slate-900 mb-1 line-clamp-1">
+                        {listing.title}
+                      </div>
+                      <div className="text-xs text-slate-600 mb-2">
+                        {listing.address.city}, {listing.address.country}
+                      </div>
+                      <div className="text-xs text-slate-500 mb-2">
+                        {getGeoPrecisionLabel(precision)}
+                      </div>
+                      <div className="text-sm font-bold text-emerald-600">
+                        ${listing.rentalType === 'long-term' ? listing.pricing.perMonth : listing.pricing.perNight}
+                        <span className="text-xs font-normal text-slate-600">
+                          {' '}/ {listing.rentalType === 'long-term' ? 'месяц' : 'ночь'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">{getGeoPrecisionHint(precision)}</div>
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+              {radius ? (
+                <Circle
+                  center={[coordinates.lat, coordinates.lng]}
+                  radius={radius}
+                  pathOptions={{ color: '#10B981', weight: 1, opacity: 0.6, fillOpacity: 0.08 }}
+                />
+              ) : null}
+            </Fragment>
           );
         })}
 
@@ -143,6 +172,12 @@ export function ListingsMap({
           />
         )}
       </MapContainer>
+      {hiddenCount > 0 ? (
+        <div className="px-3 py-2 text-xs text-slate-600 bg-white border-t border-slate-200">
+          Ещё {hiddenCount} {hiddenCount === 1 ? 'объект' : 'объектов'} пока без точки на карте — они остаются в
+          списке.
+        </div>
+      ) : null}
     </div>
   );
 }
