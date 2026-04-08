@@ -206,6 +206,7 @@ Public listing DTO (list and detail) is intentionally summary-like. No descripti
 - bedrooms, bathrooms, areaSqm
 - geo: { countryId, cityId, atlasPlaceId, atlasContainerPlaceId, public }
 - geo.public: { precision, lat, lng, accuracyRadiusM, cityLabel, areaLabel } (privacy-aware public representation)
+- precision values in current public runtime: approximate | area | city | none
 - media: { coverUrl, photos[] }
 - createdAt, updatedAt, publishedAt
 
@@ -214,6 +215,7 @@ Description is present only in owner DTOs.
 ## 4.2 Nearby item
 
 - Same as public listing + distanceMeters: number
+- distanceMeters is calculated to the same public map point (geo.public.lat/lng) shown to the user.
 
 ## 4.3 Owner listing
 
@@ -246,6 +248,7 @@ Description is present only in owner DTOs.
 - **city_id nullable:** API accepts null.
 - **No geo identity via raw free-text:** API contract uses structured geo fields; `areaText` remains owner/private.
 - **Public vs owner split:** owner DTO keeps richer geo (`lat`, `lng`, `areaText`), public DTO exposes bounded `geo.public`.
+- **areaLabel policy:** public `geo.public.areaLabel` uses canonical linked geo labels (Atlas), not owner `areaText`.
 
 ---
 

@@ -3645,7 +3645,7 @@ components:
         - properties:
             distanceMeters:
               description: |
-                Distance to query anchor calculated by service runtime coordinates. Public geo representation may be less precise than this distance value.
+                Distance to query anchor calculated by the same public map point represented by geo.public.lat/lng.
               type: integer
           type: object
     RieltOwnerGeo:
@@ -3884,8 +3884,8 @@ components:
           nullable: true
           type: number
         precision:
+          description: Privacy-aware public geo precision level used for map display.
           enum:
-            - exact
             - approximate
             - area
             - city

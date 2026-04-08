@@ -30,7 +30,7 @@ export type PublicListingRow = {
   atlas_place_id: string | null;
   atlas_container_place_id: string | null;
   city_label: string | null;
-  public_geo_precision: 'exact' | 'approximate' | 'area' | 'city' | 'none';
+  public_geo_precision: 'approximate' | 'area' | 'city' | 'none';
   public_geo_lat: number | string | null;
   public_geo_lng: number | string | null;
   public_geo_accuracy_radius_m: number | null;
@@ -792,8 +792,10 @@ export async function listPublishedListings(
         ELSE NULL
       END AS public_geo_accuracy_radius_m,
       CASE
-        WHEN l.area_text IS NOT NULL THEN l.area_text
-        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+        WHEN l.lat IS NULL
+         AND l.lng IS NULL
+         AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+         AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
         ELSE NULL
       END AS public_geo_area_label,
       l.bedrooms,
@@ -892,8 +894,10 @@ export async function getPublishedListingByIdOrSlug(
         ELSE NULL
       END AS public_geo_accuracy_radius_m,
       CASE
-        WHEN l.area_text IS NOT NULL THEN l.area_text
-        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+        WHEN l.lat IS NULL
+         AND l.lng IS NULL
+         AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+         AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
         ELSE NULL
       END AS public_geo_area_label,
       l.bedrooms,
@@ -1011,8 +1015,10 @@ export async function listPublishedListingsNearby(
           ELSE NULL
         END AS public_geo_accuracy_radius_m,
         CASE
-          WHEN b.area_text IS NOT NULL THEN b.area_text
-          WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+          WHEN b.lat IS NULL
+           AND b.lng IS NULL
+           AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+           AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
           ELSE NULL
         END AS public_geo_area_label,
         b.bedrooms,
@@ -1027,9 +1033,9 @@ export async function listPublishedListingsNearby(
               1.0,
               greatest(
                 0.0,
-                power(sin(radians((b.lat::double precision - p.lat) / 2.0)), 2) +
-                cos(radians(p.lat)) * cos(radians(b.lat::double precision)) *
-                power(sin(radians((b.lng::double precision - p.lng) / 2.0)), 2)
+                power(sin(radians((round(b.lat::numeric, 3)::double precision - p.lat) / 2.0)), 2) +
+                cos(radians(p.lat)) * cos(radians(round(b.lat::numeric, 3)::double precision)) *
+                power(sin(radians((round(b.lng::numeric, 3)::double precision - p.lng) / 2.0)), 2)
               )
             )
           )
@@ -1085,9 +1091,9 @@ export async function countPublishedListingsNearby(
               1.0,
               greatest(
                 0.0,
-                power(sin(radians((b.lat::double precision - p.lat) / 2.0)), 2) +
-                cos(radians(p.lat)) * cos(radians(b.lat::double precision)) *
-                power(sin(radians((b.lng::double precision - p.lng) / 2.0)), 2)
+                power(sin(radians((round(b.lat::numeric, 3)::double precision - p.lat) / 2.0)), 2) +
+                cos(radians(p.lat)) * cos(radians(round(b.lat::numeric, 3)::double precision)) *
+                power(sin(radians((round(b.lng::numeric, 3)::double precision - p.lng) / 2.0)), 2)
               )
             )
           )

@@ -74,10 +74,9 @@ type ListingPublicMedia = {
   photos: string[];
 };
 
-type PublicGeoPrecision = 'exact' | 'approximate' | 'area' | 'city' | 'none';
+type PublicGeoPrecision = 'approximate' | 'area' | 'city' | 'none';
 
 function toPublicGeoPrecision(value: PublicListingRow['public_geo_precision']): PublicGeoPrecision {
-  if (value === 'exact') return 'exact';
   if (value === 'approximate') return 'approximate';
   if (value === 'area') return 'area';
   if (value === 'city') return 'city';

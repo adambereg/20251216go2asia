@@ -27,7 +27,7 @@ export interface RieltGeoDto {
 }
 
 export interface RieltPublicGeoDto {
-  precision: 'exact' | 'approximate' | 'area' | 'city' | 'none';
+  precision: 'approximate' | 'area' | 'city' | 'none';
   lat?: number | null;
   lng?: number | null;
   accuracyRadiusM?: number | null;

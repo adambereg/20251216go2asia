@@ -13,7 +13,7 @@ export interface Coordinates {
   lng: number;
 }
 
-export type GeoPrecision = 'exact' | 'approximate' | 'area' | 'city' | 'none';
+export type GeoPrecision = 'approximate' | 'area' | 'city' | 'none';
 
 /** Адрес */
 export interface Address {

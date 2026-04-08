@@ -8,7 +8,7 @@
  */
 
 export type RieltNearbyListingAllOf = {
-  /** Distance to query anchor calculated by service runtime coordinates. Public geo representation may be less precise than this distance value.
+  /** Distance to query anchor calculated by the same public map point represented by geo.public.lat/lng.
    */
   distanceMeters?: number;
 };

@@ -121,7 +121,7 @@ export function mergeSeedPresentationOverlay(base: Listing, overlay: Listing | n
     base.address.geoPrecision ??
     overlay.address.geoPrecision ??
     (mergedCoordinates
-      ? ((overlay.presentation?.showPublicCoordinates ? 'exact' : 'approximate') as GeoPrecision)
+      ? ('approximate' as GeoPrecision)
       : mergedDistrict
         ? 'area'
         : base.address.city

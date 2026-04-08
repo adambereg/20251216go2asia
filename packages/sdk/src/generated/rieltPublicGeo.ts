@@ -19,5 +19,6 @@ export interface RieltPublicGeo {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  /** Privacy-aware public geo precision level used for map display. */
   precision: RieltPublicGeoPrecision;
 }

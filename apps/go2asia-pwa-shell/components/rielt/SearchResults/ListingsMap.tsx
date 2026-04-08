@@ -56,7 +56,7 @@ export function ListingsMap({
     source: ReturnType<typeof resolveMapPoint>['source'];
   }>;
   const hiddenCount = listings.length - mappedListings.length;
-  const hasNonExact = mappedListings.some((item) => item.precision !== 'exact');
+  const hasCoarsePrecision = mappedListings.some((item) => item.precision === 'area' || item.precision === 'city');
 
   if (mappedListings.length === 0) {
     return (
@@ -76,9 +76,9 @@ export function ListingsMap({
 
   return (
     <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200">
-      {hasNonExact ? (
+      {hasCoarsePrecision ? (
         <div className="px-3 py-2 text-xs text-blue-800 bg-blue-50 border-b border-blue-200">
-          Для части объявлений показано ориентировочное расположение или район.
+          Для части объявлений показан район или ориентир в городе.
         </div>
       ) : null}
       <MapContainer

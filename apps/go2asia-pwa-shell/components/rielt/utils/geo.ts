@@ -105,14 +105,13 @@ export function resolveCityCenter(cityId: string | undefined): Coordinates | nul
 
 export function resolveGeoPrecision(listing: Listing): GeoPrecision {
   if (listing.address.geoPrecision) return listing.address.geoPrecision;
-  if (listing.address.coordinates) return 'exact';
+  if (listing.address.coordinates) return 'approximate';
   if (listing.address.district) return 'area';
   if (listing.address.city) return 'city';
   return 'none';
 }
 
 export function getGeoPrecisionLabel(precision: GeoPrecision): string {
-  if (precision === 'exact') return 'Точное расположение';
   if (precision === 'approximate') return 'Ориентировочное расположение';
   if (precision === 'area') return 'Район размещения';
   if (precision === 'city') return 'Расположение в городе';
@@ -120,7 +119,6 @@ export function getGeoPrecisionLabel(precision: GeoPrecision): string {
 }
 
 export function getGeoPrecisionHint(precision: GeoPrecision): string {
-  if (precision === 'exact') return 'Точка на карте показывает местоположение объекта.';
   if (precision === 'approximate') return 'Для приватности точка на карте показана ориентировочно.';
   if (precision === 'area') return 'Показан район. Точный адрес уточняется после запроса.';
   if (precision === 'city') return 'Показан город. Точное расположение уточняйте у владельца.';

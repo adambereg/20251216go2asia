@@ -91,6 +91,11 @@ export function SearchResultsView({
           Не удалось определить вашу геолокацию. Показаны объекты рядом с условной точкой (Бангкок).
         </div>
       ) : null}
+      {nearbyMode ? (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+          Расстояние рассчитывается до публичной точки, показанной на карте.
+        </div>
+      ) : null}
 
       {hasSeedOverlay ? (
         <div className="mb-4 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">

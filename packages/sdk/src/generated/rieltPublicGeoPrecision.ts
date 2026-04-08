@@ -7,12 +7,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Privacy-aware public geo precision level used for map display.
+ */
 export type RieltPublicGeoPrecision =
   (typeof RieltPublicGeoPrecision)[keyof typeof RieltPublicGeoPrecision];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RieltPublicGeoPrecision = {
-  exact: "exact",
   approximate: "approximate",
   area: "area",
   city: "city",
