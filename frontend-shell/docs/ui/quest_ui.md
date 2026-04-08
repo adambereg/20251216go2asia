@@ -1,5 +1,15 @@
 # Quest Asia - UI Документация
 
+> **LEGACY / NOT SSOT / HISTORICAL CONCEPT**
+>
+> Этот документ является старым концептуальным UI-описанием и не должен использоваться как источник текущего frontend scope, route truth или runtime readiness.
+>
+> Актуальные источники истины:
+> - `docs/architecture/quest/quest_normalization_pack_v1.md`
+> - `docs/knowledge/quest_asia.md`
+> - `docs/openapi/quest.yaml`
+> - реальный Quest frontend baseline в `apps/go2asia-pwa-shell`
+
 > **Документация UI модуля Quest Asia - квесты и миссии**
 
 **Версия:** 1.0  
