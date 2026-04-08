@@ -1,6 +1,8 @@
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 import { createDb, sql } from '@go2asia/db';
 
+import { createNoopQuestEventPublisher } from './events/publisher';
+import { requireGatewayOrigin } from './middleware/auth';
 import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
 import { handleQuestRoute } from './routes/quests';
 
@@ -55,6 +57,12 @@ async function handleReady(env: Env): Promise<Response> {
   );
 }
 
+function isProtectedRoute(method: string, path: string): boolean {
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
+  return false;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
@@ -62,6 +70,7 @@ export default {
       env: env.ENVIRONMENT,
       version: env.VERSION,
     });
+    const publisher = createNoopQuestEventPublisher(logger);
     const path = new URL(request.url).pathname;
     const startedAt = Date.now();
     let response: Response | null = null;
@@ -76,7 +85,18 @@ export default {
         response = withRequestId(await handleReady(env), requestId);
         return response;
       }
-      response = (await handleQuestRoute(request, env, requestId)) ?? handleNotFound(path, requestId);
+
+      let principal = null;
+      if (isProtectedRoute(request.method, path)) {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          response = withRequestId(auth.res, requestId);
+          return response;
+        }
+        principal = auth.principal;
+      }
+
+      response = (await handleQuestRoute(request, env, requestId, publisher, principal)) ?? handleNotFound(path, requestId);
       return withRequestId(response, requestId);
     } catch (error) {
       logger.error('Unhandled error', error, { method: request.method, path });
