@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { MapPin, Star, Wifi, Home, Users } from 'lucide-react';
 // Badge будет использоваться напрямую, без импорта из @go2asia/ui
 import type { Listing } from './types';
-import { formatDistance } from './utils/geo';
+import { formatDistance, getGeoPrecisionLabel, resolveGeoPrecision } from './utils/geo';
 
 interface ListingCardProps {
   listing: Listing;
@@ -25,6 +25,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
   const hasAmenityChips = Boolean(listing.amenities.wifi || listing.amenities.workspace || listing.amenities.kitchen);
+  const precision = resolveGeoPrecision(listing);
 
   return (
     <Link
@@ -86,6 +87,9 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         </div>
         {listing.presentation?.trustLabel ? (
           <p className="text-xs text-slate-500 mb-2 line-clamp-1">{listing.presentation.trustLabel}</p>
+        ) : null}
+        {precision !== 'none' ? (
+          <p className="text-xs text-slate-500 mb-2">{getGeoPrecisionLabel(precision)}</p>
         ) : null}
 
         {/* Метаданные */}
