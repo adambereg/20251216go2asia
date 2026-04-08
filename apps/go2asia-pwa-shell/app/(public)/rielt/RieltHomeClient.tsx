@@ -11,7 +11,6 @@ import { SearchBar } from '@/components/rielt/SearchBar';
 import { QuickFilters } from '@/components/rielt/QuickFilters';
 import { EditorPicks } from '@/components/rielt/EditorPicks';
 import { NewListings } from '@/components/rielt/NewListings';
-import { SlidersHorizontal, MapPinned, ListFilter } from 'lucide-react';
 import type { SearchFilters } from '@/components/rielt/types';
 
 export function RieltHomeClient() {
@@ -83,14 +82,14 @@ export function RieltHomeClient() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <section className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-        Rielt Market — curated housing discovery layer: объекты идут через RF-партнёров и PRO-кураторов, а не как
-        открытая доска объявлений.
+        Rielt.Market — подбор жилья через Russian Friendly партнёров и проверку кураторов. Здесь не общая доска
+        объявлений.
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Command center поиска</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Найти жильё</h2>
         <p className="text-sm text-slate-600 mb-4">
-          Сначала выберите срок, географию и базовые параметры. Затем при необходимости раскройте advanced-фильтры.
+          Выберите срок, локацию и основные параметры. Дополнительные настройки доступны по кнопке ниже.
         </p>
         <SearchBar onSearch={handleSearch} initialFilters={filters} />
       </section>
@@ -101,27 +100,6 @@ export function RieltHomeClient() {
           onChange={(newFilters) => handleSearch(newFilters)}
           onApplyPreset={(presetFilters) => handleSearch(presetFilters)}
         />
-      </section>
-
-      <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">Переход к режиму каталога</h3>
-        <p className="text-sm text-slate-600 mb-3">
-          После поиска страница результатов показывает count, активные фильтры, сортировку, list/map и nearby mode.
-        </p>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50 text-slate-700">
-            <ListFilter className="w-4 h-4 text-slate-400" />
-            Active filters
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50 text-slate-700">
-            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
-            Sorting
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50 text-slate-700">
-            <MapPinned className="w-4 h-4 text-slate-400" />
-            List / Map / Nearby
-          </span>
-        </div>
       </section>
 
       <section className="mb-12">

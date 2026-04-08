@@ -33,7 +33,7 @@ export function Summary({ listing }: SummaryProps) {
           <MapPin className="w-5 h-5" />
           <span>
             {listing.address.district && `${listing.address.district}, `}
-            {listing.address.city || 'city_id not specified'}, {listing.address.country}
+            {listing.address.city || 'Город уточняется'}, {listing.address.country}
           </span>
         </div>
         {listing.presentation?.trustLabel ? (

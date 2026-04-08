@@ -228,7 +228,7 @@ export function SearchResultsClient() {
     const errorMessage =
       errorPayload?.error?.message ??
       errorPayload?.message ??
-      `Не удалось загрузить объявления (status: ${errorPayload?.status ?? 'unknown'})`;
+      'Не удалось загрузить объявления. Попробуйте чуть позже.';
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -237,7 +237,7 @@ export function SearchResultsClient() {
           <p className="text-amber-800 mb-4">{errorMessage}</p>
           {errorPayload?.error?.code === 'ROUTE_RESERVED_NOT_ENABLED' ? (
             <p className="text-xs text-amber-700 mb-4">
-              Runtime path закрыт на gateway: для `/v1/rielt/*` должен быть настроен `RIELT_SERVICE_URL`.
+              Сервис объявлений временно недоступен.
             </p>
           ) : null}
           <a

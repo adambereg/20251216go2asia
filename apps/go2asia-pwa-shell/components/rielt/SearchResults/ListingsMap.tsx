@@ -47,7 +47,7 @@ export function ListingsMap({
     return (
       <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center p-6 text-center">
         <p className="text-slate-600 text-sm">
-          Nearby map is unavailable for current results because listing coordinates are not exposed in public runtime.
+          Карта сейчас недоступна: для этих объявлений нет координат.
         </p>
       </div>
     );
@@ -62,7 +62,7 @@ export function ListingsMap({
     <div className="w-full h-[400px] lg:h-full rounded-xl overflow-hidden border-2 border-slate-200">
       {hasSeedOverlay ? (
         <div className="px-3 py-2 text-xs text-blue-800 bg-blue-50 border-b border-blue-200">
-          Координаты и маркеры в этом режиме идут из seed presentation overlay, а не из канонического Step 8 public DTO.
+          Точки на карте могут отличаться от финального адреса — уточняйте локацию у владельца.
         </div>
       ) : null}
       <MapContainer

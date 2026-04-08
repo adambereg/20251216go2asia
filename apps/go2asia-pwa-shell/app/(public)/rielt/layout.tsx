@@ -3,11 +3,11 @@ import { ModuleHero } from '@/components/modules';
 import { Building } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Rielt.Market - Curated housing discovery | Go2Asia',
-  description: 'Curated discovery-layer жилья в Юго-Восточной Азии через RF-партнёров и PRO-кураторов',
+  title: 'Rielt.Market - Подбор жилья | Go2Asia',
+  description: 'Подбор жилья в Юго-Восточной Азии через RF-партнёров и проверку кураторов',
   openGraph: {
-    title: 'Rielt.Market - Curated housing discovery',
-    description: 'Curated discovery-layer жилья в ЮВА через RF-партнёров и PRO-кураторов',
+    title: 'Rielt.Market - Подбор жилья',
+    description: 'Подбор жилья в ЮВА через RF-партнёров и проверку кураторов',
     type: 'website',
   },
 };
@@ -22,7 +22,7 @@ export default function RieltLayout({
       <ModuleHero
         icon={Building}
         title="Rielt.Market"
-        description="Curated housing discovery в ЮВА: RF-партнёры и PRO-кураторы, а не открытый marketplace"
+        description="Подбор жилья в ЮВА через RF-партнёров и проверку кураторов"
         gradientFrom="from-emerald-500"
         gradientTo="to-emerald-600"
       />

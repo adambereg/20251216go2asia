@@ -34,18 +34,18 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   if (filters.priceRange?.max != null) activeFilters.push({ key: 'priceRange', label: `Бюджет до: ${filters.priceRange.max}` });
   if (filters.bedroomsMin != null) activeFilters.push({ key: 'bedroomsMin', label: `Спальни от: ${filters.bedroomsMin}` });
   if (filters.bedroomsMax != null) activeFilters.push({ key: 'bedroomsMax', label: `Спальни до: ${filters.bedroomsMax}` });
-  if (filters.onlyRF) activeFilters.push({ key: 'onlyRF', label: 'Только RF' });
-  if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'Проверено PRO' });
+  if (filters.onlyRF) activeFilters.push({ key: 'onlyRF', label: 'Партнёры RF' });
+  if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'С проверкой куратора' });
   if (filters.concierge) activeFilters.push({ key: 'concierge', label: 'С сопровождением' });
   if (filters.furnished) activeFilters.push({ key: 'furnished', label: 'С мебелью' });
-  if (filters.serviced) activeFilters.push({ key: 'serviced', label: 'Serviced' });
+  if (filters.serviced) activeFilters.push({ key: 'serviced', label: 'С обслуживанием' });
   if (filters.familyFriendly) activeFilters.push({ key: 'familyFriendly', label: 'Для семьи' });
-  if (filters.nomadFriendly) activeFilters.push({ key: 'nomadFriendly', label: 'Для nomad/work' });
+  if (filters.nomadFriendly) activeFilters.push({ key: 'nomadFriendly', label: 'Для удалённой работы' });
   if (filters.nearSea) activeFilters.push({ key: 'nearSea', label: 'У моря' });
   if (filters.nearCenter) activeFilters.push({ key: 'nearCenter', label: 'В центре' });
   if (filters.quietArea) activeFilters.push({ key: 'quietArea', label: 'Тихий район' });
-  if (filters.expatArea) activeFilters.push({ key: 'expatArea', label: 'Expat area' });
-  if (filters.readyToMove) activeFilters.push({ key: 'readyToMove', label: 'Ready to move' });
+  if (filters.expatArea) activeFilters.push({ key: 'expatArea', label: 'Район с экспатами' });
+  if (filters.readyToMove) activeFilters.push({ key: 'readyToMove', label: 'Готово к заезду' });
 
   if (activeFilters.length === 0) {
     return null;

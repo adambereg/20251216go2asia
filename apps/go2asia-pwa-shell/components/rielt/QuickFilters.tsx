@@ -15,8 +15,8 @@ interface QuickFiltersProps {
 }
 
 const TRUST_FILTERS = [
-  { key: 'onlyRF', label: 'Только RF', icon: CheckCircle },
-  { key: 'onlyPROVerified', label: 'Проверено PRO', icon: CheckCircle },
+  { key: 'onlyRF', label: 'Партнёры RF', icon: CheckCircle },
+  { key: 'onlyPROVerified', label: 'С проверкой куратора', icon: CheckCircle },
   { key: 'concierge', label: 'С сопровождением', icon: ShieldCheck },
 ] as const;
 
@@ -29,7 +29,7 @@ const SCENARIO_PRESETS: Array<{
   { id: 'winter', label: 'Для зимовки', icon: Waves, filters: { rentalType: 'short-term', nearSea: true } },
   { id: 'relocation', label: 'Для релокации', icon: Building2, filters: { rentalType: 'long-term', readyToMove: true } },
   { id: 'family', label: 'Для семьи', icon: Users, filters: { familyFriendly: true, bedroomsMin: 2 } },
-  { id: 'nomad', label: 'Для digital nomads', icon: Briefcase, filters: { nomadFriendly: true, rentalType: 'long-term' } },
+  { id: 'nomad', label: 'Для удалённой работы', icon: Briefcase, filters: { nomadFriendly: true, rentalType: 'long-term' } },
 ];
 
 export function QuickFilters({ filters, onChange, onApplyPreset }: QuickFiltersProps) {
@@ -59,7 +59,7 @@ export function QuickFilters({ filters, onChange, onApplyPreset }: QuickFiltersP
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Trust layer</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Надёжность и сопровождение</p>
         <div className="flex flex-wrap gap-2">
           {TRUST_FILTERS.map((filter) => {
             const Icon = filter.icon;
@@ -82,8 +82,7 @@ export function QuickFilters({ filters, onChange, onApplyPreset }: QuickFiltersP
         </div>
       </div>
       <p className="text-xs text-slate-500">
-        Сценарные кнопки помогают быстро сузить выдачу. Trust-фильтры применяются к curated overlay без изменения
-        backend-контракта.
+        Быстрые кнопки помогают сузить подбор и сразу перейти к подходящим вариантам.
       </p>
     </div>
   );

@@ -43,14 +43,14 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         {/* Бейджи */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-2">
           {listing.isRF && (
-            <span className="px-1.5 py-0.5 bg-green-600 text-white rounded text-xs font-bold shadow-lg">
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               RF
             </span>
           )}
           {listing.proVerification?.verified && (
-            <div className="px-2 py-1 bg-green-500 text-white rounded text-xs font-bold flex items-center gap-1">
+            <div className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium flex items-center gap-1">
               <span>✓</span>
-              PRO
+              Куратор
             </div>
           )}
           {listing.isNew && (
@@ -60,7 +60,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
           )}
           {listing.isInstant && (
             <div className="px-2 py-1 bg-purple-500 text-white rounded text-xs font-bold">
-              Instant
+              Быстрый ответ
             </div>
           )}
         </div>
@@ -78,7 +78,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         <div className="flex items-center gap-1 text-sm text-slate-600 mb-2">
           <MapPin className="w-4 h-4" />
           <span className="line-clamp-1">
-            {listing.address.district || listing.address.city || 'city not specified'}, {listing.address.country}
+            {listing.address.district || listing.address.city || 'Город уточняется'}, {listing.address.country}
           </span>
           {showDistance && distance && (
             <span className="ml-1">• {formatDistance(distance)}</span>

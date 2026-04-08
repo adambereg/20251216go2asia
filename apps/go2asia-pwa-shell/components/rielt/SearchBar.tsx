@@ -113,7 +113,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Страна (country_id)"
+              placeholder="Страна"
               value={countryId}
               onChange={(e) => setCountryId(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none"
@@ -125,7 +125,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Город (city_id)"
+              placeholder="Город"
               value={cityId}
               onChange={(e) => setCityId(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none"
@@ -248,17 +248,17 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
             <div className="flex flex-wrap gap-2">
               {[
                 ['furnished', 'С мебелью', furnished, setFurnished],
-                ['serviced', 'Serviced', serviced, setServiced],
+                ['serviced', 'С обслуживанием', serviced, setServiced],
                 ['family', 'Для семьи', familyFriendly, setFamilyFriendly],
-                ['nomad', 'Для nomad/work', nomadFriendly, setNomadFriendly],
+                ['nomad', 'Для удалённой работы', nomadFriendly, setNomadFriendly],
                 ['nearSea', 'У моря', nearSea, setNearSea],
                 ['nearCenter', 'В центре', nearCenter, setNearCenter],
                 ['quietArea', 'Тихий район', quietArea, setQuietArea],
-                ['expatArea', 'Expat area', expatArea, setExpatArea],
-                ['onlyRF', 'Only RF verified', onlyRF, setOnlyRF],
-                ['onlyPRO', 'Only PRO curated', onlyPROVerified, setOnlyPROVerified],
-                ['concierge', 'Concierge / assisted', concierge, setConcierge],
-                ['ready', 'Ready to move / instant inquiry', readyToMove, setReadyToMove],
+                ['expatArea', 'Район с экспатами', expatArea, setExpatArea],
+                ['onlyRF', 'Партнёры RF', onlyRF, setOnlyRF],
+                ['onlyPRO', 'С проверкой куратора', onlyPROVerified, setOnlyPROVerified],
+                ['concierge', 'С сопровождением', concierge, setConcierge],
+                ['ready', 'Готово к заезду', readyToMove, setReadyToMove],
               ].map(([key, label, value, setter]) => (
                 <button
                   key={String(key)}
@@ -275,8 +275,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
               ))}
             </div>
             <p className="text-xs text-slate-500">
-              Часть advanced-признаков работает как guided inquiry context и сохраняется в параметрах поиска без
-              расширения backend-контракта.
+              Часть дополнительных параметров помогает точнее сформулировать запрос владельцу.
             </p>
           </div>
         ) : null}
@@ -291,8 +290,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
           <ArrowRight className="w-5 h-5" />
         </button>
         <p className="text-xs text-slate-500">
-          Rielt — curated discovery layer: витрина не показывает весь рынок. Финальная availability-проверка и
-          подтверждение условий остаются на шаге inquiry.
+          Мы показываем отобранные варианты. Точные даты и условия подтверждаются после отправки запроса.
         </p>
       </form>
     </div>
