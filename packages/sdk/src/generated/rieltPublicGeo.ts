@@ -6,16 +6,19 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { RieltGeoPublic } from "./rieltGeoPublic";
+import type { RieltPublicGeoPrecision } from "./rieltPublicGeoPrecision";
 
-export interface RieltGeo {
+export interface RieltPublicGeo {
   /** @nullable */
-  atlasContainerPlaceId?: string | null;
+  accuracyRadiusM?: number | null;
   /** @nullable */
-  atlasPlaceId?: string | null;
+  areaLabel?: string | null;
   /** @nullable */
-  cityId?: string | null;
-  countryId: string;
+  cityLabel?: string | null;
   /** @nullable */
-  public?: RieltGeoPublic;
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  /** Privacy-aware public geo precision level used for map display. */
+  precision: RieltPublicGeoPrecision;
 }

@@ -43,6 +43,17 @@ export function SearchResultsView({
 }: SearchResultsViewProps) {
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const hasSeedOverlay = listings.some((listing) => listing.presentation?.source === 'seed');
+  const hasGuidedContext =
+    Boolean(filters.furnished) ||
+    Boolean(filters.serviced) ||
+    Boolean(filters.familyFriendly) ||
+    Boolean(filters.nomadFriendly) ||
+    Boolean(filters.nearSea) ||
+    Boolean(filters.nearCenter) ||
+    Boolean(filters.quietArea) ||
+    Boolean(filters.expatArea) ||
+    Boolean(filters.concierge) ||
+    Boolean(filters.readyToMove);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -53,7 +64,7 @@ export function SearchResultsView({
             {listings.length} {listings.length === 1 ? 'объявление' : 'объявлений'}
           </h1>
           {filters.location?.city && (
-            <p className="text-slate-600 mt-1">city_id: {filters.location.city}</p>
+            <p className="text-slate-600 mt-1">Город: {filters.location.city}</p>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -66,7 +77,7 @@ export function SearchResultsView({
                 : 'border-slate-200 bg-white text-slate-700'
             }`}
           >
-            {nearbyMode ? 'Nearby: on (10 km)' : 'Nearby: off'}
+            {nearbyMode ? 'Рядом: вкл. (10 км)' : 'Рядом: выкл.'}
           </button>
           <SortDropdown
             value={filters.sortBy || 'recommended'}
@@ -77,14 +88,23 @@ export function SearchResultsView({
 
       {nearbyMode && usingFallbackLocation ? (
         <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-          Геолокация недоступна: nearby выдача сейчас построена от fallback-точки (Bangkok), а не от вашей текущей позиции.
+          Не удалось определить вашу геолокацию. Показаны объекты рядом с условной точкой (Бангкок).
+        </div>
+      ) : null}
+      {nearbyMode ? (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+          Расстояние рассчитывается до публичной точки, показанной на карте.
         </div>
       ) : null}
 
       {hasSeedOverlay ? (
         <div className="mb-4 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
-          Включён seed overlay mode: часть карточек и trust/voucher presentation идёт из repo seed data. Канонический
-          Step 8 API-контракт при этом не расширяется.
+          Для части карточек используются демонстрационные материалы витрины.
+        </div>
+      ) : null}
+      {hasGuidedContext ? (
+        <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
+          Некоторые выбранные параметры помогают точнее сформулировать запрос владельцу.
         </div>
       ) : null}
 

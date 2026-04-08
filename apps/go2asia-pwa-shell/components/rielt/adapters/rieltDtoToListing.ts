@@ -4,7 +4,7 @@
  */
 
 import type { RieltListingDto, RieltNearbyListingDto } from '@go2asia/sdk/rielt';
-import type { Listing, ListingWithDistance, RentalType } from '../types';
+import type { GeoPrecision, Listing, ListingWithDistance, RentalType } from '../types';
 
 function listingTypeToRentalType(listingType: string): RentalType {
   if (listingType === 'rent_long') return 'long-term';
@@ -25,15 +25,22 @@ function toPricing(dto: RieltListingDto) {
 }
 
 function toAddress(dto: RieltListingDto) {
+  const publicGeo = dto.geo.public ?? null;
+  const precision: GeoPrecision = publicGeo?.precision ?? (dto.geo.cityId ? 'city' : 'none');
+  const publicLat = typeof publicGeo?.lat === 'number' ? publicGeo.lat : null;
+  const publicLng = typeof publicGeo?.lng === 'number' ? publicGeo.lng : null;
   return {
     country: dto.geo.countryId,
-    city: dto.geo.cityId ?? '',
+    city: publicGeo?.cityLabel ?? dto.geo.cityId ?? '',
+    cityId: dto.geo.cityId ?? null,
     atlasPlaceId: dto.geo.atlasPlaceId ?? null,
     atlasContainerPlaceId: dto.geo.atlasContainerPlaceId ?? null,
-    district: undefined,
+    district: publicGeo?.areaLabel ?? undefined,
     street: undefined,
     building: undefined,
-    coordinates: null,
+    coordinates: publicLat != null && publicLng != null ? { lat: publicLat, lng: publicLng } : null,
+    geoPrecision: precision,
+    geoAccuracyRadiusM: publicGeo?.accuracyRadiusM ?? null,
   };
 }
 
@@ -108,8 +115,31 @@ export function rieltNearbyDtoToListingWithDistance(dto: RieltNearbyListingDto):
 export function mergeSeedPresentationOverlay(base: Listing, overlay: Listing | null | undefined): Listing {
   if (!overlay || overlay.id !== base.id) return base;
 
+  const mergedCoordinates = base.address.coordinates ?? overlay.address.coordinates ?? null;
+  const mergedDistrict = base.address.district ?? overlay.address.district;
+  const mergedPrecision: GeoPrecision =
+    base.address.geoPrecision ??
+    overlay.address.geoPrecision ??
+    (mergedCoordinates
+      ? ('approximate' as GeoPrecision)
+      : mergedDistrict
+        ? 'area'
+        : base.address.city
+          ? 'city'
+          : 'none');
+
   return {
     ...base,
+    address: {
+      ...base.address,
+      cityId: base.address.cityId ?? overlay.address.cityId ?? null,
+      district: mergedDistrict,
+      atlasPlaceId: base.address.atlasPlaceId ?? overlay.address.atlasPlaceId ?? null,
+      atlasContainerPlaceId: base.address.atlasContainerPlaceId ?? overlay.address.atlasContainerPlaceId ?? null,
+      coordinates: mergedCoordinates,
+      geoPrecision: mergedPrecision,
+      geoAccuracyRadiusM: base.address.geoAccuracyRadiusM ?? overlay.address.geoAccuracyRadiusM ?? null,
+    },
     isRF: base.isRF ?? overlay.isRF,
     rfVoucher: base.rfVoucher ?? overlay.rfVoucher,
     proVerification: base.proVerification ?? overlay.proVerification,

@@ -23,6 +23,16 @@ export interface RieltGeoDto {
   cityId: string | null;
   atlasPlaceId: string | null;
   atlasContainerPlaceId: string | null;
+  public?: RieltPublicGeoDto | null;
+}
+
+export interface RieltPublicGeoDto {
+  precision: 'approximate' | 'area' | 'city' | 'none';
+  lat?: number | null;
+  lng?: number | null;
+  accuracyRadiusM?: number | null;
+  cityLabel?: string | null;
+  areaLabel?: string | null;
 }
 
 export interface RieltMediaDto {

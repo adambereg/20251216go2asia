@@ -586,6 +586,34 @@ components:
         atlasContainerPlaceId:
           type: string
           nullable: true
+        public:
+          allOf:
+            - $ref: "#/components/schemas/RieltPublicGeo"
+          nullable: true
+
+    RieltPublicGeo:
+      type: object
+      required: [precision]
+      properties:
+        precision:
+          type: string
+          enum: [approximate, area, city, none]
+          description: Privacy-aware public geo precision level used for map display.
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        accuracyRadiusM:
+          type: integer
+          nullable: true
+        cityLabel:
+          type: string
+          nullable: true
+        areaLabel:
+          type: string
+          nullable: true
 
     RieltMedia:
       type: object
@@ -772,6 +800,9 @@ components:
           properties:
             distanceMeters:
               type: integer
+              description: >
+                Distance to query anchor calculated by the same public map point
+                represented by geo.public.lat/lng.
 
     RieltNearbyAnchor:
       type: object

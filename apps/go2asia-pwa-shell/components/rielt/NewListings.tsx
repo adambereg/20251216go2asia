@@ -28,7 +28,7 @@ export function NewListings() {
     return (
       <section>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-          Новое на этой неделе
+          Новые объекты
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -43,10 +43,10 @@ export function NewListings() {
     return (
       <section>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-          Новое на этой неделе
+          Новые объекты
         </h2>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-800">
-          Не удалось загрузить новые объявления: {(error as { message?: string })?.message ?? 'runtime request failed'}.
+          Не удалось загрузить новые объекты: {(error as { message?: string })?.message ?? 'попробуйте позже'}.
         </div>
       </section>
     );
@@ -56,7 +56,7 @@ export function NewListings() {
     return (
       <section>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-          Новое на этой неделе
+          Новые объекты
         </h2>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
           Публичная витрина пока не получила новые объявления.
@@ -68,7 +68,7 @@ export function NewListings() {
   return (
     <section>
       <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-        Новое на этой неделе
+        Новые объекты
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

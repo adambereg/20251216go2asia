@@ -65,11 +65,11 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         buildIdempotencyKey()
       );
       setInquiryStatus('success');
-      setInquiryText('Запрос отправлен через live Rielt API.');
+      setInquiryText('Запрос отправлен.');
       setMessage('');
     } catch (error) {
       const payload = error as { error?: { code?: string; message?: string }; status?: number };
-      const errorMessage = payload?.error?.message ?? `Request failed (${payload?.status ?? 'unknown'})`;
+      const errorMessage = payload?.error?.message ?? 'Не удалось отправить запрос. Попробуйте ещё раз.';
       setInquiryStatus('error');
       setInquiryText(errorMessage);
     }
@@ -112,22 +112,21 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
       <div className="rounded-lg border border-slate-200 p-3 mb-5">
         <p className="text-xs text-slate-600">
-          Booking, payment, chat and CRM flows intentionally remain out of Step 8 scope. Public voucher presentation is
-          shown as a seed extension layer; live action below keeps the real inquiry path.
+          Онлайн-бронирование и оплата пока не подключены. Чтобы уточнить условия, отправьте запрос владельцу.
         </p>
       </div>
 
       {listing.rfVoucher ? (
         <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">Voucher</span>
+            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">Акция</span>
             <span className="text-sm font-semibold text-emerald-900">{listing.rfVoucher.title}</span>
           </div>
           <p className="text-sm text-emerald-800 mb-3">{listing.rfVoucher.description}</p>
           {primaryVoucherCta ? (
             <button
               type="button"
-              className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors"
+              className="w-full px-4 py-2 border border-emerald-300 text-emerald-800 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
             >
               {primaryVoucherCta}
             </button>
@@ -140,14 +139,14 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
               {secondaryVoucherCta}
             </button>
           ) : null}
-          <p className="text-xs text-emerald-800 mt-2">Voucher CTA в этом проходе работает как presentation/meta слой.</p>
+          <p className="text-xs text-emerald-800 mt-2">Условия акции уточняются при запросе.</p>
         </div>
       ) : null}
 
       {/* Кнопки действий */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-900">
-          {voucherFirst ? 'Или отправьте live inquiry владельцу' : 'Отправьте live inquiry владельцу'}
+          {voucherFirst ? 'Или отправьте запрос владельцу' : 'Отправьте запрос владельцу'}
         </h3>
         <div className="space-y-2">
           <textarea
@@ -161,19 +160,19 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             value={contactName}
             onChange={(event) => setContactName(event.target.value)}
             className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-            placeholder="Контактное имя (optional)"
+            placeholder="Имя (необязательно)"
           />
           <input
             value={contactPhone}
             onChange={(event) => setContactPhone(event.target.value)}
             className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-            placeholder="Телефон (optional)"
+            placeholder="Телефон (необязательно)"
           />
           <input
             value={contactTelegram}
             onChange={(event) => setContactTelegram(event.target.value)}
             className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-            placeholder="Telegram (optional)"
+            placeholder="Telegram (необязательно)"
           />
           <button
             onClick={handleRequest}

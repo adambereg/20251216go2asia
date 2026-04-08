@@ -13,16 +13,21 @@ export interface Coordinates {
   lng: number;
 }
 
+export type GeoPrecision = 'approximate' | 'area' | 'city' | 'none';
+
 /** Адрес */
 export interface Address {
   country: string;      // Из Atlas
-  city: string;         // Из Atlas
+  city: string;         // Public label
+  cityId?: string | null;
   atlasPlaceId?: string | null;
   atlasContainerPlaceId?: string | null;
   district?: string;    // Район из Atlas
   street?: string;
   building?: string;
   coordinates?: Coordinates | null;
+  geoPrecision?: GeoPrecision;
+  geoAccuracyRadiusM?: number | null;
 }
 
 // =============================================================================
@@ -273,6 +278,9 @@ export interface SearchFilters {
   
   // Тип жилья
   types?: ListingType[];
+  bedroomsMin?: number;
+  bedroomsMax?: number;
+  propertyType?: ListingType | 'any';
   
   // Цена
   priceRange?: {
@@ -295,6 +303,19 @@ export interface SearchFilters {
   // Надёжность
   onlyRF?: boolean;
   onlyPROVerified?: boolean;
+  concierge?: boolean;
+
+  // Curated discovery context (Phase 1 IA, frontend-only)
+  moveInMonth?: string;
+  furnished?: boolean;
+  serviced?: boolean;
+  familyFriendly?: boolean;
+  nomadFriendly?: boolean;
+  nearSea?: boolean;
+  nearCenter?: boolean;
+  quietArea?: boolean;
+  expatArea?: boolean;
+  readyToMove?: boolean;
   
   // Долгосрок
   minMonths?: number;      // Минимум месяцев для долгосрока

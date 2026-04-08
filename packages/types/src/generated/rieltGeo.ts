@@ -6,6 +6,7 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RieltGeoPublic } from "./rieltGeoPublic";
 
 export interface RieltGeo {
   /** @nullable */
@@ -15,4 +16,6 @@ export interface RieltGeo {
   /** @nullable */
   cityId?: string | null;
   countryId: string;
+  /** @nullable */
+  public?: RieltGeoPublic;
 }
