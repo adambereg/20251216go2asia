@@ -1,6 +1,7 @@
 import type { GatewayPrincipal } from '../middleware/auth';
 import type { QuestEventPublisher } from '../events/publisher';
-import { getQuest, getQuestProgress, listQuests, startQuest } from '../services/questService';
+import { readJsonObject } from '../middleware/http';
+import { getQuest, getQuestProgress, getQuestSubmissions, listQuests, reviewQuestSubmission, startQuest, submitQuestStep } from '../services/questService';
 
 type Env = {
   DATABASE_URL?: string;
@@ -34,6 +35,30 @@ export async function handleQuestRoute(
   const questProgressMatch = path.match(/^\/v1\/quests\/([^/]+)\/progress$/);
   if (questProgressMatch && request.method === 'GET' && principal) {
     return getQuestProgress(env, questProgressMatch[1]!, principal, requestId);
+  }
+
+  const questSubmitMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps\/([^/]+)\/submit$/);
+  if (questSubmitMatch && request.method === 'POST' && principal) {
+    const body = await readJsonObject(request);
+    return submitQuestStep(env, {
+      questId: questSubmitMatch[1]!,
+      stepId: questSubmitMatch[2]!,
+      body,
+      principal,
+      requestId,
+      publisher,
+    });
+  }
+
+  const questSubmissionsMatch = path.match(/^\/v1\/quests\/([^/]+)\/submissions$/);
+  if (questSubmissionsMatch && request.method === 'GET' && principal) {
+    return getQuestSubmissions(env, questSubmissionsMatch[1]!, principal, requestId, url);
+  }
+
+  const submissionReviewMatch = path.match(/^\/v1\/submissions\/([^/]+)\/review$/);
+  if (submissionReviewMatch && request.method === 'POST' && principal) {
+    const body = await readJsonObject(request);
+    return reviewQuestSubmission(env, submissionReviewMatch[1]!, body, principal, requestId, publisher);
   }
 
   return null;

@@ -775,11 +775,17 @@ export async function submitQuestStep(
   if (!step) return errorResponse('NOT_FOUND', 'Quest step not found', input.requestId, 404);
   const progress = await getQuestProgressByQuestAndUser(db, input.questId, input.principal.userId);
   if (!progress) return errorResponse('NOT_FOUND', 'Quest progress not found', input.requestId, 404);
+  if (progress.status === 'not_started') {
+    return errorResponse('CONFLICT', 'Quest progress is not started', input.requestId, 409);
+  }
   if (progress.status === 'pending_review') {
     return errorResponse('CONFLICT', 'Quest progress is waiting for manual review', input.requestId, 409);
   }
   if (progress.status === 'completed') {
     return errorResponse('CONFLICT', 'Quest is already completed', input.requestId, 409);
+  }
+  if (progress.status === 'failed' || progress.status === 'expired') {
+    return errorResponse('CONFLICT', 'Quest progress is not active', input.requestId, 409);
   }
   if (progress.current_step !== step.order) {
     return errorResponse('CONFLICT', 'Quest step order violation', input.requestId, 409);
