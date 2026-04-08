@@ -1,7 +1,18 @@
 import type { GatewayPrincipal } from '../middleware/auth';
 import type { QuestEventPublisher } from '../events/publisher';
 import { readJsonObject } from '../middleware/http';
-import { getQuest, getQuestProgress, getQuestSubmissions, listQuests, reviewQuestSubmission, startQuest, submitQuestStep } from '../services/questService';
+import {
+  addQuestStep,
+  createQuestDraft,
+  getQuest,
+  getQuestProgress,
+  getQuestSubmissions,
+  listQuests,
+  publishQuest,
+  reviewQuestSubmission,
+  startQuest,
+  submitQuestStep,
+} from '../services/questService';
 
 type Env = {
   DATABASE_URL?: string;
@@ -22,6 +33,11 @@ export async function handleQuestRoute(
     return listQuests(env, requestId, url);
   }
 
+  if (path === '/v1/quests' && request.method === 'POST' && principal) {
+    const body = await readJsonObject(request);
+    return createQuestDraft(env, body, principal, requestId);
+  }
+
   const questDetailMatch = path.match(/^\/v1\/quests\/([^/]+)$/);
   if (questDetailMatch && request.method === 'GET') {
     return getQuest(env, requestId, questDetailMatch[1]!);
@@ -35,6 +51,17 @@ export async function handleQuestRoute(
   const questProgressMatch = path.match(/^\/v1\/quests\/([^/]+)\/progress$/);
   if (questProgressMatch && request.method === 'GET' && principal) {
     return getQuestProgress(env, questProgressMatch[1]!, principal, requestId);
+  }
+
+  const questStepsMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps$/);
+  if (questStepsMatch && request.method === 'POST' && principal) {
+    const body = await readJsonObject(request);
+    return addQuestStep(env, questStepsMatch[1]!, body, principal, requestId);
+  }
+
+  const questPublishMatch = path.match(/^\/v1\/quests\/([^/]+)\/publish$/);
+  if (questPublishMatch && request.method === 'POST' && principal) {
+    return publishQuest(env, questPublishMatch[1]!, principal, requestId);
   }
 
   const questSubmitMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps\/([^/]+)\/submit$/);

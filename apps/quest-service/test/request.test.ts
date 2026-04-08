@@ -21,7 +21,7 @@ import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import type { Env } from '../src/index';
 import worker from '../src/index';
 
-describe('quest-service pass #3', () => {
+describe('quest-service pass #4', () => {
   beforeEach(() => {
     createDbMock.mockClear();
     executeMock.mockReset();
@@ -32,112 +32,267 @@ describe('quest-service pass #3', () => {
     vi.unstubAllGlobals();
   });
 
-  it('requires gateway auth for submit', async () => {
+  it('requires gateway auth for create quest', async () => {
     const response = await worker.fetch(
-      new Request('https://quest.example/v1/quests/quest_1/steps/qstep_1/submit', { method: 'POST' }),
+      new Request('https://quest.example/v1/quests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Coffee Route' }),
+      }),
       { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' }
     );
     expect(response.status).toBe(401);
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
-  it('creates pending submission for manual verification flow', async () => {
+  it('creates draft quest for pro principal', async () => {
     const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
-    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'vip_1', roles: ['member'] });
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
 
-    executeMock
-      .mockResolvedValueOnce({ rows: [{ id: 'quest_1', steps_count: 2, status: 'published', visibility: 'public', title: 'Q', description: null, creator_pro_id: 'pro_1', city_id: null, geo_scope: null, type: null, theme: null, difficulty: null, reward_points: null, published_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qstep_1', quest_id: 'quest_1', order: 1, type: 'photo_proof', target_type: null, target_id: null, verification_type: 'manual', requirements_json: {}, reward_points: null, created_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qprog_1', quest_id: 'quest_1', user_id: 'vip_1', status: 'in_progress', current_step: 1, started_at: '2026-03-16T00:00:00.000Z', completed_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qsub_1', progress_id: 'qprog_1', step_id: 'qstep_1', user_id: 'vip_1', proof_type: 'photo', proof_data: { mediaId: 'm1' }, status: 'pending', reviewed_by: null, reviewed_at: null, rejection_reason: null, created_at: '2026-03-16T00:01:00.000Z', updated_at: '2026-03-16T00:01:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qprog_1', quest_id: 'quest_1', user_id: 'vip_1', status: 'pending_review', current_step: 1, started_at: '2026-03-16T00:00:00.000Z', completed_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:01:00.000Z' }] });
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'quest_1',
+          title: 'Coffee Route',
+          description: 'Quest description',
+          creator_pro_id: 'pro_1',
+          city_id: null,
+          geo_scope: null,
+          type: 'route',
+          theme: 'coffee',
+          difficulty: 'easy',
+          status: 'draft',
+          visibility: 'public',
+          reward_points: 100,
+          steps_count: 0,
+          published_at: null,
+          created_at: '2026-03-16T09:00:00.000Z',
+          updated_at: '2026-03-16T09:00:00.000Z',
+        },
+      ],
+    });
 
     const response = await worker.fetch(
-      new Request('https://quest.example/v1/quests/quest_1/steps/qstep_1/submit', {
+      new Request('https://quest.example/v1/quests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
-        body: JSON.stringify({ proofType: 'photo', proofData: { mediaId: 'm1' } }),
+        body: JSON.stringify({
+          title: 'Coffee Route',
+          description: 'Quest description',
+          visibility: 'public',
+          difficulty: 'easy',
+          rewardPoints: 100,
+        }),
       }),
       env
     );
-    const body = await readJson<{ status: string }>(response);
+    const body = await readJson<{ id: string; status: string; creatorProId: string; stepsCount: number }>(response);
     expect(response.status).toBe(201);
-    expect(body.status).toBe('pending');
+    expect(body).toMatchObject({
+      id: 'quest_1',
+      status: 'draft',
+      creatorProId: 'pro_1',
+      stepsCount: 0,
+    });
   });
 
-  it('returns conflict when submitting not active progress', async () => {
-    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
-    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'vip_1', roles: ['member'] });
-
-    executeMock
-      .mockResolvedValueOnce({ rows: [{ id: 'quest_1', steps_count: 2, status: 'published', visibility: 'public', title: 'Q', description: null, creator_pro_id: 'pro_1', city_id: null, geo_scope: null, type: null, theme: null, difficulty: null, reward_points: null, published_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qstep_2', quest_id: 'quest_1', order: 2, type: 'challenge', target_type: null, target_id: null, verification_type: 'manual', requirements_json: {}, reward_points: null, created_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qprog_1', quest_id: 'quest_1', user_id: 'vip_1', status: 'expired', current_step: 2, started_at: '2026-03-16T00:00:00.000Z', completed_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] });
-
-    const response = await worker.fetch(
-      new Request('https://quest.example/v1/quests/quest_1/steps/qstep_2/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
-        body: JSON.stringify({ proofType: 'text', proofData: { text: 'ok' } }),
-      }),
-      env
-    );
-    expect(response.status).toBe(409);
-  });
-
-  it('allows pro owner to list submissions', async () => {
+  it('adds step to owned draft quest and keeps deterministic ordering contract', async () => {
     const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
 
     executeMock
-      .mockResolvedValueOnce({ rows: [{ id: 'quest_1', title: 'Q', description: null, creator_pro_id: 'pro_1', city_id: null, geo_scope: null, type: null, theme: null, difficulty: null, status: 'published', visibility: 'public', reward_points: null, steps_count: 2, published_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qsub_1', progress_id: 'qprog_1', step_id: 'qstep_1', user_id: 'vip_1', proof_type: 'photo', proof_data: { mediaId: 'm1' }, status: 'pending', reviewed_by: null, reviewed_at: null, rejection_reason: null, created_at: '2026-03-16T00:01:00.000Z', updated_at: '2026-03-16T00:01:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ total: 1 }] });
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 0,
+            published_at: null,
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T09:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'visit_partner',
+            target_type: 'partner',
+            target_id: 'rf_partner_1',
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: null,
+            created_at: '2026-03-16T09:05:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
 
     const response = await worker.fetch(
-      new Request('https://quest.example/v1/quests/quest_1/submissions?page=1&pageSize=20', {
+      new Request('https://quest.example/v1/quests/quest_1/steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({
+          order: 1,
+          type: 'visit_partner',
+          targetType: 'partner',
+          targetId: 'rf_partner_1',
+          verificationType: 'manual',
+          requirements: {},
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ id: string; order: number; targetType: string; targetId: string }>(response);
+    expect(response.status).toBe(201);
+    expect(body).toMatchObject({
+      id: 'qstep_1',
+      order: 1,
+      targetType: 'partner',
+      targetId: 'rf_partner_1',
+    });
+  });
+
+  it('publishes quest only when publish preconditions are met', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 1,
+            published_at: null,
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T09:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: null,
+            created_at: '2026-03-16T09:05:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 1,
+            published_at: '2026-03-16T10:00:00.000Z',
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/publish', {
+        method: 'POST',
         headers: { 'X-Gateway-Auth': jwt },
       }),
       env
     );
-    const body = await readJson<{ total: number }>(response);
+    const body = await readJson<{ status: string; publishedAt: string }>(response);
     expect(response.status).toBe(200);
-    expect(body.total).toBe(1);
+    expect(body.status).toBe('published');
+    expect(body.publishedAt).toBeTruthy();
   });
 
-  it('reviews submission with approve and completes quest on last step', async () => {
+  it('returns conflict when trying to publish draft without steps', async () => {
     const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
 
     executeMock
-      .mockResolvedValueOnce({ rows: [{ id: 'qsub_1', progress_id: 'qprog_1', step_id: 'qstep_2', user_id: 'vip_1', proof_type: 'photo', proof_data: { mediaId: 'm1' }, status: 'pending', reviewed_by: null, reviewed_at: null, rejection_reason: null, created_at: '2026-03-16T00:01:00.000Z', updated_at: '2026-03-16T00:01:00.000Z', quest_id: 'quest_1', creator_pro_id: 'pro_1', progress_status: 'pending_review', current_step: 2, step_order: 2 }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'quest_1', title: 'Q', description: null, creator_pro_id: 'pro_1', city_id: null, geo_scope: null, type: null, theme: null, difficulty: null, status: 'published', visibility: 'public', reward_points: null, steps_count: 2, published_at: null, created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qsub_1', progress_id: 'qprog_1', step_id: 'qstep_2', user_id: 'vip_1', proof_type: 'photo', proof_data: { mediaId: 'm1' }, status: 'approved', reviewed_by: 'pro_1', reviewed_at: '2026-03-16T00:02:00.000Z', rejection_reason: null, created_at: '2026-03-16T00:01:00.000Z', updated_at: '2026-03-16T00:02:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qstep_2', quest_id: 'quest_1', order: 2, type: 'photo_proof', target_type: null, target_id: null, verification_type: 'manual', requirements_json: {}, reward_points: null, created_at: '2026-03-16T00:00:00.000Z' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 'qprog_1', quest_id: 'quest_1', user_id: 'vip_1', status: 'completed', current_step: null, started_at: '2026-03-16T00:00:00.000Z', completed_at: '2026-03-16T00:02:00.000Z', created_at: '2026-03-16T00:00:00.000Z', updated_at: '2026-03-16T00:02:00.000Z' }] });
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 0,
+            published_at: null,
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T09:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
 
     const response = await worker.fetch(
-      new Request('https://quest.example/v1/submissions/qsub_1/review', {
+      new Request('https://quest.example/v1/quests/quest_1/publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
-        body: JSON.stringify({ decision: 'approve' }),
+        headers: { 'X-Gateway-Auth': jwt },
       }),
       env
     );
-    const body = await readJson<{ status: string; reviewedBy: string }>(response);
-    expect(response.status).toBe(200);
-    expect(body.status).toBe('approved');
-    expect(body.reviewedBy).toBe('pro_1');
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
   });
 
-  it('keeps pass #4 pro authoring routes closed', async () => {
-    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
-    const responses = await Promise.all([
-      worker.fetch(new Request('https://quest.example/v1/quests', { method: 'POST' }), env),
-      worker.fetch(new Request('https://quest.example/v1/quests/quest_1/steps', { method: 'POST' }), env),
-      worker.fetch(new Request('https://quest.example/v1/quests/quest_1/publish', { method: 'POST' }), env),
-    ]);
-    for (const response of responses) expect(response.status).toBe(404);
-    expect(executeMock).not.toHaveBeenCalled();
+  it('keeps drafts out of public detail read', async () => {
+    executeMock.mockResolvedValueOnce({ rows: [] });
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_draft_hidden'),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' }
+    );
+    expect(response.status).toBe(404);
   });
 });
