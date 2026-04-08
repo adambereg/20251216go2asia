@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
 import type {
+  QuestApiError,
   QuestDetailResponse,
   QuestProgressResponse,
   QuestProofType,
@@ -16,17 +17,14 @@ interface QuestRunnerClientProps {
   quest: QuestDetailResponse;
 }
 
-type ApiErrorShape = {
-  status?: number;
-  error?: {
-    code?: string;
-    message?: string;
-  };
-};
-
 function readErrorMessage(error: unknown): string {
-  const value = error as ApiErrorShape;
-  if (value?.error?.message) return value.error.message;
+  const value = error as QuestApiError;
+  if (value?.status === 401) return 'Authentication is required for start, progress, and submit actions.';
+  if (value?.status === 403) return 'This action is blocked by current Quest runtime permissions.';
+  if (value?.status === 404) return 'Quest runtime data is unavailable for this route.';
+  if (value?.status === 409) return value.message || 'Current lifecycle state blocks this action.';
+  if (value?.status === 503) return 'Quest runtime is temporarily unavailable.';
+  if (value?.message) return value.message;
   if (value?.status) return `Request failed (${value.status})`;
   return 'Unexpected runtime error.';
 }
@@ -49,9 +47,65 @@ function getDefaultProofData(proofType: QuestProofType): Record<string, unknown>
 
 function getCurrentStep(progress: QuestProgressResponse | null, steps: QuestStepResponse[]): QuestStepResponse | null {
   if (!progress) return null;
-  if (progress.status !== 'in_progress') return null;
   if (!progress.currentStep) return null;
   return steps.find((step) => step.order === progress.currentStep) ?? null;
+}
+
+function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: string; text: string } {
+  if (!progress) {
+    return {
+      tone: 'border-slate-200 bg-slate-50 text-slate-700',
+      text: 'Progress is unavailable. Quest start/progress needs live runtime access and authenticated gateway flow.',
+    };
+  }
+
+  if (progress.status === 'in_progress') {
+    return {
+      tone: 'border-blue-200 bg-blue-50 text-blue-800',
+      text: 'Quest is active. Follow the current step in order and submit only live proof data that matches runtime expectations.',
+    };
+  }
+
+  if (progress.status === 'pending_review') {
+    return {
+      tone: 'border-amber-200 bg-amber-50 text-amber-800',
+      text: 'Progress is waiting for manual review. New submissions stay blocked until the current review outcome is resolved.',
+    };
+  }
+
+  if (progress.status === 'completed') {
+    return {
+      tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+      text: 'Quest is completed. This confirms Quest lifecycle completion only, not wallet settlement or reward issuance.',
+    };
+  }
+
+  if (progress.status === 'failed') {
+    return {
+      tone: 'border-red-200 bg-red-50 text-red-800',
+      text: 'Quest is in failed state. Submit is intentionally blocked until runtime state changes outside this baseline screen.',
+    };
+  }
+
+  if (progress.status === 'expired') {
+    return {
+      tone: 'border-red-200 bg-red-50 text-red-800',
+      text: 'Quest has expired. This run surface stays read-only until runtime reactivation or a new valid lifecycle path exists.',
+    };
+  }
+
+  return {
+    tone: 'border-slate-200 bg-slate-50 text-slate-700',
+    text: 'Quest progress exists but is not active yet.',
+  };
+}
+
+function describeStepRuntime(step: QuestStepResponse): string {
+  if (step.type === 'visit_partner') return 'Partner-linked step. Quest references the partner only and does not imply voucher ownership.';
+  if (step.type === 'attend_event') return 'Event-linked step. Treat this as event participation semantics, not a place-only check-in.';
+  if (step.type === 'space_action') return 'Referenced social action. Quest tracks the action reference, not the social content itself.';
+  if (step.verificationType === 'manual') return 'Manual review may pause progression after submit.';
+  return 'Baseline runtime step.';
 }
 
 export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps) {
@@ -64,13 +118,14 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const [proofDataText, setProofDataText] = useState('{\n  "text": "sample proof text"\n}');
 
   const currentStep = useMemo(() => getCurrentStep(progress, questDetail.steps), [progress, questDetail.steps]);
+  const lifecycleCopy = useMemo(() => getLifecycleCopy(progress), [progress]);
 
   useEffect(() => {
     if (!currentStep) return;
     const mapped = mapProofType(currentStep);
     setProofType(mapped);
     setProofDataText(JSON.stringify(getDefaultProofData(mapped), null, 2));
-  }, [currentStep?.id]);
+  }, [currentStep]);
 
   const loadProgress = useCallback(async () => {
     setError(null);
@@ -157,7 +212,16 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
               Initializing quest progress...
             </div>
           ) : !progress ? (
-            <p className="text-sm text-slate-700">Progress is unavailable right now.</p>
+            <div className="space-y-4">
+              <p className="text-sm text-slate-700">Progress is unavailable right now.</p>
+              <button
+                type="button"
+                onClick={() => void loadProgress()}
+                className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              >
+                Retry initialization
+              </button>
+            </div>
           ) : (
             <>
               <h2 className="text-lg font-semibold text-slate-900">Current progress</h2>
@@ -181,22 +245,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                   </p>
                 </div>
               </div>
-
-              {progress.status === 'pending_review' ? (
-                <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  Progress is waiting for manual review. New submissions are blocked until review result.
-                </p>
-              ) : null}
-              {progress.status === 'completed' ? (
-                <p className="mt-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                  Quest is completed. Reward/ledger flows may still depend on downstream integrations.
-                </p>
-              ) : null}
-              {progress.status === 'failed' || progress.status === 'expired' ? (
-                <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-                  Quest is not active ({progress.status}). Submission is unavailable in this state.
-                </p>
-              ) : null}
+              <div className={`mt-4 rounded-lg border p-3 text-sm ${lifecycleCopy.tone}`}>{lifecycleCopy.text}</div>
             </>
           )}
         </div>
@@ -207,10 +256,11 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
             <p className="text-sm text-slate-600 mt-2">
               step #{currentStep.order} · {currentStep.type} · verification {currentStep.verificationType}
             </p>
+            <p className="text-sm text-slate-600 mt-1">{describeStepRuntime(currentStep)}</p>
             <p className="text-sm text-slate-600">
               target: {currentStep.targetType || 'n/a'} {currentStep.targetId ? `(${currentStep.targetId})` : ''}
             </p>
-            <p className="text-sm text-slate-600">reward points: {currentStep.rewardPoints ?? 0}</p>
+            <p className="text-sm text-slate-600">reward intent: {currentStep.rewardPoints ?? 0} points</p>
 
             <div className="mt-5">
               <label htmlFor="proofType" className="block text-sm font-medium text-slate-700 mb-2">
@@ -252,7 +302,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
               {submitting ? 'Submitting...' : 'Submit current step'}
             </button>
             <p className="mt-3 text-xs text-slate-500">
-              Submit writes real runtime proof data. Validation/review may accept, reject, or delay completion.
+              Submit writes real runtime proof data. Validation/review may accept, reject, or delay completion. This is a technical baseline, not a full production proof toolkit.
             </p>
           </div>
         ) : null}

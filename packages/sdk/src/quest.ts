@@ -10,6 +10,7 @@ import type { ListQuestsParams } from './generated/listQuestsParams';
 import type { QuestDetailResponse } from './generated/questDetailResponse';
 import type { QuestListResponse } from './generated/questListResponse';
 import type { QuestProgressResponse } from './generated/questProgressResponse';
+import type { QuestSummaryResponse } from './generated/questSummaryResponse';
 import type { QuestProofType } from './generated/questProofType';
 import type { QuestSubmissionResponse } from './generated/questSubmissionResponse';
 import type { QuestStepResponse } from './generated/questStepResponse';
@@ -20,11 +21,43 @@ export type {
   QuestDetailResponse,
   QuestListResponse,
   QuestProgressResponse,
+  QuestSummaryResponse,
   QuestProofType,
   QuestStepResponse,
   QuestSubmissionResponse,
   SubmitQuestStepRequest,
 };
+
+export type QuestApiError = {
+  status?: number;
+  code?: string;
+  message: string;
+};
+
+export type QuestFetchResult<T> = {
+  data: T | null;
+  error: QuestApiError | null;
+};
+
+function normalizeQuestApiError(error: unknown): QuestApiError {
+  const value = error as {
+    status?: number;
+    error?: {
+      code?: string;
+      message?: string;
+    };
+    message?: string;
+  };
+
+  return {
+    status: value?.status,
+    code: value?.error?.code,
+    message:
+      value?.error?.message ||
+      value?.message ||
+      (value?.status ? `Request failed (${value.status})` : 'Quest API request failed.'),
+  };
+}
 
 function toQuery(params?: ListQuestsParams): string {
   const sp = new URLSearchParams();
@@ -38,18 +71,30 @@ function toQuery(params?: ListQuestsParams): string {
 }
 
 export async function fetchQuests(params?: ListQuestsParams): Promise<QuestListResponse | null> {
+  const result = await fetchQuestsResult(params);
+  return result.data;
+}
+
+export async function fetchQuestsResult(params?: ListQuestsParams): Promise<QuestFetchResult<QuestListResponse>> {
   try {
-    return await customInstance<QuestListResponse>({ method: 'GET' }, `/v1/quests${toQuery(params)}`);
-  } catch {
-    return null;
+    const data = await customInstance<QuestListResponse>({ method: 'GET' }, `/v1/quests${toQuery(params)}`);
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: normalizeQuestApiError(error) };
   }
 }
 
 export async function fetchQuest(questId: string): Promise<QuestDetailResponse | null> {
+  const result = await fetchQuestResult(questId);
+  return result.data;
+}
+
+export async function fetchQuestResult(questId: string): Promise<QuestFetchResult<QuestDetailResponse>> {
   try {
-    return await customInstance<QuestDetailResponse>({ method: 'GET' }, `/v1/quests/${encodeURIComponent(questId)}`);
-  } catch {
-    return null;
+    const data = await customInstance<QuestDetailResponse>({ method: 'GET' }, `/v1/quests/${encodeURIComponent(questId)}`);
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: normalizeQuestApiError(error) };
   }
 }
 
