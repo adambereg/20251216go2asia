@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!questData) {
     return {
-      title: questResult.error?.status === 404 ? 'Quest run unavailable | Quest Asia' : 'Quest runtime unavailable | Quest Asia',
+      title: questResult.error?.status === 404 ? 'Прохождение недоступно | Quest Asia' : 'Quest Asia временно недоступен',
     };
   }
 
@@ -38,16 +38,16 @@ export default async function QuestRunnerPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">Quest run is temporarily unavailable</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Прохождение маршрута временно недоступно</h1>
           <p className="text-slate-600">
-            {questResult.error?.message || 'Live quest detail could not be loaded for the run surface.'}
+            {questResult.error?.message || 'Не удалось подготовить экран прохождения.'}
           </p>
           <div className="mt-6">
             <Link
               href="/quest"
               className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
             >
-              Back to live quest catalog
+              Вернуться в каталог
             </Link>
           </div>
         </div>
