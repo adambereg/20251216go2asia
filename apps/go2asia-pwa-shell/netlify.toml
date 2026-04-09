@@ -50,11 +50,11 @@
   command = "pnpm turbo build --filter=@go2asia/pwa-shell"
   publish = "apps/go2asia-pwa-shell/.next"
   [context.staging.environment]
-    NEXT_PUBLIC_API_URL = "https://api-staging.go2asia.space"
+    NEXT_PUBLIC_API_URL = "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
 
 [context.deploy-preview]
   command = "pnpm turbo build --filter=@go2asia/pwa-shell"
   publish = "apps/go2asia-pwa-shell/.next"
   [context.deploy-preview.environment]
-    NEXT_PUBLIC_API_URL = "https://api-staging.go2asia.space"
+    NEXT_PUBLIC_API_URL = "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
 

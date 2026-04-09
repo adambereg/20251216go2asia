@@ -6,6 +6,19 @@
 
 ---
 
+## Canonical staging hosts
+
+- **Frontend staging host (canonical):** `https://staging.go2asia.space`
+- **API staging host (canonical for frontend env):** `https://go2asia-api-gateway-staging.fred89059599296.workers.dev`
+
+### Legacy/conflicting hostnames (do not use as staging truth)
+
+- `https://api-staging.go2asia.space` — legacy reference, not canonical for current frontend runtime wiring.
+- `https://staging.api.go2asia.space` — legacy OpenAPI server alias; keep only as contract placeholder until DNS ingress is explicitly activated.
+- `https://staging.go2asia.app` — legacy staging frontend alias; do not treat as canonical.
+
+---
+
 ## Как запустить локально с staging API
 
 ### 1. Установка зависимостей
