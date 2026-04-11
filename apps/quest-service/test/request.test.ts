@@ -837,6 +837,178 @@ describe('quest-service pass #4', () => {
     expect(deleteResponse.status).toBe(204);
   });
 
+  it('lists review submissions with bounded status and stepId filters', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Draft',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 2,
+            published_at: '2026-04-10T07:00:00.000Z',
+            created_at: '2026-04-10T07:00:00.000Z',
+            updated_at: '2026-04-10T07:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sub_pending_1',
+            progress_id: 'qprog_1',
+            step_id: 'qstep_2',
+            user_id: 'user_1',
+            proof_type: 'photo',
+            proof_data: { mediaId: 'media_1' },
+            status: 'pending',
+            reviewed_by: null,
+            reviewed_at: null,
+            rejection_reason: null,
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T08:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 1 }] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/submissions?status=pending&stepId=qstep_2&page=1&pageSize=20', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ items: Array<{ id: string; status: string }>; total: number }>(response);
+    expect(response.status).toBe(200);
+    expect(body.total).toBe(1);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]).toMatchObject({ id: 'sub_pending_1', status: 'pending' });
+  });
+
+  it('rejects invalid submission status filter for review queue', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/submissions?status=invalid', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns rejection reason in review response', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sub_1',
+            progress_id: 'qprog_1',
+            step_id: 'qstep_1',
+            user_id: 'user_1',
+            proof_type: 'photo',
+            proof_data: { mediaId: 'media_1' },
+            status: 'pending',
+            reviewed_by: null,
+            reviewed_at: null,
+            rejection_reason: null,
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T08:00:00.000Z',
+            quest_id: 'quest_1',
+            creator_pro_id: 'pro_1',
+            progress_status: 'pending_review',
+            current_step: 1,
+            step_order: 1,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Published',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 2,
+            published_at: '2026-04-10T07:00:00.000Z',
+            created_at: '2026-04-10T07:00:00.000Z',
+            updated_at: '2026-04-10T07:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sub_1',
+            progress_id: 'qprog_1',
+            step_id: 'qstep_1',
+            user_id: 'user_1',
+            proof_type: 'photo',
+            proof_data: { mediaId: 'media_1' },
+            status: 'rejected',
+            reviewed_by: 'pro_1',
+            reviewed_at: '2026-04-10T09:00:00.000Z',
+            rejection_reason: 'Photo is blurry',
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'user_1',
+            status: 'in_progress',
+            current_step: 1,
+            started_at: '2026-04-10T07:30:00.000Z',
+            completed_at: null,
+            created_at: '2026-04-10T07:30:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'reject', reason: 'Photo is blurry' }),
+      }),
+      env
+    );
+    const body = await readJson<{ status: string; rejectionReason: string | null }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ status: 'rejected', rejectionReason: 'Photo is blurry' });
+  });
+
   it('keeps drafts out of public detail read', async () => {
     executeMock.mockResolvedValueOnce({ rows: [] });
     const response = await worker.fetch(

@@ -859,6 +859,8 @@ export async function listQuestSubmissions(
   db: DbExecutor,
   input: {
     questId: string;
+    status: QuestSubmissionStatus | null;
+    stepId: string | null;
     limit: number;
     offset: number;
   }
@@ -880,6 +882,8 @@ export async function listQuestSubmissions(
     FROM quest_submission qs
     INNER JOIN quest_progress qp ON qp.id = qs.progress_id
     WHERE qp.quest_id = ${input.questId}
+      AND (${input.status}::quest_submission_status IS NULL OR qs.status = ${input.status}::quest_submission_status)
+      AND (${input.stepId}::text IS NULL OR qs.step_id = ${input.stepId}::text)
     ORDER BY qs.created_at DESC, qs.id DESC
     LIMIT ${input.limit}
     OFFSET ${input.offset}
@@ -887,12 +891,17 @@ export async function listQuestSubmissions(
   return rowsOf<QuestSubmissionRow>(result);
 }
 
-export async function countQuestSubmissions(db: DbExecutor, questId: string): Promise<number> {
+export async function countQuestSubmissions(
+  db: DbExecutor,
+  input: { questId: string; status: QuestSubmissionStatus | null; stepId: string | null }
+): Promise<number> {
   const result = await db.execute(sql`
     SELECT COUNT(*)::int AS total
     FROM quest_submission qs
     INNER JOIN quest_progress qp ON qp.id = qs.progress_id
-    WHERE qp.quest_id = ${questId}
+    WHERE qp.quest_id = ${input.questId}
+      AND (${input.status}::quest_submission_status IS NULL OR qs.status = ${input.status}::quest_submission_status)
+      AND (${input.stepId}::text IS NULL OR qs.step_id = ${input.stepId}::text)
   `);
   return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
 }

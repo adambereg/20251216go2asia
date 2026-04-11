@@ -35,6 +35,7 @@ import {
   type QuestProofType,
   type QuestRow,
   type QuestStepRow,
+  type QuestSubmissionStatus,
   type QuestTargetType,
   type QuestStepType,
   type QuestSubmissionRow,
@@ -122,6 +123,7 @@ const QUEST_STEP_TYPES: QuestStepType[] = [
 const QUEST_VERIFICATION_TYPES: QuestVerificationType[] = ['auto', 'geo', 'qr', 'manual', 'space_post'];
 const QUEST_PROOF_TYPES: QuestProofType[] = ['photo', 'geo', 'qr', 'space_post', 'text'];
 const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'space_post'];
+const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved', 'rejected'];
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -303,6 +305,7 @@ function normalizeQuestSubmission(submission: QuestSubmissionRow) {
     status: submission.status,
     reviewedBy: submission.reviewed_by,
     reviewedAt: asIso(submission.reviewed_at),
+    rejectionReason: submission.rejection_reason,
     createdAt: asIso(submission.created_at),
   };
 }
@@ -419,6 +422,12 @@ function parseQuestVisibility(value: string | null): QuestVisibility | null | un
   if (value === null) return null;
   if (!QUEST_VISIBILITIES.includes(value as QuestVisibility)) return undefined;
   return value as QuestVisibility;
+}
+
+function parseSubmissionStatus(value: string | null): QuestSubmissionStatus | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_SUBMISSION_STATUSES.includes(value as QuestSubmissionStatus)) return undefined;
+  return value as QuestSubmissionStatus;
 }
 
 function parseCreateQuestInput(body: Record<string, unknown> | null): CreateQuestInput | null {
@@ -1382,6 +1391,10 @@ export async function getQuestSubmissions(
   if (databaseUrl instanceof Response) return databaseUrl;
   const pagination = parsePage(url.searchParams);
   if (!pagination) return errorResponse('VALIDATION_ERROR', 'Invalid pagination parameters', requestId, 400);
+  const status = parseSubmissionStatus(url.searchParams.get('status'));
+  if (status === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid submission status filter', requestId, 400);
+  const stepId = parseOptionalOpaqueRef(url.searchParams.get('stepId'), 80);
+  if (stepId === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid stepId filter', requestId, 400);
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
@@ -1389,10 +1402,12 @@ export async function getQuestSubmissions(
 
   const items = await listQuestSubmissions(db, {
     questId,
+    status,
+    stepId,
     limit: pagination.pageSize,
     offset: (pagination.page - 1) * pagination.pageSize,
   });
-  const total = await countQuestSubmissions(db, questId);
+  const total = await countQuestSubmissions(db, { questId, status, stepId });
   return json(
     {
       items: items.map(normalizeQuestSubmission),

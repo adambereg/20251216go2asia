@@ -425,6 +425,18 @@ components:
       required: true
       schema:
         type: string
+    SubmissionStatusFilter:
+      in: query
+      name: status
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestSubmissionStatus"
+    SubmissionStepIdFilter:
+      in: query
+      name: stepId
+      required: false
+      schema:
+        type: string
     TabKey:
       in: query
       name: tabKey
@@ -2568,6 +2580,9 @@ components:
           $ref: "#/components/schemas/QuestProofData"
         proofType:
           $ref: "#/components/schemas/QuestProofType"
+        rejectionReason:
+          nullable: true
+          type: string
         reviewedAt:
           format: date-time
           nullable: true
@@ -5924,6 +5939,8 @@ paths:
         - $ref: "#/components/parameters/QuestId"
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/SubmissionStatusFilter"
+        - $ref: "#/components/parameters/SubmissionStepIdFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
       responses:

@@ -520,6 +520,8 @@ paths:
         - $ref: "#/components/parameters/QuestId"
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/SubmissionStatusFilter"
+        - $ref: "#/components/parameters/SubmissionStepIdFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
       responses:
@@ -647,6 +649,18 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/QuestVisibility"
+    SubmissionStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestSubmissionStatus"
+    SubmissionStepIdFilter:
+      name: stepId
+      in: query
+      required: false
+      schema:
+        type: string
     Page:
       name: page
       in: query
@@ -1073,6 +1087,9 @@ components:
         reviewedAt:
           type: string
           format: date-time
+          nullable: true
+        rejectionReason:
+          type: string
           nullable: true
         createdAt:
           type: string

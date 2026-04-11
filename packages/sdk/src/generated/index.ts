@@ -376,6 +376,8 @@ export * from "./spaceResolvedRepostPreview";
 export * from "./spaceServiceAuthNotConfiguredResponse";
 export * from "./spaceValidationErrorResponse";
 export * from "./spaceVisibility";
+export * from "./submissionStatusFilterParameter";
+export * from "./submissionStepIdFilterParameter";
 export * from "./submitQuestStepRequest";
 export * from "./tabKeyParameter";
 export * from "./themeParameter";

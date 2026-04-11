@@ -17,6 +17,8 @@ export interface QuestSubmissionResponse {
   proofData?: QuestProofData;
   proofType: QuestProofType;
   /** @nullable */
+  rejectionReason?: string | null;
+  /** @nullable */
   reviewedAt?: string | null;
   /** @nullable */
   reviewedBy?: string | null;
