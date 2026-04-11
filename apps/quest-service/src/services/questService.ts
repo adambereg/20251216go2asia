@@ -110,8 +110,114 @@ function normalizeQuestStep(step: QuestStepRow) {
   };
 }
 
-function normalizeQuest(quest: QuestRow, steps: QuestStepRow[] = []) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toNullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim());
+}
+
+function toNullableNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function extractQuestMetadataProjection(geoScope: Record<string, unknown> | null) {
+  if (!isRecord(geoScope)) return null;
+  const raw = geoScope.questMetadataV1;
+  if (!isRecord(raw)) return null;
+
+  const identity = isRecord(raw.identity) ? raw.identity : null;
+  const narrative = isRecord(raw.narrative) ? raw.narrative : null;
+  const media = isRecord(raw.media) ? raw.media : null;
+  const runtime = isRecord(raw.runtime) ? raw.runtime : null;
+
   return {
+    contentSchemaVersion: toNullableString(raw.contentSchemaVersion),
+    sourceWave: toNullableString(raw.sourceWave),
+    slug: toNullableString(identity?.slug),
+    countrySlug: toNullableString(identity?.countrySlug),
+    citySlug: toNullableString(identity?.citySlug),
+    summary: toNullableString(narrative?.summary),
+    bodyMarkdown: toNullableString(narrative?.bodyMarkdown),
+    mediaPrefix: toNullableString(media?.mediaPrefix),
+    cardMediaKey: toNullableString(media?.cardMediaKey),
+    cardMediaAlt: toNullableString(media?.cardMediaAlt),
+    heroMediaKey: toNullableString(media?.heroMediaKey),
+    heroMediaAlt: toNullableString(media?.heroMediaAlt),
+    galleryMedia: Array.isArray(media?.galleryMedia)
+      ? media.galleryMedia
+          .map((item) => {
+            if (!isRecord(item)) return null;
+            const key = toNullableString(item.key);
+            if (!key) return null;
+            return {
+              key,
+              alt: toNullableString(item.alt),
+            };
+          })
+          .filter((item): item is { key: string; alt: string | null } => item !== null)
+      : [],
+    cardBadge: toNullableString((isRecord(raw.presentation) ? raw.presentation : {}).cardBadge),
+    cardTagline: toNullableString((isRecord(raw.presentation) ? raw.presentation : {}).cardTagline),
+    estimatedMinutes: toNullableNumber((isRecord(raw.presentation) ? raw.presentation : {}).estimatedMinutes),
+    detailHighlights: toStringArray((isRecord(raw.presentation) ? raw.presentation : {}).detailHighlights),
+    presentationFlags: isRecord((isRecord(raw.presentation) ? raw.presentation : {}).presentationFlags)
+      ? ((isRecord(raw.presentation) ? raw.presentation : {}).presentationFlags as Record<string, unknown>)
+      : {},
+    runtimeDifficulty: toNullableString(runtime?.difficulty),
+    runtimeStepsCount: toNullableNumber(runtime?.stepsCount),
+    runtimeStatus: toNullableString(runtime?.status),
+    runtimeVisibility: toNullableString(runtime?.visibility),
+  };
+}
+
+function normalizeQuestMetadata(quest: QuestRow) {
+  const projected = extractQuestMetadataProjection(quest.geo_scope);
+  const summary = projected?.summary ?? quest.description;
+  const presentationFlags: Record<string, unknown> = {
+    ...(projected?.presentationFlags ?? {}),
+  };
+  if (projected?.contentSchemaVersion) presentationFlags.contentSchemaVersion = projected.contentSchemaVersion;
+  if (projected?.sourceWave) presentationFlags.sourceWave = projected.sourceWave;
+  if (projected?.slug) presentationFlags.slug = projected.slug;
+  if (projected?.countrySlug) presentationFlags.countrySlug = projected.countrySlug;
+  if (projected?.citySlug) presentationFlags.citySlug = projected.citySlug;
+  if (projected?.runtimeDifficulty) presentationFlags.runtimeDifficulty = projected.runtimeDifficulty;
+  if (typeof projected?.runtimeStepsCount === 'number') presentationFlags.runtimeStepsCount = projected.runtimeStepsCount;
+  if (projected?.runtimeStatus) presentationFlags.runtimeStatus = projected.runtimeStatus;
+  if (projected?.runtimeVisibility) presentationFlags.runtimeVisibility = projected.runtimeVisibility;
+
+  return {
+    media: {
+      mediaPrefix: projected?.mediaPrefix ?? null,
+      cardMediaKey: projected?.cardMediaKey ?? null,
+      cardMediaAlt: projected?.cardMediaAlt ?? null,
+      heroMediaKey: projected?.heroMediaKey ?? null,
+      heroMediaAlt: projected?.heroMediaAlt ?? null,
+      galleryMedia: projected?.galleryMedia ?? [],
+    },
+    narrative: {
+      summary,
+      bodyMarkdown: projected?.bodyMarkdown ?? null,
+    },
+    presentation: {
+      cardBadge: projected?.cardBadge ?? null,
+      cardTagline: projected?.cardTagline ?? null,
+      estimatedMinutes: projected?.estimatedMinutes ?? null,
+      detailHighlights: projected?.detailHighlights ?? [],
+      presentationFlags,
+    },
+  };
+}
+
+function normalizeQuest(quest: QuestRow, steps: QuestStepRow[] = [], options?: { includeSteps?: boolean }) {
+  const base = {
     id: quest.id,
     title: quest.title,
     description: quest.description,
@@ -128,6 +234,15 @@ function normalizeQuest(quest: QuestRow, steps: QuestStepRow[] = []) {
     createdAt: asIso(quest.created_at),
     updatedAt: asIso(quest.updated_at),
     publishedAt: asIso(quest.published_at),
+    metadata: normalizeQuestMetadata(quest),
+  };
+
+  if (options?.includeSteps === false) {
+    return base;
+  }
+
+  return {
+    ...base,
     steps: steps.map(normalizeQuestStep),
   };
 }
@@ -543,7 +658,7 @@ export async function listQuests(env: Env, requestId: string, url: URL): Promise
 
   return json(
     {
-      items: quests.map((quest) => normalizeQuest(quest, [])),
+      items: quests.map((quest) => normalizeQuest(quest, [], { includeSteps: false })),
       page: pagination.page,
       pageSize: pagination.pageSize,
       total,

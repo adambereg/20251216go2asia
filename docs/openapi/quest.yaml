@@ -707,6 +707,87 @@ components:
           type: string
           format: date-time
           nullable: true
+        metadata:
+          $ref: "#/components/schemas/QuestMetadataResponse"
+
+    QuestMetadataResponse:
+      type: object
+      properties:
+        media:
+          $ref: "#/components/schemas/QuestMetadataMediaResponse"
+        narrative:
+          $ref: "#/components/schemas/QuestMetadataNarrativeResponse"
+        presentation:
+          $ref: "#/components/schemas/QuestMetadataPresentationResponse"
+      additionalProperties: false
+
+    QuestMetadataMediaResponse:
+      type: object
+      properties:
+        mediaPrefix:
+          type: string
+          nullable: true
+        cardMediaKey:
+          type: string
+          nullable: true
+        cardMediaAlt:
+          type: string
+          nullable: true
+        heroMediaKey:
+          type: string
+          nullable: true
+        heroMediaAlt:
+          type: string
+          nullable: true
+        galleryMedia:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestMetadataGalleryItemResponse"
+      additionalProperties: false
+
+    QuestMetadataGalleryItemResponse:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+        alt:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    QuestMetadataNarrativeResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    QuestMetadataPresentationResponse:
+      type: object
+      properties:
+        cardBadge:
+          type: string
+          nullable: true
+        cardTagline:
+          type: string
+          nullable: true
+        estimatedMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        detailHighlights:
+          type: array
+          items:
+            type: string
+        presentationFlags:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
 
     QuestDetailResponse:
       allOf:
