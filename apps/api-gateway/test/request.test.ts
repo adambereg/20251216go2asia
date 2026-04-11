@@ -94,6 +94,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'quest.start.post',
       routeGroup: 'quest',
     });
+    expect(classifyRoute('POST', '/v1/quests/quest_1/archive')).toEqual({
+      routeKey: 'quest.archive.post',
+      routeGroup: 'quest',
+    });
     expect(classifyRoute('POST', '/v1/submissions/sub_1/review')).toEqual({
       routeKey: 'quest.review.post',
       routeGroup: 'quest',
@@ -372,6 +376,28 @@ describe('api-gateway request hardening', () => {
         body: JSON.stringify({
           decision: 'approve',
         }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest archive route without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/quest_1/archive', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://app.example',
+        },
       }),
       env
     );

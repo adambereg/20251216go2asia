@@ -2286,6 +2286,74 @@ export const getQuest = async (
 };
 
 /**
+ * @summary Archive published quest
+ */
+export type archiveQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type archiveQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type archiveQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type archiveQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type archiveQuestResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type archiveQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type archiveQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type archiveQuestResponseSuccess = archiveQuestResponse200 & {
+  headers: Headers;
+};
+export type archiveQuestResponseError = (
+  | archiveQuestResponse401
+  | archiveQuestResponse403
+  | archiveQuestResponse404
+  | archiveQuestResponse409
+  | archiveQuestResponse500
+  | archiveQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type archiveQuestResponse = archiveQuestResponseSuccess | archiveQuestResponseError;
+
+export const getArchiveQuestUrl = (questId: string) => {
+  return `/v1/quests/${questId}/archive`;
+};
+
+export const archiveQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<archiveQuestResponse> => {
+  return customInstance<archiveQuestResponse>(getArchiveQuestUrl(questId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
  * @summary Get current user progress for a quest
  */
 export type getQuestProgressResponse200 = {

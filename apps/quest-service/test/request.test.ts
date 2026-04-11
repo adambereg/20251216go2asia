@@ -287,6 +287,166 @@ describe('quest-service pass #4', () => {
     expect(body.error.code).toBe('CONFLICT');
   });
 
+  it('archives published quest for owner when no active progress or pending submissions exist', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 1,
+            published_at: '2026-03-16T10:00:00.000Z',
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'archived',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 1,
+            published_at: '2026-03-16T10:00:00.000Z',
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T11:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: null,
+            created_at: '2026-03-16T09:05:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/archive', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('archived');
+  });
+
+  it('blocks archive when active quest progress exists', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 1,
+            published_at: '2026-03-16T10:00:00.000Z',
+            created_at: '2026-03-16T09:00:00.000Z',
+            updated_at: '2026-03-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 2 }] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/archive', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
+  });
+
+  it('rejects archive transition for draft quest', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'quest_1',
+          title: 'Coffee Route',
+          description: null,
+          creator_pro_id: 'pro_1',
+          city_id: null,
+          geo_scope: null,
+          type: null,
+          theme: null,
+          difficulty: null,
+          status: 'draft',
+          visibility: 'public',
+          reward_points: null,
+          steps_count: 0,
+          published_at: null,
+          created_at: '2026-03-16T09:00:00.000Z',
+          updated_at: '2026-03-16T09:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/archive', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
+  });
+
   it('lists owned quests for pro management reads including draft and private items', async () => {
     const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
@@ -449,6 +609,15 @@ describe('quest-service pass #4', () => {
     executeMock.mockResolvedValueOnce({ rows: [] });
     const response = await worker.fetch(
       new Request('https://quest.example/v1/quests/quest_draft_hidden'),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' }
+    );
+    expect(response.status).toBe(404);
+  });
+
+  it('keeps archived quests out of public detail read', async () => {
+    executeMock.mockResolvedValueOnce({ rows: [] });
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_archived_hidden'),
       { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' }
     );
     expect(response.status).toBe(404);

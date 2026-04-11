@@ -1,9 +1,12 @@
 import { createDb } from '@go2asia/db';
 
 import {
+  archiveQuest as archiveQuestRow,
   advanceQuestProgress,
   approveSubmission,
+  countActiveQuestProgress,
   countManagedQuests,
+  countPendingQuestSubmissions,
   countPublishedQuests,
   countQuestSubmissions,
   getBlockingSubmissionForProgressStep,
@@ -334,6 +337,35 @@ function canManageQuest(principal: GatewayPrincipal): boolean {
 
 function canManageOwnedQuest(principal: GatewayPrincipal, quest: QuestRow): boolean {
   return hasRole(principal, 'admin') || quest.creator_pro_id === principal.userId;
+}
+
+function canTransitionQuestStatus(from: QuestStatus, to: QuestStatus): boolean {
+  if (from === 'draft' && to === 'published') return true;
+  if (from === 'published' && to === 'archived') return true;
+  return false;
+}
+
+function getTransitionConflictMessage(from: QuestStatus, to: QuestStatus): string {
+  if (from === to) return `Quest is already ${to}`;
+  if (to === 'published' && from === 'archived') return 'Archived quest cannot be published';
+  if (to === 'archived' && from === 'draft') return 'Draft quest cannot be archived before publish';
+  if (to === 'archived' && from === 'archived') return 'Quest is already archived';
+  return `Quest status transition ${from} -> ${to} is not supported`;
+}
+
+function assertQuestStatusTransition(quest: QuestRow, to: QuestStatus, requestId: string): Response | null {
+  if (canTransitionQuestStatus(quest.status, to)) return null;
+  return errorResponse('CONFLICT', getTransitionConflictMessage(quest.status, to), requestId, 409);
+}
+
+function getPublishReadinessError(steps: QuestStepRow[]): string | null {
+  if (steps.length === 0) return 'Quest must have at least one step before publish';
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i]?.order !== i + 1) {
+      return 'Quest steps must be sequential without gaps';
+    }
+  }
+  return null;
 }
 
 function parsePage(searchParams: URLSearchParams): { page: number; pageSize: number } | null {
@@ -839,19 +871,59 @@ export async function publishQuest(
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
   if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot publish this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Quest is already published or archived', requestId, 409);
+  const transitionError = assertQuestStatusTransition(quest, 'published', requestId);
+  if (transitionError) return transitionError;
 
   const steps = await listQuestSteps(db, questId);
-  if (steps.length === 0) return errorResponse('CONFLICT', 'Quest must have at least one step before publish', requestId, 409);
-  for (let i = 0; i < steps.length; i++) {
-    if (steps[i]?.order !== i + 1) {
-      return errorResponse('CONFLICT', 'Quest steps must be sequential without gaps', requestId, 409);
-    }
-  }
+  const publishReadinessError = getPublishReadinessError(steps);
+  if (publishReadinessError) return errorResponse('CONFLICT', publishReadinessError, requestId, 409);
 
   const published = await publishQuestRow(db, questId);
   if (!published) return errorResponse('CONFLICT', 'Quest could not be published', requestId, 409);
   return json(normalizeQuest(published, steps), 200);
+}
+
+export async function archiveQuest(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot archive this quest', requestId, 403);
+
+  const transitionError = assertQuestStatusTransition(quest, 'archived', requestId);
+  if (transitionError) return transitionError;
+
+  const activeProgressTotal = await countActiveQuestProgress(db, questId);
+  if (activeProgressTotal > 0) {
+    return errorResponse(
+      'CONFLICT',
+      'Quest cannot be archived while active progress exists',
+      requestId,
+      409
+    );
+  }
+
+  const pendingSubmissionsTotal = await countPendingQuestSubmissions(db, questId);
+  if (pendingSubmissionsTotal > 0) {
+    return errorResponse(
+      'CONFLICT',
+      'Quest cannot be archived while pending submissions exist',
+      requestId,
+      409
+    );
+  }
+
+  const archived = await archiveQuestRow(db, questId);
+  if (!archived) return errorResponse('CONFLICT', 'Quest could not be archived', requestId, 409);
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(archived, steps), 200);
 }
 
 export async function startQuest(

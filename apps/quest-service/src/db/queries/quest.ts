@@ -477,6 +477,62 @@ export async function publishQuest(db: DbExecutor, questId: string): Promise<Que
   return rowsOf<QuestRow>(result)[0] ?? null;
 }
 
+export async function archiveQuest(db: DbExecutor, questId: string): Promise<QuestRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest
+    SET
+      status = 'archived',
+      updated_at = now()
+    WHERE id = ${questId}
+      AND status = 'published'
+    RETURNING
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRow>(result)[0] ?? null;
+}
+
+export async function countActiveQuestProgress(
+  db: DbExecutor,
+  questId: string
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest_progress
+    WHERE quest_id = ${questId}
+      AND status IN ('not_started', 'in_progress', 'pending_review')
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
+export async function countPendingQuestSubmissions(
+  db: DbExecutor,
+  questId: string
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest_submission qs
+    INNER JOIN quest_progress qp ON qp.id = qs.progress_id
+    WHERE qp.quest_id = ${questId}
+      AND qs.status = 'pending'
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
 export async function getQuestProgressByQuestAndUser(
   db: DbExecutor,
   questId: string,

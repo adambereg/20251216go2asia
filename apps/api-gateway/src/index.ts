@@ -310,6 +310,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (/^\/v1\/quests\/[^/]+\/publish$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.publish.post', routeGroup: 'quest' };
   }
+  if (/^\/v1\/quests\/[^/]+\/archive$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.archive.post', routeGroup: 'quest' };
+  }
   if (/^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.submit.post', routeGroup: 'quest' };
   }
@@ -687,6 +690,7 @@ function isProtectedQuestRoute(method: string, path: string): boolean {
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/publish$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/archive$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/submissions$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/submissions\/[^/]+\/review$/.test(path)) return true;

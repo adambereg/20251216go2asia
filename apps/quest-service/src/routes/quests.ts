@@ -3,6 +3,7 @@ import type { QuestEventPublisher } from '../events/publisher';
 import { readJsonObject } from '../middleware/http';
 import {
   addQuestStep,
+  archiveQuest,
   createQuestDraft,
   getQuest,
   getOwnedQuest,
@@ -73,6 +74,11 @@ export async function handleQuestRoute(
   const questPublishMatch = path.match(/^\/v1\/quests\/([^/]+)\/publish$/);
   if (questPublishMatch && request.method === 'POST' && principal) {
     return publishQuest(env, questPublishMatch[1]!, principal, requestId);
+  }
+
+  const questArchiveMatch = path.match(/^\/v1\/quests\/([^/]+)\/archive$/);
+  if (questArchiveMatch && request.method === 'POST' && principal) {
+    return archiveQuest(env, questArchiveMatch[1]!, principal, requestId);
   }
 
   const questSubmitMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps\/([^/]+)\/submit$/);
