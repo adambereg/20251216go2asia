@@ -211,7 +211,7 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          Quest-level визуалы и краткое описание читаются из runtime metadata как штатный путь. Static mapping больше не используется как normal path и может включаться только как аварийный fallback через отдельный env-флаг.
+          Quest-level визуалы и краткое описание читаются из runtime metadata как штатный и единственный путь для этой страницы.
         </div>
       </div>
     </div>

@@ -51,6 +51,6 @@ Explicitly outside this closure:
 
 Operational follow-up:
 
-- emergency static media fallback path exists behind env flag only
-- remove emergency path after dedicated production confidence window (separate pass)
+- emergency static media fallback path for `/quest` and `/quest/[id]` is retired
+- any remaining step-level fallback behavior is outside 1.5B quest-level migration scope
 

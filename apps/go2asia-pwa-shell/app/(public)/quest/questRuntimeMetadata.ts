@@ -1,9 +1,7 @@
 import type { QuestDetailResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
 import { resolveMediaUrl } from '@go2asia/sdk/media';
-import { getQuestCoverMedia, getQuestGalleryMedia } from './questMediaContent';
 
 type QuestMedia = { url: string; alt: string };
-const ENABLE_EMERGENCY_STATIC_MEDIA_FALLBACK = process.env.NEXT_PUBLIC_QUEST_MEDIA_EMERGENCY_FALLBACK === '1';
 
 function normalizeText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -32,23 +30,13 @@ function resolveMedia(key: string | null, alt: string | null, fallbackAlt: strin
   return { url, alt: alt ?? fallbackAlt };
 }
 
-function getEmergencyCoverFallback(questId: string): QuestMedia | null {
-  if (!ENABLE_EMERGENCY_STATIC_MEDIA_FALLBACK) return null;
-  return getQuestCoverMedia(questId);
-}
-
-function getEmergencyGalleryFallback(questId: string): QuestMedia[] {
-  if (!ENABLE_EMERGENCY_STATIC_MEDIA_FALLBACK) return [];
-  return getQuestGalleryMedia(questId);
-}
-
 export function getQuestCardMediaRuntimeFirst(quest: QuestSummaryResponse): QuestMedia | null {
   const media = getMetadataMedia(quest);
   const card = resolveMedia(normalizeText(media.cardMediaKey), normalizeText(media.cardMediaAlt), quest.title);
   if (card) return card;
   const hero = resolveMedia(normalizeText(media.heroMediaKey), normalizeText(media.heroMediaAlt), quest.title);
   if (hero) return hero;
-  return getEmergencyCoverFallback(quest.id);
+  return null;
 }
 
 export function getQuestHeroMediaRuntimeFirst(quest: QuestDetailResponse): QuestMedia | null {
@@ -57,7 +45,7 @@ export function getQuestHeroMediaRuntimeFirst(quest: QuestDetailResponse): Quest
   if (hero) return hero;
   const card = resolveMedia(normalizeText(media.cardMediaKey), normalizeText(media.cardMediaAlt), quest.title);
   if (card) return card;
-  return getEmergencyCoverFallback(quest.id);
+  return null;
 }
 
 export function getQuestGalleryRuntimeFirst(quest: QuestDetailResponse): QuestMedia[] {
@@ -72,7 +60,7 @@ export function getQuestGalleryRuntimeFirst(quest: QuestDetailResponse): QuestMe
     })
     .filter((item): item is QuestMedia => item !== null);
   if (runtimeGallery.length > 0) return runtimeGallery;
-  return getEmergencyGalleryFallback(quest.id);
+  return [];
 }
 
 export function getQuestSummaryRuntimeFirst(quest: QuestSummaryResponse | QuestDetailResponse): string | null {

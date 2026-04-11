@@ -65,6 +65,12 @@ Use **staged retirement with a short confidence window**:
 
 Do not mix this retirement pass with proof/map/verification/growth work.
 
+Implementation status:
+
+- quest-level emergency static bridge for `/quest` and `/quest/[id]` is retired from runtime helpers
+- these surfaces now rely on runtime metadata path plus existing non-bridge UI placeholders
+- step-level static fallback in `/quest/[id]/run` remains outside this pass scope
+
 ---
 
 # 5. What Comes Next
