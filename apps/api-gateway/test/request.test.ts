@@ -82,6 +82,14 @@ describe('api-gateway request hardening', () => {
       routeKey: 'quest.list.get',
       routeGroup: 'quest',
     });
+    expect(classifyRoute('GET', '/v1/quests/mine')).toEqual({
+      routeKey: 'quest.mine.list.get',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('GET', '/v1/quests/mine/quest_1')).toEqual({
+      routeKey: 'quest.mine.detail.get',
+      routeGroup: 'quest',
+    });
     expect(classifyRoute('POST', '/v1/quests/quest_1/start')).toEqual({
       routeKey: 'quest.start.post',
       routeGroup: 'quest',
@@ -255,6 +263,27 @@ describe('api-gateway request hardening', () => {
 
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/feed/home', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest management read route without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine', {
         headers: {
           Origin: 'https://app.example',
         },

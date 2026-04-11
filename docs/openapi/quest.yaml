@@ -131,6 +131,67 @@ paths:
         "500":
           $ref: "#/components/responses/QuestInternalError"
 
+  /v1/quests/mine:
+    get:
+      tags: [quests]
+      operationId: listOwnedQuests
+      summary: List owned quests for management
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/QuestStatusFilter"
+        - $ref: "#/components/parameters/QuestVisibilityFilter"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestListResponse"
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+
+  /v1/quests/mine/{questId}:
+    get:
+      tags: [quests]
+      operationId: getOwnedQuest
+      summary: Get owned quest details for management
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+
   /v1/quests/{questId}:
     get:
       tags: [quests]
@@ -440,6 +501,18 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/QuestDifficulty"
+    QuestStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestStatus"
+    QuestVisibilityFilter:
+      name: visibility
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestVisibility"
     Page:
       name: page
       in: query

@@ -225,6 +225,18 @@ components:
       required: true
       schema:
         type: string
+    QuestStatusFilter:
+      in: query
+      name: status
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestStatus"
+    QuestVisibilityFilter:
+      in: query
+      name: visibility
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestVisibility"
     ReactionId:
       in: path
       name: reactionId
@@ -5473,6 +5485,67 @@ paths:
       security:
         - GatewayAuth: []
       summary: Create quest draft
+      tags:
+        - quests
+  /v1/quests/mine:
+    get:
+      operationId: listOwnedQuests
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/QuestStatusFilter"
+        - $ref: "#/components/parameters/QuestVisibilityFilter"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List owned quests for management
+      tags:
+        - quests
+  /v1/quests/mine/{questId}:
+    get:
+      operationId: getOwnedQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get owned quest details for management
       tags:
         - quests
   /v1/quests/{questId}:

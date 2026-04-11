@@ -153,6 +153,63 @@ export async function countPublishedQuests(
   return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
 }
 
+export async function listManagedQuests(
+  db: DbExecutor,
+  input: {
+    ownerProId: string | null;
+    status: QuestStatus | null;
+    visibility: QuestVisibility | null;
+    limit: number;
+    offset: number;
+  }
+): Promise<QuestRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+    FROM quest
+    WHERE (${input.ownerProId}::text IS NULL OR creator_pro_id = ${input.ownerProId})
+      AND (${input.status}::quest_status IS NULL OR status = ${input.status})
+      AND (${input.visibility}::quest_visibility IS NULL OR visibility = ${input.visibility})
+    ORDER BY updated_at DESC, created_at DESC, id DESC
+    LIMIT ${input.limit}
+    OFFSET ${input.offset}
+  `);
+  return rowsOf<QuestRow>(result);
+}
+
+export async function countManagedQuests(
+  db: DbExecutor,
+  input: {
+    ownerProId: string | null;
+    status: QuestStatus | null;
+    visibility: QuestVisibility | null;
+  }
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest
+    WHERE (${input.ownerProId}::text IS NULL OR creator_pro_id = ${input.ownerProId})
+      AND (${input.status}::quest_status IS NULL OR status = ${input.status})
+      AND (${input.visibility}::quest_visibility IS NULL OR visibility = ${input.visibility})
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
 export async function getQuestById(db: DbExecutor, questId: string): Promise<QuestRow | null> {
   const result = await db.execute(sql`
     SELECT

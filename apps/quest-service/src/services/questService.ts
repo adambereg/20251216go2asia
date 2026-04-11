@@ -3,6 +3,7 @@ import { createDb } from '@go2asia/db';
 import {
   advanceQuestProgress,
   approveSubmission,
+  countManagedQuests,
   countPublishedQuests,
   countQuestSubmissions,
   getBlockingSubmissionForProgressStep,
@@ -15,6 +16,7 @@ import {
   insertQuestProgress,
   insertQuestStep,
   insertQuestSubmission,
+  listManagedQuests,
   listPublishedQuests,
   listQuestSteps,
   listQuestSubmissions,
@@ -23,6 +25,7 @@ import {
   setProgressPendingReview,
   syncQuestStepsCount,
   type QuestDifficulty,
+  type QuestStatus,
   type QuestProgressRow,
   type QuestProofType,
   type QuestRow,
@@ -76,6 +79,7 @@ type ReviewSubmissionInput = {
 };
 
 const QUEST_DIFFICULTIES: QuestDifficulty[] = ['easy', 'medium', 'hard'];
+const QUEST_STATUSES: QuestStatus[] = ['draft', 'published', 'archived'];
 const QUEST_VISIBILITIES: QuestVisibility[] = ['public', 'private'];
 const QUEST_STEP_TYPES: QuestStepType[] = [
   'visit_place',
@@ -346,6 +350,18 @@ function parseDifficulty(value: string | null): QuestDifficulty | null | undefin
   if (value === null) return null;
   if (!QUEST_DIFFICULTIES.includes(value as QuestDifficulty)) return undefined;
   return value as QuestDifficulty;
+}
+
+function parseQuestStatus(value: string | null): QuestStatus | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_STATUSES.includes(value as QuestStatus)) return undefined;
+  return value as QuestStatus;
+}
+
+function parseQuestVisibility(value: string | null): QuestVisibility | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_VISIBILITIES.includes(value as QuestVisibility)) return undefined;
+  return value as QuestVisibility;
 }
 
 function parseCreateQuestInput(body: Record<string, unknown> | null): CreateQuestInput | null {
@@ -673,6 +689,67 @@ export async function getQuest(env: Env, requestId: string, questId: string): Pr
   const db = createDb(databaseUrl);
   const quest = await getPublishedQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(quest, steps), 200);
+}
+
+export async function listOwnedQuests(
+  env: Env,
+  principal: GatewayPrincipal,
+  requestId: string,
+  url: URL
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const pagination = parsePage(url.searchParams);
+  if (!pagination) return errorResponse('VALIDATION_ERROR', 'Invalid pagination parameters', requestId, 400);
+
+  const statusRaw = url.searchParams.get('status');
+  const status = parseQuestStatus(statusRaw);
+  if (status === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid status filter', requestId, 400);
+
+  const visibilityRaw = url.searchParams.get('visibility');
+  const visibility = parseQuestVisibility(visibilityRaw);
+  if (visibility === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid visibility filter', requestId, 400);
+
+  const db = createDb(databaseUrl);
+  const ownerProId = hasRole(principal, 'admin') ? null : principal.userId;
+  const items = await listManagedQuests(db, {
+    ownerProId,
+    status,
+    visibility,
+    limit: pagination.pageSize,
+    offset: (pagination.page - 1) * pagination.pageSize,
+  });
+  const total = await countManagedQuests(db, { ownerProId, status, visibility });
+
+  return json(
+    {
+      items: items.map((quest) => normalizeQuest(quest, [], { includeSteps: false })),
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total,
+    },
+    200
+  );
+}
+
+export async function getOwnedQuest(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  if (!canManageOwnedQuest(principal, quest)) {
+    return errorResponse('FORBIDDEN', 'Cannot access this quest', requestId, 403);
+  }
   const steps = await listQuestSteps(db, questId);
   return json(normalizeQuest(quest, steps), 200);
 }

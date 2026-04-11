@@ -287,6 +287,164 @@ describe('quest-service pass #4', () => {
     expect(body.error.code).toBe('CONFLICT');
   });
 
+  it('lists owned quests for pro management reads including draft and private items', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_draft_1',
+            title: 'Draft Coffee Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'private',
+            reward_points: null,
+            steps_count: 0,
+            published_at: null,
+            created_at: '2026-04-10T09:00:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+          {
+            id: 'quest_pub_1',
+            title: 'Published Route',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: 'easy',
+            status: 'published',
+            visibility: 'public',
+            reward_points: 50,
+            steps_count: 2,
+            published_at: '2026-04-10T10:00:00.000Z',
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 2 }] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine?page=1&pageSize=20', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ items: Array<{ id: string; status: string; visibility: string }>; total: number }>(response);
+    expect(response.status).toBe(200);
+    expect(body.total).toBe(2);
+    expect(body.items.map((item) => item.id)).toEqual(['quest_draft_1', 'quest_pub_1']);
+    expect(body.items[0]).toMatchObject({ status: 'draft', visibility: 'private' });
+  });
+
+  it('returns owned quest detail for admin management reads', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', roles: ['admin'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_archived_1',
+            title: 'Archived Route',
+            description: 'Internal archived quest',
+            creator_pro_id: 'pro_2',
+            city_id: 'phuket',
+            geo_scope: null,
+            type: 'route',
+            theme: 'city_discovery',
+            difficulty: 'medium',
+            status: 'archived',
+            visibility: 'private',
+            reward_points: 120,
+            steps_count: 1,
+            published_at: '2026-04-10T10:00:00.000Z',
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T11:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_archived_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: null,
+            created_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_archived_1', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ id: string; status: string; visibility: string; steps: Array<{ id: string }> }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      id: 'quest_archived_1',
+      status: 'archived',
+      visibility: 'private',
+    });
+    expect(body.steps).toHaveLength(1);
+  });
+
+  it('forbids non-owner from reading another quest through management detail path', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'quest_other_owner',
+          title: 'Other Owner Route',
+          description: null,
+          creator_pro_id: 'pro_2',
+          city_id: null,
+          geo_scope: null,
+          type: null,
+          theme: null,
+          difficulty: null,
+          status: 'draft',
+          visibility: 'private',
+          reward_points: null,
+          steps_count: 0,
+          published_at: null,
+          created_at: '2026-04-10T09:00:00.000Z',
+          updated_at: '2026-04-10T09:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_other_owner', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
   it('keeps drafts out of public detail read', async () => {
     executeMock.mockResolvedValueOnce({ rows: [] });
     const response = await worker.fetch(

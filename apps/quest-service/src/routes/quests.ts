@@ -5,8 +5,10 @@ import {
   addQuestStep,
   createQuestDraft,
   getQuest,
+  getOwnedQuest,
   getQuestProgress,
   getQuestSubmissions,
+  listOwnedQuests,
   listQuests,
   publishQuest,
   reviewQuestSubmission,
@@ -36,6 +38,15 @@ export async function handleQuestRoute(
   if (path === '/v1/quests' && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
     return createQuestDraft(env, body, principal, requestId);
+  }
+
+  if (path === '/v1/quests/mine' && request.method === 'GET' && principal) {
+    return listOwnedQuests(env, principal, requestId, url);
+  }
+
+  const ownedQuestDetailMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)$/);
+  if (ownedQuestDetailMatch && request.method === 'GET' && principal) {
+    return getOwnedQuest(env, ownedQuestDetailMatch[1]!, principal, requestId);
   }
 
   const questDetailMatch = path.match(/^\/v1\/quests\/([^/]+)$/);

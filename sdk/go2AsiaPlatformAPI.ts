@@ -71,6 +71,7 @@ import type {
   ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
+  ListOwnedQuestsParams,
   ListPlaceContainersResponse,
   ListPlacesParams,
   ListPlacesResponse,
@@ -2106,6 +2107,140 @@ export const createQuest = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(createQuestRequest),
+  });
+};
+
+/**
+ * @summary List owned quests for management
+ */
+export type listOwnedQuestsResponse200 = {
+  data: QuestListResponse;
+  status: 200;
+};
+
+export type listOwnedQuestsResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type listOwnedQuestsResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type listOwnedQuestsResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type listOwnedQuestsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type listOwnedQuestsResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listOwnedQuestsResponseSuccess = listOwnedQuestsResponse200 & {
+  headers: Headers;
+};
+export type listOwnedQuestsResponseError = (
+  | listOwnedQuestsResponse400
+  | listOwnedQuestsResponse401
+  | listOwnedQuestsResponse403
+  | listOwnedQuestsResponse500
+  | listOwnedQuestsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listOwnedQuestsResponse = listOwnedQuestsResponseSuccess | listOwnedQuestsResponseError;
+
+export const getListOwnedQuestsUrl = (params?: ListOwnedQuestsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/quests/mine?${stringifiedParams}` : `/v1/quests/mine`;
+};
+
+export const listOwnedQuests = async (
+  params?: ListOwnedQuestsParams,
+  options?: RequestInit
+): Promise<listOwnedQuestsResponse> => {
+  return customInstance<listOwnedQuestsResponse>(getListOwnedQuestsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get owned quest details for management
+ */
+export type getOwnedQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type getOwnedQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type getOwnedQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type getOwnedQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getOwnedQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getOwnedQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getOwnedQuestResponseSuccess = getOwnedQuestResponse200 & {
+  headers: Headers;
+};
+export type getOwnedQuestResponseError = (
+  | getOwnedQuestResponse401
+  | getOwnedQuestResponse403
+  | getOwnedQuestResponse404
+  | getOwnedQuestResponse500
+  | getOwnedQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type getOwnedQuestResponse = getOwnedQuestResponseSuccess | getOwnedQuestResponseError;
+
+export const getGetOwnedQuestUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}`;
+};
+
+export const getOwnedQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getOwnedQuestResponse> => {
+  return customInstance<getOwnedQuestResponse>(getGetOwnedQuestUrl(questId), {
+    ...options,
+    method: "GET",
   });
 };
 
