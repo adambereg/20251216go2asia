@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Loader2, RefreshCcw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, RefreshCcw } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
 import { resolveMediaUrl } from '@go2asia/sdk/media';
 import type {
@@ -101,14 +101,14 @@ function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: strin
   if (progress.status === 'completed') {
     return {
       tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-      text: 'Маршрут завершён. Это подтверждает прохождение в квесте, а не отдельную выдачу награды вне runtime.',
+      text: 'Маршрут завершён. Все шаги засчитаны, можно перейти к следующему маршруту.',
     };
   }
 
   if (progress.status === 'failed') {
     return {
       tone: 'border-red-200 bg-red-50 text-red-800',
-      text: 'Проверка шага не прошла. Обычно здесь нужна повторная отправка после исправления результата.',
+      text: 'Последняя проверка не прошла. Исправьте данные шага и отправьте подтверждение повторно.',
     };
   }
 
@@ -126,10 +126,10 @@ function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: strin
 }
 
 function describeStepRuntime(step: QuestStepResponse): string {
-  if (step.type === 'visit_partner') return 'Это остановка у партнёра. Квест подтверждает сам визит, а не отдельную скидку или оффер.';
-  if (step.type === 'attend_event') return 'Это шаг, связанный с событием. После отправки возможна ручная проверка участия.';
-  if (step.type === 'space_action') return 'Здесь нужен reference на публичное действие. Сам контент остаётся во внешнем продукте.';
-  if (step.verificationType === 'manual') return 'После отправки этого шага возможна пауза на ручную проверку.';
+  if (step.type === 'visit_partner') return 'Подтвердите визит в партнёрскую точку и переходите к следующему шагу.';
+  if (step.type === 'attend_event') return 'Подтвердите участие в событии. Проверка может занять немного времени.';
+  if (step.type === 'space_action') return 'Добавьте идентификатор опубликованного действия, чтобы мы зачли этот шаг.';
+  if (step.verificationType === 'manual') return 'После отправки шаг может перейти на ручную проверку перед продолжением.';
   return 'Подтвердите этот шаг и переходите дальше по маршруту.';
 }
 
@@ -139,6 +139,29 @@ function getProofTypeLabel(proofType: QuestProofType): string {
   if (proofType === 'photo') return 'Фото-подтверждение';
   if (proofType === 'space_post') return 'Публичное действие';
   return 'Текстовое подтверждение';
+}
+
+function getReviewModeHint(reviewMode: string | null): string | null {
+  if (!reviewMode) return null;
+  if (reviewMode === 'auto') return 'Проверка обычно проходит автоматически.';
+  if (reviewMode === 'manual') return 'Подтверждение проверяется вручную перед переходом к следующему шагу.';
+  return null;
+}
+
+function getSubmissionStatusClasses(status?: string | null): string {
+  if (status === 'approved') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (status === 'rejected') return 'border-red-200 bg-red-50 text-red-800';
+  return 'border-amber-200 bg-amber-50 text-amber-800';
+}
+
+function getSubmitBlockedReason(progress: QuestProgressResponse | null): string | null {
+  if (!progress) return 'Статус маршрута ещё загружается.';
+  if (progress.status === 'in_progress') return null;
+  if (progress.status === 'pending_review') return 'Сейчас шаг на проверке. Дождитесь результата и обновите статус.';
+  if (progress.status === 'completed') return 'Маршрут уже завершён, новые подтверждения не требуются.';
+  if (progress.status === 'failed') return 'Нужно обновить статус шага и отправить исправленное подтверждение.';
+  if (progress.status === 'expired') return 'Срок маршрута истёк. Отправка подтверждений недоступна.';
+  return 'Маршрут ещё не активирован.';
 }
 
 function getStepImage(questId: string, step: QuestStepResponse, stepImageKey: string | null, stepImageAlt: string | null) {
@@ -195,6 +218,8 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitNotice, setSubmitNotice] = useState<string | null>(null);
   const [lastSubmission, setLastSubmission] = useState<QuestSubmissionResponse | null>(null);
   const [proofDraft, setProofDraft] = useState<ProofDraft>(getDefaultProofDraft('text'));
   const [geoLoading, setGeoLoading] = useState(false);
@@ -204,6 +229,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const currentProofType = useMemo(() => (currentStep ? mapProofType(currentStep) : 'text'), [currentStep]);
   const currentStepUi = useMemo(() => (currentStep ? getStepPresentation(currentStep) : null), [currentStep]);
   const currentStepHints = useMemo(() => (currentStep ? getStepHintChips(currentStep) : []), [currentStep]);
+  const submitBlockedReason = useMemo(() => getSubmitBlockedReason(progress), [progress]);
   const currentStepImage = useMemo(() => {
     if (!currentStep || !currentStepUi) return null;
     return getStepImage(questDetail.id, currentStep, currentStepUi.stepImageKey, currentStepUi.stepImageAlt);
@@ -222,6 +248,8 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
 
   const loadProgress = useCallback(async () => {
     setError(null);
+    setFormError(null);
+    setSubmitNotice(null);
     setLoading(true);
     try {
       const started = await quest.startQuest(questDetail.id);
@@ -253,13 +281,28 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
     if (!currentStep) return;
     setSubmitting(true);
     setError(null);
+    setFormError(null);
+    setSubmitNotice(null);
     try {
       const payload = buildProofPayload(currentProofType, proofDraft);
       const response = await quest.submitQuestStep(questDetail.id, currentStep.id, payload);
       setLastSubmission(response);
       await refreshProgress();
+      if (response.status === 'pending') {
+        setSubmitNotice('Подтверждение отправлено. Сейчас оно находится на проверке.');
+      } else if (response.status === 'approved') {
+        setSubmitNotice('Подтверждение принято. Можно продолжать маршрут.');
+      } else if (response.status === 'rejected') {
+        setSubmitNotice('Подтверждение отклонено. Исправьте данные и отправьте повторно.');
+      } else {
+        setSubmitNotice('Подтверждение отправлено. Обновите статус, чтобы увидеть результат.');
+      }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : readErrorMessage(submitError));
+      if (submitError instanceof Error) {
+        setFormError(submitError.message);
+      } else {
+        setError(readErrorMessage(submitError));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -346,10 +389,6 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
               </div>
 
               <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-slate-500">Статус</p>
-                  <p className="font-medium text-slate-900">{getProgressStatusLabel(progress.status)}</p>
-                </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-slate-500">Текущий шаг</p>
                   <p className="font-medium text-slate-900">{progress.currentStep ?? '—'}</p>
@@ -446,6 +485,9 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                   {currentStepUi.proofExpectation ? (
                     <p className="mt-4 text-xs text-slate-500">Что ожидается: {currentStepUi.proofExpectation}</p>
                   ) : null}
+                  {getReviewModeHint(currentStepUi.reviewMode) ? (
+                    <p className="mt-2 text-xs text-slate-500">{getReviewModeHint(currentStepUi.reviewMode)}</p>
+                  ) : null}
                   {currentStepUi.stepImageHint ? <p className="mt-2 text-xs text-slate-500">{currentStepUi.stepImageHint}</p> : null}
 
                   <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -461,6 +503,9 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
 
                     {currentProofType === 'geo' ? (
                       <div className="mt-4 space-y-3">
+                        <p className="text-xs text-slate-500">
+                          Нужны координаты в формате десятичных градусов. Можно ввести вручную или подставить текущую геопозицию.
+                        </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label htmlFor="proofLat" className="block text-sm font-medium text-slate-700 mb-2">
@@ -503,7 +548,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                     {currentProofType === 'qr' ? (
                       <div className="mt-4">
                         <label htmlFor="proofCode" className="block text-sm font-medium text-slate-700 mb-2">
-                          Код для подтверждения
+                          Код из QR
                         </label>
                         <input
                           id="proofCode"
@@ -511,7 +556,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                           value={proofDraft.code}
                           onChange={(event) => setProofDraft((current) => ({ ...current, code: event.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                          placeholder="Введите код"
+                          placeholder="Например: PHUKET-STEP-01"
                         />
                       </div>
                     ) : null}
@@ -520,7 +565,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                       <div className="mt-4 space-y-3">
                         <div>
                           <label htmlFor="proofMediaId" className="block text-sm font-medium text-slate-700 mb-2">
-                            Media ID фотографии
+                            Идентификатор фото
                           </label>
                           <input
                             id="proofMediaId"
@@ -532,7 +577,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                           />
                         </div>
                         <p className="text-xs text-slate-500">
-                          Полная загрузка фото в этот экран ещё не встроена, поэтому пока нужен уже существующий `mediaId`.
+                          Укажите ID уже загруженного фото (формат `media_...`).
                         </p>
                       </div>
                     ) : null}
@@ -541,7 +586,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                       <div className="mt-4 space-y-3">
                         <div>
                           <label htmlFor="proofPostId" className="block text-sm font-medium text-slate-700 mb-2">
-                            Reference публичного действия
+                            Идентификатор публикации
                           </label>
                           <input
                             id="proofPostId"
@@ -553,7 +598,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                           />
                         </div>
                         <p className="text-xs text-slate-500">
-                          Здесь пока нужен ID или reference уже созданного публичного действия.
+                          Укажите ID/reference уже опубликованного действия (например `post_...`).
                         </p>
                       </div>
                     ) : null}
@@ -582,9 +627,24 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                     >
                       {submitting ? 'Отправляем...' : 'Отправить подтверждение'}
                     </button>
+                    {submitBlockedReason ? (
+                      <p className="mt-2 text-xs text-slate-500">{submitBlockedReason}</p>
+                    ) : null}
+                    {formError ? (
+                      <div className="mt-3 inline-flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{formError}</span>
+                      </div>
+                    ) : null}
+                    {submitNotice ? (
+                      <div className="mt-3 inline-flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{submitNotice}</span>
+                      </div>
+                    ) : null}
 
                     <details className="mt-4 text-xs text-slate-500">
-                      <summary className="cursor-pointer select-none">Показать технический режим</summary>
+                      <summary className="cursor-pointer select-none">Данные шага для поддержки</summary>
                       <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                         <p>Тип шага: {currentStep.type}</p>
                         <p>Проверка: {currentStep.verificationType}</p>
@@ -610,10 +670,11 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
         ) : null}
 
         {lastSubmission ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className={`mt-6 rounded-2xl border p-6 ${getSubmissionStatusClasses(lastSubmission.status)}`}>
             <h2 className="text-lg font-semibold text-slate-900">Последняя отправка</h2>
             <p className="mt-2 text-sm text-slate-600">Статус: {getSubmissionStatusLabel(lastSubmission.status)}</p>
             <p className="text-sm text-slate-600">Формат: {getProofTypeLabel(lastSubmission.proofType)}</p>
+            <p className="text-sm text-slate-600">Отправлено: {new Date(lastSubmission.createdAt).toLocaleString()}</p>
             <p className="text-sm text-slate-600">
               Проверено: {lastSubmission.reviewedAt ? new Date(lastSubmission.reviewedAt).toLocaleString() : 'ещё нет'}
             </p>
