@@ -12,8 +12,8 @@ import { ModuleHero } from '@/components/modules';
 import { ArrowRight, Loader2, Target } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
 import type { QuestApiError, QuestListResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
-import { describeQuestExperience, formatCityLabel, formatDifficultyLabel, getQuestSummary } from './questPresentation';
-import { getQuestCoverMedia } from './questMediaContent';
+import { describeQuestExperience, formatCityLabel, formatDifficultyLabel } from './questPresentation';
+import { getQuestCardMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from './questRuntimeMetadata';
 
 function getQuestBadge(item: QuestSummaryResponse): string {
   if (item.theme === 'photo_mission') return 'Фото-миссия';
@@ -95,7 +95,7 @@ export function QuestHomeClient() {
             {data.items.map((item) => (
               <Link key={item.id} href={`/quest/${item.id}`} className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition overflow-hidden">
                 {(() => {
-                  const cover = getQuestCoverMedia(item.id);
+                  const cover = getQuestCardMediaRuntimeFirst(item);
                   return cover ? (
                     <div className="relative aspect-[4/3] w-full bg-slate-100">
                       <Image
@@ -120,7 +120,7 @@ export function QuestHomeClient() {
                   </div>
 
                   <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600 line-clamp-3">{getQuestSummary(item.description)}</p>
+                  <p className="mt-2 text-sm text-slate-600 line-clamp-3">{getQuestSummaryRuntimeFirst(item) ?? 'Описание маршрута появится позже.'}</p>
 
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-700">
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">

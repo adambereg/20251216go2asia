@@ -20,7 +20,7 @@ import {
   getStepPresentation,
   getVerificationLabel,
 } from '../questPresentation';
-import { getQuestCoverMedia, getQuestGalleryMedia } from '../questMediaContent';
+import { getQuestGalleryRuntimeFirst, getQuestHeroMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from '../questRuntimeMetadata';
 
 interface QuestDetailClientProps {
   quest: QuestDetailResponse;
@@ -28,9 +28,9 @@ interface QuestDetailClientProps {
 
 export function QuestDetailClient({ quest }: QuestDetailClientProps) {
   const signals = getQuestUserSignals(quest);
-  const paragraphs = getQuestParagraphs(quest.description);
-  const cover = getQuestCoverMedia(quest.id);
-  const gallery = getQuestGalleryMedia(quest.id);
+  const paragraphs = getQuestParagraphs(getQuestSummaryRuntimeFirst(quest) ?? quest.description);
+  const cover = getQuestHeroMediaRuntimeFirst(quest);
+  const gallery = getQuestGalleryRuntimeFirst(quest);
   const showGallery = gallery.length > 1;
 
   return (
@@ -211,7 +211,7 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          Quest-level обложка и галерея в этом pass подключены из content layer по зафиксированному mapping, а step-level медиа — из runtime `contentV2` с безопасным fallback. Отдельной quest-level metadata model в runtime API пока нет, поэтому это честный гибридный режим до следующего отдельного model pass.
+          Quest-level визуалы и краткое описание читаются из runtime metadata как штатный путь. Static mapping больше не используется как normal path и может включаться только как аварийный fallback через отдельный env-флаг.
         </div>
       </div>
     </div>
