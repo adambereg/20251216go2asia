@@ -295,6 +295,15 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
     return { routeKey: 'quest.mine.detail.get', routeGroup: 'quest' };
   }
+  if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.steps.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'quest.mine.steps.delete.delete', routeGroup: 'quest' };
+  }
   if (/^\/v1\/quests\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
     return { routeKey: 'quest.detail.get', routeGroup: 'quest' };
   }
@@ -686,6 +695,9 @@ function isProtectedQuestRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/quests') return true;
   if (method === 'GET' && path === '/v1/quests/mine') return true;
   if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;

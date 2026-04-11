@@ -5,6 +5,7 @@ import {
   addQuestStep,
   archiveQuest,
   createQuestDraft,
+  deleteQuestStepByOwner,
   getQuest,
   getOwnedQuest,
   getQuestProgress,
@@ -15,6 +16,8 @@ import {
   reviewQuestSubmission,
   startQuest,
   submitQuestStep,
+  updateQuestDraftByOwner,
+  updateQuestStepByOwner,
 } from '../services/questService';
 
 type Env = {
@@ -48,6 +51,19 @@ export async function handleQuestRoute(
   const ownedQuestDetailMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)$/);
   if (ownedQuestDetailMatch && request.method === 'GET' && principal) {
     return getOwnedQuest(env, ownedQuestDetailMatch[1]!, principal, requestId);
+  }
+  if (ownedQuestDetailMatch && request.method === 'PATCH' && principal) {
+    const body = await readJsonObject(request);
+    return updateQuestDraftByOwner(env, ownedQuestDetailMatch[1]!, body, principal, requestId);
+  }
+
+  const ownedQuestStepMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)\/steps\/([^/]+)$/);
+  if (ownedQuestStepMatch && request.method === 'PATCH' && principal) {
+    const body = await readJsonObject(request);
+    return updateQuestStepByOwner(env, ownedQuestStepMatch[1]!, ownedQuestStepMatch[2]!, body, principal, requestId);
+  }
+  if (ownedQuestStepMatch && request.method === 'DELETE' && principal) {
+    return deleteQuestStepByOwner(env, ownedQuestStepMatch[1]!, ownedQuestStepMatch[2]!, principal, requestId);
   }
 
   const questDetailMatch = path.match(/^\/v1\/quests\/([^/]+)$/);

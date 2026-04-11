@@ -377,6 +377,57 @@ export async function insertQuest(
   return rowsOf<QuestRow>(result)[0] ?? null;
 }
 
+export async function updateQuestDraft(
+  db: DbExecutor,
+  input: {
+    questId: string;
+    title: string;
+    description: string | null;
+    cityId: string | null;
+    geoScope: Record<string, unknown> | null;
+    type: string | null;
+    theme: string | null;
+    difficulty: QuestDifficulty | null;
+    visibility: QuestVisibility;
+    rewardPoints: number | null;
+  }
+): Promise<QuestRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest
+    SET
+      title = ${input.title},
+      description = ${input.description},
+      city_id = ${input.cityId},
+      geo_scope = ${input.geoScope},
+      type = ${input.type},
+      theme = ${input.theme},
+      difficulty = ${input.difficulty},
+      visibility = ${input.visibility},
+      reward_points = ${input.rewardPoints},
+      updated_at = now()
+    WHERE id = ${input.questId}
+      AND status = 'draft'
+    RETURNING
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRow>(result)[0] ?? null;
+}
+
 export async function insertQuestStep(
   db: DbExecutor,
   input: {
@@ -429,6 +480,75 @@ export async function insertQuestStep(
       created_at
   `);
   return rowsOf<QuestStepRow>(result)[0] ?? null;
+}
+
+export async function updateQuestStep(
+  db: DbExecutor,
+  input: {
+    questId: string;
+    stepId: string;
+    type: QuestStepType;
+    targetType: QuestTargetType | null;
+    targetId: string | null;
+    verificationType: QuestVerificationType;
+    requirementsJson: Record<string, unknown>;
+    rewardPoints: number | null;
+  }
+): Promise<QuestStepRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest_step
+    SET
+      type = ${input.type},
+      target_type = ${input.targetType},
+      target_id = ${input.targetId},
+      verification_type = ${input.verificationType},
+      requirements_json = ${input.requirementsJson},
+      reward_points = ${input.rewardPoints}
+    WHERE quest_id = ${input.questId}
+      AND id = ${input.stepId}
+    RETURNING
+      id,
+      quest_id,
+      "order",
+      type,
+      target_type,
+      target_id,
+      verification_type,
+      requirements_json,
+      reward_points,
+      created_at
+  `);
+  return rowsOf<QuestStepRow>(result)[0] ?? null;
+}
+
+export async function deleteQuestStep(
+  db: DbExecutor,
+  input: { questId: string; stepId: string }
+): Promise<boolean> {
+  const result = await db.execute(sql`
+    DELETE FROM quest_step
+    WHERE quest_id = ${input.questId}
+      AND id = ${input.stepId}
+    RETURNING id
+  `);
+  return rowsOf<{ id: string }>(result).length > 0;
+}
+
+export async function resequenceQuestSteps(db: DbExecutor, questId: string): Promise<void> {
+  await db.execute(sql`
+    WITH ranked AS (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (ORDER BY "order" ASC, id ASC)::int AS next_order
+      FROM quest_step
+      WHERE quest_id = ${questId}
+    )
+    UPDATE quest_step qs
+    SET "order" = ranked.next_order
+    FROM ranked
+    WHERE qs.id = ranked.id
+      AND qs.quest_id = ${questId}
+  `);
 }
 
 export async function syncQuestStepsCount(db: DbExecutor, questId: string): Promise<void> {

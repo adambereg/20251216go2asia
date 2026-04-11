@@ -19,12 +19,14 @@ import {
   insertQuestProgress,
   insertQuestStep,
   insertQuestSubmission,
+  deleteQuestStep as deleteQuestStepRow,
   listManagedQuests,
   listPublishedQuests,
   listQuestSteps,
   listQuestSubmissions,
   publishQuest as publishQuestRow,
   rejectSubmission,
+  resequenceQuestSteps,
   setProgressPendingReview,
   syncQuestStepsCount,
   type QuestDifficulty,
@@ -38,6 +40,8 @@ import {
   type QuestSubmissionRow,
   type QuestVerificationType,
   type QuestVisibility,
+  updateQuestDraft as updateQuestDraftRow,
+  updateQuestStep as updateQuestStepRow,
 } from '../db/queries/quest';
 import type { QuestDomainEvent, QuestDomainEventType } from '../events/contracts';
 import type { QuestEventPublisher } from '../events/publisher';
@@ -79,6 +83,27 @@ type SubmitQuestStepInput = {
 type ReviewSubmissionInput = {
   decision: 'approve' | 'reject';
   reason: string | null;
+};
+
+type UpdateQuestDraftInput = {
+  title?: string;
+  description?: string | null;
+  cityId?: string | null;
+  geoScope?: Record<string, unknown> | null;
+  type?: string | null;
+  theme?: string | null;
+  difficulty?: QuestDifficulty | null;
+  visibility?: QuestVisibility;
+  rewardPoints?: number | null;
+};
+
+type UpdateQuestStepInput = {
+  type?: QuestStepType;
+  targetType?: QuestTargetType | null;
+  targetId?: string | null;
+  verificationType?: QuestVerificationType;
+  requirements?: Record<string, unknown>;
+  rewardPoints?: number | null;
 };
 
 const QUEST_DIFFICULTIES: QuestDifficulty[] = ['easy', 'medium', 'hard'];
@@ -431,6 +456,73 @@ function parseCreateQuestInput(body: Record<string, unknown> | null): CreateQues
   };
 }
 
+function parseUpdateQuestDraftInput(body: Record<string, unknown> | null): UpdateQuestDraftInput | null {
+  if (!body) return null;
+  const hasAnyKnownField =
+    body.title !== undefined ||
+    body.description !== undefined ||
+    body.cityId !== undefined ||
+    body.geoScope !== undefined ||
+    body.type !== undefined ||
+    body.theme !== undefined ||
+    body.difficulty !== undefined ||
+    body.visibility !== undefined ||
+    body.rewardPoints !== undefined;
+  if (!hasAnyKnownField) return null;
+
+  const parsed: UpdateQuestDraftInput = {};
+
+  if (body.title !== undefined) {
+    const title = parseOptionalString(body.title, 160);
+    if (!title) return null;
+    parsed.title = title;
+  }
+  if (body.description !== undefined) {
+    const description = parseOptionalString(body.description, 2000);
+    if (description === undefined) return null;
+    parsed.description = description;
+  }
+  if (body.cityId !== undefined) {
+    const cityId = parseOptionalString(body.cityId, 128);
+    if (cityId === undefined) return null;
+    parsed.cityId = cityId;
+  }
+  if (body.geoScope !== undefined) {
+    const geoScope = parseOptionalObject(body.geoScope);
+    if (geoScope === undefined) return null;
+    parsed.geoScope = geoScope;
+  }
+  if (body.type !== undefined) {
+    const type = parseOptionalString(body.type, 80);
+    if (type === undefined) return null;
+    parsed.type = type;
+  }
+  if (body.theme !== undefined) {
+    const theme = parseOptionalString(body.theme, 80);
+    if (theme === undefined) return null;
+    parsed.theme = theme;
+  }
+  if (body.difficulty !== undefined) {
+    const difficultyRaw = body.difficulty;
+    const difficulty =
+      difficultyRaw === null ? null : typeof difficultyRaw === 'string' ? parseDifficulty(difficultyRaw) : undefined;
+    if (difficulty === undefined) return null;
+    parsed.difficulty = difficulty;
+  }
+  if (body.visibility !== undefined) {
+    const visibilityRaw = body.visibility;
+    if (typeof visibilityRaw !== 'string' || !QUEST_VISIBILITIES.includes(visibilityRaw as QuestVisibility)) return null;
+    parsed.visibility = visibilityRaw as QuestVisibility;
+  }
+  if (body.rewardPoints !== undefined) {
+    const rewardPoints = parseOptionalNonNegativeInt(body.rewardPoints);
+    if (rewardPoints === undefined) return null;
+    parsed.rewardPoints = rewardPoints;
+  }
+
+  return parsed;
+}
+
 function parseAddQuestStepInput(body: Record<string, unknown> | null): AddQuestStepInput | null {
   if (!body) return null;
   if (typeof body.order !== 'number' || !Number.isInteger(body.order) || body.order < 1) return null;
@@ -463,6 +555,63 @@ function parseAddQuestStepInput(body: Record<string, unknown> | null): AddQuestS
     requirements,
     rewardPoints,
   };
+}
+
+function parseUpdateQuestStepInput(body: Record<string, unknown> | null): UpdateQuestStepInput | null {
+  if (!body) return null;
+  if (body.order !== undefined) return null;
+  const hasAnyKnownField =
+    body.type !== undefined ||
+    body.targetType !== undefined ||
+    body.targetId !== undefined ||
+    body.verificationType !== undefined ||
+    body.requirements !== undefined ||
+    body.rewardPoints !== undefined;
+  if (!hasAnyKnownField) return null;
+
+  const parsed: UpdateQuestStepInput = {};
+  if (body.type !== undefined) {
+    if (typeof body.type !== 'string' || !QUEST_STEP_TYPES.includes(body.type as QuestStepType)) return null;
+    parsed.type = body.type as QuestStepType;
+  }
+  if (body.targetType !== undefined) {
+    const targetTypeRaw = parseOptionalString(body.targetType, 80);
+    const targetType =
+      targetTypeRaw === null
+        ? null
+        : targetTypeRaw === undefined
+          ? undefined
+          : QUEST_TARGET_TYPES.includes(targetTypeRaw as QuestTargetType)
+            ? (targetTypeRaw as QuestTargetType)
+            : undefined;
+    if (targetType === undefined) return null;
+    parsed.targetType = targetType;
+  }
+  if (body.targetId !== undefined) {
+    const targetId = parseOptionalOpaqueRef(body.targetId, 80);
+    if (targetId === undefined) return null;
+    parsed.targetId = targetId;
+  }
+  if (body.verificationType !== undefined) {
+    if (
+      typeof body.verificationType !== 'string' ||
+      !QUEST_VERIFICATION_TYPES.includes(body.verificationType as QuestVerificationType)
+    ) {
+      return null;
+    }
+    parsed.verificationType = body.verificationType as QuestVerificationType;
+  }
+  if (body.requirements !== undefined) {
+    const requirements = parseOptionalObject(body.requirements);
+    if (!requirements) return null;
+    parsed.requirements = requirements;
+  }
+  if (body.rewardPoints !== undefined) {
+    const rewardPoints = parseOptionalNonNegativeInt(body.rewardPoints);
+    if (rewardPoints === undefined) return null;
+    parsed.rewardPoints = rewardPoints;
+  }
+  return parsed;
 }
 
 function parseSubmitQuestStepInput(body: Record<string, unknown> | null): SubmitQuestStepInput | null {
@@ -816,6 +965,42 @@ export async function createQuestDraft(
   return json(normalizeQuest(created, []), 201);
 }
 
+export async function updateQuestDraftByOwner(
+  env: Env,
+  questId: string,
+  body: Record<string, unknown> | null,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const parsed = parseUpdateQuestDraftInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft update payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
+  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+
+  const updated = await updateQuestDraftRow(db, {
+    questId,
+    title: parsed.title ?? quest.title,
+    description: parsed.description !== undefined ? parsed.description : quest.description,
+    cityId: parsed.cityId !== undefined ? parsed.cityId : quest.city_id,
+    geoScope: parsed.geoScope !== undefined ? parsed.geoScope : quest.geo_scope,
+    type: parsed.type !== undefined ? parsed.type : quest.type,
+    theme: parsed.theme !== undefined ? parsed.theme : quest.theme,
+    difficulty: parsed.difficulty !== undefined ? parsed.difficulty : quest.difficulty,
+    visibility: parsed.visibility ?? quest.visibility,
+    rewardPoints: parsed.rewardPoints !== undefined ? parsed.rewardPoints : quest.reward_points,
+  });
+  if (!updated) return errorResponse('CONFLICT', 'Quest could not be updated', requestId, 409);
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(updated, steps), 200);
+}
+
 export async function addQuestStep(
   env: Env,
   questId: string,
@@ -856,6 +1041,78 @@ export async function addQuestStep(
   if (!created) return errorResponse('INTERNAL_ERROR', 'Failed to create quest step', requestId, 500);
   await syncQuestStepsCount(db, questId);
   return json(normalizeQuestStep(created), 201);
+}
+
+export async function updateQuestStepByOwner(
+  env: Env,
+  questId: string,
+  stepId: string,
+  body: Record<string, unknown> | null,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const parsed = parseUpdateQuestStepInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft step update payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
+  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+
+  const existingStep = await getQuestStepById(db, questId, stepId);
+  if (!existingStep) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
+
+  const merged: AddQuestStepInput = {
+    order: existingStep.order,
+    type: parsed.type ?? existingStep.type,
+    targetType: parsed.targetType !== undefined ? parsed.targetType : existingStep.target_type,
+    targetId: parsed.targetId !== undefined ? parsed.targetId : existingStep.target_id,
+    verificationType: parsed.verificationType ?? existingStep.verification_type,
+    requirements: parsed.requirements ?? (existingStep.requirements_json ?? {}),
+    rewardPoints: parsed.rewardPoints !== undefined ? parsed.rewardPoints : existingStep.reward_points,
+  };
+  const validationError = validateStepDefinition(merged);
+  if (validationError) return errorResponse('VALIDATION_ERROR', validationError, requestId, 400);
+
+  const updated = await updateQuestStepRow(db, {
+    questId,
+    stepId,
+    type: merged.type,
+    targetType: merged.targetType,
+    targetId: merged.targetId,
+    verificationType: merged.verificationType,
+    requirementsJson: merged.requirements,
+    rewardPoints: merged.rewardPoints,
+  });
+  if (!updated) return errorResponse('CONFLICT', 'Quest step could not be updated', requestId, 409);
+  return json(normalizeQuestStep(updated), 200);
+}
+
+export async function deleteQuestStepByOwner(
+  env: Env,
+  questId: string,
+  stepId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
+  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+
+  const deleted = await deleteQuestStepRow(db, { questId, stepId });
+  if (!deleted) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
+  await resequenceQuestSteps(db, questId);
+  await syncQuestStepsCount(db, questId);
+  return new Response(null, { status: 204 });
 }
 
 export async function publishQuest(

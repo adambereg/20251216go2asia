@@ -191,6 +191,109 @@ paths:
           $ref: "#/components/responses/QuestServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/QuestInternalError"
+    patch:
+      tags: [quests]
+      operationId: updateQuestDraft
+      summary: Update bounded draft quest fields for management
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDraftQuestRequest"
+      responses:
+        "200":
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+
+  /v1/quests/mine/{questId}/steps/{stepId}:
+    patch:
+      tags: [quests]
+      operationId: updateDraftQuestStep
+      summary: Update bounded draft quest step fields for management
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/StepId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDraftQuestStepRequest"
+      responses:
+        "200":
+          description: Draft step updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestStepResponse"
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+    delete:
+      tags: [quests]
+      operationId: deleteDraftQuestStep
+      summary: Delete draft quest step for management
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/StepId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "204":
+          description: Draft step deleted
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
 
   /v1/quests/{questId}:
     get:
@@ -1021,6 +1124,37 @@ components:
           minimum: 0
           nullable: true
 
+    UpdateDraftQuestRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        cityId:
+          type: string
+          nullable: true
+        geoScope:
+          $ref: "#/components/schemas/QuestGeoScope"
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        theme:
+          type: string
+          nullable: true
+        difficulty:
+          $ref: "#/components/schemas/QuestDifficulty"
+          nullable: true
+        visibility:
+          $ref: "#/components/schemas/QuestVisibility"
+        rewardPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+
     AddQuestStepRequest:
       type: object
       required: [order, type, verificationType]
@@ -1041,6 +1175,27 @@ components:
         order:
           type: integer
           minimum: 1
+        type:
+          $ref: "#/components/schemas/QuestStepType"
+        targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
+          nullable: true
+        targetId:
+          type: string
+          nullable: true
+        verificationType:
+          $ref: "#/components/schemas/QuestVerificationType"
+        requirements:
+          $ref: "#/components/schemas/QuestStepRequirement"
+        rewardPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+
+    UpdateDraftQuestStepRequest:
+      type: object
+      minProperties: 1
+      properties:
         type:
           $ref: "#/components/schemas/QuestStepType"
         targetType:

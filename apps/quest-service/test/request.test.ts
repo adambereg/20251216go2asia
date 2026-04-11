@@ -605,6 +605,238 @@ describe('quest-service pass #4', () => {
     expect(body.error.code).toBe('FORBIDDEN');
   });
 
+  it('updates bounded draft quest fields for owner', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Old title',
+            description: 'Old description',
+            creator_pro_id: 'pro_1',
+            city_id: 'phuket',
+            geo_scope: { lat: 7.88, lng: 98.39 },
+            type: 'route',
+            theme: 'walk',
+            difficulty: 'easy',
+            status: 'draft',
+            visibility: 'private',
+            reward_points: 100,
+            steps_count: 1,
+            published_at: null,
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T08:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'New title',
+            description: 'Old description',
+            creator_pro_id: 'pro_1',
+            city_id: 'bangkok',
+            geo_scope: { lat: 13.75, lng: 100.5 },
+            type: 'route',
+            theme: 'walk',
+            difficulty: 'easy',
+            status: 'draft',
+            visibility: 'private',
+            reward_points: 100,
+            steps_count: 1,
+            published_at: null,
+            created_at: '2026-04-10T08:00:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: null,
+            created_at: '2026-04-10T08:30:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({
+          title: 'New title',
+          cityId: 'bangkok',
+          geoScope: { lat: 13.75, lng: 100.5 },
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ title: string; cityId: string; status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ title: 'New title', cityId: 'bangkok', status: 'draft' });
+  });
+
+  it('rejects draft quest update when quest is published', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'quest_1',
+          title: 'Published',
+          description: null,
+          creator_pro_id: 'pro_1',
+          city_id: null,
+          geo_scope: null,
+          type: null,
+          theme: null,
+          difficulty: null,
+          status: 'published',
+          visibility: 'public',
+          reward_points: null,
+          steps_count: 1,
+          published_at: '2026-04-10T08:00:00.000Z',
+          created_at: '2026-04-10T07:00:00.000Z',
+          updated_at: '2026-04-10T08:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ title: 'Cannot edit' }),
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
+  });
+
+  it('updates and deletes draft step with draft-only enforcement', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Draft',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'private',
+            reward_points: null,
+            steps_count: 2,
+            published_at: null,
+            created_at: '2026-04-10T07:00:00.000Z',
+            updated_at: '2026-04-10T07:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'manual',
+            requirements_json: {},
+            reward_points: 10,
+            created_at: '2026-04-10T07:30:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qstep_1',
+            quest_id: 'quest_1',
+            order: 1,
+            type: 'challenge',
+            target_type: null,
+            target_id: null,
+            verification_type: 'auto',
+            requirements_json: { hint: 'updated' },
+            reward_points: 15,
+            created_at: '2026-04-10T07:30:00.000Z',
+          },
+        ],
+      });
+
+    const updateResponse = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1/steps/qstep_1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ verificationType: 'auto', requirements: { hint: 'updated' }, rewardPoints: 15 }),
+      }),
+      env
+    );
+    const updateBody = await readJson<{ id: string; verificationType: string; rewardPoints: number }>(updateResponse);
+    expect(updateResponse.status).toBe(200);
+    expect(updateBody).toMatchObject({ id: 'qstep_1', verificationType: 'auto', rewardPoints: 15 });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Draft',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'draft',
+            visibility: 'private',
+            reward_points: null,
+            steps_count: 2,
+            published_at: null,
+            created_at: '2026-04-10T07:00:00.000Z',
+            updated_at: '2026-04-10T07:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'qstep_2' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const deleteResponse = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1/steps/qstep_2', {
+        method: 'DELETE',
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    expect(deleteResponse.status).toBe(204);
+  });
+
   it('keeps drafts out of public detail read', async () => {
     executeMock.mockResolvedValueOnce({ rows: [] });
     const response = await worker.fetch(

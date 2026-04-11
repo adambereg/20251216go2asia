@@ -165,6 +165,8 @@ import type {
   SubmitQuestStepRequest,
   TransactionsPage,
   UnauthorizedResponse,
+  UpdateDraftQuestRequest,
+  UpdateDraftQuestStepRequest,
   UploadResult,
   UpsertReactionRequest,
   UserBalance,
@@ -2241,6 +2243,236 @@ export const getOwnedQuest = async (
   return customInstance<getOwnedQuestResponse>(getGetOwnedQuestUrl(questId), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * @summary Update bounded draft quest fields for management
+ */
+export type updateQuestDraftResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type updateQuestDraftResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type updateQuestDraftResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type updateQuestDraftResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type updateQuestDraftResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type updateQuestDraftResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type updateQuestDraftResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type updateQuestDraftResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type updateQuestDraftResponseSuccess = updateQuestDraftResponse200 & {
+  headers: Headers;
+};
+export type updateQuestDraftResponseError = (
+  | updateQuestDraftResponse400
+  | updateQuestDraftResponse401
+  | updateQuestDraftResponse403
+  | updateQuestDraftResponse404
+  | updateQuestDraftResponse409
+  | updateQuestDraftResponse500
+  | updateQuestDraftResponse503
+) & {
+  headers: Headers;
+};
+
+export type updateQuestDraftResponse =
+  | updateQuestDraftResponseSuccess
+  | updateQuestDraftResponseError;
+
+export const getUpdateQuestDraftUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}`;
+};
+
+export const updateQuestDraft = async (
+  questId: string,
+  updateDraftQuestRequest: UpdateDraftQuestRequest,
+  options?: RequestInit
+): Promise<updateQuestDraftResponse> => {
+  return customInstance<updateQuestDraftResponse>(getUpdateQuestDraftUrl(questId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDraftQuestRequest),
+  });
+};
+
+/**
+ * @summary Delete draft quest step for management
+ */
+export type deleteDraftQuestStepResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteDraftQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type deleteDraftQuestStepResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type deleteDraftQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type deleteDraftQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type deleteDraftQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type deleteDraftQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type deleteDraftQuestStepResponseSuccess = deleteDraftQuestStepResponse204 & {
+  headers: Headers;
+};
+export type deleteDraftQuestStepResponseError = (
+  | deleteDraftQuestStepResponse401
+  | deleteDraftQuestStepResponse403
+  | deleteDraftQuestStepResponse404
+  | deleteDraftQuestStepResponse409
+  | deleteDraftQuestStepResponse500
+  | deleteDraftQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type deleteDraftQuestStepResponse =
+  | deleteDraftQuestStepResponseSuccess
+  | deleteDraftQuestStepResponseError;
+
+export const getDeleteDraftQuestStepUrl = (questId: string, stepId: string) => {
+  return `/v1/quests/mine/${questId}/steps/${stepId}`;
+};
+
+export const deleteDraftQuestStep = async (
+  questId: string,
+  stepId: string,
+  options?: RequestInit
+): Promise<deleteDraftQuestStepResponse> => {
+  return customInstance<deleteDraftQuestStepResponse>(getDeleteDraftQuestStepUrl(questId, stepId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+/**
+ * @summary Update bounded draft quest step fields for management
+ */
+export type updateDraftQuestStepResponse200 = {
+  data: QuestStepResponse;
+  status: 200;
+};
+
+export type updateDraftQuestStepResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type updateDraftQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type updateDraftQuestStepResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type updateDraftQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type updateDraftQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type updateDraftQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type updateDraftQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type updateDraftQuestStepResponseSuccess = updateDraftQuestStepResponse200 & {
+  headers: Headers;
+};
+export type updateDraftQuestStepResponseError = (
+  | updateDraftQuestStepResponse400
+  | updateDraftQuestStepResponse401
+  | updateDraftQuestStepResponse403
+  | updateDraftQuestStepResponse404
+  | updateDraftQuestStepResponse409
+  | updateDraftQuestStepResponse500
+  | updateDraftQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type updateDraftQuestStepResponse =
+  | updateDraftQuestStepResponseSuccess
+  | updateDraftQuestStepResponseError;
+
+export const getUpdateDraftQuestStepUrl = (questId: string, stepId: string) => {
+  return `/v1/quests/mine/${questId}/steps/${stepId}`;
+};
+
+export const updateDraftQuestStep = async (
+  questId: string,
+  stepId: string,
+  updateDraftQuestStepRequest: UpdateDraftQuestStepRequest,
+  options?: RequestInit
+): Promise<updateDraftQuestStepResponse> => {
+  return customInstance<updateDraftQuestStepResponse>(getUpdateDraftQuestStepUrl(questId, stepId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDraftQuestStepRequest),
   });
 };
 

@@ -381,6 +381,8 @@ export * from "./tabKeyParameter";
 export * from "./themeParameter";
 export * from "./transactionsPage";
 export * from "./unauthorizedResponse";
+export * from "./updateDraftQuestRequest";
+export * from "./updateDraftQuestStepRequest";
 export * from "./uploadResult";
 export * from "./upsertReactionRequest";
 export * from "./userBalance";
