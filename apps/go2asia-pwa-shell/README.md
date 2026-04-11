@@ -40,6 +40,6 @@ function MyComponent() {
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_API_URL=https://api-staging.go2asia.space
+NEXT_PUBLIC_API_URL=https://go2asia-api-gateway-staging.fred89059599296.workers.dev
 ```
 

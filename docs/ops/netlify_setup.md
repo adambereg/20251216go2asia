@@ -38,7 +38,7 @@ Netlify поддерживает разные контексты:
 
 - **Production** — деплой из ветки `main`.
 - **Deploy Preview** — деплой для каждого PR.
-- **Branch Deploys** — например, деплой из `develop` на `staging.go2asia.app`.
+- **Branch Deploys** — например, деплой из `develop` на `staging.go2asia.space` (canonical staging frontend host).
 
 В `netlify.toml` могут быть заданы разные настройки в зависимости от контекста.
 
@@ -60,7 +60,7 @@ Netlify поддерживает разные контексты:
 ## 6. Связь с доменом
 
 - В Netlify:
-  - добавить custom domain `go2asia.app` / `www.go2asia.app` (или поддомен).
+  - добавить custom domain `go2asia.space` / `www.go2asia.space` и staging host `staging.go2asia.space`.
 - На стороне Cloudflare:
   - CNAME-запись на Netlify.
 - Проверить, что HTTPS работает корректно, трафик идёт через Cloudflare.
@@ -102,7 +102,7 @@ Netlify поддерживает разные контексты:
 
 3. **Переиспользование окружений**
    - При создании нового Netlify-сайта для Go2Asia желательно:
-     - использовать **те же названия окружений**, что и в старом проекте (например, `G2A_STAGING`, `G2A_PROD`, если они уже есть),
+      - использовать **те же названия окружений**, что и в старом проекте (например, `G2A_STAGING`, `G2A_PROD`, если они уже есть),
      - сохранить схему переменных окружения (API_BASE_URL, CLERK_PUBLISHABLE_KEY и т.д.).
    - Все чувствительные значения задаются в Netlify UI, а в репозитории хранится только `.env.example`.
 
@@ -117,4 +117,4 @@ Netlify поддерживает разные контексты:
   - не трогать существующую Cloudflare-зону — она уже настроена.
 
 Фронтенд Go2Asia должен органично вписываться в существующую схему:  
-**Cloudflare DNS → Netlify frontend → Cloudflare / Workers backend.**
+**Cloudflare DNS (`staging.go2asia.space`) → Netlify frontend → Cloudflare Workers API (`go2asia-api-gateway-staging.fred89059599296.workers.dev`).**

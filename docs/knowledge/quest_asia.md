@@ -1,5 +1,9 @@
 # Quest Asia – сценарии активности, квесты и управляемая вовлечённость
 
+**Document role:** operational product narrative source for Quest Asia  
+**Layer:** product / narrative, not engineering contract SSOT  
+**Engineering truth:** `docs/architecture/quest/quest_normalization_pack_v1.md`, Quest SSOT package in `docs/architecture/quest/`, and `docs/openapi/quest.yaml`
+
 Quest Asia – это модуль сценарной геймификации экосистемы Go2Asia, который превращает путешествия, городскую жизнь и взаимодействие с бизнес-партнёрами в структурированные сценарии активности (квесты). В отличие от классических “заданий” или чек-листов, Quest Asia реализует концепцию **комбинированных квестов** – многослойных маршрутов, объединяющих контент, офлайн-действия, социальную активность и экономические стимулы.
 
 Ключевая идея модуля:  
@@ -177,6 +181,44 @@ Quest Service не является:
 Его роль:
 
 > **Quest Service = state machine и validation engine пользовательских сценариев**
+
+---
+
+## Текущий baseline и границы интерпретации
+
+Этот документ описывает **product narrative** Quest Asia, а не полный текущий runtime scope.
+
+### Current baseline
+
+- Quest current baseline = сценарии, шаги, прогресс, сабмиты, ручная/локальная валидация и событийная интеграция как target direction.
+- Текущий frontend baseline ограничен поверхностями:
+  - `/quest`
+  - `/quest/[id]`
+  - `/quest/[id]/run`
+- Engineering truth по current behavior и contract scope находится в Quest SSOT-пакете и `docs/openapi/quest.yaml`.
+
+### Future-ready but not current
+
+- ваучерные unlock/use flows
+- richer NFT / reward presentation
+- G2A и более широкая token economy
+- Guru / nearby quest discovery
+- глубокая cross-service validation через Space / Pulse / RF
+- широкий PRO Console beyond current Quest API contours
+
+### Deferred surfaces
+
+- my quests
+- leaderboard
+- rich final completion / rewards surface
+- dashboard aggregation
+- deep Space-linked Quest surfaces
+
+### Important interpretation rule
+
+- Quest product vision может описывать сильную экосистемную роль модуля.
+- Это не означает, что все интеграции уже активны в текущем runtime.
+- Quest не должен интерпретироваться как владелец wallet/balance truth, voucher lifecycle, partner truth или social content ownership.
 
 ---
 

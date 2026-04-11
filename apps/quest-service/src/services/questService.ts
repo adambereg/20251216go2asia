@@ -423,6 +423,10 @@ function isPendingReviewVerification(step: QuestStepRow): boolean {
   return step.verification_type === 'manual' || step.verification_type === 'space_post';
 }
 
+function isTerminalProgressStatus(status: QuestProgressRow['status']): boolean {
+  return status === 'completed' || status === 'failed' || status === 'expired';
+}
+
 function buildQuestEvent(
   env: Env,
   requestId: string,
@@ -673,7 +677,38 @@ export async function startQuest(
   if (quest.steps_count < 1) return errorResponse('CONFLICT', 'Quest has no steps', requestId, 409);
 
   const existing = await getQuestProgressByQuestAndUser(db, questId, principal.userId);
-  if (existing) return json(normalizeQuestProgress(existing, quest.steps_count), 200);
+  if (existing) {
+    if (isTerminalProgressStatus(existing.status)) {
+      return errorResponse('CONFLICT', 'Quest progress is already in terminal state', requestId, 409);
+    }
+
+    if (existing.status === 'not_started') {
+      const reactivated = await advanceQuestProgress(db, {
+        progressId: existing.id,
+        nextStep: existing.current_step ?? 1,
+        completed: false,
+      });
+      if (!reactivated) return errorResponse('INTERNAL_ERROR', 'Failed to reactivate quest progress', requestId, 500);
+
+      await publisher.publish(
+        buildQuestEvent(env, requestId, principal, {
+          eventType: 'quest.started',
+          subjectType: 'quest_progress',
+          subjectId: reactivated.id,
+          payload: {
+            questId,
+            progressId: reactivated.id,
+            userId: principal.userId,
+            currentStep: reactivated.current_step,
+          },
+        })
+      );
+
+      return json(normalizeQuestProgress(reactivated, quest.steps_count), 200);
+    }
+
+    return json(normalizeQuestProgress(existing, quest.steps_count), 200);
+  }
 
   const inserted = await insertQuestProgress(db, {
     id: `qprog_${crypto.randomUUID()}`,
@@ -740,11 +775,17 @@ export async function submitQuestStep(
   if (!step) return errorResponse('NOT_FOUND', 'Quest step not found', input.requestId, 404);
   const progress = await getQuestProgressByQuestAndUser(db, input.questId, input.principal.userId);
   if (!progress) return errorResponse('NOT_FOUND', 'Quest progress not found', input.requestId, 404);
+  if (progress.status === 'not_started') {
+    return errorResponse('CONFLICT', 'Quest progress is not started', input.requestId, 409);
+  }
   if (progress.status === 'pending_review') {
     return errorResponse('CONFLICT', 'Quest progress is waiting for manual review', input.requestId, 409);
   }
   if (progress.status === 'completed') {
     return errorResponse('CONFLICT', 'Quest is already completed', input.requestId, 409);
+  }
+  if (progress.status === 'failed' || progress.status === 'expired') {
+    return errorResponse('CONFLICT', 'Quest progress is not active', input.requestId, 409);
   }
   if (progress.current_step !== step.order) {
     return errorResponse('CONFLICT', 'Quest step order violation', input.requestId, 409);

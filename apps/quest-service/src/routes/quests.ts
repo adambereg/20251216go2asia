@@ -1,4 +1,5 @@
 import type { GatewayPrincipal } from '../middleware/auth';
+import type { QuestEventPublisher } from '../events/publisher';
 import { readJsonObject } from '../middleware/http';
 import {
   addQuestStep,
@@ -12,7 +13,6 @@ import {
   startQuest,
   submitQuestStep,
 } from '../services/questService';
-import type { QuestEventPublisher } from '../events/publisher';
 
 type Env = {
   DATABASE_URL?: string;
