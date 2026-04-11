@@ -84,15 +84,15 @@ A sunset-oriented route that demonstrates photo proof, review delay, and honest 
 ## Media
 
 ### Cover image
-- cover_image_key: `quest/q2/cover.jpg`
+- cover_image_key: `quests/phuket/sunset-viewpoint-photo-mission/cover.jpg`
 - cover_image_alt: `Закатный вид с обзорной площадки на Пхукете`
 - cover_image_hint: `sunset viewpoint / hilltop / golden hour`
 
 ### Gallery images
-- gallery_image_01_key: `quest/q2/gallery-01.jpg`
+- gallery_image_01_key: `quests/phuket/sunset-viewpoint-photo-mission/gallery/01.jpg`
 - gallery_image_01_alt: `Дорожка к обзорной площадке на закате`
 
-- gallery_image_02_key: `quest/q2/gallery-02.jpg`
+- gallery_image_02_key: `quests/phuket/sunset-viewpoint-photo-mission/gallery/02.jpg`
 - gallery_image_02_alt: `Вид с закатной точки на Пхукете`
 
 ---
@@ -216,7 +216,7 @@ A sunset-oriented route that demonstrates photo proof, review delay, and honest 
 - show_review_hint: `false`
 
 #### Step media
-- step_image_key: `quest/q2/step-01.jpg`
+- step_image_key: `quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_001/01.jpg`
 - step_image_alt: `Подход к обзорной площадке на Пхукете`
 - step_image_hint: `viewpoint entry / path / sunset lead-in`
 
@@ -253,7 +253,7 @@ A sunset-oriented route that demonstrates photo proof, review delay, and honest 
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q2/step-02.jpg`
+- step_image_key: `quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_002/01.jpg`
 - step_image_alt: `Закатный вид с обзорной площадки`
 - step_image_hint: `sunset viewpoint / golden hour / photo proof`
 
@@ -290,7 +290,7 @@ A sunset-oriented route that demonstrates photo proof, review delay, and honest 
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q2/step-03.jpg`
+- step_image_key: `quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_003/01.jpg`
 - step_image_alt: `Финальная точка фото-миссии на закате`
 - step_image_hint: `sunset close / mission confirmation / evening finish`
 

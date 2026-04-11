@@ -89,18 +89,18 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 ## Media
 
 ### Cover image
-- cover_image_key: `quest/q5/cover.jpg`
+- cover_image_key: `quests/phuket/one-day-explorer-route/cover.jpg`
 - cover_image_alt: `Насыщенный городской маршрут по Пхукету на полдня`
 - cover_image_hint: `city route / mixed activities / daytime exploration`
 
 ### Gallery images
-- gallery_image_01_key: `quest/q5/gallery-01.jpg`
+- gallery_image_01_key: `quests/phuket/one-day-explorer-route/gallery/01.jpg`
 - gallery_image_01_alt: `Городская точка старта маршрута`
 
-- gallery_image_02_key: `quest/q5/gallery-02.jpg`
+- gallery_image_02_key: `quests/phuket/one-day-explorer-route/gallery/02.jpg`
 - gallery_image_02_alt: `Партнёрская кофейня на маршруте`
 
-- gallery_image_03_key: `quest/q5/gallery-03.jpg`
+- gallery_image_03_key: `quests/phuket/one-day-explorer-route/gallery/03.jpg`
 - gallery_image_03_alt: `Фото-этап и атмосфера дневного исследования`
 
 ---
@@ -224,7 +224,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `false`
 
 #### Step media
-- step_image_key: `quest/q5/step-01.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_001/01.jpg`
 - step_image_alt: `Первая городская точка маршрута`
 - step_image_hint: `old town gate / first stop / route start`
 
@@ -261,7 +261,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `false`
 
 #### Step media
-- step_image_key: `quest/q5/step-02.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_002/01.jpg`
 - step_image_alt: `Партнёрская кофейня на маршруте`
 - step_image_hint: `coffee stop / partner venue / casual city pause`
 
@@ -298,7 +298,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q5/step-03.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_003/01.jpg`
 - step_image_alt: `Локальное событие в рамках маршрута`
 - step_image_hint: `local meetup / event participation / daytime crowd`
 
@@ -335,7 +335,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q5/step-04.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_004/01.jpg`
 - step_image_alt: `Фото-этап маршрута и дневной городской вид`
 - step_image_hint: `route photo / city atmosphere / daytime exploration`
 
@@ -372,7 +372,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q5/step-05.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_005/01.jpg`
 - step_image_alt: `Короткий публичный отчёт о маршруте`
 - step_image_hint: `social note / journey recap / public reflection`
 
@@ -409,7 +409,7 @@ A half-day city scenario that combines place discovery, partner stop, event atte
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q5/step-06.jpg`
+- step_image_key: `quests/phuket/one-day-explorer-route/steps/step_one_day_006/01.jpg`
 - step_image_alt: `Финальный этап насыщенного маршрута на полдня`
 - step_image_hint: `route completion / end of day / final confirmation`
 

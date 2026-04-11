@@ -6,6 +6,7 @@
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 import type { QuestDetailResponse } from '@go2asia/sdk/quest';
 import {
   describeQuestExperience,
@@ -19,6 +20,7 @@ import {
   getStepPresentation,
   getVerificationLabel,
 } from '../questPresentation';
+import { getQuestCoverMedia, getQuestGalleryMedia } from '../questMediaContent';
 
 interface QuestDetailClientProps {
   quest: QuestDetailResponse;
@@ -27,11 +29,31 @@ interface QuestDetailClientProps {
 export function QuestDetailClient({ quest }: QuestDetailClientProps) {
   const signals = getQuestUserSignals(quest);
   const paragraphs = getQuestParagraphs(quest.description);
+  const cover = getQuestCoverMedia(quest.id);
+  const gallery = getQuestGalleryMedia(quest.id);
+  const showGallery = gallery.length > 1;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+            {cover ? (
+              <div className="relative aspect-[16/9] md:aspect-[21/9] w-full">
+                <Image
+                  src={cover.url}
+                  alt={cover.alt}
+                  fill
+                  sizes="(min-width: 1280px) 1200px, 100vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
+              </div>
+            ) : (
+              <div className="aspect-[16/9] md:aspect-[21/9] w-full bg-gradient-to-br from-violet-100 via-white to-sky-100" />
+            )}
+          </div>
+
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
             <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-violet-700">
               {describeQuestExperience(quest)}
@@ -103,6 +125,27 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
           </div>
         </div>
 
+        {showGallery ? (
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="text-xl font-semibold text-slate-900">Фото маршрута</h2>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {gallery.map((image) => (
+                <div key={image.url} className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                  <div className="relative aspect-[4/3] w-full">
+                    <Image
+                      src={image.url}
+                      alt={image.alt}
+                      fill
+                      sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 96vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="text-xl font-semibold text-slate-900">Что будет по шагам</h2>
           {quest.steps.length === 0 ? (
@@ -168,7 +211,7 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          Часть product-оформления квеста всё ещё ограничена текущим runtime-контрактом: в API пока нет отдельной quest-level metadata model для обложек, галереи и карточных текстовых полей. В этом pass улучшено только то, что уже честно доступно через runtime и step-level `contentV2`.
+          Quest-level обложка и галерея в этом pass подключены из content layer по зафиксированному mapping, а step-level медиа — из runtime `contentV2` с безопасным fallback. Отдельной quest-level metadata model в runtime API пока нет, поэтому это честный гибридный режим до следующего отдельного model pass.
         </div>
       </div>
     </div>

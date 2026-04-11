@@ -1,6 +1,6 @@
 import type { QuestDetailResponse, QuestStepResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
 import type { LucideIcon } from 'lucide-react';
-import { Calendar, Camera, Coffee, Flag, MapPin, MessageSquare, Target } from 'lucide-react';
+import { Calendar, Camera, Coffee, Flag, MapPin, MessageSquare, ScanLine, Target } from 'lucide-react';
 
 type StepContentV2 = {
   presentation?: {
@@ -50,7 +50,9 @@ export type StepPresentation = {
   showMapHint: boolean;
   showPhotoHint: boolean;
   showReviewHint: boolean;
+  stepImageKey: string | null;
   stepImageAlt: string | null;
+  stepImageHint: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -153,7 +155,9 @@ export function getStepPresentation(step: QuestStepResponse): StepPresentation {
     showMapHint: runtimeUx.showMapHint === true,
     showPhotoHint: runtimeUx.showPhotoHint === true,
     showReviewHint: runtimeUx.showReviewHint === true,
+    stepImageKey: normalizeText(media.stepImageKey),
     stepImageAlt: normalizeText(media.stepImageAlt),
+    stepImageHint: normalizeText(media.stepImageHint),
   };
 }
 
@@ -163,6 +167,7 @@ export function getStepIcon(name: string | null): LucideIcon {
     camera: Camera,
     flag: Flag,
     coffee: Coffee,
+    'scan-line': ScanLine,
     calendar: Calendar,
     'message-square': MessageSquare,
   };
@@ -176,6 +181,7 @@ export function getStepEmphasisClasses(emphasis: string | null): string {
   if (emphasis === 'partner') return 'bg-sky-50 text-sky-700 border-sky-200';
   if (emphasis === 'event') return 'bg-rose-50 text-rose-700 border-rose-200';
   if (emphasis === 'social') return 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200';
+  if (emphasis === 'internal') return 'bg-slate-100 text-slate-700 border-slate-300';
   return 'bg-slate-50 text-slate-700 border-slate-200';
 }
 

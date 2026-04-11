@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
+import { resolveMediaUrl } from '@go2asia/sdk/media';
 import type {
   QuestApiError,
   QuestDetailResponse,
@@ -22,6 +24,7 @@ import {
   getVerificationLabel,
   getQuestSummary,
 } from '../../questPresentation';
+import { getQuestStepMediaFallback } from '../../questMediaContent';
 
 interface QuestRunnerClientProps {
   quest: QuestDetailResponse;
@@ -138,6 +141,26 @@ function getProofTypeLabel(proofType: QuestProofType): string {
   return 'Текстовое подтверждение';
 }
 
+function getStepImage(questId: string, step: QuestStepResponse, stepImageKey: string | null, stepImageAlt: string | null) {
+  const runtimeUrl = stepImageKey ? resolveMediaUrl(stepImageKey) : null;
+  if (runtimeUrl) {
+    return {
+      url: runtimeUrl,
+      alt: stepImageAlt || 'Иллюстрация текущего шага',
+    };
+  }
+
+  const fallback = getQuestStepMediaFallback(questId, step.id);
+  if (fallback?.url) {
+    return {
+      url: fallback.url,
+      alt: stepImageAlt || fallback.alt || 'Иллюстрация текущего шага',
+    };
+  }
+
+  return null;
+}
+
 function buildProofPayload(proofType: QuestProofType, draft: ProofDraft): { proofType: QuestProofType; proofData: Record<string, unknown> } {
   if (proofType === 'geo') {
     const lat = Number(draft.lat);
@@ -181,6 +204,10 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const currentProofType = useMemo(() => (currentStep ? mapProofType(currentStep) : 'text'), [currentStep]);
   const currentStepUi = useMemo(() => (currentStep ? getStepPresentation(currentStep) : null), [currentStep]);
   const currentStepHints = useMemo(() => (currentStep ? getStepHintChips(currentStep) : []), [currentStep]);
+  const currentStepImage = useMemo(() => {
+    if (!currentStep || !currentStepUi) return null;
+    return getStepImage(questDetail.id, currentStep, currentStepUi.stepImageKey, currentStepUi.stepImageAlt);
+  }, [currentStep, currentStepUi, questDetail.id]);
   const progressPercent = useMemo(() => {
     if (!progress) return 0;
     if (progress.status === 'completed') return 100;
@@ -374,6 +401,19 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                   </div>
 
                   <div className="mt-4 space-y-3">
+                    {currentStepImage ? (
+                      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                        <div className="relative aspect-video w-full">
+                          <Image
+                            src={currentStepImage.url}
+                            alt={currentStepImage.alt}
+                            fill
+                            sizes="(min-width: 1024px) 768px, 100vw"
+                            className="object-cover"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                     {currentStepUi.userInstructionShort ? (
                       <p className="text-sm text-slate-700">{currentStepUi.userInstructionShort}</p>
                     ) : null}
@@ -406,6 +446,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                   {currentStepUi.proofExpectation ? (
                     <p className="mt-4 text-xs text-slate-500">Что ожидается: {currentStepUi.proofExpectation}</p>
                   ) : null}
+                  {currentStepUi.stepImageHint ? <p className="mt-2 text-xs text-slate-500">{currentStepUi.stepImageHint}</p> : null}
 
                   <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center justify-between gap-4">

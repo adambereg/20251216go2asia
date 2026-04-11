@@ -6,12 +6,14 @@
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { ModuleHero } from '@/components/modules';
 import { ArrowRight, Loader2, Target } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
 import type { QuestApiError, QuestListResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
 import { describeQuestExperience, formatCityLabel, formatDifficultyLabel, getQuestSummary } from './questPresentation';
+import { getQuestCoverMedia } from './questMediaContent';
 
 function getQuestBadge(item: QuestSummaryResponse): string {
   if (item.theme === 'photo_mission') return 'Фото-миссия';
@@ -91,41 +93,56 @@ export function QuestHomeClient() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.items.map((item) => (
-              <Link
-                key={item.id}
-                href={`/quest/${item.id}`}
-                className="rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-                    {getQuestBadge(item)}
-                  </span>
-                  <span className="text-xs text-slate-500">{formatCityLabel(item.cityId)}</span>
-                </div>
+              <Link key={item.id} href={`/quest/${item.id}`} className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition overflow-hidden">
+                {(() => {
+                  const cover = getQuestCoverMedia(item.id);
+                  return cover ? (
+                    <div className="relative aspect-[4/3] w-full bg-slate-100">
+                      <Image
+                        src={cover.url}
+                        alt={cover.alt}
+                        fill
+                        sizes="(min-width: 1024px) 28vw, (min-width: 768px) 42vw, 96vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] w-full bg-gradient-to-br from-violet-100 via-white to-sky-100" />
+                  );
+                })()}
 
-                <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
-                <p className="mt-2 text-sm text-slate-600 line-clamp-3">{getQuestSummary(item.description)}</p>
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+                      {getQuestBadge(item)}
+                    </span>
+                    <span className="text-xs text-slate-500">{formatCityLabel(item.cityId)}</span>
+                  </div>
 
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-700">
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                    {formatDifficultyLabel(item.difficulty)}
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                    {item.stepsCount} {item.stepsCount === 1 ? 'шаг' : item.stepsCount < 5 ? 'шага' : 'шагов'}
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                    {describeQuestExperience(item)}
-                  </span>
-                </div>
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-2 text-sm text-slate-600 line-clamp-3">{getQuestSummary(item.description)}</p>
 
-                <div className="mt-4 space-y-1 text-sm text-slate-600">
-                  <p>{describeQuestExperience(item)}</p>
-                  {item.rewardPoints != null ? <p>Награда в квесте: {item.rewardPoints} очков</p> : null}
-                </div>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-700">
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {formatDifficultyLabel(item.difficulty)}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {item.stepsCount} {item.stepsCount === 1 ? 'шаг' : item.stepsCount < 5 ? 'шага' : 'шагов'}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {describeQuestExperience(item)}
+                    </span>
+                  </div>
 
-                <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-purple-700">
-                  Открыть маршрут
-                  <ArrowRight className="h-4 w-4" />
+                  <div className="mt-4 space-y-1 text-sm text-slate-600">
+                    <p>{describeQuestExperience(item)}</p>
+                    {item.rewardPoints != null ? <p>Награда в квесте: {item.rewardPoints} очков</p> : null}
+                  </div>
+
+                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-purple-700">
+                    Открыть маршрут
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
               </Link>
             ))}

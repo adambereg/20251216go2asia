@@ -86,15 +86,15 @@ A calm introductory route through Old Phuket Town with one photo proof step and 
 ## Media
 
 ### Cover image
-- cover_image_key: `quest/q1/cover.jpg`
+- cover_image_key: `quests/phuket/morning-walk-through-old-phuket/cover.jpg`
 - cover_image_alt: `Утренние улицы Старого города Пхукета`
 - cover_image_hint: `old-town-phuket / pastel streets / morning walk`
 
 ### Gallery images
-- gallery_image_01_key: `quest/q1/gallery-01.jpg`
+- gallery_image_01_key: `quests/phuket/morning-walk-through-old-phuket/gallery/01.jpg`
 - gallery_image_01_alt: `Пастельные фасады и улица Старого города Пхукета`
 
-- gallery_image_02_key: `quest/q1/gallery-02.jpg`
+- gallery_image_02_key: `quests/phuket/morning-walk-through-old-phuket/gallery/02.jpg`
 - gallery_image_02_alt: `Финальная площадь маршрута в Старом городе`
 
 ---
@@ -218,7 +218,7 @@ A calm introductory route through Old Phuket Town with one photo proof step and 
 - show_review_hint: `false`
 
 #### Step media
-- step_image_key: `quest/q1/step-01.jpg`
+- step_image_key: `quests/phuket/morning-walk-through-old-phuket/steps/step_phuket_old_town_001/01.jpg`
 - step_image_alt: `Стартовая точка маршрута в Старом городе Пхукета`
 - step_image_hint: `old town gate / morning start point`
 
@@ -255,7 +255,7 @@ A calm introductory route through Old Phuket Town with one photo proof step and 
 - show_review_hint: `true`
 
 #### Step media
-- step_image_key: `quest/q1/step-02.jpg`
+- step_image_key: `quests/phuket/morning-walk-through-old-phuket/steps/step_phuket_old_town_002/01.jpg`
 - step_image_alt: `Характерная улица или фасад в Старом городе Пхукета`
 - step_image_hint: `yaowarat corner / colorful facade / street photo`
 
@@ -292,7 +292,7 @@ A calm introductory route through Old Phuket Town with one photo proof step and 
 - show_review_hint: `false`
 
 #### Step media
-- step_image_key: `quest/q1/step-03.jpg`
+- step_image_key: `quests/phuket/morning-walk-through-old-phuket/steps/step_phuket_old_town_003/01.jpg`
 - step_image_alt: `Финальная площадь маршрута в Старом городе Пхукета`
 - step_image_hint: `sunday market square / finish point`
 
