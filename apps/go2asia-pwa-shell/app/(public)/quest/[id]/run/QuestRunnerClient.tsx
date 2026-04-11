@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCcw } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
 import { resolveMediaUrl } from '@go2asia/sdk/media';
@@ -25,10 +26,20 @@ import {
   getQuestSummary,
 } from '../../questPresentation';
 import { getQuestStepMediaFallback } from '../../questMediaContent';
+import { isSpatialStep, resolveQuestMapScope, type QuestMapPoint } from '../../questMapPresentation';
 
 interface QuestRunnerClientProps {
   quest: QuestDetailResponse;
 }
+
+const QuestMapGuidance = dynamic(() => import('../../QuestMapGuidance').then((mod) => ({ default: mod.QuestMapGuidance })), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
+      <p className="text-sm text-slate-500">Загрузка карты...</p>
+    </div>
+  ),
+});
 
 type ProofDraft = {
   text: string;
@@ -225,11 +236,19 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const [geoLoading, setGeoLoading] = useState(false);
 
   const currentStep = useMemo(() => getCurrentStep(progress, questDetail.steps), [progress, questDetail.steps]);
+  const mapScope = useMemo(() => resolveQuestMapScope(questDetail), [questDetail]);
   const lifecycleCopy = useMemo(() => getLifecycleCopy(progress), [progress]);
   const currentProofType = useMemo(() => (currentStep ? mapProofType(currentStep) : 'text'), [currentStep]);
   const currentStepUi = useMemo(() => (currentStep ? getStepPresentation(currentStep) : null), [currentStep]);
   const currentStepHints = useMemo(() => (currentStep ? getStepHintChips(currentStep) : []), [currentStep]);
   const submitBlockedReason = useMemo(() => getSubmitBlockedReason(progress), [progress]);
+  const currentStepHasSpatialContext = useMemo(() => (currentStep ? isSpatialStep(currentStep) : false), [currentStep]);
+  const currentLocationPoint = useMemo<QuestMapPoint | null>(() => {
+    const lat = Number(proofDraft.lat);
+    const lng = Number(proofDraft.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  }, [proofDraft.lat, proofDraft.lng]);
   const currentStepImage = useMemo(() => {
     if (!currentStep || !currentStepUi) return null;
     return getStepImage(questDetail.id, currentStep, currentStepUi.stepImageKey, currentStepUi.stepImageAlt);
@@ -489,6 +508,23 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                     <p className="mt-2 text-xs text-slate-500">{getReviewModeHint(currentStepUi.reviewMode)}</p>
                   ) : null}
                   {currentStepUi.stepImageHint ? <p className="mt-2 text-xs text-slate-500">{currentStepUi.stepImageHint}</p> : null}
+
+                  {mapScope.center && currentStepHasSpatialContext ? (
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                      <h3 className="text-sm font-semibold text-slate-900">Карта текущего шага</h3>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Карта показывает ориентир маршрута и вашу текущую позицию, если координаты уже определены.
+                      </p>
+                      <div className="mt-3">
+                        <QuestMapGuidance
+                          center={mapScope.center}
+                          radiusMeters={mapScope.radiusMeters}
+                          currentLocation={currentLocationPoint}
+                          className="h-64 w-full rounded-xl border border-slate-200"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center justify-between gap-4">

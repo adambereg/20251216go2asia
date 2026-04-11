@@ -7,6 +7,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import type { QuestDetailResponse } from '@go2asia/sdk/quest';
 import {
   describeQuestExperience,
@@ -21,10 +22,20 @@ import {
   getVerificationLabel,
 } from '../questPresentation';
 import { getQuestGalleryRuntimeFirst, getQuestHeroMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from '../questRuntimeMetadata';
+import { isSpatialStep, resolveQuestMapScope } from '../questMapPresentation';
 
 interface QuestDetailClientProps {
   quest: QuestDetailResponse;
 }
+
+const QuestMapGuidance = dynamic(() => import('../QuestMapGuidance').then((mod) => ({ default: mod.QuestMapGuidance })), {
+  ssr: false,
+  loading: () => (
+    <div className="h-72 w-full rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
+      <p className="text-sm text-slate-500">Загрузка карты маршрута...</p>
+    </div>
+  ),
+});
 
 export function QuestDetailClient({ quest }: QuestDetailClientProps) {
   const signals = getQuestUserSignals(quest);
@@ -32,6 +43,8 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
   const cover = getQuestHeroMediaRuntimeFirst(quest);
   const gallery = getQuestGalleryRuntimeFirst(quest);
   const showGallery = gallery.length > 1;
+  const mapScope = resolveQuestMapScope(quest);
+  const spatialSteps = quest.steps.filter((step) => isSpatialStep(step));
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -145,6 +158,44 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
             </div>
           </div>
         ) : null}
+
+        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+          <h2 className="text-xl font-semibold text-slate-900">Карта маршрута</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Карта помогает сориентироваться по району прохождения. Это визуальная подсказка и не заменяет правила подтверждения шагов.
+          </p>
+          {mapScope.center ? (
+            <>
+              <div className="mt-4">
+                <QuestMapGuidance center={mapScope.center} radiusMeters={mapScope.radiusMeters} />
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                {mapScope.source === 'geo_scope'
+                  ? 'Ориентир построен по geoScope маршрута из runtime.'
+                  : 'Точный geoScope не указан, поэтому показан ориентир по центру города.'}
+              </p>
+            </>
+          ) : (
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              Для этого маршрута пока нет достаточных координат для карты.
+            </div>
+          )}
+          {spatialSteps.length > 0 ? (
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-900">Шаги с пространственным ориентиром</p>
+              <p className="mt-1 text-xs text-slate-500">
+                На этих шагах карта особенно полезна, чтобы понять контекст маршрута.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {spatialSteps.map((step) => (
+                  <span key={step.id} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
+                    Шаг {step.order}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
 
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="text-xl font-semibold text-slate-900">Что будет по шагам</h2>
