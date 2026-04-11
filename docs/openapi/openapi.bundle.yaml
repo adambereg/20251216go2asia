@@ -2408,6 +2408,25 @@ components:
         presentation:
           $ref: "#/components/schemas/QuestMetadataPresentationResponse"
       type: object
+    QuestOperationalStatsResponse:
+      properties:
+        completedCount:
+          minimum: 0
+          type: integer
+        pendingReviewCount:
+          minimum: 0
+          type: integer
+        questId:
+          type: string
+        startedCount:
+          minimum: 0
+          type: integer
+      required:
+        - questId
+        - startedCount
+        - completedCount
+        - pendingReviewCount
+      type: object
     QuestProgressResponse:
       properties:
         completedAt:
@@ -5649,6 +5668,35 @@ paths:
       security:
         - GatewayAuth: []
       summary: Update bounded draft quest fields for management
+      tags:
+        - quests
+  /v1/quests/mine/{questId}/stats:
+    get:
+      operationId: getOwnedQuestOperationalStats
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestOperationalStatsResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get minimum operational curator stats for owned quest
       tags:
         - quests
   /v1/quests/mine/{questId}/steps/{stepId}:

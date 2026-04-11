@@ -295,6 +295,35 @@ paths:
         "500":
           $ref: "#/components/responses/QuestInternalError"
 
+  /v1/quests/mine/{questId}/stats:
+    get:
+      tags: [quests]
+      operationId: getOwnedQuestOperationalStats
+      summary: Get minimum operational curator stats for owned quest
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestOperationalStatsResponse"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+
   /v1/quests/{questId}:
     get:
       tags: [quests]
@@ -1109,6 +1138,22 @@ components:
           type: integer
         total:
           type: integer
+
+    QuestOperationalStatsResponse:
+      type: object
+      required: [questId, startedCount, completedCount, pendingReviewCount]
+      properties:
+        questId:
+          type: string
+        startedCount:
+          type: integer
+          minimum: 0
+        completedCount:
+          type: integer
+          minimum: 0
+        pendingReviewCount:
+          type: integer
+          minimum: 0
 
     CreateQuestRequest:
       type: object

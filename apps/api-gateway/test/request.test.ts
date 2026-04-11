@@ -90,6 +90,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'quest.mine.detail.get',
       routeGroup: 'quest',
     });
+    expect(classifyRoute('GET', '/v1/quests/mine/quest_1/stats')).toEqual({
+      routeKey: 'quest.mine.stats.get',
+      routeGroup: 'quest',
+    });
     expect(classifyRoute('PATCH', '/v1/quests/mine/quest_1')).toEqual({
       routeKey: 'quest.mine.update.patch',
       routeGroup: 'quest',
@@ -468,6 +472,19 @@ describe('api-gateway request hardening', () => {
     const deleteStepBody = await readJson<{ error: { code: string } }>(deleteStepResponse);
     expect(deleteStepResponse.status).toBe(401);
     expect(deleteStepBody.error.code).toBe('UNAUTHORIZED');
+
+    const statsResponse = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine/quest_1/stats', {
+        method: 'GET',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+    const statsBody = await readJson<{ error: { code: string } }>(statsResponse);
+    expect(statsResponse.status).toBe(401);
+    expect(statsBody.error.code).toBe('UNAUTHORIZED');
   });
 
   it('returns 503 when a known service route is not configured', async () => {

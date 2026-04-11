@@ -87,6 +87,7 @@ import type {
   QuestInternalErrorResponse,
   QuestListResponse,
   QuestNotFoundResponse,
+  QuestOperationalStatsResponse,
   QuestProgressResponse,
   QuestServiceAuthNotConfiguredResponse,
   QuestStepResponse,
@@ -2323,6 +2324,74 @@ export const updateQuestDraft = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateDraftQuestRequest),
   });
+};
+
+/**
+ * @summary Get minimum operational curator stats for owned quest
+ */
+export type getOwnedQuestOperationalStatsResponse200 = {
+  data: QuestOperationalStatsResponse;
+  status: 200;
+};
+
+export type getOwnedQuestOperationalStatsResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type getOwnedQuestOperationalStatsResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type getOwnedQuestOperationalStatsResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getOwnedQuestOperationalStatsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getOwnedQuestOperationalStatsResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getOwnedQuestOperationalStatsResponseSuccess =
+  getOwnedQuestOperationalStatsResponse200 & {
+    headers: Headers;
+  };
+export type getOwnedQuestOperationalStatsResponseError = (
+  | getOwnedQuestOperationalStatsResponse401
+  | getOwnedQuestOperationalStatsResponse403
+  | getOwnedQuestOperationalStatsResponse404
+  | getOwnedQuestOperationalStatsResponse500
+  | getOwnedQuestOperationalStatsResponse503
+) & {
+  headers: Headers;
+};
+
+export type getOwnedQuestOperationalStatsResponse =
+  | getOwnedQuestOperationalStatsResponseSuccess
+  | getOwnedQuestOperationalStatsResponseError;
+
+export const getGetOwnedQuestOperationalStatsUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}/stats`;
+};
+
+export const getOwnedQuestOperationalStats = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getOwnedQuestOperationalStatsResponse> => {
+  return customInstance<getOwnedQuestOperationalStatsResponse>(
+    getGetOwnedQuestOperationalStatsUrl(questId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
 };
 
 /**

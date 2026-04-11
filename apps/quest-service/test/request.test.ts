@@ -1009,6 +1009,95 @@ describe('quest-service pass #4', () => {
     expect(body).toMatchObject({ status: 'rejected', rejectionReason: 'Photo is blurry' });
   });
 
+  it('returns minimum operational stats for owned quest', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'quest_1',
+            title: 'Published',
+            description: null,
+            creator_pro_id: 'pro_1',
+            city_id: null,
+            geo_scope: null,
+            type: null,
+            theme: null,
+            difficulty: null,
+            status: 'published',
+            visibility: 'public',
+            reward_points: null,
+            steps_count: 2,
+            published_at: '2026-04-10T07:00:00.000Z',
+            created_at: '2026-04-10T07:00:00.000Z',
+            updated_at: '2026-04-10T07:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ started_count: 12, completed_count: 5 }] })
+      .mockResolvedValueOnce({ rows: [{ total: 3 }] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1/stats', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{
+      questId: string;
+      startedCount: number;
+      completedCount: number;
+      pendingReviewCount: number;
+    }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      questId: 'quest_1',
+      startedCount: 12,
+      completedCount: 5,
+      pendingReviewCount: 3,
+    });
+  });
+
+  it('forbids non-owner from reading quest operational stats', async () => {
+    const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'quest_1',
+          title: 'Published',
+          description: null,
+          creator_pro_id: 'pro_2',
+          city_id: null,
+          geo_scope: null,
+          type: null,
+          theme: null,
+          difficulty: null,
+          status: 'published',
+          visibility: 'public',
+          reward_points: null,
+          steps_count: 2,
+          published_at: '2026-04-10T07:00:00.000Z',
+          created_at: '2026-04-10T07:00:00.000Z',
+          updated_at: '2026-04-10T07:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/mine/quest_1/stats', {
+        headers: { 'X-Gateway-Auth': jwt },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
   it('keeps drafts out of public detail read', async () => {
     executeMock.mockResolvedValueOnce({ rows: [] });
     const response = await worker.fetch(

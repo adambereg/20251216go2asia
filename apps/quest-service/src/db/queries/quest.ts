@@ -653,6 +653,24 @@ export async function countPendingQuestSubmissions(
   return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
 }
 
+export async function countQuestProgressStats(
+  db: DbExecutor,
+  questId: string
+): Promise<{ startedCount: number; completedCount: number }> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (WHERE status <> 'not_started')::int AS started_count,
+      COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_count
+    FROM quest_progress
+    WHERE quest_id = ${questId}
+  `);
+  const row = rowsOf<{ started_count: number; completed_count: number }>(result)[0];
+  return {
+    startedCount: row?.started_count ?? 0,
+    completedCount: row?.completed_count ?? 0,
+  };
+}
+
 export async function getQuestProgressByQuestAndUser(
   db: DbExecutor,
   questId: string,

@@ -61,6 +61,7 @@ function isProtectedRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/quests') return true;
   if (method === 'GET' && path === '/v1/quests/mine') return true;
   if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+\/stats$/.test(path)) return true;
   if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
   if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
   if (method === 'DELETE' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;

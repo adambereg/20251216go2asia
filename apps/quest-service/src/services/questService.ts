@@ -6,6 +6,7 @@ import {
   approveSubmission,
   countActiveQuestProgress,
   countManagedQuests,
+  countQuestProgressStats,
   countPendingQuestSubmissions,
   countPublishedQuests,
   countQuestSubmissions,
@@ -365,6 +366,32 @@ function canManageQuest(principal: GatewayPrincipal): boolean {
 
 function canManageOwnedQuest(principal: GatewayPrincipal, quest: QuestRow): boolean {
   return hasRole(principal, 'admin') || quest.creator_pro_id === principal.userId;
+}
+
+function requireManagementPrincipal(principal: GatewayPrincipal, requestId: string): Response | null {
+  if (!canManageQuest(principal)) {
+    return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  }
+  return null;
+}
+
+function requireManagedQuestOwnership(
+  principal: GatewayPrincipal,
+  quest: QuestRow,
+  requestId: string,
+  message: string
+): Response | null {
+  if (!canManageOwnedQuest(principal, quest)) {
+    return errorResponse('FORBIDDEN', message, requestId, 403);
+  }
+  return null;
+}
+
+function requireDraftQuest(quest: QuestRow, requestId: string): Response | null {
+  if (quest.status !== 'draft') {
+    return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  }
+  return null;
 }
 
 function canTransitionQuestStatus(from: QuestStatus, to: QuestStatus): boolean {
@@ -841,6 +868,28 @@ async function publishSubmissionApprovedSequence(
   }
 }
 
+async function publishManagementEvent(
+  env: Env,
+  requestId: string,
+  publisher: QuestEventPublisher,
+  principal: GatewayPrincipal,
+  input: {
+    eventType: QuestDomainEventType;
+    subjectType: 'quest' | 'quest_step';
+    subjectId: string;
+    payload: Record<string, unknown>;
+  }
+): Promise<void> {
+  await publisher.publish(
+    buildQuestEvent(env, requestId, principal, {
+      eventType: input.eventType,
+      subjectType: input.subjectType,
+      subjectId: input.subjectId,
+      payload: input.payload,
+    })
+  );
+}
+
 export async function listQuests(env: Env, requestId: string, url: URL): Promise<Response> {
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
@@ -889,7 +938,8 @@ export async function listOwnedQuests(
   requestId: string,
   url: URL
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const pagination = parsePage(url.searchParams);
@@ -931,26 +981,57 @@ export async function getOwnedQuest(
   principal: GatewayPrincipal,
   requestId: string
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) {
-    return errorResponse('FORBIDDEN', 'Cannot access this quest', requestId, 403);
-  }
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot access this quest');
+  if (ownedQuestError) return ownedQuestError;
   const steps = await listQuestSteps(db, questId);
   return json(normalizeQuest(quest, steps), 200);
+}
+
+export async function getOwnedQuestOperationalStats(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot access this quest');
+  if (ownedQuestError) return ownedQuestError;
+
+  const progressStats = await countQuestProgressStats(db, questId);
+  const pendingReviewCount = await countPendingQuestSubmissions(db, questId);
+  return json(
+    {
+      questId,
+      startedCount: progressStats.startedCount,
+      completedCount: progressStats.completedCount,
+      pendingReviewCount,
+    },
+    200
+  );
 }
 
 export async function createQuestDraft(
   env: Env,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseCreateQuestInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid quest payload', requestId, 400);
 
@@ -971,6 +1052,16 @@ export async function createQuestDraft(
     rewardPoints: parsed.rewardPoints,
   });
   if (!created) return errorResponse('INTERNAL_ERROR', 'Failed to create quest', requestId, 500);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.created',
+    subjectType: 'quest',
+    subjectId: created.id,
+    payload: {
+      questId: created.id,
+      status: created.status,
+      creatorProId: created.creator_pro_id,
+    },
+  });
   return json(normalizeQuest(created, []), 201);
 }
 
@@ -979,9 +1070,11 @@ export async function updateQuestDraftByOwner(
   questId: string,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseUpdateQuestDraftInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft update payload', requestId, 400);
 
@@ -990,8 +1083,10 @@ export async function updateQuestDraftByOwner(
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
 
   const updated = await updateQuestDraftRow(db, {
     questId,
@@ -1006,6 +1101,15 @@ export async function updateQuestDraftByOwner(
     rewardPoints: parsed.rewardPoints !== undefined ? parsed.rewardPoints : quest.reward_points,
   });
   if (!updated) return errorResponse('CONFLICT', 'Quest could not be updated', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.draft.updated',
+    subjectType: 'quest',
+    subjectId: updated.id,
+    payload: {
+      questId: updated.id,
+      status: updated.status,
+    },
+  });
   const steps = await listQuestSteps(db, questId);
   return json(normalizeQuest(updated, steps), 200);
 }
@@ -1015,9 +1119,11 @@ export async function addQuestStep(
   questId: string,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseAddQuestStepInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid quest step payload', requestId, 400);
   const validationError = validateStepDefinition(parsed);
@@ -1028,8 +1134,10 @@ export async function addQuestStep(
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
 
   const steps = await listQuestSteps(db, questId);
   if (steps.some((step) => step.order === parsed.order)) {
@@ -1049,6 +1157,16 @@ export async function addQuestStep(
   });
   if (!created) return errorResponse('INTERNAL_ERROR', 'Failed to create quest step', requestId, 500);
   await syncQuestStepsCount(db, questId);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.created',
+    subjectType: 'quest_step',
+    subjectId: created.id,
+    payload: {
+      questId,
+      stepId: created.id,
+      stepOrder: created.order,
+    },
+  });
   return json(normalizeQuestStep(created), 201);
 }
 
@@ -1058,9 +1176,11 @@ export async function updateQuestStepByOwner(
   stepId: string,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseUpdateQuestStepInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft step update payload', requestId, 400);
 
@@ -1069,8 +1189,10 @@ export async function updateQuestStepByOwner(
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
 
   const existingStep = await getQuestStepById(db, questId, stepId);
   if (!existingStep) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
@@ -1098,6 +1220,16 @@ export async function updateQuestStepByOwner(
     rewardPoints: merged.rewardPoints,
   });
   if (!updated) return errorResponse('CONFLICT', 'Quest step could not be updated', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.updated',
+    subjectType: 'quest_step',
+    subjectId: updated.id,
+    payload: {
+      questId,
+      stepId: updated.id,
+      stepOrder: updated.order,
+    },
+  });
   return json(normalizeQuestStep(updated), 200);
 }
 
@@ -1106,21 +1238,34 @@ export async function deleteQuestStepByOwner(
   questId: string,
   stepId: string,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
 
   const deleted = await deleteQuestStepRow(db, { questId, stepId });
   if (!deleted) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
   await resequenceQuestSteps(db, questId);
   await syncQuestStepsCount(db, questId);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.deleted',
+    subjectType: 'quest_step',
+    subjectId: stepId,
+    payload: {
+      questId,
+      stepId,
+    },
+  });
   return new Response(null, { status: 204 });
 }
 
@@ -1128,15 +1273,18 @@ export async function publishQuest(
   env: Env,
   questId: string,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot publish this quest', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot publish this quest');
+  if (ownedQuestError) return ownedQuestError;
   const transitionError = assertQuestStatusTransition(quest, 'published', requestId);
   if (transitionError) return transitionError;
 
@@ -1146,6 +1294,17 @@ export async function publishQuest(
 
   const published = await publishQuestRow(db, questId);
   if (!published) return errorResponse('CONFLICT', 'Quest could not be published', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.published',
+    subjectType: 'quest',
+    subjectId: published.id,
+    payload: {
+      questId: published.id,
+      status: published.status,
+      publishedAt: asIso(published.published_at),
+      stepsCount: published.steps_count,
+    },
+  });
   return json(normalizeQuest(published, steps), 200);
 }
 
@@ -1153,15 +1312,18 @@ export async function archiveQuest(
   env: Env,
   questId: string,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot archive this quest', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot archive this quest');
+  if (ownedQuestError) return ownedQuestError;
 
   const transitionError = assertQuestStatusTransition(quest, 'archived', requestId);
   if (transitionError) return transitionError;
@@ -1188,6 +1350,15 @@ export async function archiveQuest(
 
   const archived = await archiveQuestRow(db, questId);
   if (!archived) return errorResponse('CONFLICT', 'Quest could not be archived', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.archived',
+    subjectType: 'quest',
+    subjectId: archived.id,
+    payload: {
+      questId: archived.id,
+      status: archived.status,
+    },
+  });
   const steps = await listQuestSteps(db, questId);
   return json(normalizeQuest(archived, steps), 200);
 }
@@ -1386,7 +1557,8 @@ export async function getQuestSubmissions(
   requestId: string,
   url: URL
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const pagination = parsePage(url.searchParams);
@@ -1398,7 +1570,13 @@ export async function getQuestSubmissions(
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot access submissions for this quest', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(
+    principal,
+    quest,
+    requestId,
+    'Cannot access submissions for this quest'
+  );
+  if (ownedQuestError) return ownedQuestError;
 
   const items = await listQuestSubmissions(db, {
     questId,
@@ -1427,7 +1605,8 @@ export async function reviewQuestSubmission(
   requestId: string,
   publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseReviewSubmissionInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid review payload', requestId, 400);
   const databaseUrl = requireDatabaseUrl(env, requestId);
@@ -1438,7 +1617,8 @@ export async function reviewQuestSubmission(
   if (!existing) return errorResponse('NOT_FOUND', 'Submission not found', requestId, 404);
   const quest = await getQuestById(db, existing.quest_id);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot review this submission', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot review this submission');
+  if (ownedQuestError) return ownedQuestError;
   if (existing.status !== 'pending') return errorResponse('CONFLICT', 'Submission is already reviewed', requestId, 409);
 
   if (parsed.decision === 'reject') {

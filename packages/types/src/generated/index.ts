@@ -177,6 +177,7 @@ export * from "./questMetadataPresentationResponse";
 export * from "./questMetadataPresentationResponsePresentationFlags";
 export * from "./questMetadataResponse";
 export * from "./questNotFoundResponse";
+export * from "./questOperationalStatsResponse";
 export * from "./questProgressResponse";
 export * from "./questProgressStatus";
 export * from "./questProofData";
