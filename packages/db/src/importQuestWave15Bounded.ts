@@ -31,6 +31,7 @@ type QuestContent = {
   stepsCount: number;
   status: QuestStatus;
   visibility: QuestVisibility;
+  coverImageKey: string | null;
   steps: StepContent[];
 };
 
@@ -66,6 +67,7 @@ type QuestRow = {
   title: string;
   description: string | null;
   city_id: string | null;
+  geo_scope: Record<string, unknown> | null;
   theme: string | null;
   difficulty: QuestDifficulty | null;
   reward_points: number | null;
@@ -75,6 +77,31 @@ type QuestRow = {
   type: string | null;
   progress_count: number;
   submission_count: number;
+};
+
+type QuestMetadataProjection = {
+  contentSchemaVersion: string;
+  sourceWave: string;
+  identity: {
+    questId: string;
+    slug: string;
+    countrySlug: string | null;
+    citySlug: string | null;
+  };
+  narrative: {
+    summary: string;
+  };
+  media: {
+    mediaPrefix: string | null;
+    cardMediaKey: string | null;
+    heroMediaKey: string | null;
+  };
+  runtime: {
+    difficulty: QuestDifficulty | null;
+    stepsCount: number;
+    status: QuestStatus;
+    visibility: QuestVisibility;
+  };
 };
 
 type StepRow = {
@@ -119,6 +146,8 @@ const QUEST_VERIFICATION_TYPES: readonly QuestVerificationType[] = ['auto', 'geo
 const QUEST_DIFFICULTIES: readonly QuestDifficulty[] = ['easy', 'medium', 'hard'];
 const QUEST_STATUSES: readonly QuestStatus[] = ['draft', 'published', 'archived'];
 const QUEST_VISIBILITIES: readonly QuestVisibility[] = ['public', 'private'];
+const QUEST_METADATA_NAMESPACE = 'questMetadataV1';
+const QUEST_METADATA_SCHEMA_VERSION = 'quest_metadata_v1';
 
 function getDatabaseUrl(): string {
   const url = process.env.STAGING_DATABASE_URL || process.env.DATABASE_URL;
@@ -264,8 +293,72 @@ function parseQuestFile(filePath: string): QuestContent {
     stepsCount: parseNullableInt(extractRequiredBulletValue(markdown, 'steps_count')) ?? 0,
     status: parseQuestStatus(extractRequiredBulletValue(markdown, 'status')),
     visibility: parseQuestVisibility(extractRequiredBulletValue(markdown, 'visibility')),
+    coverImageKey: parseNullableString(extractBulletValue(markdown, 'cover_image_key')),
     steps,
   };
+}
+
+function toNonEmptyString(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function parseMediaLocationFromCoverKey(coverImageKey: string | null): { countrySlug: string | null; citySlug: string | null; mediaPrefix: string | null } {
+  const key = toNonEmptyString(coverImageKey);
+  if (!key) {
+    return { countrySlug: null, citySlug: null, mediaPrefix: null };
+  }
+  const parts = key.split('/').filter(Boolean);
+  if (parts[0] !== 'quests' || parts.length < 3) {
+    return { countrySlug: null, citySlug: null, mediaPrefix: null };
+  }
+  if (parts.length >= 4) {
+    return {
+      countrySlug: parts[1] ?? null,
+      citySlug: parts[2] ?? null,
+      mediaPrefix: parts.slice(0, -1).join('/'),
+    };
+  }
+  return {
+    countrySlug: null,
+    citySlug: parts[1] ?? null,
+    mediaPrefix: parts.slice(0, -1).join('/'),
+  };
+}
+
+function buildQuestMetadataProjection(quest: QuestContent): QuestMetadataProjection {
+  const mediaLocation = parseMediaLocationFromCoverKey(quest.coverImageKey);
+  return {
+    contentSchemaVersion: QUEST_METADATA_SCHEMA_VERSION,
+    sourceWave: '1.5B',
+    identity: {
+      questId: quest.id,
+      slug: quest.slug,
+      countrySlug: mediaLocation.countrySlug,
+      citySlug: quest.cityId ?? mediaLocation.citySlug,
+    },
+    narrative: {
+      summary: quest.shortDescription,
+    },
+    media: {
+      mediaPrefix: mediaLocation.mediaPrefix,
+      cardMediaKey: quest.coverImageKey,
+      heroMediaKey: quest.coverImageKey,
+    },
+    runtime: {
+      difficulty: quest.difficulty,
+      stepsCount: quest.stepsCount,
+      status: quest.status,
+      visibility: quest.visibility,
+    },
+  };
+}
+
+function buildQuestGeoScope(existingGeoScope: Record<string, unknown> | null, metadata: QuestMetadataProjection): Record<string, unknown> {
+  const nextGeoScope: Record<string, unknown> = existingGeoScope && typeof existingGeoScope === 'object' ? { ...existingGeoScope } : {};
+  nextGeoScope[QUEST_METADATA_NAMESPACE] = metadata as unknown as Record<string, unknown>;
+  return nextGeoScope;
 }
 
 function normalizeTarget(step: StepContent): NormalizedTarget {
@@ -353,6 +446,7 @@ async function loadCurrentState(client: Client, questIds: string[]) {
         q.title,
         q.description,
         q.city_id,
+        q.geo_scope,
         q.theme,
         q.difficulty,
         q.reward_points,
@@ -450,6 +544,7 @@ function buildPlan(contents: QuestContent[], state: Awaited<ReturnType<typeof lo
         title: quest.title,
         description: buildQuestDescription(quest),
         cityId: quest.cityId,
+        geoScope: buildQuestGeoScope(currentQuest.geo_scope ?? null, buildQuestMetadataProjection(quest)),
         theme: quest.theme,
         difficulty: quest.difficulty,
         rewardPoints: quest.rewardPoints,
@@ -477,12 +572,13 @@ async function applyPlan(client: Client, plan: ReturnType<typeof buildPlan>) {
             title = $2,
             description = $3,
             city_id = $4,
-            theme = $5,
-            difficulty = $6,
-            reward_points = $7,
-            steps_count = $8,
-            status = $9,
-            visibility = $10,
+            geo_scope = $5::jsonb,
+            theme = $6,
+            difficulty = $7,
+            reward_points = $8,
+            steps_count = $9,
+            status = $10,
+            visibility = $11,
             updated_at = now()
           where id = $1
         `,
@@ -491,6 +587,7 @@ async function applyPlan(client: Client, plan: ReturnType<typeof buildPlan>) {
           questPlan!.nextQuestRow.title,
           questPlan!.nextQuestRow.description,
           questPlan!.nextQuestRow.cityId,
+          JSON.stringify(questPlan!.nextQuestRow.geoScope),
           questPlan!.nextQuestRow.theme,
           questPlan!.nextQuestRow.difficulty,
           questPlan!.nextQuestRow.rewardPoints,
@@ -558,6 +655,7 @@ async function main() {
           'title',
           'description<=short_description + full_description',
           'city_id',
+          'geo_scope<=questMetadataV1(minimum 1.5B projection)',
           'theme',
           'difficulty',
           'reward_points',

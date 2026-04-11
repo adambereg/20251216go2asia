@@ -2309,6 +2309,81 @@ components:
         - pageSize
         - total
       type: object
+    QuestMetadataGalleryItemResponse:
+      additionalProperties: false
+      properties:
+        alt:
+          nullable: true
+          type: string
+        key:
+          type: string
+      required:
+        - key
+      type: object
+    QuestMetadataMediaResponse:
+      additionalProperties: false
+      properties:
+        cardMediaAlt:
+          nullable: true
+          type: string
+        cardMediaKey:
+          nullable: true
+          type: string
+        galleryMedia:
+          items:
+            $ref: "#/components/schemas/QuestMetadataGalleryItemResponse"
+          type: array
+        heroMediaAlt:
+          nullable: true
+          type: string
+        heroMediaKey:
+          nullable: true
+          type: string
+        mediaPrefix:
+          nullable: true
+          type: string
+      type: object
+    QuestMetadataNarrativeResponse:
+      additionalProperties: false
+      properties:
+        bodyMarkdown:
+          nullable: true
+          type: string
+        summary:
+          nullable: true
+          type: string
+      type: object
+    QuestMetadataPresentationResponse:
+      additionalProperties: false
+      properties:
+        cardBadge:
+          nullable: true
+          type: string
+        cardTagline:
+          nullable: true
+          type: string
+        detailHighlights:
+          items:
+            type: string
+          type: array
+        estimatedMinutes:
+          minimum: 1
+          nullable: true
+          type: integer
+        presentationFlags:
+          additionalProperties: true
+          type: object
+      type: object
+    QuestMetadataResponse:
+      additionalProperties: false
+      properties:
+        media:
+          $ref: "#/components/schemas/QuestMetadataMediaResponse"
+        narrative:
+          $ref: "#/components/schemas/QuestMetadataNarrativeResponse"
+        presentation:
+          $ref: "#/components/schemas/QuestMetadataPresentationResponse"
+      type: object
     QuestProgressResponse:
       properties:
         completedAt:
@@ -2530,6 +2605,8 @@ components:
           nullable: true
         id:
           type: string
+        metadata:
+          $ref: "#/components/schemas/QuestMetadataResponse"
         publishedAt:
           format: date-time
           nullable: true
