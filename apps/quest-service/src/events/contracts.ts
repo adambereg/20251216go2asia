@@ -1,4 +1,11 @@
 export type QuestDomainEventType =
+  | 'quest.created'
+  | 'quest.draft.updated'
+  | 'quest.step.created'
+  | 'quest.step.updated'
+  | 'quest.step.deleted'
+  | 'quest.published'
+  | 'quest.archived'
   | 'quest.started'
   | 'quest.step.completed'
   | 'quest.submission.created'

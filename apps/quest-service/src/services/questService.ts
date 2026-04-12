@@ -1,8 +1,13 @@
 import { createDb } from '@go2asia/db';
 
 import {
+  archiveQuest as archiveQuestRow,
   advanceQuestProgress,
   approveSubmission,
+  countActiveQuestProgress,
+  countManagedQuests,
+  countQuestProgressStats,
+  countPendingQuestSubmissions,
   countPublishedQuests,
   countQuestSubmissions,
   getBlockingSubmissionForProgressStep,
@@ -15,23 +20,30 @@ import {
   insertQuestProgress,
   insertQuestStep,
   insertQuestSubmission,
+  deleteQuestStep as deleteQuestStepRow,
+  listManagedQuests,
   listPublishedQuests,
   listQuestSteps,
   listQuestSubmissions,
   publishQuest as publishQuestRow,
   rejectSubmission,
+  resequenceQuestSteps,
   setProgressPendingReview,
   syncQuestStepsCount,
   type QuestDifficulty,
+  type QuestStatus,
   type QuestProgressRow,
   type QuestProofType,
   type QuestRow,
   type QuestStepRow,
+  type QuestSubmissionStatus,
   type QuestTargetType,
   type QuestStepType,
   type QuestSubmissionRow,
   type QuestVerificationType,
   type QuestVisibility,
+  updateQuestDraft as updateQuestDraftRow,
+  updateQuestStep as updateQuestStepRow,
 } from '../db/queries/quest';
 import type { QuestDomainEvent, QuestDomainEventType } from '../events/contracts';
 import type { QuestEventPublisher } from '../events/publisher';
@@ -75,7 +87,29 @@ type ReviewSubmissionInput = {
   reason: string | null;
 };
 
+type UpdateQuestDraftInput = {
+  title?: string;
+  description?: string | null;
+  cityId?: string | null;
+  geoScope?: Record<string, unknown> | null;
+  type?: string | null;
+  theme?: string | null;
+  difficulty?: QuestDifficulty | null;
+  visibility?: QuestVisibility;
+  rewardPoints?: number | null;
+};
+
+type UpdateQuestStepInput = {
+  type?: QuestStepType;
+  targetType?: QuestTargetType | null;
+  targetId?: string | null;
+  verificationType?: QuestVerificationType;
+  requirements?: Record<string, unknown>;
+  rewardPoints?: number | null;
+};
+
 const QUEST_DIFFICULTIES: QuestDifficulty[] = ['easy', 'medium', 'hard'];
+const QUEST_STATUSES: QuestStatus[] = ['draft', 'published', 'archived'];
 const QUEST_VISIBILITIES: QuestVisibility[] = ['public', 'private'];
 const QUEST_STEP_TYPES: QuestStepType[] = [
   'visit_place',
@@ -90,6 +124,7 @@ const QUEST_STEP_TYPES: QuestStepType[] = [
 const QUEST_VERIFICATION_TYPES: QuestVerificationType[] = ['auto', 'geo', 'qr', 'manual', 'space_post'];
 const QUEST_PROOF_TYPES: QuestProofType[] = ['photo', 'geo', 'qr', 'space_post', 'text'];
 const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'space_post'];
+const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved', 'rejected'];
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -271,6 +306,7 @@ function normalizeQuestSubmission(submission: QuestSubmissionRow) {
     status: submission.status,
     reviewedBy: submission.reviewed_by,
     reviewedAt: asIso(submission.reviewed_at),
+    rejectionReason: submission.rejection_reason,
     createdAt: asIso(submission.created_at),
   };
 }
@@ -332,6 +368,61 @@ function canManageOwnedQuest(principal: GatewayPrincipal, quest: QuestRow): bool
   return hasRole(principal, 'admin') || quest.creator_pro_id === principal.userId;
 }
 
+function requireManagementPrincipal(principal: GatewayPrincipal, requestId: string): Response | null {
+  if (!canManageQuest(principal)) {
+    return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  }
+  return null;
+}
+
+function requireManagedQuestOwnership(
+  principal: GatewayPrincipal,
+  quest: QuestRow,
+  requestId: string,
+  message: string
+): Response | null {
+  if (!canManageOwnedQuest(principal, quest)) {
+    return errorResponse('FORBIDDEN', message, requestId, 403);
+  }
+  return null;
+}
+
+function requireDraftQuest(quest: QuestRow, requestId: string): Response | null {
+  if (quest.status !== 'draft') {
+    return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  }
+  return null;
+}
+
+function canTransitionQuestStatus(from: QuestStatus, to: QuestStatus): boolean {
+  if (from === 'draft' && to === 'published') return true;
+  if (from === 'published' && to === 'archived') return true;
+  return false;
+}
+
+function getTransitionConflictMessage(from: QuestStatus, to: QuestStatus): string {
+  if (from === to) return `Quest is already ${to}`;
+  if (to === 'published' && from === 'archived') return 'Archived quest cannot be published';
+  if (to === 'archived' && from === 'draft') return 'Draft quest cannot be archived before publish';
+  if (to === 'archived' && from === 'archived') return 'Quest is already archived';
+  return `Quest status transition ${from} -> ${to} is not supported`;
+}
+
+function assertQuestStatusTransition(quest: QuestRow, to: QuestStatus, requestId: string): Response | null {
+  if (canTransitionQuestStatus(quest.status, to)) return null;
+  return errorResponse('CONFLICT', getTransitionConflictMessage(quest.status, to), requestId, 409);
+}
+
+function getPublishReadinessError(steps: QuestStepRow[]): string | null {
+  if (steps.length === 0) return 'Quest must have at least one step before publish';
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i]?.order !== i + 1) {
+      return 'Quest steps must be sequential without gaps';
+    }
+  }
+  return null;
+}
+
 function parsePage(searchParams: URLSearchParams): { page: number; pageSize: number } | null {
   const rawPage = searchParams.get('page');
   const rawPageSize = searchParams.get('pageSize');
@@ -346,6 +437,24 @@ function parseDifficulty(value: string | null): QuestDifficulty | null | undefin
   if (value === null) return null;
   if (!QUEST_DIFFICULTIES.includes(value as QuestDifficulty)) return undefined;
   return value as QuestDifficulty;
+}
+
+function parseQuestStatus(value: string | null): QuestStatus | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_STATUSES.includes(value as QuestStatus)) return undefined;
+  return value as QuestStatus;
+}
+
+function parseQuestVisibility(value: string | null): QuestVisibility | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_VISIBILITIES.includes(value as QuestVisibility)) return undefined;
+  return value as QuestVisibility;
+}
+
+function parseSubmissionStatus(value: string | null): QuestSubmissionStatus | null | undefined {
+  if (value === null) return null;
+  if (!QUEST_SUBMISSION_STATUSES.includes(value as QuestSubmissionStatus)) return undefined;
+  return value as QuestSubmissionStatus;
 }
 
 function parseCreateQuestInput(body: Record<string, unknown> | null): CreateQuestInput | null {
@@ -383,6 +492,73 @@ function parseCreateQuestInput(body: Record<string, unknown> | null): CreateQues
   };
 }
 
+function parseUpdateQuestDraftInput(body: Record<string, unknown> | null): UpdateQuestDraftInput | null {
+  if (!body) return null;
+  const hasAnyKnownField =
+    body.title !== undefined ||
+    body.description !== undefined ||
+    body.cityId !== undefined ||
+    body.geoScope !== undefined ||
+    body.type !== undefined ||
+    body.theme !== undefined ||
+    body.difficulty !== undefined ||
+    body.visibility !== undefined ||
+    body.rewardPoints !== undefined;
+  if (!hasAnyKnownField) return null;
+
+  const parsed: UpdateQuestDraftInput = {};
+
+  if (body.title !== undefined) {
+    const title = parseOptionalString(body.title, 160);
+    if (!title) return null;
+    parsed.title = title;
+  }
+  if (body.description !== undefined) {
+    const description = parseOptionalString(body.description, 2000);
+    if (description === undefined) return null;
+    parsed.description = description;
+  }
+  if (body.cityId !== undefined) {
+    const cityId = parseOptionalString(body.cityId, 128);
+    if (cityId === undefined) return null;
+    parsed.cityId = cityId;
+  }
+  if (body.geoScope !== undefined) {
+    const geoScope = parseOptionalObject(body.geoScope);
+    if (geoScope === undefined) return null;
+    parsed.geoScope = geoScope;
+  }
+  if (body.type !== undefined) {
+    const type = parseOptionalString(body.type, 80);
+    if (type === undefined) return null;
+    parsed.type = type;
+  }
+  if (body.theme !== undefined) {
+    const theme = parseOptionalString(body.theme, 80);
+    if (theme === undefined) return null;
+    parsed.theme = theme;
+  }
+  if (body.difficulty !== undefined) {
+    const difficultyRaw = body.difficulty;
+    const difficulty =
+      difficultyRaw === null ? null : typeof difficultyRaw === 'string' ? parseDifficulty(difficultyRaw) : undefined;
+    if (difficulty === undefined) return null;
+    parsed.difficulty = difficulty;
+  }
+  if (body.visibility !== undefined) {
+    const visibilityRaw = body.visibility;
+    if (typeof visibilityRaw !== 'string' || !QUEST_VISIBILITIES.includes(visibilityRaw as QuestVisibility)) return null;
+    parsed.visibility = visibilityRaw as QuestVisibility;
+  }
+  if (body.rewardPoints !== undefined) {
+    const rewardPoints = parseOptionalNonNegativeInt(body.rewardPoints);
+    if (rewardPoints === undefined) return null;
+    parsed.rewardPoints = rewardPoints;
+  }
+
+  return parsed;
+}
+
 function parseAddQuestStepInput(body: Record<string, unknown> | null): AddQuestStepInput | null {
   if (!body) return null;
   if (typeof body.order !== 'number' || !Number.isInteger(body.order) || body.order < 1) return null;
@@ -415,6 +591,63 @@ function parseAddQuestStepInput(body: Record<string, unknown> | null): AddQuestS
     requirements,
     rewardPoints,
   };
+}
+
+function parseUpdateQuestStepInput(body: Record<string, unknown> | null): UpdateQuestStepInput | null {
+  if (!body) return null;
+  if (body.order !== undefined) return null;
+  const hasAnyKnownField =
+    body.type !== undefined ||
+    body.targetType !== undefined ||
+    body.targetId !== undefined ||
+    body.verificationType !== undefined ||
+    body.requirements !== undefined ||
+    body.rewardPoints !== undefined;
+  if (!hasAnyKnownField) return null;
+
+  const parsed: UpdateQuestStepInput = {};
+  if (body.type !== undefined) {
+    if (typeof body.type !== 'string' || !QUEST_STEP_TYPES.includes(body.type as QuestStepType)) return null;
+    parsed.type = body.type as QuestStepType;
+  }
+  if (body.targetType !== undefined) {
+    const targetTypeRaw = parseOptionalString(body.targetType, 80);
+    const targetType =
+      targetTypeRaw === null
+        ? null
+        : targetTypeRaw === undefined
+          ? undefined
+          : QUEST_TARGET_TYPES.includes(targetTypeRaw as QuestTargetType)
+            ? (targetTypeRaw as QuestTargetType)
+            : undefined;
+    if (targetType === undefined) return null;
+    parsed.targetType = targetType;
+  }
+  if (body.targetId !== undefined) {
+    const targetId = parseOptionalOpaqueRef(body.targetId, 80);
+    if (targetId === undefined) return null;
+    parsed.targetId = targetId;
+  }
+  if (body.verificationType !== undefined) {
+    if (
+      typeof body.verificationType !== 'string' ||
+      !QUEST_VERIFICATION_TYPES.includes(body.verificationType as QuestVerificationType)
+    ) {
+      return null;
+    }
+    parsed.verificationType = body.verificationType as QuestVerificationType;
+  }
+  if (body.requirements !== undefined) {
+    const requirements = parseOptionalObject(body.requirements);
+    if (!requirements) return null;
+    parsed.requirements = requirements;
+  }
+  if (body.rewardPoints !== undefined) {
+    const rewardPoints = parseOptionalNonNegativeInt(body.rewardPoints);
+    if (rewardPoints === undefined) return null;
+    parsed.rewardPoints = rewardPoints;
+  }
+  return parsed;
 }
 
 function parseSubmitQuestStepInput(body: Record<string, unknown> | null): SubmitQuestStepInput | null {
@@ -635,6 +868,28 @@ async function publishSubmissionApprovedSequence(
   }
 }
 
+async function publishManagementEvent(
+  env: Env,
+  requestId: string,
+  publisher: QuestEventPublisher,
+  principal: GatewayPrincipal,
+  input: {
+    eventType: QuestDomainEventType;
+    subjectType: 'quest' | 'quest_step';
+    subjectId: string;
+    payload: Record<string, unknown>;
+  }
+): Promise<void> {
+  await publisher.publish(
+    buildQuestEvent(env, requestId, principal, {
+      eventType: input.eventType,
+      subjectType: input.subjectType,
+      subjectId: input.subjectId,
+      payload: input.payload,
+    })
+  );
+}
+
 export async function listQuests(env: Env, requestId: string, url: URL): Promise<Response> {
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
@@ -677,13 +932,106 @@ export async function getQuest(env: Env, requestId: string, questId: string): Pr
   return json(normalizeQuest(quest, steps), 200);
 }
 
+export async function listOwnedQuests(
+  env: Env,
+  principal: GatewayPrincipal,
+  requestId: string,
+  url: URL
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const pagination = parsePage(url.searchParams);
+  if (!pagination) return errorResponse('VALIDATION_ERROR', 'Invalid pagination parameters', requestId, 400);
+
+  const statusRaw = url.searchParams.get('status');
+  const status = parseQuestStatus(statusRaw);
+  if (status === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid status filter', requestId, 400);
+
+  const visibilityRaw = url.searchParams.get('visibility');
+  const visibility = parseQuestVisibility(visibilityRaw);
+  if (visibility === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid visibility filter', requestId, 400);
+
+  const db = createDb(databaseUrl);
+  const ownerProId = hasRole(principal, 'admin') ? null : principal.userId;
+  const items = await listManagedQuests(db, {
+    ownerProId,
+    status,
+    visibility,
+    limit: pagination.pageSize,
+    offset: (pagination.page - 1) * pagination.pageSize,
+  });
+  const total = await countManagedQuests(db, { ownerProId, status, visibility });
+
+  return json(
+    {
+      items: items.map((quest) => normalizeQuest(quest, [], { includeSteps: false })),
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total,
+    },
+    200
+  );
+}
+
+export async function getOwnedQuest(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot access this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(quest, steps), 200);
+}
+
+export async function getOwnedQuestOperationalStats(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot access this quest');
+  if (ownedQuestError) return ownedQuestError;
+
+  const progressStats = await countQuestProgressStats(db, questId);
+  const pendingReviewCount = await countPendingQuestSubmissions(db, questId);
+  return json(
+    {
+      questId,
+      startedCount: progressStats.startedCount,
+      completedCount: progressStats.completedCount,
+      pendingReviewCount,
+    },
+    200
+  );
+}
+
 export async function createQuestDraft(
   env: Env,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseCreateQuestInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid quest payload', requestId, 400);
 
@@ -704,7 +1052,66 @@ export async function createQuestDraft(
     rewardPoints: parsed.rewardPoints,
   });
   if (!created) return errorResponse('INTERNAL_ERROR', 'Failed to create quest', requestId, 500);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.created',
+    subjectType: 'quest',
+    subjectId: created.id,
+    payload: {
+      questId: created.id,
+      status: created.status,
+      creatorProId: created.creator_pro_id,
+    },
+  });
   return json(normalizeQuest(created, []), 201);
+}
+
+export async function updateQuestDraftByOwner(
+  env: Env,
+  questId: string,
+  body: Record<string, unknown> | null,
+  principal: GatewayPrincipal,
+  requestId: string,
+  publisher: QuestEventPublisher
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const parsed = parseUpdateQuestDraftInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft update payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
+
+  const updated = await updateQuestDraftRow(db, {
+    questId,
+    title: parsed.title ?? quest.title,
+    description: parsed.description !== undefined ? parsed.description : quest.description,
+    cityId: parsed.cityId !== undefined ? parsed.cityId : quest.city_id,
+    geoScope: parsed.geoScope !== undefined ? parsed.geoScope : quest.geo_scope,
+    type: parsed.type !== undefined ? parsed.type : quest.type,
+    theme: parsed.theme !== undefined ? parsed.theme : quest.theme,
+    difficulty: parsed.difficulty !== undefined ? parsed.difficulty : quest.difficulty,
+    visibility: parsed.visibility ?? quest.visibility,
+    rewardPoints: parsed.rewardPoints !== undefined ? parsed.rewardPoints : quest.reward_points,
+  });
+  if (!updated) return errorResponse('CONFLICT', 'Quest could not be updated', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.draft.updated',
+    subjectType: 'quest',
+    subjectId: updated.id,
+    payload: {
+      questId: updated.id,
+      status: updated.status,
+    },
+  });
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(updated, steps), 200);
 }
 
 export async function addQuestStep(
@@ -712,9 +1119,11 @@ export async function addQuestStep(
   questId: string,
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseAddQuestStepInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid quest step payload', requestId, 400);
   const validationError = validateStepDefinition(parsed);
@@ -725,8 +1134,10 @@ export async function addQuestStep(
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot modify this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Only draft quests can be modified', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
 
   const steps = await listQuestSteps(db, questId);
   if (steps.some((step) => step.order === parsed.order)) {
@@ -746,35 +1157,210 @@ export async function addQuestStep(
   });
   if (!created) return errorResponse('INTERNAL_ERROR', 'Failed to create quest step', requestId, 500);
   await syncQuestStepsCount(db, questId);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.created',
+    subjectType: 'quest_step',
+    subjectId: created.id,
+    payload: {
+      questId,
+      stepId: created.id,
+      stepOrder: created.order,
+    },
+  });
   return json(normalizeQuestStep(created), 201);
+}
+
+export async function updateQuestStepByOwner(
+  env: Env,
+  questId: string,
+  stepId: string,
+  body: Record<string, unknown> | null,
+  principal: GatewayPrincipal,
+  requestId: string,
+  publisher: QuestEventPublisher
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const parsed = parseUpdateQuestStepInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid draft step update payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
+
+  const existingStep = await getQuestStepById(db, questId, stepId);
+  if (!existingStep) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
+
+  const merged: AddQuestStepInput = {
+    order: existingStep.order,
+    type: parsed.type ?? existingStep.type,
+    targetType: parsed.targetType !== undefined ? parsed.targetType : existingStep.target_type,
+    targetId: parsed.targetId !== undefined ? parsed.targetId : existingStep.target_id,
+    verificationType: parsed.verificationType ?? existingStep.verification_type,
+    requirements: parsed.requirements ?? (existingStep.requirements_json ?? {}),
+    rewardPoints: parsed.rewardPoints !== undefined ? parsed.rewardPoints : existingStep.reward_points,
+  };
+  const validationError = validateStepDefinition(merged);
+  if (validationError) return errorResponse('VALIDATION_ERROR', validationError, requestId, 400);
+
+  const updated = await updateQuestStepRow(db, {
+    questId,
+    stepId,
+    type: merged.type,
+    targetType: merged.targetType,
+    targetId: merged.targetId,
+    verificationType: merged.verificationType,
+    requirementsJson: merged.requirements,
+    rewardPoints: merged.rewardPoints,
+  });
+  if (!updated) return errorResponse('CONFLICT', 'Quest step could not be updated', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.updated',
+    subjectType: 'quest_step',
+    subjectId: updated.id,
+    payload: {
+      questId,
+      stepId: updated.id,
+      stepOrder: updated.order,
+    },
+  });
+  return json(normalizeQuestStep(updated), 200);
+}
+
+export async function deleteQuestStepByOwner(
+  env: Env,
+  questId: string,
+  stepId: string,
+  principal: GatewayPrincipal,
+  requestId: string,
+  publisher: QuestEventPublisher
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot modify this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const draftQuestError = requireDraftQuest(quest, requestId);
+  if (draftQuestError) return draftQuestError;
+
+  const deleted = await deleteQuestStepRow(db, { questId, stepId });
+  if (!deleted) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
+  await resequenceQuestSteps(db, questId);
+  await syncQuestStepsCount(db, questId);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.step.deleted',
+    subjectType: 'quest_step',
+    subjectId: stepId,
+    payload: {
+      questId,
+      stepId,
+    },
+  });
+  return new Response(null, { status: 204 });
 }
 
 export async function publishQuest(
   env: Env,
   questId: string,
   principal: GatewayPrincipal,
-  requestId: string
+  requestId: string,
+  publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot publish this quest', requestId, 403);
-  if (quest.status !== 'draft') return errorResponse('CONFLICT', 'Quest is already published or archived', requestId, 409);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot publish this quest');
+  if (ownedQuestError) return ownedQuestError;
+  const transitionError = assertQuestStatusTransition(quest, 'published', requestId);
+  if (transitionError) return transitionError;
 
   const steps = await listQuestSteps(db, questId);
-  if (steps.length === 0) return errorResponse('CONFLICT', 'Quest must have at least one step before publish', requestId, 409);
-  for (let i = 0; i < steps.length; i++) {
-    if (steps[i]?.order !== i + 1) {
-      return errorResponse('CONFLICT', 'Quest steps must be sequential without gaps', requestId, 409);
-    }
-  }
+  const publishReadinessError = getPublishReadinessError(steps);
+  if (publishReadinessError) return errorResponse('CONFLICT', publishReadinessError, requestId, 409);
 
   const published = await publishQuestRow(db, questId);
   if (!published) return errorResponse('CONFLICT', 'Quest could not be published', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.published',
+    subjectType: 'quest',
+    subjectId: published.id,
+    payload: {
+      questId: published.id,
+      status: published.status,
+      publishedAt: asIso(published.published_at),
+      stepsCount: published.steps_count,
+    },
+  });
   return json(normalizeQuest(published, steps), 200);
+}
+
+export async function archiveQuest(
+  env: Env,
+  questId: string,
+  principal: GatewayPrincipal,
+  requestId: string,
+  publisher: QuestEventPublisher
+): Promise<Response> {
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+  const db = createDb(databaseUrl);
+  const quest = await getQuestById(db, questId);
+  if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot archive this quest');
+  if (ownedQuestError) return ownedQuestError;
+
+  const transitionError = assertQuestStatusTransition(quest, 'archived', requestId);
+  if (transitionError) return transitionError;
+
+  const activeProgressTotal = await countActiveQuestProgress(db, questId);
+  if (activeProgressTotal > 0) {
+    return errorResponse(
+      'CONFLICT',
+      'Quest cannot be archived while active progress exists',
+      requestId,
+      409
+    );
+  }
+
+  const pendingSubmissionsTotal = await countPendingQuestSubmissions(db, questId);
+  if (pendingSubmissionsTotal > 0) {
+    return errorResponse(
+      'CONFLICT',
+      'Quest cannot be archived while pending submissions exist',
+      requestId,
+      409
+    );
+  }
+
+  const archived = await archiveQuestRow(db, questId);
+  if (!archived) return errorResponse('CONFLICT', 'Quest could not be archived', requestId, 409);
+  await publishManagementEvent(env, requestId, publisher, principal, {
+    eventType: 'quest.archived',
+    subjectType: 'quest',
+    subjectId: archived.id,
+    payload: {
+      questId: archived.id,
+      status: archived.status,
+    },
+  });
+  const steps = await listQuestSteps(db, questId);
+  return json(normalizeQuest(archived, steps), 200);
 }
 
 export async function startQuest(
@@ -971,22 +1557,35 @@ export async function getQuestSubmissions(
   requestId: string,
   url: URL
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
   const pagination = parsePage(url.searchParams);
   if (!pagination) return errorResponse('VALIDATION_ERROR', 'Invalid pagination parameters', requestId, 400);
+  const status = parseSubmissionStatus(url.searchParams.get('status'));
+  if (status === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid submission status filter', requestId, 400);
+  const stepId = parseOptionalOpaqueRef(url.searchParams.get('stepId'), 80);
+  if (stepId === undefined) return errorResponse('VALIDATION_ERROR', 'Invalid stepId filter', requestId, 400);
   const db = createDb(databaseUrl);
   const quest = await getQuestById(db, questId);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot access submissions for this quest', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(
+    principal,
+    quest,
+    requestId,
+    'Cannot access submissions for this quest'
+  );
+  if (ownedQuestError) return ownedQuestError;
 
   const items = await listQuestSubmissions(db, {
     questId,
+    status,
+    stepId,
     limit: pagination.pageSize,
     offset: (pagination.page - 1) * pagination.pageSize,
   });
-  const total = await countQuestSubmissions(db, questId);
+  const total = await countQuestSubmissions(db, { questId, status, stepId });
   return json(
     {
       items: items.map(normalizeQuestSubmission),
@@ -1006,7 +1605,8 @@ export async function reviewQuestSubmission(
   requestId: string,
   publisher: QuestEventPublisher
 ): Promise<Response> {
-  if (!canManageQuest(principal)) return errorResponse('FORBIDDEN', 'PRO or admin role is required', requestId, 403);
+  const managePrincipalError = requireManagementPrincipal(principal, requestId);
+  if (managePrincipalError) return managePrincipalError;
   const parsed = parseReviewSubmissionInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid review payload', requestId, 400);
   const databaseUrl = requireDatabaseUrl(env, requestId);
@@ -1017,7 +1617,8 @@ export async function reviewQuestSubmission(
   if (!existing) return errorResponse('NOT_FOUND', 'Submission not found', requestId, 404);
   const quest = await getQuestById(db, existing.quest_id);
   if (!quest) return errorResponse('NOT_FOUND', 'Quest not found', requestId, 404);
-  if (!canManageOwnedQuest(principal, quest)) return errorResponse('FORBIDDEN', 'Cannot review this submission', requestId, 403);
+  const ownedQuestError = requireManagedQuestOwnership(principal, quest, requestId, 'Cannot review this submission');
+  if (ownedQuestError) return ownedQuestError;
   if (existing.status !== 'pending') return errorResponse('CONFLICT', 'Submission is already reviewed', requestId, 409);
 
   if (parsed.decision === 'reject') {

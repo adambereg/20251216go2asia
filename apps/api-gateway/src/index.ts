@@ -289,6 +289,24 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath === '/v1/quests' && normalizedMethod === 'POST') {
     return { routeKey: 'quest.create.post', routeGroup: 'quest' };
   }
+  if (normalizedPath === '/v1/quests/mine' && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.list.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.detail.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/stats$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.stats.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.steps.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'quest.mine.steps.delete.delete', routeGroup: 'quest' };
+  }
   if (/^\/v1\/quests\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
     return { routeKey: 'quest.detail.get', routeGroup: 'quest' };
   }
@@ -303,6 +321,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   }
   if (/^\/v1\/quests\/[^/]+\/publish$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.publish.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/archive$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.archive.post', routeGroup: 'quest' };
   }
   if (/^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.submit.post', routeGroup: 'quest' };
@@ -675,10 +696,17 @@ function isProtectedFeedRoute(method: string, path: string): boolean {
 
 function isProtectedQuestRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/quests') return true;
+  if (method === 'GET' && path === '/v1/quests/mine') return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+\/stats$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/publish$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/archive$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/submissions$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/submissions\/[^/]+\/review$/.test(path)) return true;

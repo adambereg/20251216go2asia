@@ -153,6 +153,63 @@ export async function countPublishedQuests(
   return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
 }
 
+export async function listManagedQuests(
+  db: DbExecutor,
+  input: {
+    ownerProId: string | null;
+    status: QuestStatus | null;
+    visibility: QuestVisibility | null;
+    limit: number;
+    offset: number;
+  }
+): Promise<QuestRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+    FROM quest
+    WHERE (${input.ownerProId}::text IS NULL OR creator_pro_id = ${input.ownerProId})
+      AND (${input.status}::quest_status IS NULL OR status = ${input.status})
+      AND (${input.visibility}::quest_visibility IS NULL OR visibility = ${input.visibility})
+    ORDER BY updated_at DESC, created_at DESC, id DESC
+    LIMIT ${input.limit}
+    OFFSET ${input.offset}
+  `);
+  return rowsOf<QuestRow>(result);
+}
+
+export async function countManagedQuests(
+  db: DbExecutor,
+  input: {
+    ownerProId: string | null;
+    status: QuestStatus | null;
+    visibility: QuestVisibility | null;
+  }
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest
+    WHERE (${input.ownerProId}::text IS NULL OR creator_pro_id = ${input.ownerProId})
+      AND (${input.status}::quest_status IS NULL OR status = ${input.status})
+      AND (${input.visibility}::quest_visibility IS NULL OR visibility = ${input.visibility})
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
 export async function getQuestById(db: DbExecutor, questId: string): Promise<QuestRow | null> {
   const result = await db.execute(sql`
     SELECT
@@ -320,6 +377,57 @@ export async function insertQuest(
   return rowsOf<QuestRow>(result)[0] ?? null;
 }
 
+export async function updateQuestDraft(
+  db: DbExecutor,
+  input: {
+    questId: string;
+    title: string;
+    description: string | null;
+    cityId: string | null;
+    geoScope: Record<string, unknown> | null;
+    type: string | null;
+    theme: string | null;
+    difficulty: QuestDifficulty | null;
+    visibility: QuestVisibility;
+    rewardPoints: number | null;
+  }
+): Promise<QuestRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest
+    SET
+      title = ${input.title},
+      description = ${input.description},
+      city_id = ${input.cityId},
+      geo_scope = ${input.geoScope},
+      type = ${input.type},
+      theme = ${input.theme},
+      difficulty = ${input.difficulty},
+      visibility = ${input.visibility},
+      reward_points = ${input.rewardPoints},
+      updated_at = now()
+    WHERE id = ${input.questId}
+      AND status = 'draft'
+    RETURNING
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRow>(result)[0] ?? null;
+}
+
 export async function insertQuestStep(
   db: DbExecutor,
   input: {
@@ -374,6 +482,75 @@ export async function insertQuestStep(
   return rowsOf<QuestStepRow>(result)[0] ?? null;
 }
 
+export async function updateQuestStep(
+  db: DbExecutor,
+  input: {
+    questId: string;
+    stepId: string;
+    type: QuestStepType;
+    targetType: QuestTargetType | null;
+    targetId: string | null;
+    verificationType: QuestVerificationType;
+    requirementsJson: Record<string, unknown>;
+    rewardPoints: number | null;
+  }
+): Promise<QuestStepRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest_step
+    SET
+      type = ${input.type},
+      target_type = ${input.targetType},
+      target_id = ${input.targetId},
+      verification_type = ${input.verificationType},
+      requirements_json = ${input.requirementsJson},
+      reward_points = ${input.rewardPoints}
+    WHERE quest_id = ${input.questId}
+      AND id = ${input.stepId}
+    RETURNING
+      id,
+      quest_id,
+      "order",
+      type,
+      target_type,
+      target_id,
+      verification_type,
+      requirements_json,
+      reward_points,
+      created_at
+  `);
+  return rowsOf<QuestStepRow>(result)[0] ?? null;
+}
+
+export async function deleteQuestStep(
+  db: DbExecutor,
+  input: { questId: string; stepId: string }
+): Promise<boolean> {
+  const result = await db.execute(sql`
+    DELETE FROM quest_step
+    WHERE quest_id = ${input.questId}
+      AND id = ${input.stepId}
+    RETURNING id
+  `);
+  return rowsOf<{ id: string }>(result).length > 0;
+}
+
+export async function resequenceQuestSteps(db: DbExecutor, questId: string): Promise<void> {
+  await db.execute(sql`
+    WITH ranked AS (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (ORDER BY "order" ASC, id ASC)::int AS next_order
+      FROM quest_step
+      WHERE quest_id = ${questId}
+    )
+    UPDATE quest_step qs
+    SET "order" = ranked.next_order
+    FROM ranked
+    WHERE qs.id = ranked.id
+      AND qs.quest_id = ${questId}
+  `);
+}
+
 export async function syncQuestStepsCount(db: DbExecutor, questId: string): Promise<void> {
   await db.execute(sql`
     UPDATE quest q
@@ -418,6 +595,80 @@ export async function publishQuest(db: DbExecutor, questId: string): Promise<Que
       updated_at
   `);
   return rowsOf<QuestRow>(result)[0] ?? null;
+}
+
+export async function archiveQuest(db: DbExecutor, questId: string): Promise<QuestRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest
+    SET
+      status = 'archived',
+      updated_at = now()
+    WHERE id = ${questId}
+      AND status = 'published'
+    RETURNING
+      id,
+      title,
+      description,
+      creator_pro_id,
+      city_id,
+      geo_scope,
+      type,
+      theme,
+      difficulty,
+      status,
+      visibility,
+      reward_points,
+      steps_count,
+      published_at,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRow>(result)[0] ?? null;
+}
+
+export async function countActiveQuestProgress(
+  db: DbExecutor,
+  questId: string
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest_progress
+    WHERE quest_id = ${questId}
+      AND status IN ('not_started', 'in_progress', 'pending_review')
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
+export async function countPendingQuestSubmissions(
+  db: DbExecutor,
+  questId: string
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM quest_submission qs
+    INNER JOIN quest_progress qp ON qp.id = qs.progress_id
+    WHERE qp.quest_id = ${questId}
+      AND qs.status = 'pending'
+  `);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
+export async function countQuestProgressStats(
+  db: DbExecutor,
+  questId: string
+): Promise<{ startedCount: number; completedCount: number }> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (WHERE status <> 'not_started')::int AS started_count,
+      COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_count
+    FROM quest_progress
+    WHERE quest_id = ${questId}
+  `);
+  const row = rowsOf<{ started_count: number; completed_count: number }>(result)[0];
+  return {
+    startedCount: row?.started_count ?? 0,
+    completedCount: row?.completed_count ?? 0,
+  };
 }
 
 export async function getQuestProgressByQuestAndUser(
@@ -626,6 +877,8 @@ export async function listQuestSubmissions(
   db: DbExecutor,
   input: {
     questId: string;
+    status: QuestSubmissionStatus | null;
+    stepId: string | null;
     limit: number;
     offset: number;
   }
@@ -647,6 +900,8 @@ export async function listQuestSubmissions(
     FROM quest_submission qs
     INNER JOIN quest_progress qp ON qp.id = qs.progress_id
     WHERE qp.quest_id = ${input.questId}
+      AND (${input.status}::quest_submission_status IS NULL OR qs.status = ${input.status}::quest_submission_status)
+      AND (${input.stepId}::text IS NULL OR qs.step_id = ${input.stepId}::text)
     ORDER BY qs.created_at DESC, qs.id DESC
     LIMIT ${input.limit}
     OFFSET ${input.offset}
@@ -654,12 +909,17 @@ export async function listQuestSubmissions(
   return rowsOf<QuestSubmissionRow>(result);
 }
 
-export async function countQuestSubmissions(db: DbExecutor, questId: string): Promise<number> {
+export async function countQuestSubmissions(
+  db: DbExecutor,
+  input: { questId: string; status: QuestSubmissionStatus | null; stepId: string | null }
+): Promise<number> {
   const result = await db.execute(sql`
     SELECT COUNT(*)::int AS total
     FROM quest_submission qs
     INNER JOIN quest_progress qp ON qp.id = qs.progress_id
-    WHERE qp.quest_id = ${questId}
+    WHERE qp.quest_id = ${input.questId}
+      AND (${input.status}::quest_submission_status IS NULL OR qs.status = ${input.status}::quest_submission_status)
+      AND (${input.stepId}::text IS NULL OR qs.step_id = ${input.stepId}::text)
   `);
   return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
 }

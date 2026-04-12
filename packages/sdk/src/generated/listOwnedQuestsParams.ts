@@ -6,14 +6,14 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { SubmissionStatusFilterParameter } from "./submissionStatusFilterParameter";
-import type { SubmissionStepIdFilterParameter } from "./submissionStepIdFilterParameter";
+import type { QuestStatusFilterParameter } from "./questStatusFilterParameter";
+import type { QuestVisibilityFilterParameter } from "./questVisibilityFilterParameter";
 import type { PageParameter } from "./pageParameter";
 import type { PageSizeParameter } from "./pageSizeParameter";
 
-export type ListQuestSubmissionsParams = {
-  status?: SubmissionStatusFilterParameter;
-  stepId?: SubmissionStepIdFilterParameter;
+export type ListOwnedQuestsParams = {
+  status?: QuestStatusFilterParameter;
+  visibility?: QuestVisibilityFilterParameter;
   /**
    * @minimum 1
    */
