@@ -7,7 +7,6 @@ import { useUser } from '@clerk/nextjs';
 import { generated } from '@go2asia/sdk';
 import {
   AlertTriangle,
-  BarChart3,
   Eye,
   Loader2,
   Route,
@@ -24,6 +23,7 @@ import {
 } from '@/app/(public)/quest/questPresentation';
 import { getQuestHeroMediaRuntimeFirst } from '@/app/(public)/quest/questRuntimeMetadata';
 import { fetchOwnedQuest, fetchOwnedQuestStats, type QuestProApiError } from './QuestProApi';
+import { QuestCuratorStatsBlock } from './QuestCuratorStatsBlock';
 import { QuestDraftEditor } from './QuestDraftEditor';
 import { QuestLifecycleControls } from './QuestLifecycleControls';
 import { QuestReviewQueue } from './QuestReviewQueue';
@@ -88,6 +88,7 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
   const { user, isLoaded } = useUser();
   const [quest, setQuest] = useState<generated.QuestDetailResponse | null>(null);
   const [stats, setStats] = useState<generated.QuestOperationalStatsResponse | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,10 +104,12 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
       if (!questResponse.data) {
         setQuest(null);
         setStats(null);
+        setStatsError(null);
         setError(readDetailError(questResponse.error));
       } else {
         setQuest(questResponse.data);
         setStats(statsResponse.data);
+        setStatsError(statsResponse.data ? null : 'Не удалось загрузить curator stats. Остальной management detail остаётся доступен.');
       }
 
       setLoading(false);
@@ -133,7 +136,12 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
     const statsResponse = await fetchOwnedQuestStats(questId);
     if (statsResponse.data) {
       setStats(statsResponse.data);
+      setStatsError(null);
+      return;
     }
+
+    setStats(null);
+    setStatsError('Не удалось обновить curator stats. Блок ниже показывает, что значения сейчас недоступны.');
   }
 
   const readinessNotes = useMemo(() => (quest ? getReadinessNotes(quest) : []), [quest]);
@@ -328,30 +336,7 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
         <div className="space-y-6">
           <QuestLifecycleControls quest={quest} stats={stats} onQuestChanged={setQuest} />
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-violet-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Curator stats</h2>
-            </div>
-            <p className="mt-1 text-sm text-slate-600">
-              Minimum operational stats seam из backend closure pack.
-            </p>
-
-            <div className="mt-4 grid gap-3">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Started</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">{stats?.startedCount ?? '—'}</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Completed</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">{stats?.completedCount ?? '—'}</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Pending review</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">{stats?.pendingReviewCount ?? '—'}</p>
-              </div>
-            </div>
-          </article>
+          <QuestCuratorStatsBlock stats={stats} statsError={statsError} />
 
           <QuestReviewQueue questId={quest.id} steps={quest.steps} onQueueChanged={reloadStats} />
 
