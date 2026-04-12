@@ -160,3 +160,31 @@ export async function deleteDraftQuestStep(
     return { ok: false, error: error as QuestProApiError };
   }
 }
+
+export async function publishManagedQuest(
+  questId: string
+): Promise<{ data: generated.QuestDetailResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestDetailResponse>(
+      { method: 'POST' },
+      `/v1/quests/${encodeURIComponent(questId)}/publish`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function archiveManagedQuest(
+  questId: string
+): Promise<{ data: generated.QuestDetailResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestDetailResponse>(
+      { method: 'POST' },
+      `/v1/quests/${encodeURIComponent(questId)}/archive`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}

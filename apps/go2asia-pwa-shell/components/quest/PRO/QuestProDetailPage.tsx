@@ -25,6 +25,7 @@ import {
 import { getQuestHeroMediaRuntimeFirst } from '@/app/(public)/quest/questRuntimeMetadata';
 import { fetchOwnedQuest, fetchOwnedQuestStats, type QuestProApiError } from './QuestProApi';
 import { QuestDraftEditor } from './QuestDraftEditor';
+import { QuestLifecycleControls } from './QuestLifecycleControls';
 
 interface QuestProDetailPageProps {
   questId: string;
@@ -65,16 +66,19 @@ function getReadinessNotes(quest: generated.QuestDetailResponse): string[] {
     notes.push('Draft пока не готов к publish: нет ни одного шага.');
   }
   if (quest.status === 'draft' && quest.steps.length > 0) {
-    notes.push('Draft содержит шаги и уже выглядит как кандидат для следующего lifecycle slice.');
+    notes.push('Draft содержит шаги: publish control теперь доступен через lifecycle panel справа.');
   }
   if (quest.steps.some((step) => step.verificationType === 'manual')) {
     notes.push('Есть manual review шаги: review queue будет отдельным UI slice.');
   }
   if (quest.status === 'published') {
-    notes.push('Published lifecycle уже поддержан backend, но interactive controls deliberately отложены после UI-1.');
+    notes.push('Published quest можно архивировать через bounded lifecycle control без открытия отдельного workflow экрана.');
+  }
+  if (quest.status === 'archived') {
+    notes.push('Archived quest остаётся read-only: restore или unpublish flows в текущий slice не входят.');
   }
   if (notes.length === 0) {
-    notes.push('Management readiness context ограничен read-first сигналами UI-1.');
+    notes.push('Management detail показывает bounded readiness context без workflow platform semantics.');
   }
   return notes;
 }
@@ -225,9 +229,9 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
                 Draft editing доступен только для draft
               </span>
             )}
-            <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
+            <span className="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700">
               <Route className="mr-2 h-4 w-4" />
-              Publish / Archive — следующий slice
+              Lifecycle controls active in this slice
             </span>
             <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
               <Eye className="mr-2 h-4 w-4" />
@@ -301,7 +305,7 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
               <h2 className="text-lg font-semibold text-slate-900">Readiness and guardrails</h2>
             </div>
             <p className="mt-1 text-sm text-slate-600">
-              UI-1 показывает bounded readiness context и intentionally не включает interactive lifecycle flow.
+              Management detail показывает bounded readiness context и lifecycle controls, а review/builder flows по-прежнему intentionally вынесены в отдельные slices.
             </p>
             <ul className="mt-4 space-y-3">
               {readinessNotes.map((note) => (
@@ -314,6 +318,8 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
         </div>
 
         <div className="space-y-6">
+          <QuestLifecycleControls quest={quest} stats={stats} onQuestChanged={setQuest} />
+
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-violet-600" />
@@ -364,13 +370,13 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
             </div>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
               <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                Draft editing UI с bounded quest/step mutation surface.
+                Review queue UI поверх уже готового backend review seam.
               </li>
               <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                Lifecycle controls с publish/archive flows и conflict feedback.
+                Richer builder semantics для step ordering и более guided authoring.
               </li>
               <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                Full review queue UI поверх уже готового backend review seam.
+                Broader operational insights beyond the current bounded stats block.
               </li>
             </ul>
             <div className="mt-4">
