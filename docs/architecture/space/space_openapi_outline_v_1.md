@@ -242,6 +242,14 @@ Cross-module reposts should still be supported via canonical create-post endpoin
 
 # 6. Groups
 
+## 6.0 V1 taxonomy contract rule
+
+In v1, group taxonomy is a product-level canon and does not require a mandatory schema-level `group_type` field.
+
+`quest` / `event` / `PRO-led` group semantics may initially be represented through policy, metadata, and read-model semantics rather than canonical DB typing.
+
+If a canonical `group_type` field is introduced later, it must be a deliberate post-v1 architecture decision and not an implicit frontend-only contract.
+
 # 6.1 `POST /v1/space/groups`
 
 ## Purpose
@@ -250,6 +258,11 @@ Create a new Space group.
 ## Auth
 Required.
 
+## Policy note
+Early-phase creation may be restricted by policy (admin + approved PRO), even when endpoint auth is valid.
+
+The contract should allow business-rule responses for policy denial.
+
 ## Request body
 `CreateSpaceGroupRequest`
 
@@ -257,6 +270,10 @@ Required.
 `201 Created`
 
 Returns `SpaceGroupResponse`.
+
+## Boundary note
+PRO-led groups are still Space social-layer groups.  
+Operational administration through PRO Console does not transfer group ownership from Space Service.
 
 ---
 
@@ -333,6 +350,20 @@ Required.
 
 ## Success response
 `200 OK` or `204 No Content`
+
+---
+
+# 6.6 Group publication semantics (contract-level notes)
+
+For posts published into groups:
+
+- `groupId` identifies the social container context;
+- `visibility = group` is the canonical in-group publication visibility;
+- group feed delivery is projection behavior, not group identity.
+
+Private-to-group sharing is allowed in v1 only by explicit user action (for example `share to group` / `publish to group` / `repost into group`) and must not occur automatically.
+
+These are policy/semantic rules and do not require mandatory `group_type` schema expansion in v1.
 
 ---
 
@@ -1118,6 +1149,8 @@ At contract level document at least these rules:
 - only owner/moderator may update some group fields
 - group feed access depends on group visibility and membership
 - organizer is private to the current user
+- group creation may be policy-restricted in early phase
+- private-to-group transition requires explicit user action
 
 ---
 

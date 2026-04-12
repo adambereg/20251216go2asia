@@ -257,6 +257,13 @@ This directly supports Go2Asia’s ecosystem model.
 
 Groups are first-class social containers.
 
+Canonical semantic distinction:
+
+- `group = community context`
+- `feed = delivery surface`
+
+Group feed is a delivery projection and must not be treated as group identity itself.
+
 ### Fields
 
 - `id`
@@ -282,6 +289,22 @@ Groups are first-class social containers.
 - `archived`
 
 Groups provide bounded social context and should exist from the first real Space iteration.
+
+### Group policy notes for v1
+
+Early-phase group creation is controlled by policy (admin + approved PRO first), with unrestricted open creation intentionally deferred.
+
+Private-to-group sharing is allowed only by explicit user action and must never happen automatically.
+
+Groups, including PRO-led groups, remain social-layer entities and must not become operational workspaces.
+
+### V1 taxonomy and typing guardrail
+
+In v1, group taxonomy is treated as product-level canon and does not require a mandatory schema-level `group_type` field.
+
+`quest` / `event` / `PRO-led` semantics may be carried initially via policy, metadata, and read-model behavior, while `space_group` remains the canonical social container.
+
+Introducing canonical `group_type` typing in schema or contracts requires an explicit post-v1 architecture decision.
 
 ---
 
@@ -547,6 +570,11 @@ These indexes are sufficient for the first production iteration.
 - `GET /v1/space/groups/{id}`
 - `POST /v1/space/groups/{id}/join`
 - `POST /v1/space/groups/{id}/leave`
+
+Policy interpretation note:
+
+- create/join behavior may be constrained by controlled creation and membership policy;
+- those controls are intentional v1 guardrails and do not require schema expansion.
 
 ## Feed
 

@@ -272,6 +272,25 @@ AI must never publish silently without permission rules.
 
 ---
 
+## 4.6 PRO Console (operational/admin client)
+
+**Actions:**
+
+- create/administer groups through policy-governed Space APIs
+- manage operational workflows that reference groups
+- link operational objects to social group surfaces
+
+**Dependency type:**
+
+controlled operational/admin API client
+
+**Boundary rule:**
+
+PRO Console may operate on group workflows, but group ownership remains in Space Service.  
+PRO Console must not become a second source of truth for group identity/membership state.
+
+---
+
 # 5. Services Subscribing to Space Events
 
 Space should emit events consumed by other services.
@@ -323,6 +342,18 @@ The following domains must not migrate into Space Service:
 - quest management
 - planner logic
 - AI orchestration
+- event operational management
+- PRO Console ownership of group domain state
+
+### Social-layer-only rule for cross-domain group flows
+
+Quest/Pulse/RF related group activity is allowed only as social-layer publication/circulation context.
+
+This must not transfer ownership of:
+
+- quest progression truth;
+- event truth and event operations;
+- partner/business operational workflows.
 
 ---
 
