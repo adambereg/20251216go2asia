@@ -125,6 +125,10 @@ function normalizeGroupSlug(value: unknown): string | null {
   return normalized.slice(0, 160);
 }
 
+function canCreateGroup(principal: GatewayPrincipal): boolean {
+  return principal.platformRole === 'admin' || principal.platformRole === 'pro';
+}
+
 async function canViewGroup(
   group: SpaceGroupRow,
   viewer: GatewayPrincipal | null,
@@ -569,6 +573,15 @@ export async function createGroup(
   const visibility = normalizeGroupVisibility(body?.visibility);
   if (!slug || !title || !visibility) {
     return errorResponse('VALIDATION_ERROR', 'slug, title and visibility are required', requestId, 400);
+  }
+
+  if (!canCreateGroup(principal)) {
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'Group creation is restricted to admin and approved PRO roles in v1',
+      requestId,
+      400
+    );
   }
 
   await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));

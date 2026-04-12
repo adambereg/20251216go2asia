@@ -223,7 +223,7 @@ describe('space-service v1', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       DATABASE_URL: 'postgres://example',
     };
-    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { role: 'pro' });
 
     executeMock
       .mockResolvedValueOnce({ rows: [] })
@@ -267,6 +267,314 @@ describe('space-service v1', () => {
     expect(body.slug).toBe('bangkok-founders');
     expect(body.ownerId).toBe('user_test_1');
     expect(body.membersCount).toBe(1);
+  });
+
+  it('rejects group creation for non-PRO non-admin user', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { role: 'spacer' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          slug: 'open-group',
+          title: 'Open Group',
+          visibility: 'public',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('Group creation');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns a public group for anonymous read', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'sgroup_public',
+          slug: 'phuket-makers',
+          title: 'Phuket Makers',
+          description: 'Public group',
+          owner_id: 'user_owner',
+          visibility: 'public',
+          status: 'active',
+          members_count: 3,
+          created_at: '2026-03-14T10:00:00.000Z',
+          updated_at: '2026-03-14T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups/sgroup_public'),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ id: string; slug: string; visibility: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.id).toBe('sgroup_public');
+    expect(body.slug).toBe('phuket-makers');
+    expect(body.visibility).toBe('public');
+  });
+
+  it('joins a public group with active membership', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_public',
+            slug: 'phuket-makers',
+            title: 'Phuket Makers',
+            description: null,
+            owner_id: 'user_owner',
+            visibility: 'public',
+            status: 'active',
+            members_count: 3,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            group_id: 'sgroup_public',
+            user_id: 'user_test_1',
+            role: 'member',
+            status: 'active',
+            joined_at: '2026-03-14T10:05:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups/sgroup_public/join', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ groupId: string; userId: string; role: string; status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.groupId).toBe('sgroup_public');
+    expect(body.userId).toBe('user_test_1');
+    expect(body.role).toBe('member');
+    expect(body.status).toBe('active');
+  });
+
+  it('returns existing membership on repeated public group join', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_public',
+            slug: 'phuket-makers',
+            title: 'Phuket Makers',
+            description: null,
+            owner_id: 'user_owner',
+            visibility: 'public',
+            status: 'active',
+            members_count: 3,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            group_id: 'sgroup_public',
+            user_id: 'user_test_1',
+            role: 'member',
+            status: 'active',
+            joined_at: '2026-03-14T10:05:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups/sgroup_public/join', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('active');
+    expect(executeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves a public group with existing membership', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_public',
+            slug: 'phuket-makers',
+            title: 'Phuket Makers',
+            description: null,
+            owner_id: 'user_owner',
+            visibility: 'public',
+            status: 'active',
+            members_count: 3,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ group_id: 'sgroup_public' }] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups/sgroup_public/leave', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    expect(response.status).toBe(204);
+  });
+
+  it('returns not found on repeated leave when membership is already removed', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_public',
+            slug: 'phuket-makers',
+            title: 'Phuket Makers',
+            description: null,
+            owner_id: 'user_owner',
+            visibility: 'public',
+            status: 'active',
+            members_count: 3,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/groups/sgroup_public/leave', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('returns public group feed without auth when group is public', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'sgroup_public',
+            slug: 'phuket-makers',
+            title: 'Phuket Makers',
+            description: null,
+            owner_id: 'user_owner',
+            visibility: 'public',
+            status: 'active',
+            members_count: 3,
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_group_1',
+            author_id: 'user_owner',
+            author_display_name: 'Owner',
+            author_avatar_url: null,
+            author_role_label: 'PRO',
+            group_id: 'sgroup_public',
+            post_type: 'post',
+            visibility: 'group',
+            text: 'Hello group',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+      {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      }
+    );
+
+    const body = await readJson<{ items: Array<{ reason: string; post: { groupId: string | null; visibility: string } }> }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.reason).toBe('group_post');
+    expect(body.items[0]?.post.groupId).toBe('sgroup_public');
+    expect(body.items[0]?.post.visibility).toBe('group');
   });
 
   it('rejects external system post creation', async () => {
