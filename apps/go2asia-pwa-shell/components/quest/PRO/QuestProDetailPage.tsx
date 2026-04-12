@@ -10,7 +10,6 @@ import {
   BarChart3,
   Eye,
   Loader2,
-  Lock,
   Route,
   ShieldCheck,
   Telescope,
@@ -25,6 +24,7 @@ import {
 } from '@/app/(public)/quest/questPresentation';
 import { getQuestHeroMediaRuntimeFirst } from '@/app/(public)/quest/questRuntimeMetadata';
 import { fetchOwnedQuest, fetchOwnedQuestStats, type QuestProApiError } from './QuestProApi';
+import { QuestDraftEditor } from './QuestDraftEditor';
 
 interface QuestProDetailPageProps {
   questId: string;
@@ -89,7 +89,7 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
   useEffect(() => {
     let cancelled = false;
 
-    async function load(): Promise<void> {
+    async function loadQuestDetail(): Promise<void> {
       setLoading(true);
       setError(null);
       const [questResponse, statsResponse] = await Promise.all([fetchOwnedQuest(questId), fetchOwnedQuestStats(questId)]);
@@ -107,11 +107,22 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
       setLoading(false);
     }
 
-    void load();
+    void loadQuestDetail();
     return () => {
       cancelled = true;
     };
   }, [questId]);
+
+  async function reloadQuest(): Promise<void> {
+    const questResponse = await fetchOwnedQuest(questId);
+    if (!questResponse.data) {
+      setError(readDetailError(questResponse.error));
+      return;
+    }
+
+    setQuest(questResponse.data);
+    setError(null);
+  }
 
   const readinessNotes = useMemo(() => (quest ? getReadinessNotes(quest) : []), [quest]);
 
@@ -205,10 +216,15 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
           </dl>
 
           <div className="flex flex-wrap gap-2">
-            <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
-              <Lock className="mr-2 h-4 w-4" />
-              Edit draft — следующий slice
-            </span>
+            {quest.status === 'draft' ? (
+              <span className="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700">
+                Draft editing UI active in this slice
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
+                Draft editing доступен только для draft
+              </span>
+            )}
             <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
               <Route className="mr-2 h-4 w-4" />
               Publish / Archive — следующий slice
@@ -223,13 +239,15 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
         <div className="space-y-6">
+          <QuestDraftEditor quest={quest} onQuestChanged={setQuest} onReloadQuest={reloadQuest} />
+
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <Route className="h-5 w-5 text-violet-600" />
               <h2 className="text-lg font-semibold text-slate-900">Step list</h2>
             </div>
             <p className="mt-1 text-sm text-slate-600">
-              Структура квеста уже видна в management context, но step mutation UI намеренно вынесен в следующий slice.
+              Структура квеста по-прежнему видна в management context. В UI-2 edit controls доступны внутри draft workspace, а этот блок остаётся удобным read snapshot.
             </p>
 
             {quest.steps.length === 0 ? (

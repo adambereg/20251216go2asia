@@ -69,3 +69,94 @@ export async function fetchOwnedQuestStats(
     return { data: null, error: error as QuestProApiError };
   }
 }
+
+export type DraftQuestUpdatePayload = {
+  title?: string;
+  description?: string | null;
+  cityId?: string | null;
+  type?: string | null;
+  theme?: string | null;
+  difficulty?: generated.QuestDifficulty | null;
+  visibility?: generated.QuestVisibility;
+  rewardPoints?: number | null;
+};
+
+export type DraftQuestStepPayload = {
+  order: number;
+  type: generated.QuestStepType;
+  targetType?: generated.QuestStepTargetType | null;
+  targetId?: string | null;
+  verificationType: generated.QuestVerificationType;
+  requirements?: Record<string, unknown>;
+  rewardPoints?: number | null;
+};
+
+export type DraftQuestStepUpdatePayload = {
+  type?: generated.QuestStepType;
+  targetType?: generated.QuestStepTargetType | null;
+  targetId?: string | null;
+  verificationType?: generated.QuestVerificationType;
+  requirements?: Record<string, unknown>;
+  rewardPoints?: number | null;
+};
+
+export async function updateDraftQuest(
+  questId: string,
+  payload: DraftQuestUpdatePayload
+): Promise<{ data: generated.QuestDetailResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestDetailResponse>(
+      { method: 'PATCH', body: JSON.stringify(payload) },
+      `/v1/quests/mine/${encodeURIComponent(questId)}`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function addDraftQuestStep(
+  questId: string,
+  payload: DraftQuestStepPayload
+): Promise<{ data: generated.QuestStepResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestStepResponse>(
+      { method: 'POST', body: JSON.stringify(payload) },
+      `/v1/quests/${encodeURIComponent(questId)}/steps`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function updateDraftQuestStep(
+  questId: string,
+  stepId: string,
+  payload: DraftQuestStepUpdatePayload
+): Promise<{ data: generated.QuestStepResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestStepResponse>(
+      { method: 'PATCH', body: JSON.stringify(payload) },
+      `/v1/quests/mine/${encodeURIComponent(questId)}/steps/${encodeURIComponent(stepId)}`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function deleteDraftQuestStep(
+  questId: string,
+  stepId: string
+): Promise<{ ok: boolean; error: QuestProApiError | null }> {
+  try {
+    await customInstance<unknown>(
+      { method: 'DELETE' },
+      `/v1/quests/mine/${encodeURIComponent(questId)}/steps/${encodeURIComponent(stepId)}`
+    );
+    return { ok: true, error: null };
+  } catch (error) {
+    return { ok: false, error: error as QuestProApiError };
+  }
+}
