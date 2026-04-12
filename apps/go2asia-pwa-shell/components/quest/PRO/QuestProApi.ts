@@ -18,12 +18,29 @@ type OwnedQuestListParams = {
   visibility?: generated.QuestVisibility | 'all';
 };
 
+type ReviewQueueParams = {
+  status?: generated.SubmissionStatusFilterParameter | 'all';
+  stepId?: string | 'all';
+  page?: number;
+  pageSize?: number;
+};
+
 function buildQuery(params: OwnedQuestListParams): string {
   const search = new URLSearchParams();
   search.set('page', String(params.page ?? 1));
   search.set('pageSize', String(params.pageSize ?? 20));
   if (params.status && params.status !== 'all') search.set('status', params.status);
   if (params.visibility && params.visibility !== 'all') search.set('visibility', params.visibility);
+  const value = search.toString();
+  return value ? `?${value}` : '';
+}
+
+function buildReviewQueueQuery(params: ReviewQueueParams): string {
+  const search = new URLSearchParams();
+  search.set('page', String(params.page ?? 1));
+  search.set('pageSize', String(params.pageSize ?? 20));
+  if (params.status && params.status !== 'all') search.set('status', params.status);
+  if (params.stepId && params.stepId !== 'all') search.set('stepId', params.stepId);
   const value = search.toString();
   return value ? `?${value}` : '';
 }
@@ -182,6 +199,36 @@ export async function archiveManagedQuest(
     const data = await customInstance<generated.QuestDetailResponse>(
       { method: 'POST' },
       `/v1/quests/${encodeURIComponent(questId)}/archive`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function fetchQuestReviewQueue(
+  questId: string,
+  params: ReviewQueueParams
+): Promise<{ data: generated.QuestSubmissionListResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestSubmissionListResponse>(
+      { method: 'GET' },
+      `/v1/quests/${encodeURIComponent(questId)}/submissions${buildReviewQueueQuery(params)}`
+    );
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as QuestProApiError };
+  }
+}
+
+export async function reviewQuestSubmissionByManager(
+  submissionId: string,
+  payload: generated.ReviewSubmissionRequest
+): Promise<{ data: generated.QuestSubmissionResponse | null; error: QuestProApiError | null }> {
+  try {
+    const data = await customInstance<generated.QuestSubmissionResponse>(
+      { method: 'POST', body: JSON.stringify(payload) },
+      `/v1/submissions/${encodeURIComponent(submissionId)}/review`
     );
     return { data, error: null };
   } catch (error) {

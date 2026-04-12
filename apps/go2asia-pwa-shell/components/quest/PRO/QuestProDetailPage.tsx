@@ -26,6 +26,7 @@ import { getQuestHeroMediaRuntimeFirst } from '@/app/(public)/quest/questRuntime
 import { fetchOwnedQuest, fetchOwnedQuestStats, type QuestProApiError } from './QuestProApi';
 import { QuestDraftEditor } from './QuestDraftEditor';
 import { QuestLifecycleControls } from './QuestLifecycleControls';
+import { QuestReviewQueue } from './QuestReviewQueue';
 
 interface QuestProDetailPageProps {
   questId: string;
@@ -69,7 +70,7 @@ function getReadinessNotes(quest: generated.QuestDetailResponse): string[] {
     notes.push('Draft содержит шаги: publish control теперь доступен через lifecycle panel справа.');
   }
   if (quest.steps.some((step) => step.verificationType === 'manual')) {
-    notes.push('Есть manual review шаги: review queue будет отдельным UI slice.');
+    notes.push('Есть manual review шаги: review queue actions доступны в отдельном per-quest блоке справа.');
   }
   if (quest.status === 'published') {
     notes.push('Published quest можно архивировать через bounded lifecycle control без открытия отдельного workflow экрана.');
@@ -126,6 +127,13 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
 
     setQuest(questResponse.data);
     setError(null);
+  }
+
+  async function reloadStats(): Promise<void> {
+    const statsResponse = await fetchOwnedQuestStats(questId);
+    if (statsResponse.data) {
+      setStats(statsResponse.data);
+    }
   }
 
   const readinessNotes = useMemo(() => (quest ? getReadinessNotes(quest) : []), [quest]);
@@ -233,9 +241,9 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
               <Route className="mr-2 h-4 w-4" />
               Lifecycle controls active in this slice
             </span>
-            <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">
+            <span className="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700">
               <Eye className="mr-2 h-4 w-4" />
-              Review actions — следующий slice
+              Review queue active in this slice
             </span>
           </div>
         </div>
@@ -345,23 +353,7 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-violet-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Review summary</h2>
-            </div>
-            <p className="mt-1 text-sm text-slate-600">
-              В UI-1 review queue пока только обозначен как следующий рабочий блок.
-            </p>
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm text-slate-700">
-                Сейчас ожидают review: <span className="font-semibold text-slate-900">{stats?.pendingReviewCount ?? 0}</span>
-              </p>
-              <div className="mt-3 inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-                Review queue UI — следующий slice
-              </div>
-            </div>
-          </article>
+          <QuestReviewQueue questId={quest.id} steps={quest.steps} onQueueChanged={reloadStats} />
 
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
@@ -370,13 +362,13 @@ export function QuestProDetailPage({ questId }: QuestProDetailPageProps) {
             </div>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
               <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                Review queue UI поверх уже готового backend review seam.
-              </li>
-              <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 Richer builder semantics для step ordering и более guided authoring.
               </li>
               <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 Broader operational insights beyond the current bounded stats block.
+              </li>
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                Optional cross-quest moderation workflows only if the product scope explicitly expands later.
               </li>
             </ul>
             <div className="mt-4">
