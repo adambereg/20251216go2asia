@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Bell,
   LayoutDashboard,
+  Newspaper,
+  ScrollText,
   Trophy,
   Ticket,
   Wallet,
@@ -21,6 +24,9 @@ interface NavItem {
 
 const activeNavItems: NavItem[] = [
   { href: '/space', label: 'Runtime shell', icon: LayoutDashboard },
+  { href: '/space/community/feed', label: 'Лента сообщества', icon: Newspaper },
+  { href: '/space/posts', label: 'Публикации', icon: ScrollText },
+  { href: '/space/activity', label: 'Активность', icon: Bell },
 ];
 
 const deferredNavItems: Array<{ label: string; icon: React.ComponentType<{ className?: string }> }> = [
