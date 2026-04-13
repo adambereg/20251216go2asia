@@ -284,6 +284,31 @@ Owned by Space Service.
 
 Groups may support topic- or geo-based communities, curator-led communities, or private spaces.
 
+Groups are first-class social containers in Space.
+
+Canonical semantic distinction:
+
+- `group = community context`
+- `feed = delivery surface`
+
+Group feed can project group activity, but it does not replace group identity, membership, or governance semantics.
+
+Groups remain social-layer entities and must not be treated as operational workspaces for Quest/Pulse/RF object management.
+
+### V1 group taxonomy rule
+
+In v1, group taxonomy is a product-level canon and does not require a mandatory schema-level `group_type` field.
+
+`quest` / `event` / `PRO-led` semantics may initially live as policy, metadata, and read-model semantics rather than canonical DB typing.
+
+Any move to introduce canonical `group_type` in schema or API contracts must be an explicit post-v1 architecture decision.
+
+### Private to group sharing note
+
+Private-to-group sharing is allowed in v1 only as explicit user intent (`share to group` / `publish to group` / `repost into group`).
+
+This transition must never happen automatically and must not be interpreted as default privacy leakage.
+
 ---
 
 # 4.4 `space_group_member`

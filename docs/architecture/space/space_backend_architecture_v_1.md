@@ -303,6 +303,13 @@ But those should not explode the canonical backend model prematurely.
 
 Groups are social containers.
 
+Canonical semantic distinction:
+
+- `group = community context`
+- `feed = delivery surface`
+
+A group feed may deliver group-scoped publications, but group identity and membership semantics remain first-class and separate from feed assembly.
+
 ### Fields
 
 - `id`
@@ -326,6 +333,22 @@ Groups are social containers.
 - `active`
 - `hidden`
 - `archived`
+
+### Early-phase controlled creation policy
+
+In early-phase v1, group creation is policy-restricted:
+
+- `admin` may create groups;
+- approved `PRO` may create groups according to moderation policy;
+- unrestricted open creation for all users is intentionally deferred.
+
+This is a quality and anti-spam control, not a schema limitation.
+
+### Private to group publication semantics
+
+Private-to-group sharing is allowed only through explicit user intent.
+
+It must not occur automatically and must not be interpreted as passive expansion of private visibility.
 
 ---
 
@@ -721,6 +744,12 @@ This means:
 
 > **PRO Console is a multi-service operational workspace, not a screen over only Space Service.**
 
+Important clarification:
+
+- `PRO-led group` remains a Space social-layer entity;
+- `PRO Console` remains an operational/admin contour that may create/administer groups through policy-governed APIs;
+- this does not transfer group domain ownership from Space to PRO Console.
+
 ---
 
 # 17. Clear Boundary Between Space UI, Space Service, and PRO Console
@@ -749,6 +778,10 @@ A backend social-core service responsible for:
 A separate operational UI contour aggregating multiple domain services.
 
 This separation prevents architectural drift.
+
+Boundary rule:
+
+If a surface primary purpose becomes operational object management (quest proof processing, event setup, partner workflow operations, moderation queues), it is no longer only a social group surface and must remain in operational contours.
 
 ---
 
