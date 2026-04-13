@@ -5,11 +5,13 @@ import {
   deleteReactionByIdForUser,
   getActiveReactionByIdForUser,
   getActiveReactionByIdentity,
+  listActiveReactionsByUser,
   getReactionIdempotencyRecord,
   getReactionSummary,
   insertReactionIdempotencyRecord,
   insertActiveReaction,
   type ReactionRow,
+  type ReactionType,
   type ReactionTargetType,
 } from '../db/queries/reactions';
 import type { ReactionsEventPublisher } from '../events/publisher';
@@ -33,7 +35,7 @@ type Env = {
 type UpsertReactionInput = {
   targetType: ReactionTargetType;
   targetId: string;
-  reactionType: 'like';
+  reactionType: ReactionType;
 };
 
 type BatchSummaryInput = {
@@ -42,6 +44,16 @@ type BatchSummaryInput = {
     targetId: string;
   }>;
 };
+
+type ListMyReactionsInput = {
+  targetType: ReactionTargetType;
+  reactionType: ReactionType;
+  limit: number;
+};
+
+const ALLOWED_REACTION_TYPES: ReactionType[] = ['like', 'bookmark'];
+const DEFAULT_MINE_LIMIT = 20;
+const MAX_MINE_LIMIT = 50;
 
 function normalizeReaction(row: ReactionRow) {
   return {
@@ -58,15 +70,47 @@ function normalizeReaction(row: ReactionRow) {
 
 function parseUpsertReactionInput(body: Record<string, unknown> | null): UpsertReactionInput | null {
   if (!body) return null;
-  if (body.reactionType !== 'like') return null;
+  if (typeof body.reactionType !== 'string' || !ALLOWED_REACTION_TYPES.includes(body.reactionType as ReactionType)) {
+    return null;
+  }
   if (typeof body.targetType !== 'string' || !ALLOWED_TARGET_TYPES.includes(body.targetType as ReactionTargetType)) {
     return null;
   }
   if (typeof body.targetId !== 'string' || body.targetId.trim().length === 0) return null;
+  const reactionType = body.reactionType as ReactionType;
+  const targetType = body.targetType as ReactionTargetType;
+  if (reactionType === 'bookmark' && targetType !== 'space_post') {
+    return null;
+  }
   return {
-    targetType: body.targetType as ReactionTargetType,
+    targetType,
     targetId: body.targetId.trim(),
-    reactionType: 'like',
+    reactionType,
+  };
+}
+
+function parseListMyReactionsInput(searchParams: URLSearchParams): ListMyReactionsInput | null {
+  const targetTypeRaw = searchParams.get('targetType');
+  const reactionTypeRaw = searchParams.get('reactionType');
+  if (!targetTypeRaw || !reactionTypeRaw) return null;
+  if (!ALLOWED_TARGET_TYPES.includes(targetTypeRaw as ReactionTargetType)) return null;
+  if (!ALLOWED_REACTION_TYPES.includes(reactionTypeRaw as ReactionType)) return null;
+  const targetType = targetTypeRaw as ReactionTargetType;
+  const reactionType = reactionTypeRaw as ReactionType;
+  if (targetType !== 'space_post' || reactionType !== 'bookmark') {
+    return null;
+  }
+  const limitRaw = searchParams.get('limit');
+  let limit = DEFAULT_MINE_LIMIT;
+  if (limitRaw !== null) {
+    const parsed = Number.parseInt(limitRaw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > MAX_MINE_LIMIT) return null;
+    limit = parsed;
+  }
+  return {
+    targetType,
+    reactionType,
+    limit,
   };
 }
 
@@ -176,7 +220,7 @@ export async function upsertReaction(
     userId: principal.userId,
     targetType: parsed.targetType,
     targetId: parsed.targetId,
-    reactionType: 'like',
+    reactionType: parsed.reactionType,
   });
 
   const reaction = created
@@ -211,11 +255,13 @@ export async function upsertReaction(
   }
 
   if (created) {
-    await applyLikeCountDelta(db, {
-      targetType: parsed.targetType,
-      targetId: parsed.targetId,
-      delta: 1,
-    });
+    if (parsed.reactionType === 'like') {
+      await applyLikeCountDelta(db, {
+        targetType: parsed.targetType,
+        targetId: parsed.targetId,
+        delta: 1,
+      });
+    }
     await publisher.publish({
       eventId: `evt_${crypto.randomUUID()}`,
       eventType: 'reaction.created',
@@ -238,7 +284,7 @@ export async function upsertReaction(
         actorUserId: principal.userId,
         targetType: parsed.targetType,
         targetId: parsed.targetId,
-        reactionType: 'like',
+        reactionType: parsed.reactionType,
         requestId,
       },
     });
@@ -278,11 +324,13 @@ export async function removeReactionById(
     return errorResponse('NOT_FOUND', 'Active reaction not found', requestId, 404);
   }
 
-  await applyLikeCountDelta(db, {
-    targetType: existing.target_type,
-    targetId: existing.target_id,
-    delta: -1,
-  });
+  if (existing.reaction_type === 'like') {
+    await applyLikeCountDelta(db, {
+      targetType: existing.target_type,
+      targetId: existing.target_id,
+      delta: -1,
+    });
+  }
   await publisher.publish({
     eventId: `evt_${crypto.randomUUID()}`,
     eventType: 'reaction.deleted',
@@ -305,12 +353,48 @@ export async function removeReactionById(
       actorUserId: principal.userId,
       targetType: existing.target_type,
       targetId: existing.target_id,
-      reactionType: 'like',
+      reactionType: existing.reaction_type,
       requestId,
     },
   });
 
   return json({ removed: true }, 200);
+}
+
+export async function listMyReactions(
+  env: Env,
+  request: Request,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  if (!env.DATABASE_URL) {
+    return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
+  }
+  const parsed = parseListMyReactionsInput(new URL(request.url).searchParams);
+  if (!parsed) {
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'Expected targetType=space_post and reactionType=bookmark (optional limit=1..50)',
+      requestId,
+      400
+    );
+  }
+
+  const db = createDb(env.DATABASE_URL);
+  const items = await listActiveReactionsByUser(db, {
+    userId: principal.userId,
+    targetType: parsed.targetType,
+    reactionType: parsed.reactionType,
+    limit: parsed.limit,
+  });
+
+  return json(
+    {
+      items: items.map((item) => ({ reaction: normalizeReaction(item) })),
+      nextCursor: null,
+    },
+    200
+  );
 }
 
 export async function getReactionSummarySingle(

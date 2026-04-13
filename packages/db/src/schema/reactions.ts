@@ -1,7 +1,7 @@
 import { check, index, integer, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-export const reactionTypeEnum = pgEnum('reaction_type', ['like']);
+export const reactionTypeEnum = pgEnum('reaction_type', ['like', 'bookmark']);
 export const reactionTargetTypeEnum = pgEnum('reaction_target_type', [
   'space_post',
   'blog_post',

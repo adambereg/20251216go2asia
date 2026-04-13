@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bell,
+  Bookmark,
   LayoutDashboard,
   Newspaper,
   ScrollText,
@@ -26,6 +27,7 @@ const activeNavItems: NavItem[] = [
   { href: '/space', label: 'Runtime shell', icon: LayoutDashboard },
   { href: '/space/community/feed', label: 'Лента сообщества', icon: Newspaper },
   { href: '/space/posts', label: 'Публикации', icon: ScrollText },
+  { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },
   { href: '/space/activity', label: 'Активность', icon: Bell },
 ];
 

@@ -4,7 +4,7 @@ import { sql } from '@go2asia/db';
 type DbExecutor = Pick<Db, 'execute'>;
 
 export type ReactionTargetType = 'space_post' | 'blog_post' | 'place' | 'event' | 'partner' | 'listing' | 'quest';
-export type ReactionType = 'like';
+export type ReactionType = 'like' | 'bookmark';
 export type ReactionStatus = 'active' | 'deleted';
 
 export type ReactionRow = {
@@ -219,4 +219,26 @@ export async function insertReactionIdempotencyRecord(
     RETURNING user_id, idempotency_key, payload_hash, reaction_id, created_at
   `);
   return rowsOf<ReactionIdempotencyRow>(result)[0] ?? null;
+}
+
+export async function listActiveReactionsByUser(
+  db: DbExecutor,
+  input: {
+    userId: string;
+    targetType: ReactionTargetType;
+    reactionType: ReactionType;
+    limit: number;
+  }
+): Promise<ReactionRow[]> {
+  const result = await db.execute(sql`
+    SELECT id, user_id, target_type, target_id, reaction_type, status, created_at, updated_at
+    FROM reactions
+    WHERE user_id = ${input.userId}
+      AND target_type = ${input.targetType}
+      AND reaction_type = ${input.reactionType}
+      AND status = 'active'
+    ORDER BY created_at DESC, id DESC
+    LIMIT ${input.limit}
+  `);
+  return rowsOf<ReactionRow>(result);
 }
