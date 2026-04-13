@@ -51,6 +51,7 @@
   publish = "apps/go2asia-pwa-shell/.next"
   [context.staging.environment]
     NEXT_PUBLIC_API_URL = "https://go2asia-api-gateway-staging.fred89059599296.workers.dev"
+    NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID = "user_3BlK8FjaNuSTgxcgX8Lnkeot3Wy"
 
 [context.deploy-preview]
   command = "pnpm turbo build --filter=@go2asia/pwa-shell"
