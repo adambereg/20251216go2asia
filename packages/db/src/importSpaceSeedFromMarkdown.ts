@@ -1,3 +1,11 @@
+/**
+ * Import Space seed baseline from markdown canon.
+ *
+ * Identity hardening rule:
+ * - `--apply` MUST resolve canonical `user_id` from `auth.users` by email.
+ * - email-derived ids are allowed only in dry-run preview output and must never be
+ *   treated as runtime truth for applied seed data.
+ */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from 'pg';
@@ -158,6 +166,101 @@ function toUserId(email: string): string {
   return slugify(local.replace(/\.seed$/i, '').replace(/\./g, '-'));
 }
 
+function collectUsedEmails(parsed: ParsedSeed): string[] {
+  const publicGroupSlugs = new Set(
+    parsed.groups.filter((group) => group.visibility === 'public').map((group) => group.slug)
+  );
+  const usedEmails = new Set<string>();
+
+  for (const group of parsed.groups) {
+    if (group.visibility !== 'public') continue;
+    usedEmails.add(group.owner_email);
+    for (const email of group.moderator_emails ?? []) usedEmails.add(email);
+    for (const email of group.member_emails ?? []) usedEmails.add(email);
+  }
+
+  for (const membership of parsed.groupMembershipMatrix) {
+    if (!publicGroupSlugs.has(membership.group_slug)) continue;
+    usedEmails.add(membership.owner_email);
+    for (const email of membership.moderators ?? []) usedEmails.add(email);
+    for (const email of membership.active_members ?? []) usedEmails.add(email);
+  }
+
+  for (const post of parsed.posts) {
+    if (post.visibility !== 'public' && post.visibility !== 'group') continue;
+    if (post.visibility === 'group') {
+      const groupSlug = toNullableString(post.group_slug);
+      if (!groupSlug || !publicGroupSlugs.has(groupSlug)) continue;
+    }
+    usedEmails.add(post.author_email);
+  }
+
+  return Array.from(usedEmails).sort();
+}
+
+async function resolveCanonicalUserIds(
+  emails: string[],
+  databaseUrl: string | null,
+  mode: ImportMode
+): Promise<Map<string, string>> {
+  if (mode === 'dry-run' || !databaseUrl) {
+    console.warn(
+      '[space-seed] dry-run uses preview-only email-derived user ids; apply mode resolves canonical ids from auth.users'
+    );
+    return new Map(emails.map((email) => [email, toUserId(email)]));
+  }
+
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    const result = await client.query<{ id: string; email: string }>(
+      `
+        SELECT id, email
+        FROM users
+        WHERE lower(email) = ANY($1::text[])
+      `,
+      [emails.map((email) => email.toLowerCase())]
+    );
+
+    const resolved = new Map<string, string>();
+    const ambiguous = new Map<string, string[]>();
+    for (const row of result.rows) {
+      const email = row.email.toLowerCase();
+      const existing = resolved.get(email);
+      if (existing && existing !== row.id) {
+        ambiguous.set(email, [...(ambiguous.get(email) ?? [existing]), row.id]);
+        continue;
+      }
+      resolved.set(email, row.id);
+    }
+
+    if (ambiguous.size > 0) {
+      const details = Array.from(ambiguous.entries())
+        .map(([email, ids]) => `${email} -> ${Array.from(new Set(ids)).join(', ')}`)
+        .join('; ');
+      throw new Error(
+        `Space seed importer found ambiguous auth.users email mapping and refuses to guess canonical ids: ${details}`
+      );
+    }
+
+    const missing = emails.filter((email) => !resolved.has(email.toLowerCase()));
+    if (missing.length > 0) {
+      throw new Error(
+        [
+          'Space seed importer requires canonical auth.users rows for all referenced seed emails.',
+          `Missing emails: ${missing.join(', ')}`,
+          'Run the auth/user provisioning flow first, or treat this import as dry-run only.',
+        ].join(' ')
+      );
+    }
+
+    console.log(`[space-seed] identity_source=auth.users email_lookup count=${emails.length}`);
+    return new Map(emails.map((email) => [email, resolved.get(email.toLowerCase())!]));
+  } finally {
+    await client.end();
+  }
+}
+
 function toCountryId(value: string | null): string | null {
   return value ? slugify(value) : null;
 }
@@ -202,7 +305,7 @@ function getRoleLabel(user: SeedUser, profile: SeedProfile | null): string | nul
   return toNullableString(profile?.role_label) ?? toNullableString(user.role_label) ?? null;
 }
 
-function materializeSeed(parsed: ParsedSeed) {
+function materializeSeed(parsed: ParsedSeed, userIdByEmail: Map<string, string>) {
   const usersByEmail = new Map(parsed.users.map((user) => [user.email, user]));
   const profilesByEmail = new Map(parsed.profileProjections.map((profile) => [profile.email, profile]));
   const publicGroups = parsed.groups.filter((group) => group.visibility === 'public');
@@ -211,18 +314,7 @@ function materializeSeed(parsed: ParsedSeed) {
     parsed.groupMembershipMatrix.map((membership) => [membership.group_slug, membership])
   );
 
-  const usedEmails = new Set<string>();
-  for (const group of publicGroups) {
-    usedEmails.add(group.owner_email);
-    for (const email of group.moderator_emails ?? []) usedEmails.add(email);
-    for (const email of group.member_emails ?? []) usedEmails.add(email);
-  }
-  for (const membership of parsed.groupMembershipMatrix) {
-    if (!publicGroupSlugs.has(membership.group_slug)) continue;
-    usedEmails.add(membership.owner_email);
-    for (const email of membership.moderators ?? []) usedEmails.add(email);
-    for (const email of membership.active_members ?? []) usedEmails.add(email);
-  }
+  const usedEmails = new Set(collectUsedEmails(parsed));
   const selectedPosts = parsed.posts.filter((post) => {
     if (post.visibility !== 'public' && post.visibility !== 'group') return false;
     if (post.visibility === 'group') {
@@ -241,9 +333,13 @@ function materializeSeed(parsed: ParsedSeed) {
       if (!user) {
         throw new Error(`Seed email "${email}" is referenced but missing from users section`);
       }
+      const canonicalUserId = userIdByEmail.get(email);
+      if (!canonicalUserId) {
+        throw new Error(`No resolved user id for seed email "${email}"`);
+      }
       const profile = profilesByEmail.get(email) ?? null;
       return {
-        userId: toUserId(email),
+        userId: canonicalUserId,
         displayName: toNullableString(profile?.display_name) ?? user.display_name,
         avatarUrl: toNullableString(user.avatar_url),
         roleLabel: getRoleLabel(user, profile),
@@ -259,7 +355,7 @@ function materializeSeed(parsed: ParsedSeed) {
     slug: group.slug,
     title: group.title,
     description: toNullableString(group.description),
-    ownerId: toUserId(group.owner_email),
+    ownerId: userIdByEmail.get(group.owner_email)!,
     visibility: 'public',
   }));
 
@@ -289,7 +385,7 @@ function materializeSeed(parsed: ParsedSeed) {
     for (const [idx, email] of (membership?.moderators ?? seedGroup.moderator_emails ?? []).entries()) {
       pushMembership(
         group.id,
-        toUserId(email),
+        userIdByEmail.get(email)!,
         'moderator',
         group.ownerId,
         new Date(joinedBase.getTime() + (idx + 1) * 60_000).toISOString()
@@ -298,7 +394,7 @@ function materializeSeed(parsed: ParsedSeed) {
     for (const [idx, email] of (membership?.active_members ?? seedGroup.member_emails ?? []).entries()) {
       pushMembership(
         group.id,
-        toUserId(email),
+        userIdByEmail.get(email)!,
         'member',
         group.ownerId,
         new Date(joinedBase.getTime() + (idx + 10) * 60_000).toISOString()
@@ -315,7 +411,7 @@ function materializeSeed(parsed: ParsedSeed) {
     const publishedAt = new Date(Date.UTC(2026, 2, 15, 7, index * 7, 0)).toISOString();
     return {
       id: post.post_ref,
-      authorId: toUserId(post.author_email),
+      authorId: userIdByEmail.get(post.author_email)!,
       groupId,
       postType: post.post_kind,
       visibility,
@@ -547,12 +643,13 @@ function printSummary(
 
 async function main() {
   const { mode } = parseArgs(process.argv.slice(2));
+  const databaseUrl = getDatabaseUrl(mode);
   const markdown = readFileSync(SOURCE_PATH, 'utf8');
   const parsed = parseSeed(markdown);
-  const data = materializeSeed(parsed);
+  const userIdByEmail = await resolveCanonicalUserIds(collectUsedEmails(parsed), databaseUrl, mode);
+  const data = materializeSeed(parsed, userIdByEmail);
   printSummary(mode, data);
 
-  const databaseUrl = getDatabaseUrl(mode);
   if (mode === 'dry-run' || !databaseUrl) {
     console.log('[space-seed] dry-run complete');
     return;
