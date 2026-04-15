@@ -27,7 +27,7 @@ interface NavItem {
 const activeNavItems: NavItem[] = [
   { href: '/space', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/space/community', label: 'Сообщества', icon: Users },
-  { href: '/space/community/feed', label: 'Лента сообщества', icon: Newspaper },
+  { href: '/space/community/feed', label: 'Поток постов', icon: Newspaper },
   { href: '/space/posts', label: 'Публикации', icon: ScrollText },
   { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },
   { href: '/space/activity', label: 'Активность', icon: Bell },

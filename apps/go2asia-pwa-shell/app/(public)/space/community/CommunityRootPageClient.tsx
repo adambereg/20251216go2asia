@@ -26,6 +26,13 @@ function getSectionLabel(sectionTone: 'runtime' | 'summary' | 'reference'): stri
 export function CommunityRootPageClient() {
   const { isSignedIn } = useUser();
   const discovery = useSpaceCommunityDiscovery(communityDiscoveryGroupIds);
+  const primarySectionKeys = new Set(['recommended', 'local', 'pro-led']);
+  const primarySections = communityDiscoverySections.filter((section) =>
+    primarySectionKeys.has(section.key)
+  );
+  const secondarySections = communityDiscoverySections.filter(
+    (section) => !primarySectionKeys.has(section.key)
+  );
 
   return (
     <SpaceLayout>
@@ -39,8 +46,8 @@ export function CommunityRootPageClient() {
                 из них лучше начать.
               </p>
               <p className="mt-3 text-xs text-slate-500">
-                Формула этого route: discover → belong → enter. Полная social лента остаётся отдельной
-                поверхностью.
+                Формула этого route: discover → belong → enter. Поток публикаций остаётся отдельной
+                поверхностью и живёт в соседнем route.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -48,7 +55,7 @@ export function CommunityRootPageClient() {
                 href="/space/community/feed"
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
               >
-                Открыть full feed
+                Открыть поток постов
               </Link>
               <Link
                 href="/space"
@@ -66,25 +73,16 @@ export function CommunityRootPageClient() {
             </div>
           )}
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Куда встроиться</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Через локальные, тематические и curator-led группы, а не через безличный второй feed.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">С чего начать</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Сначала curated picks, затем local communities, потом более узкие event, quest и PRO-led слои.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Что уже живо</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Group detail, group feed и join/leave уже работают как отдельные live surfaces за каждой карточкой.
-              </p>
-            </div>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
+              Сообщества = карта входа в группы
+            </span>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
+              Лента сообщества = поток публикаций
+            </span>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
+              Group detail и join/leave уже live
+            </span>
           </div>
         </section>
 
@@ -106,7 +104,7 @@ export function CommunityRootPageClient() {
           </div>
         )}
 
-        {communityDiscoverySections.map((section) => (
+        {primarySections.map((section) => (
           <section
             key={section.key}
             className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
@@ -134,29 +132,47 @@ export function CommunityRootPageClient() {
           </section>
         ))}
 
-        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Тонкий, но честный community baseline</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-sm font-semibold text-slate-900">Discovery сначала</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Этот route помогает выбрать group entry point и не притворяется полноразмерным search engine.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-sm font-semibold text-slate-900">Feed отдельно</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                `/space/community/feed` остаётся full social surface и не подменяет карту сообществ.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-sm font-semibold text-slate-900">Organizer дальше</div>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Organizer и более глубокие next-step mechanics остаются следующей волной и не открываются здесь.
-              </p>
-            </div>
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-slate-900">Дополнительные траектории</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              Эти секции расширяют карту входа, но поданы компактно, чтобы не перегружать первый экран.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {secondarySections.map((section) => (
+              <details
+                key={section.key}
+                className="rounded-xl border border-slate-200 bg-white p-4"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">{section.title}</h3>
+                    <p className="mt-1 text-xs text-slate-600">{section.description}</p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                    {section.items.length} группы
+                  </span>
+                </summary>
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {section.items.map((item) => (
+                    <SpaceCommunityGroupCard
+                      key={`${section.key}-${item.groupId}-${item.title}`}
+                      item={item}
+                      runtimeGroup={discovery.groupsById[item.groupId]}
+                      tone={section.tone}
+                    />
+                  ))}
+                </div>
+              </details>
+            ))}
           </div>
         </section>
+
+        <p className="text-xs text-slate-500">
+          Community root остаётся discovery-first baseline: без search engine и без broad recommendation wave.
+          Полный поток постов доступен отдельно на `/space/community/feed`.
+        </p>
       </div>
     </SpaceLayout>
   );

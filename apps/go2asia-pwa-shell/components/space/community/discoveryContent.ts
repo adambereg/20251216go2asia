@@ -116,7 +116,7 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
   {
     key: 'thematic',
     title: 'Тематические траектории',
-    description: 'Guided themes по пользовательской потребности: адаптация, city life и curated local insight.',
+    description: 'Вход по потребности: адаптация, городской ритм и shared exploration paths.',
     tone: 'reference',
     items: [
       {
@@ -138,13 +138,13 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
         ctaLabel: 'Открыть группу',
       },
       {
-        groupId: 'oleg-vietnam-insiders',
-        title: 'Curated Local Insight',
-        shortDescription: 'Curated social layer вокруг полезного local knowledge.',
-        whoFor: 'Для тех, кто предпочитает высокосигнальный social context.',
-        whyJoin: 'Подходит тем, кто ценит quality curation и сильную curator gravity.',
-        activityHint: 'energetic but curated',
-        curatorHint: 'Oleg Tran',
+        groupId: 'quest-phu-quoc-weekend',
+        title: 'Shared Quest Exploration',
+        shortDescription: 'Сообщество, где travel-квесты и маршруты проходят в shared social формате.',
+        whoFor: 'Для тех, кто хочет исследовать через совместный опыт, а не в одиночку.',
+        whyJoin: 'Даёт тематический вход через exploration и social participation.',
+        activityHint: 'playful',
+        linkedContext: 'Quest / exploration path',
         ctaLabel: 'Открыть группу',
       },
     ],

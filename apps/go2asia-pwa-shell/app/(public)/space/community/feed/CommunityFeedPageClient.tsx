@@ -19,9 +19,9 @@ export function CommunityFeedPageClient() {
     <SpaceLayout>
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Лента сообщества</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Поток постов сообщества</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Live-adoption pass v1: runtime-backed feed on existing Space contract.
+            Здесь живёт social stream публикаций. Карта входа в группы остаётся на `/space/community`.
           </p>
           <div className="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
             {mode === 'home' && 'Live mode: home feed'}

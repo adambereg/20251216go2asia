@@ -4,8 +4,8 @@ import { CommunityFeedPageClient } from './CommunityFeedPageClient';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Лента сообщества | Space Asia | Go2Asia',
-  description: 'Лента постов и активности сообщества Space Asia',
+  title: 'Поток постов сообщества | Space Asia | Go2Asia',
+  description: 'Social stream публикаций сообщества; discovery root остаётся на /space/community',
 };
 
 export default function CommunityFeedPage() {
