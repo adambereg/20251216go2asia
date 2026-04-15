@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
 import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
-import { getErrorStatus } from '@/components/space/runtime/utils';
+import { getErrorStatus, isServiceUnavailableStatus, SAVED_POSTS_MINE_URL } from '@/components/space/runtime/utils';
 
 type SavedReactionRecord = {
   id: string;
@@ -25,22 +25,27 @@ type SavedHydratedItem = {
   post: generated.SpacePostResponse;
 };
 
-const SAVED_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=50';
-
 export function SavedPostsPageClient() {
   const [items, setItems] = useState<SavedHydratedItem[]>([]);
+  const [reactionCount, setReactionCount] = useState(0);
+  const [hydrationMissingCount, setHydrationMissingCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
+  const [runtimeUnavailable, setRuntimeUnavailable] = useState(false);
   const [pendingReactionIds, setPendingReactionIds] = useState<Record<string, boolean>>({});
 
   const loadSavedPosts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     setAuthRequired(false);
+    setRuntimeUnavailable(false);
+    setReactionCount(0);
+    setHydrationMissingCount(0);
 
     try {
-      const saved = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_MINE_URL);
+      const saved = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_POSTS_MINE_URL);
+      setReactionCount(saved.items.length);
       if (saved.items.length === 0) {
         setItems([]);
         return;
@@ -64,15 +69,21 @@ export function SavedPostsPageClient() {
         })
       );
 
-      setItems(hydrated.filter((item): item is SavedHydratedItem => item !== null));
+      const hydratedItems = hydrated.filter((item): item is SavedHydratedItem => item !== null);
+      setItems(hydratedItems);
+      setHydrationMissingCount(saved.items.length - hydratedItems.length);
     } catch (loadError) {
       const status = getErrorStatus(loadError);
       if (status === 401 || status === 403) {
         setAuthRequired(true);
+      } else if (isServiceUnavailableStatus(status)) {
+        setRuntimeUnavailable(true);
       } else {
         setError(`Saved posts runtime request failed (${status ?? 'unknown'}).`);
       }
       setItems([]);
+      setReactionCount(0);
+      setHydrationMissingCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +98,7 @@ export function SavedPostsPageClient() {
     try {
       await customInstance<{ removed: boolean }>({ method: 'DELETE' }, `/v1/reactions/${encodeURIComponent(reactionId)}`);
       setItems((prev) => prev.filter((item) => item.reactionId !== reactionId));
+      setReactionCount((prev) => Math.max(0, prev - 1));
       setError(null);
     } catch (removeError) {
       setError(`Saved remove failed (${getErrorStatus(removeError) ?? 'unknown'}).`);
@@ -105,7 +117,7 @@ export function SavedPostsPageClient() {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-slate-900">Сохранённые посты</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Saved posts live-surface baseline v1: только `space_post` bookmark через reactions runtime.
+            Подборка ваших сохранённых публикаций на базе reactions bookmark runtime.
           </p>
         </header>
 
@@ -121,20 +133,34 @@ export function SavedPostsPageClient() {
           </div>
         )}
 
-        {!isLoading && !authRequired && error && (
+        {!isLoading && !authRequired && runtimeUnavailable && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Сохранённые публикации временно недоступны в этом окружении. Как только reactions runtime станет доступен,
+            здесь снова появится ваш shortlist.
+          </div>
+        )}
+
+        {!isLoading && !authRequired && !runtimeUnavailable && error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        {!isLoading && !authRequired && !error && items.length === 0 && (
+        {!isLoading && !authRequired && !runtimeUnavailable && !error && items.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Пока нет сохранённых публикаций. Сохраните пост в `/space` или `/space/community/feed`.
+            {reactionCount === 0
+              ? 'Пока нет сохранённых публикаций. Сохраните пост в `/space` или `/space/community/feed`.'
+              : 'Сохранения есть, но посты для этого списка сейчас не удалось загрузить. Попробуйте открыть позже или обновить страницу.'}
           </div>
         )}
 
-        {!isLoading && !authRequired && items.length > 0 && (
+        {!isLoading && !authRequired && !runtimeUnavailable && items.length > 0 && (
           <div className="space-y-4">
+            {hydrationMissingCount > 0 && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                Часть сохранённых постов ({hydrationMissingCount}) временно недоступна для просмотра в этом окружении.
+              </div>
+            )}
             {items.map((item) => {
               const feedItem: generated.SpaceFeedItem = {
                 id: `saved_${item.reactionId}`,

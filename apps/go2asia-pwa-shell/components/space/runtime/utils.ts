@@ -2,12 +2,17 @@ import { clerk, generated, getBaseUrl } from '@go2asia/sdk';
 
 export const DEFAULT_FEED_LIMIT = 20;
 export const HOME_FEED_URL = `/v1/space/feed/home?limit=${DEFAULT_FEED_LIMIT}`;
+export const SAVED_POSTS_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=50';
 export const PUBLIC_PROFILE_ID = (process.env.NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID ?? '').trim();
 
 export function getErrorStatus(error: unknown): number | null {
   if (!error || typeof error !== 'object') return null;
   const status = (error as { status?: unknown }).status;
   return typeof status === 'number' ? status : null;
+}
+
+export function isServiceUnavailableStatus(status: number | null): boolean {
+  return status === 500 || status === 501 || status === 502 || status === 503;
 }
 
 export function formatDate(value: string): string {

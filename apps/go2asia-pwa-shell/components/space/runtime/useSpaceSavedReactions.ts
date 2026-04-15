@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { customInstance } from '@go2asia/sdk';
-import { getErrorStatus } from './utils';
+import { getErrorStatus, isServiceUnavailableStatus, SAVED_POSTS_MINE_URL } from './utils';
 
 type SavedReactionRecord = {
   id: string;
   targetType: 'space_post';
   targetId: string;
   reactionType: 'bookmark';
+  createdAt?: string;
 };
 
 type SavedReactionItem = {
@@ -25,12 +26,11 @@ type ReactionWriteResponse = {
   applied: boolean;
 };
 
-type SavedState = 'loading' | 'ready' | 'auth-required' | 'error';
-
-const SAVED_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=50';
+type SavedState = 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
 
 export function useSpaceSavedReactions(enabled = true) {
   const [savedByPostId, setSavedByPostId] = useState<Record<string, string>>({});
+  const [savedReactions, setSavedReactions] = useState<SavedReactionRecord[]>([]);
   const [state, setState] = useState<SavedState>('loading');
   const [error, setError] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
@@ -40,21 +40,33 @@ export function useSpaceSavedReactions(enabled = true) {
     setState('loading');
     setError(null);
     try {
-      const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_MINE_URL);
+      const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_POSTS_MINE_URL);
       const next: Record<string, string> = {};
+      const reactions: SavedReactionRecord[] = [];
       for (const item of response.items) {
         next[item.reaction.targetId] = item.reaction.id;
+        reactions.push(item.reaction);
       }
       setSavedByPostId(next);
+      setSavedReactions(reactions);
       setState('ready');
     } catch (loadError) {
       const status = getErrorStatus(loadError);
       if (status === 401 || status === 403) {
         setSavedByPostId({});
+        setSavedReactions([]);
         setState('auth-required');
         return;
       }
+      if (isServiceUnavailableStatus(status)) {
+        setSavedByPostId({});
+        setSavedReactions([]);
+        setState('unavailable');
+        setError('Saved runtime временно недоступен в этом окружении.');
+        return;
+      }
       setSavedByPostId({});
+      setSavedReactions([]);
       setState('error');
       setError(`Saved reactions request failed (${status ?? 'unknown'}).`);
     }
@@ -75,6 +87,7 @@ export function useSpaceSavedReactions(enabled = true) {
           delete next[postId];
           return next;
         });
+        setSavedReactions((prev) => prev.filter((item) => item.targetId !== postId));
       } else {
         const response = await customInstance<ReactionWriteResponse>(
           {
@@ -88,6 +101,13 @@ export function useSpaceSavedReactions(enabled = true) {
           '/v1/reactions'
         );
         setSavedByPostId((prev) => ({ ...prev, [postId]: response.reaction.id }));
+        setSavedReactions((prev) => [
+          {
+            ...response.reaction,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.filter((item) => item.targetId !== postId),
+        ]);
       }
       setError(null);
       if (state !== 'ready') setState('ready');
@@ -96,6 +116,9 @@ export function useSpaceSavedReactions(enabled = true) {
       if (status === 401 || status === 403) {
         setState('auth-required');
         setError('Нужна авторизация, чтобы сохранять публикации.');
+      } else if (isServiceUnavailableStatus(status)) {
+        setState('unavailable');
+        setError('Сохранение временно недоступно в этом окружении.');
       } else {
         setError(`Saved toggle failed (${status ?? 'unknown'}).`);
       }
@@ -115,12 +138,14 @@ export function useSpaceSavedReactions(enabled = true) {
     () => ({
       state,
       error,
+      savedReactions,
+      savedCount: savedReactions.length,
       isSaved,
       isPending,
       toggleSaved,
       reload: load,
     }),
-    [state, error, isSaved, isPending, toggleSaved, load]
+    [state, error, savedReactions, isSaved, isPending, toggleSaved, load]
   );
 }
 

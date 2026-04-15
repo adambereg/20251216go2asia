@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceFeedCard } from './SpaceFeedCard';
-import { getErrorStatus, getProfileFeedUrl } from './utils';
+import { getErrorStatus, getProfileFeedUrl, isServiceUnavailableStatus } from './utils';
 
 type SpaceProfileSurfaceProps = {
   userId: string;
@@ -46,9 +46,16 @@ export function SpaceProfileSurface({
         setFeed(feedResponse);
       } catch (loadError) {
         if (cancelled) return;
+        const status = getErrorStatus(loadError);
         setProfile(null);
         setFeed(null);
-        setError(`Profile runtime request failed (${getErrorStatus(loadError) ?? 'unknown'}).`);
+        if (status === 401 || status === 403) {
+          setError('Для этого профиля нужна авторизация.');
+        } else if (isServiceUnavailableStatus(status)) {
+          setError('Профиль и авторские публикации временно недоступны в этом окружении.');
+        } else {
+          setError(`Profile runtime request failed (${status ?? 'unknown'}).`);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }

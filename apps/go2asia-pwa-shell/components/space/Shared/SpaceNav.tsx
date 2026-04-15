@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Newspaper,
   ScrollText,
+  Users,
   Trophy,
   Ticket,
   Wallet,
@@ -24,8 +25,9 @@ interface NavItem {
 }
 
 const activeNavItems: NavItem[] = [
-  { href: '/space', label: 'Runtime shell', icon: LayoutDashboard },
-  { href: '/space/community/feed', label: 'Лента сообщества', icon: Newspaper },
+  { href: '/space', label: 'Дашборд', icon: LayoutDashboard },
+  { href: '/space/community', label: 'Сообщества', icon: Users },
+  { href: '/space/community/feed', label: 'Поток постов', icon: Newspaper },
   { href: '/space/posts', label: 'Публикации', icon: ScrollText },
   { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },
   { href: '/space/activity', label: 'Активность', icon: Bell },
@@ -48,15 +50,23 @@ interface SpaceNavProps {
 export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
   const pathname = usePathname();
 
+  function isItemActive(href: string): boolean {
+    if (href === '/space') return pathname === '/space';
+    if (href === '/space/community') {
+      return pathname === '/space/community' || pathname.startsWith('/space/community/groups/');
+    }
+    if (href === '/space/community/feed') {
+      return pathname.startsWith('/space/community/feed');
+    }
+    return pathname.startsWith(href);
+  }
+
   if (variant === 'horizontal') {
     return (
       <nav className={cn('flex gap-2 overflow-x-auto pb-2', className)}>
         {activeNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            item.href === '/space'
-              ? pathname === '/space'
-              : pathname.startsWith(item.href);
+          const isActive = isItemActive(item.href);
 
           return (
             <Link
@@ -84,10 +94,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
     <nav className={cn('space-y-1', className)}>
       {activeNavItems.map((item) => {
         const Icon = item.icon;
-        const isActive =
-          item.href === '/space'
-            ? pathname === '/space'
-            : pathname.startsWith(item.href);
+        const isActive = isItemActive(item.href);
 
         return (
           <Link
@@ -107,9 +114,9 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
         );
       })}
 
-      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-          Deferred (phase 1 baseline)
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Скоро
         </div>
         <ul className="mt-2 space-y-2">
           {deferredNavItems.map((item) => {
@@ -117,7 +124,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
             return (
               <li
                 key={item.label}
-                className="flex items-center gap-2 text-xs text-amber-800"
+                className="flex items-center gap-2 text-xs text-slate-500"
               >
                 <Icon className="h-3.5 w-3.5" />
                 <span>{item.label}</span>

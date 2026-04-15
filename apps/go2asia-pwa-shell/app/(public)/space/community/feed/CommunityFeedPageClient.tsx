@@ -1,24 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { customInstance, generated } from '@go2asia/sdk';
+import { useMemo } from 'react';
 import { SpaceLayout } from '@/components/space/Shared';
 import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
+import { useSpaceHomeFeed } from '@/components/space/runtime/useSpaceHomeFeed';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
-import {
-  getErrorStatus,
-  getProfileFeedUrl,
-  HOME_FEED_URL,
-  PUBLIC_PROFILE_ID,
-} from '@/components/space/runtime/utils';
-
-type CommunityFeedMode = 'home' | 'public-profile' | 'deferred';
 
 export function CommunityFeedPageClient() {
-  const [mode, setMode] = useState<CommunityFeedMode>('deferred');
-  const [feed, setFeed] = useState<generated.SpaceFeedResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { mode, feed, isLoading, error } = useSpaceHomeFeed();
 
   const deferredReferences = useMemo(
     () => ['partner', 'quest', 'blog_post', 'space_post'],
@@ -26,73 +15,13 @@ export function CommunityFeedPageClient() {
   );
   const saved = useSpaceSavedReactions(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRuntimeFeed() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const home = await customInstance<generated.SpaceFeedResponse>(
-          { method: 'GET' },
-          HOME_FEED_URL
-        );
-        if (cancelled) return;
-        setFeed(home);
-        setMode('home');
-      } catch (homeError) {
-        if (cancelled) return;
-        const status = getErrorStatus(homeError);
-        const canFallbackToPublic = status === 401 || status === 403;
-
-        if (canFallbackToPublic && PUBLIC_PROFILE_ID.length > 0) {
-          try {
-            const profileFeed = await customInstance<generated.SpaceFeedResponse>(
-              { method: 'GET' },
-              getProfileFeedUrl(PUBLIC_PROFILE_ID)
-            );
-            if (cancelled) return;
-            setFeed(profileFeed);
-            setMode('public-profile');
-            return;
-          } catch (fallbackError) {
-            if (cancelled) return;
-            const fallbackStatus = getErrorStatus(fallbackError);
-            setMode('deferred');
-            setFeed(null);
-            setError(`Community feed fallback failed (${fallbackStatus ?? 'unknown'}).`);
-            return;
-          }
-        }
-
-        setMode('deferred');
-        setFeed(null);
-        if (status === 401 || status === 403) {
-          setError(
-            'Требуется авторизация для community feed. Публичный fallback-профиль не настроен.'
-          );
-        } else {
-          setError(`Community feed runtime request failed (${status ?? 'unknown'}).`);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void loadRuntimeFeed();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
     <SpaceLayout>
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Лента сообщества</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Поток постов сообщества</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Live-adoption pass v1: runtime-backed feed on existing Space contract.
+            Здесь живёт social stream публикаций. Карта входа в группы остаётся на `/space/community`.
           </p>
           <div className="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
             {mode === 'home' && 'Live mode: home feed'}
@@ -148,6 +77,12 @@ export function CommunityFeedPageClient() {
         {!isLoading && saved.state === 'auth-required' && (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Войдите в аккаунт, чтобы использовать сохранение публикаций.
+          </div>
+        )}
+
+        {!isLoading && saved.state === 'unavailable' && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Сохранение постов временно недоступно в этом окружении, но сама лента работает в штатном режиме.
           </div>
         )}
 
