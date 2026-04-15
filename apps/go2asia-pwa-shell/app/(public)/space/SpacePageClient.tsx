@@ -20,9 +20,9 @@ type SavedPreviewItem = {
 
 const quickEntries = [
   {
-    href: '/space/community/feed',
-    title: 'Лента сообщества',
-    description: 'Открыть полный social stream и посмотреть, что происходит в сообществе.',
+    href: '/space/community',
+    title: 'Сообщества',
+    description: 'Найти подходящую группу и затем перейти в group detail или full feed.',
   },
   {
     href: '/space/posts',
