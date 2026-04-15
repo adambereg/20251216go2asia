@@ -18,6 +18,19 @@ type SavedPreviewItem = {
   post: generated.SpacePostResponse;
 };
 
+type DashboardSignalSource = 'runtime' | 'summary' | 'reference';
+
+type DashboardActionItem = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  cta: string;
+  source: DashboardSignalSource;
+  priority?: 'high' | 'medium' | 'low';
+  state?: 'planned' | 'pending' | 'waiting';
+};
+
 const quickEntries = [
   {
     href: '/space/community',
@@ -43,21 +56,6 @@ const quickEntries = [
 
 const referenceBlocks = [
   {
-    title: 'Today',
-    status: 'Preview',
-    description: 'Короткий дневной фокус без organizer/planner runtime.',
-  },
-  {
-    title: 'Next Actions',
-    status: 'Preview',
-    description: 'Спокойная рамка для следующих шагов без assistant workflow.',
-  },
-  {
-    title: 'Organizer Preview',
-    status: 'Preview',
-    description: 'Тонкий обзор будущего organizer слоя без отдельного runtime slice.',
-  },
-  {
     title: 'Ecosystem Signals',
     status: 'Summary',
     description: 'Сводка смежных доменов без переноса ownership в Space.',
@@ -73,6 +71,32 @@ const referenceBlocks = [
     description: 'Спокойный bridge к PRO без замены рабочего контура.',
   },
 ] as const;
+
+function formatSourceLabel(source: DashboardSignalSource): string {
+  switch (source) {
+    case 'runtime':
+      return 'Live';
+    case 'summary':
+      return 'Summary';
+    case 'reference':
+      return 'Preview';
+    default:
+      return 'Preview';
+  }
+}
+
+function formatPriorityLabel(priority: 'high' | 'medium' | 'low'): string {
+  switch (priority) {
+    case 'high':
+      return 'High';
+    case 'medium':
+      return 'Medium';
+    case 'low':
+      return 'Low';
+    default:
+      return 'Medium';
+  }
+}
 
 export function SpacePageClient() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -90,6 +114,161 @@ export function SpacePageClient() {
   }, [isSignedIn, user?.id]);
 
   const pulsePreviewItems = useMemo(() => feed?.items.slice(0, 2) ?? [], [feed]);
+
+  const todayItems = useMemo<DashboardActionItem[]>(() => {
+    const items: DashboardActionItem[] = [];
+
+    if (saved.state === 'ready' && saved.savedCount > 0) {
+      items.push({
+        id: 'today_saved_follow_up',
+        title: 'Вернуться к сохранённому shortlist',
+        description: `У вас ${saved.savedCount} сохранённых постов — хороший момент выбрать 1–2 и сделать следующий шаг.`,
+        href: '/space/saved',
+        cta: 'Открыть сохранённые',
+        source: 'runtime',
+      });
+    }
+
+    if (pulsePreviewItems.length > 0) {
+      items.push({
+        id: 'today_social_change',
+        title: 'Проверить свежие social изменения',
+        description: `В Social Pulse уже есть ${pulsePreviewItems.length} живых сигнала(ов) — стоит быстро пройтись по потоку.`,
+        href: '/space/community/feed',
+        cta: 'Открыть поток постов',
+        source: 'runtime',
+      });
+    }
+
+    if (headerProfile?.cityId) {
+      items.push({
+        id: 'today_city_context',
+        title: `Сверить городской контекст: ${headerProfile.cityId}`,
+        description: 'Локальные сообщества помогают быстрее перейти от ориентирования к полезному участию.',
+        href: '/space/community',
+        cta: 'Открыть сообщества',
+        source: 'summary',
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: 'today_start_light',
+        title: 'Сформировать первый дневной фокус',
+        description: 'Если сигналов пока мало, начните с одного сообщества и одного небольшого действия.',
+        href: '/space/community',
+        cta: 'Выбрать группу',
+        source: 'reference',
+      });
+    }
+
+    return items.slice(0, 3);
+  }, [saved.state, saved.savedCount, pulsePreviewItems.length, headerProfile?.cityId]);
+
+  const nextActionItems = useMemo<DashboardActionItem[]>(() => {
+    const items: DashboardActionItem[] = [
+      {
+        id: 'next_enter_community',
+        title: 'Выбрать группу для входа',
+        description: 'Community root теперь показывает карту входа: проще выбрать, где встроиться сначала.',
+        href: '/space/community',
+        cta: 'Открыть сообщества',
+        source: 'summary',
+      },
+    ];
+
+    if (saved.state === 'ready' && saved.savedCount > 0) {
+      items.push({
+        id: 'next_convert_saved',
+        title: 'Преобразовать сохранённое в действие',
+        description: 'Возьмите один сохранённый пост и решите, что сделать сегодня: открыть, обсудить или зафиксировать шаг.',
+        href: '/space/saved',
+        cta: 'Перейти в сохранённые',
+        source: 'runtime',
+      });
+    } else {
+      items.push({
+        id: 'next_build_shortlist',
+        title: 'Собрать небольшой shortlist',
+        description: 'Даже 1–2 сохранения дадут более полезный контекст для следующих действий на dashboard.',
+        href: '/space/community/feed',
+        cta: 'Открыть поток постов',
+        source: 'reference',
+      });
+    }
+
+    const isPro = headerProfile?.roleLabel?.toLowerCase().includes('pro');
+    items.push(
+      isPro
+        ? {
+            id: 'next_group_rhythm',
+            title: 'Поддержать ритм группы',
+            description: 'Один содержательный апдейт в группе часто лучше длинного списка отложенных задач.',
+            href: '/space/community',
+            cta: 'Открыть сообщества',
+            source: 'summary',
+          }
+        : {
+            id: 'next_authored_update',
+            title: 'Сделать короткую авторскую публикацию',
+            description: 'Небольшой пост может превратить пассивный просмотр в активное включение.',
+            href: '/space/posts',
+            cta: 'Открыть публикации',
+            source: 'summary',
+          }
+    );
+
+    return items;
+  }, [saved.state, saved.savedCount, headerProfile?.roleLabel]);
+
+  const organizerPreviewItems = useMemo<DashboardActionItem[]>(() => {
+    const first: DashboardActionItem =
+      saved.state === 'ready' && saved.savedCount > 0
+        ? {
+            id: 'organizer_saved',
+            title: 'Вернуться к shortlist и принять решение',
+            description: 'Организовать один практический шаг из сохранённых объектов.',
+            href: '/space/saved',
+            cta: 'Открыть',
+            source: 'summary',
+            state: 'planned',
+            priority: 'high',
+          }
+        : {
+            id: 'organizer_seed',
+            title: 'Сформировать первый actionable shortlist',
+            description: 'Добавьте 1–2 сигнала в рабочий контекст, чтобы organizer preview стал точнее.',
+            href: '/space/community/feed',
+            cta: 'Открыть',
+            source: 'reference',
+            state: 'planned',
+            priority: 'high',
+          };
+
+    return [
+      first,
+      {
+        id: 'organizer_community',
+        title: 'Поддерживать живой ритм в выбранной группе',
+        description: 'Community действия лучше удерживаются, когда есть понятная следующая точка входа.',
+        href: '/space/community',
+        cta: 'Открыть',
+        source: 'reference',
+        state: 'planned',
+        priority: 'medium',
+      },
+      {
+        id: 'organizer_activity',
+        title: 'Проверить сигналы в activity surface',
+        description: 'Это помогает не терять контекст изменений и вовремя закрывать follow-up.',
+        href: '/space/activity',
+        cta: 'Открыть',
+        source: 'runtime',
+        state: 'waiting',
+        priority: 'low',
+      },
+    ];
+  }, [saved.state, saved.savedCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,11 +429,112 @@ export function SpacePageClient() {
           )}
         </section>
 
+        <section className="grid gap-6 lg:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Today</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                1-3 дневных акцента, чтобы быстро перейти от контекста к конкретному шагу.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {todayItems.map((item) => (
+                <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
+                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      {formatSourceLabel(item.source)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">{item.description}</p>
+                  <Link
+                    href={item.href}
+                    className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    {item.cta}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Next Actions</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Рекомендованные шаги на ближайший цикл, без имитации workflow-движка.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {nextActionItems.map((item) => (
+                <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
+                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      {formatSourceLabel(item.source)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">{item.description}</p>
+                  <Link
+                    href={item.href}
+                    className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    {item.cta}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Organizer Preview</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Короткий preview execution-слоя: planned/pending логика без открытия полноценной organizer wave.
+              </p>
+            </div>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+              thin state
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {organizerPreviewItems.map((item) => (
+              <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap gap-2 text-[11px]">
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-medium text-slate-600">
+                    {formatSourceLabel(item.source)}
+                  </span>
+                  {item.state && (
+                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-medium text-slate-600">
+                      {item.state}
+                    </span>
+                  )}
+                  {item.priority && (
+                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-medium text-slate-600">
+                      {formatPriorityLabel(item.priority)}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-3 text-sm font-semibold text-slate-900">{item.title}</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{item.description}</p>
+                <Link
+                  href={item.href}
+                  className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {item.cta}
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Что сделать дальше</h2>
-              <p className="mt-1 text-sm text-slate-600">Быстрые входы в уже живые Space surfaces.</p>
+              <h2 className="text-lg font-semibold text-slate-900">Secondary Previews</h2>
+              <p className="mt-1 text-sm text-slate-600">Спокойные входы в уже живые surfaces без перегрузки основного decision-layer.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {quickEntries.map((entry) => (
@@ -339,13 +619,15 @@ export function SpacePageClient() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Social Pulse</h2>
-              <p className="mt-1 text-sm text-slate-600">Короткий preview того, что сейчас происходит. Полная лента остаётся на `/space/community/feed`.</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Короткий preview того, что сейчас происходит. Полный поток постов остаётся на `/space/community/feed`.
+              </p>
             </div>
             <Link
               href="/space/community/feed"
               className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
-              Открыть full feed
+              Открыть поток постов
             </Link>
           </div>
 
