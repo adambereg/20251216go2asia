@@ -24,7 +24,7 @@ interface NavItem {
 }
 
 const activeNavItems: NavItem[] = [
-  { href: '/space', label: 'Runtime shell', icon: LayoutDashboard },
+  { href: '/space', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/space/community/feed', label: 'Лента сообщества', icon: Newspaper },
   { href: '/space/posts', label: 'Публикации', icon: ScrollText },
   { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },

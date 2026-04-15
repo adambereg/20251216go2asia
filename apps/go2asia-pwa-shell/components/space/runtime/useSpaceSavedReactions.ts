@@ -9,6 +9,7 @@ type SavedReactionRecord = {
   targetType: 'space_post';
   targetId: string;
   reactionType: 'bookmark';
+  createdAt?: string;
 };
 
 type SavedReactionItem = {
@@ -31,6 +32,7 @@ const SAVED_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bo
 
 export function useSpaceSavedReactions(enabled = true) {
   const [savedByPostId, setSavedByPostId] = useState<Record<string, string>>({});
+  const [savedReactions, setSavedReactions] = useState<SavedReactionRecord[]>([]);
   const [state, setState] = useState<SavedState>('loading');
   const [error, setError] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
@@ -42,19 +44,24 @@ export function useSpaceSavedReactions(enabled = true) {
     try {
       const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_MINE_URL);
       const next: Record<string, string> = {};
+      const reactions: SavedReactionRecord[] = [];
       for (const item of response.items) {
         next[item.reaction.targetId] = item.reaction.id;
+        reactions.push(item.reaction);
       }
       setSavedByPostId(next);
+      setSavedReactions(reactions);
       setState('ready');
     } catch (loadError) {
       const status = getErrorStatus(loadError);
       if (status === 401 || status === 403) {
         setSavedByPostId({});
+        setSavedReactions([]);
         setState('auth-required');
         return;
       }
       setSavedByPostId({});
+      setSavedReactions([]);
       setState('error');
       setError(`Saved reactions request failed (${status ?? 'unknown'}).`);
     }
@@ -75,6 +82,7 @@ export function useSpaceSavedReactions(enabled = true) {
           delete next[postId];
           return next;
         });
+        setSavedReactions((prev) => prev.filter((item) => item.targetId !== postId));
       } else {
         const response = await customInstance<ReactionWriteResponse>(
           {
@@ -88,6 +96,13 @@ export function useSpaceSavedReactions(enabled = true) {
           '/v1/reactions'
         );
         setSavedByPostId((prev) => ({ ...prev, [postId]: response.reaction.id }));
+        setSavedReactions((prev) => [
+          {
+            ...response.reaction,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.filter((item) => item.targetId !== postId),
+        ]);
       }
       setError(null);
       if (state !== 'ready') setState('ready');
@@ -115,12 +130,14 @@ export function useSpaceSavedReactions(enabled = true) {
     () => ({
       state,
       error,
+      savedReactions,
+      savedCount: savedReactions.length,
       isSaved,
       isPending,
       toggleSaved,
       reload: load,
     }),
-    [state, error, isSaved, isPending, toggleSaved, load]
+    [state, error, savedReactions, isSaved, isPending, toggleSaved, load]
   );
 }
 
