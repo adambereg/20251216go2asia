@@ -6,11 +6,10 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { ListMyReactionsItem } from "./listMyReactionsItem";
 
-export type ReactionType = (typeof ReactionType)[keyof typeof ReactionType];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ReactionType = {
-  like: "like",
-  bookmark: "bookmark",
-} as const;
+export interface ListMyReactionsResponse {
+  items: ListMyReactionsItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}

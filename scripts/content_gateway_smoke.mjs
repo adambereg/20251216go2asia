@@ -6,6 +6,7 @@ const GATEWAY_URL =
 const STAGING_TEST_JWT = process.env.STAGING_TEST_JWT?.trim() || '';
 const TEST_ARTIFACT_PATH = process.env.TEST_ARTIFACT_PATH?.trim() || '';
 const RELEASE_SHA = process.env.RELEASE_SHA?.trim() || '';
+const SMOKE_RETRY_ATTEMPTS = Math.max(1, Number(process.env.SMOKE_RETRY_ATTEMPTS ?? '3') || 3);
 
 const summary = {
   gatewayUrl: GATEWAY_URL,
@@ -31,17 +32,59 @@ async function fetchJson(url, init) {
   return { response, contentType, text, json };
 }
 
+function shouldRetry(responseStatus, errorMessage) {
+  if (typeof responseStatus === 'number' && responseStatus >= 500) return true;
+  if (!errorMessage) return false;
+  return /fetch failed|network|socket|timeout|terminated|econnreset|enotfound|etimedout/i.test(errorMessage);
+}
+
+async function expectJson200WithRetry(url, shapeCheck) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= SMOKE_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const result = await fetchJson(url, {
+        headers: { Accept: 'application/json' },
+      });
+
+      if (result.response.status !== 200) {
+        const statusError = new Error(
+          `Expected 200 for ${url}, got ${result.response.status}: ${result.text.slice(0, 300)}`
+        );
+        if (attempt < SMOKE_RETRY_ATTEMPTS && shouldRetry(result.response.status, statusError.message)) {
+          console.warn(
+            `[smoke:retry] GET ${url} attempt ${attempt}/${SMOKE_RETRY_ATTEMPTS} returned ${result.response.status}`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+          continue;
+        }
+        throw statusError;
+      }
+
+      assert(
+        result.contentType.includes('application/json'),
+        `Expected JSON content-type for ${url}, got ${result.contentType}`
+      );
+      assert(result.json && typeof result.json === 'object', `Expected JSON object body for ${url}`);
+      if (shapeCheck) shapeCheck(result.json);
+      summary.checks.push({ name: `GET ${url}`, status: result.response.status, contentType: result.contentType, ok: true });
+      console.log(`[smoke:ok] GET ${url}`);
+      return result.json;
+    } catch (error) {
+      lastError = error;
+      const message = error?.message || String(error);
+      if (attempt < SMOKE_RETRY_ATTEMPTS && shouldRetry(undefined, message)) {
+        console.warn(`[smoke:retry] GET ${url} attempt ${attempt}/${SMOKE_RETRY_ATTEMPTS} failed: ${message}`);
+        await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError ?? new Error(`Expected 200 for ${url}`);
+}
+
 async function expectJson200(url, shapeCheck) {
-  const { response, contentType, json, text } = await fetchJson(url, {
-    headers: { Accept: 'application/json' },
-  });
-  assert(response.status === 200, `Expected 200 for ${url}, got ${response.status}: ${text.slice(0, 300)}`);
-  assert(contentType.includes('application/json'), `Expected JSON content-type for ${url}, got ${contentType}`);
-  assert(json && typeof json === 'object', `Expected JSON object body for ${url}`);
-  if (shapeCheck) shapeCheck(json);
-  summary.checks.push({ name: `GET ${url}`, status: response.status, contentType, ok: true });
-  console.log(`[smoke:ok] GET ${url}`);
-  return json;
+  return expectJson200WithRetry(url, shapeCheck);
 }
 
 function requireItemsArray(json, label) {

@@ -71,6 +71,8 @@ import type {
   ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
+  ListMyReactionsParams,
+  ListMyReactionsResponse,
   ListOwnedQuestsParams,
   ListPlaceContainersResponse,
   ListPlacesParams,
@@ -3138,6 +3140,74 @@ export const upsertReaction = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(upsertReactionRequest),
+  });
+};
+
+/**
+ * @summary List my saved reactions (space posts bookmark baseline)
+ */
+export type listMyReactionsResponse200 = {
+  data: ListMyReactionsResponse;
+  status: 200;
+};
+
+export type listMyReactionsResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type listMyReactionsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type listMyReactionsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listMyReactionsResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listMyReactionsResponseSuccess = listMyReactionsResponse200 & {
+  headers: Headers;
+};
+export type listMyReactionsResponseError = (
+  | listMyReactionsResponse400
+  | listMyReactionsResponse401
+  | listMyReactionsResponse500
+  | listMyReactionsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMyReactionsResponse = listMyReactionsResponseSuccess | listMyReactionsResponseError;
+
+export const getListMyReactionsUrl = (params: ListMyReactionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/reactions/mine?${stringifiedParams}`
+    : `/v1/reactions/mine`;
+};
+
+export const listMyReactions = async (
+  params: ListMyReactionsParams,
+  options?: RequestInit
+): Promise<listMyReactionsResponse> => {
+  return customInstance<listMyReactionsResponse>(getListMyReactionsUrl(params), {
+    ...options,
+    method: "GET",
   });
 };
 

@@ -265,6 +265,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath === '/v1/reactions/summary:batch' && normalizedMethod === 'POST') {
     return { routeKey: 'reactions.summary-batch.post', routeGroup: 'reactions' };
   }
+  if (normalizedPath === '/v1/reactions/mine' && normalizedMethod === 'GET') {
+    return { routeKey: 'reactions.mine.get', routeGroup: 'reactions' };
+  }
   if (normalizedPath.startsWith('/v1/reactions/')) {
     return { routeKey: `reactions.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'reactions' };
   }
@@ -683,6 +686,7 @@ function isProtectedSpaceRoute(method: string, path: string): boolean {
 function isProtectedReactionsRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/reactions') return true;
   if (method === 'DELETE' && /^\/v1\/reactions\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && path === '/v1/reactions/mine') return true;
   return false;
 }
 

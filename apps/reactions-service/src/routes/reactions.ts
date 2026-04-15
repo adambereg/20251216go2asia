@@ -4,6 +4,7 @@ import { readJsonObject } from '../middleware/http';
 import {
   getReactionSummaryBatch,
   getReactionSummarySingle,
+  listMyReactions,
   removeReactionById,
   upsertReaction,
 } from '../services/reactionsService';
@@ -29,6 +30,10 @@ export async function handleReactionsRoute(
   const deleteMatch = path.match(/^\/v1\/reactions\/([^/]+)$/);
   if (deleteMatch && request.method === 'DELETE' && principal) {
     return removeReactionById(env, decodeURIComponent(deleteMatch[1]), principal, requestId, publisher);
+  }
+
+  if (path === '/v1/reactions/mine' && request.method === 'GET' && principal) {
+    return listMyReactions(env, request, principal, requestId);
   }
 
   const summaryMatch = path.match(/^\/v1\/reactions\/summary\/([^/]+)\/([^/]+)$/);

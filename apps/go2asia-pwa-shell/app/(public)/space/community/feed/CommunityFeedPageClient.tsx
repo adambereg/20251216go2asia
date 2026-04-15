@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
 import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
+import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import {
   getErrorStatus,
   getProfileFeedUrl,
@@ -23,6 +24,7 @@ export function CommunityFeedPageClient() {
     () => ['partner', 'quest', 'blog_post', 'space_post'],
     []
   );
+  const saved = useSpaceSavedReactions(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,13 +122,38 @@ export function CommunityFeedPageClient() {
         {!isLoading && feed && feed.items.length > 0 && (
           <div className="space-y-4">
             {feed.items.map((item) => (
-              <SpaceFeedCard
-                key={item.id}
-                item={item}
-                showReason
-                showGroupSignal
-              />
+              <div key={item.id} className="space-y-2">
+                <SpaceFeedCard item={item} showReason showGroupSignal />
+                {saved.state === 'ready' && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void saved.toggleSaved(item.post.id)}
+                      disabled={saved.isPending(item.post.id)}
+                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {saved.isPending(item.post.id)
+                        ? 'Обновляем...'
+                        : saved.isSaved(item.post.id)
+                          ? 'Убрать из сохранённых'
+                          : 'Сохранить пост'}
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
+          </div>
+        )}
+
+        {!isLoading && saved.state === 'auth-required' && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Войдите в аккаунт, чтобы использовать сохранение публикаций.
+          </div>
+        )}
+
+        {!isLoading && saved.state === 'error' && saved.error && (
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            {saved.error}
           </div>
         )}
 

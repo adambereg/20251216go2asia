@@ -7,10 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ReactionType = (typeof ReactionType)[keyof typeof ReactionType];
+export type ListMyReactionsTargetType =
+  (typeof ListMyReactionsTargetType)[keyof typeof ListMyReactionsTargetType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ReactionType = {
-  like: "like",
-  bookmark: "bookmark",
+export const ListMyReactionsTargetType = {
+  space_post: "space_post",
 } as const;

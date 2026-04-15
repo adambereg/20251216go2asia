@@ -2149,6 +2149,26 @@ components:
         - limit
         - offset
       type: object
+    ListMyReactionsItem:
+      properties:
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+      required:
+        - reaction
+      type: object
+    ListMyReactionsResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ListMyReactionsItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
     ListPlaceContainersResponse:
       properties:
         items:
@@ -2820,6 +2840,7 @@ components:
     ReactionType:
       enum:
         - like
+        - bookmark
       type: string
     ReactionWriteResponse:
       properties:
@@ -6048,6 +6069,54 @@ paths:
       security:
         - GatewayAuth: []
       summary: Create or update a like (idempotent write)
+      tags:
+        - reactions
+  /v1/reactions/mine:
+    get:
+      operationId: listMyReactions
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - in: query
+          name: targetType
+          required: true
+          schema:
+            enum:
+              - space_post
+            type: string
+        - in: query
+          name: reactionType
+          required: true
+          schema:
+            enum:
+              - bookmark
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            default: 20
+            maximum: 50
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListMyReactionsResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List my saved reactions (space posts bookmark baseline)
       tags:
         - reactions
   /v1/reactions/summary/{targetType}/{targetId}:

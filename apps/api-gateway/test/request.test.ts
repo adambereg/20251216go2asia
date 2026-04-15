@@ -62,6 +62,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'reactions.summary-batch.post',
       routeGroup: 'reactions',
     });
+    expect(classifyRoute('GET', '/v1/reactions/mine')).toEqual({
+      routeKey: 'reactions.mine.get',
+      routeGroup: 'reactions',
+    });
     expect(classifyRoute('GET', '/v1/feed/home')).toEqual({
       routeKey: 'feed.home.get',
       routeGroup: 'feed',
@@ -265,6 +269,28 @@ describe('api-gateway request hardening', () => {
           targetId: 'post_1',
           reactionType: 'like',
         }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected reactions mine route without bearer token', async () => {
+    const env: Env = {
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions/mine?targetType=space_post&reactionType=bookmark', {
+        method: 'GET',
+        headers: {
+          Origin: 'https://app.example',
+        },
       }),
       env
     );
