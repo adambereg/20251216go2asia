@@ -22,55 +22,55 @@ const quickEntries = [
   {
     href: '/space/community/feed',
     title: 'Лента сообщества',
-    description: 'Полный social stream остаётся отдельной live-surface.',
+    description: 'Открыть полный social stream и посмотреть, что происходит в сообществе.',
   },
   {
     href: '/space/posts',
     title: 'Публикации',
-    description: 'Авторские публикации и public profile feed baseline.',
+    description: 'Перейти к авторским публикациям и public profile baseline.',
   },
   {
     href: '/space/activity',
     title: 'Активность',
-    description: 'Узкий activity path как отдельный timeline.',
+    description: 'Проверить недавние действия и narrow activity timeline.',
   },
   {
     href: '/space/saved',
     title: 'Сохранённые',
-    description: 'Bookmark runtime через reactions contour.',
+    description: 'Вернуться к сохранённым постам, если bookmark runtime доступен.',
   },
 ] as const;
 
 const referenceBlocks = [
   {
     title: 'Today',
-    status: 'reference-only',
-    description: 'Что важно именно сегодня. Пока только direction block без live organizer/planner semantics.',
+    status: 'Preview',
+    description: 'Короткий дневной фокус без organizer/planner runtime.',
   },
   {
     title: 'Next Actions',
-    status: 'reference-only',
-    description: 'Следующие шаги остаются action framing, а не fully-live assistant workflow.',
+    status: 'Preview',
+    description: 'Спокойная рамка для следующих шагов без assistant workflow.',
   },
   {
     title: 'Organizer Preview',
-    status: 'reference-only',
-    description: 'Preview остаётся thin by design до отдельного organizer runtime slice.',
+    status: 'Preview',
+    description: 'Тонкий обзор будущего organizer слоя без отдельного runtime slice.',
   },
   {
     title: 'Ecosystem Signals',
-    status: 'summary-only',
-    description: 'Adjacent domains будут здесь только как summaries, без переноса ownership в Space.',
+    status: 'Summary',
+    description: 'Сводка смежных доменов без переноса ownership в Space.',
   },
   {
     title: 'AI Assistant Suggestions',
-    status: 'reference-only',
-    description: 'AI слой пока не открывается как operational loop и остаётся calm reference section.',
+    status: 'Preview',
+    description: 'Небольшой preview AI слоя без operational loop.',
   },
   {
     title: 'PRO Widget',
-    status: 'reference-only',
-    description: 'Bridge life -> work остаётся marker block, не заменяя PRO Workspace.',
+    status: 'Preview',
+    description: 'Спокойный bridge к PRO без замены рабочего контура.',
   },
 ] as const;
 
@@ -186,30 +186,25 @@ export function SpacePageClient() {
     <SpaceLayout>
       <div className="space-y-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <header className="flex flex-col gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Space Asia</h1>
               <p className="mt-2 text-sm text-slate-600">
-                Dashboard-shell baseline v1: `/space` = orient → act → return, а полный social stream вынесен в отдельную поверхность.
+                Спокойная dashboard-точка входа: сначала сориентироваться, затем перейти в нужную живую поверхность.
               </p>
             </div>
-            <div className="inline-flex rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
-              {mode === 'home' && 'Live mode: personal dashboard baseline'}
-              {mode === 'public-profile' && 'Live mode: public representative preview'}
-              {mode === 'deferred' && 'Thin mode: runtime shell degraded'}
-            </div>
+            <p className="text-xs text-slate-500">
+              {mode === 'home' && 'Персональный dashboard baseline активен.'}
+              {mode === 'public-profile' && 'Показан representative public preview.'}
+              {mode === 'deferred' && 'Часть runtime-слоя недоступна, поэтому экран работает в thin mode.'}
+            </p>
           </header>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">User Header</h2>
-              <p className="mt-1 text-sm text-slate-600">Honest narrow identity/context layer на существующем profile/runtime baseline.</p>
-            </div>
-            <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800">
-              summary-backed now
-            </span>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Ваш контекст</h2>
+            <p className="mt-1 text-sm text-slate-600">Кого показывает dashboard сейчас и сколько живых social сигналов уже доступно.</p>
           </div>
 
           {headerState === 'loading' && (
@@ -241,10 +236,14 @@ export function SpacePageClient() {
                   </span>
                 )}
                 <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700">
-                  Social preview: {pulsePreviewItems.length}
-                </span>
-                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700">
-                  Saved: {saved.state === 'ready' ? saved.savedCount : isSignedIn ? 'loading' : 'auth required'}
+                  Saved:{' '}
+                  {saved.state === 'ready'
+                    ? saved.savedCount
+                    : saved.state === 'unavailable'
+                      ? 'temporarily unavailable'
+                      : isSignedIn
+                        ? 'loading'
+                        : 'auth required'}
                 </span>
               </div>
             </div>
@@ -253,21 +252,16 @@ export function SpacePageClient() {
 
         <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Quick Entry</h2>
-                <p className="mt-1 text-sm text-slate-600">Переходы в уже живые Space surfaces без broad dashboard expansion.</p>
-              </div>
-              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800">
-                runtime-backed now
-              </span>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Что сделать дальше</h2>
+              <p className="mt-1 text-sm text-slate-600">Быстрые входы в уже живые Space surfaces.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {quickEntries.map((entry) => (
                 <Link
                   key={entry.href}
                   href={entry.href}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100"
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:border-slate-300 hover:bg-slate-100"
                 >
                   <div className="text-sm font-semibold text-slate-900">{entry.title}</div>
                   <p className="mt-2 text-xs text-slate-600">{entry.description}</p>
@@ -277,14 +271,9 @@ export function SpacePageClient() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Saved Preview</h2>
-                <p className="mt-1 text-sm text-slate-600">Минимальный preview поверх уже живого reactions bookmark contour.</p>
-              </div>
-              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800">
-                runtime-backed now
-              </span>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Saved Preview</h2>
+              <p className="mt-1 text-sm text-slate-600">Короткий доступ к сохранённым постам без перегрузки dashboard.</p>
             </div>
 
             {saved.state === 'loading' && (
@@ -296,6 +285,12 @@ export function SpacePageClient() {
             {saved.state === 'auth-required' && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                 Войдите, чтобы увидеть персональный saved preview и полный список в `/space/saved`.
+              </div>
+            )}
+
+            {saved.state === 'unavailable' && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                Saved preview временно недоступен в этом окружении. Остальные social surfaces продолжают работать.
               </div>
             )}
 
@@ -344,7 +339,7 @@ export function SpacePageClient() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Social Pulse</h2>
-              <p className="mt-1 text-sm text-slate-600">Preview-only social block. Full feed semantics остаются на `/space/community/feed`.</p>
+              <p className="mt-1 text-sm text-slate-600">Короткий preview того, что сейчас происходит. Полная лента остаётся на `/space/community/feed`.</p>
             </div>
             <Link
               href="/space/community/feed"
@@ -399,22 +394,19 @@ export function SpacePageClient() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-amber-900">Reference / summary layers</h2>
-              <p className="mt-1 text-sm text-amber-800">These dashboard blocks are intentionally thin by design in this pass.</p>
-            </div>
-            <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800">
-              not full live surfaces
-            </span>
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Следующие слои</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Спокойные preview и summary-блоки, которые задают направление, но не притворяются отдельными live-сервисами.
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {referenceBlocks.map((block) => (
-              <article key={block.title} className="rounded-xl border border-amber-300 bg-white p-4">
+              <article key={block.title} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-slate-900">{block.title}</h3>
-                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                     {block.status}
                   </span>
                 </div>

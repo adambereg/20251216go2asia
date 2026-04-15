@@ -107,9 +107,9 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
         );
       })}
 
-      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-          Deferred (phase 1 baseline)
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Скоро
         </div>
         <ul className="mt-2 space-y-2">
           {deferredNavItems.map((item) => {
@@ -117,7 +117,7 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
             return (
               <li
                 key={item.label}
-                className="flex items-center gap-2 text-xs text-amber-800"
+                className="flex items-center gap-2 text-xs text-slate-500"
               >
                 <Icon className="h-3.5 w-3.5" />
                 <span>{item.label}</span>

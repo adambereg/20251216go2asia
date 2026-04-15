@@ -10,6 +10,10 @@ export function getErrorStatus(error: unknown): number | null {
   return typeof status === 'number' ? status : null;
 }
 
+export function isServiceUnavailableStatus(status: number | null): boolean {
+  return status === 500 || status === 501 || status === 502 || status === 503;
+}
+
 export function formatDate(value: string): string {
   try {
     return new Date(value).toLocaleString('ru-RU');

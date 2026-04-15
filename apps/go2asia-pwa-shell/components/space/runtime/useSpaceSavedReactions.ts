@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { customInstance } from '@go2asia/sdk';
-import { getErrorStatus } from './utils';
+import { getErrorStatus, isServiceUnavailableStatus } from './utils';
 
 type SavedReactionRecord = {
   id: string;
@@ -26,7 +26,7 @@ type ReactionWriteResponse = {
   applied: boolean;
 };
 
-type SavedState = 'loading' | 'ready' | 'auth-required' | 'error';
+type SavedState = 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
 
 const SAVED_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=50';
 
@@ -58,6 +58,13 @@ export function useSpaceSavedReactions(enabled = true) {
         setSavedByPostId({});
         setSavedReactions([]);
         setState('auth-required');
+        return;
+      }
+      if (isServiceUnavailableStatus(status)) {
+        setSavedByPostId({});
+        setSavedReactions([]);
+        setState('unavailable');
+        setError('Saved runtime временно недоступен в этом окружении.');
         return;
       }
       setSavedByPostId({});
@@ -111,6 +118,9 @@ export function useSpaceSavedReactions(enabled = true) {
       if (status === 401 || status === 403) {
         setState('auth-required');
         setError('Нужна авторизация, чтобы сохранять публикации.');
+      } else if (isServiceUnavailableStatus(status)) {
+        setState('unavailable');
+        setError('Сохранение временно недоступно в этом окружении.');
       } else {
         setError(`Saved toggle failed (${status ?? 'unknown'}).`);
       }

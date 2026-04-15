@@ -80,6 +80,12 @@ export function CommunityFeedPageClient() {
           </div>
         )}
 
+        {!isLoading && saved.state === 'unavailable' && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Сохранение постов временно недоступно в этом окружении, но сама лента работает в штатном режиме.
+          </div>
+        )}
+
         {!isLoading && saved.state === 'error' && saved.error && (
           <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {saved.error}
