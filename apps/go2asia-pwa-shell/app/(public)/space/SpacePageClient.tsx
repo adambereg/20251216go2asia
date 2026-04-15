@@ -106,6 +106,7 @@ export function SpacePageClient() {
   const [headerState, setHeaderState] = useState<HeaderSurfaceState>('loading');
   const [savedPreview, setSavedPreview] = useState<SavedPreviewItem[]>([]);
   const [savedPreviewLoading, setSavedPreviewLoading] = useState(false);
+  const [savedPreviewHydrationMisses, setSavedPreviewHydrationMisses] = useState(0);
 
   const headerUserId = useMemo(() => {
     if (isSignedIn && user?.id) return user.id;
@@ -309,6 +310,7 @@ export function SpacePageClient() {
     async function loadSavedPreview() {
       if (saved.state !== 'ready' || saved.savedReactions.length === 0) {
         setSavedPreview([]);
+        setSavedPreviewHydrationMisses(0);
         return;
       }
 
@@ -335,7 +337,9 @@ export function SpacePageClient() {
         );
 
         if (cancelled) return;
-        setSavedPreview(hydrated.filter((item): item is SavedPreviewItem => item !== null));
+        const hydratedItems = hydrated.filter((item): item is SavedPreviewItem => item !== null);
+        setSavedPreview(hydratedItems);
+        setSavedPreviewHydrationMisses(previewTargets.length - hydratedItems.length);
       } finally {
         if (!cancelled) setSavedPreviewLoading(false);
       }
@@ -420,6 +424,8 @@ export function SpacePageClient() {
                     ? saved.savedCount
                     : saved.state === 'unavailable'
                       ? 'temporarily unavailable'
+                      : saved.state === 'error'
+                        ? 'error'
                       : isSignedIn
                         ? 'loading'
                         : 'auth required'}
@@ -598,7 +604,14 @@ export function SpacePageClient() {
                 )}
                 {!savedPreviewLoading && savedPreview.length === 0 && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    Preview пока недоступен, но полный список уже открыт через `/space/saved`.
+                    {savedPreviewHydrationMisses > 0
+                      ? 'Сохранения найдены, но preview постов сейчас не удалось загрузить. Полный список доступен через `/space/saved`.'
+                      : 'Preview сейчас не удалось загрузить. Полный список остаётся доступным через `/space/saved`.'}
+                  </div>
+                )}
+                {savedPreview.length > 0 && savedPreviewHydrationMisses > 0 && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                    Часть сохранённых постов ({savedPreviewHydrationMisses}) временно не попала в preview.
                   </div>
                 )}
                 {savedPreview.map((item) => {

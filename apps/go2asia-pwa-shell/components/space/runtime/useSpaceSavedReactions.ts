@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { customInstance } from '@go2asia/sdk';
-import { getErrorStatus, isServiceUnavailableStatus } from './utils';
+import { getErrorStatus, isServiceUnavailableStatus, SAVED_POSTS_MINE_URL } from './utils';
 
 type SavedReactionRecord = {
   id: string;
@@ -28,8 +28,6 @@ type ReactionWriteResponse = {
 
 type SavedState = 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
 
-const SAVED_MINE_URL = '/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=50';
-
 export function useSpaceSavedReactions(enabled = true) {
   const [savedByPostId, setSavedByPostId] = useState<Record<string, string>>({});
   const [savedReactions, setSavedReactions] = useState<SavedReactionRecord[]>([]);
@@ -42,7 +40,7 @@ export function useSpaceSavedReactions(enabled = true) {
     setState('loading');
     setError(null);
     try {
-      const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_MINE_URL);
+      const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_POSTS_MINE_URL);
       const next: Record<string, string> = {};
       const reactions: SavedReactionRecord[] = [];
       for (const item of response.items) {
