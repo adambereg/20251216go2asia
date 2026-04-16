@@ -11,6 +11,7 @@ export * from './cityMapping';
 export * from './conventions';
 export * from './content';
 export * from './media';
+export * from './organizer';
 export * from './points';
 export * from './quest';
 export * from './rf';

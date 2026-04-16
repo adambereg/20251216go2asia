@@ -54,6 +54,18 @@ describe('api-gateway request hardening', () => {
       routeKey: 'space.feed.home.get',
       routeGroup: 'space',
     });
+    expect(classifyRoute('GET', '/v1/organizer/trips')).toEqual({
+      routeKey: 'organizer.trips.list.get',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('POST', '/v1/organizer/trips')).toEqual({
+      routeKey: 'organizer.trips.create.post',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('GET', '/v1/organizer/trips/trip_1')).toEqual({
+      routeKey: 'organizer.trips.detail.get',
+      routeGroup: 'organizer',
+    });
     expect(classifyRoute('POST', '/v1/reactions')).toEqual({
       routeKey: 'reactions.create.post',
       routeGroup: 'reactions',
@@ -241,6 +253,27 @@ describe('api-gateway request hardening', () => {
           visibility: 'public',
           text: 'Hello',
         }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected organizer route without bearer token', async () => {
+    const env: Env = {
+      ORGANIZER_SERVICE_URL: 'https://organizer.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/organizer/trips', {
+        headers: {
+          Origin: 'https://app.example',
+        },
       }),
       env
     );

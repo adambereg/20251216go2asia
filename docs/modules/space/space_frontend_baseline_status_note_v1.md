@@ -1,6 +1,6 @@
 # Space Frontend Baseline Status Note v1
 
-Status: fixed as bounded frontend milestone (v1).
+Status: fixed as bounded frontend milestone with Organizer Phase 2 first slice.
 
 ## Purpose
 
@@ -16,7 +16,8 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/posts` works as authored/public posts baseline.
 - `/space/saved` works as saved posts baseline.
 - `/space/activity` works as narrow activity baseline.
-- `/space/organizer` now exists as honest shell insertion baseline for Organizer.
+- `/space/organizer` now works as a real Organizer home with trip create/list/select baseline.
+- `/space/organizer/trips/[tripId]` now works as a minimal trip detail surface for items/tasks/notes.
 
 ## Architectural Alignment Already Reached
 
@@ -30,14 +31,14 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer is opened only as bounded shell insertion with truthful auth/loading/empty/thin states.
+- Organizer remains bounded, but it is no longer shell-only: trip containers and minimal trip detail are now real.
 - Saved remains bounded to `space_post` only.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.
 
 ## Deferred (Not Opened In This Milestone)
 
-- Full Organizer trip-model and saved-to-trip implementation wave.
+- Broad Organizer saved-to-trip wave and richer planning suite.
 - Broad saved wave.
 - Ecosystem signals wave.
 - AI full-loop wave.
@@ -52,5 +53,5 @@ Current state is a usable product baseline, not the full target Space v3.
 
 ## Recommended Next Direction
 
-Next likely direction is core Organizer Phase 2 trip-model work or further bounded dashboard enrichment.
+Next likely direction is bounded saved-to-trip integration, richer trip execution signals, or further dashboard enrichment.
 This note does not open a new execution pass; it only fixes the current milestone status.
