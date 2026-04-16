@@ -72,6 +72,8 @@ const referenceBlocks = [
   },
 ] as const;
 
+const organizerEntryHref = '/space/organizer';
+
 function formatSourceLabel(source: DashboardSignalSource): string {
   switch (source) {
     case 'runtime':
@@ -228,19 +230,19 @@ export function SpacePageClient() {
         ? {
             id: 'organizer_saved',
             title: 'Вернуться к shortlist и принять решение',
-            description: 'Организовать один практический шаг из сохранённых объектов.',
-            href: '/space/saved',
-            cta: 'Открыть',
+            description: 'Organizer уже открыт как отдельная секция shell. Следующий честный шаг — зайти внутрь и увидеть bounded state без fake trips.',
+            href: organizerEntryHref,
+            cta: 'Открыть Organizer',
             source: 'summary',
             state: 'planned',
             priority: 'high',
           }
         : {
             id: 'organizer_seed',
-            title: 'Сформировать первый actionable shortlist',
-            description: 'Добавьте 1–2 сигнала в рабочий контекст, чтобы organizer preview стал точнее.',
-            href: '/space/community/feed',
-            cta: 'Открыть',
+            title: 'Открыть Organizer как новую section',
+            description: 'Даже при пустом shortlist Organizer уже существует как честный route inside Space и не притворяется полноценным planner.',
+            href: organizerEntryHref,
+            cta: 'Открыть Organizer',
             source: 'reference',
             state: 'planned',
             priority: 'high',
@@ -250,20 +252,20 @@ export function SpacePageClient() {
       first,
       {
         id: 'organizer_community',
-        title: 'Поддерживать живой ритм в выбранной группе',
-        description: 'Community действия лучше удерживаются, когда есть понятная следующая точка входа.',
-        href: '/space/community',
-        cta: 'Открыть',
+        title: 'Перейти в Organizer из dashboard shell',
+        description: 'Dashboard остаётся cockpit, а Organizer теперь открывается как более глубокий bounded mode внутри Space.',
+        href: organizerEntryHref,
+        cta: 'Перейти',
         source: 'reference',
         state: 'planned',
         priority: 'medium',
       },
       {
         id: 'organizer_activity',
-        title: 'Проверить сигналы в activity surface',
-        description: 'Это помогает не терять контекст изменений и вовремя закрывать follow-up.',
-        href: '/space/activity',
-        cta: 'Открыть',
+        title: 'Проверить thin Organizer state',
+        description: 'Если planner runtime ещё не развернут полностью, route всё равно показывает honest loading/empty/auth/thin states.',
+        href: organizerEntryHref,
+        cta: 'Перейти',
         source: 'runtime',
         state: 'waiting',
         priority: 'low',
@@ -498,12 +500,21 @@ export function SpacePageClient() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Organizer Preview</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Короткий preview execution-слоя: planned/pending логика без открытия полноценной organizer wave.
+                Organizer больше не только preview-обещание: это уже реальная shell section внутри Space с честными
+                bounded states.
               </p>
             </div>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-              thin state
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                shell inserted
+              </span>
+              <Link
+                href={organizerEntryHref}
+                className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Открыть Organizer
+              </Link>
+            </div>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {organizerPreviewItems.map((item) => (

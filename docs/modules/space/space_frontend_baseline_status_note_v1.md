@@ -16,6 +16,7 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/posts` works as authored/public posts baseline.
 - `/space/saved` works as saved posts baseline.
 - `/space/activity` works as narrow activity baseline.
+- `/space/organizer` now exists as honest shell insertion baseline for Organizer.
 
 ## Architectural Alignment Already Reached
 
@@ -24,18 +25,19 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - Community pack is active as product source for `/space/community`.
 - Saved ownership stays in the reactions contour.
 - Route semantics are separated between dashboard, community root, community feed, posts, saved, and activity surfaces.
+- Organizer is opened as a real Space section without turning the whole shell into planner-first UI.
 
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer is not opened as a dedicated implementation wave.
+- Organizer is opened only as bounded shell insertion with truthful auth/loading/empty/thin states.
 - Saved remains bounded to `space_post` only.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.
 
 ## Deferred (Not Opened In This Milestone)
 
-- Organizer implementation wave.
+- Full Organizer trip-model and saved-to-trip implementation wave.
 - Broad saved wave.
 - Ecosystem signals wave.
 - AI full-loop wave.
@@ -50,5 +52,5 @@ Current state is a usable product baseline, not the full target Space v3.
 
 ## Recommended Next Direction
 
-Next likely direction is either organizer planning/preview wave or further bounded dashboard enrichment.
+Next likely direction is core Organizer Phase 2 trip-model work or further bounded dashboard enrichment.
 This note does not open a new execution pass; it only fixes the current milestone status.
