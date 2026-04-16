@@ -97,6 +97,11 @@ type CreateItemPayload = {
   title: string;
   note?: string | null;
   status?: OrganizerTripItemStatus;
+  source?: {
+    module: string;
+    entityType: string;
+    entityId: string;
+  };
 };
 
 type CreateTaskPayload = {
@@ -147,9 +152,16 @@ export function fetchOrganizerTripDetail(tripId: string) {
 }
 
 export function createOrganizerTripItem(tripId: string, payload: CreateItemPayload) {
-  return safeRequest<{ item: OrganizerTripItem }>(
+  return safeRequest<{ item: OrganizerTripItem; applied?: boolean }>(
     { method: 'POST', body: JSON.stringify(payload) },
     `/v1/organizer/trips/${encodeURIComponent(tripId)}/items`
+  );
+}
+
+export function deleteOrganizerTripItem(tripId: string, itemId: string) {
+  return safeRequest<{ removed: boolean; tripId: string; itemId: string }>(
+    { method: 'DELETE' },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(itemId)}`
   );
 }
 

@@ -66,6 +66,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'organizer.trips.detail.get',
       routeGroup: 'organizer',
     });
+    expect(classifyRoute('DELETE', '/v1/organizer/trips/trip_1/items/item_1')).toEqual({
+      routeKey: 'organizer.items.delete.delete',
+      routeGroup: 'organizer',
+    });
     expect(classifyRoute('POST', '/v1/reactions')).toEqual({
       routeKey: 'reactions.create.post',
       routeGroup: 'reactions',
@@ -271,6 +275,28 @@ describe('api-gateway request hardening', () => {
 
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/organizer/trips', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected organizer delete route without bearer token', async () => {
+    const env: Env = {
+      ORGANIZER_SERVICE_URL: 'https://organizer.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/organizer/trips/trip_1/items/item_1', {
+        method: 'DELETE',
         headers: {
           Origin: 'https://app.example',
         },

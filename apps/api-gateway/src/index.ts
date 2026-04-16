@@ -267,6 +267,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (/^\/v1\/organizer\/trips\/[^/]+\/items$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'organizer.items.create.post', routeGroup: 'organizer' };
   }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/items\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'organizer.items.delete.delete', routeGroup: 'organizer' };
+  }
   if (/^\/v1\/organizer\/trips\/[^/]+\/tasks$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'organizer.tasks.create.post', routeGroup: 'organizer' };
   }
@@ -719,7 +722,7 @@ function isProtectedReactionsRoute(method: string, path: string): boolean {
 
 function isProtectedOrganizerRoute(method: string, path: string): boolean {
   if (!path.startsWith('/v1/organizer/')) return false;
-  return method === 'GET' || method === 'POST' || method === 'PATCH';
+  return method === 'GET' || method === 'POST' || method === 'PATCH' || method === 'DELETE';
 }
 
 function isProtectedFeedRoute(method: string, path: string): boolean {

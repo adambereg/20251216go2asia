@@ -123,4 +123,115 @@ describe('organizer-service v1', () => {
     expect(response.status).toBe(400);
     expect(body.error.code).toBe('VALIDATION_ERROR');
   });
+
+  it('returns existing trip item when same saved source is added twice', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'trip_1',
+            user_id: 'user_123',
+            title: 'Bangkok in May',
+            destination_label: null,
+            summary: null,
+            status: 'draft',
+            start_date: null,
+            end_date: null,
+            created_at: '2026-04-16T10:00:00.000Z',
+            updated_at: '2026-04-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'titem_1',
+            trip_id: 'trip_1',
+            user_id: 'user_123',
+            title: 'Saved post',
+            note: null,
+            source_module: 'space',
+            source_entity_type: 'space_post',
+            source_entity_id: 'spost_1',
+            status: 'planned',
+            created_at: '2026-04-16T10:00:00.000Z',
+            updated_at: '2026-04-16T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://organizer.example/v1/organizer/trips/trip_1/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          title: 'Saved post',
+          source: {
+            module: 'space',
+            entityType: 'space_post',
+            entityId: 'spost_1',
+          },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ item: { id: string }; applied: boolean }>(response);
+    expect(response.status).toBe(200);
+    expect(body.item.id).toBe('titem_1');
+    expect(body.applied).toBe(false);
+  });
+
+  it('removes trip item without touching global saved ownership', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'trip_1',
+            user_id: 'user_123',
+            title: 'Bangkok in May',
+            destination_label: null,
+            summary: null,
+            status: 'draft',
+            start_date: null,
+            end_date: null,
+            created_at: '2026-04-16T10:00:00.000Z',
+            updated_at: '2026-04-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ id: 'titem_1' }],
+      });
+
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://organizer.example/v1/organizer/trips/trip_1/items/titem_1', {
+        method: 'DELETE',
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ removed: boolean; itemId: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.removed).toBe(true);
+    expect(body.itemId).toBe('titem_1');
+  });
 });

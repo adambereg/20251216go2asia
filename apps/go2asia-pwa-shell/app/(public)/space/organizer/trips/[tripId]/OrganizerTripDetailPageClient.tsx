@@ -8,6 +8,7 @@ import {
   createOrganizerTripItem,
   createOrganizerTripNote,
   createOrganizerTripTask,
+  deleteOrganizerTripItem,
   fetchOrganizerTripDetail,
   type OrganizerTripDetailResponse,
   updateOrganizerTripTask,
@@ -15,6 +16,20 @@ import {
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
 
 type DetailState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error' | 'not-found';
+
+function deriveWhatMattersNow(detail: OrganizerTripDetailResponse): string {
+  const pendingCount = detail.tasks.filter((task) => task.status === 'pending').length;
+  if (detail.items.length === 0) {
+    return 'Добавьте первый trip item, чтобы поездка перестала быть пустым контейнером.';
+  }
+  if (pendingCount > 0) {
+    return `Сейчас важно закрыть ${pendingCount} незавершённых задач.`;
+  }
+  if (detail.notes.length === 0) {
+    return 'Добавьте заметку с ключевым контекстом поездки.';
+  }
+  return 'Базовый trip context уже собран. Можно продолжать точечно наполнять поездку.';
+}
 
 function tripWindowLabel(detail: OrganizerTripDetailResponse['trip']): string | null {
   if (!detail.startDate && !detail.endDate) return null;
@@ -35,7 +50,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const [itemNote, setItemNote] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
-  const [pendingAction, setPendingAction] = useState<'item' | 'task' | 'note' | `toggle:${string}` | null>(null);
+  const [pendingAction, setPendingAction] = useState<'item' | 'task' | 'note' | `toggle:${string}` | `remove:${string}` | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,10 +130,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       ...detail,
       items: [response.data.item, ...detail.items],
       insight: {
-        whatMattersNow:
-          detail.tasks.filter((task) => task.status === 'pending').length > 0
-            ? `Сейчас важно закрыть ${detail.tasks.filter((task) => task.status === 'pending').length} незавершённых задач.`
-            : 'Добавьте задачи или заметки, чтобы поездка стала практичнее.',
+        whatMattersNow: deriveWhatMattersNow({
+          ...detail,
+          items: [response.data.item, ...detail.items],
+        }),
       },
     });
     setItemTitle('');
@@ -140,12 +155,14 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     }
 
     const nextTasks = [response.data.task, ...detail.tasks];
-    const pendingCount = nextTasks.filter((task) => task.status === 'pending').length;
     setDetail({
       ...detail,
       tasks: nextTasks,
       insight: {
-        whatMattersNow: `Сейчас важно закрыть ${pendingCount} незавершённых задач.`,
+        whatMattersNow: deriveWhatMattersNow({
+          ...detail,
+          tasks: nextTasks,
+        }),
       },
     });
     setTaskTitle('');
@@ -164,19 +181,38 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     }
 
     const nextTasks = detail.tasks.map((task) => (task.id === taskId ? response.data!.task : task));
-    const pendingCount = nextTasks.filter((task) => task.status === 'pending').length;
     setDetail({
       ...detail,
       tasks: nextTasks,
       insight: {
-        whatMattersNow:
-          detail.items.length === 0
-            ? 'Добавьте первый trip item, чтобы поездка перестала быть пустым контейнером.'
-            : pendingCount > 0
-              ? `Сейчас важно закрыть ${pendingCount} незавершённых задач.`
-              : detail.notes.length === 0
-                ? 'Добавьте заметку с ключевым контекстом поездки.'
-                : 'Базовый trip context уже собран. Можно продолжать точечно наполнять поездку.',
+        whatMattersNow: deriveWhatMattersNow({
+          ...detail,
+          tasks: nextTasks,
+        }),
+      },
+    });
+    setError(null);
+  }
+
+  async function handleRemoveItem(itemId: string) {
+    if (!detail || pendingAction) return;
+    setPendingAction(`remove:${itemId}`);
+    const response = await deleteOrganizerTripItem(tripId, itemId);
+    setPendingAction(null);
+
+    if (!response.data?.removed) {
+      setError(response.error?.error?.message ?? 'Не удалось убрать item из поездки.');
+      return;
+    }
+
+    const nextDetail = {
+      ...detail,
+      items: detail.items.filter((item) => item.id !== itemId),
+    };
+    setDetail({
+      ...nextDetail,
+      insight: {
+        whatMattersNow: deriveWhatMattersNow(nextDetail),
       },
     });
     setError(null);
@@ -304,7 +340,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-slate-900">Trip items</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Minimal baseline для мест, слотов или важных элементов поездки. Пока без broad saved import.
+                  Minimal baseline для мест, слотов или важных элементов поездки. Saved-to-trip intake открыт только узко, для
+                  реального baseline из `Space / Saved`, без broad saved import.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateItem}>
                   <input
@@ -337,12 +374,34 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     detail.items.map((item) => (
                       <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div className="text-sm font-medium text-slate-900">{item.title}</div>
-                          <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                            {item.status}
-                          </span>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{item.title}</div>
+                            {item.sourceModule && item.sourceEntityType && item.sourceEntityId ? (
+                              <div className="mt-1 text-xs text-slate-500">
+                                Источник: {item.sourceModule} / {item.sourceEntityType} / {item.sourceEntityId}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                              {item.status}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={pendingAction !== null}
+                              onClick={() => void handleRemoveItem(item.id)}
+                              className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {pendingAction === `remove:${item.id}` ? 'Убираем...' : 'Убрать из поездки'}
+                            </button>
+                          </div>
                         </div>
                         {item.note ? <p className="mt-2 text-sm text-slate-600">{item.note}</p> : null}
+                        {item.sourceModule ? (
+                          <p className="mt-3 text-xs text-slate-500">
+                            Это удалит только trip link. Объект останется в `Space / Saved`, пока вы отдельно не уберёте его из сохранённых.
+                          </p>
+                        ) : null}
                       </div>
                     ))
                   )}

@@ -1,7 +1,9 @@
 import { createDb } from '@go2asia/db';
 
 import {
+  deleteTripItemByIdForUser,
   getTripByIdForUser,
+  getTripItemBySourceRef,
   insertTrip,
   insertTripItem,
   insertTripNote,
@@ -35,6 +37,9 @@ type TripItemCreateInput = {
   title: string;
   note: string | null;
   status: OrganizerTripItemStatus;
+  sourceModule: string | null;
+  sourceEntityType: string | null;
+  sourceEntityId: string | null;
 };
 
 type TripTaskCreateInput = {
@@ -183,7 +188,27 @@ function parseTripItemCreateInput(body: Record<string, unknown> | null): TripIte
   if (note && note.length > 400) return null;
   const rawStatus = trimString(body.status);
   const status: OrganizerTripItemStatus = rawStatus === 'booked' || rawStatus === 'done' ? rawStatus : 'planned';
-  return { title, note, status };
+  const nestedSource =
+    body.source && typeof body.source === 'object' && !Array.isArray(body.source)
+      ? (body.source as Record<string, unknown>)
+      : null;
+
+  const sourceModule = trimString(nestedSource?.module ?? body.sourceModule);
+  const sourceEntityType = trimString(nestedSource?.entityType ?? body.sourceEntityType);
+  const sourceEntityId = trimString(nestedSource?.entityId ?? body.sourceEntityId);
+
+  const hasSomeSource = Boolean(sourceModule || sourceEntityType || sourceEntityId);
+  const hasFullSource = Boolean(sourceModule && sourceEntityType && sourceEntityId);
+  if (hasSomeSource && !hasFullSource) return null;
+
+  return {
+    title,
+    note,
+    status,
+    sourceModule,
+    sourceEntityType,
+    sourceEntityId,
+  };
 }
 
 function parseTripTaskCreateInput(body: Record<string, unknown> | null): TripTaskCreateInput | null {
@@ -314,15 +339,28 @@ export async function createTripItem(
   const tripResult = await ensureTripOwned(env, principal, tripId, requestId);
   if (!tripResult.ok) return tripResult.response;
 
+  if (parsed.sourceModule && parsed.sourceEntityType && parsed.sourceEntityId) {
+    const existing = await getTripItemBySourceRef(tripResult.db, {
+      tripId,
+      userId: principal.userId,
+      sourceModule: parsed.sourceModule,
+      sourceEntityType: parsed.sourceEntityType,
+      sourceEntityId: parsed.sourceEntityId,
+    });
+    if (existing) {
+      return json({ item: normalizeTripItem(existing), applied: false });
+    }
+  }
+
   const created = await insertTripItem(tripResult.db, {
     id: `titem_${crypto.randomUUID()}`,
     tripId,
     userId: principal.userId,
     title: parsed.title,
     note: parsed.note,
-    sourceModule: null,
-    sourceEntityType: null,
-    sourceEntityId: null,
+    sourceModule: parsed.sourceModule,
+    sourceEntityType: parsed.sourceEntityType,
+    sourceEntityId: parsed.sourceEntityId,
     status: parsed.status,
   });
 
@@ -330,7 +368,34 @@ export async function createTripItem(
     return errorResponse('INTERNAL_ERROR', 'Failed to create trip item', requestId, 500);
   }
 
-  return json({ item: normalizeTripItem(created) }, 201);
+  return json({ item: normalizeTripItem(created), applied: true }, 201);
+}
+
+export async function removeTripItem(
+  env: Env,
+  principal: GatewayPrincipal,
+  tripId: string,
+  itemId: string,
+  requestId: string
+): Promise<Response> {
+  const tripResult = await ensureTripOwned(env, principal, tripId, requestId);
+  if (!tripResult.ok) return tripResult.response;
+
+  const removed = await deleteTripItemByIdForUser(tripResult.db, {
+    tripId,
+    itemId,
+    userId: principal.userId,
+  });
+
+  if (!removed) {
+    return errorResponse('NOT_FOUND', 'Trip item not found', requestId, 404);
+  }
+
+  return json({
+    removed: true,
+    tripId,
+    itemId,
+  });
 }
 
 export async function createTripTask(

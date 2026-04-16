@@ -8,6 +8,7 @@ import {
   getTripDetail,
   listTrips,
   patchTripTask,
+  removeTripItem,
 } from '../services/organizerService';
 
 type Env = {
@@ -42,6 +43,11 @@ export async function handleTripsRoute(
   if (itemMatch && request.method === 'POST') {
     const body = await readJsonObject(request);
     return createTripItem(env, principal, decodeURIComponent(itemMatch[1]), body, requestId);
+  }
+
+  const itemDeleteMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items\/([^/]+)$/);
+  if (itemDeleteMatch && request.method === 'DELETE') {
+    return removeTripItem(env, principal, decodeURIComponent(itemDeleteMatch[1]), decodeURIComponent(itemDeleteMatch[2]), requestId);
   }
 
   const taskMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/tasks$/);

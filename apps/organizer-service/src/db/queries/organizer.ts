@@ -217,6 +217,47 @@ export async function insertTripItem(
   return rowsOf<TripItemRow>(result)[0] ?? null;
 }
 
+export async function getTripItemBySourceRef(
+  db: DbExecutor,
+  input: {
+    tripId: string;
+    userId: string;
+    sourceModule: string;
+    sourceEntityType: string;
+    sourceEntityId: string;
+  }
+): Promise<TripItemRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, trip_id, user_id, title, note, source_module, source_entity_type, source_entity_id, status, created_at, updated_at
+    FROM organizer_trip_item
+    WHERE trip_id = ${input.tripId}
+      AND user_id = ${input.userId}
+      AND source_module = ${input.sourceModule}
+      AND source_entity_type = ${input.sourceEntityType}
+      AND source_entity_id = ${input.sourceEntityId}
+    LIMIT 1
+  `);
+  return rowsOf<TripItemRow>(result)[0] ?? null;
+}
+
+export async function deleteTripItemByIdForUser(
+  db: DbExecutor,
+  input: {
+    tripId: string;
+    itemId: string;
+    userId: string;
+  }
+): Promise<boolean> {
+  const result = await db.execute(sql`
+    DELETE FROM organizer_trip_item
+    WHERE id = ${input.itemId}
+      AND trip_id = ${input.tripId}
+      AND user_id = ${input.userId}
+    RETURNING id
+  `);
+  return rowsOf<{ id: string }>(result).length > 0;
+}
+
 export async function listTripTasks(db: DbExecutor, tripId: string, userId: string): Promise<TripTaskRow[]> {
   const result = await db.execute(sql`
     SELECT id, trip_id, user_id, title, status, created_at, updated_at, completed_at

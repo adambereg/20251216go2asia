@@ -99,7 +99,7 @@ export function OrganizerPageClient() {
   const savedHint = useMemo(() => {
     if (saved.state !== 'ready') return null;
     if (saved.savedCount > 0) {
-      return `В Saved уже есть ${saved.savedCount} элементов shortlist. Broad saved-to-trip wave ещё не открыта, но source layer уже рядом.`;
+      return `В Saved уже есть ${saved.savedCount} элементов shortlist. Базовый saved-to-trip intake теперь доступен через /space/saved, без открытия broad saved wave.`;
     }
     return 'Saved shortlist пока пуст. Это нормально: first slice строится вокруг реальных trip containers, а не fake imports.';
   }, [saved.savedCount, saved.state]);
