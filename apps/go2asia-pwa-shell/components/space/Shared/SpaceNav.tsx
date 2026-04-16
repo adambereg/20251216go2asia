@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Bell,
   Bookmark,
+  Briefcase,
   LayoutDashboard,
   Newspaper,
   ScrollText,
@@ -28,9 +29,13 @@ const activeNavItems: NavItem[] = [
   { href: '/space', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/space/community', label: 'Сообщества', icon: Users },
   { href: '/space/community/feed', label: 'Поток постов', icon: Newspaper },
-  { href: '/space/posts', label: 'Публикации', icon: ScrollText },
   { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },
   { href: '/space/activity', label: 'Активность', icon: Bell },
+  { href: '/space/organizer', label: 'Organizer', icon: Briefcase },
+];
+
+const secondaryNavItems: NavItem[] = [
+  { href: '/space/posts', label: 'Публикации', icon: ScrollText },
 ];
 
 const deferredNavItems: Array<{ label: string; icon: React.ComponentType<{ className?: string }> }> = [
@@ -86,6 +91,28 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
             </Link>
           );
         })}
+        {secondaryNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = isItemActive(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex flex-col items-center gap-1 rounded-lg border px-3 py-2 min-w-[80px] transition-colors whitespace-nowrap',
+                isActive
+                  ? 'border-slate-300 bg-white text-slate-900'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="text-xs text-center leading-tight">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
     );
   }
@@ -113,6 +140,34 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
           </Link>
         );
       })}
+
+      <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Ещё в Space
+        </div>
+        <div className="mt-2 space-y-1">
+          {secondaryNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isItemActive(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                  isActive
+                    ? 'bg-slate-100 text-slate-900'
+                    : 'text-slate-600 hover:bg-slate-50'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
