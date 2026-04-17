@@ -51,6 +51,12 @@ function formatSourceLabel(detail: OrganizerTripDetailResponse['items'][number])
   return `${detail.sourceModule} / ${detail.sourceEntityType}`;
 }
 
+function sectionClasses(isPrimary: boolean): string {
+  return isPrimary
+    ? 'rounded-2xl border border-sky-200 bg-sky-50/40 p-6 shadow-sm ring-1 ring-sky-100'
+    : 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm';
+}
+
 export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const { isLoaded, isSignedIn } = useUser();
   const [state, setState] = useState<DetailState>('idle');
@@ -129,6 +135,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const execution = useMemo(() => (detail ? deriveExecutionFromDetail(detail) : null), [detail]);
   const pendingTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'pending') ?? [], [detail]);
   const completedTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'done') ?? [], [detail]);
+  const primarySection = useMemo(() => {
+    if (!execution) return null;
+    if (execution.nextStep.actionKey === 'add-item' || execution.nextStep.actionKey === 'review-items') return 'items';
+    if (execution.nextStep.actionKey === 'add-task' || execution.nextStep.actionKey === 'finish-task') return 'tasks';
+    if (execution.nextStep.actionKey === 'add-note') return 'notes';
+    return null;
+  }, [execution]);
 
   function focusSection(actionKey: OrganizerExecutionActionKey) {
     if (actionKey === 'add-item' || actionKey === 'review-items') {
@@ -287,9 +300,9 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Space &gt; Organizer &gt; Trip</div>
-              <h1 className="mt-2 text-2xl font-semibold text-slate-900">Trip detail</h1>
+              <h1 className="mt-2 text-2xl font-semibold text-slate-900">{detail?.trip.title ?? 'Поездка'}</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Минимальная detail surface этого slice: header, trip items, tasks, notes и честный `what matters now`.
+                Всё, что уже собрано по поездке: объекты, ближайшие шаги и заметки с контекстом.
               </p>
             </div>
             <Link
@@ -304,25 +317,24 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
         {!isLoaded || state === 'loading' ? (
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Загрузка поездки</h2>
-            <p className="mt-2 text-sm text-slate-600">Подтягиваем реальный trip context без fake itinerary UI.</p>
+            <p className="mt-2 text-sm text-slate-600">Собираем объекты, шаги и заметки по этой поездке.</p>
           </article>
         ) : null}
 
         {state === 'auth-required' ? (
           <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-amber-900">Нужна авторизация</h2>
-            <p className="mt-2 text-sm text-amber-800">Trip detail доступен только в авторизованной session.</p>
+            <p className="mt-2 text-sm text-amber-800">Поездка доступна только после входа в аккаунт.</p>
           </article>
         ) : null}
 
         {state === 'not-found' || state === 'unavailable' || state === 'error' ? (
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
-              {state === 'not-found' ? 'Trip не найдена' : state === 'unavailable' ? 'Thin mode' : 'Trip detail недоступен'}
+              {state === 'not-found' ? 'Поездка не найдена' : state === 'unavailable' ? 'Поездка пока недоступна' : 'Поездка временно недоступна'}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              {error ??
-                'Organizer runtime временно недоступен. Вместо фальшивой полноты detail surface остаётся честной и bounded.'}
+              {error ?? 'Сейчас не удаётся открыть поездку. Попробуйте ещё раз немного позже.'}
             </p>
           </article>
         ) : null}
@@ -332,7 +344,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
             <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">{detail.trip.title}</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Контекст поездки</h2>
                   <p className="mt-2 text-sm text-slate-600">
                     {detail.trip.destinationLabel ?? 'Локация пока не уточнена'}
                     {tripWindowLabel(detail.trip) ? ` · ${tripWindowLabel(detail.trip)}` : ''}
@@ -351,44 +363,16 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Trip items</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.items.length}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Pending tasks</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">
-                    {detail.tasks.filter((task) => task.status === 'pending').length}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Notes</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.notes.length}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Done tasks</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{completedTasks.length}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Trip window</div>
-                  <div className="mt-2 text-sm font-medium text-slate-900">{tripWindowLabel(detail.trip) ?? 'Пока без дат'}</div>
-                </div>
-              </div>
-
               {execution ? (
                 <div className={`mt-5 rounded-xl border p-5 ${toneClasses(execution.readinessTone)}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="text-xs font-medium uppercase tracking-wide opacity-80">What matters now</div>
+                      <div className="text-xs font-medium uppercase tracking-wide opacity-80">Что важно сейчас</div>
                       <div className="mt-2 text-sm font-medium">{execution.whatMattersNow}</div>
                     </div>
-                    <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
-                      {execution.readinessLabel}
-                    </span>
                   </div>
                   <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Next step</div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
                     <div className="mt-2 text-sm font-medium text-slate-900">{execution.nextStep.title}</div>
                     <p className="mt-1 text-sm text-slate-600">{execution.nextStep.description}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -399,22 +383,45 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                       >
                         Перейти к следующему шагу
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => focusSection('review-items')}
-                        className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Проверить items
-                      </button>
+                      {primarySection === 'tasks' && pendingTasks.length > 0 ? (
+                        <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                          Ближайший шаг: {pendingTasks[0].title}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {execution.chips.map((chip) => (
-                      <span key={chip.label} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(chip.tone)}`}>
-                        {chip.label}
-                      </span>
-                    ))}
+                </div>
+              ) : null}
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Объекты</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.items.length}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Открытые шаги</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">
+                    {detail.tasks.filter((task) => task.status === 'pending').length}
                   </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Заметки</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.notes.length}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Собрано</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">
+                    {completedTasks.length > 0 ? `${completedTasks.length} шагов закрыто` : 'Пока без закрытых шагов'}
+                  </div>
+                </div>
+              </div>
+              {execution ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {execution.chips.map((chip) => (
+                    <span key={chip.label} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(chip.tone)}`}>
+                      {chip.label}
+                    </span>
+                  ))}
                 </div>
               ) : null}
 
@@ -430,28 +437,27 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
             ) : null}
 
             <div className="grid gap-6 xl:grid-cols-3">
-              <article ref={itemsRef} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Trip items</h3>
+              <article ref={itemsRef} className={sectionClasses(primarySection === 'items')}>
+                <h3 className="text-lg font-semibold text-slate-900">Объекты поездки</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Minimal baseline для мест, слотов или важных элементов поездки. Saved-to-trip intake открыт только узко, для
-                  реального baseline из `Space / Saved`, без broad saved import.
+                  Здесь живут места, брони, слоты и другие важные ориентиры поездки.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateItem}>
                   <input
                     value={itemTitle}
                     onChange={(event) => setItemTitle(event.target.value)}
-                    placeholder="Добавить item"
+                    placeholder="Например, отель или район"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
                   />
                   <textarea
                     value={itemNote}
                     onChange={(event) => setItemNote(event.target.value)}
                     rows={3}
-                    placeholder="Короткое пояснение"
+                    placeholder="Короткая пометка"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
                   />
                   <label className="block">
-                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Статус item</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Статус</span>
                     <select
                       value={itemStatus}
                       onChange={(event) => setItemStatus(event.target.value as OrganizerTripItemStatus)}
@@ -465,9 +471,9 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   <button
                     type="submit"
                     disabled={pendingAction !== null || itemTitle.trim().length === 0}
-                    className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
-                    {pendingAction === 'item' ? 'Добавляем...' : 'Добавить item'}
+                    {pendingAction === 'item' ? 'Добавляем...' : 'Добавить объект'}
                   </button>
                 </form>
                 <div className="mt-5 space-y-3">
@@ -523,7 +529,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         </div>
                         {item.sourceModule ? (
                           <p className="mt-3 text-xs text-slate-500">
-                            Это удалит только trip link. Объект останется в `Space / Saved`, пока вы отдельно не уберёте его из сохранённых.
+                            Это уберёт объект только из этой поездки. В сохранённом он останется, пока вы не удалите его отдельно.
                           </p>
                         ) : null}
                       </div>
@@ -532,10 +538,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 </div>
               </article>
 
-              <article ref={tasksRef} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Tasks</h3>
+              <article ref={tasksRef} className={sectionClasses(primarySection === 'tasks')}>
+                <h3 className="text-lg font-semibold text-slate-900">Следующие шаги</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Travel-specific задачи без full reminder engine.
+                  Короткие практические действия, которые помогают двигать поездку вперёд.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateTask}>
                   <input
@@ -547,9 +553,9 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   <button
                     type="submit"
                     disabled={pendingAction !== null || taskTitle.trim().length === 0}
-                    className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
-                    {pendingAction === 'task' ? 'Добавляем...' : 'Добавить задачу'}
+                    {pendingAction === 'task' ? 'Добавляем...' : 'Добавить шаг'}
                   </button>
                 </form>
                 <div className="mt-5 space-y-3">
@@ -561,7 +567,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     <>
                       {pendingTasks.length > 0 ? (
                         <div className="space-y-3">
-                          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Открытые задачи</div>
+                          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Открытые шаги</div>
                           {pendingTasks.map((task, index) => {
                             const isTogglePending = pendingAction === `toggle:${task.id}`;
                             return (
@@ -572,7 +578,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                                       <div className="text-sm font-medium text-slate-900">{task.title}</div>
                                       {index === 0 ? (
                                         <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">
-                                          Next
+                                          Сейчас
                                         </span>
                                       ) : null}
                                     </div>
@@ -626,10 +632,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 </div>
               </article>
 
-              <article ref={notesRef} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Notes</h3>
+              <article ref={notesRef} className={sectionClasses(primarySection === 'notes')}>
+                <h3 className="text-lg font-semibold text-slate-900">Заметки по поездке</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Заметки для ключевого trip context, без AI workspace и full planning canvas.
+                  Короткие ориентиры, которые помогают не потерять контекст этой поездки.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateNote}>
                   <textarea
@@ -642,7 +648,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   <button
                     type="submit"
                     disabled={pendingAction !== null || noteBody.trim().length === 0}
-                    className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     {pendingAction === 'note' ? 'Сохраняем...' : 'Добавить заметку'}
                   </button>

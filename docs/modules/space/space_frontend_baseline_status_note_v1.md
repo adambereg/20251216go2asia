@@ -1,6 +1,6 @@
 # Space Frontend Baseline Status Note v1
 
-Status: fixed as bounded frontend milestone with Organizer execution refinement v1 and Saved-to-Trip baseline.
+Status: fixed as bounded frontend milestone with Organizer execution polish / clarity refinement v2 and Saved-to-Trip baseline.
 
 ## Purpose
 
@@ -16,8 +16,8 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/posts` works as authored/public posts baseline.
 - `/space/saved` works as saved posts baseline with bounded add-to-trip / create-trip-from-saved intake for `space_post`.
 - `/space/activity` works as narrow activity baseline.
-- `/space/organizer` now works as a real Organizer home with trip create/list/select baseline plus rule-based execution focus.
-- `/space/organizer/trips/[tripId]` now works as a bounded trip execution surface for items/tasks/notes, next-step guidance, and remove-from-trip semantics.
+- `/space/organizer` now works as a real Organizer home with trip create/list/select baseline, clearer primary focus, and rule-based execution guidance.
+- `/space/organizer/trips/[tripId]` now works as a bounded trip execution surface with stronger visual hierarchy, clearer next-step guidance, and remove-from-trip semantics.
 
 ## Architectural Alignment Already Reached
 
@@ -32,7 +32,7 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer remains bounded, but it is no longer shell-only: trip containers, trip execution focus, and minimal trip detail are now real.
+- Organizer remains bounded, but it is no longer shell-only: trip containers, clearer execution focus, and a more confident minimal trip detail are now real.
 - Saved remains bounded to `space_post` only, even after the first saved-to-trip bridge.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.

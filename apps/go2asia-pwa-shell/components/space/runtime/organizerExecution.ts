@@ -179,12 +179,12 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
 
   if (metrics.itemsCount === 0) {
     return {
-      readinessLabel: 'Trip ещё пустая',
+      readinessLabel: 'Нужно начать',
       readinessTone: 'amber',
-      whatMattersNow: 'Поездка пока выглядит как контейнер без наполнения. Начните с первого реального item.',
+      whatMattersNow: 'В поездке пока нет ни одного опорного объекта.',
       nextStep: {
-        title: 'Добавить первый item',
-        description: 'Откройте поездку и зафиксируйте первое место, слот или важный объект.',
+        title: 'Добавить первый объект',
+        description: 'Зафиксируйте место, бронь, слот или другой важный ориентир.',
         actionKey: 'add-item',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -193,12 +193,12 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
 
   if (metrics.pendingTaskCount > 0) {
     return {
-      readinessLabel: 'Есть открытые шаги',
+      readinessLabel: 'Есть шаги в работе',
       readinessTone: 'amber',
-      whatMattersNow: `В поездке ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'незавершённая задача', 'незавершённые задачи', 'незавершённых задач')}.`,
+      whatMattersNow: `Открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}, и поездку уже можно продвигать дальше.`,
       nextStep: {
-        title: 'Разобрать открытые задачи',
-        description: 'Откройте поездку и закройте или уточните ближайший практический шаг.',
+        title: 'Вернуться к открытому шагу',
+        description: 'Откройте поездку и разберите ближайшее действие.',
         actionKey: 'finish-task',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -207,12 +207,12 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
 
   if (metrics.noteCount === 0) {
     return {
-      readinessLabel: 'Контекст ещё тонкий',
+      readinessLabel: 'Нужен ориентир',
       readinessTone: 'sky',
-      whatMattersNow: 'Структура уже есть, но пока не хватает заметки с trip-specific контекстом.',
+      whatMattersNow: 'Структура уже появилась, но поездке пока не хватает короткого контекста.',
       nextStep: {
         title: 'Добавить заметку',
-        description: 'Зафиксируйте краткий ориентир: зачем поездка, что важно не забыть, что проверить дальше.',
+        description: 'Коротко запишите, что важно не забыть и к чему вы готовитесь.',
         actionKey: 'add-note',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -220,12 +220,12 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
   }
 
   return {
-    readinessLabel: 'Есть рабочая структура',
+    readinessLabel: 'Можно продолжать',
     readinessTone: 'emerald',
-    whatMattersNow: 'Поездка уже собрана в минимальный execution context и готова к точечному продвижению.',
+    whatMattersNow: 'Поездка уже собрана в рабочий минимум и не выглядит пустой.',
     nextStep: {
-      title: 'Продолжить refinement',
-      description: 'Откройте поездку и посмотрите, какой item или note стоит уточнить следующим.',
+      title: 'Открыть и продолжить',
+      description: 'Проверьте, что ещё стоит уточнить или подтвердить.',
       actionKey: 'review-trip',
     },
     chips: buildSummaryChips(trip, metrics),
@@ -237,12 +237,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.itemsCount === 0) {
     return {
-      readinessLabel: 'Trip ещё пустая',
+      readinessLabel: 'Нужно начать',
       readinessTone: 'amber',
-      whatMattersNow: 'Поездка пока не наполнена реальными trip items и остаётся слишком тонкой для подготовки.',
+      whatMattersNow: 'В поездке пока нет ни одного опорного объекта.',
       nextStep: {
-        title: 'Добавить первый item',
-        description: 'Начните с конкретного объекта поездки: жильё, место, рейс, слот или важный ориентир.',
+        title: 'Добавить первый объект',
+        description: 'Начните с жилья, места, рейса, слота или другого важного ориентира.',
         actionKey: 'add-item',
       },
       chips: buildDetailChips(detail.trip, metrics),
@@ -251,12 +251,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.tasksCount === 0) {
     return {
-      readinessLabel: 'Нужен первый практический шаг',
+      readinessLabel: 'Нужен следующий шаг',
       readinessTone: 'sky',
-      whatMattersNow: 'Items уже есть, но поездка ещё не переведена в execution steps.',
+      whatMattersNow: 'Объекты уже собраны, но пока нет ни одного практического шага.',
       nextStep: {
         title: 'Добавить первую задачу',
-        description: 'Сформулируйте ближайшее действие, которое реально двигает поездку вперёд.',
+        description: 'Сформулируйте одно ближайшее действие, которое двигает поездку вперёд.',
         actionKey: 'add-task',
       },
       chips: buildDetailChips(detail.trip, metrics),
@@ -265,12 +265,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.pendingTaskCount > 0) {
     return {
-      readinessLabel: 'Есть открытые шаги',
+      readinessLabel: 'Есть шаги в работе',
       readinessTone: 'amber',
-      whatMattersNow: `Сейчас важно не потерять ритм: открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}.`,
+      whatMattersNow: `Сейчас важнее всего не потерять ритм: открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}.`,
       nextStep: {
         title: metrics.firstPendingTaskTitle ?? 'Закрыть ближайшую задачу',
-        description: 'Разберите первую pending-задачу или отметьте её как выполненную, если шаг уже закрыт.',
+        description: 'Разберите ближайший шаг или отметьте его выполненным.',
         actionKey: 'finish-task',
       },
       chips: buildDetailChips(detail.trip, metrics),
@@ -279,12 +279,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.noteCount === 0) {
     return {
-      readinessLabel: 'Контекст ещё тонкий',
+      readinessLabel: 'Нужен ориентир',
       readinessTone: 'sky',
-      whatMattersNow: 'Практические шаги уже появились, но без заметки поездке всё ещё не хватает личного контекста.',
+      whatMattersNow: 'Шаги уже есть, но поездке всё ещё не хватает короткого личного контекста.',
       nextStep: {
         title: 'Добавить заметку',
-        description: 'Сохраните один ориентир: что важно проверить, какой риск помнить, что ещё уточнить.',
+        description: 'Запишите один ориентир: что проверить, что помнить, что уточнить.',
         actionKey: 'add-note',
       },
       chips: buildDetailChips(detail.trip, metrics),
@@ -293,12 +293,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.plannedItemCount > 0) {
     return {
-      readinessLabel: 'Есть неподтверждённые items',
+      readinessLabel: 'Есть неподтверждённые объекты',
       readinessTone: 'amber',
-      whatMattersNow: `${metrics.plannedItemCount} ${pluralizeRu(metrics.plannedItemCount, 'item пока только запланирован', 'items пока только запланированы', 'items пока только запланированы')}.`,
+      whatMattersNow: `${metrics.plannedItemCount} ${pluralizeRu(metrics.plannedItemCount, 'объект пока только запланирован', 'объекта пока только запланированы', 'объектов пока только запланированы')}.`,
       nextStep: {
-        title: 'Продвинуть один item',
-        description: 'Переведите один planned item в booked или done, если по нему уже есть подтверждение.',
+        title: 'Подтвердить один объект',
+        description: 'Переведите один объект в подтверждённый или завершённый статус.',
         actionKey: 'review-items',
       },
       chips: buildDetailChips(detail.trip, metrics),
@@ -306,12 +306,12 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
   }
 
   return {
-    readinessLabel: 'Есть рабочая структура',
+    readinessLabel: 'Можно продолжать',
     readinessTone: 'emerald',
-    whatMattersNow: 'Поездка уже выглядит как рабочий execution space: есть структура, контекст и завершённые шаги.',
+    whatMattersNow: 'Поездка уже выглядит собранной: есть структура, контекст и завершённые шаги.',
     nextStep: {
-      title: 'Точечно обновить поездку',
-      description: 'Проверьте, что ещё стоит уточнить: item, заметку или следующий практический шаг.',
+      title: 'Проверить поездку',
+      description: 'Посмотрите, что ещё стоит уточнить или подтвердить.',
       actionKey: 'review-trip',
     },
     chips: buildDetailChips(detail.trip, metrics),
