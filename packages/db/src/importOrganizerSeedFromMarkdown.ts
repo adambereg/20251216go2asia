@@ -398,7 +398,13 @@ function materializeExample(
     });
   }
 
-  if (example.code !== 'A' && example.code !== 'C' && example.code !== 'D' && example.code !== 'E') {
+  if (
+    example.code !== 'A' &&
+    example.code !== 'B' &&
+    example.code !== 'C' &&
+    example.code !== 'D' &&
+    example.code !== 'E'
+  ) {
     splitCsvLike(example.itemsRaw).forEach((title, index) => {
       items.push({
         id: buildStableChildId('seed_org_item', tripId, index),
