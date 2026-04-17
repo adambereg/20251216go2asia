@@ -1,6 +1,6 @@
 # Space Frontend Baseline Status Note v1
 
-Status: fixed as bounded frontend milestone (v1).
+Status: fixed as bounded frontend milestone with Organizer Phase 2 first slice and Saved-to-Trip baseline.
 
 ## Purpose
 
@@ -14,9 +14,10 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/community/feed` remains the full social feed surface.
 - `/space/community/groups/[groupId]` works as group detail and membership baseline.
 - `/space/posts` works as authored/public posts baseline.
-- `/space/saved` works as saved posts baseline.
+- `/space/saved` works as saved posts baseline with bounded add-to-trip / create-trip-from-saved intake for `space_post`.
 - `/space/activity` works as narrow activity baseline.
-- `/space/organizer` now exists as honest shell insertion baseline for Organizer.
+- `/space/organizer` now works as a real Organizer home with trip create/list/select baseline.
+- `/space/organizer/trips/[tripId]` now works as a minimal trip detail surface for items/tasks/notes and remove-from-trip semantics.
 
 ## Architectural Alignment Already Reached
 
@@ -24,20 +25,21 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - Dashboard pack is active as product source for `/space`.
 - Community pack is active as product source for `/space/community`.
 - Saved ownership stays in the reactions contour.
+- Saved-to-trip uses global Saved as intake source; Organizer keeps only trip link/context.
 - Route semantics are separated between dashboard, community root, community feed, posts, saved, and activity surfaces.
 - Organizer is opened as a real Space section without turning the whole shell into planner-first UI.
 
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer is opened only as bounded shell insertion with truthful auth/loading/empty/thin states.
-- Saved remains bounded to `space_post` only.
+- Organizer remains bounded, but it is no longer shell-only: trip containers and minimal trip detail are now real.
+- Saved remains bounded to `space_post` only, even after the first saved-to-trip bridge.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.
 
 ## Deferred (Not Opened In This Milestone)
 
-- Full Organizer trip-model and saved-to-trip implementation wave.
+- Broad Organizer saved-to-trip wave and richer planning suite beyond the `space_post` baseline.
 - Broad saved wave.
 - Ecosystem signals wave.
 - AI full-loop wave.
@@ -52,5 +54,5 @@ Current state is a usable product baseline, not the full target Space v3.
 
 ## Recommended Next Direction
 
-Next likely direction is core Organizer Phase 2 trip-model work or further bounded dashboard enrichment.
+Next likely direction is richer trip execution signals, more explicit saved provenance UI, or further dashboard enrichment.
 This note does not open a new execution pass; it only fixes the current milestone status.

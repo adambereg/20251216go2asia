@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Organizer | Space Asia | Go2Asia',
   description:
-    'Honest shell insertion of Personal Organizer inside Space Asia with bounded Phase 1 states.',
+    'Minimal Organizer trip-model slice inside Space Asia with real trip containers and bounded Phase 2 surfaces.',
 };
 
 export default function OrganizerPage() {
