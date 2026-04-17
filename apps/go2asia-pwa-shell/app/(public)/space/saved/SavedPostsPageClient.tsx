@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
 import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
@@ -58,6 +59,7 @@ function deriveNewTripTitle(post: generated.SpacePostResponse): string {
 }
 
 export function SavedPostsPageClient() {
+  const { isLoaded, isSignedIn } = useUser();
   const [items, setItems] = useState<SavedHydratedItem[]>([]);
   const [reactionCount, setReactionCount] = useState(0);
   const [hydrationMissingCount, setHydrationMissingCount] = useState(0);
@@ -129,8 +131,38 @@ export function SavedPostsPageClient() {
   }, []);
 
   useEffect(() => {
-    void loadSavedPosts();
-  }, [loadSavedPosts]);
+    let cancelled = false;
+
+    if (!isLoaded) {
+      setIsLoading(true);
+      setAuthRequired(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!isSignedIn) {
+      setIsLoading(false);
+      setAuthRequired(true);
+      setRuntimeUnavailable(false);
+      setError(null);
+      setItems([]);
+      setReactionCount(0);
+      setHydrationMissingCount(0);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void (async () => {
+      await loadSavedPosts();
+      if (cancelled) return;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, loadSavedPosts]);
 
   const ensureOrganizerTripsLoaded = useCallback(async () => {
     if (organizerState === 'loading') return false;
