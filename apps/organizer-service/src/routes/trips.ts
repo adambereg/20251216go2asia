@@ -6,6 +6,7 @@ import {
   createTripNote,
   createTripTask,
   getTripDetail,
+  patchTripItem,
   listTrips,
   patchTripTask,
   removeTripItem,
@@ -48,6 +49,18 @@ export async function handleTripsRoute(
   const itemDeleteMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items\/([^/]+)$/);
   if (itemDeleteMatch && request.method === 'DELETE') {
     return removeTripItem(env, principal, decodeURIComponent(itemDeleteMatch[1]), decodeURIComponent(itemDeleteMatch[2]), requestId);
+  }
+
+  if (itemDeleteMatch && request.method === 'PATCH') {
+    const body = await readJsonObject(request);
+    return patchTripItem(
+      env,
+      principal,
+      decodeURIComponent(itemDeleteMatch[1]),
+      decodeURIComponent(itemDeleteMatch[2]),
+      body,
+      requestId
+    );
   }
 
   const taskMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/tasks$/);

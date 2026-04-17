@@ -10,6 +10,7 @@ import {
   fetchOrganizerTrips,
   type OrganizerTripSummary,
 } from '@/components/space/runtime/organizerApi';
+import { deriveExecutionFromSummary, type OrganizerExecutionTone } from '@/components/space/runtime/organizerExecution';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
 
@@ -25,11 +26,11 @@ function formatTripWindow(trip: OrganizerTripSummary): string | null {
     : `Финал: ${new Date(trip.endDate!).toLocaleDateString('ru-RU')}`;
 }
 
-function deriveTripFocus(trip: OrganizerTripSummary): string {
-  if (trip.itemCount === 0) return 'Добавьте первый trip item, чтобы поездка перестала быть пустым контейнером.';
-  if (trip.pendingTaskCount > 0) return `Сейчас важно закрыть ${trip.pendingTaskCount} незавершённых задач.`;
-  if (trip.noteCount === 0) return 'Добавьте заметку с контекстом поездки или следующими шагами.';
-  return 'Базовый trip context уже собран и готов к точечному расширению.';
+function toneClasses(tone: OrganizerExecutionTone): string {
+  if (tone === 'amber') return 'border-amber-200 bg-amber-50 text-amber-900';
+  if (tone === 'sky') return 'border-sky-200 bg-sky-50 text-sky-900';
+  if (tone === 'emerald') return 'border-emerald-200 bg-emerald-50 text-emerald-900';
+  return 'border-slate-200 bg-slate-50 text-slate-800';
 }
 
 export function OrganizerPageClient() {
@@ -104,6 +105,35 @@ export function OrganizerPageClient() {
     return 'Saved shortlist пока пуст. Это нормально: first slice строится вокруг реальных trip containers, а не fake imports.';
   }, [saved.savedCount, saved.state]);
 
+  const tripCards = useMemo(
+    () =>
+      trips.map((trip) => ({
+        trip,
+        execution: deriveExecutionFromSummary(trip),
+      })),
+    [trips]
+  );
+
+  const tripsNeedingAttention = useMemo(
+    () => tripCards.filter(({ execution }) => execution.readinessTone !== 'emerald').length,
+    [tripCards]
+  );
+
+  const structuredTrips = useMemo(
+    () => tripCards.filter(({ trip }) => trip.itemCount > 0 && trip.noteCount > 0).length,
+    [tripCards]
+  );
+
+  const tripsWithOpenTasks = useMemo(
+    () => tripCards.filter(({ trip }) => trip.pendingTaskCount > 0).length,
+    [tripCards]
+  );
+
+  const primaryTripCard = useMemo(
+    () => tripCards.find(({ execution }) => execution.readinessTone !== 'emerald') ?? tripCards[0] ?? null,
+    [tripCards]
+  );
+
   async function handleCreateTrip(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextTitle = title.trim();
@@ -148,12 +178,12 @@ export function OrganizerPageClient() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Organizer</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Первый честный trip-model slice внутри `Space Asia`: здесь можно создать поездку, выбрать её и вести
-                минимальный контекст без fake planner completeness и без дрейфа ownership в `space-service`.
+                Trip-first рабочий контур внутри `Space Asia`: здесь поездки получают структуру, следующий шаг и честный
+                execution focus без full planner wave.
               </p>
             </div>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-              trip-model first slice
+              execution refinement v1
             </span>
           </div>
         </header>
@@ -220,9 +250,89 @@ export function OrganizerPageClient() {
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Что важно по Organizer сейчас</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Home больше не только список поездок: он подсказывает, где сейчас тонкий контекст и какой следующий
+                      шаг даст самый быстрый прогресс.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    {trips.length === 0 ? 'start here' : `${tripsNeedingAttention} требуют внимания`}
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">Всего поездок</div>
+                    <div className="mt-2 text-2xl font-semibold text-slate-900">{trips.length}</div>
+                    <div className="mt-2 text-xs text-slate-500">Organizer остаётся портфелем поездок, а не вторым Saved.</div>
+                  </div>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-amber-700">Нуждаются во внимании</div>
+                    <div className="mt-2 text-2xl font-semibold text-amber-900">{tripsNeedingAttention}</div>
+                    <div className="mt-2 text-xs text-amber-800">
+                      Пустые или ещё тонкие поездки, где следующий шаг особенно важен.
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-emerald-700">Есть структура</div>
+                    <div className="mt-2 text-2xl font-semibold text-emerald-900">{structuredTrips}</div>
+                    <div className="mt-2 text-xs text-emerald-800">
+                      Поездки, где уже есть хотя бы items и notes, а контекст не выглядит пустым.
+                    </div>
+                  </div>
+                </div>
+
+                {trips.length === 0 ? (
+                  <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <div className="text-sm font-medium text-slate-900">Начните с первого trip container</div>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Первый полезный шаг этого slice прост: создайте поездку, затем добавьте хотя бы один item, одну
+                      задачу и одну заметку.
+                    </p>
+                    {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
+                  </div>
+                ) : primaryTripCard ? (
+                  <div className={`mt-5 rounded-xl border p-5 ${toneClasses(primaryTripCard.execution.readinessTone)}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wide opacity-80">What matters now</div>
+                        <h3 className="mt-2 text-lg font-semibold">{primaryTripCard.trip.title}</h3>
+                        <p className="mt-2 text-sm opacity-90">{primaryTripCard.execution.whatMattersNow}</p>
+                      </div>
+                      <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                        {primaryTripCard.execution.readinessLabel}
+                      </span>
+                    </div>
+                    <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Next step</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{primaryTripCard.execution.nextStep.title}</div>
+                      <p className="mt-1 text-sm text-slate-600">{primaryTripCard.execution.nextStep.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link
+                          href={`/space/organizer/trips/${encodeURIComponent(primaryTripCard.trip.id)}`}
+                          className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                        >
+                          Открыть поездку
+                        </Link>
+                        {tripsWithOpenTasks > 0 ? (
+                          <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                            В Organizer сейчас {tripsWithOpenTasks} {tripsWithOpenTasks === 1 ? 'поездка с открытыми задачами' : 'поездки с открытыми задачами'}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+
+              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
                     <h2 className="text-lg font-semibold text-slate-900">Ваши поездки</h2>
                     <p className="mt-2 text-sm text-slate-600">
-                      Organizer остаётся deeper mode внутри Space: здесь живут trip containers, а не весь модуль Space.
+                      Organizer остаётся deeper mode внутри Space: здесь живут trip containers, их readiness и следующий
+                      полезный шаг, а не весь модуль Space.
                     </p>
                   </div>
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
@@ -241,7 +351,7 @@ export function OrganizerPageClient() {
                   </div>
                 ) : (
                   <div className="mt-6 space-y-3">
-                    {trips.map((trip) => {
+                    {tripCards.map(({ trip, execution }) => {
                       const windowLabel = formatTripWindow(trip);
                       return (
                         <Link
@@ -267,7 +377,21 @@ export function OrganizerPageClient() {
                             <span>{trip.pendingTaskCount} pending tasks</span>
                             <span>{trip.noteCount} notes</span>
                           </div>
-                          <p className="mt-3 text-sm text-slate-700">{deriveTripFocus(trip)}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {execution.chips.map((chip) => (
+                              <span
+                                key={`${trip.id}-${chip.label}`}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(chip.tone)}`}
+                              >
+                                {chip.label}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="mt-3 text-sm font-medium text-slate-900">{execution.whatMattersNow}</p>
+                          <p className="mt-1 text-sm text-slate-600">
+                            Next step: <span className="font-medium text-slate-700">{execution.nextStep.title}</span>{' '}
+                            {execution.nextStep.description}
+                          </p>
                           {trip.updatedAt ? (
                             <div className="mt-2 text-xs text-slate-500">Обновлено: {formatDate(trip.updatedAt)}</div>
                           ) : null}
@@ -277,28 +401,14 @@ export function OrganizerPageClient() {
                   </div>
                 )}
               </article>
-
-              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Что сознательно не открыто</h2>
-                <ul className="mt-4 space-y-3 text-sm text-slate-700">
-                  <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Нет map/day planner/comparison/reminder wave.
-                  </li>
-                  <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Нет broad saved unification и fake imports в trip context.
-                  </li>
-                  <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Нет planner ownership внутри `space-service`: Organizer идёт отдельным backend contour.
-                  </li>
-                </ul>
-              </article>
             </div>
 
             <div className="space-y-6">
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">Создать поездку</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Самый короткий flow этого slice: создать trip container, затем открыть detail и наполнить items/tasks/notes.
+                  Самый короткий flow этого slice: создать trip container, затем наполнить его item, задачей и заметкой,
+                  чтобы поездка стала рабочим execution surface.
                 </p>
                 <form className="mt-5 space-y-4" onSubmit={handleCreateTrip}>
                   <label className="block">
@@ -341,13 +451,16 @@ export function OrganizerPageClient() {
               </article>
 
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Связь с остальным Space</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Границы этого slice</h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-700">
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Dashboard остаётся cockpit, а Organizer остаётся deeper mode.
+                    Dashboard остаётся cockpit, а Organizer остаётся deeper mode для подготовки поездки.
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     Saved по-прежнему живёт как global shortlist source: {savedHint ?? 'состояние saved source уточняется.'}
+                  </li>
+                  <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    Нет map/day planner/reminder/comparison/AI workspace. Этот pass усиливает execution, а не открывает full planner.
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     Communities, Feed и Activity не поглощаются Organizer и продолжают жить как самостоятельные sections.

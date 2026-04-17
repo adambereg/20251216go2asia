@@ -258,6 +258,28 @@ export async function deleteTripItemByIdForUser(
   return rowsOf<{ id: string }>(result).length > 0;
 }
 
+export async function updateTripItemStatus(
+  db: DbExecutor,
+  input: {
+    tripId: string;
+    itemId: string;
+    userId: string;
+    status: OrganizerTripItemStatus;
+  }
+): Promise<TripItemRow | null> {
+  const result = await db.execute(sql`
+    UPDATE organizer_trip_item
+    SET
+      status = ${input.status},
+      updated_at = now()
+    WHERE id = ${input.itemId}
+      AND trip_id = ${input.tripId}
+      AND user_id = ${input.userId}
+    RETURNING id, trip_id, user_id, title, note, source_module, source_entity_type, source_entity_id, status, created_at, updated_at
+  `);
+  return rowsOf<TripItemRow>(result)[0] ?? null;
+}
+
 export async function listTripTasks(db: DbExecutor, tripId: string, userId: string): Promise<TripTaskRow[]> {
   const result = await db.execute(sql`
     SELECT id, trip_id, user_id, title, status, created_at, updated_at, completed_at

@@ -165,6 +165,13 @@ export function deleteOrganizerTripItem(tripId: string, itemId: string) {
   );
 }
 
+export function updateOrganizerTripItem(tripId: string, itemId: string, payload: { status: OrganizerTripItemStatus }) {
+  return safeRequest<{ item: OrganizerTripItem }>(
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(itemId)}`
+  );
+}
+
 export function createOrganizerTripTask(tripId: string, payload: CreateTaskPayload) {
   return safeRequest<{ task: OrganizerTripTask }>(
     { method: 'POST', body: JSON.stringify(payload) },

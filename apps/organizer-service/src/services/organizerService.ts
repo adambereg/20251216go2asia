@@ -15,6 +15,7 @@ import {
   type OrganizerTripItemStatus,
   type OrganizerTripStatus,
   type OrganizerTripTaskStatus,
+  updateTripItemStatus,
   updateTripTaskStatus,
 } from '../db/queries/organizer';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -49,6 +50,10 @@ type TripTaskCreateInput = {
 
 type TripTaskUpdateInput = {
   status: OrganizerTripTaskStatus;
+};
+
+type TripItemUpdateInput = {
+  status: OrganizerTripItemStatus;
 };
 
 type TripNoteCreateInput = {
@@ -227,6 +232,13 @@ function parseTripTaskUpdateInput(body: Record<string, unknown> | null): TripTas
   return { status: rawStatus };
 }
 
+function parseTripItemUpdateInput(body: Record<string, unknown> | null): TripItemUpdateInput | null {
+  if (!body) return null;
+  const rawStatus = trimString(body.status);
+  if (rawStatus !== 'planned' && rawStatus !== 'booked' && rawStatus !== 'done') return null;
+  return { status: rawStatus };
+}
+
 function parseTripNoteCreateInput(body: Record<string, unknown> | null): TripNoteCreateInput | null {
   if (!body) return null;
   const bodyText = trimString(body.body);
@@ -396,6 +408,36 @@ export async function removeTripItem(
     tripId,
     itemId,
   });
+}
+
+export async function patchTripItem(
+  env: Env,
+  principal: GatewayPrincipal,
+  tripId: string,
+  itemId: string,
+  body: Record<string, unknown> | null,
+  requestId: string
+): Promise<Response> {
+  const parsed = parseTripItemUpdateInput(body);
+  if (!parsed) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid trip item update payload', requestId, 400);
+  }
+
+  const tripResult = await ensureTripOwned(env, principal, tripId, requestId);
+  if (!tripResult.ok) return tripResult.response;
+
+  const updated = await updateTripItemStatus(tripResult.db, {
+    tripId,
+    itemId,
+    userId: principal.userId,
+    status: parsed.status,
+  });
+
+  if (!updated) {
+    return errorResponse('NOT_FOUND', 'Trip item not found', requestId, 404);
+  }
+
+  return json({ item: normalizeTripItem(updated) });
 }
 
 export async function createTripTask(

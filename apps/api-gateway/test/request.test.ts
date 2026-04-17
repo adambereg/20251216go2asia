@@ -66,6 +66,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'organizer.trips.detail.get',
       routeGroup: 'organizer',
     });
+    expect(classifyRoute('PATCH', '/v1/organizer/trips/trip_1/items/item_1')).toEqual({
+      routeKey: 'organizer.items.update.patch',
+      routeGroup: 'organizer',
+    });
     expect(classifyRoute('DELETE', '/v1/organizer/trips/trip_1/items/item_1')).toEqual({
       routeKey: 'organizer.items.delete.delete',
       routeGroup: 'organizer',

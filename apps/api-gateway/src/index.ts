@@ -267,6 +267,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (/^\/v1\/organizer\/trips\/[^/]+\/items$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'organizer.items.create.post', routeGroup: 'organizer' };
   }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/items\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'organizer.items.update.patch', routeGroup: 'organizer' };
+  }
   if (/^\/v1\/organizer\/trips\/[^/]+\/items\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
     return { routeKey: 'organizer.items.delete.delete', routeGroup: 'organizer' };
   }
