@@ -35,6 +35,14 @@ type SavedHydratedItem = {
 
 type OrganizerChooserState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
 
+function pluralizeRu(count: number, one: string, few: string, many: string): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
 function deriveTripItemTitle(post: generated.SpacePostResponse): string {
   const text = post.text?.trim();
   if (text) {
@@ -45,7 +53,7 @@ function deriveTripItemTitle(post: generated.SpacePostResponse): string {
 
 function deriveTripItemNote(post: generated.SpacePostResponse): string | null {
   const text = post.text?.trim();
-  if (!text) return 'Добавлено из `Space / Saved` как trip-linked reference.';
+  if (!text) return 'Добавлено из сохранённых как ориентир для этой поездки.';
   return text.length > 220 ? `${text.slice(0, 220).trim()}...` : text;
 }
 
@@ -181,18 +189,18 @@ export function SavedPostsPageClient() {
     if (status === 401 || status === 403) {
       setOrganizerTrips([]);
       setOrganizerState('auth-required');
-      setOrganizerError('Нужна авторизация, чтобы привязать объект к поездке.');
+      setOrganizerError('Нужно войти в аккаунт, чтобы добавить пост в поездку.');
       return false;
     }
     if (isServiceUnavailableStatus(status)) {
       setOrganizerTrips([]);
       setOrganizerState('unavailable');
-      setOrganizerError('Organizer runtime временно недоступен. Saved при этом остаётся доступным отдельно.');
+      setOrganizerError('Сейчас список поездок недоступен. Сохранённые посты при этом остаются на месте.');
       return false;
     }
     setOrganizerTrips([]);
     setOrganizerState('error');
-    setOrganizerError(`Organizer trip list request failed (${status ?? 'unknown'}).`);
+    setOrganizerError(`Не удалось загрузить поездки (${status ?? 'unknown'}).`);
     return false;
   }, [organizerState]);
 
@@ -214,11 +222,12 @@ export function SavedPostsPageClient() {
       setItems((prev) => prev.filter((item) => item.reactionId !== reactionId));
       setReactionCount((prev) => Math.max(0, prev - 1));
       setError(null);
+      setTripFeedback(null);
       if (chooserReactionId === reactionId) {
         setChooserReactionId(null);
       }
     } catch (removeError) {
-      setError(`Saved remove failed (${getErrorStatus(removeError) ?? 'unknown'}).`);
+      setError(`Не удалось убрать пост из сохранённых (${getErrorStatus(removeError) ?? 'unknown'}).`);
     } finally {
       setPendingReactionIds((prev) => {
         const next = { ...prev };
@@ -248,7 +257,7 @@ export function SavedPostsPageClient() {
       setPendingTripActionId(null);
 
       if (!response.data?.item) {
-        setOrganizerError(response.error?.error?.message ?? 'Не удалось привязать сохранённый объект к поездке.');
+        setOrganizerError(response.error?.error?.message ?? 'Не удалось добавить пост в поездку.');
         return;
       }
 
@@ -256,8 +265,8 @@ export function SavedPostsPageClient() {
         tone: 'success',
         message:
           response.data.applied === false
-            ? `Этот объект уже был привязан к поездке "${trip.title}".`
-            : `Объект добавлен в поездку "${trip.title}". Global Saved при этом остаётся отдельным слоем.`,
+            ? `Этот пост уже есть в поездке "${trip.title}". В сохранённых он по-прежнему остаётся.`
+            : `Пост добавлен в поездку "${trip.title}". В сохранённых он по-прежнему остаётся.`,
         href: `/space/organizer/trips/${encodeURIComponent(trip.id)}`,
       });
       setChooserReactionId(null);
@@ -280,7 +289,7 @@ export function SavedPostsPageClient() {
 
       const tripResponse = await createOrganizerTrip({
         title,
-        summary: 'Создано из `Space / Saved` для первого saved-to-trip baseline.',
+        summary: 'Создано из сохранённого поста в Space.',
       });
 
       if (!tripResponse.data?.trip) {
@@ -303,10 +312,10 @@ export function SavedPostsPageClient() {
       setPendingTripActionId(null);
 
       if (!itemResponse.data?.item) {
-        setOrganizerError(itemResponse.error?.error?.message ?? 'Поездка создана, но не удалось привязать объект.');
+        setOrganizerError(itemResponse.error?.error?.message ?? 'Поездка создана, но пост пока не удалось туда добавить.');
         setTripFeedback({
           tone: 'success',
-          message: `Поездка "${title}" создана, но saved-link нужно повторить отдельно.`,
+          message: `Поездка "${title}" создана, но добавить туда этот пост не получилось. Попробуйте ещё раз уже из самой поездки.`,
           href: `/space/organizer/trips/${encodeURIComponent(tripId)}`,
         });
         return;
@@ -324,7 +333,7 @@ export function SavedPostsPageClient() {
       setChooserReactionId(null);
       setTripFeedback({
         tone: 'success',
-        message: `Создана новая поездка "${title}", и объект сразу привязан к trip context.`,
+        message: `Создали поездку "${title}" и сразу добавили туда пост. В сохранённых он тоже остался.`,
         href: `/space/organizer/trips/${encodeURIComponent(tripId)}`,
       });
     },
@@ -335,11 +344,28 @@ export function SavedPostsPageClient() {
     <SpaceLayout>
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Сохранённые посты</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Подборка ваших сохранённых публикаций на базе reactions bookmark runtime.
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">Сохранённые посты</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Общий список постов, к которым вы хотите вернуться. При необходимости любой из них можно привязать к
+                конкретной поездке.
+              </p>
+            </div>
+            {reactionCount > 0 ? (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                {reactionCount} {pluralizeRu(reactionCount, 'сохранение', 'сохранения', 'сохранений')}
+              </span>
+            ) : null}
+          </div>
         </header>
+
+        {!isLoading && !authRequired && !runtimeUnavailable ? (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            Сохранённое остаётся общим списком интересного. Добавление в поездку не убирает пост отсюда: оно только
+            связывает его с конкретной поездкой.
+          </div>
+        ) : null}
 
         {isLoading && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -355,8 +381,8 @@ export function SavedPostsPageClient() {
 
         {!isLoading && !authRequired && runtimeUnavailable && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Сохранённые публикации временно недоступны в этом окружении. Как только reactions runtime станет доступен,
-            здесь снова появится ваш shortlist.
+            Сохранённые посты временно недоступны в этом окружении. Как только сервис вернётся, ваш список появится
+            снова.
           </div>
         )}
 
@@ -388,8 +414,8 @@ export function SavedPostsPageClient() {
         {!isLoading && !authRequired && !runtimeUnavailable && !error && items.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             {reactionCount === 0
-              ? 'Пока нет сохранённых публикаций. Сохраните пост в `/space` или `/space/community/feed`.'
-              : 'Сохранения есть, но посты для этого списка сейчас не удалось загрузить. Попробуйте открыть позже или обновить страницу.'}
+              ? 'Пока нет сохранённых постов. Когда увидите в Space что-то полезное, сохраните это сюда и потом при необходимости добавьте в поездку.'
+              : 'Сохранения есть, но часть постов сейчас не удалось открыть. Попробуйте обновить страницу чуть позже.'}
           </div>
         )}
 
@@ -410,6 +436,10 @@ export function SavedPostsPageClient() {
               return (
                 <div key={item.reactionId} className="space-y-2">
                   <SpaceFeedCard item={feedItem} showReason={false} showGroupSignal />
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">Сохранено в Space</span>
+                    <span>Можно оставить здесь и отдельно привязать к одной или нескольким поездкам.</span>
+                  </div>
                   <div className="flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
@@ -430,9 +460,10 @@ export function SavedPostsPageClient() {
                   </div>
                   {chooserReactionId === item.reactionId ? (
                     <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-                      <div className="text-sm font-medium text-slate-900">Добавить в trip context</div>
+                      <div className="text-sm font-medium text-slate-900">Добавить в поездку</div>
                       <p className="mt-2 text-sm text-slate-600">
-                        `Saved` остаётся глобальным shortlist. Ниже вы только создаёте trip link поверх уже сохранённого объекта.
+                        Пост останется в сохранённых. Ниже вы либо добавите его в существующую поездку, либо сразу
+                        создадите новую.
                       </p>
                       {organizerError ? <div className="mt-3 text-sm text-rose-700">{organizerError}</div> : null}
                       {organizerState === 'loading' ? (
@@ -446,11 +477,11 @@ export function SavedPostsPageClient() {
                       {organizerState === 'ready' ? (
                         <div className="mt-4 space-y-4">
                           <div>
-                            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Существующие поездки</div>
+                            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Ваши поездки</div>
                             <div className="mt-3 space-y-2">
                               {organizerTrips.length === 0 ? (
                                 <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
-                                  Пока нет ни одной поездки. Можно сразу создать новую из этого сохранённого объекта.
+                                  Пока нет ни одной поездки. Можно сразу создать новую и добавить туда этот пост.
                                 </div>
                               ) : (
                                 organizerTrips.map((trip) => {
@@ -463,7 +494,8 @@ export function SavedPostsPageClient() {
                                       <div>
                                         <div className="text-sm font-medium text-slate-900">{trip.title}</div>
                                         <div className="mt-1 text-xs text-slate-500">
-                                          {trip.destinationLabel ?? 'Локация пока не уточнена'} · {trip.itemCount} items
+                                          {trip.destinationLabel ?? 'Локация пока не уточнена'} · {trip.itemCount}{' '}
+                                          {pluralizeRu(trip.itemCount, 'объект', 'объекта', 'объектов')}
                                         </div>
                                       </div>
                                       <button
@@ -484,7 +516,8 @@ export function SavedPostsPageClient() {
                           <div className="border-t border-sky-200 pt-4">
                             <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Создать новую поездку</div>
                             <p className="mt-2 text-sm text-slate-600">
-                              `Create trip from this` = создать trip container и сразу привязать к нему текущий saved object.
+                              Создадим новую поездку и сразу добавим в неё этот пост. В сохранённых он при этом тоже
+                              останется.
                             </p>
                             <input
                               value={newTripTitle}
@@ -499,7 +532,7 @@ export function SavedPostsPageClient() {
                                 disabled={pendingTripActionId !== null || newTripTitle.trim().length === 0}
                                 className="rounded-md border border-sky-200 bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {pendingTripActionId === `${item.reactionId}:create-trip` ? 'Создаём...' : 'Создать поездку из этого'}
+                                {pendingTripActionId === `${item.reactionId}:create-trip` ? 'Создаём...' : 'Создать поездку и добавить пост'}
                               </button>
                               <button
                                 type="button"

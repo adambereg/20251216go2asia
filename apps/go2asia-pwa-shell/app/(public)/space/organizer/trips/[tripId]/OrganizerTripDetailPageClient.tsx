@@ -26,6 +26,11 @@ import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/compon
 
 type DetailState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error' | 'not-found';
 
+type DetailFeedback = {
+  tone: 'success' | 'info';
+  message: string;
+};
+
 function toneClasses(tone: OrganizerExecutionTone): string {
   if (tone === 'amber') return 'border-amber-200 bg-amber-50 text-amber-900';
   if (tone === 'sky') return 'border-sky-200 bg-sky-50 text-sky-900';
@@ -46,9 +51,20 @@ function tripWindowLabel(detail: OrganizerTripDetailResponse['trip']): string | 
 function formatSourceLabel(detail: OrganizerTripDetailResponse['items'][number]): string | null {
   if (!detail.sourceModule || !detail.sourceEntityType || !detail.sourceEntityId) return null;
   if (detail.sourceModule === 'space' && detail.sourceEntityType === 'space_post') {
-    return 'Из Space / Saved';
+    return 'Добавлено из сохранённых';
   }
   return `${detail.sourceModule} / ${detail.sourceEntityType}`;
+}
+
+function isSavedSourcedItem(detail: OrganizerTripDetailResponse['items'][number]): boolean {
+  return detail.sourceModule === 'space' && detail.sourceEntityType === 'space_post';
+}
+
+function nextStepButtonLabel(actionKey: OrganizerExecutionActionKey): string {
+  if (actionKey === 'add-item' || actionKey === 'review-items') return 'Перейти к объектам';
+  if (actionKey === 'add-task' || actionKey === 'finish-task') return 'Перейти к шагам';
+  if (actionKey === 'add-note') return 'Перейти к заметкам';
+  return 'Открыть следующий шаг';
 }
 
 function sectionClasses(isPrimary: boolean): string {
@@ -62,6 +78,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const [state, setState] = useState<DetailState>('idle');
   const [detail, setDetail] = useState<OrganizerTripDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<DetailFeedback | null>(null);
   const [itemTitle, setItemTitle] = useState('');
   const [itemNote, setItemNote] = useState('');
   const [itemStatus, setItemStatus] = useState<OrganizerTripItemStatus>('planned');
@@ -92,6 +109,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
 
       setState('loading');
       setError(null);
+      setFeedback(null);
 
       const response = await fetchOrganizerTripDetail(tripId);
       if (cancelled) return;
@@ -185,6 +203,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     setItemNote('');
     setItemStatus('planned');
     setError(null);
+    setFeedback({ tone: 'success', message: 'Объект добавлен в поездку.' });
   }
 
   async function handleCreateTask(event: FormEvent<HTMLFormElement>) {
@@ -228,6 +247,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setError(null);
+    setFeedback(null);
   }
 
   async function handleUpdateItemStatus(itemId: string, nextStatus: OrganizerTripItemStatus) {
@@ -247,10 +267,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setError(null);
+    setFeedback({ tone: 'info', message: 'Статус объекта обновлён.' });
   }
 
   async function handleRemoveItem(itemId: string) {
     if (!detail || pendingAction) return;
+    const removedItem = detail.items.find((item) => item.id === itemId) ?? null;
     setPendingAction(`remove:${itemId}`);
     const response = await deleteOrganizerTripItem(tripId, itemId);
     setPendingAction(null);
@@ -269,6 +291,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setError(null);
+    setFeedback({
+      tone: removedItem && isSavedSourcedItem(removedItem) ? 'info' : 'success',
+      message:
+        removedItem && isSavedSourcedItem(removedItem)
+          ? 'Объект убран только из этой поездки. В сохранённых он по-прежнему остаётся.'
+          : 'Объект убран из поездки.',
+    });
   }
 
   async function handleCreateNote(event: FormEvent<HTMLFormElement>) {
@@ -291,7 +320,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     });
     setNoteBody('');
     setError(null);
+    setFeedback({ tone: 'success', message: 'Заметка добавлена.' });
   }
+
+  const savedSourcedCount = useMemo(
+    () => detail?.items.filter((item) => isSavedSourcedItem(item)).length ?? 0,
+    [detail]
+  );
 
   return (
     <SpaceLayout>
@@ -302,7 +337,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Space &gt; Organizer &gt; Trip</div>
               <h1 className="mt-2 text-2xl font-semibold text-slate-900">{detail?.trip.title ?? 'Поездка'}</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Всё, что уже собрано по поездке: объекты, ближайшие шаги и заметки с контекстом.
+                Здесь собран рабочий контекст поездки: что уже выбрано, что ещё нужно решить и к какому шагу лучше
+                вернуться сейчас.
               </p>
             </div>
             <Link
@@ -381,7 +417,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         onClick={() => focusSection(execution.nextStep.actionKey)}
                         className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
                       >
-                        Перейти к следующему шагу
+                        {nextStepButtonLabel(execution.nextStep.actionKey)}
                       </button>
                       {primarySection === 'tasks' && pendingTasks.length > 0 ? (
                         <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
@@ -428,6 +464,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               {detail.trip.updatedAt ? (
                 <div className="mt-4 text-xs text-slate-500">Обновлено: {formatDate(detail.trip.updatedAt)}</div>
               ) : null}
+              {savedSourcedCount > 0 ? (
+                <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                  {savedSourcedCount} {savedSourcedCount === 1 ? 'объект добавлен' : savedSourcedCount < 5 ? 'объекта добавлены' : 'объектов добавлено'} из сохранённых.
+                  Они живут в контексте этой поездки отдельно, но сами посты остаются в разделе «Сохранённые».
+                </div>
+              ) : null}
             </article>
 
             {error ? (
@@ -435,12 +477,24 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 {error}
               </article>
             ) : null}
+            {feedback ? (
+              <article
+                className={`rounded-2xl p-4 text-sm shadow-sm ${
+                  feedback.tone === 'success'
+                    ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : 'border border-sky-200 bg-sky-50 text-sky-800'
+                }`}
+              >
+                {feedback.message}
+              </article>
+            ) : null}
 
             <div className="grid gap-6 xl:grid-cols-3">
               <article ref={itemsRef} className={sectionClasses(primarySection === 'items')}>
                 <h3 className="text-lg font-semibold text-slate-900">Объекты поездки</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Здесь живут места, брони, слоты и другие важные ориентиры поездки.
+                  Здесь живут места, брони и другие ориентиры поездки. Всё, что пришло из сохранённых, остаётся
+                  понятным по происхождению.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateItem}>
                   <input
@@ -512,6 +566,16 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         </div>
                         {item.note ? <p className="mt-2 text-sm text-slate-600">{item.note}</p> : null}
                         <div className="mt-3 flex flex-wrap gap-2">
+                          {isSavedSourcedItem(item) ? (
+                            <>
+                              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                                Из сохранённых
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                                Сохранено отдельно
+                              </span>
+                            </>
+                          ) : null}
                           <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${
                             item.status === 'done'
                               ? toneClasses('emerald')
@@ -527,11 +591,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                             </span>
                           ) : null}
                         </div>
-                        {item.sourceModule ? (
+                        {isSavedSourcedItem(item) ? (
                           <p className="mt-3 text-xs text-slate-500">
-                            Это уберёт объект только из этой поездки. В сохранённом он останется, пока вы не удалите его отдельно.
+                            Если убрать этот объект из поездки, он всё равно останется в «Сохранённых». Это отдельные
+                            действия.
                           </p>
-                        ) : null}
+                        ) : item.sourceModule ? <p className="mt-3 text-xs text-slate-500">Источник объекта сохранён отдельно от статуса поездки.</p> : null}
                       </div>
                     ))
                   )}

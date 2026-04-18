@@ -108,9 +108,9 @@ export function OrganizerPageClient() {
   const savedHint = useMemo(() => {
     if (saved.state !== 'ready') return null;
     if (saved.savedCount > 0) {
-      return `В сохранённом уже есть ${saved.savedCount} ${pluralizeRu(saved.savedCount, 'объект', 'объекта', 'объектов')}. При необходимости их можно добавить в поездку из раздела «Сохранённые».`;
+      return `В сохранённом уже есть ${saved.savedCount} ${pluralizeRu(saved.savedCount, 'пост', 'поста', 'постов')}. Если какой-то из них пригодится, его можно добавить в поездку из раздела «Сохранённые».`;
     }
-    return 'Сохранённое пока пусто. Это нормально: поездку можно начать и без готового shortlist.';
+    return 'Сохранённое пока пусто. Это нормально: поездку можно начать и без заранее собранного списка.';
   }, [saved.savedCount, saved.state]);
 
   const tripCards = useMemo(
@@ -361,8 +361,8 @@ export function OrganizerPageClient() {
                   <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
                     <div className="text-sm font-medium text-slate-900">Пока нет ни одной поездки</div>
                     <p className="mt-2 text-sm text-slate-600">
-                      Это уже не thin shell: первым полезным действием здесь становится создание trip container с честным
-                      минимальным контекстом.
+                      Первый полезный шаг здесь простой: создать поездку и добавить в неё хотя бы один ориентир, один
+                      следующий шаг и короткую заметку.
                     </p>
                     {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
                   </div>
