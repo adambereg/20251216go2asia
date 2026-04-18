@@ -16,11 +16,19 @@ import {
   updateOrganizerTripTask,
 } from '@/components/space/runtime/organizerApi';
 import {
+  buildTripDayAnchors,
   deriveExecutionFromDetail,
+  deriveTripBlockers,
+  deriveTripDateConfidenceState,
+  deriveTripLifecycleState,
+  deriveTripReadinessChecks,
+  describeTripDuration,
   formatTripItemStatusLabel,
   formatTripStatusLabel,
   formatTripTaskStatusLabel,
+  getSuggestedTripDayAnchor,
   type OrganizerExecutionActionKey,
+  type OrganizerLifecycleState,
   type OrganizerExecutionTone,
 } from '@/components/space/runtime/organizerExecution';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
@@ -74,6 +82,72 @@ function sectionClasses(isPrimary: boolean): string {
     : 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm';
 }
 
+function readinessCheckClasses(done: boolean): string {
+  return done
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+    : 'border-slate-200 bg-slate-50 text-slate-700';
+}
+
+function getDayContextCopy(params: {
+  lifecycle: OrganizerLifecycleState;
+  selectedDayLabel: string | null;
+  selectedDayIndex: number | null;
+  isToday: boolean;
+  nextStepTitle: string;
+}): { title: string; description: string } {
+  const { lifecycle, selectedDayLabel, selectedDayIndex, isToday, nextStepTitle } = params;
+
+  if (!selectedDayLabel || !selectedDayIndex) {
+    if (lifecycle.mode === 'post_trip') {
+      return {
+        title: 'Дневной контекст появится здесь',
+        description: 'Когда у поездки есть полное окно, к конкретному дню проще привязать полезные выводы и заметки после поездки.',
+      };
+    }
+    if (lifecycle.mode === 'in_trip') {
+      return {
+        title: 'Текущий день станет понятнее здесь',
+        description: 'Когда полное окно поездки уже задано, сюда удобно выносить спокойный фокус текущего дня без тяжёлого планера.',
+      };
+    }
+    return {
+      title: 'Дневной контекст появится после уточнения дат',
+      description: 'Когда окно поездки станет полным, здесь будет легче примерять ближайший шаг к конкретному дню.',
+    };
+  }
+
+  if (lifecycle.mode === 'in_trip') {
+    return {
+      title: isToday ? `Сегодня, день ${selectedDayIndex}` : `День ${selectedDayIndex} поездки`,
+      description: `${selectedDayLabel} можно держать как спокойный ориентир на день. Сейчас главный практический фокус: ${nextStepTitle}.`,
+    };
+  }
+
+  if (lifecycle.mode === 'post_trip') {
+    return {
+      title: `День ${selectedDayIndex} как полезная опора`,
+      description: `${selectedDayLabel} можно использовать как опорную точку для заметки о том, что сработало и что стоит сохранить на будущее.`,
+    };
+  }
+
+  return {
+    title: `День ${selectedDayIndex} как точка входа`,
+    description: `${selectedDayLabel} пока без отдельного плана, и это нормально. На этот день удобно примерять ближайший шаг: ${nextStepTitle}.`,
+  };
+}
+
+function getVisibleDayAnchors<T extends { iso: string }>(anchors: T[], selectedIso: string | null, maxVisible = 7): T[] {
+  if (anchors.length <= maxVisible) return anchors;
+  const selectedIndex = Math.max(
+    0,
+    selectedIso ? anchors.findIndex((anchor) => anchor.iso === selectedIso) : 0
+  );
+  const safeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+  const half = Math.floor(maxVisible / 2);
+  const start = Math.max(0, Math.min(safeIndex - half, anchors.length - maxVisible));
+  return anchors.slice(start, start + maxVisible);
+}
+
 export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const { isLoaded, isSignedIn } = useUser();
   const [state, setState] = useState<DetailState>('idle');
@@ -85,6 +159,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const [itemStatus, setItemStatus] = useState<OrganizerTripItemStatus>('planned');
   const [taskTitle, setTaskTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
+  const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<
     'item' | 'task' | 'note' | `toggle:${string}` | `remove:${string}` | `item-status:${string}` | null
   >(null);
@@ -154,6 +229,37 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const execution = useMemo(() => (detail ? deriveExecutionFromDetail(detail) : null), [detail]);
   const pendingTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'pending') ?? [], [detail]);
   const completedTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'done') ?? [], [detail]);
+  const lifecycle = useMemo(() => (detail ? deriveTripLifecycleState(detail.trip) : null), [detail]);
+  const dateConfidence = useMemo(() => (detail ? deriveTripDateConfidenceState(detail.trip) : null), [detail]);
+  const tripDuration = useMemo(() => (detail ? describeTripDuration(detail.trip) : null), [detail]);
+  const blockers = useMemo(() => (detail ? deriveTripBlockers(detail) : []), [detail]);
+  const readinessChecks = useMemo(() => (detail ? deriveTripReadinessChecks(detail) : []), [detail]);
+  const dayAnchors = useMemo(() => (detail ? buildTripDayAnchors(detail.trip) : []), [detail]);
+  const suggestedDay = useMemo(
+    () => (detail ? getSuggestedTripDayAnchor(detail.trip, dayAnchors) : null),
+    [detail, dayAnchors]
+  );
+  const selectedDay = useMemo(
+    () => dayAnchors.find((anchor) => anchor.iso === selectedDayIso) ?? suggestedDay ?? null,
+    [dayAnchors, selectedDayIso, suggestedDay]
+  );
+  const visibleDayAnchors = useMemo(
+    () => getVisibleDayAnchors(dayAnchors, selectedDay?.iso ?? selectedDayIso),
+    [dayAnchors, selectedDay, selectedDayIso]
+  );
+  const dayContextCopy = useMemo(
+    () =>
+      lifecycle && execution
+        ? getDayContextCopy({
+            lifecycle,
+            selectedDayLabel: selectedDay?.label ?? null,
+            selectedDayIndex: selectedDay?.dayIndex ?? null,
+            isToday: selectedDay?.isToday ?? false,
+            nextStepTitle: execution.nextStep.title,
+          })
+        : null,
+    [execution, lifecycle, selectedDay]
+  );
   const primarySection = useMemo(() => {
     if (!execution) return null;
     if (execution.nextStep.actionKey === 'add-item' || execution.nextStep.actionKey === 'review-items') return 'items';
@@ -161,6 +267,17 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     if (execution.nextStep.actionKey === 'add-note') return 'notes';
     return null;
   }, [execution]);
+
+  useEffect(() => {
+    if (!dayAnchors.length) {
+      setSelectedDayIso(null);
+      return;
+    }
+    setSelectedDayIso((current) => {
+      if (current && dayAnchors.some((anchor) => anchor.iso === current)) return current;
+      return suggestedDay?.iso ?? dayAnchors[0]?.iso ?? null;
+    });
+  }, [dayAnchors, suggestedDay]);
 
   function focusSection(actionKey: OrganizerExecutionActionKey) {
     if (actionKey === 'add-item' || actionKey === 'review-items') {
@@ -410,6 +527,114 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 </div>
               </div>
 
+              {lifecycle && dateConfidence ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Время поездки</div>
+                      <div className="mt-2 text-base font-semibold text-slate-900">
+                        {tripWindowLabel(detail.trip) ?? 'Даты поездки пока не заданы'}
+                      </div>
+                      <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                        {lifecycle.hint} {dateConfidence.hint}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(lifecycle.tone)}`}>
+                        {lifecycle.label}
+                      </span>
+                      <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(dateConfidence.tone)}`}>
+                        {dateConfidence.label}
+                      </span>
+                      {tripDuration ? (
+                        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                          {tripDuration}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-500">Режим</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{lifecycle.label}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {lifecycle.mode === 'preparation'
+                          ? 'Собрать поездку без перегрузки.'
+                          : lifecycle.mode === 'in_trip'
+                            ? 'Не потерять текущее важное.'
+                            : 'Сохранить практическую пользу.'}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-500">Окно поездки</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">
+                        {tripWindowLabel(detail.trip) ?? 'Пока не задано'}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">{dateConfidence.label}</div>
+                    </div>
+                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-500">Что важно сейчас</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{execution?.whatMattersNow ?? 'Без оценки'}</div>
+                    </div>
+                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-500">Следующий шаг</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{execution?.nextStep.title ?? 'Пока не задан'}</div>
+                      <button
+                        type="button"
+                        onClick={() => execution && focusSection(execution.nextStep.actionKey)}
+                        className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        {execution ? nextStepButtonLabel(execution.nextStep.actionKey) : 'Открыть'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-white/70 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Фокус дня</div>
+                        <div className="mt-2 text-sm font-medium text-slate-900">{dayContextCopy?.title ?? 'День пока не выбран'}</div>
+                        <p className="mt-1 text-sm text-slate-600">{dayContextCopy?.description}</p>
+                      </div>
+                      {selectedDay ? (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                          {selectedDay.shortLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {visibleDayAnchors.length > 0 ? (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {visibleDayAnchors.map((anchor) => {
+                          const isActive = selectedDay?.iso === anchor.iso;
+                          return (
+                            <button
+                              key={anchor.iso}
+                              type="button"
+                              onClick={() => setSelectedDayIso(anchor.iso)}
+                              className={`rounded-xl border px-3 py-2 text-left text-xs transition ${
+                                isActive
+                                  ? 'border-sky-300 bg-sky-50 text-sky-900'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="font-medium">{anchor.weekdayLabel}</div>
+                              <div className="mt-0.5">{anchor.shortLabel}</div>
+                              <div className="mt-1 text-[11px] opacity-80">День {anchor.dayIndex}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                        Когда окно поездки станет понятнее, здесь появится лёгкий вход в контекст выбранного дня без
+                        отдельного day planner.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
               {execution ? (
                 <div className={`mt-5 rounded-xl border p-5 ${toneClasses(execution.readinessTone)}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -440,6 +665,39 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 </div>
               ) : null}
 
+              <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Уже собрано</div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {readinessChecks.map((check) => (
+                      <div key={check.id} className={`rounded-xl border p-4 ${readinessCheckClasses(check.done)}`}>
+                        <div className="text-sm font-medium">{check.label}</div>
+                        <div className="mt-1 text-xs opacity-80">{check.hint}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Что ещё хрупко</div>
+                  <div className="mt-3 space-y-3">
+                    {blockers.length > 0 ? (
+                      blockers.map((blocker) => (
+                        <div key={blocker.id} className={`rounded-xl border p-4 ${toneClasses(blocker.tone)}`}>
+                          <div className="text-sm font-medium">{blocker.title}</div>
+                          <p className="mt-1 text-xs opacity-80">{blocker.description}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                        У поездки уже есть уверенная база: время, контекст и следующий шаг читаются спокойно и без явных
+                        хрупких мест.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Объекты</div>
@@ -456,10 +714,14 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.notes.length}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Стадия</div>
-                  <div className="mt-2 text-sm font-medium text-slate-900">{execution?.progressLabel ?? 'Без оценки'}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Фаза поездки</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{lifecycle?.label ?? execution?.progressLabel ?? 'Без оценки'}</div>
                   <div className="mt-2 text-xs text-slate-500">
-                    {completedTasks.length > 0 ? `${completedTasks.length} шагов уже закрыто` : 'Пока без закрытых шагов'}
+                    {completedTasks.length > 0
+                      ? `${completedTasks.length} шагов уже закрыто`
+                      : lifecycle?.mode === 'post_trip'
+                        ? 'Можно зафиксировать выводы и полезные заметки'
+                        : 'Пока без закрытых шагов'}
                   </div>
                 </div>
               </div>
