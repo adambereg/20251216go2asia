@@ -18,6 +18,7 @@ import {
 import {
   deriveExecutionFromDetail,
   formatTripItemStatusLabel,
+  formatTripStatusLabel,
   formatTripTaskStatusLabel,
   type OrganizerExecutionActionKey,
   type OrganizerExecutionTone,
@@ -227,6 +228,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     });
     setTaskTitle('');
     setError(null);
+    setFeedback({ tone: 'success', message: 'Следующий шаг добавлен.' });
   }
 
   async function handleToggleTask(taskId: string, nextStatus: 'pending' | 'done') {
@@ -247,7 +249,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setError(null);
-    setFeedback(null);
+    setFeedback({
+      tone: 'info',
+      message: nextStatus === 'done' ? 'Шаг отмечен как выполненный.' : 'Шаг снова открыт и вернулся в работу.',
+    });
   }
 
   async function handleUpdateItemStatus(itemId: string, nextStatus: OrganizerTripItemStatus) {
@@ -267,7 +272,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setError(null);
-    setFeedback({ tone: 'info', message: 'Статус объекта обновлён.' });
+    setFeedback({ tone: 'info', message: `Статус объекта: ${formatTripItemStatusLabel(nextStatus)}.` });
   }
 
   async function handleRemoveItem(itemId: string) {
@@ -320,7 +325,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     });
     setNoteBody('');
     setError(null);
-    setFeedback({ tone: 'success', message: 'Заметка добавлена.' });
+    setFeedback({ tone: 'success', message: 'Заметка добавлена. Контекст поездки стал полнее.' });
   }
 
   const savedSourcedCount = useMemo(
@@ -334,10 +339,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
         <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Space &gt; Organizer &gt; Trip</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Space &gt; Organizer &gt; Поездка</div>
               <h1 className="mt-2 text-2xl font-semibold text-slate-900">{detail?.trip.title ?? 'Поездка'}</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Здесь собран рабочий контекст поездки: что уже выбрано, что ещё нужно решить и к какому шагу лучше
+                Здесь собран рабочий контекст поездки: что уже выбрано, что ещё просит внимания и к какому шагу лучше
                 вернуться сейчас.
               </p>
             </div>
@@ -386,6 +391,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     {tripWindowLabel(detail.trip) ? ` · ${tripWindowLabel(detail.trip)}` : ''}
                   </p>
                   {detail.trip.summary ? <p className="mt-3 text-sm text-slate-700">{detail.trip.summary}</p> : null}
+                  {execution ? <p className="mt-3 text-sm text-slate-600">{execution.progressHint}</p> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {execution ? (
@@ -393,8 +399,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                       {execution.readinessLabel}
                     </span>
                   ) : null}
+                  {execution ? (
+                    <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(execution.readinessTone)}`}>
+                      {execution.progressLabel}
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                    {detail.trip.status}
+                    {formatTripStatusLabel(detail.trip.status)}
                   </span>
                 </div>
               </div>
@@ -403,7 +414,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 <div className={`mt-5 rounded-xl border p-5 ${toneClasses(execution.readinessTone)}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="text-xs font-medium uppercase tracking-wide opacity-80">Что важно сейчас</div>
+                      <div className="text-xs font-medium uppercase tracking-wide opacity-80">{execution.progressLabel}</div>
                       <div className="mt-2 text-sm font-medium">{execution.whatMattersNow}</div>
                     </div>
                   </div>
@@ -445,9 +456,10 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.notes.length}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Собрано</div>
-                  <div className="mt-2 text-sm font-medium text-slate-900">
-                    {completedTasks.length > 0 ? `${completedTasks.length} шагов закрыто` : 'Пока без закрытых шагов'}
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Стадия</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{execution?.progressLabel ?? 'Без оценки'}</div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    {completedTasks.length > 0 ? `${completedTasks.length} шагов уже закрыто` : 'Пока без закрытых шагов'}
                   </div>
                 </div>
               </div>
@@ -494,7 +506,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                 <h3 className="text-lg font-semibold text-slate-900">Объекты поездки</h3>
                 <p className="mt-2 text-sm text-slate-600">
                   Здесь живут места, брони и другие ориентиры поездки. Всё, что пришло из сохранённых, остаётся
-                  понятным по происхождению.
+                  понятным по происхождению и не смешивается с глобальным Saved.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateItem}>
                   <input
@@ -606,7 +618,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               <article ref={tasksRef} className={sectionClasses(primarySection === 'tasks')}>
                 <h3 className="text-lg font-semibold text-slate-900">Следующие шаги</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Короткие практические действия, которые помогают двигать поездку вперёд.
+                  Короткие практические действия, которые помогают двигать поездку вперёд без перегрузки.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateTask}>
                   <input
@@ -700,7 +712,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               <article ref={notesRef} className={sectionClasses(primarySection === 'notes')}>
                 <h3 className="text-lg font-semibold text-slate-900">Заметки по поездке</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Короткие ориентиры, которые помогают не потерять контекст этой поездки.
+                  Короткие ориентиры, которые помогают не потерять контекст и спокойнее возвращаться к поездке.
                 </p>
                 <form className="mt-4 space-y-3" onSubmit={handleCreateNote}>
                   <textarea

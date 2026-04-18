@@ -128,7 +128,7 @@ export function SavedPostsPageClient() {
       } else if (isServiceUnavailableStatus(status)) {
         setRuntimeUnavailable(true);
       } else {
-        setError(`Saved posts runtime request failed (${status ?? 'unknown'}).`);
+        setError(`Не удалось загрузить сохранённые посты (${status ?? 'unknown'}).`);
       }
       setItems([]);
       setReactionCount(0);
@@ -354,7 +354,7 @@ export function SavedPostsPageClient() {
             </div>
             {reactionCount > 0 ? (
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                {reactionCount} {pluralizeRu(reactionCount, 'сохранение', 'сохранения', 'сохранений')}
+                {reactionCount} {pluralizeRu(reactionCount, 'сохранённый пост', 'сохранённых поста', 'сохранённых постов')}
               </span>
             ) : null}
           </div>

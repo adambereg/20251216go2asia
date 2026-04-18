@@ -2,6 +2,7 @@ import type {
   OrganizerTrip,
   OrganizerTripDetailResponse,
   OrganizerTripItem,
+  OrganizerTripStatus,
   OrganizerTripSummary,
   OrganizerTripTask,
 } from './organizerApi';
@@ -31,6 +32,8 @@ export type OrganizerExecutionStep = {
 export type OrganizerExecutionState = {
   readinessLabel: string;
   readinessTone: OrganizerExecutionTone;
+  progressLabel: string;
+  progressHint: string;
   whatMattersNow: string;
   nextStep: OrganizerExecutionStep;
   chips: OrganizerExecutionChip[];
@@ -113,11 +116,11 @@ function buildSummaryChips(trip: OrganizerTripSummary, metrics: DerivedMetrics):
       label:
         metrics.noteCount > 0
           ? `${metrics.noteCount} ${pluralizeRu(metrics.noteCount, 'заметка', 'заметки', 'заметок')}`
-          : 'Нет заметок',
+          : 'Контекст не собран',
       tone: metrics.noteCount > 0 ? 'sky' : 'slate',
     },
     {
-      label: trip.destinationLabel ? 'Локация задана' : 'Локация не задана',
+      label: trip.destinationLabel ? 'Локация понятна' : 'Локация не задана',
       tone: trip.destinationLabel ? 'emerald' : 'slate',
     },
   ];
@@ -140,7 +143,7 @@ function buildDetailChips(trip: OrganizerTrip, metrics: DerivedMetrics): Organiz
       label:
         metrics.noteCount > 0
           ? `${metrics.noteCount} ${pluralizeRu(metrics.noteCount, 'заметка', 'заметки', 'заметок')}`
-          : 'Контекст без заметок',
+          : 'Контекст не зафиксирован',
       tone: metrics.noteCount > 0 ? 'sky' : 'slate',
     },
   ];
@@ -159,7 +162,7 @@ function buildDetailChips(trip: OrganizerTrip, metrics: DerivedMetrics): Organiz
 
   if (metrics.sourceLinkedItemCount > 0) {
     chips.push({
-      label: `Из Saved: ${metrics.sourceLinkedItemCount}`,
+      label: `Из сохранённых: ${metrics.sourceLinkedItemCount}`,
       tone: 'slate',
     });
   }
@@ -179,12 +182,14 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
 
   if (metrics.itemsCount === 0) {
     return {
-      readinessLabel: 'Нужно начать',
+      readinessLabel: 'Пора начать',
       readinessTone: 'amber',
-      whatMattersNow: 'В поездке пока нет ни одного опорного объекта.',
+      progressLabel: 'Пустой старт',
+      progressHint: 'Поездка только создана, поэтому сначала нужен первый опорный объект.',
+      whatMattersNow: 'Поездка ещё пустая, и сейчас важнее всего зафиксировать первую полезную опору.',
       nextStep: {
         title: 'Добавить первый объект',
-        description: 'Зафиксируйте место, бронь, слот или другой важный ориентир.',
+        description: 'Добавьте место, бронь, слот или другой ориентир, вокруг которого удобно собирать остальной контекст.',
         actionKey: 'add-item',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -195,7 +200,9 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
     return {
       readinessLabel: 'Есть шаги в работе',
       readinessTone: 'amber',
-      whatMattersNow: `Открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}, и поездку уже можно продвигать дальше.`,
+      progressLabel: 'Поездка движется',
+      progressHint: 'Основа уже есть, теперь главное не потерять темп.',
+      whatMattersNow: `Открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}, и к одному из них лучше вернуться сейчас.`,
       nextStep: {
         title: 'Вернуться к открытому шагу',
         description: 'Откройте поездку и разберите ближайшее действие.',
@@ -207,9 +214,11 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
 
   if (metrics.noteCount === 0) {
     return {
-      readinessLabel: 'Нужен ориентир',
+      readinessLabel: 'Нужен контекст',
       readinessTone: 'sky',
-      whatMattersNow: 'Структура уже появилась, но поездке пока не хватает короткого контекста.',
+      progressLabel: 'Появилась основа',
+      progressHint: 'У поездки уже есть структура, осталось зафиксировать короткий ориентир.',
+      whatMattersNow: 'Объекты уже собраны, но поездке всё ещё не хватает короткого личного контекста.',
       nextStep: {
         title: 'Добавить заметку',
         description: 'Коротко запишите, что важно не забыть и к чему вы готовитесь.',
@@ -220,9 +229,11 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
   }
 
   return {
-    readinessLabel: 'Можно продолжать',
+    readinessLabel: 'Собрано уверенно',
     readinessTone: 'emerald',
-    whatMattersNow: 'Поездка уже собрана в рабочий минимум и не выглядит пустой.',
+    progressLabel: 'Рабочий контекст',
+    progressHint: 'Есть основа, контекст и понятный следующий ход.',
+    whatMattersNow: 'Поездка уже выглядит собранной и не требует срочного догоняющего шага.',
     nextStep: {
       title: 'Открыть и продолжить',
       description: 'Проверьте, что ещё стоит уточнить или подтвердить.',
@@ -237,9 +248,11 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.itemsCount === 0) {
     return {
-      readinessLabel: 'Нужно начать',
+      readinessLabel: 'Пора начать',
       readinessTone: 'amber',
-      whatMattersNow: 'В поездке пока нет ни одного опорного объекта.',
+      progressLabel: 'Пустой старт',
+      progressHint: 'Поездка только начинается, и ей пока не хватает первой полезной опоры.',
+      whatMattersNow: 'В поездке пока нет ни одного опорного объекта, вокруг которого можно собирать решения.',
       nextStep: {
         title: 'Добавить первый объект',
         description: 'Начните с жилья, места, рейса, слота или другого важного ориентира.',
@@ -253,7 +266,9 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
     return {
       readinessLabel: 'Нужен следующий шаг',
       readinessTone: 'sky',
-      whatMattersNow: 'Объекты уже собраны, но пока нет ни одного практического шага.',
+      progressLabel: 'Появилась основа',
+      progressHint: 'У поездки уже есть опорные объекты, теперь ей нужен первый практический шаг.',
+      whatMattersNow: 'Объекты уже собраны, но пока нет ни одного действия, которое двигает поездку вперёд.',
       nextStep: {
         title: 'Добавить первую задачу',
         description: 'Сформулируйте одно ближайшее действие, которое двигает поездку вперёд.',
@@ -267,6 +282,8 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
     return {
       readinessLabel: 'Есть шаги в работе',
       readinessTone: 'amber',
+      progressLabel: 'Поездка движется',
+      progressHint: 'Структура уже есть, сейчас главное сохранить ритм и закрыть ближайшее действие.',
       whatMattersNow: `Сейчас важнее всего не потерять ритм: открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}.`,
       nextStep: {
         title: metrics.firstPendingTaskTitle ?? 'Закрыть ближайшую задачу',
@@ -279,8 +296,10 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.noteCount === 0) {
     return {
-      readinessLabel: 'Нужен ориентир',
+      readinessLabel: 'Нужен контекст',
       readinessTone: 'sky',
+      progressLabel: 'Почти собрана',
+      progressHint: 'Структура уже есть, осталось добавить один короткий ориентир для себя.',
       whatMattersNow: 'Шаги уже есть, но поездке всё ещё не хватает короткого личного контекста.',
       nextStep: {
         title: 'Добавить заметку',
@@ -293,8 +312,10 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
 
   if (metrics.plannedItemCount > 0) {
     return {
-      readinessLabel: 'Есть неподтверждённые объекты',
+      readinessLabel: 'Есть что подтвердить',
       readinessTone: 'amber',
+      progressLabel: 'Требует уточнений',
+      progressHint: 'Поездка уже собрана, но часть опор ещё стоит подтвердить.',
       whatMattersNow: `${metrics.plannedItemCount} ${pluralizeRu(metrics.plannedItemCount, 'объект пока только запланирован', 'объекта пока только запланированы', 'объектов пока только запланированы')}.`,
       nextStep: {
         title: 'Подтвердить один объект',
@@ -306,8 +327,10 @@ export function deriveExecutionFromDetail(detail: OrganizerTripDetailResponse): 
   }
 
   return {
-    readinessLabel: 'Можно продолжать',
+    readinessLabel: 'Собрано уверенно',
     readinessTone: 'emerald',
+    progressLabel: 'Рабочий контекст',
+    progressHint: 'Есть структура, контекст и завершённые шаги. Можно спокойно продолжать подготовку.',
     whatMattersNow: 'Поездка уже выглядит собранной: есть структура, контекст и завершённые шаги.',
     nextStep: {
       title: 'Проверить поездку',
@@ -322,6 +345,13 @@ export function formatTripItemStatusLabel(status: OrganizerTripItem['status']): 
   if (status === 'booked') return 'Подтверждено';
   if (status === 'done') return 'Готово';
   return 'Запланировано';
+}
+
+export function formatTripStatusLabel(status: OrganizerTripStatus): string {
+  if (status === 'active') return 'В работе';
+  if (status === 'completed') return 'Завершена';
+  if (status === 'archived') return 'В архиве';
+  return 'Черновик';
 }
 
 export function formatTripTaskStatusLabel(status: OrganizerTripTask['status']): string {

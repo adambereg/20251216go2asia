@@ -10,7 +10,11 @@ import {
   fetchOrganizerTrips,
   type OrganizerTripSummary,
 } from '@/components/space/runtime/organizerApi';
-import { deriveExecutionFromSummary, type OrganizerExecutionTone } from '@/components/space/runtime/organizerExecution';
+import {
+  deriveExecutionFromSummary,
+  formatTripStatusLabel,
+  type OrganizerExecutionTone,
+} from '@/components/space/runtime/organizerExecution';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
 
@@ -127,8 +131,13 @@ export function OrganizerPageClient() {
     [tripCards]
   );
 
-  const structuredTrips = useMemo(
-    () => tripCards.filter(({ trip }) => trip.itemCount > 0 && trip.noteCount > 0).length,
+  const tripsTakingShape = useMemo(
+    () => tripCards.filter(({ execution }) => execution.readinessTone === 'sky').length,
+    [tripCards]
+  );
+
+  const tripsSteady = useMemo(
+    () => tripCards.filter(({ execution }) => execution.readinessTone === 'emerald').length,
     [tripCards]
   );
 
@@ -168,7 +177,7 @@ export function OrganizerPageClient() {
 
     if (!response.data?.trip) {
       const status = getErrorStatus(response.error);
-      setError(response.error?.error?.message ?? `Trip creation failed (${status ?? 'unknown'}).`);
+      setError(response.error?.error?.message ?? `Не удалось создать поездку (${status ?? 'unknown'}).`);
       return;
     }
 
@@ -194,8 +203,8 @@ export function OrganizerPageClient() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Organizer</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Здесь поездки собираются в понятный рабочий контекст: что уже есть, что требует внимания и какой шаг
-                логично сделать следующим.
+                Здесь поездки собираются в спокойный рабочий контекст: что уже есть, чему нужно внимание и к какому
+                шагу лучше вернуться сейчас.
               </p>
             </div>
             {trips.length > 0 ? (
@@ -266,8 +275,8 @@ export function OrganizerPageClient() {
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">Главный фокус</h2>
                     <p className="mt-2 text-sm text-slate-600">
-                      Organizer нужен не для хранения поездок самих по себе, а для того, чтобы быстро понять, куда
-                      лучше вернуться сейчас.
+                      Самая полезная поездка здесь не обязательно самая новая, а та, которой сейчас нужен ближайший
+                      понятный шаг.
                     </p>
                   </div>
                   {trips.length > 0 ? (
@@ -281,7 +290,7 @@ export function OrganizerPageClient() {
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-xs uppercase tracking-wide text-slate-500">Всего поездок</div>
                     <div className="mt-2 text-2xl font-semibold text-slate-900">{trips.length}</div>
-                    <div className="mt-2 text-xs text-slate-500">Органайзер показывает портфель поездок, а не заменяет раздел сохранённого.</div>
+                    <div className="mt-2 text-xs text-slate-500">Organizer помогает вести поездки, а не заменяет раздел «Сохранённые».</div>
                   </div>
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                     <div className="text-xs uppercase tracking-wide text-amber-700">Требуют внимания</div>
@@ -290,11 +299,11 @@ export function OrganizerPageClient() {
                       Поездки, где лучше не терять темп: пустые, тонкие или с открытыми шагами.
                     </div>
                   </div>
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-emerald-700">Собраны лучше</div>
-                    <div className="mt-2 text-2xl font-semibold text-emerald-900">{structuredTrips}</div>
-                    <div className="mt-2 text-xs text-emerald-800">
-                      Поездки, где уже есть объекты и заметки, а контекст не выглядит пустым.
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-sky-700">Набирают структуру</div>
+                    <div className="mt-2 text-2xl font-semibold text-sky-900">{tripsTakingShape}</div>
+                    <div className="mt-2 text-xs text-sky-800">
+                      Поездки, где база уже появилась, но контекст ещё можно спокойно усилить.
                     </div>
                   </div>
                 </div>
@@ -312,13 +321,21 @@ export function OrganizerPageClient() {
                   <div className={`mt-5 rounded-xl border p-5 ${toneClasses(primaryTripCard.execution.readinessTone)}`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wide opacity-80">Что важно сейчас</div>
+                        <div className="text-xs font-medium uppercase tracking-wide opacity-80">
+                          {primaryTripCard.execution.progressLabel}
+                        </div>
                         <h3 className="mt-2 text-lg font-semibold">{primaryTripCard.trip.title}</h3>
+                        <p className="mt-2 text-sm opacity-80">{primaryTripCard.execution.progressHint}</p>
                         <p className="mt-2 text-sm opacity-90">{primaryTripCard.execution.whatMattersNow}</p>
                       </div>
-                      <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
-                        {primaryTripCard.execution.readinessLabel}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                          {primaryTripCard.execution.readinessLabel}
+                        </span>
+                        <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                          {formatTripStatusLabel(primaryTripCard.trip.status)}
+                        </span>
+                      </div>
                     </div>
                     <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
                       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
@@ -347,12 +364,13 @@ export function OrganizerPageClient() {
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">Ваши поездки</h2>
                     <p className="mt-2 text-sm text-slate-600">
-                      Здесь видно, какая поездка уже собрана лучше, а какая просит следующего понятного действия.
+                      Здесь видно, какая поездка только начинается, какая уже набирает структуру, а какая собрана
+                      увереннее.
                     </p>
                   </div>
                   {trips.length > 0 ? (
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                      {structuredTrips} в хорошем ритме
+                      {tripsSteady} собраны увереннее
                     </span>
                   ) : null}
                 </div>
@@ -383,9 +401,14 @@ export function OrganizerPageClient() {
                                 {trip.destinationLabel ?? 'Локация пока не уточнена'}
                               </div>
                             </div>
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                              {trip.status}
-                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(execution.readinessTone)}`}>
+                                {execution.progressLabel}
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                                {formatTripStatusLabel(trip.status)}
+                              </span>
+                            </div>
                           </div>
                           {trip.summary ? <p className="mt-3 text-sm text-slate-600">{trip.summary}</p> : null}
                           <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -404,6 +427,7 @@ export function OrganizerPageClient() {
                               </span>
                             ))}
                           </div>
+                          <p className="mt-3 text-sm text-slate-600">{execution.progressHint}</p>
                           <p className="mt-3 text-sm font-medium text-slate-900">{execution.whatMattersNow}</p>
                           <p className="mt-1 text-sm text-slate-600">
                             Следующий шаг: <span className="font-medium text-slate-700">{execution.nextStep.title}</span>
@@ -423,7 +447,7 @@ export function OrganizerPageClient() {
               <article className={`rounded-2xl border bg-white p-6 shadow-sm ${trips.length === 0 ? 'border-sky-200 ring-1 ring-sky-100' : 'border-slate-200'}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Создать поездку</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Короткий старт: создайте поездку, затем добавьте в неё объект, один шаг и короткую заметку.
+                  Короткий спокойный старт: создайте поездку, затем добавьте в неё объект, один шаг и короткую заметку.
                 </p>
                 <form className="mt-5 space-y-4" onSubmit={handleCreateTrip}>
                   <label className="block">
@@ -466,16 +490,16 @@ export function OrganizerPageClient() {
               </article>
 
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Как это устроено</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Как работает Organizer</h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-700">
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Organizer помогает вести подготовку поездки, а не заменяет весь Space.
+                    Здесь поездка превращается в понятный рабочий контекст: объекты, шаги и заметки собираются в одном месте.
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     Saved остаётся источником сохранённого: {savedHint ?? 'доступность сохранённого уточняется.'}
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Здесь собраны только поездка, объекты, шаги и заметки. Этого достаточно для повседневной подготовки без перегрузки интерфейса.
+                    Добавление в поездку не создаёт второй saved-layer, а помогает превратить полезный пост в часть конкретной подготовки.
                   </li>
                 </ul>
               </article>
