@@ -15,20 +15,20 @@ import {
   formatTripStatusLabel,
   type OrganizerExecutionTone,
 } from '@/components/space/runtime/organizerExecution';
+import {
+  buildActionTimeline,
+  buildPortfolioGroups,
+  derivePortfolioActions,
+  deriveTripTimeline,
+  formatTripWindowLabel,
+  type OrganizerOverviewScale,
+  type OrganizerPortfolioAction,
+} from '@/components/space/runtime/organizerPortfolio';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
 
 type OrganizerHomeState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
-
-function formatTripWindow(trip: OrganizerTripSummary): string | null {
-  if (!trip.startDate && !trip.endDate) return null;
-  if (trip.startDate && trip.endDate) {
-    return `${new Date(trip.startDate).toLocaleDateString('ru-RU')} - ${new Date(trip.endDate).toLocaleDateString('ru-RU')}`;
-  }
-  return trip.startDate
-    ? `Старт: ${new Date(trip.startDate).toLocaleDateString('ru-RU')}`
-    : `Финал: ${new Date(trip.endDate!).toLocaleDateString('ru-RU')}`;
-}
+type OrganizerHomeTab = 'overview' | 'list' | 'timeline';
 
 function toneClasses(tone: OrganizerExecutionTone): string {
   if (tone === 'amber') return 'border-amber-200 bg-amber-50 text-amber-900';
@@ -45,6 +45,40 @@ function pluralizeRu(count: number, one: string, few: string, many: string): str
   return many;
 }
 
+const tabMeta: Record<
+  OrganizerHomeTab,
+  {
+    title: string;
+    description: string;
+  }
+> = {
+  overview: {
+    title: 'Обзор',
+    description: 'Главный portfolio-level слой Organizer: что делать дальше по всем поездкам сразу.',
+  },
+  list: {
+    title: 'Список',
+    description: 'Поездки как контейнеры: в каком они состоянии и к какой из них лучше вернуться.',
+  },
+  timeline: {
+    title: 'Таймлайн',
+    description: 'Поездки во времени: как они лежат, где пересекаются и где между ними остаются окна.',
+  },
+};
+
+const overviewScaleOptions: Array<{ id: OrganizerOverviewScale; label: string }> = [
+  { id: 'day', label: 'День' },
+  { id: 'week', label: 'Неделя' },
+  { id: 'month', label: 'Месяц' },
+];
+
+function portfolioActionButtonLabel(action: OrganizerPortfolioAction): string {
+  if (action.actionKey === 'finish-task') return 'Вернуться к шагу';
+  if (action.actionKey === 'add-note') return 'Открыть заметки';
+  if (action.actionKey === 'review-items') return 'Проверить объекты';
+  return action.ctaLabel;
+}
+
 export function OrganizerPageClient() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
@@ -56,6 +90,8 @@ export function OrganizerPageClient() {
   const [destinationLabel, setDestinationLabel] = useState('');
   const [summary, setSummary] = useState('');
   const [createPending, setCreatePending] = useState(false);
+  const [activeTab, setActiveTab] = useState<OrganizerHomeTab>('overview');
+  const [overviewScale, setOverviewScale] = useState<OrganizerOverviewScale>('week');
 
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +195,15 @@ export function OrganizerPageClient() {
     return 'Продолжить поездку';
   }, [primaryTripCard]);
 
+  const portfolioActions = useMemo(() => derivePortfolioActions(trips), [trips]);
+  const portfolioGroups = useMemo(() => buildPortfolioGroups(portfolioActions), [portfolioActions]);
+  const focusAction = portfolioActions[0] ?? null;
+  const actionTimeline = useMemo(
+    () => buildActionTimeline(portfolioActions, overviewScale),
+    [overviewScale, portfolioActions]
+  );
+  const tripTimeline = useMemo(() => deriveTripTimeline(trips), [trips]);
+
   async function handleCreateTrip(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextTitle = title.trim();
@@ -202,10 +247,7 @@ export function OrganizerPageClient() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Organizer</h1>
-              <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Здесь поездки собираются в спокойный рабочий контекст: что уже есть, чему нужно внимание и к какому
-                шагу лучше вернуться сейчас.
-              </p>
+              <p className="mt-2 max-w-3xl text-sm text-slate-600">{tabMeta[activeTab].description}</p>
             </div>
             {trips.length > 0 ? (
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
@@ -215,21 +257,40 @@ export function OrganizerPageClient() {
           </div>
         </header>
 
+        <nav className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(tabMeta) as OrganizerHomeTab[]).map((tab) => {
+              const isActive = tab === activeTab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-xl border px-4 py-2 text-left transition ${
+                    isActive
+                      ? 'border-sky-300 bg-sky-50 text-sky-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="text-sm font-medium">{tabMeta[tab].title}</div>
+                  <div className="mt-1 text-xs opacity-80">{tabMeta[tab].description}</div>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
         {!isLoaded || state === 'loading' ? (
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Загрузка Organizer</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Собираем ваши поездки и подготавливаем рабочий контекст.
-            </p>
+            <p className="mt-2 text-sm text-slate-600">Собираем ваши поездки и подготавливаем portfolio-level контекст.</p>
           </article>
         ) : null}
 
         {state === 'auth-required' ? (
           <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-amber-900">Нужна авторизация</h2>
-            <p className="mt-2 text-sm text-amber-800">
-              Organizer показывает личные поездки и доступен только после входа.
-            </p>
+            <p className="mt-2 text-sm text-amber-800">Organizer показывает личные поездки и доступен только после входа.</p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
                 href="/space"
@@ -255,12 +316,10 @@ export function OrganizerPageClient() {
                   {state === 'unavailable' ? 'Organizer пока недоступен' : 'Organizer временно недоступен'}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Сейчас не удаётся загрузить поездки. Когда сервис снова станет доступен, вы сможете продолжить с того
-                  же места.
+                  Сейчас не удаётся загрузить поездки. Когда сервис снова станет доступен, вы сможете продолжить с того же места.
                 </p>
               </div>
             </div>
-
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               {error ?? 'Organizer runtime временно недоступен в этом окружении.'}
             </div>
@@ -270,177 +329,467 @@ export function OrganizerPageClient() {
         {state === 'ready' ? (
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-6">
-              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Главный фокус</h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Самая полезная поездка здесь не обязательно самая новая, а та, которой сейчас нужен ближайший
-                      понятный шаг.
-                    </p>
-                  </div>
-                  {trips.length > 0 ? (
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                      {tripsNeedingAttention === 0 ? 'Все поездки в рабочем ритме' : `${tripsNeedingAttention} требуют внимания`}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-5 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-500">Всего поездок</div>
-                    <div className="mt-2 text-2xl font-semibold text-slate-900">{trips.length}</div>
-                    <div className="mt-2 text-xs text-slate-500">Organizer помогает вести поездки, а не заменяет раздел «Сохранённые».</div>
-                  </div>
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-amber-700">Требуют внимания</div>
-                    <div className="mt-2 text-2xl font-semibold text-amber-900">{tripsNeedingAttention}</div>
-                    <div className="mt-2 text-xs text-amber-800">
-                      Поездки, где лучше не терять темп: пустые, тонкие или с открытыми шагами.
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-sky-700">Набирают структуру</div>
-                    <div className="mt-2 text-2xl font-semibold text-sky-900">{tripsTakingShape}</div>
-                    <div className="mt-2 text-xs text-sky-800">
-                      Поездки, где база уже появилась, но контекст ещё можно спокойно усилить.
-                    </div>
-                  </div>
-                </div>
-
-                {trips.length === 0 ? (
-                  <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <div className="text-sm font-medium text-slate-900">Начните с первой поездки</div>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Сначала создайте поездку, потом добавьте хотя бы один объект, один шаг и одну заметку. Этого уже
-                      достаточно, чтобы подготовка перестала быть пустой.
-                    </p>
-                    {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
-                  </div>
-                ) : primaryTripCard ? (
-                  <div className={`mt-5 rounded-xl border p-5 ${toneClasses(primaryTripCard.execution.readinessTone)}`}>
+              {activeTab === 'overview' ? (
+                <>
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wide opacity-80">
-                          {primaryTripCard.execution.progressLabel}
+                        <h2 className="text-lg font-semibold text-slate-900">Главный фокус</h2>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Обзор не дублирует список поездок. Здесь собраны действия и точки внимания по всему портфелю.
+                        </p>
+                      </div>
+                      {focusAction ? (
+                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(focusAction.tone)}`}>
+                          {focusAction.horizonLabel}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {focusAction ? (
+                      <div className={`mt-5 rounded-2xl border p-5 ${toneClasses(focusAction.tone)}`}>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-medium uppercase tracking-wide opacity-80">Точка внимания</div>
+                            <h3 className="mt-2 text-lg font-semibold">{focusAction.title}</h3>
+                            <p className="mt-2 text-sm opacity-90">{focusAction.whyNow}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                              {focusAction.lifecycleLabel}
+                            </span>
+                            <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                              {focusAction.statusLabel}
+                            </span>
+                          </div>
                         </div>
-                        <h3 className="mt-2 text-lg font-semibold">{primaryTripCard.trip.title}</h3>
-                        <p className="mt-2 text-sm opacity-80">{primaryTripCard.execution.progressHint}</p>
-                        <p className="mt-2 text-sm opacity-90">{primaryTripCard.execution.whatMattersNow}</p>
+                        <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
+                          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Связана с поездкой</div>
+                          <div className="mt-2 text-sm font-medium text-slate-900">{focusAction.tripTitle}</div>
+                          <p className="mt-1 text-sm text-slate-600">{focusAction.description}</p>
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                            <span>{focusAction.timingLabel}</span>
+                            {focusAction.tripWindowLabel ? <span>{focusAction.tripWindowLabel}</span> : null}
+                            {focusAction.attentionLabel ? <span>{focusAction.attentionLabel}</span> : null}
+                          </div>
+                          <div className="mt-4">
+                            <Link
+                              href={focusAction.tripHref}
+                              className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                            >
+                              {portfolioActionButtonLabel(focusAction)}
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                        <div className="text-sm font-medium text-slate-900">Портфель действий появится здесь</div>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Как только появится хотя бы одна поездка, здесь будет видно, к какому действию лучше вернуться раньше всего.
+                        </p>
+                        {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
+                      </div>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Действия по поездкам</h2>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Один action portfolio по всем поездкам сразу: что важно сейчас, что на этой неделе, а что можно держать позже.
+                        </p>
+                      </div>
+                      {portfolioActions.length > 0 ? (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                          {portfolioActions.length} {pluralizeRu(portfolioActions.length, 'точка внимания', 'точки внимания', 'точек внимания')}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {portfolioGroups.length > 0 ? (
+                      <div className="mt-6 space-y-5">
+                        {portfolioGroups.map((group) => (
+                          <section key={group.id} className="space-y-3">
+                            <div className="flex flex-wrap items-baseline justify-between gap-3">
+                              <div>
+                                <h3 className="text-sm font-semibold text-slate-900">{group.label}</h3>
+                                <p className="mt-1 text-xs text-slate-500">{group.description}</p>
+                              </div>
+                              <span className="text-xs text-slate-500">
+                                {group.actions.length} {pluralizeRu(group.actions.length, 'действие', 'действия', 'действий')}
+                              </span>
+                            </div>
+                            <div className="space-y-3">
+                              {group.actions.map((action) => (
+                                <div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                  <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                      <div className="text-sm font-medium text-slate-900">{action.title}</div>
+                                      <div className="mt-1 text-xs text-slate-500">{action.tripTitle}</div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(action.tone)}`}>
+                                        {action.lifecycleLabel}
+                                      </span>
+                                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                                        {action.timingLabel}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <p className="mt-3 text-sm text-slate-700">{action.whyNow}</p>
+                                  <p className="mt-1 text-sm text-slate-600">{action.description}</p>
+                                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                                    {action.tripWindowLabel ? <span>{action.tripWindowLabel}</span> : null}
+                                    <span>{action.statusLabel}</span>
+                                    {action.attentionLabel ? <span>{action.attentionLabel}</span> : null}
+                                  </div>
+                                  <div className="mt-4">
+                                    <Link
+                                      href={action.tripHref}
+                                      className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                                    >
+                                      {portfolioActionButtonLabel(action)}
+                                    </Link>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                        Пока нет поездок, поэтому action portfolio ещё не собран.
+                      </div>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Таймлайн действий</h2>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Это timeline именно действий и attention points. Таймлайн поездок остаётся отдельной вкладкой.
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
-                          {primaryTripCard.execution.readinessLabel}
-                        </span>
-                        <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
-                          {formatTripStatusLabel(primaryTripCard.trip.status)}
-                        </span>
+                        {overviewScaleOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setOverviewScale(option.id)}
+                            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                              option.id === overviewScale
+                                ? 'border-sky-300 bg-sky-50 text-sky-900'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
-                      <div className="mt-2 text-sm font-medium text-slate-900">{primaryTripCard.execution.nextStep.title}</div>
-                      <p className="mt-1 text-sm text-slate-600">{primaryTripCard.execution.nextStep.description}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Link
-                          href={`/space/organizer/trips/${encodeURIComponent(primaryTripCard.trip.id)}`}
-                          className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
-                        >
-                          {focusButtonLabel}
-                        </Link>
-                        {tripsWithOpenTasks > 0 ? (
-                          <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
-                            Сейчас {tripsWithOpenTasks} {pluralizeRu(tripsWithOpenTasks, 'поездка с открытым шагом', 'поездки с открытыми шагами', 'поездок с открытыми шагами')}
-                          </span>
-                        ) : null}
+
+                    {actionTimeline.slots.length > 0 && portfolioActions.length > 0 ? (
+                      <div className="mt-6 overflow-x-auto pb-2">
+                        <div className="grid min-w-max auto-cols-[minmax(180px,1fr)] grid-flow-col gap-3">
+                          {actionTimeline.slots.map((slot) => (
+                            <section key={slot.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                              <div className="text-sm font-medium text-slate-900">{slot.label}</div>
+                              <div className="mt-1 text-xs text-slate-500">{slot.caption}</div>
+                              <div className="mt-4 space-y-2">
+                                {slot.actions.length > 0 ? (
+                                  slot.actions.map((action) => (
+                                    <Link
+                                      key={`${slot.id}-${action.id}`}
+                                      href={action.tripHref}
+                                      className="block rounded-lg border border-white bg-white p-3 text-sm text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
+                                    >
+                                      <div className="font-medium text-slate-900">{action.title}</div>
+                                      <div className="mt-1 text-xs text-slate-500">{action.tripTitle}</div>
+                                      <div className="mt-2 text-xs text-slate-500">{action.horizonLabel}</div>
+                                    </Link>
+                                  ))
+                                ) : (
+                                  <div className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">
+                                    Здесь пока спокойно.
+                                  </div>
+                                )}
+                              </div>
+                            </section>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                        Когда появятся поездки, здесь будет видно, как действия распределяются во времени без тяжёлой scheduler-сетки.
+                      </div>
+                    )}
+                  </article>
+                </>
+              ) : null}
+
+              {activeTab === 'list' ? (
+                <>
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Список поездок</h2>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Здесь поездки читаются как отдельные контейнеры: какая требует внимания, какая уже набрала структуру, а какая стала увереннее.
+                        </p>
+                      </div>
+                      {trips.length > 0 ? (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                          {tripsSteady} собраны увереннее
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Всего поездок</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">{trips.length}</div>
+                        <div className="mt-2 text-xs text-slate-500">Список показывает контейнеры поездок, а не action portfolio.</div>
+                      </div>
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-amber-700">Требуют внимания</div>
+                        <div className="mt-2 text-2xl font-semibold text-amber-900">{tripsNeedingAttention}</div>
+                        <div className="mt-2 text-xs text-amber-800">Поездки, где лучше не терять темп и вернуться к следующему шагу.</div>
+                      </div>
+                      <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-sky-700">Набирают структуру</div>
+                        <div className="mt-2 text-2xl font-semibold text-sky-900">{tripsTakingShape}</div>
+                        <div className="mt-2 text-xs text-sky-800">Поездки, где база уже появилась, но контекст ещё можно усилить.</div>
                       </div>
                     </div>
-                  </div>
-                ) : null}
-              </article>
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Ваши поездки</h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Здесь видно, какая поездка только начинается, какая уже набирает структуру, а какая собрана
-                      увереннее.
-                    </p>
-                  </div>
-                  {trips.length > 0 ? (
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                      {tripsSteady} собраны увереннее
-                    </span>
-                  ) : null}
-                </div>
+                    {trips.length === 0 ? (
+                      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                        <div className="text-sm font-medium text-slate-900">Пока нет ни одной поездки</div>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Первый полезный шаг здесь простой: создать поездку и добавить в неё хотя бы один ориентир, один следующий шаг и короткую заметку.
+                        </p>
+                        {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
+                      </div>
+                    ) : primaryTripCard ? (
+                      <div className={`mt-5 rounded-xl border p-5 ${toneClasses(primaryTripCard.execution.readinessTone)}`}>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-medium uppercase tracking-wide opacity-80">Главная поездка списка</div>
+                            <h3 className="mt-2 text-lg font-semibold">{primaryTripCard.trip.title}</h3>
+                            <p className="mt-2 text-sm opacity-80">{primaryTripCard.execution.progressHint}</p>
+                            <p className="mt-2 text-sm opacity-90">{primaryTripCard.execution.whatMattersNow}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                              {primaryTripCard.execution.readinessLabel}
+                            </span>
+                            <span className="rounded-full border border-current/15 bg-white/70 px-3 py-1 text-xs font-medium">
+                              {formatTripStatusLabel(primaryTripCard.trip.status)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
+                          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
+                          <div className="mt-2 text-sm font-medium text-slate-900">{primaryTripCard.execution.nextStep.title}</div>
+                          <p className="mt-1 text-sm text-slate-600">{primaryTripCard.execution.nextStep.description}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Link
+                              href={`/space/organizer/trips/${encodeURIComponent(primaryTripCard.trip.id)}`}
+                              className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                            >
+                              {focusButtonLabel}
+                            </Link>
+                            {tripsWithOpenTasks > 0 ? (
+                              <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                                Сейчас {tripsWithOpenTasks} {pluralizeRu(tripsWithOpenTasks, 'поездка с открытым шагом', 'поездки с открытыми шагами', 'поездок с открытыми шагами')}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
 
-                {trips.length === 0 ? (
-                  <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <div className="text-sm font-medium text-slate-900">Пока нет ни одной поездки</div>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Первый полезный шаг здесь простой: создать поездку и добавить в неё хотя бы один ориентир, один
-                      следующий шаг и короткую заметку.
-                    </p>
-                    {savedHint ? <p className="mt-3 text-xs text-slate-500">{savedHint}</p> : null}
-                  </div>
-                ) : (
-                  <div className="mt-6 space-y-3">
-                    {tripCards.map(({ trip, execution }) => {
-                      const windowLabel = formatTripWindow(trip);
-                      return (
-                        <Link
-                          key={trip.id}
-                          href={`/space/organizer/trips/${encodeURIComponent(trip.id)}`}
-                          className="block rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50"
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <div className="text-base font-semibold text-slate-900">{trip.title}</div>
-                              <div className="mt-1 text-sm text-slate-600">
-                                {trip.destinationLabel ?? 'Локация пока не уточнена'}
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Ваши поездки</h2>
+                        <p className="mt-2 text-sm text-slate-600">Контейнеры поездок с их текущим состоянием, контекстом и ближайшим шагом.</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-3">
+                      {tripCards.map(({ trip, execution }) => {
+                        const windowLabel = formatTripWindowLabel(trip);
+                        return (
+                          <Link
+                            key={trip.id}
+                            href={`/space/organizer/trips/${encodeURIComponent(trip.id)}`}
+                            className="block rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <div className="text-base font-semibold text-slate-900">{trip.title}</div>
+                                <div className="mt-1 text-sm text-slate-600">{trip.destinationLabel ?? 'Локация пока не уточнена'}</div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(execution.readinessTone)}`}>
+                                  {execution.progressLabel}
+                                </span>
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                                  {formatTripStatusLabel(trip.status)}
+                                </span>
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(execution.readinessTone)}`}>
-                                {execution.progressLabel}
-                              </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                                {formatTripStatusLabel(trip.status)}
-                              </span>
+                            {trip.summary ? <p className="mt-3 text-sm text-slate-600">{trip.summary}</p> : null}
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                              {windowLabel ? <span>{windowLabel}</span> : null}
+                              <span>{trip.itemCount} объектов</span>
+                              <span>{trip.pendingTaskCount} открытых шагов</span>
+                              <span>{trip.noteCount} заметок</span>
                             </div>
-                          </div>
-                          {trip.summary ? <p className="mt-3 text-sm text-slate-600">{trip.summary}</p> : null}
-                          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                            {windowLabel ? <span>{windowLabel}</span> : null}
-                            <span>{trip.itemCount} объектов</span>
-                            <span>{trip.pendingTaskCount} открытых шагов</span>
-                            <span>{trip.noteCount} заметок</span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {execution.chips.slice(0, 3).map((chip) => (
-                              <span
-                                key={`${trip.id}-${chip.label}`}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(chip.tone)}`}
-                              >
-                                {chip.label}
-                              </span>
-                            ))}
-                          </div>
-                          <p className="mt-3 text-sm text-slate-600">{execution.progressHint}</p>
-                          <p className="mt-3 text-sm font-medium text-slate-900">{execution.whatMattersNow}</p>
-                          <p className="mt-1 text-sm text-slate-600">
-                            Следующий шаг: <span className="font-medium text-slate-700">{execution.nextStep.title}</span>
-                          </p>
-                          {trip.updatedAt ? (
-                            <div className="mt-2 text-xs text-slate-500">Обновлено: {formatDate(trip.updatedAt)}</div>
-                          ) : null}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </article>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {execution.chips.slice(0, 3).map((chip) => (
+                                <span
+                                  key={`${trip.id}-${chip.label}`}
+                                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(chip.tone)}`}
+                                >
+                                  {chip.label}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="mt-3 text-sm text-slate-600">{execution.progressHint}</p>
+                            <p className="mt-3 text-sm font-medium text-slate-900">{execution.whatMattersNow}</p>
+                            <p className="mt-1 text-sm text-slate-600">
+                              Следующий шаг: <span className="font-medium text-slate-700">{execution.nextStep.title}</span>
+                            </p>
+                            {trip.updatedAt ? <div className="mt-2 text-xs text-slate-500">Обновлено: {formatDate(trip.updatedAt)}</div> : null}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </article>
+                </>
+              ) : null}
+
+              {activeTab === 'timeline' ? (
+                <>
+                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Таймлайн поездок</h2>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Здесь видны именно поездки как диапазоны во времени: где они пересекаются и где между ними есть окна.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                        {tripTimeline.ranges.length} {pluralizeRu(tripTimeline.ranges.length, 'поездка с датами', 'поездки с датами', 'поездок с датами')}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Пересечения</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.overlapCount}</div>
+                        <div className="mt-2 text-xs text-slate-500">Пары поездок, которые накладываются по времени.</div>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Окна</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.windowCount}</div>
+                        <div className="mt-2 text-xs text-slate-500">Промежутки между поездками, которые уже читаются во времени.</div>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Без дат</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.unscheduledTrips.length}</div>
+                        <div className="mt-2 text-xs text-slate-500">Эти поездки остаются в списке, пока их окно не уточнено.</div>
+                      </div>
+                    </div>
+
+                    {tripTimeline.ranges.length > 0 ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="text-xs text-slate-500">{tripTimeline.axisLabel}</div>
+                        <div className="grid grid-cols-4 gap-2 text-[11px] text-slate-500">
+                          {tripTimeline.axisMarkers.map((marker) => (
+                            <div key={marker}>{marker}</div>
+                          ))}
+                        </div>
+                        <div className="space-y-4">
+                          {tripTimeline.ranges.map((range) => (
+                            <div key={range.tripId} className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+                              <div>
+                                <Link href={range.tripHref} className="text-sm font-medium text-slate-900 hover:text-sky-700">
+                                  {range.tripTitle}
+                                </Link>
+                                <div className="mt-1 text-xs text-slate-500">{range.tripWindowLabel ?? 'Окно поездки ещё уточняется'}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(range.tone)}`}>
+                                    {range.lifecycleLabel}
+                                  </span>
+                                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                                    {range.statusLabel}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="relative rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                {tripTimeline.todayPercent !== null ? (
+                                  <div className="absolute inset-y-2 w-px bg-sky-300" style={{ left: `${tripTimeline.todayPercent}%` }} />
+                                ) : null}
+                                <div className="relative h-5 rounded-full bg-white">
+                                  <div
+                                    className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full ${
+                                      range.tone === 'amber'
+                                        ? 'bg-amber-300'
+                                        : range.tone === 'sky'
+                                          ? 'bg-sky-300'
+                                          : range.tone === 'emerald'
+                                            ? 'bg-emerald-300'
+                                            : 'bg-slate-300'
+                                    }`}
+                                    style={{
+                                      left: `${range.leftPercent}%`,
+                                      width: `${range.widthPercent}%`,
+                                    }}
+                                  />
+                                </div>
+                                {range.summary ? <p className="mt-3 text-sm text-slate-600">{range.summary}</p> : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                        Когда у поездок появятся даты, здесь будет видно, как они лежат во времени.
+                      </div>
+                    )}
+                  </article>
+
+                  {tripTimeline.unscheduledTrips.length > 0 ? (
+                    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h2 className="text-lg font-semibold text-slate-900">Поездки без окна</h2>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Они уже существуют как контейнеры, но пока не попадают в таймлайн диапазонов.
+                      </p>
+                      <div className="mt-5 space-y-3">
+                        {tripTimeline.unscheduledTrips.map((trip) => (
+                          <Link
+                            key={trip.id}
+                            href={`/space/organizer/trips/${encodeURIComponent(trip.id)}`}
+                            className="block rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-sky-50"
+                          >
+                            <div className="text-sm font-medium text-slate-900">{trip.title}</div>
+                            <div className="mt-1 text-xs text-slate-500">{trip.destinationLabel ?? 'Локация пока не уточнена'}</div>
+                          </Link>
+                        ))}
+                      </div>
+                    </article>
+                  ) : null}
+                </>
+              ) : null}
             </div>
 
             <div className="space-y-6">
@@ -490,16 +839,16 @@ export function OrganizerPageClient() {
               </article>
 
               <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Как работает Organizer</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Как устроен Organizer</h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-700">
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Здесь поездка превращается в понятный рабочий контекст: объекты, шаги и заметки собираются в одном месте.
+                    Список показывает поездки как контейнеры. Таймлайн показывает поездки во времени. Обзор показывает действия по всем поездкам сразу.
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     Saved остаётся источником сохранённого: {savedHint ?? 'доступность сохранённого уточняется.'}
                   </li>
                   <li className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    Добавление в поездку не создаёт второй saved-layer, а помогает превратить полезный пост в часть конкретной подготовки.
+                    Trip Detail остаётся главным рабочим экраном поездки. Portfolio-level вкладки не заменяют его, а помогают понять, к какой поездке лучше вернуться.
                   </li>
                 </ul>
               </article>

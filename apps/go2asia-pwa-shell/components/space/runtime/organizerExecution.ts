@@ -494,17 +494,30 @@ function buildDetailChips(trip: OrganizerTrip, metrics: DerivedMetrics): Organiz
 
 export function deriveExecutionFromSummary(trip: OrganizerTripSummary): OrganizerExecutionState {
   const metrics = metricsFromSummary(trip);
+  const lifecycle = deriveTripLifecycleState(trip);
+  const dateConfidence = deriveTripDateConfidenceState(trip);
 
   if (metrics.itemsCount === 0) {
     return {
       readinessLabel: 'Пора начать',
       readinessTone: 'amber',
       progressLabel: 'Пустой старт',
-      progressHint: 'Поездка только создана, поэтому сначала нужен первый опорный объект.',
-      whatMattersNow: 'Поездка ещё пустая, и сейчас важнее всего зафиксировать первую полезную опору.',
+      progressHint:
+        lifecycle.mode === 'post_trip'
+          ? 'Поездка уже завершилась, но у неё пока нет ни одной опоры, к которой можно вернуться позже.'
+          : lifecycle.mode === 'in_trip'
+            ? 'Поездка уже идёт, но ей всё ещё не хватает первой полезной опоры.'
+            : 'Поездка только создана, поэтому сначала нужен первый опорный объект.',
+      whatMattersNow:
+        lifecycle.mode === 'post_trip'
+          ? 'После поездки пока не на что опереться, чтобы сохранить практическую пользу.'
+          : 'Поездка ещё пустая, и сейчас важнее всего зафиксировать первую полезную опору.',
       nextStep: {
-        title: 'Добавить первый объект',
-        description: 'Добавьте место, бронь, слот или другой ориентир, вокруг которого удобно собирать остальной контекст.',
+        title: lifecycle.mode === 'post_trip' ? 'Зафиксировать полезную опору' : 'Добавить первый объект',
+        description:
+          lifecycle.mode === 'post_trip'
+            ? 'Сохраните объект или вывод, который стоит помнить об этой поездке потом.'
+            : 'Добавьте место, бронь, слот или другой ориентир, вокруг которого удобно собирать остальной контекст.',
         actionKey: 'add-item',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -515,12 +528,21 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
     return {
       readinessLabel: 'Есть шаги в работе',
       readinessTone: 'amber',
-      progressLabel: 'Поездка движется',
-      progressHint: 'Основа уже есть, теперь главное не потерять темп.',
-      whatMattersNow: `Открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}, и к одному из них лучше вернуться сейчас.`,
+      progressLabel: lifecycle.mode === 'in_trip' ? 'Сейчас в движении' : 'Поездка движется',
+      progressHint:
+        lifecycle.mode === 'in_trip'
+          ? 'Сейчас важнее быстро держать ближайший шаг и не потерять текущий ритм поездки.'
+          : 'Основа уже есть, теперь главное не потерять темп.',
+      whatMattersNow:
+        lifecycle.mode === 'in_trip'
+          ? `Поездка уже идёт, и в фокусе ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'текущее действие', 'текущих действия', 'текущих действий')}.`
+          : `Открыто ${metrics.pendingTaskCount} ${pluralizeRu(metrics.pendingTaskCount, 'действие', 'действия', 'действий')}, и к одному из них лучше вернуться сейчас.`,
       nextStep: {
         title: 'Вернуться к открытому шагу',
-        description: 'Откройте поездку и разберите ближайшее действие.',
+        description:
+          lifecycle.mode === 'in_trip'
+            ? 'Откройте поездку и сфокусируйтесь на ближайшем действии этого этапа.'
+            : 'Откройте поездку и разберите ближайшее действие.',
         actionKey: 'finish-task',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -531,12 +553,21 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
     return {
       readinessLabel: 'Нужен контекст',
       readinessTone: 'sky',
-      progressLabel: 'Появилась основа',
-      progressHint: 'У поездки уже есть структура, осталось зафиксировать короткий ориентир.',
-      whatMattersNow: 'Объекты уже собраны, но поездке всё ещё не хватает короткого личного контекста.',
+      progressLabel: lifecycle.mode === 'post_trip' ? 'Нужно сохранить пользу' : 'Появилась основа',
+      progressHint:
+        lifecycle.mode === 'post_trip'
+          ? 'Поездка уже закончилась, и сейчас полезно оставить хотя бы один вывод или заметку на будущее.'
+          : 'У поездки уже есть структура, осталось зафиксировать короткий ориентир.',
+      whatMattersNow:
+        lifecycle.mode === 'post_trip'
+          ? 'Поездке уже хватает структуры, но пока нет ни одной заметки о том, что стоит сохранить или повторить.'
+          : 'Объекты уже собраны, но поездке всё ещё не хватает короткого личного контекста.',
       nextStep: {
         title: 'Добавить заметку',
-        description: 'Коротко запишите, что важно не забыть и к чему вы готовитесь.',
+        description:
+          lifecycle.mode === 'post_trip'
+            ? 'Коротко запишите, что сработало и к чему стоит вернуться позже.'
+            : 'Коротко запишите, что важно не забыть и к чему вы готовитесь.',
         actionKey: 'add-note',
       },
       chips: buildSummaryChips(trip, metrics),
@@ -544,14 +575,34 @@ export function deriveExecutionFromSummary(trip: OrganizerTripSummary): Organize
   }
 
   return {
-    readinessLabel: 'Собрано уверенно',
-    readinessTone: 'emerald',
-    progressLabel: 'Рабочий контекст',
-    progressHint: 'Есть основа, контекст и понятный следующий ход.',
-    whatMattersNow: 'Поездка уже выглядит собранной и не требует срочного догоняющего шага.',
+    readinessLabel: lifecycle.mode === 'post_trip' ? 'Польза сохранена' : 'Собрано уверенно',
+    readinessTone: lifecycle.mode === 'post_trip' ? 'slate' : 'emerald',
+    progressLabel:
+      lifecycle.mode === 'in_trip'
+        ? 'Текущий контекст'
+        : lifecycle.mode === 'post_trip'
+          ? 'После поездки'
+          : 'Рабочий контекст',
+    progressHint:
+      lifecycle.mode === 'in_trip'
+        ? 'Есть опоры и понятный ритм. Можно спокойно держать фокус на текущем этапе поездки.'
+        : lifecycle.mode === 'post_trip'
+          ? 'Поездка уже завершилась, и теперь важно не потерять то, что стоит сохранить или повторить.'
+          : dateConfidence.tone !== 'emerald'
+            ? 'Есть рабочая база, но полная временная рамка всё ещё уточняется.'
+            : 'Есть основа, контекст и понятный следующий ход.',
+    whatMattersNow:
+      lifecycle.mode === 'post_trip'
+        ? 'Поездка уже завершилась и выглядит собранной: теперь полезно сохранить выводы и удачные опоры на будущее.'
+        : lifecycle.mode === 'in_trip'
+          ? 'Поездка уже в движении: есть на что опереться и можно спокойно держать фокус на ближайшем этапе.'
+          : 'Поездка уже выглядит собранной и не требует срочного догоняющего шага.',
     nextStep: {
-      title: 'Открыть и продолжить',
-      description: 'Проверьте, что ещё стоит уточнить или подтвердить.',
+      title: lifecycle.mode === 'post_trip' ? 'Сохранить полезный вывод' : 'Открыть и продолжить',
+      description:
+        lifecycle.mode === 'post_trip'
+          ? 'Проверьте, что стоит записать и использовать в будущей поездке.'
+          : 'Проверьте, что ещё стоит уточнить или подтвердить.',
       actionKey: 'review-trip',
     },
     chips: buildSummaryChips(trip, metrics),
