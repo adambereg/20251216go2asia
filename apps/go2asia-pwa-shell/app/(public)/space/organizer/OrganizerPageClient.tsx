@@ -169,8 +169,13 @@ export function OrganizerPageClient() {
     const newTrip: OrganizerTripSummary = {
       ...response.data.trip,
       itemCount: 0,
+      bookedItemCount: 0,
+      pinnedItemCount: 0,
+      linkedItemCount: 0,
       pendingTaskCount: 0,
+      firstPendingTaskTitle: null,
       noteCount: 0,
+      dayCount: 0,
     };
     setTrips((prev) => [newTrip, ...prev]);
     setState('ready');

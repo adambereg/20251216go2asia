@@ -3,6 +3,7 @@ import { readJsonObject } from '../middleware/http';
 import {
   createTrip,
   createTripItem,
+  createTripItemNote,
   createTripNote,
   createTripTask,
   getTripDetail,
@@ -63,6 +64,19 @@ export async function handleTripsRoute(
       principal,
       decodeURIComponent(itemDeleteMatch[1]),
       decodeURIComponent(itemDeleteMatch[2]),
+      body,
+      requestId
+    );
+  }
+
+  const itemNoteMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items\/([^/]+)\/notes$/);
+  if (itemNoteMatch && request.method === 'POST') {
+    const body = await readJsonObject(request);
+    return createTripItemNote(
+      env,
+      principal,
+      decodeURIComponent(itemNoteMatch[1]),
+      decodeURIComponent(itemNoteMatch[2]),
       body,
       requestId
     );

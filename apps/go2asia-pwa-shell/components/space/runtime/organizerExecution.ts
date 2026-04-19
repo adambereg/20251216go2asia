@@ -1,5 +1,6 @@
 import type {
   OrganizerTrip,
+  OrganizerTripDay,
   OrganizerTripDetailResponse,
   OrganizerTripItem,
   OrganizerTripStatus,
@@ -74,6 +75,9 @@ export type OrganizerDayAnchor = {
   weekdayLabel: string;
   dayIndex: number;
   isToday: boolean;
+  theme?: string | null;
+  focus?: string | null;
+  plannedHighlights?: string | null;
 };
 
 type DerivedMetrics = {
@@ -144,11 +148,11 @@ function metricsFromSummary(trip: OrganizerTripSummary): DerivedMetrics {
     pendingTaskCount: trip.pendingTaskCount,
     doneTaskCount: 0,
     noteCount: trip.noteCount,
-    plannedItemCount: 0,
-    bookedItemCount: 0,
+    plannedItemCount: Math.max(trip.itemCount - trip.bookedItemCount, 0),
+    bookedItemCount: trip.bookedItemCount,
     doneItemCount: 0,
-    sourceLinkedItemCount: 0,
-    firstPendingTaskTitle: null,
+    sourceLinkedItemCount: trip.linkedItemCount,
+    firstPendingTaskTitle: trip.firstPendingTaskTitle,
   };
 }
 
@@ -205,6 +209,9 @@ export function deriveTripLifecycleState(
   trip: OrganizerTrip,
   referenceDate: Date = new Date()
 ): OrganizerLifecycleState {
+  if (trip.lifecycleOverride) {
+    return buildBaseLifecycleState(trip.lifecycleOverride);
+  }
   const today = startOfDay(referenceDate);
   const start = parseTripDate(trip.startDate);
   const end = parseTripDate(trip.endDate);
@@ -222,6 +229,27 @@ export function deriveTripLifecycleState(
 }
 
 export function deriveTripDateConfidenceState(trip: OrganizerTrip): OrganizerDateConfidenceState {
+  if (trip.datesConfidence === 'confirmed') {
+    return {
+      label: 'Даты подтверждены',
+      hint: 'Окно поездки уже зафиксировано и на него можно уверенно опираться в деталях поездки.',
+      tone: 'emerald',
+    };
+  }
+  if (trip.datesConfidence === 'rough') {
+    return {
+      label: 'Даты примерные',
+      hint: 'Окно поездки уже намечено, но его ещё стоит уточнить перед следующими решениями.',
+      tone: 'amber',
+    };
+  }
+  if (trip.datesConfidence === 'none') {
+    return {
+      label: 'Даты ещё не заданы',
+      hint: 'Сначала поездке нужен смысл, контекст и первые опоры, а уже потом фиксированное окно.',
+      tone: 'slate',
+    };
+  }
   const hasStart = Boolean(parseTripDate(trip.startDate));
   const hasEnd = Boolean(parseTripDate(trip.endDate));
 
@@ -256,9 +284,34 @@ export function describeTripDuration(trip: OrganizerTrip): string | null {
 
 export function buildTripDayAnchors(
   trip: OrganizerTrip,
+  days: OrganizerTripDay[] = [],
   referenceDate: Date = new Date(),
   maxDays: number = 31
 ): OrganizerDayAnchor[] {
+  if (days.length > 0) {
+    const sortedDays = [...days].sort((left, right) => left.dayDate.localeCompare(right.dayDate));
+    const today = formatDayKey(startOfDay(referenceDate));
+    return sortedDays.slice(0, maxDays).map((day, index) => {
+      const parsed = parseTripDate(day.dayDate);
+      const fallback = new Date(day.dayDate);
+      const date = parsed ?? fallback;
+      return {
+        iso: day.dayDate,
+        label: capitalize(formatDayLabel(date)),
+        shortLabel: formatDayShort(date),
+        weekdayLabel: capitalize(
+          date.toLocaleDateString('ru-RU', {
+            weekday: 'short',
+          }).replace('.', '')
+        ),
+        dayIndex: index + 1,
+        isToday: day.dayDate === today,
+        theme: day.theme,
+        focus: day.focus,
+        plannedHighlights: day.plannedHighlights,
+      };
+    });
+  }
   const start = parseTripDate(trip.startDate);
   const end = parseTripDate(trip.endDate);
   if (!start || !end || end < start) return [];

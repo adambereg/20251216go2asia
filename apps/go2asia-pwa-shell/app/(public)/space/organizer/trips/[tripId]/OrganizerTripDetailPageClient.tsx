@@ -245,7 +245,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const tripDuration = useMemo(() => (detail ? describeTripDuration(detail.trip) : null), [detail]);
   const blockers = useMemo(() => (detail ? deriveTripBlockers(detail) : []), [detail]);
   const readinessChecks = useMemo(() => (detail ? deriveTripReadinessChecks(detail) : []), [detail]);
-  const dayAnchors = useMemo(() => (detail ? buildTripDayAnchors(detail.trip) : []), [detail]);
+  const dayAnchors = useMemo(() => (detail ? buildTripDayAnchors(detail.trip, detail.days) : []), [detail]);
   const suggestedDay = useMemo(
     () => (detail ? getSuggestedTripDayAnchor(detail.trip, dayAnchors) : null),
     [detail, dayAnchors]

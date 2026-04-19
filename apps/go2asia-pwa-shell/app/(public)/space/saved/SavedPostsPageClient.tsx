@@ -325,8 +325,13 @@ export function SavedPostsPageClient() {
         {
           ...tripResponse.data!.trip,
           itemCount: 1,
+          bookedItemCount: 0,
+          pinnedItemCount: 0,
+          linkedItemCount: 1,
           pendingTaskCount: 0,
+          firstPendingTaskTitle: null,
           noteCount: 0,
+          dayCount: 0,
         },
         ...prev,
       ]);
