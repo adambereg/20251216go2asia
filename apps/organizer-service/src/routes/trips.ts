@@ -6,6 +6,7 @@ import {
   createTripNote,
   createTripTask,
   getTripDetail,
+  patchTrip,
   patchTripItem,
   listTrips,
   patchTripTask,
@@ -38,6 +39,10 @@ export async function handleTripsRoute(
   const tripMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)$/);
   if (tripMatch && request.method === 'GET') {
     return getTripDetail(env, principal, decodeURIComponent(tripMatch[1]), requestId);
+  }
+  if (tripMatch && request.method === 'PATCH') {
+    const body = await readJsonObject(request);
+    return patchTrip(env, principal, decodeURIComponent(tripMatch[1]), body, requestId);
   }
 
   const itemMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items$/);

@@ -16,8 +16,8 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/posts` works as authored/public posts baseline.
 - `/space/saved` works as saved posts baseline with bounded add-to-trip / create-trip-from-saved intake for `space_post`.
 - `/space/activity` works as narrow activity baseline.
-- `/space/organizer` now works as a real Organizer home with corrected separation between Overview, List, and Timeline: Overview stays a concise action portfolio, while Timeline is a denser trip-time board with packed trip bars, calmer undated rail, and inline trip preview.
-- `/space/organizer/trips/[tripId]` now works as a bounded trip execution surface with a unified trip time block, lifecycle-aware guidance, calmer blockers/readiness signals, clearer next-step framing, and remove-from-trip semantics.
+- `/space/organizer` now works as a calmer, more canonical Organizer home: Overview acts as an action portfolio with an action-time layer, List reads as lifecycle-aware trip containers, and Timeline remains a stronger trip-time board with packed trip bars, calmer undated rail, and inline trip preview.
+- `/space/organizer/trips/[tripId]` now works as a bounded trip workspace with an editable unified trip time block, lifecycle-aware guidance, calmer blockers/readiness signals, lightweight day focus, clearer next-step framing, and remove-from-trip semantics.
 
 ## Architectural Alignment Already Reached
 
@@ -32,7 +32,7 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer remains bounded, but it is no longer shell-only: trip containers, a concise portfolio-level Overview, a stronger trip-range Timeline with more truthful timeline density, unified trip time framing, lifecycle-aware trip guidance, and a more confident minimal trip detail are now real.
+- Organizer remains bounded, but it now feels closer to the canonical product shape: lifecycle-aware trip containers, a stronger action-portfolio Overview, a denser trip-range Timeline, editable unified trip time framing, lightweight day focus, and a more mature trip workspace are now real.
 - Saved remains bounded to `space_post` only, even after the first saved-to-trip bridge.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.
@@ -54,5 +54,5 @@ Current state is a usable product baseline, not the full target Space v3.
 
 ## Recommended Next Direction
 
-Next likely direction is deeper trip-level maturity, richer portfolio derivation, or further dashboard enrichment.
+Next likely direction is richer day-aware trip maturity, more faithful organizer data enrichment, or further dashboard enrichment.
 This note does not open a new execution pass; it only fixes the current milestone status.

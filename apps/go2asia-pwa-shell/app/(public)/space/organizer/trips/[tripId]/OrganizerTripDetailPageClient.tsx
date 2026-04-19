@@ -12,6 +12,7 @@ import {
   fetchOrganizerTripDetail,
   type OrganizerTripDetailResponse,
   type OrganizerTripItemStatus,
+  updateOrganizerTrip,
   updateOrganizerTripItem,
   updateOrganizerTripTask,
 } from '@/components/space/runtime/organizerApi';
@@ -63,6 +64,13 @@ function formatSourceLabel(detail: OrganizerTripDetailResponse['items'][number])
     return 'Добавлено из сохранённых';
   }
   return `${detail.sourceModule} / ${detail.sourceEntityType}`;
+}
+
+function toDateInputValue(value: string | null): string {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toISOString().slice(0, 10);
 }
 
 function isSavedSourcedItem(detail: OrganizerTripDetailResponse['items'][number]): boolean {
@@ -159,9 +167,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const [itemStatus, setItemStatus] = useState<OrganizerTripItemStatus>('planned');
   const [taskTitle, setTaskTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
+  const [isEditingTripWindow, setIsEditingTripWindow] = useState(false);
+  const [tripStartInput, setTripStartInput] = useState('');
+  const [tripEndInput, setTripEndInput] = useState('');
   const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<
-    'item' | 'task' | 'note' | `toggle:${string}` | `remove:${string}` | `item-status:${string}` | null
+    'item' | 'task' | 'note' | 'trip-window' | `toggle:${string}` | `remove:${string}` | `item-status:${string}` | null
   >(null);
   const itemsRef = useRef<HTMLElement | null>(null);
   const tasksRef = useRef<HTMLElement | null>(null);
@@ -279,6 +290,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     });
   }, [dayAnchors, suggestedDay]);
 
+  useEffect(() => {
+    if (!detail) return;
+    setTripStartInput(toDateInputValue(detail.trip.startDate));
+    setTripEndInput(toDateInputValue(detail.trip.endDate));
+  }, [detail]);
+
   function focusSection(actionKey: OrganizerExecutionActionKey) {
     if (actionKey === 'add-item' || actionKey === 'review-items') {
       itemsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -293,6 +310,42 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       return;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleSaveTripWindow() {
+    if (!detail || pendingAction) return;
+    const nextStart = tripStartInput || null;
+    const nextEnd = tripEndInput || null;
+    if (nextStart && nextEnd && nextStart > nextEnd) {
+      setError('Дата начала не может быть позже даты завершения.');
+      return;
+    }
+
+    setPendingAction('trip-window');
+    const response = await updateOrganizerTrip(tripId, {
+      startDate: nextStart,
+      endDate: nextEnd,
+    });
+    setPendingAction(null);
+
+    if (!response.data?.trip) {
+      setError(response.error?.error?.message ?? 'Не удалось обновить окно поездки.');
+      return;
+    }
+
+    setDetail((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        trip: response.data!.trip,
+      };
+    });
+    setIsEditingTripWindow(false);
+    setError(null);
+    setFeedback({
+      tone: 'info',
+      message: nextStart || nextEnd ? 'Окно поездки обновлено.' : 'Окно поездки очищено. Его можно задать позже.',
+    });
   }
 
   async function handleCreateItem(event: FormEvent<HTMLFormElement>) {
@@ -539,20 +592,79 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         {lifecycle.hint} {dateConfidence.hint}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(lifecycle.tone)}`}>
-                        {lifecycle.label}
-                      </span>
-                      <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(dateConfidence.tone)}`}>
-                        {dateConfidence.label}
-                      </span>
-                      {tripDuration ? (
-                        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
-                          {tripDuration}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(lifecycle.tone)}`}>
+                          {lifecycle.label}
                         </span>
-                      ) : null}
+                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(dateConfidence.tone)}`}>
+                          {dateConfidence.label}
+                        </span>
+                        {tripDuration ? (
+                          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                            {tripDuration}
+                          </span>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTripStartInput(toDateInputValue(detail.trip.startDate));
+                          setTripEndInput(toDateInputValue(detail.trip.endDate));
+                          setIsEditingTripWindow((current) => !current);
+                        }}
+                        className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        {isEditingTripWindow ? 'Свернуть редактирование' : tripWindowLabel(detail.trip) ? 'Изменить даты' : 'Задать даты'}
+                      </button>
                     </div>
                   </div>
+
+                  {isEditingTripWindow ? (
+                    <div className="mt-4 rounded-xl border border-white/70 bg-white p-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="block">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Начало</span>
+                          <input
+                            type="date"
+                            value={tripStartInput}
+                            onChange={(event) => setTripStartInput(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Завершение</span>
+                          <input
+                            type="date"
+                            value={tripEndInput}
+                            onChange={(event) => setTripEndInput(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                          />
+                        </label>
+                      </div>
+                      <div className="mt-4 flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTripStartInput(toDateInputValue(detail.trip.startDate));
+                            setTripEndInput(toDateInputValue(detail.trip.endDate));
+                            setIsEditingTripWindow(false);
+                          }}
+                          className="inline-flex rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+                        >
+                          Отмена
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingAction !== null}
+                          onClick={() => void handleSaveTripWindow()}
+                          className="inline-flex rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          {pendingAction === 'trip-window' ? 'Сохраняем...' : 'Сохранить окно поездки'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-white/70 bg-white p-4">

@@ -15,6 +15,7 @@ import {
   type OrganizerTripItemStatus,
   type OrganizerTripStatus,
   type OrganizerTripTaskStatus,
+  updateTripByIdForUser,
   updateTripItemStatus,
   updateTripTaskStatus,
 } from '../db/queries/organizer';
@@ -54,6 +55,15 @@ type TripTaskUpdateInput = {
 
 type TripItemUpdateInput = {
   status: OrganizerTripItemStatus;
+};
+
+type TripUpdateInput = {
+  title?: string | null;
+  destinationLabel?: string | null;
+  summary?: string | null;
+  status?: OrganizerTripStatus;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 type TripNoteCreateInput = {
@@ -239,6 +249,72 @@ function parseTripItemUpdateInput(body: Record<string, unknown> | null): TripIte
   return { status: rawStatus };
 }
 
+function parseTripUpdateInput(body: Record<string, unknown> | null): TripUpdateInput | null {
+  if (!body) return null;
+  const next: TripUpdateInput = {};
+  let hasAnyField = false;
+
+  if ('title' in body) {
+    const title = trimString(body.title);
+    if (!title || title.length > 120) return null;
+    next.title = title;
+    hasAnyField = true;
+  }
+
+  if ('destinationLabel' in body) {
+    const destinationLabel = trimString(body.destinationLabel);
+    if (destinationLabel && destinationLabel.length > 120) return null;
+    next.destinationLabel = destinationLabel;
+    hasAnyField = true;
+  }
+
+  if ('summary' in body) {
+    const summary = trimString(body.summary);
+    if (summary && summary.length > 400) return null;
+    next.summary = summary;
+    hasAnyField = true;
+  }
+
+  if ('status' in body) {
+    const rawStatus = trimString(body.status);
+    if (rawStatus !== 'draft' && rawStatus !== 'active' && rawStatus !== 'completed' && rawStatus !== 'archived') {
+      return null;
+    }
+    next.status = rawStatus;
+    hasAnyField = true;
+  }
+
+  if ('startDate' in body) {
+    const rawStart = body.startDate;
+    if (rawStart === null) {
+      next.startDate = null;
+    } else {
+      const normalized = normalizeIsoDate(trimString(rawStart));
+      if (!normalized) return null;
+      next.startDate = normalized;
+    }
+    hasAnyField = true;
+  }
+
+  if ('endDate' in body) {
+    const rawEnd = body.endDate;
+    if (rawEnd === null) {
+      next.endDate = null;
+    } else {
+      const normalized = normalizeIsoDate(trimString(rawEnd));
+      if (!normalized) return null;
+      next.endDate = normalized;
+    }
+    hasAnyField = true;
+  }
+
+  const nextStart = next.startDate;
+  const nextEnd = next.endDate;
+  if (nextStart && nextEnd && nextStart > nextEnd) return null;
+
+  return hasAnyField ? next : null;
+}
+
 function parseTripNoteCreateInput(body: Record<string, unknown> | null): TripNoteCreateInput | null {
   if (!body) return null;
   const bodyText = trimString(body.body);
@@ -334,6 +410,53 @@ export async function getTripDetail(env: Env, principal: GatewayPrincipal, tripI
       whatMattersNow,
     },
   });
+}
+
+export async function patchTrip(
+  env: Env,
+  principal: GatewayPrincipal,
+  tripId: string,
+  body: Record<string, unknown> | null,
+  requestId: string
+): Promise<Response> {
+  const parsed = parseTripUpdateInput(body);
+  if (!parsed) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid trip update payload', requestId, 400);
+  }
+
+  const tripResult = await ensureTripOwned(env, principal, tripId, requestId);
+  if (!tripResult.ok) return tripResult.response;
+
+  const currentStart = tripResult.trip.start_date ? new Date(tripResult.trip.start_date).toISOString() : null;
+  const currentEnd = tripResult.trip.end_date ? new Date(tripResult.trip.end_date).toISOString() : null;
+  const nextStart = Object.prototype.hasOwnProperty.call(parsed, 'startDate') ? parsed.startDate ?? null : currentStart;
+  const nextEnd = Object.prototype.hasOwnProperty.call(parsed, 'endDate') ? parsed.endDate ?? null : currentEnd;
+  if (nextStart && nextEnd && nextStart > nextEnd) {
+    return errorResponse('VALIDATION_ERROR', 'Trip dates are out of order', requestId, 400);
+  }
+
+  const updated = await updateTripByIdForUser(tripResult.db, {
+    tripId,
+    userId: principal.userId,
+    hasTitle: Object.prototype.hasOwnProperty.call(parsed, 'title'),
+    title: parsed.title,
+    hasDestinationLabel: Object.prototype.hasOwnProperty.call(parsed, 'destinationLabel'),
+    destinationLabel: parsed.destinationLabel,
+    hasSummary: Object.prototype.hasOwnProperty.call(parsed, 'summary'),
+    summary: parsed.summary,
+    hasStatus: Object.prototype.hasOwnProperty.call(parsed, 'status'),
+    status: parsed.status,
+    hasStartDate: Object.prototype.hasOwnProperty.call(parsed, 'startDate'),
+    startDate: parsed.startDate,
+    hasEndDate: Object.prototype.hasOwnProperty.call(parsed, 'endDate'),
+    endDate: parsed.endDate,
+  });
+
+  if (!updated) {
+    return errorResponse('NOT_FOUND', 'Trip not found', requestId, 404);
+  }
+
+  return json({ trip: normalizeTripDetailRow(updated) });
 }
 
 export async function createTripItem(

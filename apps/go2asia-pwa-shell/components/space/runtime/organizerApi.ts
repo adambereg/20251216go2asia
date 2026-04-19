@@ -93,6 +93,15 @@ type CreateTripPayload = {
   endDate?: string | null;
 };
 
+type UpdateTripPayload = {
+  title?: string | null;
+  destinationLabel?: string | null;
+  summary?: string | null;
+  status?: OrganizerTripStatus;
+  startDate?: string | null;
+  endDate?: string | null;
+};
+
 type CreateItemPayload = {
   title: string;
   note?: string | null;
@@ -149,6 +158,13 @@ export function createOrganizerTrip(payload: CreateTripPayload) {
 
 export function fetchOrganizerTripDetail(tripId: string) {
   return safeRequest<OrganizerTripDetailResponse>({ method: 'GET' }, `/v1/organizer/trips/${encodeURIComponent(tripId)}`);
+}
+
+export function updateOrganizerTrip(tripId: string, payload: UpdateTripPayload) {
+  return safeRequest<{ trip: OrganizerTrip }>(
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}`
+  );
 }
 
 export function createOrganizerTripItem(tripId: string, payload: CreateItemPayload) {

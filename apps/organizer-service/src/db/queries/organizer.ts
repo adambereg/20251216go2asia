@@ -160,6 +160,60 @@ export async function insertTrip(
   return rowsOf<TripRow>(result)[0] ?? null;
 }
 
+export async function updateTripByIdForUser(
+  db: DbExecutor,
+  input: {
+    tripId: string;
+    userId: string;
+    hasTitle: boolean;
+    title?: string | null;
+    hasDestinationLabel: boolean;
+    destinationLabel?: string | null;
+    hasSummary: boolean;
+    summary?: string | null;
+    hasStatus: boolean;
+    status?: OrganizerTripStatus;
+    hasStartDate: boolean;
+    startDate?: string | null;
+    hasEndDate: boolean;
+    endDate?: string | null;
+  }
+): Promise<TripRow | null> {
+  const result = await db.execute(sql`
+    UPDATE organizer_trip
+    SET
+      title = CASE
+        WHEN ${input.hasTitle} THEN COALESCE(${input.title}, title)
+        ELSE title
+      END,
+      destination_label = CASE
+        WHEN ${input.hasDestinationLabel} THEN ${input.destinationLabel}
+        ELSE destination_label
+      END,
+      summary = CASE
+        WHEN ${input.hasSummary} THEN ${input.summary}
+        ELSE summary
+      END,
+      status = CASE
+        WHEN ${input.hasStatus} THEN COALESCE(${input.status}, status)
+        ELSE status
+      END,
+      start_date = CASE
+        WHEN ${input.hasStartDate} THEN ${input.startDate}
+        ELSE start_date
+      END,
+      end_date = CASE
+        WHEN ${input.hasEndDate} THEN ${input.endDate}
+        ELSE end_date
+      END,
+      updated_at = now()
+    WHERE id = ${input.tripId}
+      AND user_id = ${input.userId}
+    RETURNING id, user_id, title, destination_label, summary, status, start_date, end_date, created_at, updated_at
+  `);
+  return rowsOf<TripRow>(result)[0] ?? null;
+}
+
 export async function listTripItems(db: DbExecutor, tripId: string, userId: string): Promise<TripItemRow[]> {
   const result = await db.execute(sql`
     SELECT id, trip_id, user_id, title, note, source_module, source_entity_type, source_entity_id, status, created_at, updated_at
