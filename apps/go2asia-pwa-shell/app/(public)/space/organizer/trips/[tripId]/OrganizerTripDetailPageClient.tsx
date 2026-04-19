@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { SpaceLayout } from '@/components/space/Shared';
 import {
   createOrganizerTripItem,
+  createOrganizerTripItemNote,
   createOrganizerTripNote,
   createOrganizerTripTask,
   deleteOrganizerTripItem,
@@ -32,6 +33,11 @@ import {
   type OrganizerLifecycleState,
   type OrganizerExecutionTone,
 } from '@/components/space/runtime/organizerExecution';
+import {
+  buildTripDetailSnapshot,
+  getDayBucket,
+  getTripDayRecord,
+} from '@/components/space/runtime/organizerDetailSelectors';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
 
 type DetailState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error' | 'not-found';
@@ -164,15 +170,33 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   const [feedback, setFeedback] = useState<DetailFeedback | null>(null);
   const [itemTitle, setItemTitle] = useState('');
   const [itemNote, setItemNote] = useState('');
+  const [itemCategory, setItemCategory] = useState('');
+  const [itemDayDate, setItemDayDate] = useState('');
+  const [itemPinned, setItemPinned] = useState(false);
   const [itemStatus, setItemStatus] = useState<OrganizerTripItemStatus>('planned');
   const [taskTitle, setTaskTitle] = useState('');
+  const [taskDayDate, setTaskDayDate] = useState('');
+  const [taskWhyItMatters, setTaskWhyItMatters] = useState('');
   const [noteBody, setNoteBody] = useState('');
+  const [noteDayDate, setNoteDayDate] = useState('');
+  const [noteType, setNoteType] = useState('');
   const [isEditingTripWindow, setIsEditingTripWindow] = useState(false);
   const [tripStartInput, setTripStartInput] = useState('');
   const [tripEndInput, setTripEndInput] = useState('');
+  const [tripDatesConfidenceInput, setTripDatesConfidenceInput] = useState<'none' | 'rough' | 'confirmed' | ''>('');
+  const [tripLifecycleOverrideInput, setTripLifecycleOverrideInput] = useState<'preparation' | 'in_trip' | 'post_trip' | ''>('');
   const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
+  const [itemNoteDrafts, setItemNoteDrafts] = useState<Record<string, string>>({});
   const [pendingAction, setPendingAction] = useState<
-    'item' | 'task' | 'note' | 'trip-window' | `toggle:${string}` | `remove:${string}` | `item-status:${string}` | null
+    | 'item'
+    | 'task'
+    | 'note'
+    | 'trip-window'
+    | `toggle:${string}`
+    | `remove:${string}`
+    | `item-status:${string}`
+    | `item-note:${string}`
+    | null
   >(null);
   const itemsRef = useRef<HTMLElement | null>(null);
   const tasksRef = useRef<HTMLElement | null>(null);
@@ -238,8 +262,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
   }, [isLoaded, isSignedIn, tripId]);
 
   const execution = useMemo(() => (detail ? deriveExecutionFromDetail(detail) : null), [detail]);
-  const pendingTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'pending') ?? [], [detail]);
-  const completedTasks = useMemo(() => detail?.tasks.filter((task) => task.status === 'done') ?? [], [detail]);
+  const detailSnapshot = useMemo(() => (detail ? buildTripDetailSnapshot(detail) : null), [detail]);
+  const sortedItems = detailSnapshot?.sortedItems ?? [];
+  const sortedTasks = detailSnapshot?.sortedTasks ?? [];
+  const sortedNotes = detailSnapshot?.sortedNotes ?? [];
+  const itemNotesByItemId = detailSnapshot?.groupedItemNotes ?? {};
+  const pendingTasks = useMemo(() => sortedTasks.filter((task) => task.status === 'pending'), [sortedTasks]);
+  const completedTasks = useMemo(() => sortedTasks.filter((task) => task.status === 'done'), [sortedTasks]);
   const lifecycle = useMemo(() => (detail ? deriveTripLifecycleState(detail.trip) : null), [detail]);
   const dateConfidence = useMemo(() => (detail ? deriveTripDateConfidenceState(detail.trip) : null), [detail]);
   const tripDuration = useMemo(() => (detail ? describeTripDuration(detail.trip) : null), [detail]);
@@ -254,6 +283,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     () => dayAnchors.find((anchor) => anchor.iso === selectedDayIso) ?? suggestedDay ?? null,
     [dayAnchors, selectedDayIso, suggestedDay]
   );
+  const selectedDayRecord = useMemo(
+    () => (detail ? getTripDayRecord(detail.days, selectedDay?.iso ?? null) : null),
+    [detail, selectedDay]
+  );
+  const selectedDayItems = useMemo(() => getDayBucket(sortedItems, selectedDay?.iso ?? null), [selectedDay, sortedItems]);
+  const selectedDayTasks = useMemo(() => getDayBucket(sortedTasks, selectedDay?.iso ?? null), [selectedDay, sortedTasks]);
+  const selectedDayNotes = useMemo(() => getDayBucket(sortedNotes, selectedDay?.iso ?? null), [selectedDay, sortedNotes]);
   const visibleDayAnchors = useMemo(
     () => getVisibleDayAnchors(dayAnchors, selectedDay?.iso ?? selectedDayIso),
     [dayAnchors, selectedDay, selectedDayIso]
@@ -294,6 +330,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     if (!detail) return;
     setTripStartInput(toDateInputValue(detail.trip.startDate));
     setTripEndInput(toDateInputValue(detail.trip.endDate));
+    setTripDatesConfidenceInput(detail.trip.datesConfidence ?? '');
+    setTripLifecycleOverrideInput(detail.trip.lifecycleOverride ?? '');
   }, [detail]);
 
   function focusSection(actionKey: OrganizerExecutionActionKey) {
@@ -325,6 +363,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     const response = await updateOrganizerTrip(tripId, {
       startDate: nextStart,
       endDate: nextEnd,
+      datesConfidence: tripDatesConfidenceInput || null,
+      lifecycleOverride: tripLifecycleOverrideInput || null,
     });
     setPendingAction(null);
 
@@ -356,6 +396,9 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     const response = await createOrganizerTripItem(tripId, {
       title: itemTitle.trim(),
       note: itemNote.trim() || null,
+      category: itemCategory.trim() || null,
+      dayDate: itemDayDate || null,
+      pinned: itemPinned,
       status: itemStatus,
     });
     setPendingAction(null);
@@ -372,6 +415,9 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     });
     setItemTitle('');
     setItemNote('');
+    setItemCategory('');
+    setItemDayDate('');
+    setItemPinned(false);
     setItemStatus('planned');
     setError(null);
     setFeedback({ tone: 'success', message: 'Объект добавлен в поездку.' });
@@ -382,7 +428,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     if (!detail || taskTitle.trim().length === 0 || pendingAction) return;
 
     setPendingAction('task');
-    const response = await createOrganizerTripTask(tripId, { title: taskTitle.trim() });
+    const response = await createOrganizerTripTask(tripId, {
+      title: taskTitle.trim(),
+      dayDate: taskDayDate || null,
+      whyItMatters: taskWhyItMatters.trim() || null,
+      sortOrder: (sortedTasks[sortedTasks.length - 1]?.sortOrder ?? 0) + 10,
+    });
     setPendingAction(null);
 
     if (!response.data?.task) {
@@ -397,6 +448,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setTaskTitle('');
+    setTaskDayDate('');
+    setTaskWhyItMatters('');
     setError(null);
     setFeedback({ tone: 'success', message: 'Следующий шаг добавлен.' });
   }
@@ -480,7 +533,11 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
     if (!detail || noteBody.trim().length === 0 || pendingAction) return;
 
     setPendingAction('note');
-    const response = await createOrganizerTripNote(tripId, { body: noteBody.trim() });
+    const response = await createOrganizerTripNote(tripId, {
+      body: noteBody.trim(),
+      dayDate: noteDayDate || null,
+      noteType: noteType.trim() || null,
+    });
     setPendingAction(null);
 
     if (!response.data?.note) {
@@ -494,8 +551,37 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
       insight: detail.insight,
     });
     setNoteBody('');
+    setNoteDayDate('');
+    setNoteType('');
     setError(null);
     setFeedback({ tone: 'success', message: 'Заметка добавлена. Контекст поездки стал полнее.' });
+  }
+
+  async function handleCreateItemNote(itemId: string) {
+    const draft = itemNoteDrafts[itemId]?.trim();
+    if (!detail || !draft || pendingAction) return;
+
+    setPendingAction(`item-note:${itemId}`);
+    const currentNotes = itemNotesByItemId[itemId] ?? [];
+    const response = await createOrganizerTripItemNote(tripId, itemId, {
+      body: draft,
+      sortOrder: (currentNotes[currentNotes.length - 1]?.sortOrder ?? 0) + 10,
+    });
+    setPendingAction(null);
+
+    if (!response.data?.itemNote) {
+      setError(response.error?.error?.message ?? 'Не удалось добавить заметку к объекту.');
+      return;
+    }
+
+    setDetail({
+      ...detail,
+      itemNotes: [...detail.itemNotes, response.data.itemNote],
+      insight: detail.insight,
+    });
+    setItemNoteDrafts((current) => ({ ...current, [itemId]: '' }));
+    setError(null);
+    setFeedback({ tone: 'success', message: 'К объекту добавлена отдельная заметка.' });
   }
 
   const savedSourcedCount = useMemo(
@@ -611,6 +697,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         onClick={() => {
                           setTripStartInput(toDateInputValue(detail.trip.startDate));
                           setTripEndInput(toDateInputValue(detail.trip.endDate));
+                          setTripDatesConfidenceInput(detail.trip.datesConfidence ?? '');
+                          setTripLifecycleOverrideInput(detail.trip.lifecycleOverride ?? '');
                           setIsEditingTripWindow((current) => !current);
                         }}
                         className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
@@ -622,7 +710,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
 
                   {isEditingTripWindow ? (
                     <div className="mt-4 rounded-xl border border-white/70 bg-white p-4">
-                      <div className="grid gap-3 md:grid-cols-2">
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <label className="block">
                           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Начало</span>
                           <input
@@ -641,6 +729,32 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
                           />
                         </label>
+                        <label className="block">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Уверенность в датах</span>
+                          <select
+                            value={tripDatesConfidenceInput}
+                            onChange={(event) => setTripDatesConfidenceInput(event.target.value as typeof tripDatesConfidenceInput)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                          >
+                            <option value="">Без явной оценки</option>
+                            <option value="none">Даты не заданы</option>
+                            <option value="rough">Даты примерные</option>
+                            <option value="confirmed">Даты подтверждены</option>
+                          </select>
+                        </label>
+                        <label className="block">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Lifecycle override</span>
+                          <select
+                            value={tripLifecycleOverrideInput}
+                            onChange={(event) => setTripLifecycleOverrideInput(event.target.value as typeof tripLifecycleOverrideInput)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                          >
+                            <option value="">Авто по датам</option>
+                            <option value="preparation">Подготовка</option>
+                            <option value="in_trip">В поездке</option>
+                            <option value="post_trip">После поездки</option>
+                          </select>
+                        </label>
                       </div>
                       <div className="mt-4 flex flex-wrap justify-end gap-2">
                         <button
@@ -648,6 +762,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                           onClick={() => {
                             setTripStartInput(toDateInputValue(detail.trip.startDate));
                             setTripEndInput(toDateInputValue(detail.trip.endDate));
+                            setTripDatesConfidenceInput(detail.trip.datesConfidence ?? '');
+                            setTripLifecycleOverrideInput(detail.trip.lifecycleOverride ?? '');
                             setIsEditingTripWindow(false);
                           }}
                           className="inline-flex rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
@@ -715,6 +831,29 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         </span>
                       ) : null}
                     </div>
+                    {selectedDayRecord ? (
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Тема дня</div>
+                          <div className="mt-2 text-sm font-medium text-slate-900">{selectedDayRecord.theme ?? 'Пока без темы'}</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Главный фокус</div>
+                          <div className="mt-2 text-sm font-medium text-slate-900">{selectedDayRecord.focus ?? 'Пока без фокуса'}</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Что уже привязано</div>
+                          <div className="mt-2 text-sm font-medium text-slate-900">
+                            {selectedDayItems.length} объектов · {selectedDayTasks.length} шагов · {selectedDayNotes.length} заметок
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                    {selectedDayRecord?.plannedHighlights ? (
+                      <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm text-slate-700">
+                        {selectedDayRecord.plannedHighlights}
+                      </div>
+                    ) : null}
                     {visibleDayAnchors.length > 0 ? (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {visibleDayAnchors.map((anchor) => {
@@ -733,6 +872,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                               <div className="font-medium">{anchor.weekdayLabel}</div>
                               <div className="mt-0.5">{anchor.shortLabel}</div>
                               <div className="mt-1 text-[11px] opacity-80">День {anchor.dayIndex}</div>
+                              {anchor.focus ? <div className="mt-1 max-w-[140px] truncate text-[11px] opacity-80">{anchor.focus}</div> : null}
                             </button>
                           );
                         })}
@@ -813,17 +953,18 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Объекты</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.items.length}</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{sortedItems.length}</div>
+                  <div className="mt-2 text-xs text-slate-500">{detailSnapshot?.pinnedItems.length ?? 0} закреплено</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Открытые шаги</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">
-                    {detail.tasks.filter((task) => task.status === 'pending').length}
-                  </div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{pendingTasks.length}</div>
+                  <div className="mt-2 text-xs text-slate-500">{detailSnapshot?.dayBoundTasks.length ?? 0} привязано к дню</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Заметки</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{detail.notes.length}</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{sortedNotes.length}</div>
+                  <div className="mt-2 text-xs text-slate-500">{detail.itemNotes.length} заметок к объектам</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Фаза поездки</div>
@@ -875,6 +1016,69 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               </article>
             ) : null}
 
+            {selectedDay ? (
+              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Контент выбранного дня</div>
+                    <div className="mt-2 text-base font-semibold text-slate-900">{selectedDay.label}</div>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Здесь видно, что уже честно привязано к дню внутри поездки: объекты, шаги и заметки.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                    {selectedDayItems.length} объектов · {selectedDayTasks.length} шагов · {selectedDayNotes.length} заметок
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Объекты дня</div>
+                    <div className="mt-3 space-y-2">
+                      {selectedDayItems.length > 0 ? (
+                        selectedDayItems.map((item) => (
+                          <div key={item.id} className="text-sm text-slate-700">
+                            <span className="font-medium text-slate-900">{item.title}</span>
+                            {item.category ? <span className="text-slate-500"> · {item.category}</span> : null}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-slate-500">Пока ничего не привязано.</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Шаги дня</div>
+                    <div className="mt-3 space-y-2">
+                      {selectedDayTasks.length > 0 ? (
+                        selectedDayTasks.map((task) => (
+                          <div key={task.id} className="text-sm text-slate-700">
+                            <span className="font-medium text-slate-900">{task.title}</span>
+                            {task.whyItMatters ? <div className="mt-1 text-xs text-slate-500">{task.whyItMatters}</div> : null}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-slate-500">Пока без шагов на этот день.</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Заметки дня</div>
+                    <div className="mt-3 space-y-2">
+                      {selectedDayNotes.length > 0 ? (
+                        selectedDayNotes.map((note) => (
+                          <div key={note.id} className="text-sm text-slate-700">
+                            {note.body}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-slate-500">Пока без заметок на этот день.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ) : null}
+
             <div className="grid gap-6 xl:grid-cols-3">
               <article ref={itemsRef} className={sectionClasses(primarySection === 'items')}>
                 <h3 className="text-lg font-semibold text-slate-900">Объекты поездки</h3>
@@ -896,6 +1100,26 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     placeholder="Короткая пометка"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
                   />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Категория</span>
+                      <input
+                        value={itemCategory}
+                        onChange={(event) => setItemCategory(event.target.value)}
+                        placeholder="Например, stay / food / area"
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">День поездки</span>
+                      <input
+                        type="date"
+                        value={itemDayDate}
+                        onChange={(event) => setItemDayDate(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                      />
+                    </label>
+                  </div>
                   <label className="block">
                     <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Статус</span>
                     <select
@@ -908,6 +1132,15 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                       <option value="done">Готово</option>
                     </select>
                   </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={itemPinned}
+                      onChange={(event) => setItemPinned(event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-400"
+                    />
+                    Закрепить как полезную опору для поездки
+                  </label>
                   <button
                     type="submit"
                     disabled={pendingAction !== null || itemTitle.trim().length === 0}
@@ -917,12 +1150,12 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   </button>
                 </form>
                 <div className="mt-5 space-y-3">
-                  {detail.items.length === 0 ? (
+                  {sortedItems.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
                       Пока пусто. Начните с 1-2 реальных элементов поездки.
                     </div>
                   ) : (
-                    detail.items.map((item) => (
+                    sortedItems.map((item) => (
                       <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -952,6 +1185,21 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         </div>
                         {item.note ? <p className="mt-2 text-sm text-slate-600">{item.note}</p> : null}
                         <div className="mt-3 flex flex-wrap gap-2">
+                          {item.category ? (
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                              {item.category}
+                            </span>
+                          ) : null}
+                          {item.dayDate ? (
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                              {item.dayDate}
+                            </span>
+                          ) : null}
+                          {item.pinned ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800">
+                              Закреплено
+                            </span>
+                          ) : null}
                           {isSavedSourcedItem(item) ? (
                             <>
                               <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
@@ -977,6 +1225,42 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                             </span>
                           ) : null}
                         </div>
+                        <div className="mt-4 rounded-xl border border-white/80 bg-white p-4">
+                          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Заметки к объекту</div>
+                          <div className="mt-3 space-y-2">
+                            {(itemNotesByItemId[item.id] ?? []).length > 0 ? (
+                              (itemNotesByItemId[item.id] ?? []).map((itemNote) => (
+                                <div key={itemNote.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                                  {itemNote.body}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-sm text-slate-500">Пока без отдельных заметок к этому объекту.</div>
+                            )}
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            <textarea
+                              value={itemNoteDrafts[item.id] ?? ''}
+                              onChange={(event) =>
+                                setItemNoteDrafts((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                              rows={2}
+                              placeholder="Что важно помнить именно по этому объекту"
+                              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
+                            />
+                            <button
+                              type="button"
+                              disabled={pendingAction !== null || !(itemNoteDrafts[item.id] ?? '').trim()}
+                              onClick={() => void handleCreateItemNote(item.id)}
+                              className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {pendingAction === `item-note:${item.id}` ? 'Сохраняем...' : 'Добавить заметку к объекту'}
+                            </button>
+                          </div>
+                        </div>
                         {isSavedSourcedItem(item) ? (
                           <p className="mt-3 text-xs text-slate-500">
                             Если убрать этот объект из поездки, он всё равно останется в «Сохранённых». Это отдельные
@@ -1001,6 +1285,22 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     placeholder="Например, забронировать отель"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
                   />
+                  <textarea
+                    value={taskWhyItMatters}
+                    onChange={(event) => setTaskWhyItMatters(event.target.value)}
+                    rows={2}
+                    placeholder="Почему этот шаг важен именно сейчас"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
+                  />
+                  <label className="block">
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Привязать к дню</span>
+                    <input
+                      type="date"
+                      value={taskDayDate}
+                      onChange={(event) => setTaskDayDate(event.target.value)}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                    />
+                  </label>
                   <button
                     type="submit"
                     disabled={pendingAction !== null || taskTitle.trim().length === 0}
@@ -1010,7 +1310,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   </button>
                 </form>
                 <div className="mt-5 space-y-3">
-                  {detail.tasks.length === 0 ? (
+                  {sortedTasks.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
                       Пока нет задач. Добавьте следующий практический шаг.
                     </div>
@@ -1034,6 +1334,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                                       ) : null}
                                     </div>
                                     <div className="mt-1 text-xs text-slate-500">{formatTripTaskStatusLabel(task.status)}</div>
+                                    {task.dayDate ? <div className="mt-1 text-xs text-slate-500">День: {task.dayDate}</div> : null}
+                                    {task.whyItMatters ? <div className="mt-2 text-sm text-slate-600">{task.whyItMatters}</div> : null}
                                   </div>
                                   <button
                                     type="button"
@@ -1063,6 +1365,8 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                                     <div className="mt-1 text-xs text-slate-500">
                                       {task.completedAt ? `Завершено: ${formatDate(task.completedAt)}` : 'Задача закрыта'}
                                     </div>
+                                    {task.dayDate ? <div className="mt-1 text-xs text-slate-500">День: {task.dayDate}</div> : null}
+                                    {task.whyItMatters ? <div className="mt-2 text-sm text-slate-600">{task.whyItMatters}</div> : null}
                                   </div>
                                   <button
                                     type="button"
@@ -1096,6 +1400,26 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     placeholder="Что важно не забыть по этой поездке"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
                   />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">День поездки</span>
+                      <input
+                        type="date"
+                        value={noteDayDate}
+                        onChange={(event) => setNoteDayDate(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-sky-300"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Тип заметки</span>
+                      <input
+                        value={noteType}
+                        onChange={(event) => setNoteType(event.target.value)}
+                        placeholder="Например, reminder / recap"
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300"
+                      />
+                    </label>
+                  </div>
                   <button
                     type="submit"
                     disabled={pendingAction !== null || noteBody.trim().length === 0}
@@ -1105,14 +1429,26 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   </button>
                 </form>
                 <div className="mt-5 space-y-3">
-                  {detail.notes.length === 0 ? (
+                  {sortedNotes.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
                       Пока нет заметок. Добавьте хотя бы один контекстный ориентир для поездки.
                     </div>
                   ) : (
-                    detail.notes.map((note) => (
+                    sortedNotes.map((note) => (
                       <div key={note.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <p className="text-sm text-slate-700">{note.body}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {note.dayDate ? (
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                              {note.dayDate}
+                            </span>
+                          ) : null}
+                          {note.noteType ? (
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                              {note.noteType}
+                            </span>
+                          ) : null}
+                        </div>
                         {note.createdAt ? <div className="mt-2 text-xs text-slate-500">{formatDate(note.createdAt)}</div> : null}
                       </div>
                     ))

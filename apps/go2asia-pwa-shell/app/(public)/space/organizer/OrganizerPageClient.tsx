@@ -8,7 +8,9 @@ import { Calendar, Eye, LayoutList, Plus, X } from 'lucide-react';
 import { SpaceLayout } from '@/components/space/Shared';
 import {
   createOrganizerTrip,
+  fetchOrganizerTripDetail,
   fetchOrganizerTrips,
+  type OrganizerTripDetailResponse,
   type OrganizerTripSummary,
 } from '@/components/space/runtime/organizerApi';
 import { OrganizerHomeListSurface } from '@/components/space/runtime/OrganizerHomeListSurface';
@@ -70,6 +72,7 @@ export function OrganizerPageClient() {
   const saved = useSpaceSavedReactions(isLoaded && isSignedIn);
   const [state, setState] = useState<OrganizerHomeState>('idle');
   const [trips, setTrips] = useState<OrganizerTripSummary[]>([]);
+  const [tripDetailsById, setTripDetailsById] = useState<Record<string, OrganizerTripDetailResponse>>({});
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [destinationLabel, setDestinationLabel] = useState('');
@@ -132,6 +135,40 @@ export function OrganizerPageClient() {
     };
   }, [isLoaded, isSignedIn]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTripDetails() {
+      if (state !== 'ready' || trips.length === 0) {
+        setTripDetailsById({});
+        return;
+      }
+
+      const responses = await Promise.all(
+        trips.map(async (trip) => {
+          const response = await fetchOrganizerTripDetail(trip.id);
+          return response.data ? ([trip.id, response.data] as const) : null;
+        })
+      );
+
+      if (cancelled) return;
+
+      setTripDetailsById(
+        responses.reduce<Record<string, OrganizerTripDetailResponse>>((acc, entry) => {
+          if (!entry) return acc;
+          const [tripId, detail] = entry;
+          acc[tripId] = detail;
+          return acc;
+        }, {})
+      );
+    }
+
+    void loadTripDetails();
+    return () => {
+      cancelled = true;
+    };
+  }, [state, trips]);
+
   const savedHint = useMemo(() => {
     if (saved.state !== 'ready') return null;
     if (saved.savedCount > 0) {
@@ -140,7 +177,7 @@ export function OrganizerPageClient() {
     return 'Сохранённое пока пусто. Это нормально: поездку можно начать и без заранее собранного списка.';
   }, [saved.savedCount, saved.state]);
 
-  const portfolioActions = useMemo(() => derivePortfolioActions(trips), [trips]);
+  const portfolioActions = useMemo(() => derivePortfolioActions(trips, tripDetailsById), [tripDetailsById, trips]);
   const portfolioGroups = useMemo(() => buildPortfolioGroups(portfolioActions), [portfolioActions]);
   const focusAction = portfolioActions[0] ?? null;
 
@@ -269,11 +306,14 @@ export function OrganizerPageClient() {
               />
             ) : null}
 
-            {activeTab === 'list' ? <OrganizerHomeListSurface trips={trips} onCreateClick={() => setCreateOpen(true)} /> : null}
+            {activeTab === 'list' ? (
+              <OrganizerHomeListSurface trips={trips} tripDetailsById={tripDetailsById} onCreateClick={() => setCreateOpen(true)} />
+            ) : null}
 
             {activeTab === 'timeline' ? (
               <OrganizerTimelineSurface
                 trips={trips}
+                tripDetailsById={tripDetailsById}
                 scale={timelineScale}
                 onScaleChange={setTimelineScale}
                 scaleOptions={timelineScaleOptions}

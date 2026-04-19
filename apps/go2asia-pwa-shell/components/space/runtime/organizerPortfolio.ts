@@ -1,4 +1,4 @@
-import type { OrganizerTripSummary } from './organizerApi';
+import type { OrganizerTripDetailResponse, OrganizerTripSummary } from './organizerApi';
 import {
   deriveExecutionFromSummary,
   deriveTripDateConfidenceState,
@@ -8,6 +8,7 @@ import {
   type OrganizerExecutionTone,
   type OrganizerLifecycleMode,
 } from './organizerExecution';
+import { buildTripDetailSnapshot } from './organizerDetailSelectors';
 
 export type OrganizerOverviewScale = 'day' | 'week' | 'month';
 export type OrganizerTimelineScale = 'week' | 'month';
@@ -34,6 +35,8 @@ export type OrganizerPortfolioAction = {
   tone: OrganizerExecutionTone;
   anchorDateKey: string | null;
 };
+
+export type OrganizerTripDetailsById = Record<string, OrganizerTripDetailResponse | undefined>;
 
 export type OrganizerPortfolioGroup = {
   id: OrganizerPortfolioHorizon;
@@ -232,12 +235,55 @@ function buildWhyNow(trip: OrganizerTripSummary, referenceDate: Date = new Date(
   return execution.progressHint;
 }
 
+function buildDetailAwareDescription(
+  trip: OrganizerTripSummary,
+  detail: OrganizerTripDetailResponse | undefined
+): string {
+  if (!detail) {
+    return deriveExecutionFromSummary(trip).nextStep.description;
+  }
+
+  const snapshot = buildTripDetailSnapshot(detail);
+  if (snapshot.nextPendingTask?.whyItMatters) {
+    return snapshot.nextPendingTask.whyItMatters;
+  }
+  if (snapshot.upcomingDay?.focus) {
+    return snapshot.upcomingDay.focus;
+  }
+  return deriveExecutionFromSummary(trip).nextStep.description;
+}
+
 function buildAttentionLabel(trip: OrganizerTripSummary, referenceDate: Date = new Date()): string | null {
   const execution = deriveExecutionFromSummary(trip);
   const dateConfidence = deriveTripDateConfidenceState(trip);
   if (dateConfidence.tone !== 'emerald') return dateConfidence.label;
   if (execution.readinessTone !== 'emerald') return execution.readinessLabel;
   return null;
+}
+
+function buildDetailAwareAttentionLabel(
+  trip: OrganizerTripSummary,
+  detail: OrganizerTripDetailResponse | undefined,
+  referenceDate: Date = new Date()
+): string | null {
+  if (detail) {
+    const snapshot = buildTripDetailSnapshot(detail);
+    const parts: string[] = [];
+    if (snapshot.pinnedItems.length > 0) {
+      parts.push(`${snapshot.pinnedItems.length} закреплено`);
+    }
+    if (snapshot.dayBoundTasks.length > 0) {
+      parts.push(`${snapshot.dayBoundTasks.length} шага по дням`);
+    }
+    if (detail.days.length > 0) {
+      parts.push(`${detail.days.length} дней в слое поездки`);
+    }
+    if (snapshot.topCategories.length > 0) {
+      parts.push(snapshot.topCategories.join(' · '));
+    }
+    if (parts.length > 0) return parts.join(' · ');
+  }
+  return buildAttentionLabel(trip, referenceDate);
 }
 
 function buildAnchorDate(trip: OrganizerTripSummary, referenceDate: Date = new Date()): string | null {
@@ -257,8 +303,60 @@ function buildAnchorDate(trip: OrganizerTripSummary, referenceDate: Date = new D
   return formatDayKey(today);
 }
 
+function buildDetailAwareAnchorDate(
+  trip: OrganizerTripSummary,
+  detail: OrganizerTripDetailResponse | undefined,
+  referenceDate: Date = new Date()
+): string | null {
+  if (detail) {
+    const snapshot = buildTripDetailSnapshot(detail);
+    if (snapshot.nextPendingTask?.dayDate) return snapshot.nextPendingTask.dayDate;
+    if (snapshot.upcomingDay?.dayDate) return snapshot.upcomingDay.dayDate;
+    const nearestDayBoundItem = snapshot.dayBoundItems[0];
+    if (nearestDayBoundItem?.dayDate) return nearestDayBoundItem.dayDate;
+  }
+  return buildAnchorDate(trip, referenceDate);
+}
+
+function buildDetailAwareTitle(trip: OrganizerTripSummary, detail: OrganizerTripDetailResponse | undefined): string {
+  if (!detail) {
+    return deriveExecutionFromSummary(trip).nextStep.title;
+  }
+  const snapshot = buildTripDetailSnapshot(detail);
+  if (snapshot.nextPendingTask?.title) return snapshot.nextPendingTask.title;
+  return deriveExecutionFromSummary(trip).nextStep.title;
+}
+
+function buildDetailAwareWhyNow(
+  trip: OrganizerTripSummary,
+  detail: OrganizerTripDetailResponse | undefined,
+  referenceDate: Date = new Date()
+): string {
+  if (detail) {
+    const snapshot = buildTripDetailSnapshot(detail);
+    if (snapshot.nextPendingTask?.dayDate) {
+      const dayLabel = formatTripWindowLabel({
+        ...trip,
+        startDate: snapshot.nextPendingTask.dayDate,
+        endDate: snapshot.nextPendingTask.dayDate,
+      });
+      return dayLabel
+        ? `Ближайший рабочий шаг уже привязан к дню: ${dayLabel.toLowerCase()}.`
+        : buildWhyNow(trip, referenceDate);
+    }
+    if (snapshot.upcomingDay?.theme || snapshot.upcomingDay?.focus) {
+      const context = snapshot.upcomingDay.focus ?? snapshot.upcomingDay.theme;
+      if (context) {
+        return `У поездки уже есть дневной фокус: ${context.charAt(0).toLowerCase()}${context.slice(1)}.`;
+      }
+    }
+  }
+  return buildWhyNow(trip, referenceDate);
+}
+
 export function derivePortfolioActions(
   trips: OrganizerTripSummary[],
+  tripDetailsById: OrganizerTripDetailsById = {},
   referenceDate: Date = new Date()
 ): OrganizerPortfolioAction[] {
   const horizonOrder: OrganizerPortfolioHorizon[] = ['now', 'this_week', 'soon', 'later', 'post_trip'];
@@ -268,14 +366,15 @@ export function derivePortfolioActions(
       const execution = deriveExecutionFromSummary(trip);
       const lifecycle = deriveTripLifecycleState(trip, referenceDate);
       const horizon = derivePortfolioHorizon(trip, referenceDate);
+      const detail = tripDetailsById[trip.id];
       return {
         id: `action:${trip.id}`,
         tripId: trip.id,
         tripTitle: trip.title,
         tripHref: `/space/organizer/trips/${encodeURIComponent(trip.id)}`,
-        title: execution.nextStep.title,
-        description: execution.nextStep.description,
-        whyNow: buildWhyNow(trip, referenceDate),
+        title: buildDetailAwareTitle(trip, detail),
+        description: buildDetailAwareDescription(trip, detail),
+        whyNow: buildDetailAwareWhyNow(trip, detail, referenceDate),
         ctaLabel: getPrimaryCtaLabel(execution.nextStep.actionKey),
         actionKey: execution.nextStep.actionKey,
         lifecycleLabel: lifecycle.label,
@@ -283,11 +382,11 @@ export function derivePortfolioActions(
         statusLabel: formatTripStatusLabel(trip.status),
         tripWindowLabel: formatTripWindowLabel(trip),
         timingLabel: buildTimingLabel(trip, horizon, referenceDate),
-        attentionLabel: buildAttentionLabel(trip, referenceDate),
+        attentionLabel: buildDetailAwareAttentionLabel(trip, detail, referenceDate),
         horizon,
         horizonLabel: getHorizonLabel(horizon),
         tone: getPortfolioTone(horizon, execution.readinessTone),
-        anchorDateKey: buildAnchorDate(trip, referenceDate),
+        anchorDateKey: buildDetailAwareAnchorDate(trip, detail, referenceDate),
       };
     })
     .sort((left, right) => {

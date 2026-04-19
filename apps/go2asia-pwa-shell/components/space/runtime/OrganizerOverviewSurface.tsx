@@ -87,7 +87,8 @@ export function OrganizerOverviewSurface({
             </div>
 
             <h2 className="mt-4 text-2xl font-semibold leading-tight text-slate-900">{focusAction.title}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">{focusAction.whyNow}</p>
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-800">{focusAction.description}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{focusAction.whyNow}</p>
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Связано с поездкой</div>
@@ -96,11 +97,12 @@ export function OrganizerOverviewSurface({
                 {focusAction.tripWindowLabel ? <span>{focusAction.tripWindowLabel}</span> : null}
                 <span>{focusAction.lifecycleLabel}</span>
                 <span>{focusAction.statusLabel}</span>
+                {focusAction.attentionLabel ? <span>{focusAction.attentionLabel}</span> : null}
               </div>
             </div>
 
             <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm leading-relaxed text-slate-700">
-              <span className="font-medium">Почему сейчас.</span> {focusAction.description}
+              <span className="font-medium">Почему сейчас.</span> {focusAction.whyNow}
               {focusAction.attentionLabel ? <span className="text-slate-500"> {focusAction.attentionLabel}.</span> : null}
             </div>
 
@@ -161,10 +163,12 @@ export function OrganizerOverviewSurface({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[14px] font-medium leading-snug text-slate-900">{action.title}</span>
+                      <span className="mt-1 block text-sm leading-relaxed text-slate-700">{action.description}</span>
                       <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                         <span>{action.tripTitle}</span>
                         <span>{action.lifecycleLabel}</span>
                         <span>{action.timingLabel}</span>
+                        {action.attentionLabel ? <span>{action.attentionLabel}</span> : null}
                       </span>
                     </span>
                     <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />

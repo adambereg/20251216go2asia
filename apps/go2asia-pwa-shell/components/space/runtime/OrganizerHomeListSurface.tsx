@@ -2,12 +2,20 @@
 
 import Link from 'next/link';
 import { ArrowRight, Plus, Sparkles } from 'lucide-react';
-import type { OrganizerTripSummary } from './organizerApi';
-import { deriveExecutionFromSummary, deriveTripLifecycleState, formatTripStatusLabel, type OrganizerExecutionTone } from './organizerExecution';
+import type { OrganizerTripDetailResponse, OrganizerTripSummary } from './organizerApi';
+import {
+  deriveExecutionFromSummary,
+  deriveTripDateConfidenceState,
+  deriveTripLifecycleState,
+  formatTripStatusLabel,
+  type OrganizerExecutionTone,
+} from './organizerExecution';
 import { formatTripWindowLabel } from './organizerPortfolio';
+import { buildTripDetailSnapshot } from './organizerDetailSelectors';
 
 type OrganizerHomeListSurfaceProps = {
   trips: OrganizerTripSummary[];
+  tripDetailsById: Record<string, OrganizerTripDetailResponse>;
   onCreateClick: () => void;
 };
 
@@ -75,7 +83,7 @@ function getFocusHeroCopy(entry: TripEntry) {
   };
 }
 
-export function OrganizerHomeListSurface({ trips, onCreateClick }: OrganizerHomeListSurfaceProps) {
+export function OrganizerHomeListSurface({ trips, tripDetailsById, onCreateClick }: OrganizerHomeListSurfaceProps) {
   const entries = trips.map((trip) => ({
     trip,
     execution: deriveExecutionFromSummary(trip),
@@ -110,23 +118,50 @@ export function OrganizerHomeListSurface({ trips, onCreateClick }: OrganizerHome
 
   return (
     <div className="space-y-8">
-      {focusTrip ? <FocusTripCard entry={focusTrip} /> : null}
+      {focusTrip ? <FocusTripCard entry={focusTrip} detail={tripDetailsById[focusTrip.trip.id]} /> : null}
 
-      <LifecycleSection title="Сейчас в поездке" subtitle="Что важно прямо сейчас" entries={groups.inTrip} />
+      <LifecycleSection
+        title="Сейчас в поездке"
+        subtitle="Что важно прямо сейчас"
+        entries={groups.inTrip}
+        tripDetailsById={tripDetailsById}
+      />
       <LifecycleSection
         title="В подготовке"
         subtitle="Собираем, уточняем и закрываем хрупкие места"
         entries={groups.preparation}
+        tripDetailsById={tripDetailsById}
         onCreateClick={onCreateClick}
       />
-      <LifecycleSection title="После поездки" subtitle="Что сохранить и на что опереться дальше" entries={groups.postTrip} />
+      <LifecycleSection
+        title="После поездки"
+        subtitle="Что сохранить и на что опереться дальше"
+        entries={groups.postTrip}
+        tripDetailsById={tripDetailsById}
+      />
     </div>
   );
 }
 
-function FocusTripCard({ entry }: { entry: TripEntry }) {
+function buildTripMeta(entry: TripEntry, detail: OrganizerTripDetailResponse | undefined): string[] {
+  const confidence = deriveTripDateConfidenceState(entry.trip);
+  const parts = [confidence.label];
+  if (entry.trip.dayCount > 0) parts.push(`${entry.trip.dayCount} дн. слоя`);
+  if (entry.trip.pinnedItemCount > 0) parts.push(`${entry.trip.pinnedItemCount} закреплено`);
+  if (entry.trip.bookedItemCount > 0) parts.push(`${entry.trip.bookedItemCount} подтверждено`);
+  if (detail) {
+    const snapshot = buildTripDetailSnapshot(detail);
+    if (snapshot.topCategories.length > 0) {
+      parts.push(snapshot.topCategories.join(' · '));
+    }
+  }
+  return parts;
+}
+
+function FocusTripCard({ entry, detail }: { entry: TripEntry; detail: OrganizerTripDetailResponse | undefined }) {
   const copy = getFocusHeroCopy(entry);
   const windowLabel = formatTripWindowLabel(entry.trip);
+  const meta = buildTripMeta(entry, detail);
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -148,10 +183,15 @@ function FocusTripCard({ entry }: { entry: TripEntry }) {
             <span>{entry.trip.destinationLabel ?? 'Локация пока не уточнена'}</span>
             {windowLabel ? <span>· {windowLabel}</span> : null}
           </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+            {meta.map((part) => (
+              <span key={part}>{part}</span>
+            ))}
+          </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <InfoBlock label={copy.focusLabel} value={entry.execution.whatMattersNow} />
-            <InfoBlock label={copy.nextLabel} value={entry.execution.nextStep.title} accent />
+            <InfoBlock label={copy.nextLabel} value={entry.trip.firstPendingTaskTitle ?? entry.execution.nextStep.title} accent />
           </div>
 
           <div className={`mt-5 rounded-xl border px-4 py-3 text-sm leading-relaxed ${toneClasses(entry.execution.readinessTone)}`}>{copy.banner}</div>
@@ -181,8 +221,10 @@ function FocusTripCard({ entry }: { entry: TripEntry }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Stat label="Объектов" value={entry.trip.itemCount} />
+            <Stat label="Подтверждено" value={entry.trip.bookedItemCount} />
             <Stat label="Открытых шагов" value={entry.trip.pendingTaskCount} />
+            <Stat label="Закреплено" value={entry.trip.pinnedItemCount} />
+            <Stat label="Дней в слое" value={entry.trip.dayCount} />
           </div>
         </aside>
       </div>
@@ -194,11 +236,13 @@ function LifecycleSection({
   title,
   subtitle,
   entries,
+  tripDetailsById,
   onCreateClick,
 }: {
   title: string;
   subtitle: string;
   entries: TripEntry[];
+  tripDetailsById: Record<string, OrganizerTripDetailResponse>;
   onCreateClick?: () => void;
 }) {
   if (entries.length === 0 && !onCreateClick) return null;
@@ -212,7 +256,7 @@ function LifecycleSection({
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {entries.map((entry) => (
-          <TripCard key={entry.trip.id} entry={entry} />
+          <TripCard key={entry.trip.id} entry={entry} detail={tripDetailsById[entry.trip.id]} />
         ))}
         {onCreateClick ? <AddTripCard onClick={onCreateClick} /> : null}
       </div>
@@ -220,8 +264,10 @@ function LifecycleSection({
   );
 }
 
-function TripCard({ entry }: { entry: TripEntry }) {
+function TripCard({ entry, detail }: { entry: TripEntry; detail: OrganizerTripDetailResponse | undefined }) {
   const windowLabel = formatTripWindowLabel(entry.trip);
+  const confidence = deriveTripDateConfidenceState(entry.trip);
+  const snapshot = detail ? buildTripDetailSnapshot(detail) : null;
 
   return (
     <Link
@@ -244,10 +290,18 @@ function TripCard({ entry }: { entry: TripEntry }) {
 
       <div className="line-clamp-2 min-h-[40px] text-sm leading-relaxed text-slate-600">{entry.execution.whatMattersNow}</div>
 
-      <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-500">
-        <span>{entry.trip.itemCount} объектов</span>
-        <span>{entry.trip.pendingTaskCount} шагов</span>
-        <span>{entry.trip.noteCount} заметок</span>
+      <div className="mt-4 space-y-2">
+        <div className="flex flex-wrap gap-2 text-[11px] text-slate-500">
+          <span>{confidence.label}</span>
+          {entry.trip.dayCount > 0 ? <span>{entry.trip.dayCount} дн. слоя</span> : null}
+          {entry.trip.pinnedItemCount > 0 ? <span>{entry.trip.pinnedItemCount} закреплено</span> : null}
+        </div>
+        <div className="text-sm text-slate-700">
+          {entry.trip.firstPendingTaskTitle ?? snapshot?.nextPendingTask?.title ?? 'Следующий шаг появится здесь, когда поездка получит рабочий ритм.'}
+        </div>
+        {snapshot?.topCategories.length ? (
+          <div className="text-xs text-slate-500">Опоры: {snapshot.topCategories.join(' · ')}</div>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">

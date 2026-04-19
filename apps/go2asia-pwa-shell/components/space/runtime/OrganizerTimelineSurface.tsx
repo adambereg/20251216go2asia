@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import type { OrganizerTripSummary } from './organizerApi';
+import type { OrganizerTripDetailResponse, OrganizerTripSummary } from './organizerApi';
 import {
   deriveExecutionFromSummary,
+  deriveTripDateConfidenceState,
   deriveTripLifecycleState,
   formatTripStatusLabel,
   type OrganizerExecutionTone,
 } from './organizerExecution';
 import { formatTripWindowLabel, type OrganizerTimelineScale } from './organizerPortfolio';
+import { buildTripDetailSnapshot } from './organizerDetailSelectors';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTH_WIDTH = 148;
@@ -61,6 +63,7 @@ type TimelineLayout = {
 
 type OrganizerTimelineSurfaceProps = {
   trips: OrganizerTripSummary[];
+  tripDetailsById: Record<string, OrganizerTripDetailResponse>;
   scale: OrganizerTimelineScale;
   onScaleChange: (scale: OrganizerTimelineScale) => void;
   scaleOptions: TimelineScaleOption[];
@@ -297,6 +300,7 @@ function buildWeekLayout(trips: TimelineTripRecord[], referenceDate: Date): Time
 
 export function OrganizerTimelineSurface({
   trips,
+  tripDetailsById,
   scale,
   onScaleChange,
   scaleOptions,
@@ -465,7 +469,7 @@ export function OrganizerTimelineSurface({
           </article>
         </div>
 
-        <TimelineSelectionPreview trip={selectedTrip} />
+        <TimelineSelectionPreview trip={selectedTrip} detail={selectedTrip ? tripDetailsById[selectedTrip.id] : undefined} />
       </div>
     </div>
   );
@@ -486,6 +490,7 @@ function TimelineBar({
 }) {
   const execution = deriveExecutionFromSummary(placed.trip);
   const lifecycle = deriveTripLifecycleState(placed.trip);
+  const confidence = deriveTripDateConfidenceState(placed.trip);
   const minWidth = 52;
 
   return (
@@ -496,12 +501,13 @@ function TimelineBar({
       onClick={onSelect}
       className={`absolute overflow-hidden rounded-xl border px-3 py-2 text-left shadow-sm transition ${toneBarClasses(
         execution.readinessTone
-      )} ${isActive ? 'ring-2 ring-sky-400 z-10' : 'hover:ring-1 hover:ring-slate-300'}`}
+      )} ${isActive ? 'z-10 ring-2 ring-sky-400 shadow-md' : 'hover:ring-1 hover:ring-slate-300'}`}
       style={{
         left: placed.left + 4,
         width: Math.max(minWidth, placed.width - 8),
         top,
         height: LANE_HEIGHT - 8,
+        borderStyle: confidence.tone === 'emerald' ? 'solid' : 'dashed',
       }}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -513,11 +519,18 @@ function TimelineBar({
         </div>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${toneClasses(lifecycle.tone)}`}>{lifecycle.label}</span>
       </div>
+      <div className="mt-1 text-[10px] text-slate-500">{confidence.label}</div>
     </button>
   );
 }
 
-function TimelineSelectionPreview({ trip }: { trip: OrganizerTripSummary | null }) {
+function TimelineSelectionPreview({
+  trip,
+  detail,
+}: {
+  trip: OrganizerTripSummary | null;
+  detail: OrganizerTripDetailResponse | undefined;
+}) {
   if (!trip) {
     return (
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -531,7 +544,9 @@ function TimelineSelectionPreview({ trip }: { trip: OrganizerTripSummary | null 
 
   const execution = deriveExecutionFromSummary(trip);
   const lifecycle = deriveTripLifecycleState(trip);
+  const confidence = deriveTripDateConfidenceState(trip);
   const windowLabel = formatTripWindowLabel(trip);
+  const snapshot = detail ? buildTripDetailSnapshot(detail) : null;
 
   return (
     <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -546,6 +561,7 @@ function TimelineSelectionPreview({ trip }: { trip: OrganizerTripSummary | null 
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
         <span>{windowLabel ?? 'Даты ещё не заданы'}</span>
         <span>{formatTripStatusLabel(trip.status)}</span>
+        <span>{confidence.label}</span>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -558,11 +574,36 @@ function TimelineSelectionPreview({ trip }: { trip: OrganizerTripSummary | null 
       </div>
 
       <p className="mt-4 text-sm text-slate-700">{execution.whatMattersNow}</p>
+      {snapshot?.upcomingDay ? (
+        <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50/70 p-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Ближайший день поездки</div>
+          <div className="mt-2 text-sm font-medium text-slate-900">{snapshot.upcomingDay.focus ?? snapshot.upcomingDay.theme ?? snapshot.upcomingDay.dayDate}</div>
+          {snapshot.upcomingDay.plannedHighlights ? (
+            <p className="mt-1 text-sm text-slate-600">{snapshot.upcomingDay.plannedHighlights}</p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
-        <div className="mt-2 text-sm font-medium text-slate-900">{execution.nextStep.title}</div>
-        <p className="mt-1 text-sm text-slate-600">{execution.nextStep.description}</p>
+        <div className="mt-2 text-sm font-medium text-slate-900">{snapshot?.nextPendingTask?.title ?? execution.nextStep.title}</div>
+        <p className="mt-1 text-sm text-slate-600">{snapshot?.nextPendingTask?.whyItMatters ?? execution.nextStep.description}</p>
       </div>
+      {snapshot ? (
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[11px] text-slate-500">Закреплено</div>
+            <div className="mt-1 text-base font-semibold text-slate-900">{snapshot.pinnedItems.length}</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[11px] text-slate-500">Дней</div>
+            <div className="mt-1 text-base font-semibold text-slate-900">{detail?.days.length ?? 0}</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[11px] text-slate-500">По дням</div>
+            <div className="mt-1 text-base font-semibold text-slate-900">{snapshot.dayBoundTasks.length}</div>
+          </div>
+        </div>
+      ) : null}
 
       <Link
         href={`/space/organizer/trips/${encodeURIComponent(trip.id)}`}
