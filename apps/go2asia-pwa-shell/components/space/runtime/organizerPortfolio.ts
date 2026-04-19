@@ -10,6 +10,7 @@ import {
 } from './organizerExecution';
 
 export type OrganizerOverviewScale = 'day' | 'week' | 'month';
+export type OrganizerTimelineScale = 'week' | 'month';
 export type OrganizerPortfolioHorizon = 'now' | 'this_week' | 'soon' | 'later' | 'post_trip';
 
 export type OrganizerPortfolioAction = {
@@ -66,14 +67,31 @@ export type OrganizerTripTimelineRange = {
   widthPercent: number;
 };
 
+export type OrganizerTripTimelineCell = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  monthLabel: string;
+  isToday: boolean;
+};
+
+export type OrganizerTripTimelineMonthGroup = {
+  key: string;
+  label: string;
+  span: number;
+};
+
 export type OrganizerTripTimeline = {
-  axisLabel: string;
-  axisMarkers: string[];
+  scale: OrganizerTimelineScale;
+  boardStartLabel: string;
+  boardEndLabel: string;
+  cells: OrganizerTripTimelineCell[];
+  monthGroups: OrganizerTripTimelineMonthGroup[];
   ranges: OrganizerTripTimelineRange[];
   unscheduledTrips: OrganizerTripSummary[];
   overlapCount: number;
   windowCount: number;
-  todayPercent: number | null;
+  cellWidth: number;
 };
 
 function startOfDay(date: Date): Date {
@@ -111,6 +129,12 @@ function formatWeekday(date: Date): string {
   return date
     .toLocaleDateString('ru-RU', { weekday: 'short' })
     .replace('.', '')
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
+function formatMonthLabel(date: Date): string {
+  return date
+    .toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
     .replace(/^./, (value) => value.toUpperCase());
 }
 
@@ -401,7 +425,42 @@ export function buildActionTimeline(
   return { scale, slots: buildWeekScaleSlots(actions, referenceDate) };
 }
 
-export function deriveTripTimeline(trips: OrganizerTripSummary[], referenceDate: Date = new Date()): OrganizerTripTimeline {
+function buildTimelineCells(start: Date, end: Date): OrganizerTripTimelineCell[] {
+  const totalDays = Math.max(1, diffCalendarDays(start, end) + 1);
+  return Array.from({ length: totalDays }, (_, index) => {
+    const date = addCalendarDays(start, index);
+    return {
+      key: formatDayKey(date),
+      label: formatWeekday(date),
+      shortLabel: formatShortDate(date),
+      monthLabel: formatMonthLabel(date),
+      isToday: formatDayKey(date) === formatDayKey(new Date()),
+    };
+  });
+}
+
+function buildMonthGroups(cells: OrganizerTripTimelineCell[]): OrganizerTripTimelineMonthGroup[] {
+  const groups: OrganizerTripTimelineMonthGroup[] = [];
+  cells.forEach((cell) => {
+    const previous = groups[groups.length - 1];
+    if (previous && previous.label === cell.monthLabel) {
+      previous.span += 1;
+      return;
+    }
+    groups.push({
+      key: `${cell.monthLabel}-${groups.length}`,
+      label: cell.monthLabel,
+      span: 1,
+    });
+  });
+  return groups;
+}
+
+export function deriveTripTimeline(
+  trips: OrganizerTripSummary[],
+  scale: OrganizerTimelineScale = 'week',
+  referenceDate: Date = new Date()
+): OrganizerTripTimeline {
   const scheduledTrips = trips
     .map((trip) => ({
       trip,
@@ -424,21 +483,25 @@ export function deriveTripTimeline(trips: OrganizerTripSummary[], referenceDate:
 
   if (normalizedTrips.length === 0) {
     return {
-      axisLabel: 'Пока нет поездок с датами',
-      axisMarkers: [],
+      scale,
+      boardStartLabel: 'Пока нет поездок с датами',
+      boardEndLabel: '',
+      cells: [],
+      monthGroups: [],
       ranges: [],
       unscheduledTrips,
       overlapCount: 0,
       windowCount: 0,
-      todayPercent: null,
+      cellWidth: scale === 'week' ? 52 : 34,
     };
   }
 
   const sorted = [...normalizedTrips].sort((left, right) => left.start.getTime() - right.start.getTime());
   const minStart = sorted[0]?.start ?? startOfDay(referenceDate);
   const maxEnd = sorted[sorted.length - 1]?.end ?? addCalendarDays(minStart, 30);
-  const paddedStart = addCalendarDays(minStart, -7);
-  const paddedEnd = addCalendarDays(maxEnd, 7);
+  const paddingDays = scale === 'week' ? 4 : 8;
+  const paddedStart = addCalendarDays(minStart, -paddingDays);
+  const paddedEnd = addCalendarDays(maxEnd, paddingDays);
   const totalDays = Math.max(1, diffCalendarDays(paddedStart, paddedEnd) + 1);
 
   let overlapCount = 0;
@@ -455,10 +518,13 @@ export function deriveTripTimeline(trips: OrganizerTripSummary[], referenceDate:
     }
   }
 
+  const cells = buildTimelineCells(paddedStart, paddedEnd);
+  const monthGroups = buildMonthGroups(cells);
+
   const ranges = sorted.map(({ trip, start, end }) => {
     const lifecycle = deriveTripLifecycleState(trip, referenceDate);
-    const leftPercent = (diffCalendarDays(paddedStart, start) / totalDays) * 100;
-    const widthPercent = (Math.max(1, diffCalendarDays(start, end) + 1) / totalDays) * 100;
+    const startIndex = diffCalendarDays(paddedStart, start);
+    const span = Math.max(1, diffCalendarDays(start, end) + 1);
     return {
       tripId: trip.id,
       tripTitle: trip.title,
@@ -468,27 +534,21 @@ export function deriveTripTimeline(trips: OrganizerTripSummary[], referenceDate:
       statusLabel: formatTripStatusLabel(trip.status),
       summary: trip.summary,
       tone: deriveExecutionFromSummary(trip).readinessTone,
-      leftPercent: Math.max(0, leftPercent),
-      widthPercent: Math.max(10, widthPercent),
+      leftPercent: Math.max(0, (startIndex / totalDays) * 100),
+      widthPercent: Math.max((span / totalDays) * 100, (1 / totalDays) * 100),
     };
   });
 
-  const axisMarkers = [0, 0.33, 0.66, 1].map((point) => {
-    const markerDate = addCalendarDays(paddedStart, Math.round(totalDays * point));
-    return formatShortDate(markerDate);
-  });
-
-  const today = startOfDay(referenceDate);
-  const todayPercent =
-    today >= paddedStart && today <= paddedEnd ? (diffCalendarDays(paddedStart, today) / totalDays) * 100 : null;
-
   return {
-    axisLabel: `${formatShortDate(paddedStart)} - ${formatShortDate(paddedEnd)}`,
-    axisMarkers,
+    scale,
+    boardStartLabel: formatShortDate(paddedStart),
+    boardEndLabel: formatShortDate(paddedEnd),
+    cells,
+    monthGroups,
     ranges,
     unscheduledTrips,
     overlapCount,
     windowCount,
-    todayPercent,
+    cellWidth: scale === 'week' ? 52 : 34,
   };
 }

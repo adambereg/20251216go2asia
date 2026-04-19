@@ -16,7 +16,7 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 - `/space/posts` works as authored/public posts baseline.
 - `/space/saved` works as saved posts baseline with bounded add-to-trip / create-trip-from-saved intake for `space_post`.
 - `/space/activity` works as narrow activity baseline.
-- `/space/organizer` now works as a real Organizer home with truthful separation between Overview, List, and Timeline, plus a derived action-portfolio layer across trips.
+- `/space/organizer` now works as a real Organizer home with corrected separation between Overview, List, and Timeline: Overview stays a concise action portfolio, while Timeline is a denser trip-time board.
 - `/space/organizer/trips/[tripId]` now works as a bounded trip execution surface with a unified trip time block, lifecycle-aware guidance, calmer blockers/readiness signals, clearer next-step framing, and remove-from-trip semantics.
 
 ## Architectural Alignment Already Reached
@@ -32,7 +32,7 @@ It is a status fixation artifact, not a new roadmap and not a new execution wave
 ## Thin By Design (Intentional)
 
 - Dashboard is not the full Dashboard v3 composition yet.
-- Organizer remains bounded, but it is no longer shell-only: trip containers, a portfolio-level Overview, a trip-range Timeline, unified trip time framing, lifecycle-aware trip guidance, and a more confident minimal trip detail are now real.
+- Organizer remains bounded, but it is no longer shell-only: trip containers, a concise portfolio-level Overview, a stronger trip-range Timeline, unified trip time framing, lifecycle-aware trip guidance, and a more confident minimal trip detail are now real.
 - Saved remains bounded to `space_post` only, even after the first saved-to-trip bridge.
 - Activity remains a narrow baseline.
 - Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.

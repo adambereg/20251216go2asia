@@ -16,13 +16,12 @@ import {
   type OrganizerExecutionTone,
 } from '@/components/space/runtime/organizerExecution';
 import {
-  buildActionTimeline,
   buildPortfolioGroups,
   derivePortfolioActions,
   deriveTripTimeline,
   formatTripWindowLabel,
-  type OrganizerOverviewScale,
   type OrganizerPortfolioAction,
+  type OrganizerTimelineScale,
 } from '@/components/space/runtime/organizerPortfolio';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import { formatDate, getErrorStatus, isServiceUnavailableStatus } from '@/components/space/runtime/utils';
@@ -35,6 +34,13 @@ function toneClasses(tone: OrganizerExecutionTone): string {
   if (tone === 'sky') return 'border-sky-200 bg-sky-50 text-sky-900';
   if (tone === 'emerald') return 'border-emerald-200 bg-emerald-50 text-emerald-900';
   return 'border-slate-200 bg-slate-50 text-slate-800';
+}
+
+function toneBarClasses(tone: OrganizerExecutionTone): string {
+  if (tone === 'amber') return 'border-amber-300 bg-amber-100 text-amber-900';
+  if (tone === 'sky') return 'border-sky-300 bg-sky-100 text-sky-900';
+  if (tone === 'emerald') return 'border-emerald-300 bg-emerald-100 text-emerald-900';
+  return 'border-slate-300 bg-slate-100 text-slate-900';
 }
 
 function pluralizeRu(count: number, one: string, few: string, many: string): string {
@@ -66,8 +72,7 @@ const tabMeta: Record<
   },
 };
 
-const overviewScaleOptions: Array<{ id: OrganizerOverviewScale; label: string }> = [
-  { id: 'day', label: 'День' },
+const timelineScaleOptions: Array<{ id: OrganizerTimelineScale; label: string }> = [
   { id: 'week', label: 'Неделя' },
   { id: 'month', label: 'Месяц' },
 ];
@@ -91,7 +96,7 @@ export function OrganizerPageClient() {
   const [summary, setSummary] = useState('');
   const [createPending, setCreatePending] = useState(false);
   const [activeTab, setActiveTab] = useState<OrganizerHomeTab>('overview');
-  const [overviewScale, setOverviewScale] = useState<OrganizerOverviewScale>('week');
+  const [timelineScale, setTimelineScale] = useState<OrganizerTimelineScale>('month');
 
   useEffect(() => {
     let cancelled = false;
@@ -198,11 +203,15 @@ export function OrganizerPageClient() {
   const portfolioActions = useMemo(() => derivePortfolioActions(trips), [trips]);
   const portfolioGroups = useMemo(() => buildPortfolioGroups(portfolioActions), [portfolioActions]);
   const focusAction = portfolioActions[0] ?? null;
-  const actionTimeline = useMemo(
-    () => buildActionTimeline(portfolioActions, overviewScale),
-    [overviewScale, portfolioActions]
+  const tripTimeline = useMemo(() => deriveTripTimeline(trips, timelineScale), [timelineScale, trips]);
+  const tripTimelineBoardWidth = useMemo(
+    () => Math.max(tripTimeline.cells.length * tripTimeline.cellWidth, 640),
+    [tripTimeline.cellWidth, tripTimeline.cells.length]
   );
-  const tripTimeline = useMemo(() => deriveTripTimeline(trips), [trips]);
+  const tripTimelineTodayIndex = useMemo(
+    () => tripTimeline.cells.findIndex((cell) => cell.isToday),
+    [tripTimeline.cells]
+  );
 
   async function handleCreateTrip(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -398,7 +407,7 @@ export function OrganizerPageClient() {
                       <div>
                         <h2 className="text-lg font-semibold text-slate-900">Действия по поездкам</h2>
                         <p className="mt-2 text-sm text-slate-600">
-                          Один action portfolio по всем поездкам сразу: что важно сейчас, что на этой неделе, а что можно держать позже.
+                          Короткий action portfolio по всем поездкам сразу. Здесь важны следующий шаг, контекст и срок, но не отдельный большой timeline-экран.
                         </p>
                       </div>
                       {portfolioActions.length > 0 ? (
@@ -421,7 +430,7 @@ export function OrganizerPageClient() {
                                 {group.actions.length} {pluralizeRu(group.actions.length, 'действие', 'действия', 'действий')}
                               </span>
                             </div>
-                            <div className="space-y-3">
+                            <div className="grid gap-3 xl:grid-cols-2">
                               {group.actions.map((action) => (
                                 <div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -439,7 +448,6 @@ export function OrganizerPageClient() {
                                     </div>
                                   </div>
                                   <p className="mt-3 text-sm text-slate-700">{action.whyNow}</p>
-                                  <p className="mt-1 text-sm text-slate-600">{action.description}</p>
                                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                                     {action.tripWindowLabel ? <span>{action.tripWindowLabel}</span> : null}
                                     <span>{action.statusLabel}</span>
@@ -462,69 +470,6 @@ export function OrganizerPageClient() {
                     ) : (
                       <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
                         Пока нет поездок, поэтому action portfolio ещё не собран.
-                      </div>
-                    )}
-                  </article>
-
-                  <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-semibold text-slate-900">Таймлайн действий</h2>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Это timeline именно действий и attention points. Таймлайн поездок остаётся отдельной вкладкой.
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {overviewScaleOptions.map((option) => (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => setOverviewScale(option.id)}
-                            className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                              option.id === overviewScale
-                                ? 'border-sky-300 bg-sky-50 text-sky-900'
-                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {actionTimeline.slots.length > 0 && portfolioActions.length > 0 ? (
-                      <div className="mt-6 overflow-x-auto pb-2">
-                        <div className="grid min-w-max auto-cols-[minmax(180px,1fr)] grid-flow-col gap-3">
-                          {actionTimeline.slots.map((slot) => (
-                            <section key={slot.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                              <div className="text-sm font-medium text-slate-900">{slot.label}</div>
-                              <div className="mt-1 text-xs text-slate-500">{slot.caption}</div>
-                              <div className="mt-4 space-y-2">
-                                {slot.actions.length > 0 ? (
-                                  slot.actions.map((action) => (
-                                    <Link
-                                      key={`${slot.id}-${action.id}`}
-                                      href={action.tripHref}
-                                      className="block rounded-lg border border-white bg-white p-3 text-sm text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
-                                    >
-                                      <div className="font-medium text-slate-900">{action.title}</div>
-                                      <div className="mt-1 text-xs text-slate-500">{action.tripTitle}</div>
-                                      <div className="mt-2 text-xs text-slate-500">{action.horizonLabel}</div>
-                                    </Link>
-                                  ))
-                                ) : (
-                                  <div className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">
-                                    Здесь пока спокойно.
-                                  </div>
-                                )}
-                              </div>
-                            </section>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
-                        Когда появятся поездки, здесь будет видно, как действия распределяются во времени без тяжёлой scheduler-сетки.
                       </div>
                     )}
                   </article>
@@ -683,82 +628,141 @@ export function OrganizerPageClient() {
                       <div>
                         <h2 className="text-lg font-semibold text-slate-900">Таймлайн поездок</h2>
                         <p className="mt-2 text-sm text-slate-600">
-                          Здесь видны именно поездки как диапазоны во времени: где они пересекаются и где между ними есть окна.
+                          Главный визуальный обзор поездок во времени: где они идут плотнее, где пересекаются и где между ними остаются окна.
                         </p>
                       </div>
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                        {tripTimeline.ranges.length} {pluralizeRu(tripTimeline.ranges.length, 'поездка с датами', 'поездки с датами', 'поездок с датами')}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {timelineScaleOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setTimelineScale(option.id)}
+                            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                              option.id === timelineScale
+                                ? 'border-sky-300 bg-sky-50 text-sky-900'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-wide text-slate-500">Пересечения</div>
-                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.overlapCount}</div>
-                        <div className="mt-2 text-xs text-slate-500">Пары поездок, которые накладываются по времени.</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Поездки с датами</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.ranges.length}</div>
+                        <div className="mt-2 text-xs text-slate-500">Диапазоны, которые уже попали на временную доску.</div>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-wide text-slate-500">Окна</div>
-                        <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.windowCount}</div>
-                        <div className="mt-2 text-xs text-slate-500">Промежутки между поездками, которые уже читаются во времени.</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Пересечения и окна</div>
+                        <div className="mt-2 text-2xl font-semibold text-slate-900">
+                          {tripTimeline.overlapCount} / {tripTimeline.windowCount}
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">Слева пересечения, справа окна между соседними поездками.</div>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="text-xs uppercase tracking-wide text-slate-500">Без дат</div>
                         <div className="mt-2 text-2xl font-semibold text-slate-900">{tripTimeline.unscheduledTrips.length}</div>
-                        <div className="mt-2 text-xs text-slate-500">Эти поездки остаются в списке, пока их окно не уточнено.</div>
+                        <div className="mt-2 text-xs text-slate-500">Эти поездки остаются отдельно, пока окно ещё не уточнено.</div>
                       </div>
                     </div>
 
                     {tripTimeline.ranges.length > 0 ? (
                       <div className="mt-6 space-y-4">
-                        <div className="text-xs text-slate-500">{tripTimeline.axisLabel}</div>
-                        <div className="grid grid-cols-4 gap-2 text-[11px] text-slate-500">
-                          {tripTimeline.axisMarkers.map((marker) => (
-                            <div key={marker}>{marker}</div>
-                          ))}
+                        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                          <span>
+                            Доска покрывает период {tripTimeline.boardStartLabel} - {tripTimeline.boardEndLabel}.
+                          </span>
+                          <span>Каждая полоса показывает длину поездки и делает видимыми пересечения.</span>
                         </div>
-                        <div className="space-y-4">
-                          {tripTimeline.ranges.map((range) => (
-                            <div key={range.tripId} className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
-                              <div>
-                                <Link href={range.tripHref} className="text-sm font-medium text-slate-900 hover:text-sky-700">
-                                  {range.tripTitle}
-                                </Link>
-                                <div className="mt-1 text-xs text-slate-500">{range.tripWindowLabel ?? 'Окно поездки ещё уточняется'}</div>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(range.tone)}`}>
-                                    {range.lifecycleLabel}
-                                  </span>
-                                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600">
-                                    {range.statusLabel}
-                                  </span>
+                        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50">
+                          <div className="min-w-max p-4">
+                            <div className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+                              <div />
+                              <div style={{ width: tripTimelineBoardWidth }}>
+                                <div
+                                  className="grid text-[11px] font-medium text-slate-600"
+                                  style={{ gridTemplateColumns: `repeat(${tripTimeline.cells.length}, minmax(0, 1fr))` }}
+                                >
+                                  {tripTimeline.monthGroups.map((group) => (
+                                    <div key={group.key} className="border-b border-slate-200 pb-2" style={{ gridColumn: `span ${group.span}` }}>
+                                      {group.label}
+                                    </div>
+                                  ))}
                                 </div>
-                              </div>
-                              <div className="relative rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                {tripTimeline.todayPercent !== null ? (
-                                  <div className="absolute inset-y-2 w-px bg-sky-300" style={{ left: `${tripTimeline.todayPercent}%` }} />
-                                ) : null}
-                                <div className="relative h-5 rounded-full bg-white">
-                                  <div
-                                    className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full ${
-                                      range.tone === 'amber'
-                                        ? 'bg-amber-300'
-                                        : range.tone === 'sky'
-                                          ? 'bg-sky-300'
-                                          : range.tone === 'emerald'
-                                            ? 'bg-emerald-300'
-                                            : 'bg-slate-300'
-                                    }`}
-                                    style={{
-                                      left: `${range.leftPercent}%`,
-                                      width: `${range.widthPercent}%`,
-                                    }}
-                                  />
+                                <div className="mt-2 flex border-b border-slate-200 pb-2">
+                                  {tripTimeline.cells.map((cell) => (
+                                    <div
+                                      key={cell.key}
+                                      className={`shrink-0 border-r border-slate-200 pr-1 text-[11px] ${
+                                        cell.isToday ? 'text-sky-700' : 'text-slate-500'
+                                      }`}
+                                      style={{ width: tripTimeline.cellWidth }}
+                                    >
+                                      <div className="font-medium">{cell.label}</div>
+                                      <div>{cell.shortLabel}</div>
+                                    </div>
+                                  ))}
                                 </div>
-                                {range.summary ? <p className="mt-3 text-sm text-slate-600">{range.summary}</p> : null}
                               </div>
                             </div>
-                          ))}
+
+                            <div className="mt-4 space-y-3">
+                              {tripTimeline.ranges.map((range) => (
+                                <div key={range.tripId} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+                                  <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                    <Link href={range.tripHref} className="text-sm font-medium text-slate-900 hover:text-sky-700">
+                                      {range.tripTitle}
+                                    </Link>
+                                    <div className="mt-1 text-xs text-slate-500">{range.tripWindowLabel ?? 'Окно поездки ещё уточняется'}</div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClasses(range.tone)}`}>
+                                        {range.lifecycleLabel}
+                                      </span>
+                                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600">
+                                        {range.statusLabel}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                    <div className="relative" style={{ width: tripTimelineBoardWidth, height: 72 }}>
+                                      <div className="absolute inset-0 flex">
+                                        {tripTimeline.cells.map((cell) => (
+                                          <div
+                                            key={`${range.tripId}-${cell.key}`}
+                                            className={`h-full shrink-0 border-r border-slate-200 ${
+                                              cell.isToday ? 'bg-sky-50/70' : 'bg-white'
+                                            }`}
+                                            style={{ width: tripTimeline.cellWidth }}
+                                          />
+                                        ))}
+                                      </div>
+                                      {tripTimelineTodayIndex >= 0 ? (
+                                        <div
+                                          className="absolute inset-y-0 w-px bg-sky-300"
+                                          style={{ left: tripTimelineTodayIndex * tripTimeline.cellWidth }}
+                                        />
+                                      ) : null}
+                                      <div
+                                        className={`absolute top-1/2 -translate-y-1/2 rounded-xl border px-3 py-2 shadow-sm ${toneBarClasses(range.tone)}`}
+                                        style={{
+                                          left: `calc(${range.leftPercent}% + 4px)`,
+                                          width: `max(calc(${range.widthPercent}% - 8px), ${tripTimeline.cellWidth - 8}px)`,
+                                        }}
+                                      >
+                                        <div className="truncate text-sm font-medium">{range.tripTitle}</div>
+                                        <div className="mt-1 truncate text-[11px] opacity-80">
+                                          {range.tripWindowLabel ?? range.statusLabel}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -772,7 +776,7 @@ export function OrganizerPageClient() {
                     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                       <h2 className="text-lg font-semibold text-slate-900">Поездки без окна</h2>
                       <p className="mt-2 text-sm text-slate-600">
-                        Они уже существуют как контейнеры, но пока не попадают в таймлайн диапазонов.
+                        Они уже существуют как контейнеры, но пока не попадают на временную доску, потому что окно ещё не задано.
                       </p>
                       <div className="mt-5 space-y-3">
                         {tripTimeline.unscheduledTrips.map((trip) => (
