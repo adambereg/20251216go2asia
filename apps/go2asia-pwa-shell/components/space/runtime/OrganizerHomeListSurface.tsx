@@ -32,6 +32,12 @@ function toneClasses(tone: OrganizerExecutionTone): string {
   return 'border-slate-200 bg-slate-50 text-slate-800';
 }
 
+function sectionTone(mode: TripEntry['lifecycle']['mode']): string {
+  if (mode === 'post_trip') return 'border-slate-200 bg-slate-50/70';
+  if (mode === 'in_trip') return 'border-sky-200 bg-sky-50/70';
+  return 'border-slate-200 bg-white';
+}
+
 function groupEntries(entries: TripEntry[]) {
   return {
     inTrip: entries.filter((entry) => entry.lifecycle.mode === 'in_trip'),
@@ -117,7 +123,7 @@ export function OrganizerHomeListSurface({ trips, tripDetailsById, onCreateClick
   const groups = groupEntries(entries.filter((entry) => entry.trip.id !== focusTrip?.trip.id));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       {focusTrip ? <FocusTripCard entry={focusTrip} detail={tripDetailsById[focusTrip.trip.id]} /> : null}
 
       <LifecycleSection
@@ -252,7 +258,7 @@ function LifecycleSection({
       <div className="mb-3 flex items-center gap-3">
         <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
         <span className="truncate text-xs text-slate-400">· {subtitle}</span>
-        <span className="ml-auto text-xs text-slate-400">{entries.length}</span>
+        <span className="ml-auto rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-500">{entries.length}</span>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {entries.map((entry) => (
@@ -272,17 +278,17 @@ function TripCard({ entry, detail }: { entry: TripEntry; detail: OrganizerTripDe
   return (
     <Link
       href={`/space/organizer/trips/${encodeURIComponent(entry.trip.id)}`}
-      className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-sky-300 hover:shadow-md"
+      className={`group rounded-2xl border p-5 shadow-sm transition hover:border-sky-300 hover:shadow-md ${sectionTone(entry.lifecycle.mode)}`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-[15px] font-semibold text-slate-900">{entry.trip.title}</div>
           <div className="mt-1 truncate text-xs text-slate-500">
             {entry.lifecycle.mode === 'in_trip'
-              ? 'Поездка идёт сейчас'
+              ? 'Сейчас в активной фазе'
               : entry.lifecycle.mode === 'post_trip'
-                ? 'Поездка завершилась'
-                : windowLabel ?? 'Даты пока не заданы'}
+                ? 'Можно сохранить полезные выводы'
+                : windowLabel ?? 'Окно поездки пока уточняется'}
           </div>
         </div>
         <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${toneClasses(entry.lifecycle.tone)}`}>{entry.lifecycle.label}</span>
@@ -290,17 +296,18 @@ function TripCard({ entry, detail }: { entry: TripEntry; detail: OrganizerTripDe
 
       <div className="line-clamp-2 min-h-[40px] text-sm leading-relaxed text-slate-600">{entry.execution.whatMattersNow}</div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 border-t border-slate-100/80 pt-3">
         <div className="flex flex-wrap gap-2 text-[11px] text-slate-500">
           <span>{confidence.label}</span>
           {entry.trip.dayCount > 0 ? <span>{entry.trip.dayCount} дн. слоя</span> : null}
           {entry.trip.pinnedItemCount > 0 ? <span>{entry.trip.pinnedItemCount} закреплено</span> : null}
         </div>
-        <div className="text-sm text-slate-700">
+        <div className="mt-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">Ближайший шаг</div>
+        <div className="mt-1 text-sm font-medium text-slate-900">
           {entry.trip.firstPendingTaskTitle ?? snapshot?.nextPendingTask?.title ?? 'Следующий шаг появится здесь, когда поездка получит рабочий ритм.'}
         </div>
         {snapshot?.topCategories.length ? (
-          <div className="text-xs text-slate-500">Опоры: {snapshot.topCategories.join(' · ')}</div>
+          <div className="mt-1 text-xs text-slate-500">Сейчас опираемся на {snapshot.topCategories.join(' · ')}</div>
         ) : null}
       </div>
 

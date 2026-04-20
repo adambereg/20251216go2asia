@@ -208,7 +208,7 @@ export function OrganizerActionTimelineSurface({
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="relative mb-5 h-7">
+        <div className="relative mb-6 h-8">
           <div className="absolute inset-x-0 top-4 h-px bg-slate-100" />
           {ticks.map((tick) => (
             <div
@@ -231,7 +231,7 @@ export function OrganizerActionTimelineSurface({
           </div>
         </div>
 
-        <div className="relative" style={{ height: laneCount * 38 + 12 }}>
+        <div className="relative" style={{ height: laneCount * 46 + 16 }}>
           <div className="pointer-events-none absolute inset-0">
             {ticks.map((tick) => (
               <div
@@ -239,6 +239,9 @@ export function OrganizerActionTimelineSurface({
                 className={`absolute top-0 bottom-0 w-px ${tick.major ? 'bg-slate-100' : 'bg-slate-50'}`}
                 style={{ left: `${percentOf(tick.date)}%` }}
               />
+            ))}
+            {Array.from({ length: laneCount }, (_, index) => (
+              <div key={`lane-${index}`} className="absolute inset-x-0 h-px bg-slate-100" style={{ top: index * 46 + 32 }} />
             ))}
           </div>
 
@@ -255,11 +258,11 @@ export function OrganizerActionTimelineSurface({
                 <Link
                   key={action.id}
                   href={action.tripHref}
-                  className={`absolute flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium ring-1 transition hover:shadow-sm ${color.bg} ${color.ring} ${color.text}`}
+                  className={`absolute flex h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium ring-1 transition hover:shadow-sm ${color.bg} ${color.ring} ${color.text}`}
                   style={{
                     left: `calc(${percentOf(anchor)}% - 8px)`,
-                    top: lane * 38,
-                    maxWidth: scale === 'day' ? 240 : scale === 'week' ? 220 : 180,
+                    top: lane * 46,
+                    maxWidth: scale === 'day' ? 250 : scale === 'week' ? 230 : 190,
                   }}
                   title={`${action.tripTitle} · ${action.title}`}
                 >
@@ -274,11 +277,12 @@ export function OrganizerActionTimelineSurface({
           )}
         </div>
 
-        <div className="mt-5 border-t border-slate-100 pt-4">
+        <div className="mt-5 border-t border-slate-100 pt-3">
           <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
             <Calendar className="h-3.5 w-3.5" />
             Поездки на шкале
           </div>
+          <div className="mb-3 text-xs text-slate-500">Цвет показывает поездку, а пилюли отмечают точки внимания во времени.</div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {Array.from(new Map(actions.map((action) => [action.tripId, action])).values())
               .slice(0, 6)

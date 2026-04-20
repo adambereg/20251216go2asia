@@ -16,8 +16,8 @@ import { buildTripDetailSnapshot } from './organizerDetailSelectors';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTH_WIDTH = 148;
 const DAY_WIDTH = 34;
-const LANE_HEIGHT = 62;
-const LANE_GAP = 10;
+const LANE_HEIGHT = 74;
+const LANE_GAP = 12;
 
 type TimelineScaleOption = {
   id: OrganizerTimelineScale;
@@ -348,8 +348,8 @@ export function OrganizerTimelineSurface({
         </div>
 
         <div className="overflow-x-auto">
-          <div className="relative min-w-full px-5 py-4" style={{ width: Math.max(layout.totalWidth + 40, 760) }}>
-            <div className="mb-3 grid text-[11px] font-medium text-slate-500" style={{ gridTemplateColumns: layout.headerGroups.map((group) => `${group.width}px`).join(' ') }}>
+          <div className="relative min-w-full px-5 py-5" style={{ width: Math.max(layout.totalWidth + 40, 760) }}>
+            <div className="mb-4 grid text-[11px] font-medium text-slate-500" style={{ gridTemplateColumns: layout.headerGroups.map((group) => `${group.width}px`).join(' ') }}>
               {layout.headerGroups.map((group) => (
                 <div key={group.key} className="border-b border-slate-200 pb-2 pr-2">
                   {group.label}
@@ -358,7 +358,7 @@ export function OrganizerTimelineSurface({
             </div>
 
             {layout.ticks.length > 0 ? (
-              <div className="mb-3 flex border-b border-slate-200 pb-2">
+              <div className="mb-4 flex border-b border-slate-200 pb-2">
                 {layout.ticks.map((tick) => (
                   <div
                     key={tick.key}
@@ -372,7 +372,10 @@ export function OrganizerTimelineSurface({
               </div>
             ) : null}
 
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50" style={{ minHeight: layout.empty ? 160 : layout.laneCount * (LANE_HEIGHT + LANE_GAP) + 24 }}>
+            <div
+              className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50"
+              style={{ minHeight: layout.empty ? 200 : Math.max(layout.laneCount * (LANE_HEIGHT + LANE_GAP) + 28, 220) }}
+            >
               <div className="absolute inset-0 flex pointer-events-none">
                 {layout.headerGroups.map((group) => (
                   <div key={`${group.key}-grid`} className="h-full border-r border-slate-200/80 first:border-l-0" style={{ width: group.width }} />
@@ -394,7 +397,7 @@ export function OrganizerTimelineSurface({
               {layout.todayLeft !== null ? (
                 <div className="absolute inset-y-0 z-10" style={{ left: layout.todayLeft }}>
                   <div className="h-full w-px bg-sky-400" />
-                  <div className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                  <div className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
                     Сегодня
                   </div>
                 </div>
@@ -433,11 +436,11 @@ export function OrganizerTimelineSurface({
               <h3 className="text-sm font-semibold text-slate-900">Поездки без дат</h3>
               <span className="text-xs text-slate-400">{normalized.undated.length}</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Они появятся на шкале, как только у них будет хотя бы одна временная опора.
+            <p className="mt-1 text-sm text-slate-500">
+              Они ещё не легли на шкалу, но уже остаются видимой частью общего travel board.
             </p>
             {normalized.undated.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2.5">
                 {normalized.undated.map((trip) => {
                   const execution = deriveExecutionFromSummary(trip);
                   return (
@@ -447,7 +450,7 @@ export function OrganizerTimelineSurface({
                       onMouseEnter={() => setHoverId(trip.id)}
                       onMouseLeave={() => setHoverId((current) => (current === trip.id ? null : current))}
                       onClick={() => setSelectedId((current) => (current === trip.id ? null : trip.id))}
-                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${
+                      className={`inline-flex items-center gap-2 rounded-2xl border px-3.5 py-2.5 text-sm transition ${
                         trip.id === selectedId || trip.id === hoverId
                           ? 'border-sky-300 bg-sky-50 text-sky-900'
                           : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
@@ -499,14 +502,14 @@ function TimelineBar({
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       onClick={onSelect}
-      className={`absolute overflow-hidden rounded-xl border px-3 py-2 text-left shadow-sm transition ${toneBarClasses(
+      className={`absolute overflow-hidden rounded-2xl border px-3.5 py-2.5 text-left shadow-sm transition ${toneBarClasses(
         execution.readinessTone
-      )} ${isActive ? 'z-10 ring-2 ring-sky-400 shadow-md' : 'hover:ring-1 hover:ring-slate-300'}`}
+      )} ${isActive ? 'z-10 ring-2 ring-sky-500 shadow-lg' : 'hover:ring-1 hover:ring-slate-300'}`}
       style={{
         left: placed.left + 4,
         width: Math.max(minWidth, placed.width - 8),
         top,
-        height: LANE_HEIGHT - 8,
+        height: LANE_HEIGHT - 10,
         borderStyle: confidence.tone === 'emerald' ? 'solid' : 'dashed',
       }}
     >
@@ -573,7 +576,7 @@ function TimelineSelectionPreview({
         </span>
       </div>
 
-      <p className="mt-4 text-sm text-slate-700">{execution.whatMattersNow}</p>
+      <p className="mt-4 text-sm leading-relaxed text-slate-700">{execution.whatMattersNow}</p>
       {snapshot?.upcomingDay ? (
         <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50/70 p-4">
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Ближайший день поездки</div>

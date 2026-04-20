@@ -225,7 +225,7 @@ export function OrganizerPageClient() {
 
   return (
     <SpaceLayout>
-      <section className="space-y-8">
+      <section className="space-y-8 pb-10">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="text-[11px] font-medium uppercase tracking-wider text-sky-700">Space Asia · Organizer</div>
@@ -320,19 +320,31 @@ export function OrganizerPageClient() {
               />
             ) : null}
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">Как держать слои Organizer в порядке</h2>
-              <div className="mt-3 grid gap-3 lg:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                  <span className="font-medium text-slate-900">Обзор</span> показывает действия по поездкам и ритм
-                  внимания.
+            <article className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+              <div className="max-w-3xl">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Organizer в одном ритме</div>
+                <h2 className="mt-2 text-base font-semibold text-slate-900">Спокойное завершение экрана, без лишнего служебного шума</h2>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Organizer уже собран как три рабочих режима: где действовать сейчас, как поездки лежат во времени и к какой
+                  поездке удобнее вернуться как к отдельному контейнеру.
+                </p>
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Обзор</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">Очередь действий по всему портфелю</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">Когда нужно быстро понять, к чему лучше вернуться прямо сейчас.</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                  <span className="font-medium text-slate-900">Список</span> остаётся портфелем контейнеров поездок.
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Список</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">Спокойный портфель поездок</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">Когда важнее видеть сами контейнеры поездок и их зрелость.</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                  <span className="font-medium text-slate-900">Saved</span> остаётся глобальным источником сохранённого.
-                  {savedHint ? <span className="block pt-2 text-xs text-slate-500">{savedHint}</span> : null}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Saved</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">Глобальный источник сохранённого</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">Материалы можно подтягивать в поездки, не смешивая их с trip truth.</p>
+                  {savedHint ? <span className="mt-2 block text-xs leading-relaxed text-slate-500">{savedHint}</span> : null}
                 </div>
               </div>
             </article>

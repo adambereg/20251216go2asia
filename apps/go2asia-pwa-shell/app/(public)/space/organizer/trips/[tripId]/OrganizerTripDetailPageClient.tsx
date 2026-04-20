@@ -92,8 +92,8 @@ function nextStepButtonLabel(actionKey: OrganizerExecutionActionKey): string {
 
 function sectionClasses(isPrimary: boolean): string {
   return isPrimary
-    ? 'rounded-2xl border border-sky-200 bg-sky-50/40 p-6 shadow-sm ring-1 ring-sky-100'
-    : 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm';
+    ? 'rounded-2xl border border-sky-200 bg-sky-50/30 p-5 shadow-sm ring-1 ring-sky-100'
+    : 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm';
 }
 
 function readinessCheckClasses(done: boolean): string {
@@ -591,16 +591,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
 
   return (
     <SpaceLayout>
-      <section className="space-y-6">
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="space-y-6 pb-10">
+        <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Space &gt; Organizer &gt; Поездка</div>
               <h1 className="mt-2 text-2xl font-semibold text-slate-900">{detail?.trip.title ?? 'Поездка'}</h1>
-              <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                Здесь собран рабочий контекст поездки: что уже выбрано, что ещё просит внимания и к какому шагу лучше
-                вернуться сейчас.
-              </p>
+              <p className="mt-2 max-w-3xl text-sm text-slate-600">Спокойный рабочий контекст поездки: время, день и ближайший полезный шаг.</p>
             </div>
             <Link
               href="/space/organizer"
@@ -638,7 +635,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
 
         {state === 'ready' && detail ? (
           <>
-            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Контекст поездки</h2>
@@ -646,8 +643,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     {detail.trip.destinationLabel ?? 'Локация пока не уточнена'}
                     {tripWindowLabel(detail.trip) ? ` · ${tripWindowLabel(detail.trip)}` : ''}
                   </p>
-                  {detail.trip.summary ? <p className="mt-3 text-sm text-slate-700">{detail.trip.summary}</p> : null}
-                  {execution ? <p className="mt-3 text-sm text-slate-600">{execution.progressHint}</p> : null}
+                  {detail.trip.summary ? <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700">{detail.trip.summary}</p> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {execution ? (
@@ -656,7 +652,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     </span>
                   ) : null}
                   {execution ? (
-                    <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses(execution.readinessTone)}`}>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
                       {execution.progressLabel}
                     </span>
                   ) : null}
@@ -667,7 +663,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               </div>
 
               {lifecycle && dateConfidence ? (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Время поездки</div>
@@ -783,7 +779,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   ) : null}
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                    <div className="rounded-xl border border-white/70 bg-white/90 p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-500">Режим</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">{lifecycle.label}</div>
                       <div className="mt-1 text-xs text-slate-500">
@@ -794,18 +790,18 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                             : 'Сохранить практическую пользу.'}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                    <div className="rounded-xl border border-white/70 bg-white/90 p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-500">Окно поездки</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">
                         {tripWindowLabel(detail.trip) ?? 'Пока не задано'}
                       </div>
                       <div className="mt-1 text-xs text-slate-500">{dateConfidence.label}</div>
                     </div>
-                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                    <div className="rounded-xl border border-white/70 bg-white/90 p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-500">Что важно сейчас</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">{execution?.whatMattersNow ?? 'Без оценки'}</div>
                     </div>
-                    <div className="rounded-xl border border-white/70 bg-white p-4">
+                    <div className="rounded-xl border border-white/70 bg-white/90 p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-500">Следующий шаг</div>
                       <div className="mt-2 text-sm font-medium text-slate-900">{execution?.nextStep.title ?? 'Пока не задан'}</div>
                       <button
@@ -888,18 +884,13 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               ) : null}
 
               {execution ? (
-                <div className={`mt-5 rounded-xl border p-5 ${toneClasses(execution.readinessTone)}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className={`mt-4 rounded-xl border p-4 ${toneClasses(execution.readinessTone)}`}>
+                  <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <div className="text-xs font-medium uppercase tracking-wide opacity-80">{execution.progressLabel}</div>
                       <div className="mt-2 text-sm font-medium">{execution.whatMattersNow}</div>
                     </div>
-                  </div>
-                  <div className="mt-4 rounded-xl border border-white/60 bg-white/60 p-4">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Следующий шаг</div>
-                    <div className="mt-2 text-sm font-medium text-slate-900">{execution.nextStep.title}</div>
-                    <p className="mt-1 text-sm text-slate-600">{execution.nextStep.description}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => focusSection(execution.nextStep.actionKey)}
@@ -908,7 +899,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                         {nextStepButtonLabel(execution.nextStep.actionKey)}
                       </button>
                       {primarySection === 'tasks' && pendingTasks.length > 0 ? (
-                        <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                        <span className="inline-flex rounded-md border border-white/70 bg-white/70 px-3 py-1.5 text-xs text-slate-700">
                           Ближайший шаг: {pendingTasks[0].title}
                         </span>
                       ) : null}
@@ -918,7 +909,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               ) : null}
 
               <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Уже собрано</div>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {readinessChecks.map((check) => (
@@ -930,7 +921,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Что ещё хрупко</div>
                   <div className="mt-3 space-y-3">
                     {blockers.length > 0 ? (
@@ -951,22 +942,22 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               </div>
 
               <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Объекты</div>
                   <div className="mt-2 text-2xl font-semibold text-slate-900">{sortedItems.length}</div>
                   <div className="mt-2 text-xs text-slate-500">{detailSnapshot?.pinnedItems.length ?? 0} закреплено</div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Открытые шаги</div>
                   <div className="mt-2 text-2xl font-semibold text-slate-900">{pendingTasks.length}</div>
                   <div className="mt-2 text-xs text-slate-500">{detailSnapshot?.dayBoundTasks.length ?? 0} привязано к дню</div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Заметки</div>
                   <div className="mt-2 text-2xl font-semibold text-slate-900">{sortedNotes.length}</div>
                   <div className="mt-2 text-xs text-slate-500">{detail.itemNotes.length} заметок к объектам</div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Фаза поездки</div>
                   <div className="mt-2 text-sm font-medium text-slate-900">{lifecycle?.label ?? execution?.progressLabel ?? 'Без оценки'}</div>
                   <div className="mt-2 text-xs text-slate-500">
@@ -1017,7 +1008,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
             ) : null}
 
             {selectedDay ? (
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Контент выбранного дня</div>
@@ -1031,7 +1022,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                   </span>
                 </div>
                 <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Объекты дня</div>
                     <div className="mt-3 space-y-2">
                       {selectedDayItems.length > 0 ? (
@@ -1046,7 +1037,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Шаги дня</div>
                     <div className="mt-3 space-y-2">
                       {selectedDayTasks.length > 0 ? (
@@ -1061,7 +1052,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Заметки дня</div>
                     <div className="mt-3 space-y-2">
                       {selectedDayNotes.length > 0 ? (
@@ -1079,7 +1070,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
               </article>
             ) : null}
 
-            <div className="grid gap-6 xl:grid-cols-3">
+            <div className="grid gap-5 xl:grid-cols-3">
               <article ref={itemsRef} className={sectionClasses(primarySection === 'items')}>
                 <h3 className="text-lg font-semibold text-slate-900">Объекты поездки</h3>
                 <p className="mt-2 text-sm text-slate-600">
@@ -1156,7 +1147,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     </div>
                   ) : (
                     sortedItems.map((item) => (
-                      <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="text-sm font-medium text-slate-900">{item.title}</div>
@@ -1225,7 +1216,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                             </span>
                           ) : null}
                         </div>
-                        <div className="mt-4 rounded-xl border border-white/80 bg-white p-4">
+                        <div className="mt-4 rounded-xl border border-white/80 bg-white/90 p-4">
                           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Заметки к объекту</div>
                           <div className="mt-3 space-y-2">
                             {(itemNotesByItemId[item.id] ?? []).length > 0 ? (
@@ -1322,7 +1313,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                           {pendingTasks.map((task, index) => {
                             const isTogglePending = pendingAction === `toggle:${task.id}`;
                             return (
-                              <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                              <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <div className="flex flex-wrap items-center gap-2">
@@ -1358,7 +1349,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                           {completedTasks.map((task) => {
                             const isTogglePending = pendingAction === `toggle:${task.id}`;
                             return (
-                              <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                              <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <div className="text-sm font-medium text-slate-500 line-through">{task.title}</div>
@@ -1435,7 +1426,7 @@ export function OrganizerTripDetailPageClient({ tripId }: { tripId: string }) {
                     </div>
                   ) : (
                     sortedNotes.map((note) => (
-                      <div key={note.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div key={note.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                         <p className="text-sm text-slate-700">{note.body}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {note.dayDate ? (
