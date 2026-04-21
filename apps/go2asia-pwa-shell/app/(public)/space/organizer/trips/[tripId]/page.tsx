@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   description: 'Minimal Organizer trip detail inside Space Asia for the first real trip-model slice.',
 };
 
+function normalizeTripRouteParam(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export default async function OrganizerTripDetailPage({
   params,
 }: {
@@ -15,5 +23,5 @@ export default async function OrganizerTripDetailPage({
 }) {
   const { tripId } = await params;
 
-  return <OrganizerTripDetailPageClient tripId={tripId} />;
+  return <OrganizerTripDetailPageClient tripId={normalizeTripRouteParam(tripId)} />;
 }

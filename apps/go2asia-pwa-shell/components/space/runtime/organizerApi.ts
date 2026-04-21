@@ -12,6 +12,8 @@ export type OrganizerApiError = {
 export type OrganizerTripStatus = 'draft' | 'active' | 'completed' | 'archived';
 export type OrganizerTripItemStatus = 'planned' | 'booked' | 'done';
 export type OrganizerTripTaskStatus = 'pending' | 'done';
+export type OrganizerTripDatesConfidence = 'none' | 'rough' | 'confirmed';
+export type OrganizerTripLifecycleMode = 'preparation' | 'in_trip' | 'post_trip';
 
 export type OrganizerTripSummary = {
   id: string;
@@ -21,11 +23,18 @@ export type OrganizerTripSummary = {
   status: OrganizerTripStatus;
   startDate: string | null;
   endDate: string | null;
+  datesConfidence: OrganizerTripDatesConfidence | null;
+  lifecycleOverride: OrganizerTripLifecycleMode | null;
   createdAt: string | null;
   updatedAt: string | null;
   itemCount: number;
+  bookedItemCount: number;
+  pinnedItemCount: number;
+  linkedItemCount: number;
   pendingTaskCount: number;
+  firstPendingTaskTitle: string | null;
   noteCount: number;
+  dayCount: number;
 };
 
 export type OrganizerTrip = {
@@ -36,6 +45,8 @@ export type OrganizerTrip = {
   status: OrganizerTripStatus;
   startDate: string | null;
   endDate: string | null;
+  datesConfidence: OrganizerTripDatesConfidence | null;
+  lifecycleOverride: OrganizerTripLifecycleMode | null;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -45,6 +56,9 @@ export type OrganizerTripItem = {
   tripId: string;
   title: string;
   note: string | null;
+  category: string | null;
+  pinned: boolean;
+  dayDate: string | null;
   status: OrganizerTripItemStatus;
   sourceModule: string | null;
   sourceEntityType: string | null;
@@ -58,6 +72,9 @@ export type OrganizerTripTask = {
   tripId: string;
   title: string;
   status: OrganizerTripTaskStatus;
+  dayDate: string | null;
+  sortOrder: number;
+  whyItMatters: string | null;
   completedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -67,6 +84,30 @@ export type OrganizerTripNote = {
   id: string;
   tripId: string;
   body: string;
+  dayDate: string | null;
+  noteType: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type OrganizerTripDay = {
+  id: string;
+  tripId: string;
+  dayDate: string;
+  theme: string | null;
+  focus: string | null;
+  plannedHighlights: string | null;
+  sortOrder: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type OrganizerTripItemNote = {
+  id: string;
+  itemId: string;
+  tripId: string;
+  body: string;
+  sortOrder: number;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -80,6 +121,8 @@ export type OrganizerTripDetailResponse = {
   items: OrganizerTripItem[];
   tasks: OrganizerTripTask[];
   notes: OrganizerTripNote[];
+  days: OrganizerTripDay[];
+  itemNotes: OrganizerTripItemNote[];
   insight?: {
     whatMattersNow?: string;
   };
@@ -91,11 +134,27 @@ type CreateTripPayload = {
   summary?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  datesConfidence?: OrganizerTripDatesConfidence | null;
+  lifecycleOverride?: OrganizerTripLifecycleMode | null;
+};
+
+type UpdateTripPayload = {
+  title?: string | null;
+  destinationLabel?: string | null;
+  summary?: string | null;
+  status?: OrganizerTripStatus;
+  startDate?: string | null;
+  endDate?: string | null;
+  datesConfidence?: OrganizerTripDatesConfidence | null;
+  lifecycleOverride?: OrganizerTripLifecycleMode | null;
 };
 
 type CreateItemPayload = {
   title: string;
   note?: string | null;
+  category?: string | null;
+  pinned?: boolean;
+  dayDate?: string | null;
   status?: OrganizerTripItemStatus;
   source?: {
     module: string;
@@ -107,14 +166,22 @@ type CreateItemPayload = {
 type CreateTaskPayload = {
   title: string;
   status?: OrganizerTripTaskStatus;
+  dayDate?: string | null;
+  sortOrder?: number;
+  whyItMatters?: string | null;
 };
 
 type UpdateTaskPayload = {
-  status: OrganizerTripTaskStatus;
+  status?: OrganizerTripTaskStatus;
+  dayDate?: string | null;
+  sortOrder?: number | null;
+  whyItMatters?: string | null;
 };
 
 type CreateNotePayload = {
   body: string;
+  dayDate?: string | null;
+  noteType?: string | null;
 };
 
 type OrganizerFetchConfig = {
@@ -151,6 +218,13 @@ export function fetchOrganizerTripDetail(tripId: string) {
   return safeRequest<OrganizerTripDetailResponse>({ method: 'GET' }, `/v1/organizer/trips/${encodeURIComponent(tripId)}`);
 }
 
+export function updateOrganizerTrip(tripId: string, payload: UpdateTripPayload) {
+  return safeRequest<{ trip: OrganizerTrip }>(
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}`
+  );
+}
+
 export function createOrganizerTripItem(tripId: string, payload: CreateItemPayload) {
   return safeRequest<{ item: OrganizerTripItem; applied?: boolean }>(
     { method: 'POST', body: JSON.stringify(payload) },
@@ -161,6 +235,24 @@ export function createOrganizerTripItem(tripId: string, payload: CreateItemPaylo
 export function deleteOrganizerTripItem(tripId: string, itemId: string) {
   return safeRequest<{ removed: boolean; tripId: string; itemId: string }>(
     { method: 'DELETE' },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(itemId)}`
+  );
+}
+
+export function updateOrganizerTripItem(
+  tripId: string,
+  itemId: string,
+  payload: {
+    title?: string | null;
+    note?: string | null;
+    category?: string | null;
+    pinned?: boolean;
+    dayDate?: string | null;
+    status?: OrganizerTripItemStatus;
+  }
+) {
+  return safeRequest<{ item: OrganizerTripItem }>(
+    { method: 'PATCH', body: JSON.stringify(payload) },
     `/v1/organizer/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(itemId)}`
   );
 }
@@ -183,5 +275,19 @@ export function createOrganizerTripNote(tripId: string, payload: CreateNotePaylo
   return safeRequest<{ note: OrganizerTripNote }>(
     { method: 'POST', body: JSON.stringify(payload) },
     `/v1/organizer/trips/${encodeURIComponent(tripId)}/notes`
+  );
+}
+
+export function createOrganizerTripItemNote(
+  tripId: string,
+  itemId: string,
+  payload: {
+    body: string;
+    sortOrder?: number;
+  }
+) {
+  return safeRequest<{ itemNote: OrganizerTripItemNote }>(
+    { method: 'POST', body: JSON.stringify(payload) },
+    `/v1/organizer/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(itemId)}/notes`
   );
 }

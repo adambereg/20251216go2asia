@@ -3,9 +3,12 @@ import { readJsonObject } from '../middleware/http';
 import {
   createTrip,
   createTripItem,
+  createTripItemNote,
   createTripNote,
   createTripTask,
   getTripDetail,
+  patchTrip,
+  patchTripItem,
   listTrips,
   patchTripTask,
   removeTripItem,
@@ -38,6 +41,10 @@ export async function handleTripsRoute(
   if (tripMatch && request.method === 'GET') {
     return getTripDetail(env, principal, decodeURIComponent(tripMatch[1]), requestId);
   }
+  if (tripMatch && request.method === 'PATCH') {
+    const body = await readJsonObject(request);
+    return patchTrip(env, principal, decodeURIComponent(tripMatch[1]), body, requestId);
+  }
 
   const itemMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items$/);
   if (itemMatch && request.method === 'POST') {
@@ -48,6 +55,31 @@ export async function handleTripsRoute(
   const itemDeleteMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items\/([^/]+)$/);
   if (itemDeleteMatch && request.method === 'DELETE') {
     return removeTripItem(env, principal, decodeURIComponent(itemDeleteMatch[1]), decodeURIComponent(itemDeleteMatch[2]), requestId);
+  }
+
+  if (itemDeleteMatch && request.method === 'PATCH') {
+    const body = await readJsonObject(request);
+    return patchTripItem(
+      env,
+      principal,
+      decodeURIComponent(itemDeleteMatch[1]),
+      decodeURIComponent(itemDeleteMatch[2]),
+      body,
+      requestId
+    );
+  }
+
+  const itemNoteMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/items\/([^/]+)\/notes$/);
+  if (itemNoteMatch && request.method === 'POST') {
+    const body = await readJsonObject(request);
+    return createTripItemNote(
+      env,
+      principal,
+      decodeURIComponent(itemNoteMatch[1]),
+      decodeURIComponent(itemNoteMatch[2]),
+      body,
+      requestId
+    );
   }
 
   const taskMatch = path.match(/^\/v1\/organizer\/trips\/([^/]+)\/tasks$/);

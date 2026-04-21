@@ -234,4 +234,68 @@ describe('organizer-service v1', () => {
     expect(body.removed).toBe(true);
     expect(body.itemId).toBe('titem_1');
   });
+
+  it('updates trip item status for authenticated user', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'trip_1',
+            user_id: 'user_123',
+            title: 'Bangkok in May',
+            destination_label: null,
+            summary: null,
+            status: 'draft',
+            start_date: null,
+            end_date: null,
+            created_at: '2026-04-16T10:00:00.000Z',
+            updated_at: '2026-04-16T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'titem_1',
+            trip_id: 'trip_1',
+            user_id: 'user_123',
+            title: 'Hotel shortlist',
+            note: 'Need to confirm booking',
+            source_module: null,
+            source_entity_type: null,
+            source_entity_id: null,
+            status: 'booked',
+            created_at: '2026-04-16T10:00:00.000Z',
+            updated_at: '2026-04-17T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    const response = await worker.fetch(
+      new Request('https://organizer.example/v1/organizer/trips/trip_1/items/titem_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          status: 'booked',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ item: { id: string; status: string } }>(response);
+    expect(response.status).toBe(200);
+    expect(body.item).toMatchObject({
+      id: 'titem_1',
+      status: 'booked',
+    });
+  });
 });
