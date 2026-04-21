@@ -88,9 +88,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -n "${ORGANIZER_SEED_USER_ID}" ]; then
-            pnpm -C packages/db db:import:organizer-md -- --apply --user-id "${ORGANIZER_SEED_USER_ID}"
+            pnpm -C packages/db db:import:organizer-md -- --apply --source "../../content/space/Organizer-Content-Pack-v2.md" --user-id "${ORGANIZER_SEED_USER_ID}"
           elif [ -n "${ORGANIZER_SEED_USER_EMAIL}" ]; then
-            pnpm -C packages/db db:import:organizer-md -- --apply --user-email "${ORGANIZER_SEED_USER_EMAIL}"
+            pnpm -C packages/db db:import:organizer-md -- --apply --source "../../content/space/Organizer-Content-Pack-v2.md" --user-email "${ORGANIZER_SEED_USER_EMAIL}"
           else
             echo "Skipping organizer demo seed: ORGANIZER_DEMO_USER_ID / ORGANIZER_DEMO_USER_EMAIL is not configured."
           fi
