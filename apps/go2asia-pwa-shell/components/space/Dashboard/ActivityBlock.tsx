@@ -55,7 +55,7 @@ export function ActivityBlock({ activities, currentUser }: ActivityBlockProps) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-900">Активность</h2>
         <Link
-          href="/space/community/feed"
+          href="/space/activity"
           className="text-sm text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1"
         >
           Все

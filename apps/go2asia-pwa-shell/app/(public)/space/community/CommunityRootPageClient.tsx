@@ -52,10 +52,10 @@ export function CommunityRootPageClient() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/space/community/feed"
+                href="/space/feed"
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
               >
-                Открыть поток постов
+                Открыть ленту
               </Link>
               <Link
                 href="/space"
@@ -78,7 +78,7 @@ export function CommunityRootPageClient() {
               Сообщества = карта входа в группы
             </span>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
-              Лента сообщества = поток публикаций
+              Лента = отдельный personal social stream
             </span>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
               Group detail и join/leave уже live
@@ -171,7 +171,7 @@ export function CommunityRootPageClient() {
 
         <p className="text-xs text-slate-500">
           Community root остаётся discovery-first baseline: без search engine и без broad recommendation wave.
-          Полный поток постов доступен отдельно на `/space/community/feed`.
+          Полная лента доступна отдельно на `/space/feed`.
         </p>
       </div>
     </SpaceLayout>

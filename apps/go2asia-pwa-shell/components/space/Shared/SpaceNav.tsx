@@ -28,7 +28,7 @@ interface NavItem {
 const activeNavItems: NavItem[] = [
   { href: '/space', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/space/community', label: 'Сообщества', icon: Users },
-  { href: '/space/community/feed', label: 'Поток постов', icon: Newspaper },
+  { href: '/space/feed', label: 'Лента', icon: Newspaper },
   { href: '/space/saved', label: 'Сохранённые', icon: Bookmark },
   { href: '/space/activity', label: 'Активность', icon: Bell },
   { href: '/space/organizer', label: 'Organizer', icon: Briefcase },
@@ -60,8 +60,8 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
     if (href === '/space/community') {
       return pathname === '/space/community' || pathname.startsWith('/space/community/groups/');
     }
-    if (href === '/space/community/feed') {
-      return pathname.startsWith('/space/community/feed');
+    if (href === '/space/feed') {
+      return pathname.startsWith('/space/feed');
     }
     return pathname.startsWith(href);
   }

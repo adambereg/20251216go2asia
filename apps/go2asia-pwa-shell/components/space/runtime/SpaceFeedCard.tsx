@@ -5,6 +5,8 @@ import { generated } from '@go2asia/sdk';
 import {
   formatDate,
   formatFeedReason,
+  formatRepostTargetLabel,
+  formatVisibilityLabel,
   getGroupHref,
   getProfileHref,
   resolveReferenceHref,
@@ -51,12 +53,15 @@ export function SpaceFeedCard({
       </div>
 
       {showGroupSignal && item.post.groupId && (
-        <div className="mb-3">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800">
+            Контекст: группа
+          </span>
           <Link
             href={getGroupHref(item.post.groupId)}
-            className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
           >
-            Группа: {item.post.groupId}
+            Открыть группу
           </Link>
         </div>
       )}
@@ -65,17 +70,17 @@ export function SpaceFeedCard({
         <p className="mb-3 whitespace-pre-wrap text-sm text-slate-800">{item.post.text}</p>
       ) : (
         <p className="mb-3 text-sm text-slate-500">
-          Пост без текстового контента (media/repost-first).
+          Пост без текстового контента.
         </p>
       )}
 
       {item.post.repost && reference && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-          <div className="font-medium">Reference: {item.post.repost.targetType}</div>
-          <div className="mt-1 text-slate-600">Target ID: {item.post.repost.targetId}</div>
+          <div className="font-medium">Связанный объект: {formatRepostTargetLabel(item.post.repost.targetType)}</div>
+          <div className="mt-1 text-slate-600">ID объекта: {item.post.repost.targetId}</div>
           {item.post.repost.resolvedPreview?.title && (
             <div className="mt-2 rounded-md border border-slate-200 bg-white p-2 text-slate-700">
-              Runtime preview: {item.post.repost.resolvedPreview.title}
+              Preview: {item.post.repost.resolvedPreview.title}
             </div>
           )}
           <div className="mt-2">
@@ -84,24 +89,24 @@ export function SpaceFeedCard({
                 href={reference.href}
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
               >
-                Open linked module
+                Открыть связанный объект
               </Link>
             ) : (
               <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
-                Deferred reference preview
+                Preview будет расширен позже
               </span>
             )}
           </div>
           {reference.isDeferred && (
             <div className="mt-2 text-[11px] text-slate-500">
-              This reference type is intentionally not expanded in this slice.
+              Этот тип ссылки в текущем slice намеренно не раскрывается глубже.
             </div>
           )}
         </div>
       )}
 
       <div className="text-xs text-slate-500">
-        Visibility: {item.post.visibility} • Media: {item.post.media.length}
+        Видимость: {formatVisibilityLabel(item.post.visibility)} • Медиа: {item.post.media.length}
       </div>
     </article>
   );

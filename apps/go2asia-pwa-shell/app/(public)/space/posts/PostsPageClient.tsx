@@ -27,7 +27,7 @@ export function PostsPageClient() {
           <h1 className="text-2xl font-semibold text-slate-900">Авторские публикации</h1>
           <p className="mt-2 text-sm text-slate-600">
             Для гостевого authored baseline пока не задан representative profile. Войдите, чтобы увидеть свои публикации,
-            или откройте `/space/community/feed` для общего social потока.
+            или откройте `/space/feed` для общего social потока.
           </p>
         </section>
       </SpaceLayout>
