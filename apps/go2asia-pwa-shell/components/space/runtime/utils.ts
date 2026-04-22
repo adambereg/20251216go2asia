@@ -42,15 +42,15 @@ export function getGroupFeedUrl(groupId: string, limit = DEFAULT_FEED_LIMIT): st
 export function formatFeedReason(reason: generated.SpaceFeedReason): string {
   switch (reason) {
     case 'group_post':
-      return 'Пост из группы';
+      return 'В группе';
     case 'author_post':
-      return 'Авторский пост';
+      return 'Публикация';
     case 'repost':
       return 'Репост';
     case 'system':
-      return 'Системный сигнал';
+      return 'Объявление';
     case 'recommended':
-      return 'Рекомендация';
+      return 'Подборка';
     default:
       return reason;
   }

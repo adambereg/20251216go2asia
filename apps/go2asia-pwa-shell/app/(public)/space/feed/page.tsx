@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Лента | Space Asia | Go2Asia',
-  description: 'Центральная персональная лента Space Asia. Сообщества остаются отдельной discovery surface на /space/community.',
+  description: 'Личный поток полезных публикаций, групп и репостов по Space Asia.',
 };
 
 export default function FeedPage() {

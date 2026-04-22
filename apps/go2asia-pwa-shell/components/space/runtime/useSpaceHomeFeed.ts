@@ -41,10 +41,9 @@ export function useSpaceHomeFeed() {
             return;
           } catch (fallbackError) {
             if (cancelled) return;
-            const fallbackStatus = getErrorStatus(fallbackError);
             setMode('deferred');
             setFeed(null);
-            setError(`Space runtime fallback failed (${fallbackStatus ?? 'unknown'}).`);
+            setError('Сейчас не удаётся открыть ленту. Попробуйте позже.');
             return;
           }
         }
@@ -52,9 +51,9 @@ export function useSpaceHomeFeed() {
         setMode('deferred');
         setFeed(null);
         if (status === 401 || status === 403) {
-          setError('Требуется авторизация для персональной ленты. Публичный fallback-профиль не настроен.');
+          setError('Войдите в аккаунт, чтобы увидеть персональную ленту.');
         } else {
-          setError(`Space runtime request failed (${status ?? 'unknown'}).`);
+          setError('Сейчас не удаётся загрузить ленту. Попробуйте позже.');
         }
       } finally {
         if (!cancelled) setIsLoading(false);
