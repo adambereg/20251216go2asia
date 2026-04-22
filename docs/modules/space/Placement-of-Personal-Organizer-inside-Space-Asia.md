@@ -45,6 +45,7 @@ Personal Organizer — это личный travel workspace внутри Space A
 ## UX implication
 
 На верхнем уровне Space Asia для Organizer должна существовать отдельная вкладка / отдельный вход первого уровня.
+Shell sync note: конкретный порядок и состав верхнеуровневой навигации должны сверяться с текущим runtime shell (`SpaceNav`) и `docs/modules/space/space_current_state_audit_with_organizer_v1.md`; примеры ниже иллюстративны, не как жёсткая копия текущего UI.
 Пример допустимой логики верхнего уровня:
 •	Feed 
 •	Saved 

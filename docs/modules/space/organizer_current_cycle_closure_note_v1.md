@@ -4,6 +4,8 @@
 
 Organizer current cycle is closed for the bounded scope completed through domain expansion v2, frontend prototype alignment v3, and final polishing v4.
 
+Post-merge note: procedural statements in this document describe cycle closure timing. For current runtime snapshot after merge, see `docs/modules/space/space_current_state_audit_with_organizer_v1.md`.
+
 ## 1. Purpose of This Note
 
 This note fixes the final state of Organizer at the end of the current delivery cycle before PR and merge to `main`.

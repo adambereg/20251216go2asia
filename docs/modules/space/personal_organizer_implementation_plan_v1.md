@@ -1,6 +1,7 @@
 # Personal Organizer Implementation Plan v1
 
 Status: planning draft grounded in current repo state  
+Sync note (post-merge): this is now a historical implementation-plan artifact. For current runtime state after Organizer merge, use `docs/modules/space/space_current_state_audit_with_organizer_v1.md` and `docs/modules/space/space_frontend_baseline_status_note_v1.md`.  
 Scope: audit-backed implementation plan for introducing the new Personal Organizer inside `Space Asia` without opening an unbounded redesign
 
 ## 1. Framing
@@ -82,6 +83,8 @@ Real frontend Space routes today:
 - `/space/saved`
 - `/space/activity`
 - `/space/profiles/[userId]`
+- `/space/organizer`
+- `/space/organizer/trips/[tripId]`
 
 Additional placeholder/deferred pages also exist in the route tree, but they are not honest live product slices:
 
@@ -121,7 +124,7 @@ Evidence:
 #### Partial / thin by design
 
 - dashboard composition is real but still preview-heavy
-- organizer exists only as dashboard preview semantics, not as a full route
+- organizer is no longer only a dashboard preview semantic and now has real routes, while still remaining a bounded slice
 - community root is discovery-first and intentionally not a full community engine
 - saved is live only for `space_post` bookmarks
 - activity is narrow and not a notification center
@@ -135,11 +138,9 @@ Evidence:
 
 #### Only in SSOT / planning / architecture docs
 
-- `/space/organizer` as a real route
-- organizer-specific backend endpoints
-- organizer storage model in runtime schema
+- broader planner-suite expansions beyond the current bounded organizer slice
 - trip-first Organizer/planner domain local to the Organizer section, not to the whole `Space` module
-- cross-module saved-to-trip execution
+- broader cross-module saved intake beyond the current `space_post` baseline
 - map/day/reminder/comparison/trip dashboard model from the new Personal Organizer SSOT
 
 Evidence:
@@ -161,7 +162,7 @@ Current actual primary navigation in code:
 - Saved
 - Activity
 
-Organizer is not in current nav. Profile is not in `SpaceNav`, even though profile route exists. Connections is not an implemented Space section at all; the closest real contour is community/groups.
+Organizer is now in current nav. Profile is still not in `SpaceNav`, even though profile route exists. Connections is not an implemented Space section at all; the closest real contour is community/groups.
 
 Evidence:
 

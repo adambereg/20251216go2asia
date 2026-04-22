@@ -3,7 +3,7 @@
 **Status:** Accepted / Planning guardrail  
 **Date:** 2026-04-16  
 **Zone:** Space Asia / Personal Organizer backend ownership  
-**Related docs:** `docs/modules/space/go_2_asia_personal_organizer_ssot_v_1.md`, `docs/modules/space/Placement-of-Personal-Organizer-inside-Space-Asia.md`, `docs/modules/space/space_personal_organizer_framing_note_v1.md`, `docs/modules/space/personal_organizer_implementation_plan_v1.md`, `docs/architecture/space/space_backend_architecture_v_1.md`, `docs/architecture/space/space_domain_model_v_1.md`, `docs/architecture/space/space_service_implementation_plan.md`, `docs/architecture/space/space_service_production_architecture_v_1.md`, `docs/architecture/space/space_status_framing_audit_2026_04_12.md`, `docs/modules/space/space_ui_backend_mapping_v_1.md`, `docs/openapi/space.yaml`
+**Related docs:** `docs/modules/space/go_2_asia_personal_organizer_ssot_v_1.md`, `docs/modules/space/Placement-of-Personal-Organizer-inside-Space-Asia.md`, `docs/modules/space/space_personal_organizer_framing_note_v1.md`, `docs/modules/space/space_saved_and_organizer_intake_note_v1.md`, `docs/modules/space/personal_organizer_implementation_plan_v1.md`, `docs/modules/space/space_current_state_audit_with_organizer_v1.md`, `docs/architecture/space/space_backend_architecture_v_1.md`, `docs/architecture/space/space_domain_model_v_1.md`, `docs/architecture/space/space_service_implementation_plan.md`, `docs/architecture/space/space_service_production_architecture_v_1.md`, `docs/architecture/space/space_status_framing_audit_2026_04_12.md`, `docs/modules/space/space_ui_backend_mapping_v_1.md`, `docs/openapi/space.yaml`
 
 ## Context
 
