@@ -551,3 +551,414 @@ This pack gives Feed Slice 1:
 
 so that Feed can feel like a believable Space Asia surface
 without pretending that future feed layers are already live.
+
+---
+
+## 14. Importer-ready materialization appendix
+
+This appendix exists only to let the existing Space markdown importer materialize
+Feed Slice 1 content through the normal `space_post` runtime path.
+
+It is intentionally bounded:
+
+- it does not replace the main Full Seed canon;
+- it does not add new runtime classes;
+- it only provides the minimal YAML sections expected by `db:import:space-md`;
+- it keeps target types inside the already supported allowlist.
+
+Important compatibility notes:
+
+- RF `offer` from `F14` is materialized as `target_type: partner` with the existing
+  `rf-partner-phuket-breakfast-club` target hint.
+- Some repost targets use the closest existing ecosystem target hints already present
+  in the current full seed canon.
+- `fred89059599296@gmail.com` is included here because `My` review realism depends on it,
+  but applied materialization still requires that this identity exists in the target auth/users contour.
+
+________________________________________
+
+users:
+  - email: "admin.operator.seed@example.com"
+    account_role: "admin"
+    display_name: "Admin Operator"
+    role_label: "Admin"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Поддерживаю экосистему Go2Asia и помогаю запускать новые социальные контуры."
+
+  - email: "oleg.tran.seed@example.com"
+    account_role: "pro"
+    display_name: "Oleg Tran"
+    role_label: "PRO"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Помогаю адаптироваться во Вьетнаме, собираю локальные сообщества и практичные маршруты."
+
+  - email: "natalia.kim.seed@example.com"
+    account_role: "pro"
+    display_name: "Natalia Kim"
+    role_label: "PRO"
+    avatar_url: ""
+    country: "Thailand"
+    city: "Phuket"
+    bio_short: "Собираю комьюнити по зимовке, жилью и повседневной жизни на Пхукете."
+
+  - email: "alexey.chernov.seed@example.com"
+    account_role: "pro"
+    display_name: "Alexey Chernov"
+    role_label: "PRO"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Ho Chi Minh City"
+    bio_short: "Интересуюсь городскими маршрутами, встречами, событиями и цифровой повседневностью в ЮВА."
+
+  - email: "kirill.denisov.seed@example.com"
+    account_role: "vip"
+    display_name: "Kirill Denisov"
+    role_label: "VIP"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Ho Chi Minh City"
+    bio_short: "Люблю новые места, практичные тревел-сценарии и городские находки."
+
+  - email: "elena.morozova.seed@example.com"
+    account_role: "spacer"
+    display_name: "Elena Morozova"
+    role_label: "Spacer"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Люблю события, уютные места и сообщества, в которые легко встроиться."
+
+  - email: "fred89059599296@gmail.com"
+    account_role: "spacer"
+    display_name: "Fred B."
+    role_label: "Spacer"
+    avatar_url: ""
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Собираю понятные городские ориентиры, короткие маршруты и спокойные social входы."
+
+________________________________________
+
+profile_projections:
+  - email: "admin.operator.seed@example.com"
+    display_name: "Admin Operator"
+    role_label: "Admin"
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Поддерживаю экосистему Go2Asia и помогаю запускать новые социальные контуры."
+
+  - email: "oleg.tran.seed@example.com"
+    display_name: "Oleg Tran"
+    role_label: "PRO"
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Помогаю адаптироваться во Вьетнаме, собираю локальные сообщества и практичные маршруты."
+
+  - email: "natalia.kim.seed@example.com"
+    display_name: "Natalia Kim"
+    role_label: "PRO"
+    country: "Thailand"
+    city: "Phuket"
+    bio_short: "Собираю комьюнити по зимовке, жилью и повседневной жизни на Пхукете."
+
+  - email: "alexey.chernov.seed@example.com"
+    display_name: "Alexey Chernov"
+    role_label: "PRO"
+    country: "Vietnam"
+    city: "Ho Chi Minh City"
+    bio_short: "Люблю события, городские ритмы и живые социальные сценарии."
+
+  - email: "kirill.denisov.seed@example.com"
+    display_name: "Kirill Denisov"
+    role_label: "VIP"
+    country: "Vietnam"
+    city: "Ho Chi Minh City"
+    bio_short: "Ищу сильные места, маршруты и городские открытия."
+
+  - email: "elena.morozova.seed@example.com"
+    display_name: "Elena Morozova"
+    role_label: "Spacer"
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Люблю события, уютные места и сообщества, в которые легко встроиться."
+
+  - email: "fred89059599296@gmail.com"
+    display_name: "Fred B."
+    role_label: "Spacer"
+    country: "Vietnam"
+    city: "Da Nang"
+    bio_short: "Ищу полезные сообщества, заметные репосты и спокойный ритм жизни в городе."
+
+________________________________________
+
+groups:
+  - slug: "danang-city-life"
+    title: "Da Nang City Life"
+    description: "Публичное сообщество о повседневной жизни, районах, местах и полезных находках в Дананге."
+    visibility: "public"
+    owner_email: "oleg.tran.seed@example.com"
+    moderator_emails: []
+    member_emails:
+      - "elena.morozova.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - slug: "asia-city-events"
+    title: "Asia City Events"
+    description: "Публичная группа вокруг интересных городских событий, встреч и social afterlife после них."
+    visibility: "public"
+    owner_email: "alexey.chernov.seed@example.com"
+    moderator_emails: []
+    member_emails:
+      - "kirill.denisov.seed@example.com"
+      - "elena.morozova.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - slug: "quest-phu-quoc-weekend"
+    title: "Quest Phu Quoc Weekend"
+    description: "Сообщество вокруг городских и travel-квестов на Фукуоке: впечатления, отчеты и полезные репосты."
+    visibility: "public"
+    owner_email: "alexey.chernov.seed@example.com"
+    moderator_emails:
+      - "oleg.tran.seed@example.com"
+    member_emails:
+      - "kirill.denisov.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - slug: "phuket-relocation-circle"
+    title: "Phuket Relocation Circle"
+    description: "Публичная группа про мягкую адаптацию на Пхукете: районы, жильё, бытовой ритм и полезные точки входа."
+    visibility: "public"
+    owner_email: "natalia.kim.seed@example.com"
+    moderator_emails: []
+    member_emails: []
+
+________________________________________
+
+group_membership_matrix:
+  - group_slug: "danang-city-life"
+    owner_email: "oleg.tran.seed@example.com"
+    moderators: []
+    active_members:
+      - "elena.morozova.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - group_slug: "asia-city-events"
+    owner_email: "alexey.chernov.seed@example.com"
+    moderators: []
+    active_members:
+      - "kirill.denisov.seed@example.com"
+      - "elena.morozova.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - group_slug: "quest-phu-quoc-weekend"
+    owner_email: "alexey.chernov.seed@example.com"
+    moderators:
+      - "oleg.tran.seed@example.com"
+    active_members:
+      - "kirill.denisov.seed@example.com"
+      - "fred89059599296@gmail.com"
+
+  - group_slug: "phuket-relocation-circle"
+    owner_email: "natalia.kim.seed@example.com"
+    moderators: []
+    active_members: []
+
+________________________________________
+
+posts:
+  - post_ref: "feed-post-001"
+    author_email: "oleg.tran.seed@example.com"
+    post_kind: "post"
+    visibility: "public"
+    group_slug: ""
+    text: "Если только приехали в Дананг и не хотите сразу перегружаться, я бы начал с связки: тихий завтрак, один понятный район, одно рабочее кафе и вечерняя прогулка у реки. Такой день лучше даёт почувствовать город, чем беготня по топ-спискам."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs:
+      - "feed-post-media-001"
+
+  - post_ref: "feed-post-002"
+    author_email: "elena.morozova.seed@example.com"
+    post_kind: "post"
+    visibility: "group"
+    group_slug: "danang-city-life"
+    text: "Для группы: если хочется не просто сидеть дома после работы, а мягко встроиться в городской ритм, очень советую маршрут через набережную, одно кафе и короткую остановку на мосту Дракона. Без туристической суеты, но с ощущением живого города."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs:
+      - "feed-post-media-002"
+      - "feed-post-media-003"
+
+  - post_ref: "feed-post-003"
+    author_email: "alexey.chernov.seed@example.com"
+    post_kind: "repost"
+    visibility: "public"
+    group_slug: ""
+    text: "Хороший формат для тех, кто не любит большие и шумные ивенты. Здесь скорее про лёгкий вход в город и новых людей."
+    repost_target:
+      target_type: "event"
+      target_hint: "pulse-event-danang-community-meetup"
+    media_refs: []
+
+  - post_ref: "feed-post-004"
+    author_email: "natalia.kim.seed@example.com"
+    post_kind: "repost"
+    visibility: "public"
+    group_slug: ""
+    text: "Редкий тип места, которое не кричит «лучшее на острове», а просто честно решает задачу: сесть, поработать, выпить кофе и не устать от шума."
+    repost_target:
+      target_type: "place"
+      target_hint: "atlas-place-phuket-chill-cafe"
+    media_refs: []
+
+  - post_ref: "feed-post-005"
+    author_email: "kirill.denisov.seed@example.com"
+    post_kind: "repost"
+    visibility: "group"
+    group_slug: "asia-city-events"
+    text: "Кинул в группу, потому что это как раз тот случай, когда статья помогает не только подумать, но и реально чуть спокойнее встроиться в новую среду."
+    repost_target:
+      target_type: "blog_post"
+      target_hint: "blog-how-to-start-in-danang"
+    media_refs: []
+
+  - post_ref: "feed-post-006"
+    author_email: "admin.operator.seed@example.com"
+    post_kind: "system"
+    visibility: "public"
+    group_slug: ""
+    text: "В Space Asia стало больше живых городских и групповых сценариев. Если давно только читали, попробуйте один простой шаг: открыть группу по вашему городу, сохранить полезный пост или сделать первый репост объекта экосистемы."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs: []
+
+  - post_ref: "feed-post-007"
+    author_email: "fred89059599296@gmail.com"
+    post_kind: "post"
+    visibility: "public"
+    group_slug: ""
+    text: "Чем дольше живу в городском ритме Дананга, тем больше понимаю ценность не громких мест, а понятных опор: кафе, короткий маршрут, одна рабочая точка, одно место для вечера. Хочется собирать вокруг себя именно такие ориентиры."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs:
+      - "feed-post-media-004"
+
+  - post_ref: "feed-post-008"
+    author_email: "fred89059599296@gmail.com"
+    post_kind: "post"
+    visibility: "group"
+    group_slug: "quest-phu-quoc-weekend"
+    text: "Для группы: понравился формат, где квест не превращается в гонку. Самое приятное — что после прохождения остаётся не только галочка, но и несколько реальных точек, к которым хочется вернуться."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs:
+      - "feed-post-media-005"
+      - "feed-post-media-006"
+
+  - post_ref: "feed-post-009"
+    author_email: "fred89059599296@gmail.com"
+    post_kind: "repost"
+    visibility: "public"
+    group_slug: ""
+    text: "Хороший пример того, как квест может быть не только про прохождение, но и про настроение, ритм и маленькие полезные находки."
+    repost_target:
+      target_type: "quest"
+      target_hint: "quest-phu-quoc-sunset-path"
+    media_refs: []
+
+  - post_ref: "feed-post-010"
+    author_email: "natalia.kim.seed@example.com"
+    post_kind: "post"
+    visibility: "group"
+    group_slug: "phuket-relocation-circle"
+    text: "Для группы: не пытайтесь решить всё за один день. Лучше сначала понять, какой вам нужен ритм — море, работа, тишина, логистика. Уже потом выбирать район и жильё."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs: []
+
+  - post_ref: "feed-post-011"
+    author_email: "alexey.chernov.seed@example.com"
+    post_kind: "repost"
+    visibility: "public"
+    group_slug: ""
+    text: "Обычно не люблю тащить listings в social layer просто так, но здесь хорош именно контекст: понятный район, спокойный ритм и логичная бытовая география."
+    repost_target:
+      target_type: "listing"
+      target_hint: "rielt-listing-phuket-kathu-01"
+    media_refs: []
+
+  - post_ref: "feed-post-012"
+    author_email: "kirill.denisov.seed@example.com"
+    post_kind: "post"
+    visibility: "public"
+    group_slug: ""
+    text: "Интересно, что в последнее время больше всего сохраняют не «топ-10 мест», а короткие practical posts: районы, рабочие кафе, события без перегруза и один понятный маршрут на вечер."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs: []
+
+  - post_ref: "feed-post-013"
+    author_email: "oleg.tran.seed@example.com"
+    post_kind: "post"
+    visibility: "group"
+    group_slug: "danang-city-life"
+    text: "Для группы собрал короткую связку: район, кафе и вечерняя прогулка, которые дают ощущение «я уже живу здесь», а не просто приехал посмотреть."
+    repost_target:
+      target_type: ""
+      target_hint: ""
+    media_refs:
+      - "feed-post-media-007"
+
+  - post_ref: "feed-post-014"
+    author_email: "elena.morozova.seed@example.com"
+    post_kind: "repost"
+    visibility: "group"
+    group_slug: "asia-city-events"
+    text: "В группу кидаю это не ради скидки как таковой, а потому что формат хорошо подходит для продолжения после городских событий."
+    repost_target:
+      target_type: "partner"
+      target_hint: "rf-partner-phuket-breakfast-club"
+    media_refs: []
+
+________________________________________
+
+media_registry:
+  post_media:
+    - media_ref: "feed-post-media-001"
+      attached_to_post_ref: "feed-post-001"
+      sort_order: 0
+
+    - media_ref: "feed-post-media-002"
+      attached_to_post_ref: "feed-post-002"
+      sort_order: 0
+
+    - media_ref: "feed-post-media-003"
+      attached_to_post_ref: "feed-post-002"
+      sort_order: 1
+
+    - media_ref: "feed-post-media-004"
+      attached_to_post_ref: "feed-post-007"
+      sort_order: 0
+
+    - media_ref: "feed-post-media-005"
+      attached_to_post_ref: "feed-post-008"
+      sort_order: 0
+
+    - media_ref: "feed-post-media-006"
+      attached_to_post_ref: "feed-post-008"
+      sort_order: 1
+
+    - media_ref: "feed-post-media-007"
+      attached_to_post_ref: "feed-post-013"
+      sort_order: 0

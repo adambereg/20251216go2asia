@@ -2,6 +2,8 @@
 
 Цель: безопасно materialize `Space-Asia-Full-Seed-Content-Pack-v1.md` без догадки о runtime `user_id`.
 
+По умолчанию importer читает `Space-Asia-Full-Seed-Content-Pack-v1.md`, но для bounded review/materialization passes можно передать альтернативный markdown source через `--source`, если этот файл уже приведён к каноническим YAML sections (`users`, `profile_projections`, `groups`, `group_membership_matrix`, `posts`, `media_registry`).
+
 ## Каноническое правило identity
 
 - Для applied seed source-of-truth по user identity: `auth.users.id`.
@@ -27,6 +29,15 @@
 2. Убедиться, что `auth.users.id` уже соответствует canonical auth-linked identity.
 3. Запустить importer в `dry-run` для preview объёма данных.
 4. Запустить importer с `--apply`.
+
+Примеры:
+
+- Full seed по умолчанию:
+  `pnpm -C packages/db db:import:space-md`
+- Альтернативный bounded source:
+  `pnpm -C packages/db db:import:space-md -- --source "../../content/space/Space-Asia-Feed-Content-Pack-Slice-1-v1.md"`
+- Apply для альтернативного bounded source:
+  `pnpm -C packages/db db:import:space-md -- --apply --source "../../content/space/Space-Asia-Feed-Content-Pack-Slice-1-v1.md"`
 
 ## Failure semantics
 
