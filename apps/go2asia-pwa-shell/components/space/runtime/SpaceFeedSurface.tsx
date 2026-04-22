@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { SpaceLayout } from '@/components/space/Shared';
@@ -15,17 +16,51 @@ type FilterOption = {
   isDisabled?: boolean;
 };
 
-function getFilterEmptyState(filter: FeedFilter): string {
+type EmptyState = {
+  title: string;
+  description?: string;
+  actionLabel?: string;
+};
+
+function getFilterEmptyState(filter: FeedFilter, hasAnyItems: boolean): EmptyState {
   switch (filter) {
     case 'groups':
-      return 'Пока нет публикаций из групп.';
+      return hasAnyItems
+        ? {
+            title: 'В этой подборке пока нет публикаций из групп.',
+            description: 'Попробуйте вернуться ко всей ленте или заглянуть в сообщества.',
+            actionLabel: 'Показать всё',
+          }
+        : {
+            title: 'Пока нет публикаций из групп.',
+            description: 'Когда они появятся, этот раздел наполнится сам.',
+            actionLabel: 'Открыть сообщества',
+          };
     case 'reposts':
-      return 'Пока нет репостов.';
+      return hasAnyItems
+        ? {
+            title: 'В этой подборке пока нет репостов.',
+            description: 'Откройте весь поток, чтобы посмотреть остальные публикации.',
+            actionLabel: 'Показать всё',
+          }
+        : {
+            title: 'Пока нет репостов.',
+            description: 'Здесь будут появляться заметные материалы из других модулей Go2Asia.',
+            actionLabel: 'Показать всё',
+          };
     case 'my':
-      return 'Пока здесь нет ваших публикаций и репостов.';
+      return {
+        title: 'Пока здесь нет ваших публикаций и репостов.',
+        description: 'Когда вы будете заметнее в потоке, этот раздел соберёт ваши публикации в одном месте.',
+        actionLabel: 'Показать всё',
+      };
     case 'all':
     default:
-      return 'Пока в ленте тихо. Загляните чуть позже.';
+      return {
+        title: 'Пока в ленте тихо.',
+        description: 'Новые публикации, посты из групп и заметные репосты появятся здесь.',
+        actionLabel: 'Открыть сообщества',
+      };
   }
 }
 
@@ -37,6 +72,7 @@ export function SpaceFeedSurface() {
 
   const currentUserId = isSignedIn && user?.id ? user.id : null;
   const items = feed?.items ?? [];
+  const hasAnyItems = items.length > 0;
 
   const filterOptions = useMemo<FilterOption[]>(
     () => [
@@ -52,6 +88,19 @@ export function SpaceFeedSurface() {
     [currentUserId]
   );
 
+  const counts = useMemo(() => {
+    const groups = items.filter((item) => item.post.groupId !== null).length;
+    const reposts = items.filter((item) => item.post.postType === 'repost' || item.post.repost !== null).length;
+    const mine = currentUserId ? items.filter((item) => item.post.author.userId === currentUserId).length : 0;
+
+    return {
+      all: items.length,
+      groups,
+      reposts,
+      my: mine,
+    };
+  }, [currentUserId, items]);
+
   const visibleItems = useMemo(() => {
     switch (activeFilter) {
       case 'groups':
@@ -66,13 +115,37 @@ export function SpaceFeedSurface() {
     }
   }, [activeFilter, currentUserId, items]);
 
+  const emptyState = useMemo(
+    () => getFilterEmptyState(activeFilter, hasAnyItems),
+    [activeFilter, hasAnyItems]
+  );
+
+  const summaryParts = useMemo(() => {
+    const parts: string[] = [];
+
+    if (counts.all > 0) {
+      parts.push(`${counts.all} в ленте`);
+    }
+    if (counts.groups > 0) {
+      parts.push(`${counts.groups} из групп`);
+    }
+    if (counts.reposts > 0) {
+      parts.push(`${counts.reposts} репостов`);
+    }
+    if (currentUserId && counts.my > 0) {
+      parts.push(`${counts.my} ваших`);
+    }
+
+    return parts;
+  }, [counts, currentUserId]);
+
   return (
     <SpaceLayout>
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-slate-900">Лента</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-600">
-            Личный поток Space Asia: полезные публикации, группы и заметные репосты в одном месте.
+            Личный поток Space Asia: городские находки, публикации из групп и заметные репосты в одном месте.
           </p>
 
           {mode === 'public-profile' && (
@@ -84,6 +157,7 @@ export function SpaceFeedSurface() {
           <div className="flex flex-wrap gap-2">
             {filterOptions.map((option) => {
               const isActive = option.key === activeFilter;
+              const count = counts[option.key];
               return (
                 <button
                   key={option.key}
@@ -99,16 +173,28 @@ export function SpaceFeedSurface() {
                     option.isDisabled ? 'cursor-not-allowed opacity-60 hover:bg-white' : '',
                   ].join(' ')}
                 >
-                  {option.label}
+                  <span>{option.label}</span>
+                  {!option.isDisabled && count > 0 && (
+                    <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[11px] text-slate-500">
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
+
+          {summaryParts.length > 0 && (
+            <p className="mt-3 text-xs text-slate-500">Сейчас в подборке: {summaryParts.join(' · ')}.</p>
+          )}
         </div>
 
         {isLoading && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Собираем ленту...
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+            <div className="h-16 animate-pulse rounded-lg bg-white" />
+            <div className="h-16 animate-pulse rounded-lg bg-white" />
+            <div className="text-sm text-slate-600">Собираем ленту...</div>
           </div>
         )}
 
@@ -119,8 +205,29 @@ export function SpaceFeedSurface() {
         )}
 
         {!isLoading && !error && feed && visibleItems.length === 0 && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            {getFilterEmptyState(activeFilter)}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <h2 className="text-sm font-semibold text-slate-900">{emptyState.title}</h2>
+            {emptyState.description && (
+              <p className="mt-2 text-sm text-slate-600">{emptyState.description}</p>
+            )}
+            <div className="mt-4">
+              {activeFilter === 'all' || (!hasAnyItems && activeFilter === 'groups') ? (
+                <Link
+                  href="/space/community"
+                  className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {emptyState.actionLabel ?? 'Открыть сообщества'}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter('all')}
+                  className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {emptyState.actionLabel ?? 'Показать всё'}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
