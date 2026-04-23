@@ -43,7 +43,7 @@ function truncate(value: string, maxLength: number): string {
 function formatPublicationType(postType: generated.SpacePostType): string {
   switch (postType) {
     case 'post':
-      return 'Пост';
+      return 'Запись';
     case 'repost':
       return 'Репост';
     case 'system':
@@ -71,7 +71,7 @@ function formatVisibility(visibility: generated.SpaceVisibility): string {
 function formatRepostTarget(targetType: generated.SpaceRepostTargetType): string {
   switch (targetType) {
     case 'space_post':
-      return 'поста Space';
+      return 'записи в Space';
     case 'blog_post':
       return 'публикации блога';
     case 'place':
@@ -124,7 +124,7 @@ function getPublicationTitle(item: generated.SpaceFeedItem): string {
   }
 
   if (item.post.postType === 'system') {
-    return 'Системная публикация';
+    return 'Объявление';
   }
 
   if (item.post.text) {
@@ -146,7 +146,7 @@ function getPublicationExcerpt(item: generated.SpaceFeedItem, title: string): st
   }
 
   if (item.post.repost) {
-    return 'Материал сохранён как репост и доступен через исходный маршрут, если он уже поддержан в интерфейсе.';
+    return 'Материал сохранён как репост и связан с исходной публикацией или объектом.';
   }
 
   if (item.post.media.length > 0) {
@@ -195,7 +195,7 @@ export function PostsPublicationCard({
 
           <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
             <span title={exactTime}>Опубликовано {relativeTime}</span>
-            {item.post.repost && <span>Связано с объектом экосистемы</span>}
+            {item.post.repost && <span>Есть связанный материал</span>}
             {!item.post.repost && item.post.groupId && <span>Опубликовано в группе</span>}
             {!item.post.repost && !item.post.groupId && (
               <span>{isOwnerView ? 'Ваша авторская публикация' : 'Авторская публикация'}</span>
@@ -231,7 +231,7 @@ export function PostsPublicationCard({
             href={`/space/profiles/${encodeURIComponent(item.post.author.userId)}`}
             className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
           >
-            {isOwnerView ? 'Открыть профиль' : 'Открыть автора'}
+            {isOwnerView ? 'Мой профиль' : 'Страница автора'}
           </Link>
         ) : null}
       </div>

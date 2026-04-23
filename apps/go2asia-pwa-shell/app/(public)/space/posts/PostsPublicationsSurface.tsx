@@ -59,13 +59,13 @@ function getSurfaceCopy(
     return {
       title: 'Авторские публикации',
       subtitle: 'Здесь собраны ваши материалы и репосты, которые уже видны в Space Asia.',
-      note: 'Страница показывает только публикации, уже доступные в текущем runtime-контуре.',
+      note: 'Здесь собраны только те публикации, которые уже доступны в этой версии Space Asia.',
     };
   }
 
   return {
     title: profile?.displayName ? `Публикации ${profile.displayName}` : 'Авторские публикации',
-    subtitle: 'Открытый срез материалов автора, которые сейчас видны в Space Asia.',
+    subtitle: 'Здесь собраны публикации автора, которые сейчас можно увидеть в Space Asia.',
     note: 'После входа в аккаунт здесь откроется ваш собственный список публикаций.',
   };
 }
@@ -154,7 +154,7 @@ export function PostsPublicationsSurface({
 
           {!isLoading && !error && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-              <div className="text-xs uppercase tracking-wide text-slate-500">В списке</div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">Публикаций</div>
               <div className="mt-1 text-xl font-semibold text-slate-900">{summary.total}</div>
             </div>
           )}
@@ -174,12 +174,9 @@ export function PostsPublicationsSurface({
 
         {!isLoading && !error && (
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700">
-              Показано: {summary.total}
-            </span>
             {summary.authored > 0 && (
               <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-                Посты: {summary.authored}
+                Записи: {summary.authored}
               </span>
             )}
             {summary.reposts > 0 && (
@@ -220,7 +217,7 @@ export function PostsPublicationsSurface({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-base font-semibold text-slate-900">Пока здесь нет публикаций</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Когда в Space Asia появятся видимые авторские материалы или репосты, они соберутся в этом разделе.
+              Когда появятся новые видимые публикации или репосты, они соберутся в этом разделе.
             </p>
           </div>
         )}
