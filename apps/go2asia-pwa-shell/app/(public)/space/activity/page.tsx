@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Активность | Space Asia | Go2Asia',
-  description: 'Bounded activity baseline в Space Asia',
+  description: 'Недавняя активность в Space Asia.',
 };
 
 export default function ActivityPage() {
