@@ -12,6 +12,8 @@
 
 import { getAuthToken } from './clerk-integration';
 
+const STAGING_API_GATEWAY_URL = 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev';
+
 interface FetchConfig {
   method?: string;
   headers?: Record<string, string>;
@@ -37,10 +39,7 @@ export function getBaseUrl(): string {
   // Server-side or client-side fallback
   // Use globalThis.process to avoid TypeScript errors
   const envApiUrl = (globalThis as any).process?.env?.NEXT_PUBLIC_API_URL;
-  return (
-    envApiUrl ||
-    'https://go2asia-api-gateway-staging.fred89059599296.workers.dev'
-  );
+  return envApiUrl || STAGING_API_GATEWAY_URL;
 }
 
 /**

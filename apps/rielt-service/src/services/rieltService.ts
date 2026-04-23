@@ -74,6 +74,37 @@ type ListingPublicMedia = {
   photos: string[];
 };
 
+type PublicGeoPrecision = 'approximate' | 'area' | 'city' | 'none';
+
+function toPublicGeoPrecision(value: PublicListingRow['public_geo_precision']): PublicGeoPrecision {
+  if (value === 'approximate') return 'approximate';
+  if (value === 'area') return 'area';
+  if (value === 'city') return 'city';
+  return 'none';
+}
+
+function toPublicGeo(row: PublicListingRow) {
+  const precision = toPublicGeoPrecision(row.public_geo_precision);
+  const lat = toNumber(row.public_geo_lat);
+  const lng = toNumber(row.public_geo_lng);
+  const accuracyRadiusM = row.public_geo_accuracy_radius_m ?? null;
+
+  return {
+    countryId: row.country_id,
+    cityId: row.city_id,
+    atlasPlaceId: row.atlas_place_id ?? null,
+    atlasContainerPlaceId: row.atlas_container_place_id ?? null,
+    public: {
+      precision,
+      lat,
+      lng,
+      accuracyRadiusM,
+      cityLabel: row.city_label ?? null,
+      areaLabel: row.public_geo_area_label ?? null,
+    },
+  };
+}
+
 function buildPublicMediaMap(rows: PublicListingMediaRow[]): Map<string, ListingPublicMedia> {
   const byListing = new Map<string, ListingPublicMedia>();
   for (const row of rows) {
@@ -108,12 +139,7 @@ function toPublicListingDto(row: PublicListingRow, media?: ListingPublicMedia) {
     bedrooms: row.bedrooms,
     bathrooms: row.bathrooms,
     areaSqm: toNumber(row.area_sqm),
-    geo: {
-      countryId: row.country_id,
-      cityId: row.city_id,
-      atlasPlaceId: row.atlas_place_id ?? null,
-      atlasContainerPlaceId: row.atlas_container_place_id ?? null,
-    },
+    geo: toPublicGeo(row),
     media: {
       coverUrl: media?.coverUrl ?? null,
       photos: media?.photos ?? [],

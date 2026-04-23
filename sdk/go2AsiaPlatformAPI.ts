@@ -71,6 +71,9 @@ import type {
   ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
+  ListMyReactionsParams,
+  ListMyReactionsResponse,
+  ListOwnedQuestsParams,
   ListPlaceContainersResponse,
   ListPlacesParams,
   ListPlacesResponse,
@@ -86,6 +89,7 @@ import type {
   QuestInternalErrorResponse,
   QuestListResponse,
   QuestNotFoundResponse,
+  QuestOperationalStatsResponse,
   QuestProgressResponse,
   QuestServiceAuthNotConfiguredResponse,
   QuestStepResponse,
@@ -164,6 +168,8 @@ import type {
   SubmitQuestStepRequest,
   TransactionsPage,
   UnauthorizedResponse,
+  UpdateDraftQuestRequest,
+  UpdateDraftQuestStepRequest,
   UploadResult,
   UpsertReactionRequest,
   UserBalance,
@@ -2110,6 +2116,438 @@ export const createQuest = async (
 };
 
 /**
+ * @summary List owned quests for management
+ */
+export type listOwnedQuestsResponse200 = {
+  data: QuestListResponse;
+  status: 200;
+};
+
+export type listOwnedQuestsResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type listOwnedQuestsResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type listOwnedQuestsResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type listOwnedQuestsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type listOwnedQuestsResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listOwnedQuestsResponseSuccess = listOwnedQuestsResponse200 & {
+  headers: Headers;
+};
+export type listOwnedQuestsResponseError = (
+  | listOwnedQuestsResponse400
+  | listOwnedQuestsResponse401
+  | listOwnedQuestsResponse403
+  | listOwnedQuestsResponse500
+  | listOwnedQuestsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listOwnedQuestsResponse = listOwnedQuestsResponseSuccess | listOwnedQuestsResponseError;
+
+export const getListOwnedQuestsUrl = (params?: ListOwnedQuestsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/quests/mine?${stringifiedParams}` : `/v1/quests/mine`;
+};
+
+export const listOwnedQuests = async (
+  params?: ListOwnedQuestsParams,
+  options?: RequestInit
+): Promise<listOwnedQuestsResponse> => {
+  return customInstance<listOwnedQuestsResponse>(getListOwnedQuestsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Get owned quest details for management
+ */
+export type getOwnedQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type getOwnedQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type getOwnedQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type getOwnedQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getOwnedQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getOwnedQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getOwnedQuestResponseSuccess = getOwnedQuestResponse200 & {
+  headers: Headers;
+};
+export type getOwnedQuestResponseError = (
+  | getOwnedQuestResponse401
+  | getOwnedQuestResponse403
+  | getOwnedQuestResponse404
+  | getOwnedQuestResponse500
+  | getOwnedQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type getOwnedQuestResponse = getOwnedQuestResponseSuccess | getOwnedQuestResponseError;
+
+export const getGetOwnedQuestUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}`;
+};
+
+export const getOwnedQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getOwnedQuestResponse> => {
+  return customInstance<getOwnedQuestResponse>(getGetOwnedQuestUrl(questId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Update bounded draft quest fields for management
+ */
+export type updateQuestDraftResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type updateQuestDraftResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type updateQuestDraftResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type updateQuestDraftResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type updateQuestDraftResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type updateQuestDraftResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type updateQuestDraftResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type updateQuestDraftResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type updateQuestDraftResponseSuccess = updateQuestDraftResponse200 & {
+  headers: Headers;
+};
+export type updateQuestDraftResponseError = (
+  | updateQuestDraftResponse400
+  | updateQuestDraftResponse401
+  | updateQuestDraftResponse403
+  | updateQuestDraftResponse404
+  | updateQuestDraftResponse409
+  | updateQuestDraftResponse500
+  | updateQuestDraftResponse503
+) & {
+  headers: Headers;
+};
+
+export type updateQuestDraftResponse =
+  | updateQuestDraftResponseSuccess
+  | updateQuestDraftResponseError;
+
+export const getUpdateQuestDraftUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}`;
+};
+
+export const updateQuestDraft = async (
+  questId: string,
+  updateDraftQuestRequest: UpdateDraftQuestRequest,
+  options?: RequestInit
+): Promise<updateQuestDraftResponse> => {
+  return customInstance<updateQuestDraftResponse>(getUpdateQuestDraftUrl(questId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDraftQuestRequest),
+  });
+};
+
+/**
+ * @summary Get minimum operational curator stats for owned quest
+ */
+export type getOwnedQuestOperationalStatsResponse200 = {
+  data: QuestOperationalStatsResponse;
+  status: 200;
+};
+
+export type getOwnedQuestOperationalStatsResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type getOwnedQuestOperationalStatsResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type getOwnedQuestOperationalStatsResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type getOwnedQuestOperationalStatsResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type getOwnedQuestOperationalStatsResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getOwnedQuestOperationalStatsResponseSuccess =
+  getOwnedQuestOperationalStatsResponse200 & {
+    headers: Headers;
+  };
+export type getOwnedQuestOperationalStatsResponseError = (
+  | getOwnedQuestOperationalStatsResponse401
+  | getOwnedQuestOperationalStatsResponse403
+  | getOwnedQuestOperationalStatsResponse404
+  | getOwnedQuestOperationalStatsResponse500
+  | getOwnedQuestOperationalStatsResponse503
+) & {
+  headers: Headers;
+};
+
+export type getOwnedQuestOperationalStatsResponse =
+  | getOwnedQuestOperationalStatsResponseSuccess
+  | getOwnedQuestOperationalStatsResponseError;
+
+export const getGetOwnedQuestOperationalStatsUrl = (questId: string) => {
+  return `/v1/quests/mine/${questId}/stats`;
+};
+
+export const getOwnedQuestOperationalStats = async (
+  questId: string,
+  options?: RequestInit
+): Promise<getOwnedQuestOperationalStatsResponse> => {
+  return customInstance<getOwnedQuestOperationalStatsResponse>(
+    getGetOwnedQuestOperationalStatsUrl(questId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
+};
+
+/**
+ * @summary Delete draft quest step for management
+ */
+export type deleteDraftQuestStepResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type deleteDraftQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type deleteDraftQuestStepResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type deleteDraftQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type deleteDraftQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type deleteDraftQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type deleteDraftQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type deleteDraftQuestStepResponseSuccess = deleteDraftQuestStepResponse204 & {
+  headers: Headers;
+};
+export type deleteDraftQuestStepResponseError = (
+  | deleteDraftQuestStepResponse401
+  | deleteDraftQuestStepResponse403
+  | deleteDraftQuestStepResponse404
+  | deleteDraftQuestStepResponse409
+  | deleteDraftQuestStepResponse500
+  | deleteDraftQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type deleteDraftQuestStepResponse =
+  | deleteDraftQuestStepResponseSuccess
+  | deleteDraftQuestStepResponseError;
+
+export const getDeleteDraftQuestStepUrl = (questId: string, stepId: string) => {
+  return `/v1/quests/mine/${questId}/steps/${stepId}`;
+};
+
+export const deleteDraftQuestStep = async (
+  questId: string,
+  stepId: string,
+  options?: RequestInit
+): Promise<deleteDraftQuestStepResponse> => {
+  return customInstance<deleteDraftQuestStepResponse>(getDeleteDraftQuestStepUrl(questId, stepId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+/**
+ * @summary Update bounded draft quest step fields for management
+ */
+export type updateDraftQuestStepResponse200 = {
+  data: QuestStepResponse;
+  status: 200;
+};
+
+export type updateDraftQuestStepResponse400 = {
+  data: QuestValidationErrorResponse;
+  status: 400;
+};
+
+export type updateDraftQuestStepResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type updateDraftQuestStepResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type updateDraftQuestStepResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type updateDraftQuestStepResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type updateDraftQuestStepResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type updateDraftQuestStepResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type updateDraftQuestStepResponseSuccess = updateDraftQuestStepResponse200 & {
+  headers: Headers;
+};
+export type updateDraftQuestStepResponseError = (
+  | updateDraftQuestStepResponse400
+  | updateDraftQuestStepResponse401
+  | updateDraftQuestStepResponse403
+  | updateDraftQuestStepResponse404
+  | updateDraftQuestStepResponse409
+  | updateDraftQuestStepResponse500
+  | updateDraftQuestStepResponse503
+) & {
+  headers: Headers;
+};
+
+export type updateDraftQuestStepResponse =
+  | updateDraftQuestStepResponseSuccess
+  | updateDraftQuestStepResponseError;
+
+export const getUpdateDraftQuestStepUrl = (questId: string, stepId: string) => {
+  return `/v1/quests/mine/${questId}/steps/${stepId}`;
+};
+
+export const updateDraftQuestStep = async (
+  questId: string,
+  stepId: string,
+  updateDraftQuestStepRequest: UpdateDraftQuestStepRequest,
+  options?: RequestInit
+): Promise<updateDraftQuestStepResponse> => {
+  return customInstance<updateDraftQuestStepResponse>(getUpdateDraftQuestStepUrl(questId, stepId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDraftQuestStepRequest),
+  });
+};
+
+/**
  * @summary Get published quest details
  */
 export type getQuestResponse200 = {
@@ -2147,6 +2585,74 @@ export const getQuest = async (
   return customInstance<getQuestResponse>(getGetQuestUrl(questId), {
     ...options,
     method: "GET",
+  });
+};
+
+/**
+ * @summary Archive published quest
+ */
+export type archiveQuestResponse200 = {
+  data: QuestDetailResponse;
+  status: 200;
+};
+
+export type archiveQuestResponse401 = {
+  data: QuestUnauthorizedResponse;
+  status: 401;
+};
+
+export type archiveQuestResponse403 = {
+  data: QuestForbiddenResponse;
+  status: 403;
+};
+
+export type archiveQuestResponse404 = {
+  data: QuestNotFoundResponse;
+  status: 404;
+};
+
+export type archiveQuestResponse409 = {
+  data: QuestConflictResponse;
+  status: 409;
+};
+
+export type archiveQuestResponse500 = {
+  data: QuestInternalErrorResponse;
+  status: 500;
+};
+
+export type archiveQuestResponse503 = {
+  data: QuestServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type archiveQuestResponseSuccess = archiveQuestResponse200 & {
+  headers: Headers;
+};
+export type archiveQuestResponseError = (
+  | archiveQuestResponse401
+  | archiveQuestResponse403
+  | archiveQuestResponse404
+  | archiveQuestResponse409
+  | archiveQuestResponse500
+  | archiveQuestResponse503
+) & {
+  headers: Headers;
+};
+
+export type archiveQuestResponse = archiveQuestResponseSuccess | archiveQuestResponseError;
+
+export const getArchiveQuestUrl = (questId: string) => {
+  return `/v1/quests/${questId}/archive`;
+};
+
+export const archiveQuest = async (
+  questId: string,
+  options?: RequestInit
+): Promise<archiveQuestResponse> => {
+  return customInstance<archiveQuestResponse>(getArchiveQuestUrl(questId), {
+    ...options,
+    method: "POST",
   });
 };
 
@@ -2634,6 +3140,74 @@ export const upsertReaction = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(upsertReactionRequest),
+  });
+};
+
+/**
+ * @summary List my saved reactions (space posts bookmark baseline)
+ */
+export type listMyReactionsResponse200 = {
+  data: ListMyReactionsResponse;
+  status: 200;
+};
+
+export type listMyReactionsResponse400 = {
+  data: ReactionsValidationErrorResponse;
+  status: 400;
+};
+
+export type listMyReactionsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type listMyReactionsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listMyReactionsResponse503 = {
+  data: ReactionsServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listMyReactionsResponseSuccess = listMyReactionsResponse200 & {
+  headers: Headers;
+};
+export type listMyReactionsResponseError = (
+  | listMyReactionsResponse400
+  | listMyReactionsResponse401
+  | listMyReactionsResponse500
+  | listMyReactionsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMyReactionsResponse = listMyReactionsResponseSuccess | listMyReactionsResponseError;
+
+export const getListMyReactionsUrl = (params: ListMyReactionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/reactions/mine?${stringifiedParams}`
+    : `/v1/reactions/mine`;
+};
+
+export const listMyReactions = async (
+  params: ListMyReactionsParams,
+  options?: RequestInit
+): Promise<listMyReactionsResponse> => {
+  return customInstance<listMyReactionsResponse>(getListMyReactionsUrl(params), {
+    ...options,
+    method: "GET",
   });
 };
 

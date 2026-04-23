@@ -1,0 +1,60 @@
+# Space Frontend Baseline Status Note v1
+
+Status: fixed as bounded frontend milestone with Organizer execution polish / clarity refinement v2 and Saved-to-Trip baseline.
+
+## Purpose
+
+This note fixes the current frontend baseline status of Space Asia after bounded implementation passes.
+It is a status fixation artifact, not a new roadmap and not a new execution wave.
+
+Cross-reference: detailed current runtime verification is captured in `docs/modules/space/space_current_state_audit_with_organizer_v1.md`. Cycle-closure framing is captured in `docs/modules/space/organizer_current_cycle_closure_note_v1.md`.
+
+## What Is Live / Assembled Now
+
+- `/space` works as dashboard-shell baseline.
+- `/space/community` works as discovery and belonging entry.
+- `/space/community/feed` remains the full social feed surface.
+- `/space/community/groups/[groupId]` works as group detail and membership baseline.
+- `/space/posts` works as authored/public posts baseline.
+- `/space/saved` works as saved posts baseline with bounded add-to-trip / create-trip-from-saved intake for `space_post`.
+- `/space/activity` works as narrow activity baseline.
+- `/space/organizer` now works as a calmer, more canonical Organizer home: Overview acts as an action portfolio with an action-time layer, List reads as lifecycle-aware trip containers, and Timeline remains a stronger trip-time board with packed trip bars, calmer undated rail, and inline trip preview.
+- `/space/organizer/trips/[tripId]` now works as a bounded trip workspace with an editable unified trip time block, lifecycle-aware guidance, calmer blockers/readiness signals, lightweight day focus, clearer next-step framing, and remove-from-trip semantics.
+
+## Architectural Alignment Already Reached
+
+- `/space` is no longer a feed-home route.
+- Dashboard pack is active as product source for `/space`.
+- Community pack is active as product source for `/space/community`.
+- Saved ownership stays in the reactions contour.
+- Saved-to-trip uses global Saved as intake source; Organizer keeps only trip link/context.
+- Route semantics are separated between dashboard, community root, community feed, posts, saved, and activity surfaces.
+- Organizer is opened as a real Space section without turning the whole shell into planner-first UI.
+
+## Thin By Design (Intentional)
+
+- Dashboard is not the full Dashboard v3 composition yet.
+- Organizer remains bounded, but it now feels closer to the canonical product shape: lifecycle-aware trip containers, a stronger action-portfolio Overview, a denser trip-range Timeline, editable unified trip time framing, lightweight day focus, and a more mature trip workspace are now real.
+- Saved remains bounded to `space_post` only, even after the first saved-to-trip bridge.
+- Activity remains a narrow baseline.
+- Ecosystem Signals, AI Suggestions, and PRO Widget remain summary/reference-level.
+
+## Deferred (Not Opened In This Milestone)
+
+- Broad Organizer saved-to-trip wave and richer planning suite beyond the `space_post` baseline.
+- Broad saved wave.
+- Ecosystem signals wave.
+- AI full-loop wave.
+- Broad PRO frontend wave.
+- Advanced community discovery/search/recommendation wave.
+
+## Where We Are Now
+
+Space frontend is no longer a feed-first shell.
+Space frontend is now a structured bounded baseline aligned with the dashboard-first concept.
+Current state is a usable product baseline, not the full target Space v3.
+
+## Recommended Next Direction
+
+Next likely direction is richer day-aware trip maturity, more faithful organizer data enrichment, or further dashboard enrichment.
+This note does not open a new execution pass; it only fixes the current milestone status.

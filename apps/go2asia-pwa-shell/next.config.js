@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const STAGING_API_GATEWAY_URL = 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev';
+
 const nextConfig = {
   reactStrictMode: true,
   // Отключаем ESLint во время сборки, чтобы не блокировать деплой
@@ -11,7 +13,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://go2asia-api-gateway-staging.fred89059599296.workers.dev',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || STAGING_API_GATEWAY_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },
   images: {

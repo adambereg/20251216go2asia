@@ -16,6 +16,7 @@ name = "go2asia-api-gateway-staging"
 # CONTENT_SERVICE_URL - Internal Content Service URL
 # POINTS_SERVICE_URL - Internal Points Service URL
 # REFERRAL_SERVICE_URL - Internal Referral Service URL
+# ORGANIZER_SERVICE_URL - Internal Organizer Service URL
 
 
 

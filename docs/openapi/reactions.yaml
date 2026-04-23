@@ -184,6 +184,52 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/reactions/mine:
+    get:
+      tags: [reactions]
+      operationId: listMyReactions
+      summary: List my saved reactions (space posts bookmark baseline)
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: targetType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [space_post]
+        - name: reactionType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [bookmark]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListMyReactionsResponse"
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
 components:
   securitySchemes:
     GatewayAuth:
@@ -343,7 +389,7 @@ components:
 
     ReactionType:
       type: string
-      enum: [like]
+      enum: [like, bookmark]
 
     ReactionTargetType:
       type: string
@@ -461,3 +507,22 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReactionSummaryItem"
+
+    ListMyReactionsItem:
+      type: object
+      required: [reaction]
+      properties:
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+
+    ListMyReactionsResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListMyReactionsItem"
+        nextCursor:
+          type: string
+          nullable: true

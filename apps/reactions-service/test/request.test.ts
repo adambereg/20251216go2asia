@@ -105,6 +105,61 @@ describe('reactions-service request', () => {
     );
   });
 
+  it('creates bookmark only for space_post without touching like aggregates', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_bookmark_1',
+            user_id: 'user_1',
+            target_type: 'space_post',
+            target_id: 'post_1',
+            reaction_type: 'bookmark',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          targetType: 'space_post',
+          targetId: 'post_1',
+          reactionType: 'bookmark',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ applied: boolean; reaction: { reactionType: string } }>(response);
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(true);
+    expect(body.reaction.reactionType).toBe('bookmark');
+    expect(aggregateSqlCallCount()).toBe(0);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          reactionType: 'bookmark',
+        }),
+      })
+    );
+  });
+
   it('removes like', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
@@ -416,6 +471,75 @@ describe('reactions-service request', () => {
     const body = await readJson<{ items: Array<{ viewer: { liked: boolean } }> }>(response);
     expect(response.status).toBe(200);
     expect(body.items[0]?.viewer.liked).toBe(false);
+  });
+
+  it('lists my saved space posts for bookmark baseline', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'react_bookmark_1',
+          user_id: 'user_1',
+          target_type: 'space_post',
+          target_id: 'post_1',
+          reaction_type: 'bookmark',
+          status: 'active',
+          created_at: '2026-03-14T00:00:00.000Z',
+          updated_at: '2026-03-14T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions/mine?targetType=space_post&reactionType=bookmark&limit=10', {
+        method: 'GET',
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: Array<{ reaction: { targetId: string; reactionType: string } }>; nextCursor: null }>(
+      response
+    );
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.reaction.targetId).toBe('post_1');
+    expect(body.items[0]?.reaction.reactionType).toBe('bookmark');
+    expect(body.nextCursor).toBeNull();
+  });
+
+  it('rejects bookmark writes for non-space targets', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          targetType: 'event',
+          targetId: 'event_1',
+          reactionType: 'bookmark',
+        }),
+      }),
+      env
+    );
+
+    expect(response.status).toBe(400);
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
   it('replays same idempotency key with same payload', async () => {

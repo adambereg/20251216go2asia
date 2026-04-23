@@ -18,6 +18,14 @@ on:
         required: false
         type: boolean
         default: true
+      organizer_user_id:
+        description: "Optional Organizer demo target user id"
+        required: false
+        type: string
+      organizer_user_email:
+        description: "Optional Organizer demo target user email (used only if user id is empty)"
+        required: false
+        type: string
 
 concurrency:
   group: seed-staging-${{ github.ref }}
@@ -69,6 +77,23 @@ jobs:
           STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
           SEED_RESET: ${{ inputs.reset && '1' || '' }}
         run: pnpm -C packages/db db:seed
+
+      - name: Seed organizer demo content (staging)
+        if: ${{ inputs.skip_seed != true }}
+        env:
+          ENVIRONMENT: staging
+          STAGING_DATABASE_URL: "${{ secrets.STAGING_DATABASE_URL }}"
+          ORGANIZER_SEED_USER_ID: "${{ inputs.organizer_user_id || vars.ORGANIZER_DEMO_USER_ID }}"
+          ORGANIZER_SEED_USER_EMAIL: "${{ inputs.organizer_user_email || vars.ORGANIZER_DEMO_USER_EMAIL }}"
+        run: |
+          set -euo pipefail
+          if [ -n "${ORGANIZER_SEED_USER_ID}" ]; then
+            pnpm -C packages/db db:import:organizer-md -- --apply --source "../../content/space/Organizer-Content-Pack-v2.md" --user-id "${ORGANIZER_SEED_USER_ID}"
+          elif [ -n "${ORGANIZER_SEED_USER_EMAIL}" ]; then
+            pnpm -C packages/db db:import:organizer-md -- --apply --source "../../content/space/Organizer-Content-Pack-v2.md" --user-email "${ORGANIZER_SEED_USER_EMAIL}"
+          else
+            echo "Skipping organizer demo seed: ORGANIZER_DEMO_USER_ID / ORGANIZER_DEMO_USER_EMAIL is not configured."
+          fi
 
       - name: Cleanup old Blog canon data (staging)
         if: ${{ always() && inputs.skip_ddl != true }}

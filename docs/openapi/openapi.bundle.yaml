@@ -225,6 +225,18 @@ components:
       required: true
       schema:
         type: string
+    QuestStatusFilter:
+      in: query
+      name: status
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestStatus"
+    QuestVisibilityFilter:
+      in: query
+      name: visibility
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestVisibility"
     ReactionId:
       in: path
       name: reactionId
@@ -411,6 +423,18 @@ components:
       in: path
       name: submissionId
       required: true
+      schema:
+        type: string
+    SubmissionStatusFilter:
+      in: query
+      name: status
+      required: false
+      schema:
+        $ref: "#/components/schemas/QuestSubmissionStatus"
+    SubmissionStepIdFilter:
+      in: query
+      name: stepId
+      required: false
       schema:
         type: string
     TabKey:
@@ -2125,6 +2149,26 @@ components:
         - limit
         - offset
       type: object
+    ListMyReactionsItem:
+      properties:
+        reaction:
+          $ref: "#/components/schemas/ReactionRecord"
+      required:
+        - reaction
+      type: object
+    ListMyReactionsResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ListMyReactionsItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
+      type: object
     ListPlaceContainersResponse:
       properties:
         items:
@@ -2309,6 +2353,100 @@ components:
         - pageSize
         - total
       type: object
+    QuestMetadataGalleryItemResponse:
+      additionalProperties: false
+      properties:
+        alt:
+          nullable: true
+          type: string
+        key:
+          type: string
+      required:
+        - key
+      type: object
+    QuestMetadataMediaResponse:
+      additionalProperties: false
+      properties:
+        cardMediaAlt:
+          nullable: true
+          type: string
+        cardMediaKey:
+          nullable: true
+          type: string
+        galleryMedia:
+          items:
+            $ref: "#/components/schemas/QuestMetadataGalleryItemResponse"
+          type: array
+        heroMediaAlt:
+          nullable: true
+          type: string
+        heroMediaKey:
+          nullable: true
+          type: string
+        mediaPrefix:
+          nullable: true
+          type: string
+      type: object
+    QuestMetadataNarrativeResponse:
+      additionalProperties: false
+      properties:
+        bodyMarkdown:
+          nullable: true
+          type: string
+        summary:
+          nullable: true
+          type: string
+      type: object
+    QuestMetadataPresentationResponse:
+      additionalProperties: false
+      properties:
+        cardBadge:
+          nullable: true
+          type: string
+        cardTagline:
+          nullable: true
+          type: string
+        detailHighlights:
+          items:
+            type: string
+          type: array
+        estimatedMinutes:
+          minimum: 1
+          nullable: true
+          type: integer
+        presentationFlags:
+          additionalProperties: true
+          type: object
+      type: object
+    QuestMetadataResponse:
+      additionalProperties: false
+      properties:
+        media:
+          $ref: "#/components/schemas/QuestMetadataMediaResponse"
+        narrative:
+          $ref: "#/components/schemas/QuestMetadataNarrativeResponse"
+        presentation:
+          $ref: "#/components/schemas/QuestMetadataPresentationResponse"
+      type: object
+    QuestOperationalStatsResponse:
+      properties:
+        completedCount:
+          minimum: 0
+          type: integer
+        pendingReviewCount:
+          minimum: 0
+          type: integer
+        questId:
+          type: string
+        startedCount:
+          minimum: 0
+          type: integer
+      required:
+        - questId
+        - startedCount
+        - completedCount
+        - pendingReviewCount
+      type: object
     QuestProgressResponse:
       properties:
         completedAt:
@@ -2481,6 +2619,9 @@ components:
           $ref: "#/components/schemas/QuestProofData"
         proofType:
           $ref: "#/components/schemas/QuestProofType"
+        rejectionReason:
+          nullable: true
+          type: string
         reviewedAt:
           format: date-time
           nullable: true
@@ -2530,6 +2671,8 @@ components:
           nullable: true
         id:
           type: string
+        metadata:
+          $ref: "#/components/schemas/QuestMetadataResponse"
         publishedAt:
           format: date-time
           nullable: true
@@ -2697,6 +2840,7 @@ components:
     ReactionType:
       enum:
         - like
+        - bookmark
       type: string
     ReactionWriteResponse:
       properties:
@@ -3420,6 +3564,10 @@ components:
           type: string
         countryId:
           type: string
+        public:
+          allOf:
+            - $ref: "#/components/schemas/RieltPublicGeo"
+          nullable: true
       required:
         - countryId
       type: object
@@ -3640,6 +3788,8 @@ components:
         - $ref: "#/components/schemas/RieltListing"
         - properties:
             distanceMeters:
+              description: |
+                Distance to query anchor calculated by the same public map point represented by geo.public.lat/lng.
               type: integer
           type: object
     RieltOwnerGeo:
@@ -3859,6 +4009,34 @@ components:
         - amount
         - currency
         - period
+      type: object
+    RieltPublicGeo:
+      properties:
+        accuracyRadiusM:
+          nullable: true
+          type: integer
+        areaLabel:
+          nullable: true
+          type: string
+        cityLabel:
+          nullable: true
+          type: string
+        lat:
+          nullable: true
+          type: number
+        lng:
+          nullable: true
+          type: number
+        precision:
+          description: Privacy-aware public geo precision level used for map display.
+          enum:
+            - approximate
+            - area
+            - city
+            - none
+          type: string
+      required:
+        - precision
       type: object
     RieltReadyResponse:
       properties:
@@ -4255,6 +4433,56 @@ components:
           type: string
       required:
         - items
+      type: object
+    UpdateDraftQuestRequest:
+      minProperties: 1
+      properties:
+        cityId:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        difficulty:
+          $ref: "#/components/schemas/QuestDifficulty"
+          nullable: true
+        geoScope:
+          $ref: "#/components/schemas/QuestGeoScope"
+          nullable: true
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        theme:
+          nullable: true
+          type: string
+        title:
+          type: string
+        type:
+          nullable: true
+          type: string
+        visibility:
+          $ref: "#/components/schemas/QuestVisibility"
+      type: object
+    UpdateDraftQuestStepRequest:
+      minProperties: 1
+      properties:
+        requirements:
+          $ref: "#/components/schemas/QuestStepRequirement"
+        rewardPoints:
+          minimum: 0
+          nullable: true
+          type: integer
+        targetId:
+          nullable: true
+          type: string
+        targetType:
+          $ref: "#/components/schemas/QuestStepTargetType"
+          nullable: true
+        type:
+          $ref: "#/components/schemas/QuestStepType"
+        verificationType:
+          $ref: "#/components/schemas/QuestVerificationType"
       type: object
     UploadResult:
       properties:
@@ -5364,6 +5592,201 @@ paths:
       summary: Create quest draft
       tags:
         - quests
+  /v1/quests/mine:
+    get:
+      operationId: listOwnedQuests
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/QuestStatusFilter"
+        - $ref: "#/components/parameters/QuestVisibilityFilter"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestListResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List owned quests for management
+      tags:
+        - quests
+  /v1/quests/mine/{questId}:
+    get:
+      operationId: getOwnedQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get owned quest details for management
+      tags:
+        - quests
+    patch:
+      operationId: updateQuestDraft
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDraftQuestRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: Draft updated
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Update bounded draft quest fields for management
+      tags:
+        - quests
+  /v1/quests/mine/{questId}/stats:
+    get:
+      operationId: getOwnedQuestOperationalStats
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestOperationalStatsResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get minimum operational curator stats for owned quest
+      tags:
+        - quests
+  /v1/quests/mine/{questId}/steps/{stepId}:
+    delete:
+      operationId: deleteDraftQuestStep
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/StepId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "204":
+          description: Draft step deleted
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Delete draft quest step for management
+      tags:
+        - quests
+    patch:
+      operationId: updateDraftQuestStep
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/StepId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDraftQuestStepRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestStepResponse"
+          description: Draft step updated
+        "400":
+          $ref: "#/components/responses/QuestValidationError"
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Update bounded draft quest step fields for management
+      tags:
+        - quests
   /v1/quests/{questId}:
     get:
       operationId: getQuest
@@ -5381,6 +5804,37 @@ paths:
         "500":
           $ref: "#/components/responses/QuestInternalError"
       summary: Get published quest details
+      tags:
+        - quests
+  /v1/quests/{questId}/archive:
+    post:
+      operationId: archiveQuest
+      parameters:
+        - $ref: "#/components/parameters/QuestId"
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestDetailResponse"
+          description: Archived
+        "401":
+          $ref: "#/components/responses/QuestUnauthorized"
+        "403":
+          $ref: "#/components/responses/QuestForbidden"
+        "404":
+          $ref: "#/components/responses/QuestNotFound"
+        "409":
+          $ref: "#/components/responses/QuestConflict"
+        "500":
+          $ref: "#/components/responses/QuestInternalError"
+        "503":
+          $ref: "#/components/responses/QuestServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Archive published quest
       tags:
         - quests
   /v1/quests/{questId}/progress:
@@ -5554,6 +6008,8 @@ paths:
         - $ref: "#/components/parameters/QuestId"
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/SubmissionStatusFilter"
+        - $ref: "#/components/parameters/SubmissionStepIdFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
       responses:
@@ -5613,6 +6069,54 @@ paths:
       security:
         - GatewayAuth: []
       summary: Create or update a like (idempotent write)
+      tags:
+        - reactions
+  /v1/reactions/mine:
+    get:
+      operationId: listMyReactions
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - in: query
+          name: targetType
+          required: true
+          schema:
+            enum:
+              - space_post
+            type: string
+        - in: query
+          name: reactionType
+          required: true
+          schema:
+            enum:
+              - bookmark
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            default: 20
+            maximum: 50
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListMyReactionsResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/ReactionsValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List my saved reactions (space posts bookmark baseline)
       tags:
         - reactions
   /v1/reactions/summary/{targetType}/{targetId}:

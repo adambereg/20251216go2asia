@@ -24,7 +24,9 @@ const isPublicRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (_re
   '/quest(.*)', // Просмотр квестов публичный, прохождение требует авторизации
   '/rf(.*)', // Каталог партнёров публичный, личные разделы требуют авторизации
   '/rielt(.*)', // Объявления публичные
-  '/space(.*)', // Просмотр постов публичный, создание требует авторизации
+  '/space/community(.*)',
+  '/space/posts(.*)',
+  '/space/profiles(.*)',
   '/about(.*)',
   '/help(.*)',
   '/sign-in(.*)',
@@ -50,8 +52,11 @@ const isProtectedRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (
   '/partner(.*)',
   '/rf/merchant(.*)',
   '/rf/pro(.*)',
+  '/space',
   '/space/me(.*)',
-  '/space/posts(.*)',
+  '/space/saved(.*)',
+  '/space/activity(.*)',
+  '/space/organizer(.*)',
   '/space/balance(.*)',
   '/space/referrals(.*)',
   '/space/settings(.*)',

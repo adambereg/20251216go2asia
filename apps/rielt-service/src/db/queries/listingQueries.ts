@@ -29,6 +29,12 @@ export type PublicListingRow = {
   city_id: string | null;
   atlas_place_id: string | null;
   atlas_container_place_id: string | null;
+  city_label: string | null;
+  public_geo_precision: 'approximate' | 'area' | 'city' | 'none';
+  public_geo_lat: number | string | null;
+  public_geo_lng: number | string | null;
+  public_geo_accuracy_radius_m: number | null;
+  public_geo_area_label: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   area_sqm: number | string | null;
@@ -738,41 +744,79 @@ export async function listPublishedListings(
 ): Promise<PublicListingRow[]> {
   const sortSql =
     input.sort === 'price_asc'
-      ? sql`price_amount ASC, id ASC`
+      ? sql`l.price_amount ASC, l.id ASC`
       : input.sort === 'price_desc'
-        ? sql`price_amount DESC, id DESC`
-        : sql`published_at DESC NULLS LAST, updated_at DESC, id DESC`;
+        ? sql`l.price_amount DESC, l.id DESC`
+        : sql`l.published_at DESC NULLS LAST, l.updated_at DESC, l.id DESC`;
 
   const result = await db.execute(sql`
     SELECT
-      id,
-      slug,
-      title,
-      listing_type,
-      price_amount,
-      price_currency,
-      price_period,
-      country_id,
-      city_id,
-      atlas_place_id,
-      atlas_container_place_id,
-      bedrooms,
-      bathrooms,
-      area_sqm,
-      created_at,
-      updated_at,
-      published_at
-    FROM rielt_listing
-    WHERE status = 'published'
-      AND archived_at IS NULL
-      AND deleted_at IS NULL
-      AND (${input.countryId}::text IS NULL OR country_id = ${input.countryId})
-      AND (${input.cityId}::text IS NULL OR city_id = ${input.cityId})
-      AND (${input.listingType}::text IS NULL OR listing_type = ${input.listingType})
-      AND (${input.minPrice}::numeric IS NULL OR price_amount >= ${input.minPrice})
-      AND (${input.maxPrice}::numeric IS NULL OR price_amount <= ${input.maxPrice})
-      AND (${input.bedroomsMin}::int IS NULL OR bedrooms >= ${input.bedroomsMin})
-      AND (${input.bedroomsMax}::int IS NULL OR bedrooms <= ${input.bedroomsMax})
+      l.id,
+      l.slug,
+      l.title,
+      l.listing_type,
+      l.price_amount,
+      l.price_currency,
+      l.price_period,
+      l.country_id,
+      l.city_id,
+      l.atlas_place_id,
+      l.atlas_container_place_id,
+      COALESCE(c.names ->> 'ru', c.name, l.city_id) AS city_label,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 'approximate'
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 'area'
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 'city'
+        ELSE 'none'
+      END AS public_geo_precision,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN round(l.lat::numeric, 3)
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+          THEN round(COALESCE(ap.lat, ap.latitude)::numeric, 4)
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+          THEN round(COALESCE(c.lat, c.latitude)::numeric, 4)
+        ELSE NULL
+      END AS public_geo_lat,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN round(l.lng::numeric, 3)
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+          THEN round(COALESCE(ap.lng, ap.longitude)::numeric, 4)
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+          THEN round(COALESCE(c.lng, c.longitude)::numeric, 4)
+        ELSE NULL
+      END AS public_geo_lng,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 500
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 1200
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 3000
+        ELSE NULL
+      END AS public_geo_accuracy_radius_m,
+      CASE
+        WHEN l.lat IS NULL
+         AND l.lng IS NULL
+         AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+         AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+        ELSE NULL
+      END AS public_geo_area_label,
+      l.bedrooms,
+      l.bathrooms,
+      l.area_sqm,
+      l.created_at,
+      l.updated_at,
+      l.published_at
+    FROM rielt_listing l
+    LEFT JOIN places ap ON ap.id = l.atlas_place_id
+    LEFT JOIN cities c ON c.id = l.city_id
+    WHERE l.status = 'published'
+      AND l.archived_at IS NULL
+      AND l.deleted_at IS NULL
+      AND (${input.countryId}::text IS NULL OR l.country_id = ${input.countryId})
+      AND (${input.cityId}::text IS NULL OR l.city_id = ${input.cityId})
+      AND (${input.listingType}::text IS NULL OR l.listing_type = ${input.listingType})
+      AND (${input.minPrice}::numeric IS NULL OR l.price_amount >= ${input.minPrice})
+      AND (${input.maxPrice}::numeric IS NULL OR l.price_amount <= ${input.maxPrice})
+      AND (${input.bedroomsMin}::int IS NULL OR l.bedrooms >= ${input.bedroomsMin})
+      AND (${input.bedroomsMax}::int IS NULL OR l.bedrooms <= ${input.bedroomsMax})
     ORDER BY ${sortSql}
     LIMIT ${input.limit}
     OFFSET ${input.offset}
@@ -809,28 +853,66 @@ export async function getPublishedListingByIdOrSlug(
 ): Promise<PublicListingRow | null> {
   const result = await db.execute(sql`
     SELECT
-      id,
-      slug,
-      title,
-      listing_type,
-      price_amount,
-      price_currency,
-      price_period,
-      country_id,
-      city_id,
-      atlas_place_id,
-      atlas_container_place_id,
-      bedrooms,
-      bathrooms,
-      area_sqm,
-      created_at,
-      updated_at,
-      published_at
-    FROM rielt_listing
-    WHERE status = 'published'
-      AND archived_at IS NULL
-      AND deleted_at IS NULL
-      AND (id = ${idOrSlug} OR slug = ${idOrSlug})
+      l.id,
+      l.slug,
+      l.title,
+      l.listing_type,
+      l.price_amount,
+      l.price_currency,
+      l.price_period,
+      l.country_id,
+      l.city_id,
+      l.atlas_place_id,
+      l.atlas_container_place_id,
+      COALESCE(c.names ->> 'ru', c.name, l.city_id) AS city_label,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 'approximate'
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 'area'
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 'city'
+        ELSE 'none'
+      END AS public_geo_precision,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN round(l.lat::numeric, 3)
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+          THEN round(COALESCE(ap.lat, ap.latitude)::numeric, 4)
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+          THEN round(COALESCE(c.lat, c.latitude)::numeric, 4)
+        ELSE NULL
+      END AS public_geo_lat,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN round(l.lng::numeric, 3)
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+          THEN round(COALESCE(ap.lng, ap.longitude)::numeric, 4)
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+          THEN round(COALESCE(c.lng, c.longitude)::numeric, 4)
+        ELSE NULL
+      END AS public_geo_lng,
+      CASE
+        WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 500
+        WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 1200
+        WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 3000
+        ELSE NULL
+      END AS public_geo_accuracy_radius_m,
+      CASE
+        WHEN l.lat IS NULL
+         AND l.lng IS NULL
+         AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+         AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+        ELSE NULL
+      END AS public_geo_area_label,
+      l.bedrooms,
+      l.bathrooms,
+      l.area_sqm,
+      l.created_at,
+      l.updated_at,
+      l.published_at
+    FROM rielt_listing l
+    LEFT JOIN places ap ON ap.id = l.atlas_place_id
+    LEFT JOIN cities c ON c.id = l.city_id
+    WHERE l.status = 'published'
+      AND l.archived_at IS NULL
+      AND l.deleted_at IS NULL
+      AND (l.id = ${idOrSlug} OR l.slug = ${idOrSlug})
     LIMIT 1
   `);
 
@@ -903,6 +985,42 @@ export async function listPublishedListingsNearby(
         b.city_id,
         b.atlas_place_id,
         b.atlas_container_place_id,
+        COALESCE(c.names ->> 'ru', c.name, b.city_id) AS city_label,
+        CASE
+          WHEN b.lat IS NOT NULL AND b.lng IS NOT NULL THEN 'approximate'
+          WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 'area'
+          WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 'city'
+          ELSE 'none'
+        END AS public_geo_precision,
+        CASE
+          WHEN b.lat IS NOT NULL AND b.lng IS NOT NULL THEN round(b.lat::numeric, 3)
+          WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+            THEN round(COALESCE(ap.lat, ap.latitude)::numeric, 4)
+          WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+            THEN round(COALESCE(c.lat, c.latitude)::numeric, 4)
+          ELSE NULL
+        END AS public_geo_lat,
+        CASE
+          WHEN b.lat IS NOT NULL AND b.lng IS NOT NULL THEN round(b.lng::numeric, 3)
+          WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL
+            THEN round(COALESCE(ap.lng, ap.longitude)::numeric, 4)
+          WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL
+            THEN round(COALESCE(c.lng, c.longitude)::numeric, 4)
+          ELSE NULL
+        END AS public_geo_lng,
+        CASE
+          WHEN b.lat IS NOT NULL AND b.lng IS NOT NULL THEN 500
+          WHEN COALESCE(ap.lat, ap.latitude) IS NOT NULL AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN 1200
+          WHEN COALESCE(c.lat, c.latitude) IS NOT NULL AND COALESCE(c.lng, c.longitude) IS NOT NULL THEN 3000
+          ELSE NULL
+        END AS public_geo_accuracy_radius_m,
+        CASE
+          WHEN b.lat IS NULL
+           AND b.lng IS NULL
+           AND COALESCE(ap.lat, ap.latitude) IS NOT NULL
+           AND COALESCE(ap.lng, ap.longitude) IS NOT NULL THEN ap.name
+          ELSE NULL
+        END AS public_geo_area_label,
         b.bedrooms,
         b.bathrooms,
         b.area_sqm,
@@ -915,14 +1033,17 @@ export async function listPublishedListingsNearby(
               1.0,
               greatest(
                 0.0,
-                power(sin(radians((b.lat::double precision - p.lat) / 2.0)), 2) +
-                cos(radians(p.lat)) * cos(radians(b.lat::double precision)) *
-                power(sin(radians((b.lng::double precision - p.lng) / 2.0)), 2)
+                power(sin(radians((round(b.lat::numeric, 3)::double precision - p.lat) / 2.0)), 2) +
+                cos(radians(p.lat)) * cos(radians(round(b.lat::numeric, 3)::double precision)) *
+                power(sin(radians((round(b.lng::numeric, 3)::double precision - p.lng) / 2.0)), 2)
               )
             )
           )
         ) AS distance_meters
-      FROM base b, p
+      FROM base b
+      JOIN p ON true
+      LEFT JOIN places ap ON ap.id = b.atlas_place_id
+      LEFT JOIN cities c ON c.id = b.city_id
     )
     SELECT *
     FROM scored
@@ -970,9 +1091,9 @@ export async function countPublishedListingsNearby(
               1.0,
               greatest(
                 0.0,
-                power(sin(radians((b.lat::double precision - p.lat) / 2.0)), 2) +
-                cos(radians(p.lat)) * cos(radians(b.lat::double precision)) *
-                power(sin(radians((b.lng::double precision - p.lng) / 2.0)), 2)
+                power(sin(radians((round(b.lat::numeric, 3)::double precision - p.lat) / 2.0)), 2) +
+                cos(radians(p.lat)) * cos(radians(round(b.lat::numeric, 3)::double precision)) *
+                power(sin(radians((round(b.lng::numeric, 3)::double precision - p.lng) / 2.0)), 2)
               )
             )
           )

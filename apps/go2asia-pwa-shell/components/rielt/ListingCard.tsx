@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { MapPin, Star, Wifi, Home, Users } from 'lucide-react';
 // Badge будет использоваться напрямую, без импорта из @go2asia/ui
 import type { Listing } from './types';
-import { formatDistance } from './utils/geo';
+import { formatDistance, getGeoPrecisionLabel, resolveGeoPrecision } from './utils/geo';
 
 interface ListingCardProps {
   listing: Listing;
@@ -24,6 +24,8 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
     : listing.pricing.perNight;
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
+  const hasAmenityChips = Boolean(listing.amenities.wifi || listing.amenities.workspace || listing.amenities.kitchen);
+  const precision = resolveGeoPrecision(listing);
 
   return (
     <Link
@@ -42,14 +44,14 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         {/* Бейджи */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-2">
           {listing.isRF && (
-            <span className="px-1.5 py-0.5 bg-green-600 text-white rounded text-xs font-bold shadow-lg">
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               RF
             </span>
           )}
           {listing.proVerification?.verified && (
-            <div className="px-2 py-1 bg-green-500 text-white rounded text-xs font-bold flex items-center gap-1">
+            <div className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium flex items-center gap-1">
               <span>✓</span>
-              PRO
+              Куратор
             </div>
           )}
           {listing.isNew && (
@@ -59,7 +61,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
           )}
           {listing.isInstant && (
             <div className="px-2 py-1 bg-purple-500 text-white rounded text-xs font-bold">
-              Instant
+              Быстрый ответ
             </div>
           )}
         </div>
@@ -77,12 +79,18 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         <div className="flex items-center gap-1 text-sm text-slate-600 mb-2">
           <MapPin className="w-4 h-4" />
           <span className="line-clamp-1">
-            {listing.address.district || listing.address.city || 'city not specified'}, {listing.address.country}
+            {listing.address.district || listing.address.city || 'Город уточняется'}, {listing.address.country}
           </span>
           {showDistance && distance && (
             <span className="ml-1">• {formatDistance(distance)}</span>
           )}
         </div>
+        {listing.presentation?.trustLabel ? (
+          <p className="text-xs text-slate-500 mb-2 line-clamp-1">{listing.presentation.trustLabel}</p>
+        ) : null}
+        {precision !== 'none' ? (
+          <p className="text-xs text-slate-500 mb-2">{getGeoPrecisionLabel(precision)}</p>
+        ) : null}
 
         {/* Метаданные */}
         <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
@@ -101,26 +109,27 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
           </div>
         </div>
 
-        {/* Удобства (чипы) */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {listing.amenities.wifi && (
-            <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700 flex items-center gap-1">
-              <Wifi className="w-3 h-3" />
-              Wi-Fi
-            </div>
-          )}
-          {listing.amenities.workspace && (
-            <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700 flex items-center gap-1">
-              <Home className="w-3 h-3" />
-              Рабочее место
-            </div>
-          )}
-          {listing.amenities.kitchen && (
-            <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700">
-              Кухня
-            </div>
-          )}
-        </div>
+        {hasAmenityChips ? (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {listing.amenities.wifi && (
+              <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700 flex items-center gap-1">
+                <Wifi className="w-3 h-3" />
+                Wi-Fi
+              </div>
+            )}
+            {listing.amenities.workspace && (
+              <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700 flex items-center gap-1">
+                <Home className="w-3 h-3" />
+                Рабочее место
+              </div>
+            )}
+            {listing.amenities.kitchen && (
+              <div className="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700">
+                Кухня
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {/* Цена */}
         <div className="flex items-center justify-between">
@@ -136,9 +145,6 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
             </span>
           ) : null}
         </div>
-        {listing.presentation?.trustLabel ? (
-          <p className="mt-2 text-xs text-slate-500 line-clamp-1">{listing.presentation.trustLabel}</p>
-        ) : null}
       </div>
     </Link>
   );

@@ -23,9 +23,12 @@
     "db:seed": "tsx src/seed.ts",
     "db:seed:content": "tsx src/seed.ts",
     "db:seed:pulse": "tsx src/seed.ts",
+    "db:seed:space-saved-demo": "cross-env ENVIRONMENT=staging tsx src/seedSpaceSavedDemo.ts",
     "db:seed:atlas-tabs": "tsx src/seedAtlasTabs.ts",
     "db:seed:atlas-places-ph": "tsx src/seedAtlasPlacesPhilippines.ts",
     "db:seed:atlas-places-kh": "tsx src/seedAtlasPlacesCambodia.ts",
+    "db:import:space-md": "cross-env ENVIRONMENT=staging tsx src/importSpaceSeedFromMarkdown.ts",
+    "db:import:organizer-md": "cross-env ENVIRONMENT=staging tsx src/importOrganizerSeedFromMarkdown.ts",
     "db:cleanup:blog": "cross-env ENVIRONMENT=staging tsx src/cleanupBlogCanon.ts",
     "db:cleanup:demo-places": "tsx src/cleanupDemoPlaces.ts",
     "db:export:places-neon": "tsx src/exportPlacesToNeon.ts",
@@ -43,7 +46,8 @@
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
     "drizzle-orm": "^0.29.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@go2asia/config": "workspace:*",

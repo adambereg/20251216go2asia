@@ -81,6 +81,10 @@ jobs:
             path: apps/reactions-service
             url: https://go2asia-reactions-service-staging.fred89059599296.workers.dev
             extra_vars: ""
+          - service: organizer-service
+            path: apps/organizer-service
+            url: https://go2asia-organizer-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
           - service: feed-service
             path: apps/feed-service
             url: https://go2asia-feed-service-staging.fred89059599296.workers.dev
@@ -94,6 +98,10 @@ jobs:
           - service: rielt-service
             path: apps/rielt-service
             url: https://go2asia-rielt-service-staging.fred89059599296.workers.dev
+            extra_vars: ""
+          - service: quest-service
+            path: apps/quest-service
+            url: https://go2asia-quest-service-staging.fred89059599296.workers.dev
             extra_vars: ""
 
     steps:
@@ -189,9 +197,11 @@ jobs:
             --var REFERRAL_SERVICE_URL:https://go2asia-referral-service-staging.fred89059599296.workers.dev \
             --var SPACE_SERVICE_URL:https://go2asia-space-service-staging.fred89059599296.workers.dev \
             --var REACTIONS_SERVICE_URL:https://go2asia-reactions-service-staging.fred89059599296.workers.dev \
+            --var ORGANIZER_SERVICE_URL:https://go2asia-organizer-service-staging.fred89059599296.workers.dev \
             --var FEED_SERVICE_URL:https://go2asia-feed-service-staging.fred89059599296.workers.dev \
             --var RF_SERVICE_URL:https://go2asia-rf-service-staging.fred89059599296.workers.dev \
-            --var RIELT_SERVICE_URL:https://go2asia-rielt-service-staging.fred89059599296.workers.dev
+            --var RIELT_SERVICE_URL:https://go2asia-rielt-service-staging.fred89059599296.workers.dev \
+            --var QUEST_SERVICE_URL:https://go2asia-quest-service-staging.fred89059599296.workers.dev
       - name: Smoke check gateway
         run: |
           set -euo pipefail

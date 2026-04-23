@@ -1,18 +1,25 @@
 import type { GatewayPrincipal } from '../middleware/auth';
+import type { QuestEventPublisher } from '../events/publisher';
 import { readJsonObject } from '../middleware/http';
 import {
   addQuestStep,
+  archiveQuest,
   createQuestDraft,
+  deleteQuestStepByOwner,
   getQuest,
+  getOwnedQuest,
+  getOwnedQuestOperationalStats,
   getQuestProgress,
   getQuestSubmissions,
+  listOwnedQuests,
   listQuests,
   publishQuest,
   reviewQuestSubmission,
   startQuest,
   submitQuestStep,
+  updateQuestDraftByOwner,
+  updateQuestStepByOwner,
 } from '../services/questService';
-import type { QuestEventPublisher } from '../events/publisher';
 
 type Env = {
   DATABASE_URL?: string;
@@ -35,7 +42,34 @@ export async function handleQuestRoute(
 
   if (path === '/v1/quests' && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
-    return createQuestDraft(env, body, principal, requestId);
+    return createQuestDraft(env, body, principal, requestId, publisher);
+  }
+
+  if (path === '/v1/quests/mine' && request.method === 'GET' && principal) {
+    return listOwnedQuests(env, principal, requestId, url);
+  }
+
+  const ownedQuestDetailMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)$/);
+  if (ownedQuestDetailMatch && request.method === 'GET' && principal) {
+    return getOwnedQuest(env, ownedQuestDetailMatch[1]!, principal, requestId);
+  }
+  if (ownedQuestDetailMatch && request.method === 'PATCH' && principal) {
+    const body = await readJsonObject(request);
+    return updateQuestDraftByOwner(env, ownedQuestDetailMatch[1]!, body, principal, requestId, publisher);
+  }
+
+  const ownedQuestStepMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)\/steps\/([^/]+)$/);
+  if (ownedQuestStepMatch && request.method === 'PATCH' && principal) {
+    const body = await readJsonObject(request);
+    return updateQuestStepByOwner(env, ownedQuestStepMatch[1]!, ownedQuestStepMatch[2]!, body, principal, requestId, publisher);
+  }
+  if (ownedQuestStepMatch && request.method === 'DELETE' && principal) {
+    return deleteQuestStepByOwner(env, ownedQuestStepMatch[1]!, ownedQuestStepMatch[2]!, principal, requestId, publisher);
+  }
+
+  const ownedQuestStatsMatch = path.match(/^\/v1\/quests\/mine\/([^/]+)\/stats$/);
+  if (ownedQuestStatsMatch && request.method === 'GET' && principal) {
+    return getOwnedQuestOperationalStats(env, ownedQuestStatsMatch[1]!, principal, requestId);
   }
 
   const questDetailMatch = path.match(/^\/v1\/quests\/([^/]+)$/);
@@ -56,12 +90,17 @@ export async function handleQuestRoute(
   const questStepsMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps$/);
   if (questStepsMatch && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
-    return addQuestStep(env, questStepsMatch[1]!, body, principal, requestId);
+    return addQuestStep(env, questStepsMatch[1]!, body, principal, requestId, publisher);
   }
 
   const questPublishMatch = path.match(/^\/v1\/quests\/([^/]+)\/publish$/);
   if (questPublishMatch && request.method === 'POST' && principal) {
-    return publishQuest(env, questPublishMatch[1]!, principal, requestId);
+    return publishQuest(env, questPublishMatch[1]!, principal, requestId, publisher);
+  }
+
+  const questArchiveMatch = path.match(/^\/v1\/quests\/([^/]+)\/archive$/);
+  if (questArchiveMatch && request.method === 'POST' && principal) {
+    return archiveQuest(env, questArchiveMatch[1]!, principal, requestId, publisher);
   }
 
   const questSubmitMatch = path.match(/^\/v1\/quests\/([^/]+)\/steps\/([^/]+)\/submit$/);

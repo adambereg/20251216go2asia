@@ -25,7 +25,7 @@ export type ReactionsDomainEvent = {
     actorUserId: string;
     targetType: 'space_post' | 'blog_post' | 'place' | 'event' | 'partner' | 'listing' | 'quest';
     targetId: string;
-    reactionType: 'like';
+    reactionType: 'like' | 'bookmark';
     requestId: string;
   };
 };

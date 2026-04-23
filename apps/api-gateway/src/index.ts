@@ -17,6 +17,7 @@ export interface Env {
   REFERRAL_SERVICE_URL?: string;
   // Phase 2 services (not all exist yet; keep optional and only route when configured)
   SPACE_SERVICE_URL?: string;
+  ORGANIZER_SERVICE_URL?: string;
   REACTIONS_SERVICE_URL?: string;
   FEED_SERVICE_URL?: string;
   QUEST_SERVICE_URL?: string;
@@ -58,6 +59,7 @@ export type RouteGroup =
   | 'points'
   | 'referral'
   | 'space'
+  | 'organizer'
   | 'reactions'
   | 'feed'
   | 'quest'
@@ -253,6 +255,36 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath.startsWith('/v1/space/')) {
     return { routeKey: `space.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'space' };
   }
+  if (normalizedPath === '/v1/organizer/trips' && normalizedMethod === 'GET') {
+    return { routeKey: 'organizer.trips.list.get', routeGroup: 'organizer' };
+  }
+  if (normalizedPath === '/v1/organizer/trips' && normalizedMethod === 'POST') {
+    return { routeKey: 'organizer.trips.create.post', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'organizer.trips.detail.get', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/items$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'organizer.items.create.post', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/items\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'organizer.items.update.patch', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/items\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'organizer.items.delete.delete', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/tasks$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'organizer.tasks.create.post', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/tasks\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'organizer.tasks.update.patch', routeGroup: 'organizer' };
+  }
+  if (/^\/v1\/organizer\/trips\/[^/]+\/notes$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'organizer.notes.create.post', routeGroup: 'organizer' };
+  }
+  if (normalizedPath.startsWith('/v1/organizer/')) {
+    return { routeKey: `organizer.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'organizer' };
+  }
   if (normalizedPath === '/v1/reactions' && normalizedMethod === 'POST') {
     return { routeKey: 'reactions.create.post', routeGroup: 'reactions' };
   }
@@ -264,6 +296,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   }
   if (normalizedPath === '/v1/reactions/summary:batch' && normalizedMethod === 'POST') {
     return { routeKey: 'reactions.summary-batch.post', routeGroup: 'reactions' };
+  }
+  if (normalizedPath === '/v1/reactions/mine' && normalizedMethod === 'GET') {
+    return { routeKey: 'reactions.mine.get', routeGroup: 'reactions' };
   }
   if (normalizedPath.startsWith('/v1/reactions/')) {
     return { routeKey: `reactions.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'reactions' };
@@ -289,6 +324,24 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath === '/v1/quests' && normalizedMethod === 'POST') {
     return { routeKey: 'quest.create.post', routeGroup: 'quest' };
   }
+  if (normalizedPath === '/v1/quests/mine' && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.list.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.detail.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/stats$/.test(normalizedPath) && normalizedMethod === 'GET') {
+    return { routeKey: 'quest.mine.stats.get', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'quest.mine.steps.update.patch', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
+    return { routeKey: 'quest.mine.steps.delete.delete', routeGroup: 'quest' };
+  }
   if (/^\/v1\/quests\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
     return { routeKey: 'quest.detail.get', routeGroup: 'quest' };
   }
@@ -303,6 +356,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   }
   if (/^\/v1\/quests\/[^/]+\/publish$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.publish.post', routeGroup: 'quest' };
+  }
+  if (/^\/v1\/quests\/[^/]+\/archive$/.test(normalizedPath) && normalizedMethod === 'POST') {
+    return { routeKey: 'quest.archive.post', routeGroup: 'quest' };
   }
   if (/^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(normalizedPath) && normalizedMethod === 'POST') {
     return { routeKey: 'quest.submit.post', routeGroup: 'quest' };
@@ -634,6 +690,7 @@ function getUrlCheck(value?: string): 'ok' | 'missing' | 'invalid' {
 
 function getReservedPhase2ServiceVar(path: string): keyof Env | null {
   if (path.startsWith('/v1/space/')) return 'SPACE_SERVICE_URL';
+  if (path.startsWith('/v1/organizer/')) return 'ORGANIZER_SERVICE_URL';
   if (path === '/v1/reactions' || path.startsWith('/v1/reactions/')) return 'REACTIONS_SERVICE_URL';
   if (path.startsWith('/v1/feed/')) return 'FEED_SERVICE_URL';
   if (path === '/v1/quests' || path.startsWith('/v1/quests/') || path.startsWith('/v1/submissions/')) {
@@ -662,7 +719,13 @@ function isProtectedSpaceRoute(method: string, path: string): boolean {
 function isProtectedReactionsRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/reactions') return true;
   if (method === 'DELETE' && /^\/v1\/reactions\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && path === '/v1/reactions/mine') return true;
   return false;
+}
+
+function isProtectedOrganizerRoute(method: string, path: string): boolean {
+  if (!path.startsWith('/v1/organizer/')) return false;
+  return method === 'GET' || method === 'POST' || method === 'PATCH' || method === 'DELETE';
 }
 
 function isProtectedFeedRoute(method: string, path: string): boolean {
@@ -675,10 +738,17 @@ function isProtectedFeedRoute(method: string, path: string): boolean {
 
 function isProtectedQuestRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/quests') return true;
+  if (method === 'GET' && path === '/v1/quests/mine') return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+\/stats$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/publish$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/archive$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/submissions$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/submissions\/[^/]+\/review$/.test(path)) return true;
@@ -816,6 +886,7 @@ async function routeRequest(
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
           // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
           { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
+          { prefix: '/v1/organizer/', var: 'ORGANIZER_SERVICE_URL', host: safeHostFromUrl(env.ORGANIZER_SERVICE_URL) },
           { prefix: '/v1/reactions/', var: 'REACTIONS_SERVICE_URL', host: safeHostFromUrl(env.REACTIONS_SERVICE_URL) },
           { prefix: '/v1/feed/', var: 'FEED_SERVICE_URL', host: safeHostFromUrl(env.FEED_SERVICE_URL) },
           { prefix: '/v1/quests/', var: 'QUEST_SERVICE_URL', host: safeHostFromUrl(env.QUEST_SERVICE_URL) },
@@ -866,6 +937,8 @@ async function routeRequest(
     // Phase 2 (planned): do not fail with 502 if the service is not configured yet.
     // Keep behavior consistent with "unknown route" until SPACE_SERVICE_URL is provided.
     if (env.SPACE_SERVICE_URL) serviceUrl = env.SPACE_SERVICE_URL;
+  } else if (path.startsWith('/v1/organizer/')) {
+    if (env.ORGANIZER_SERVICE_URL) serviceUrl = env.ORGANIZER_SERVICE_URL;
   } else if (path === '/v1/reactions' || path.startsWith('/v1/reactions/')) {
     if (env.REACTIONS_SERVICE_URL) serviceUrl = env.REACTIONS_SERVICE_URL;
   } else if (path.startsWith('/v1/feed/')) {
@@ -969,6 +1042,7 @@ async function routeRequest(
     isMediaUploadToken ||
     isMediaAttach ||
     isProtectedSpaceRoute(request.method, path) ||
+    isProtectedOrganizerRoute(request.method, path) ||
     isProtectedReactionsRoute(request.method, path) ||
     isProtectedFeedRoute(request.method, path) ||
     isProtectedQuestRoute(request.method, path) ||

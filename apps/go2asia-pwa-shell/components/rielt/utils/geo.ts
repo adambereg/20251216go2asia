@@ -3,7 +3,7 @@
  * Функции работы с геолокацией
  */
 
-import type { Coordinates, Listing, ListingWithDistance } from '../types';
+import type { Coordinates, GeoPrecision, Listing, ListingWithDistance } from '../types';
 
 /**
  * Вычислить расстояние между двумя точками (Haversine formula)
@@ -80,5 +80,91 @@ export function formatDistance(distanceMeters: number): string {
     return `${Math.round(distanceMeters)} м`;
   }
   return `${(distanceMeters / 1000).toFixed(1)} км`;
+}
+
+const CITY_CENTERS: Record<string, Coordinates> = {
+  bangkok: { lat: 13.7563, lng: 100.5018 },
+  phuket: { lat: 7.8804, lng: 98.3923 },
+  da_nang: { lat: 16.0544, lng: 108.2022 },
+  'da-nang': { lat: 16.0544, lng: 108.2022 },
+  danang: { lat: 16.0544, lng: 108.2022 },
+  ho_chi_minh_city: { lat: 10.8231, lng: 106.6297 },
+  'ho-chi-minh-city': { lat: 10.8231, lng: 106.6297 },
+  hcmc: { lat: 10.8231, lng: 106.6297 },
+};
+
+function normalizeCity(cityId: string | undefined): string {
+  return (cityId ?? '').trim().toLowerCase();
+}
+
+export function resolveCityCenter(cityId: string | undefined): Coordinates | null {
+  const normalized = normalizeCity(cityId);
+  if (!normalized) return null;
+  return CITY_CENTERS[normalized] ?? null;
+}
+
+export function resolveGeoPrecision(listing: Listing): GeoPrecision {
+  if (listing.address.geoPrecision) return listing.address.geoPrecision;
+  if (listing.address.coordinates) return 'approximate';
+  if (listing.address.district) return 'area';
+  if (listing.address.city) return 'city';
+  return 'none';
+}
+
+export function getGeoPrecisionLabel(precision: GeoPrecision): string {
+  if (precision === 'approximate') return 'Ориентировочное расположение';
+  if (precision === 'area') return 'Район размещения';
+  if (precision === 'city') return 'Расположение в городе';
+  return 'Локация уточняется';
+}
+
+export function getGeoPrecisionHint(precision: GeoPrecision): string {
+  if (precision === 'approximate') return 'Для приватности точка на карте показана ориентировочно.';
+  if (precision === 'area') return 'Показан район. Точный адрес уточняется после запроса.';
+  if (precision === 'city') return 'Показан город. Точное расположение уточняйте у владельца.';
+  return 'Точная локация для этого объявления пока не отображается.';
+}
+
+export function getMapRadiusByPrecision(precision: GeoPrecision): number | null {
+  if (precision === 'approximate') return 500;
+  if (precision === 'area') return 1200;
+  if (precision === 'city') return 3000;
+  return null;
+}
+
+export function resolveMapPoint(listing: Listing): {
+  coordinates: Coordinates | null;
+  precision: GeoPrecision;
+  radiusM: number | null;
+  source: 'listing_public' | 'legacy_city_fallback' | 'none';
+} {
+  const precision = resolveGeoPrecision(listing);
+  const radiusM = listing.address.geoAccuracyRadiusM ?? getMapRadiusByPrecision(precision);
+  if (listing.address.coordinates) {
+    return {
+      coordinates: listing.address.coordinates,
+      precision,
+      radiusM,
+      source: 'listing_public',
+    };
+  }
+
+  // Legacy fallback for old payloads without public geo point.
+  const cityCenter = resolveCityCenter(listing.address.cityId ?? listing.address.city);
+  if (cityCenter) {
+    return {
+      coordinates: cityCenter,
+      precision: listing.address.district ? 'area' : 'city',
+      radiusM: getMapRadiusByPrecision(listing.address.district ? 'area' : 'city'),
+      source: 'legacy_city_fallback',
+    };
+  }
+
+  return {
+    coordinates: null,
+    precision: 'none',
+    radiusM: null,
+    source: 'none',
+  };
 }
 

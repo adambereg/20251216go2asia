@@ -12,4 +12,5 @@ export type ReactionType = (typeof ReactionType)[keyof typeof ReactionType];
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ReactionType = {
   like: "like",
+  bookmark: "bookmark",
 } as const;

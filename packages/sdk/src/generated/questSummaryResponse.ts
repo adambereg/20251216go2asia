@@ -8,6 +8,7 @@
  */
 import type { QuestDifficulty } from "./questDifficulty";
 import type { QuestGeoScope } from "./questGeoScope";
+import type { QuestMetadataResponse } from "./questMetadataResponse";
 import type { QuestStatus } from "./questStatus";
 import type { QuestVisibility } from "./questVisibility";
 
@@ -23,6 +24,7 @@ export interface QuestSummaryResponse {
   /** @nullable */
   geoScope?: QuestGeoScope;
   id: string;
+  metadata?: QuestMetadataResponse;
   /** @nullable */
   publishedAt?: string | null;
   /**

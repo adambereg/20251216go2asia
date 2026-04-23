@@ -85,7 +85,7 @@ The API does **not** expose:
 
 **Response:** `{ listing: ListingDto }`
 
-**Public detail DTO:** Intentionally returns a summary-like DTO. Description is absent from the public listing DTO (present only in owner DTOs). Media returns coverUrl: null, photos: [].
+**Public detail DTO:** Summary-like DTO with bounded public geo model. Description is absent from the public listing DTO (present only in owner DTOs).
 
 **Key errors:** VALIDATION_ERROR (invalid idOrSlug), NOT_FOUND, SERVICE_NOT_CONFIGURED.
 
@@ -199,13 +199,15 @@ The API does **not** expose:
 
 ## 4.1 Public listing summary / detail
 
-Public listing DTO (list and detail) is intentionally summary-like. No description; no media URL resolution.
+Public listing DTO (list and detail) is intentionally summary-like. No description.
 
 - id, slug, title, listingType
 - price: { amount, currency, period }
 - bedrooms, bathrooms, areaSqm
-- geo: { countryId, cityId }
-- media: { coverUrl: null, photos: [] } (Step 8: not resolved)
+- geo: { countryId, cityId, atlasPlaceId, atlasContainerPlaceId, public }
+- geo.public: { precision, lat, lng, accuracyRadiusM, cityLabel, areaLabel } (privacy-aware public representation)
+- precision values in current public runtime: approximate | area | city | none
+- media: { coverUrl, photos[] }
 - createdAt, updatedAt, publishedAt
 
 Description is present only in owner DTOs.
@@ -213,6 +215,7 @@ Description is present only in owner DTOs.
 ## 4.2 Nearby item
 
 - Same as public listing + distanceMeters: number
+- distanceMeters is calculated to the same public map point (geo.public.lat/lng) shown to the user.
 
 ## 4.3 Owner listing
 
@@ -241,9 +244,11 @@ Description is present only in owner DTOs.
 
 # 5. Geo/API Rules
 
-- **Canonical geo fields only:** country_id, city_id. No raw free-text geo identity in API contract.
+- **Canonical geo fields:** country_id, city_id (+ optional atlas IDs) and privacy-aware public geo representation in read DTO.
 - **city_id nullable:** API accepts null.
-- **No geo identity via raw free-text:** API contract uses country_id and city_id as structured fields.
+- **No geo identity via raw free-text:** API contract uses structured geo fields; `areaText` remains owner/private.
+- **Public vs owner split:** owner DTO keeps richer geo (`lat`, `lng`, `areaText`), public DTO exposes bounded `geo.public`.
+- **areaLabel policy:** public `geo.public.areaLabel` uses canonical linked geo labels (Atlas), not owner `areaText`.
 
 ---
 

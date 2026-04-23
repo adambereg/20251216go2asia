@@ -33,7 +33,7 @@ export default async function ListingDetailPage({
         <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-6">
           <h1 className="text-xl font-semibold text-amber-900 mb-2">Деталь объявления временно недоступна</h1>
           <p className="text-amber-800">
-            Не удалось загрузить данные из live runtime, а seed-слой для этого идентификатора не найден.
+            Не удалось загрузить данные по этому объявлению. Попробуйте открыть страницу позже.
           </p>
         </div>
       </div>

@@ -54,12 +54,36 @@ describe('api-gateway request hardening', () => {
       routeKey: 'space.feed.home.get',
       routeGroup: 'space',
     });
+    expect(classifyRoute('GET', '/v1/organizer/trips')).toEqual({
+      routeKey: 'organizer.trips.list.get',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('POST', '/v1/organizer/trips')).toEqual({
+      routeKey: 'organizer.trips.create.post',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('GET', '/v1/organizer/trips/trip_1')).toEqual({
+      routeKey: 'organizer.trips.detail.get',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('PATCH', '/v1/organizer/trips/trip_1/items/item_1')).toEqual({
+      routeKey: 'organizer.items.update.patch',
+      routeGroup: 'organizer',
+    });
+    expect(classifyRoute('DELETE', '/v1/organizer/trips/trip_1/items/item_1')).toEqual({
+      routeKey: 'organizer.items.delete.delete',
+      routeGroup: 'organizer',
+    });
     expect(classifyRoute('POST', '/v1/reactions')).toEqual({
       routeKey: 'reactions.create.post',
       routeGroup: 'reactions',
     });
     expect(classifyRoute('POST', '/v1/reactions/summary:batch')).toEqual({
       routeKey: 'reactions.summary-batch.post',
+      routeGroup: 'reactions',
+    });
+    expect(classifyRoute('GET', '/v1/reactions/mine')).toEqual({
+      routeKey: 'reactions.mine.get',
       routeGroup: 'reactions',
     });
     expect(classifyRoute('GET', '/v1/feed/home')).toEqual({
@@ -82,8 +106,36 @@ describe('api-gateway request hardening', () => {
       routeKey: 'quest.list.get',
       routeGroup: 'quest',
     });
+    expect(classifyRoute('GET', '/v1/quests/mine')).toEqual({
+      routeKey: 'quest.mine.list.get',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('GET', '/v1/quests/mine/quest_1')).toEqual({
+      routeKey: 'quest.mine.detail.get',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('GET', '/v1/quests/mine/quest_1/stats')).toEqual({
+      routeKey: 'quest.mine.stats.get',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('PATCH', '/v1/quests/mine/quest_1')).toEqual({
+      routeKey: 'quest.mine.update.patch',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('PATCH', '/v1/quests/mine/quest_1/steps/step_1')).toEqual({
+      routeKey: 'quest.mine.steps.update.patch',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('DELETE', '/v1/quests/mine/quest_1/steps/step_1')).toEqual({
+      routeKey: 'quest.mine.steps.delete.delete',
+      routeGroup: 'quest',
+    });
     expect(classifyRoute('POST', '/v1/quests/quest_1/start')).toEqual({
       routeKey: 'quest.start.post',
+      routeGroup: 'quest',
+    });
+    expect(classifyRoute('POST', '/v1/quests/quest_1/archive')).toEqual({
+      routeKey: 'quest.archive.post',
       routeGroup: 'quest',
     });
     expect(classifyRoute('POST', '/v1/submissions/sub_1/review')).toEqual({
@@ -219,6 +271,49 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected organizer route without bearer token', async () => {
+    const env: Env = {
+      ORGANIZER_SERVICE_URL: 'https://organizer.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/organizer/trips', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected organizer delete route without bearer token', async () => {
+    const env: Env = {
+      ORGANIZER_SERVICE_URL: 'https://organizer.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/organizer/trips/trip_1/items/item_1', {
+        method: 'DELETE',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
   it('returns 401 for protected reactions write route without bearer token', async () => {
     const env: Env = {
       REACTIONS_SERVICE_URL: 'https://reactions.example',
@@ -247,6 +342,28 @@ describe('api-gateway request hardening', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
   });
 
+  it('returns 401 for protected reactions mine route without bearer token', async () => {
+    const env: Env = {
+      REACTIONS_SERVICE_URL: 'https://reactions.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/reactions/mine?targetType=space_post&reactionType=bookmark', {
+        method: 'GET',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
   it('returns 401 for protected feed read route without bearer token', async () => {
     const env: Env = {
       FEED_SERVICE_URL: 'https://feed.example',
@@ -255,6 +372,27 @@ describe('api-gateway request hardening', () => {
 
     const response = await worker.fetch(
       new Request('https://gateway.example/v1/feed/home', {
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest management read route without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine', {
         headers: {
           Origin: 'https://app.example',
         },
@@ -351,6 +489,91 @@ describe('api-gateway request hardening', () => {
     expect(response.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest archive route without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/quest_1/archive', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected quest draft update routes without bearer token', async () => {
+    const env: Env = {
+      QUEST_SERVICE_URL: 'https://quest.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const updateQuestResponse = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine/quest_1', {
+        method: 'PATCH',
+        headers: {
+          Origin: 'https://app.example',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: 'Updated title' }),
+      }),
+      env
+    );
+    const updateQuestBody = await readJson<{ error: { code: string } }>(updateQuestResponse);
+    expect(updateQuestResponse.status).toBe(401);
+    expect(updateQuestBody.error.code).toBe('UNAUTHORIZED');
+
+    const updateStepResponse = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine/quest_1/steps/qstep_1', {
+        method: 'PATCH',
+        headers: {
+          Origin: 'https://app.example',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ verificationType: 'manual' }),
+      }),
+      env
+    );
+    const updateStepBody = await readJson<{ error: { code: string } }>(updateStepResponse);
+    expect(updateStepResponse.status).toBe(401);
+    expect(updateStepBody.error.code).toBe('UNAUTHORIZED');
+
+    const deleteStepResponse = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine/quest_1/steps/qstep_1', {
+        method: 'DELETE',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+    const deleteStepBody = await readJson<{ error: { code: string } }>(deleteStepResponse);
+    expect(deleteStepResponse.status).toBe(401);
+    expect(deleteStepBody.error.code).toBe('UNAUTHORIZED');
+
+    const statsResponse = await worker.fetch(
+      new Request('https://gateway.example/v1/quests/mine/quest_1/stats', {
+        method: 'GET',
+        headers: {
+          Origin: 'https://app.example',
+        },
+      }),
+      env
+    );
+    const statsBody = await readJson<{ error: { code: string } }>(statsResponse);
+    expect(statsResponse.status).toBe(401);
+    expect(statsBody.error.code).toBe('UNAUTHORIZED');
   });
 
   it('returns 503 when a known service route is not configured', async () => {

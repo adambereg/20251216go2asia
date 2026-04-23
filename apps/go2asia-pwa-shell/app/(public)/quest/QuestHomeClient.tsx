@@ -6,18 +6,28 @@
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { ModuleHero } from '@/components/modules';
-import { Loader2, Target } from 'lucide-react';
+import { ArrowRight, Loader2, Target } from 'lucide-react';
 import { quest } from '@go2asia/sdk';
-import type { QuestListResponse } from '@go2asia/sdk/quest';
+import type { QuestApiError, QuestListResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
+import { describeQuestExperience, formatCityLabel, formatDifficultyLabel } from './questPresentation';
+import { getQuestCardMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from './questRuntimeMetadata';
 
-function formatDifficulty(value?: string | null): string {
-  if (!value) return 'not specified';
-  if (value === 'easy') return 'easy';
-  if (value === 'medium') return 'medium';
-  if (value === 'hard') return 'hard';
-  return value;
+function getQuestBadge(item: QuestSummaryResponse): string {
+  if (item.theme === 'photo_mission') return 'Фото-миссия';
+  if (item.theme === 'mixed_route') return 'Маршрут на полдня';
+  if (item.theme === 'city_discovery') return 'Городская прогулка';
+  if (item.stepsCount >= 5) return 'Длинный маршрут';
+  return 'Маршрут';
+}
+
+function readCatalogError(error: QuestApiError | null): string {
+  if (!error) return 'Каталог квестов временно недоступен.';
+  if (error.status === 400) return 'Не удалось корректно загрузить каталог квестов.';
+  if (error.status === 500 || error.status === 503) return 'Каталог квестов временно недоступен.';
+  return error.message;
 }
 
 export function QuestHomeClient() {
@@ -31,13 +41,13 @@ export function QuestHomeClient() {
     async function loadQuests(): Promise<void> {
       setLoading(true);
       setError(null);
-      const response = await quest.fetchQuests({ pageSize: 24, page: 1 });
+      const response = await quest.fetchQuestsResult({ pageSize: 24, page: 1 });
       if (cancelled) return;
-      if (!response) {
+      if (!response.data) {
         setData(null);
-        setError('Quest API is currently unavailable.');
+        setError(readCatalogError(response.error));
       } else {
-        setData(response);
+        setData(response.data);
       }
       setLoading(false);
     }
@@ -54,23 +64,23 @@ export function QuestHomeClient() {
       <ModuleHero
         icon={Target}
         title="Quest Asia"
-        description="Проходите квесты, выполняйте миссии и получайте награды"
+        description="Маршруты и задания, которые можно пройти по шагам: прогулки, фото-миссии и более длинные городские сценарии."
         gradientFrom="from-purple-500"
         gradientTo="to-purple-600"
       />
-      
+
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
-          Live public quests
+          Доступные маршруты
         </h2>
         <p className="text-sm text-slate-600 mb-6">
-          This catalog reflects only published + public quests from current runtime.
+          Здесь показываются только маршруты, которые уже доступны в текущем runtime.
         </p>
 
         {loading ? (
           <div className="flex items-center gap-2 text-slate-600">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Loading quests...
+            Загружаем маршруты...
           </div>
         ) : error ? (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-800">
@@ -78,23 +88,61 @@ export function QuestHomeClient() {
           </div>
         ) : !data || data.items.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-            No public quests are available right now.
+            Пока нет доступных маршрутов.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.items.map((item) => (
-              <Link
-                key={item.id}
-                href={`/quest/${item.id}`}
-                className="rounded-xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition"
-              >
-                <h3 className="text-lg font-semibold text-slate-900">{item.title}</h3>
-                <p className="text-sm text-slate-600 mt-2 line-clamp-2">{item.description || 'No description.'}</p>
-                <div className="mt-4 space-y-1 text-xs text-slate-500">
-                  <p>difficulty: {formatDifficulty(item.difficulty)}</p>
-                  <p>theme: {item.theme || 'not specified'}</p>
-                  <p>steps: {item.stepsCount}</p>
-                  <p>reward points: {item.rewardPoints ?? 0}</p>
+              <Link key={item.id} href={`/quest/${item.id}`} className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition overflow-hidden">
+                {(() => {
+                  const cover = getQuestCardMediaRuntimeFirst(item);
+                  return cover ? (
+                    <div className="relative aspect-[4/3] w-full bg-slate-100">
+                      <Image
+                        src={cover.url}
+                        alt={cover.alt}
+                        fill
+                        sizes="(min-width: 1024px) 28vw, (min-width: 768px) 42vw, 96vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] w-full bg-gradient-to-br from-violet-100 via-white to-sky-100" />
+                  );
+                })()}
+
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+                      {getQuestBadge(item)}
+                    </span>
+                    <span className="text-xs text-slate-500">{formatCityLabel(item.cityId)}</span>
+                  </div>
+
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-2 text-sm text-slate-600 line-clamp-3">{getQuestSummaryRuntimeFirst(item) ?? 'Описание маршрута появится позже.'}</p>
+
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-700">
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {formatDifficultyLabel(item.difficulty)}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {item.stepsCount} {item.stepsCount === 1 ? 'шаг' : item.stepsCount < 5 ? 'шага' : 'шагов'}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {describeQuestExperience(item)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-1 text-sm text-slate-600">
+                    <p>{describeQuestExperience(item)}</p>
+                    {item.rewardPoints != null ? <p>Награда в квесте: {item.rewardPoints} очков</p> : null}
+                  </div>
+
+                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-purple-700">
+                    Открыть маршрут
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
               </Link>
             ))}

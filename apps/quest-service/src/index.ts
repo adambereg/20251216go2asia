@@ -1,4 +1,5 @@
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
+import { createDb, sql } from '@go2asia/db';
 
 import { createNoopQuestEventPublisher } from './events/publisher';
 import { requireGatewayOrigin } from './middleware/auth';
@@ -21,11 +22,23 @@ function handleHealth(env: Env): Response {
   });
 }
 
-function handleReady(env: Env): Response {
+async function handleReady(env: Env): Promise<Response> {
   const checks = {
     databaseUrl: getSecretCheck(env.DATABASE_URL),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
+    databaseConnection: 'missing' as 'ok' | 'missing',
   };
+
+  if (checks.databaseUrl === 'ok') {
+    try {
+      const db = createDb(env.DATABASE_URL!);
+      await db.execute(sql`SELECT 1`);
+      checks.databaseConnection = 'ok';
+    } catch {
+      checks.databaseConnection = 'missing';
+    }
+  }
+
   const missing = Object.entries(checks)
     .filter(([, status]) => status !== 'ok')
     .map(([name]) => name);
@@ -46,10 +59,17 @@ function handleReady(env: Env): Response {
 
 function isProtectedRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/quests') return true;
+  if (method === 'GET' && path === '/v1/quests/mine') return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'GET' && /^\/v1\/quests\/mine\/[^/]+\/stats$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+$/.test(path)) return true;
+  if (method === 'PATCH' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
+  if (method === 'DELETE' && /^\/v1\/quests\/mine\/[^/]+\/steps\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/start$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/progress$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/publish$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/quests\/[^/]+\/archive$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/quests\/[^/]+\/steps\/[^/]+\/submit$/.test(path)) return true;
   if (method === 'GET' && /^\/v1\/quests\/[^/]+\/submissions$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/submissions\/[^/]+\/review$/.test(path)) return true;
@@ -75,20 +95,18 @@ export default {
       }
 
       if (path === '/ready') {
-        response = withRequestId(handleReady(env), requestId);
+        response = withRequestId(await handleReady(env), requestId);
         return response;
       }
 
       let principal = null;
-      if (path === '/v1/quests' || path.startsWith('/v1/quests/') || path.startsWith('/v1/submissions/')) {
-        if (isProtectedRoute(request.method, path)) {
-          const auth = await requireGatewayOrigin(request, env, requestId, logger);
-          if (!auth.ok) {
-            response = withRequestId(auth.res, requestId);
-            return response;
-          }
-          principal = auth.principal;
+      if (isProtectedRoute(request.method, path)) {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          response = withRequestId(auth.res, requestId);
+          return response;
         }
+        principal = auth.principal;
       }
 
       response = (await handleQuestRoute(request, env, requestId, publisher, principal)) ?? handleNotFound(path, requestId);
