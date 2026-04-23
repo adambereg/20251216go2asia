@@ -520,6 +520,116 @@ describe('space-service v1', () => {
     expect(body.error.code).toBe('NOT_FOUND');
   });
 
+  it('returns bounded activity slice 1 with group joins and v2 fields', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'group_joined:sgroup_public:user_test_1',
+          type: 'group_joined',
+          action_type: 'space.group_joined',
+          direction: 'outgoing',
+          category: 'social',
+          title: 'You joined Phuket Makers',
+          description: 'Builders in Phuket',
+          related_post_id: null,
+          related_entity_type: 'space_group',
+          related_entity_id: 'sgroup_public',
+          created_at: '2026-03-14T10:05:00.000Z',
+        },
+        {
+          id: 'spost_repost_1',
+          type: 'repost_created',
+          action_type: 'space.repost_created',
+          direction: 'outgoing',
+          category: 'social',
+          title: 'You reposted an item',
+          description: 'Worth sharing',
+          related_post_id: 'spost_repost_1',
+          related_entity_type: 'space_post',
+          related_entity_id: 'spost_7',
+          created_at: '2026-03-14T10:04:00.000Z',
+        },
+        {
+          id: 'spost_1',
+          type: 'post_created',
+          action_type: 'space.post_created',
+          direction: 'outgoing',
+          category: 'social',
+          title: 'You created a post',
+          description: 'Hello Space',
+          related_post_id: 'spost_1',
+          related_entity_type: null,
+          related_entity_id: null,
+          created_at: '2026-03-14T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/activity?limit=2', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        type: string;
+        actionType: string;
+        direction: string;
+        category: string;
+        title: string;
+        description: string | null;
+        relatedPostId: string | null;
+        relatedEntityType: string | null;
+        relatedEntityId: string | null;
+        createdAt: string;
+      }>;
+      nextCursor: string | null;
+    }>(response);
+
+    const expectedCursor = btoa(JSON.stringify({ publishedAt: '2026-03-14T10:03:00.000Z', id: 'spost_1' }))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(2);
+    expect(body.items[0]).toEqual({
+      id: 'group_joined:sgroup_public:user_test_1',
+      type: 'group_joined',
+      actionType: 'space.group_joined',
+      direction: 'outgoing',
+      category: 'social',
+      title: 'You joined Phuket Makers',
+      description: 'Builders in Phuket',
+      relatedPostId: null,
+      relatedEntityType: 'space_group',
+      relatedEntityId: 'sgroup_public',
+      createdAt: '2026-03-14T10:05:00.000Z',
+    });
+    expect(body.items[1]).toMatchObject({
+      id: 'spost_repost_1',
+      type: 'repost_created',
+      actionType: 'space.repost_created',
+      direction: 'outgoing',
+      category: 'social',
+      relatedPostId: 'spost_repost_1',
+      relatedEntityType: 'space_post',
+      relatedEntityId: 'spost_7',
+    });
+    expect(body.nextCursor).toBe(expectedCursor);
+  });
+
   it('returns public group feed without auth when group is public', async () => {
     executeMock
       .mockResolvedValueOnce({

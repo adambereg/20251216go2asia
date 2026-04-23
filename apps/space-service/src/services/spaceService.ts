@@ -942,6 +942,9 @@ export async function getActivityFeed(
       items: pageRows.map((row: SpaceActivityRow) => ({
         id: row.id,
         type: row.type,
+        actionType: row.action_type,
+        direction: row.direction,
+        category: row.category,
         title: row.title,
         description: row.description,
         relatedPostId: row.related_post_id,

@@ -4081,11 +4081,25 @@ components:
       type: object
     SpaceActivityFeedItem:
       properties:
+        actionType:
+          enum:
+            - space.post_created
+            - space.repost_created
+            - space.group_joined
+          type: string
+        category:
+          enum:
+            - social
+          type: string
         createdAt:
           format: date-time
           type: string
         description:
           nullable: true
+          type: string
+        direction:
+          enum:
+            - outgoing
           type: string
         id:
           type: string
@@ -4101,10 +4115,18 @@ components:
         title:
           type: string
         type:
+          description: Deprecated alias for actionType without the `space.` prefix.
+          enum:
+            - post_created
+            - repost_created
+            - group_joined
           type: string
       required:
         - id
         - type
+        - actionType
+        - direction
+        - category
         - title
         - createdAt
       type: object

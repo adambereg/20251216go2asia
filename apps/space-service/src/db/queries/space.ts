@@ -63,6 +63,9 @@ export type SpaceProfileRow = {
 export type SpaceActivityRow = {
   id: string;
   type: string;
+  action_type: string;
+  direction: 'outgoing';
+  category: 'social';
   title: string;
   description: string | null;
   related_post_id: string | null;
@@ -475,22 +478,68 @@ export async function listActivityFeedRows(
   limit: number,
   cursor: FeedCursor | null
 ): Promise<SpaceActivityRow[]> {
+  const cursorCondition = cursor
+    ? sql`WHERE (
+        activity.created_at < ${cursor.publishedAt}
+        OR (activity.created_at = ${cursor.publishedAt} AND activity.id < ${cursor.id})
+      )`
+    : sql``;
+
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      CASE WHEN sp.post_type = 'repost' THEN 'repost_created' ELSE 'post_created' END AS type,
-      CASE WHEN sp.post_type = 'repost' THEN 'You reposted an item' ELSE 'You created a post' END AS title,
-      sp.text AS description,
-      sp.id AS related_post_id,
-      sp.repost_target_type AS related_entity_type,
-      sp.repost_target_id AS related_entity_id,
-      sp.published_at AS created_at
-    FROM space_post sp
-    WHERE sp.author_id = ${userId}
-      AND sp.status = 'active'
-      AND sp.deleted_at IS NULL
-      ${cursor ? sql`AND (sp.published_at < ${cursor.publishedAt} OR (sp.published_at = ${cursor.publishedAt} AND sp.id < ${cursor.id}))` : sql``}
-    ORDER BY sp.published_at DESC, sp.id DESC
+      activity.id,
+      activity.type,
+      activity.action_type,
+      activity.direction,
+      activity.category,
+      activity.title,
+      activity.description,
+      activity.related_post_id,
+      activity.related_entity_type,
+      activity.related_entity_id,
+      activity.created_at
+    FROM (
+      SELECT
+        sp.id,
+        CASE WHEN sp.post_type = 'repost' THEN 'repost_created' ELSE 'post_created' END AS type,
+        CASE
+          WHEN sp.post_type = 'repost' THEN 'space.repost_created'
+          ELSE 'space.post_created'
+        END AS action_type,
+        'outgoing' AS direction,
+        'social' AS category,
+        CASE WHEN sp.post_type = 'repost' THEN 'You reposted an item' ELSE 'You created a post' END AS title,
+        sp.text AS description,
+        sp.id AS related_post_id,
+        sp.repost_target_type AS related_entity_type,
+        sp.repost_target_id AS related_entity_id,
+        sp.published_at AS created_at
+      FROM space_post sp
+      WHERE sp.author_id = ${userId}
+        AND sp.status = 'active'
+        AND sp.deleted_at IS NULL
+
+      UNION ALL
+
+      SELECT
+        CONCAT('group_joined:', sgm.group_id, ':', sgm.user_id) AS id,
+        'group_joined' AS type,
+        'space.group_joined' AS action_type,
+        'outgoing' AS direction,
+        'social' AS category,
+        CONCAT('You joined ', sg.title) AS title,
+        sg.description AS description,
+        NULL AS related_post_id,
+        'space_group' AS related_entity_type,
+        sgm.group_id AS related_entity_id,
+        sgm.joined_at AS created_at
+      FROM space_group_member sgm
+      INNER JOIN space_group sg ON sg.id = sgm.group_id
+      WHERE sgm.user_id = ${userId}
+        AND sgm.status = 'active'
+    ) AS activity
+    ${cursorCondition}
+    ORDER BY activity.created_at DESC, activity.id DESC
     LIMIT ${limit}
   `);
   return rowsOf<SpaceActivityRow>(result);
