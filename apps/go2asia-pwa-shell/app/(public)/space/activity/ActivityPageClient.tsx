@@ -37,40 +37,44 @@ function formatActivityTime(value: string): string {
 
 function isTechnicalText(value: string | null | undefined): boolean {
   if (!value) return false;
-  return /(post_created|repost_created|baseline|contract|runtime|Entity|feed-post-|\/v1\/space\/feed\/activity)/i.test(
+  return /(post_created|repost_created|group_joined|baseline|contract|runtime|Entity|feed-post-|\/v1\/space\/feed\/activity|^You joined\b)/i.test(
     value
   );
 }
 
-function formatEntityType(value: string | null | undefined): string | null {
+function formatEntityChip(value: string | null | undefined): string | null {
   if (!value) return null;
 
   switch (value) {
     case 'space_post':
-      return 'публикацией';
+      return 'Публикация';
     case 'blog_post':
-      return 'статьёй';
+      return 'Статья';
     case 'event':
-      return 'событием';
+      return 'Событие';
     case 'place':
-      return 'местом';
+      return 'Место';
     case 'listing':
-      return 'объявлением';
+      return 'Объявление';
     case 'partner':
-      return 'партнёром';
+      return 'Партнёр';
     case 'quest':
-      return 'квестом';
+      return 'Квест';
+    case 'space_group':
+      return 'Группа';
     default:
-      return 'материалом';
+      return null;
   }
 }
 
 function getActivityTitle(item: generated.SpaceActivityFeedItem): string {
   switch (item.type) {
     case 'post_created':
-      return 'Опубликована новая запись';
+      return 'Опубликована запись';
     case 'repost_created':
-      return 'Добавлен репост';
+      return 'Сделан репост';
+    case 'group_joined':
+      return 'Вступили в группу';
     default:
       if (item.title && !isTechnicalText(item.title)) return item.title;
       return 'Новое действие в Space Asia';
@@ -78,20 +82,25 @@ function getActivityTitle(item: generated.SpaceActivityFeedItem): string {
 }
 
 function getActivityDescription(item: generated.SpaceActivityFeedItem): string | null {
+  if (item.type === 'group_joined') {
+    return 'Сообщество добавлено в ваш круг активности.';
+  }
+
   if (item.description && !isTechnicalText(item.description)) {
     return item.description;
   }
 
   if (item.type === 'post_created') {
-    return 'Запись появилась в вашей активности и уже доступна в Space Asia.';
+    return 'Запись появилась в вашей недавней активности.';
   }
 
   if (item.type === 'repost_created') {
-    return 'Репост сохранён в вашей активности и связан с исходным материалом.';
+    return 'Репост добавлен в вашу недавнюю активность.';
   }
 
-  if (item.relatedEntityType || item.relatedEntityId) {
-    return `Событие связано с ${formatEntityType(item.relatedEntityType) ?? 'материалом'} в Space Asia.`;
+  const entityChip = formatEntityChip(item.relatedEntityType);
+  if (entityChip) {
+    return `Действие связано с разделом «${entityChip}» в Space Asia.`;
   }
 
   return 'Здесь появляются недавние действия, которые уже видны в Space Asia.';
@@ -101,17 +110,16 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
   const parts: string[] = [];
 
   if (item.type === 'post_created') {
-    parts.push('Публикация');
+    parts.push('Запись');
   } else if (item.type === 'repost_created') {
     parts.push('Репост');
+  } else if (item.type === 'group_joined') {
+    parts.push('Группа');
   }
 
-  if (item.relatedPostId) {
-    parts.push('Связано с публикацией');
-  }
-
-  if (item.relatedEntityType || item.relatedEntityId) {
-    parts.push(`Связано с ${formatEntityType(item.relatedEntityType) ?? 'материалом'}`);
+  const entityChip = formatEntityChip(item.relatedEntityType);
+  if (entityChip && !(item.type === 'group_joined' && entityChip === 'Группа')) {
+    parts.push(entityChip);
   }
 
   return parts;
@@ -223,8 +231,8 @@ export function ActivityPageClient() {
         <footer className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <h2 className="text-sm font-semibold text-amber-900">Что здесь показывается</h2>
           <p className="mt-1 text-xs text-amber-800">
-            Этот раздел показывает только часть недавних действий в Space Asia. Это не центр уведомлений, а
-            короткая история уже видимой активности.
+            Здесь показывается только часть недавних действий. Раздел не заменяет уведомления и не дублирует
+            ленту.
           </p>
         </footer>
       </section>
