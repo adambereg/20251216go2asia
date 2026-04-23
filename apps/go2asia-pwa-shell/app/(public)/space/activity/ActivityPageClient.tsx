@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
 
@@ -117,6 +118,7 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
 }
 
 export function ActivityPageClient() {
+  const { isLoaded, isSignedIn } = useUser();
   const [feed, setFeed] = useState<generated.SpaceActivityFeedResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +127,19 @@ export function ActivityPageClient() {
     let cancelled = false;
 
     async function loadActivity() {
+      if (!isLoaded) {
+        setIsLoading(true);
+        setError(null);
+        return;
+      }
+
+      if (!isSignedIn) {
+        setFeed(null);
+        setIsLoading(false);
+        setError('Войдите в аккаунт, чтобы увидеть свою недавнюю активность.');
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -153,7 +168,7 @@ export function ActivityPageClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   return (
     <SpaceLayout>
