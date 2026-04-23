@@ -268,10 +268,10 @@ export function OrganizerPageClient() {
                 Вернуться в Space
               </Link>
               <Link
-                href="/space/community/feed"
+                href="/space/feed"
                 className="inline-flex rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
               >
-                Открыть Feed
+                Открыть ленту
               </Link>
             </div>
           </article>

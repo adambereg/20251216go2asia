@@ -35,7 +35,7 @@ const quickEntries = [
   {
     href: '/space/community',
     title: 'Сообщества',
-    description: 'Найти подходящую группу и затем перейти в group detail или full feed.',
+    description: 'Найти подходящую группу и затем перейти в group detail или открыть центральную ленту отдельно.',
   },
   {
     href: '/space/posts',
@@ -137,8 +137,8 @@ export function SpacePageClient() {
         id: 'today_social_change',
         title: 'Проверить свежие social изменения',
         description: `В Social Pulse уже есть ${pulsePreviewItems.length} живых сигнала(ов) — стоит быстро пройтись по потоку.`,
-        href: '/space/community/feed',
-        cta: 'Открыть поток постов',
+        href: '/space/feed',
+        cta: 'Открыть ленту',
         source: 'runtime',
       });
     }
@@ -194,8 +194,8 @@ export function SpacePageClient() {
         id: 'next_build_shortlist',
         title: 'Собрать небольшой shortlist',
         description: 'Даже 1–2 сохранения дадут более полезный контекст для следующих действий на dashboard.',
-        href: '/space/community/feed',
-        cta: 'Открыть поток постов',
+        href: '/space/feed',
+        cta: 'Открыть ленту',
         source: 'reference',
       });
     }
@@ -599,7 +599,7 @@ export function SpacePageClient() {
 
             {saved.state === 'ready' && saved.savedCount === 0 && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                Пока нет сохранённых публикаций. Начните с community feed или полного списка публикаций.
+                Пока нет сохранённых публикаций. Начните с ленты или полного списка публикаций.
               </div>
             )}
 
@@ -644,14 +644,14 @@ export function SpacePageClient() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Social Pulse</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Короткий preview того, что сейчас происходит. Полный поток постов остаётся на `/space/community/feed`.
+                Короткий preview центральной ленты. Полный поток публикаций доступен отдельно на `/space/feed`.
               </p>
             </div>
             <Link
-              href="/space/community/feed"
+              href="/space/feed"
               className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
-              Открыть поток постов
+              Открыть ленту
             </Link>
           </div>
 
@@ -669,7 +669,7 @@ export function SpacePageClient() {
 
           {!isFeedLoading && !feedError && pulsePreviewItems.length === 0 && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              Пока здесь мало сигналов. Полная лента сообщества остаётся доступной как отдельная surface.
+              Пока здесь мало сигналов. Полная лента остаётся доступной как отдельная surface.
             </div>
           )}
 

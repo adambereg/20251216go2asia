@@ -42,15 +42,53 @@ export function getGroupFeedUrl(groupId: string, limit = DEFAULT_FEED_LIMIT): st
 export function formatFeedReason(reason: generated.SpaceFeedReason): string {
   switch (reason) {
     case 'group_post':
-      return 'Пост из группы';
+      return 'В группе';
     case 'author_post':
-      return 'Авторский пост';
+      return 'Публикация';
     case 'repost':
       return 'Репост';
     case 'system':
-      return 'Системный сигнал';
+      return 'Объявление';
+    case 'recommended':
+      return 'Подборка';
     default:
       return reason;
+  }
+}
+
+export function formatVisibilityLabel(visibility: generated.SpaceVisibility): string {
+  switch (visibility) {
+    case 'public':
+      return 'Публично';
+    case 'followers':
+      return 'Подписчики';
+    case 'group':
+      return 'Только группа';
+    case 'private':
+      return 'Личное';
+    default:
+      return visibility;
+  }
+}
+
+export function formatRepostTargetLabel(targetType: generated.SpaceRepostTargetType): string {
+  switch (targetType) {
+    case 'space_post':
+      return 'пост Space';
+    case 'blog_post':
+      return 'публикация блога';
+    case 'place':
+      return 'место';
+    case 'event':
+      return 'событие';
+    case 'partner':
+      return 'партнёрский объект';
+    case 'listing':
+      return 'объявление';
+    case 'quest':
+      return 'квест';
+    default:
+      return targetType;
   }
 }
 

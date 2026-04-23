@@ -120,7 +120,7 @@ type MaterializedPost = {
   publishedAt: string;
 };
 
-const SOURCE_PATH = resolve(process.cwd(), '../../content/space/Space-Asia-Full-Seed-Content-Pack-v1.md');
+const DEFAULT_SOURCE_PATH = resolve(process.cwd(), '../../content/space/Space-Asia-Full-Seed-Content-Pack-v1.md');
 const SECTION_SEPARATOR_RE = /^_{10,}\s*$/m;
 const ALLOWED_REPOST_TYPES = new Set([
   'space_post',
@@ -132,9 +132,16 @@ const ALLOWED_REPOST_TYPES = new Set([
   'quest',
 ]);
 
-function parseArgs(argv: string[]): { mode: ImportMode } {
+function parseArgs(argv: string[]): { mode: ImportMode; sourcePath: string } {
+  const sourceIndex = argv.indexOf('--source');
+  const sourceArg =
+    sourceIndex >= 0 && sourceIndex + 1 < argv.length
+      ? argv[sourceIndex + 1]
+      : DEFAULT_SOURCE_PATH;
+
   return {
     mode: argv.includes('--apply') ? 'apply' : 'dry-run',
+    sourcePath: resolve(process.cwd(), sourceArg),
   };
 }
 
@@ -269,10 +276,12 @@ function toCityId(value: string | null): string | null {
   return value ? slugify(value) : null;
 }
 
-function extractSection(markdown: string, key: string): string {
-  const startIndex = markdown.indexOf(`${key}:`);
+function extractSection(markdown: string, key: string, sourcePath: string): string {
+  const sectionPattern = new RegExp(`^${key}:`, 'm');
+  const sectionMatch = markdown.match(sectionPattern);
+  const startIndex = sectionMatch?.index ?? -1;
   if (startIndex === -1) {
-    throw new Error(`Missing section "${key}" in ${SOURCE_PATH}`);
+    throw new Error(`Missing section "${key}" in ${sourcePath}`);
   }
   const afterStart = markdown.slice(startIndex);
   const separatorMatch = afterStart.match(SECTION_SEPARATOR_RE);
@@ -280,8 +289,8 @@ function extractSection(markdown: string, key: string): string {
   return markdown.slice(startIndex, endIndex).trim();
 }
 
-function parseSection<T>(markdown: string, key: string): T {
-  const block = extractSection(markdown, key);
+function parseSection<T>(markdown: string, key: string, sourcePath: string): T {
+  const block = extractSection(markdown, key, sourcePath);
   const parsed = parse(block) as Record<string, unknown> | null;
   if (!parsed || !(key in parsed)) {
     throw new Error(`Unable to parse section "${key}"`);
@@ -289,14 +298,14 @@ function parseSection<T>(markdown: string, key: string): T {
   return parsed[key] as T;
 }
 
-function parseSeed(markdown: string): ParsedSeed {
-  const mediaRegistry = parseSection<Record<string, SeedMediaItem[] | undefined>>(markdown, 'media_registry');
+function parseSeed(markdown: string, sourcePath: string): ParsedSeed {
+  const mediaRegistry = parseSection<Record<string, SeedMediaItem[] | undefined>>(markdown, 'media_registry', sourcePath);
   return {
-    users: parseSection<SeedUser[]>(markdown, 'users'),
-    profileProjections: parseSection<SeedProfile[]>(markdown, 'profile_projections'),
-    groups: parseSection<SeedGroup[]>(markdown, 'groups'),
-    groupMembershipMatrix: parseSection<SeedMembershipMatrix[]>(markdown, 'group_membership_matrix'),
-    posts: parseSection<SeedPost[]>(markdown, 'posts'),
+    users: parseSection<SeedUser[]>(markdown, 'users', sourcePath),
+    profileProjections: parseSection<SeedProfile[]>(markdown, 'profile_projections', sourcePath),
+    groups: parseSection<SeedGroup[]>(markdown, 'groups', sourcePath),
+    groupMembershipMatrix: parseSection<SeedMembershipMatrix[]>(markdown, 'group_membership_matrix', sourcePath),
+    posts: parseSection<SeedPost[]>(markdown, 'posts', sourcePath),
     postMedia: mediaRegistry.post_media ?? [],
   };
 }
@@ -642,12 +651,13 @@ function printSummary(
 }
 
 async function main() {
-  const { mode } = parseArgs(process.argv.slice(2));
+  const { mode, sourcePath } = parseArgs(process.argv.slice(2));
   const databaseUrl = getDatabaseUrl(mode);
-  const markdown = readFileSync(SOURCE_PATH, 'utf8');
-  const parsed = parseSeed(markdown);
+  const markdown = readFileSync(sourcePath, 'utf8');
+  const parsed = parseSeed(markdown, sourcePath);
   const userIdByEmail = await resolveCanonicalUserIds(collectUsedEmails(parsed), databaseUrl, mode);
   const data = materializeSeed(parsed, userIdByEmail);
+  console.log(`[space-seed] source=${sourcePath}`);
   printSummary(mode, data);
 
   if (mode === 'dry-run' || !databaseUrl) {

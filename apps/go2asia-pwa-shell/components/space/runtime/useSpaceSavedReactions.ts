@@ -62,13 +62,13 @@ export function useSpaceSavedReactions(enabled = true) {
         setSavedByPostId({});
         setSavedReactions([]);
         setState('unavailable');
-        setError('Saved runtime временно недоступен в этом окружении.');
+        setError('Сохранённые временно недоступны.');
         return;
       }
       setSavedByPostId({});
       setSavedReactions([]);
       setState('error');
-      setError(`Saved reactions request failed (${status ?? 'unknown'}).`);
+      setError('Сейчас не удаётся загрузить сохранённые публикации.');
     }
   }, [enabled]);
 
@@ -118,9 +118,9 @@ export function useSpaceSavedReactions(enabled = true) {
         setError('Нужна авторизация, чтобы сохранять публикации.');
       } else if (isServiceUnavailableStatus(status)) {
         setState('unavailable');
-        setError('Сохранение временно недоступно в этом окружении.');
+        setError('Сохранение временно недоступно.');
       } else {
-        setError(`Saved toggle failed (${status ?? 'unknown'}).`);
+        setError('Не удалось обновить сохранение. Попробуйте ещё раз.');
       }
     } finally {
       setPendingIds((prev) => {
