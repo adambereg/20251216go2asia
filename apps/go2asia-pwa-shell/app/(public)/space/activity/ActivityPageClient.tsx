@@ -2,10 +2,37 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
 
-const ACTIVITY_PATH = '/v1/space/feed/activity?limit=20';
+const ACTIVITY_FILTERS = [
+  {
+    value: 'all',
+    label: 'Все',
+    hint: 'Входящие события и ваши недавние действия.',
+  },
+  {
+    value: 'incoming',
+    label: 'Входящие',
+    hint: 'Только реакции и репосты вокруг ваших публикаций.',
+  },
+  {
+    value: 'my_actions',
+    label: 'Мои действия',
+    hint: 'Только ваши публикации, репосты и вступления в группы.',
+  },
+] as const;
+
+type ActivityFilter = (typeof ACTIVITY_FILTERS)[number]['value'];
+
+function normalizeActivityFilter(value: string | null | undefined): ActivityFilter {
+  return value === 'incoming' || value === 'my_actions' ? value : 'all';
+}
+
+function buildActivityPath(filter: ActivityFilter): string {
+  return `/v1/space/feed/activity?limit=20&filter=${filter}`;
+}
 
 function getErrorStatus(error: unknown): number | null {
   if (!error || typeof error !== 'object') return null;
@@ -75,6 +102,10 @@ function getActivityTitle(item: generated.SpaceActivityFeedItem): string {
       return 'Сделан репост';
     case 'group_joined':
       return 'Вступили в группу';
+    case 'post_liked_by_other':
+      return 'Кто-то лайкнул вашу запись';
+    case 'post_reposted_by_other':
+      return 'Кто-то сделал репост вашей записи';
     default:
       if (item.title && !isTechnicalText(item.title)) return item.title;
       return 'Новое действие в Space Asia';
@@ -98,6 +129,14 @@ function getActivityDescription(item: generated.SpaceActivityFeedItem): string |
     return 'Репост добавлен в вашу недавнюю активность.';
   }
 
+  if (item.type === 'post_liked_by_other') {
+    return 'На вашу публикацию пришла новая реакция.';
+  }
+
+  if (item.type === 'post_reposted_by_other') {
+    return 'Вашей публикацией поделились в Space Asia.';
+  }
+
   const entityChip = formatEntityChip(item.relatedEntityType);
   if (entityChip) {
     return `Действие связано с разделом «${entityChip}» в Space Asia.`;
@@ -115,6 +154,10 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
     parts.push('Репост');
   } else if (item.type === 'group_joined') {
     parts.push('Группа');
+  } else if (item.type === 'post_liked_by_other') {
+    parts.push('Реакция');
+  } else if (item.type === 'post_reposted_by_other') {
+    parts.push('Репост');
   }
 
   const entityChip = formatEntityChip(item.relatedEntityType);
@@ -125,11 +168,39 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
   return parts;
 }
 
-export function ActivityPageClient() {
+function getEmptyStateMessage(filter: ActivityFilter): string {
+  if (filter === 'incoming') {
+    return 'Пока здесь нет входящих событий. Когда кто-то отреагирует на вашу публикацию или сделает репост, это появится здесь.';
+  }
+
+  if (filter === 'my_actions') {
+    return 'Здесь появляются ваши собственные действия в Space Asia. Как только вы опубликуете запись, сделаете репост или вступите в группу, они отобразятся тут.';
+  }
+
+  return 'Пока здесь нет новых действий. Когда в Space Asia появится активность, она отобразится в этом разделе.';
+}
+
+interface ActivityPageClientProps {
+  initialFilter?: ActivityFilter;
+}
+
+export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClientProps) {
   const { isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [feed, setFeed] = useState<generated.SpaceActivityFeedResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const rawFilter = searchParams.get('filter');
+  const activeFilter = normalizeActivityFilter(rawFilter ?? initialFilter);
+
+  useEffect(() => {
+    if (rawFilter === null || rawFilter === activeFilter) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('filter', activeFilter);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [activeFilter, pathname, rawFilter, router, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +225,7 @@ export function ActivityPageClient() {
       try {
         const response = await customInstance<generated.SpaceActivityFeedResponse>(
           { method: 'GET' },
-          ACTIVITY_PATH
+          buildActivityPath(activeFilter)
         );
         if (cancelled) return;
         setFeed(response);
@@ -176,7 +247,14 @@ export function ActivityPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn]);
+  }, [activeFilter, isLoaded, isSignedIn]);
+
+  function handleFilterChange(nextFilter: ActivityFilter) {
+    if (nextFilter === activeFilter) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('filter', nextFilter);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
   return (
     <SpaceLayout>
@@ -185,6 +263,23 @@ export function ActivityPageClient() {
           <h1 className="text-2xl font-semibold text-slate-900">Активность</h1>
           <p className="mt-2 text-sm text-slate-600">
             Здесь собраны недавние действия, которые уже появились в Space Asia.
+          </p>
+          <div className="mt-4 inline-flex flex-wrap items-center rounded-xl border border-slate-200 bg-white p-1">
+            {ACTIVITY_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => handleFilterChange(filter.value)}
+                className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs transition ${
+                  activeFilter === filter.value ? 'bg-slate-900 font-medium text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-500">
+            {ACTIVITY_FILTERS.find((filter) => filter.value === activeFilter)?.hint}
           </p>
         </header>
 
@@ -202,7 +297,7 @@ export function ActivityPageClient() {
 
         {!isLoading && !error && feed && feed.items.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Пока здесь нет новых действий. Когда в Space Asia появится активность, она отобразится в этом разделе.
+            {getEmptyStateMessage(activeFilter)}
           </div>
         )}
 
