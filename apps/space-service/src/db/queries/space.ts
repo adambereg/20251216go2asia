@@ -511,7 +511,7 @@ export async function listActivityFeedRows(
         CASE WHEN sp.post_type = 'repost' THEN 'You reposted an item' ELSE 'You created a post' END AS title,
         sp.text AS description,
         sp.id AS related_post_id,
-        sp.repost_target_type AS related_entity_type,
+        sp.repost_target_type::text AS related_entity_type,
         sp.repost_target_id AS related_entity_id,
         sp.published_at AS created_at
       FROM space_post sp
