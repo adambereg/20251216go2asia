@@ -60,23 +60,47 @@ export type SpaceProfileRow = {
   updated_at: string | Date;
 };
 
+export type SpaceActivityFilter = 'all' | 'incoming' | 'my_actions';
+
 export type SpaceActivityRow = {
   id: string;
   type: string;
   action_type: string;
-  direction: 'outgoing';
+  direction: 'incoming' | 'outgoing';
   category: 'social';
+  actor_user_id: string;
+  actor_display_name: string | null;
+  actor_avatar_url: string | null;
+  actor_role_label: string | null;
   title: string;
   description: string | null;
   related_post_id: string | null;
   related_entity_type: string | null;
   related_entity_id: string | null;
-  created_at: string | Date;
+  occurred_at: string | Date;
 };
 
 function rowsOf<T>(result: unknown): T[] {
   return ((result as { rows?: T[] } | null)?.rows ?? []) as T[];
 }
+
+type ActivityProjectionInput = {
+  id: string;
+  recipientUserId: string;
+  occurredAt: string | Date;
+  actionType: string;
+  direction: 'incoming' | 'outgoing';
+  category: 'social';
+  actorUserId: string;
+  title: string;
+  description: string | null;
+  relatedPostId: string | null;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  sourceStream: 'space' | 'reactions';
+  sourceRecordKey: string;
+  sourceEventId: string | null;
+};
 
 function applyCursorCondition(cursor: FeedCursor | null) {
   if (!cursor) {
@@ -355,6 +379,89 @@ export async function markMembershipRemoved(db: DbExecutor, groupId: string, use
   return rowsOf<{ group_id: string }>(result).length > 0;
 }
 
+export async function upsertActivityProjectionRow(db: DbExecutor, input: ActivityProjectionInput): Promise<void> {
+  await db.execute(sql`
+    INSERT INTO space_activity_projection (
+      id,
+      recipient_user_id,
+      occurred_at,
+      action_type,
+      direction,
+      category,
+      actor_user_id,
+      title,
+      description,
+      related_post_id,
+      related_entity_type,
+      related_entity_id,
+      source_stream,
+      source_record_key,
+      source_event_id,
+      removed_at
+    )
+    VALUES (
+      ${input.id},
+      ${input.recipientUserId},
+      ${input.occurredAt},
+      ${input.actionType},
+      ${input.direction},
+      ${input.category},
+      ${input.actorUserId},
+      ${input.title},
+      ${input.description},
+      ${input.relatedPostId},
+      ${input.relatedEntityType},
+      ${input.relatedEntityId},
+      ${input.sourceStream},
+      ${input.sourceRecordKey},
+      ${input.sourceEventId},
+      null
+    )
+    ON CONFLICT (recipient_user_id, action_type, source_record_key)
+    DO UPDATE SET
+      id = EXCLUDED.id,
+      occurred_at = EXCLUDED.occurred_at,
+      direction = EXCLUDED.direction,
+      category = EXCLUDED.category,
+      actor_user_id = EXCLUDED.actor_user_id,
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      related_post_id = EXCLUDED.related_post_id,
+      related_entity_type = EXCLUDED.related_entity_type,
+      related_entity_id = EXCLUDED.related_entity_id,
+      source_stream = EXCLUDED.source_stream,
+      source_event_id = EXCLUDED.source_event_id,
+      removed_at = null
+  `);
+}
+
+export async function markActivityProjectionRemovedForPost(db: DbExecutor, postId: string): Promise<void> {
+  await db.execute(sql`
+    UPDATE space_activity_projection
+    SET removed_at = now()
+    WHERE removed_at IS NULL
+      AND (
+        related_post_id = ${postId}
+        OR source_record_key = ${'repost:' + postId}
+      )
+  `);
+}
+
+export async function markActivityProjectionRemovedForGroupJoin(
+  db: DbExecutor,
+  groupId: string,
+  userId: string
+): Promise<void> {
+  await db.execute(sql`
+    UPDATE space_activity_projection
+    SET removed_at = now()
+    WHERE removed_at IS NULL
+      AND recipient_user_id = ${userId}
+      AND action_type = 'space.group_joined'
+      AND source_record_key = ${`group_join:${groupId}:${userId}`}
+  `);
+}
+
 export async function listHomeFeedPosts(
   db: DbExecutor,
   userId: string,
@@ -475,71 +582,54 @@ export async function listGroupFeedPosts(
 export async function listActivityFeedRows(
   db: DbExecutor,
   userId: string,
+  filter: SpaceActivityFilter,
   limit: number,
   cursor: FeedCursor | null
 ): Promise<SpaceActivityRow[]> {
+  const filterCondition =
+    filter === 'incoming'
+      ? sql`AND sap.direction = 'incoming'`
+      : filter === 'my_actions'
+        ? sql`AND sap.direction = 'outgoing'`
+        : sql``;
   const cursorCondition = cursor
-    ? sql`WHERE (
-        activity.created_at < ${cursor.publishedAt}
-        OR (activity.created_at = ${cursor.publishedAt} AND activity.id < ${cursor.id})
+    ? sql`AND (
+        sap.occurred_at < ${cursor.publishedAt}
+        OR (sap.occurred_at = ${cursor.publishedAt} AND sap.id < ${cursor.id})
       )`
     : sql``;
 
   const result = await db.execute(sql`
     SELECT
-      activity.id,
-      activity.type,
-      activity.action_type,
-      activity.direction,
-      activity.category,
-      activity.title,
-      activity.description,
-      activity.related_post_id,
-      activity.related_entity_type,
-      activity.related_entity_id,
-      activity.created_at
-    FROM (
-      SELECT
-        sp.id,
-        CASE WHEN sp.post_type = 'repost' THEN 'repost_created' ELSE 'post_created' END AS type,
-        CASE
-          WHEN sp.post_type = 'repost' THEN 'space.repost_created'
-          ELSE 'space.post_created'
-        END AS action_type,
-        'outgoing' AS direction,
-        'social' AS category,
-        CASE WHEN sp.post_type = 'repost' THEN 'You reposted an item' ELSE 'You created a post' END AS title,
-        sp.text AS description,
-        sp.id AS related_post_id,
-        sp.repost_target_type::text AS related_entity_type,
-        sp.repost_target_id AS related_entity_id,
-        sp.published_at AS created_at
-      FROM space_post sp
-      WHERE sp.author_id = ${userId}
-        AND sp.status = 'active'
-        AND sp.deleted_at IS NULL
-
-      UNION ALL
-
-      SELECT
-        CONCAT('group_joined:', sgm.group_id, ':', sgm.user_id) AS id,
-        'group_joined' AS type,
-        'space.group_joined' AS action_type,
-        'outgoing' AS direction,
-        'social' AS category,
-        CONCAT('You joined ', sg.title) AS title,
-        sg.description AS description,
-        NULL AS related_post_id,
-        'space_group' AS related_entity_type,
-        sgm.group_id AS related_entity_id,
-        sgm.joined_at AS created_at
-      FROM space_group_member sgm
-      INNER JOIN space_group sg ON sg.id = sgm.group_id
-      WHERE sgm.user_id = ${userId}
-        AND sgm.status = 'active'
-    ) AS activity
-    ${cursorCondition}
-    ORDER BY activity.created_at DESC, activity.id DESC
+      sap.id,
+      CASE
+        WHEN sap.action_type = 'space.post_created' THEN 'post_created'
+        WHEN sap.action_type = 'space.repost_created' THEN 'repost_created'
+        WHEN sap.action_type = 'space.group_joined' THEN 'group_joined'
+        WHEN sap.action_type = 'space.post_liked_by_other' THEN 'post_liked_by_other'
+        WHEN sap.action_type = 'space.post_reposted_by_other' THEN 'post_reposted_by_other'
+        ELSE sap.action_type
+      END AS type,
+      sap.action_type,
+      sap.direction,
+      sap.category,
+      sap.actor_user_id,
+      spp.display_name AS actor_display_name,
+      spp.avatar_url AS actor_avatar_url,
+      spp.role_label AS actor_role_label,
+      sap.title,
+      sap.description,
+      sap.related_post_id,
+      sap.related_entity_type,
+      sap.related_entity_id,
+      sap.occurred_at
+    FROM space_activity_projection sap
+    LEFT JOIN space_profile_projection spp ON spp.user_id = sap.actor_user_id
+    WHERE sap.recipient_user_id = ${userId}
+      AND sap.removed_at IS NULL
+      ${filterCondition}
+      ${cursorCondition}
+    ORDER BY sap.occurred_at DESC, sap.id DESC
     LIMIT ${limit}
   `);
   return rowsOf<SpaceActivityRow>(result);

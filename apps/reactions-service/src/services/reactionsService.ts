@@ -14,6 +14,11 @@ import {
   type ReactionType,
   type ReactionTargetType,
 } from '../db/queries/reactions';
+import {
+  getSpacePostActivityTarget,
+  retractIncomingLikeActivityProjection,
+  upsertIncomingLikeActivityProjection,
+} from '../db/queries/activityProjection';
 import type { ReactionsEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
 import { errorResponse, json } from '../middleware/http';
@@ -54,6 +59,10 @@ type ListMyReactionsInput = {
 const ALLOWED_REACTION_TYPES: ReactionType[] = ['like', 'bookmark'];
 const DEFAULT_MINE_LIMIT = 20;
 const MAX_MINE_LIMIT = 50;
+
+function toIso(value: string | Date): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
 
 function normalizeReaction(row: ReactionRow) {
   return {
@@ -261,6 +270,19 @@ export async function upsertReaction(
         targetId: parsed.targetId,
         delta: 1,
       });
+      if (parsed.targetType === 'space_post') {
+        const targetPost = await getSpacePostActivityTarget(db, parsed.targetId);
+        if (targetPost && targetPost.status === 'active' && targetPost.author_id !== principal.userId) {
+          await upsertIncomingLikeActivityProjection(db, {
+            actorUserId: principal.userId,
+            recipientUserId: targetPost.author_id,
+            relatedPostId: targetPost.id,
+            description: targetPost.text,
+            occurredAt: toIso(reaction.created_at),
+            sourceEventId: reaction.id,
+          });
+        }
+      }
     }
     await publisher.publish({
       eventId: `evt_${crypto.randomUUID()}`,
@@ -330,6 +352,16 @@ export async function removeReactionById(
       targetId: existing.target_id,
       delta: -1,
     });
+    if (existing.target_type === 'space_post') {
+      const targetPost = await getSpacePostActivityTarget(db, existing.target_id);
+      if (targetPost && targetPost.author_id !== principal.userId) {
+        await retractIncomingLikeActivityProjection(db, {
+          actorUserId: principal.userId,
+          recipientUserId: targetPost.author_id,
+          relatedPostId: targetPost.id,
+        });
+      }
+    }
   }
   await publisher.publish({
     eventId: `evt_${crypto.randomUUID()}`,

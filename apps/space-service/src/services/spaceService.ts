@@ -16,9 +16,13 @@ import {
   listHomeFeedPosts,
   listMediaByPostId,
   listProfileFeedPosts,
+  markActivityProjectionRemovedForGroupJoin,
+  markActivityProjectionRemovedForPost,
   markMembershipRemoved,
   softDeletePost,
+  type SpaceActivityFilter,
   upsertMembership,
+  upsertActivityProjectionRow,
   upsertPostMedia,
   deletePostMedia,
   type SpaceActivityRow,
@@ -236,6 +240,91 @@ async function emit(
   });
 }
 
+function makeActivityId(actionType: string, parts: string[]): string {
+  return `activity:${actionType}:${parts.join(':')}`;
+}
+
+async function materializeOutgoingPostActivity(db: ReturnType<typeof createDb>, post: SpacePostRow): Promise<void> {
+  const actionType = post.post_type === 'repost' ? 'space.repost_created' : 'space.post_created';
+  await upsertActivityProjectionRow(db, {
+    id: makeActivityId(actionType, [post.id]),
+    recipientUserId: post.author_id,
+    occurredAt: post.published_at,
+    actionType,
+    direction: 'outgoing',
+    category: 'social',
+    actorUserId: post.author_id,
+    title: post.post_type === 'repost' ? 'You reposted an item' : 'You created a post',
+    description: post.text,
+    relatedPostId: post.id,
+    relatedEntityType: post.repost_target_type,
+    relatedEntityId: post.repost_target_id,
+    sourceStream: 'space',
+    sourceRecordKey: `post:${post.id}`,
+    sourceEventId: post.id,
+  });
+}
+
+async function materializeIncomingRepostActivity(
+  db: ReturnType<typeof createDb>,
+  repostPost: SpacePostRow,
+  targetPost: SpacePostRow | null
+): Promise<void> {
+  if (
+    repostPost.post_type !== 'repost' ||
+    repostPost.repost_target_type !== 'space_post' ||
+    !targetPost ||
+    targetPost.status !== 'active' ||
+    targetPost.author_id === repostPost.author_id
+  ) {
+    return;
+  }
+
+  await upsertActivityProjectionRow(db, {
+    id: makeActivityId('space.post_reposted_by_other', [repostPost.id, targetPost.author_id]),
+    recipientUserId: targetPost.author_id,
+    occurredAt: repostPost.published_at,
+    actionType: 'space.post_reposted_by_other',
+    direction: 'incoming',
+    category: 'social',
+    actorUserId: repostPost.author_id,
+    title: 'Someone reposted your post',
+    description: targetPost.text,
+    relatedPostId: targetPost.id,
+    relatedEntityType: 'space_post',
+    relatedEntityId: repostPost.id,
+    sourceStream: 'space',
+    sourceRecordKey: `repost:${repostPost.id}`,
+    sourceEventId: repostPost.id,
+  });
+}
+
+async function materializeGroupJoinedActivity(
+  db: ReturnType<typeof createDb>,
+  membership: SpaceMembershipRow,
+  group: SpaceGroupRow
+): Promise<void> {
+  if (membership.status !== 'active') return;
+
+  await upsertActivityProjectionRow(db, {
+    id: makeActivityId('space.group_joined', [membership.group_id, membership.user_id]),
+    recipientUserId: membership.user_id,
+    occurredAt: membership.joined_at,
+    actionType: 'space.group_joined',
+    direction: 'outgoing',
+    category: 'social',
+    actorUserId: membership.user_id,
+    title: `You joined ${group.title}`,
+    description: group.description,
+    relatedPostId: null,
+    relatedEntityType: 'space_group',
+    relatedEntityId: membership.group_id,
+    sourceStream: 'space',
+    sourceRecordKey: `group_join:${membership.group_id}:${membership.user_id}`,
+    sourceEventId: `${membership.group_id}:${membership.user_id}`,
+  });
+}
+
 export async function createPost(
   env: ServiceEnv,
   body: Record<string, unknown> | null,
@@ -322,6 +411,12 @@ export async function createPost(
   const created = await getPostById(db, postId);
   if (!created) {
     return errorResponse('INTERNAL_ERROR', 'Failed to load created post', requestId, 500);
+  }
+
+  await materializeOutgoingPostActivity(db, created);
+  if (created.post_type === 'repost' && created.repost_target_type === 'space_post' && created.repost_target_id) {
+    const targetPost = await getPostById(db, created.repost_target_id);
+    await materializeIncomingRepostActivity(db, created, targetPost);
   }
 
   await emit(publisher, postType === 'repost' ? 'space.post.reposted' : 'space.post.created', {
@@ -436,6 +531,8 @@ export async function deletePost(
     }
     return errorResponse('POST_DELETE_NOT_ALLOWED', 'Only the author may delete this post in v1', requestId, 403);
   }
+
+  await markActivityProjectionRemovedForPost(db, postId);
 
   await emit(publisher, 'space.post.deleted', {
     postId,
@@ -723,6 +820,8 @@ export async function joinGroup(
     return errorResponse('INTERNAL_ERROR', 'Failed to load membership', requestId, 500);
   }
 
+  await materializeGroupJoinedActivity(db, membership, group);
+
   await emit(publisher, 'space.group.member_joined', {
     groupId,
     userId: principal.userId,
@@ -775,6 +874,8 @@ export async function leaveGroup(
   if (!removed) {
     return errorResponse('NOT_FOUND', 'Membership not found', requestId, 404);
   }
+
+  await markActivityProjectionRemovedForGroupJoin(db, groupId, principal.userId);
 
   await emit(publisher, 'space.group.member_left', {
     groupId,
@@ -927,6 +1028,7 @@ export async function getGroupFeed(
 export async function getActivityFeed(
   env: ServiceEnv,
   principal: GatewayPrincipal,
+  filter: SpaceActivityFilter,
   limit: number,
   cursorValue: string | null,
   requestId: string
@@ -934,7 +1036,7 @@ export async function getActivityFeed(
   const dbState = getDb(env, requestId);
   if (!dbState.ok) return dbState.res;
   const db = dbState.db;
-  const rows = await listActivityFeedRows(db, principal.userId, limit + 1, decodeFeedCursor(cursorValue));
+  const rows = await listActivityFeedRows(db, principal.userId, filter, limit + 1, decodeFeedCursor(cursorValue));
   const pageRows = rows.slice(0, limit);
   const extraRow = rows[limit];
   return new Response(
@@ -945,16 +1047,22 @@ export async function getActivityFeed(
         actionType: row.action_type,
         direction: row.direction,
         category: row.category,
+        actor: {
+          userId: row.actor_user_id,
+          displayName: row.actor_display_name ?? row.actor_user_id,
+          avatarUrl: row.actor_avatar_url,
+          roleLabel: row.actor_role_label,
+        },
         title: row.title,
         description: row.description,
         relatedPostId: row.related_post_id,
         relatedEntityType: row.related_entity_type,
         relatedEntityId: row.related_entity_id,
-        createdAt: toIso(row.created_at),
+        createdAt: toIso(row.occurred_at),
       })),
       nextCursor: extraRow
         ? encodeFeedCursor({
-            publishedAt: toIso(extraRow.created_at),
+            publishedAt: toIso(extraRow.occurred_at),
             id: extraRow.id,
           })
         : null,

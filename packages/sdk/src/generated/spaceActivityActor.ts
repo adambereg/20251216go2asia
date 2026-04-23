@@ -7,11 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SpaceActivityFeedItemDirection =
-  (typeof SpaceActivityFeedItemDirection)[keyof typeof SpaceActivityFeedItemDirection];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SpaceActivityFeedItemDirection = {
-  incoming: "incoming",
-  outgoing: "outgoing",
-} as const;
+export interface SpaceActivityActor {
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  roleLabel?: string | null;
+  userId: string;
+}

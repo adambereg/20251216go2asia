@@ -7,11 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SpaceActivityFeedItemDirection =
-  (typeof SpaceActivityFeedItemDirection)[keyof typeof SpaceActivityFeedItemDirection];
+export type SpaceActivityFilterParameter =
+  (typeof SpaceActivityFilterParameter)[keyof typeof SpaceActivityFilterParameter];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SpaceActivityFeedItemDirection = {
+export const SpaceActivityFilterParameter = {
+  all: "all",
   incoming: "incoming",
-  outgoing: "outgoing",
+  my_actions: "my_actions",
 } as const;

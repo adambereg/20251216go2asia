@@ -12,5 +12,6 @@ export type SpaceActivityFeedItemDirection =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SpaceActivityFeedItemDirection = {
+  incoming: "incoming",
   outgoing: "outgoing",
 } as const;

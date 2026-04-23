@@ -15,4 +15,6 @@ export const SpaceActivityFeedItemActionType = {
   spacepost_created: "space.post_created",
   spacerepost_created: "space.repost_created",
   spacegroup_joined: "space.group_joined",
+  spacepost_liked_by_other: "space.post_liked_by_other",
+  spacepost_reposted_by_other: "space.post_reposted_by_other",
 } as const;

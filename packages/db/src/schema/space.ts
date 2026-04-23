@@ -162,3 +162,52 @@ export const spaceProfileProjections = pgTable(
     idxCountryCity: index('idx_space_profile_projection_country_city').on(table.countryId, table.cityId),
   })
 );
+
+export const spaceActivityProjections = pgTable(
+  'space_activity_projection',
+  {
+    id: text('id').primaryKey(),
+    recipientUserId: text('recipient_user_id').notNull(),
+    occurredAt: timestamp('occurred_at').notNull(),
+    actionType: text('action_type').notNull(),
+    direction: text('direction').notNull(),
+    category: text('category').notNull(),
+    actorUserId: text('actor_user_id').notNull(),
+    title: text('title').notNull(),
+    description: text('description'),
+    relatedPostId: text('related_post_id'),
+    relatedEntityType: text('related_entity_type'),
+    relatedEntityId: text('related_entity_id'),
+    sourceStream: text('source_stream').notNull(),
+    sourceRecordKey: text('source_record_key').notNull(),
+    sourceEventId: text('source_event_id'),
+    removedAt: timestamp('removed_at'),
+  },
+  (table) => ({
+    uniqueRecipientActionSource: unique('space_activity_projection_recipient_action_source_unique').on(
+      table.recipientUserId,
+      table.actionType,
+      table.sourceRecordKey
+    ),
+    idxRecipientOccurredAt: index('idx_space_activity_projection_recipient_occurred_at').on(
+      table.recipientUserId,
+      table.occurredAt,
+      table.id
+    ),
+    idxRecipientDirectionOccurredAt: index('idx_space_activity_projection_recipient_direction_occurred_at').on(
+      table.recipientUserId,
+      table.direction,
+      table.occurredAt,
+      table.id
+    ),
+    directionAllowed: check(
+      'space_activity_projection_direction_check',
+      sql`${table.direction} IN ('incoming', 'outgoing')`
+    ),
+    categoryAllowed: check('space_activity_projection_category_check', sql`${table.category} IN ('social')`),
+    sourceStreamAllowed: check(
+      'space_activity_projection_source_stream_check',
+      sql`${table.sourceStream} IN ('space', 'reactions')`
+    ),
+  })
+);

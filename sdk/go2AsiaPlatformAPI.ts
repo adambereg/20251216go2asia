@@ -4832,6 +4832,11 @@ export type getSpaceActivityFeedResponse200 = {
   status: 200;
 };
 
+export type getSpaceActivityFeedResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
 export type getSpaceActivityFeedResponse401 = {
   data: UnauthorizedResponse;
   status: 401;
@@ -4851,6 +4856,7 @@ export type getSpaceActivityFeedResponseSuccess = getSpaceActivityFeedResponse20
   headers: Headers;
 };
 export type getSpaceActivityFeedResponseError = (
+  | getSpaceActivityFeedResponse400
   | getSpaceActivityFeedResponse401
   | getSpaceActivityFeedResponse500
   | getSpaceActivityFeedResponse503
