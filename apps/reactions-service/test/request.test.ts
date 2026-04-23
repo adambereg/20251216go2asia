@@ -35,6 +35,10 @@ function aggregateSqlCallCount(): number {
   return executeMock.mock.calls.filter((_, i) => sqlOf(i).includes('reaction_aggregates')).length;
 }
 
+function activityProjectionSqlCallCount(): number {
+  return executeMock.mock.calls.filter((_, i) => sqlOf(i).includes('space_activity_projection')).length;
+}
+
 describe('reactions-service request', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -66,6 +70,50 @@ describe('reactions-service request', () => {
           },
         ],
       })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
       .mockResolvedValueOnce({ rows: [] });
 
     const response = await worker.fetch(
@@ -90,6 +138,7 @@ describe('reactions-service request', () => {
     expect(body.reaction.id).toBe('react_1');
     expect(body.reaction.targetType).toBe('space_post');
     expect(aggregateSqlCallCount()).toBe(1);
+    expect(activityProjectionSqlCallCount()).toBe(1);
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -150,6 +199,7 @@ describe('reactions-service request', () => {
     expect(body.applied).toBe(true);
     expect(body.reaction.reactionType).toBe('bookmark');
     expect(aggregateSqlCallCount()).toBe(0);
+    expect(activityProjectionSqlCallCount()).toBe(0);
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -183,6 +233,17 @@ describe('reactions-service request', () => {
         ],
       })
       .mockResolvedValueOnce({ rows: [{ id: 'react_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
       .mockResolvedValueOnce({ rows: [] });
 
     const response = await worker.fetch(
@@ -199,6 +260,7 @@ describe('reactions-service request', () => {
     expect(response.status).toBe(200);
     expect(body.removed).toBe(true);
     expect(aggregateSqlCallCount()).toBe(1);
+    expect(activityProjectionSqlCallCount()).toBe(1);
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -234,6 +296,17 @@ describe('reactions-service request', () => {
             status: 'active',
             created_at: '2026-03-14T00:00:00.000Z',
             updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
           },
         ],
       })
@@ -304,6 +377,17 @@ describe('reactions-service request', () => {
       })
       .mockResolvedValueOnce({ rows: [{ id: 'react_1' }] })
       .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
     const first = await worker.fetch(
@@ -360,6 +444,17 @@ describe('reactions-service request', () => {
       .mockResolvedValueOnce({
         rows: [
           {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
             id: 'react_1',
             user_id: 'user_rl_1',
             target_type: 'space_post',
@@ -396,7 +491,7 @@ describe('reactions-service request', () => {
     const body = await readJson<{ error: { code: string } }>(third);
     expect(third.status).toBe(429);
     expect(body.error.code).toBe('RATE_LIMITED');
-    expect(executeMock).toHaveBeenCalledTimes(4);
+    expect(executeMock).toHaveBeenCalledTimes(6);
     expect(publishMock).toHaveBeenCalledTimes(1);
   });
 
@@ -574,6 +669,17 @@ describe('reactions-service request', () => {
             payload_hash: '8346ae6deb57428f276e2c58f535aeb14f6879adba7d7f5fa78267d384c4de35',
             reaction_id: 'react_1',
             created_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'post_1',
+            author_id: 'user_owner',
+            text: 'Hello Space',
+            status: 'active',
           },
         ],
       })

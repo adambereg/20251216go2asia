@@ -6,11 +6,20 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { SpaceActivityFeedItemActionType } from "./spaceActivityFeedItemActionType";
+import type { SpaceActivityActor } from "./spaceActivityActor";
+import type { SpaceActivityFeedItemCategory } from "./spaceActivityFeedItemCategory";
+import type { SpaceActivityFeedItemDirection } from "./spaceActivityFeedItemDirection";
+import type { SpaceActivityFeedItemType } from "./spaceActivityFeedItemType";
 
 export interface SpaceActivityFeedItem {
+  actionType: SpaceActivityFeedItemActionType;
+  actor: SpaceActivityActor;
+  category: SpaceActivityFeedItemCategory;
   createdAt: string;
   /** @nullable */
   description?: string | null;
+  direction: SpaceActivityFeedItemDirection;
   id: string;
   /** @nullable */
   relatedEntityId?: string | null;
@@ -19,5 +28,6 @@ export interface SpaceActivityFeedItem {
   /** @nullable */
   relatedPostId?: string | null;
   title: string;
-  type: string;
+  /** Deprecated alias for actionType without the `space.` prefix. */
+  type: SpaceActivityFeedItemType;
 }

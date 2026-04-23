@@ -2,19 +2,23 @@
 
 import { useUser } from '@clerk/nextjs';
 import { SpaceLayout } from '@/components/space/Shared';
-import { SpaceProfileSurface } from '@/components/space/runtime/SpaceProfileSurface';
-import { PUBLIC_PROFILE_ID } from '@/components/space/runtime/utils';
+import { PostsPublicationsSurface } from './PostsPublicationsSurface';
+
+const PUBLIC_PROFILE_ID = (process.env.NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID ?? '').trim();
 
 export function PostsPageClient() {
   const { user, isLoaded, isSignedIn } = useUser();
   const profileId = isSignedIn && user?.id ? user.id : PUBLIC_PROFILE_ID;
+  const isOwnerView = Boolean(isSignedIn && user?.id && profileId === user.id);
 
   if (!isLoaded) {
     return (
       <SpaceLayout>
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Авторские публикации</h1>
-          <p className="mt-2 text-sm text-slate-600">Подготавливаем профиль для authored baseline...</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Загружаем публикации и репосты, которые уже доступны в Space Asia.
+          </p>
         </section>
       </SpaceLayout>
     );
@@ -26,8 +30,8 @@ export function PostsPageClient() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Авторские публикации</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Для гостевого authored baseline пока не задан representative profile. Войдите, чтобы увидеть свои публикации,
-            или откройте `/space/feed` для общего social потока.
+            Войдите в аккаунт, чтобы увидеть свои публикации. Если хотите просто посмотреть, откройте ленту
+            Space Asia.
           </p>
         </section>
       </SpaceLayout>
@@ -36,15 +40,7 @@ export function PostsPageClient() {
 
   return (
     <SpaceLayout>
-      <SpaceProfileSurface
-        userId={profileId}
-        heading="Авторские публикации"
-        subtitle={
-          isSignedIn
-            ? 'Ваши авторские публикации через существующий profile feed contract.'
-            : 'Representative public authored baseline через существующий profile feed contract.'
-        }
-      />
+      <PostsPublicationsSurface userId={profileId} isOwnerView={isOwnerView} />
     </SpaceLayout>
   );
 }

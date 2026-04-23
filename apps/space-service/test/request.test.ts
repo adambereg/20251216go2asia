@@ -19,6 +19,11 @@ vi.mock('@go2asia/db', () => ({
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import worker, { type Env } from '../src/index';
 
+function sqlOf(callIndex: number): string {
+  const arg = executeMock.mock.calls[callIndex]?.[0] as { strings?: string[] } | undefined;
+  return (arg?.strings ?? []).join('');
+}
+
 describe('space-service v1', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -176,6 +181,61 @@ describe('space-service v1', () => {
     expect(response.status).toBe(400);
     expect(body.error.code).toBe('VALIDATION_ERROR');
     expect(body.error.message).toContain('group');
+  });
+
+  it('creates a post and materializes outgoing activity projection', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_created',
+            author_id: 'user_test_1',
+            author_display_name: 'user_test_1',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'post',
+            visibility: 'public',
+            text: 'Hello Space',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('created');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Hello Space',
+        }),
+      }),
+      env
+    );
+
+    expect(response.status).toBe(201);
+    expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('INSERT INTO space_activity_projection'))).toBe(true);
   });
 
   it('returns a public post for anonymous read', async () => {
@@ -518,6 +578,210 @@ describe('space-service v1', () => {
     const body = await readJson<{ error: { code: string } }>(response);
     expect(response.status).toBe(404);
     expect(body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('returns activity projection rows with actor and stable cursor', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'activity:space.group_joined:sgroup_public:user_test_1',
+          type: 'group_joined',
+          action_type: 'space.group_joined',
+          direction: 'outgoing',
+          category: 'social',
+          actor_user_id: 'user_test_1',
+          actor_display_name: 'User Test',
+          actor_avatar_url: null,
+          actor_role_label: 'Spacer',
+          title: 'You joined Phuket Makers',
+          description: 'Builders in Phuket',
+          related_post_id: null,
+          related_entity_type: 'space_group',
+          related_entity_id: 'sgroup_public',
+          occurred_at: '2026-03-14T10:05:00.000Z',
+        },
+        {
+          id: 'activity:space.post_reposted_by_other:spost_repost_1:user_test_1',
+          type: 'post_reposted_by_other',
+          action_type: 'space.post_reposted_by_other',
+          direction: 'incoming',
+          category: 'social',
+          actor_user_id: 'user_2',
+          actor_display_name: 'User Two',
+          actor_avatar_url: 'https://example.com/u2.png',
+          actor_role_label: null,
+          title: 'Someone reposted your post',
+          description: 'Hello Space',
+          related_post_id: 'spost_1',
+          related_entity_type: 'space_post',
+          related_entity_id: 'spost_repost_1',
+          occurred_at: '2026-03-14T10:04:00.000Z',
+        },
+        {
+          id: 'activity:space.post_created:spost_1',
+          type: 'post_created',
+          action_type: 'space.post_created',
+          direction: 'outgoing',
+          category: 'social',
+          actor_user_id: 'user_test_1',
+          actor_display_name: 'User Test',
+          actor_avatar_url: null,
+          actor_role_label: 'Spacer',
+          title: 'You created a post',
+          description: 'Hello Space',
+          related_post_id: 'spost_1',
+          related_entity_type: null,
+          related_entity_id: null,
+          occurred_at: '2026-03-14T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/activity?limit=2', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        type: string;
+        actionType: string;
+        direction: string;
+        category: string;
+        actor: {
+          userId: string;
+          displayName: string | null;
+          avatarUrl: string | null;
+          roleLabel: string | null;
+        };
+        title: string;
+        description: string | null;
+        relatedPostId: string | null;
+        relatedEntityType: string | null;
+        relatedEntityId: string | null;
+        createdAt: string;
+      }>;
+      nextCursor: string | null;
+    }>(response);
+
+    const expectedCursor = btoa(
+      JSON.stringify({ publishedAt: '2026-03-14T10:03:00.000Z', id: 'activity:space.post_created:spost_1' })
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(2);
+    expect(body.items[0]).toEqual({
+      id: 'activity:space.group_joined:sgroup_public:user_test_1',
+      type: 'group_joined',
+      actionType: 'space.group_joined',
+      direction: 'outgoing',
+      category: 'social',
+      actor: {
+        userId: 'user_test_1',
+        displayName: 'User Test',
+        avatarUrl: null,
+        roleLabel: 'Spacer',
+      },
+      title: 'You joined Phuket Makers',
+      description: 'Builders in Phuket',
+      relatedPostId: null,
+      relatedEntityType: 'space_group',
+      relatedEntityId: 'sgroup_public',
+      createdAt: '2026-03-14T10:05:00.000Z',
+    });
+    expect(body.items[1]).toEqual({
+      id: 'activity:space.post_reposted_by_other:spost_repost_1:user_test_1',
+      type: 'post_reposted_by_other',
+      actionType: 'space.post_reposted_by_other',
+      direction: 'incoming',
+      category: 'social',
+      actor: {
+        userId: 'user_2',
+        displayName: 'User Two',
+        avatarUrl: 'https://example.com/u2.png',
+        roleLabel: null,
+      },
+      title: 'Someone reposted your post',
+      description: 'Hello Space',
+      relatedPostId: 'spost_1',
+      relatedEntityType: 'space_post',
+      relatedEntityId: 'spost_repost_1',
+      createdAt: '2026-03-14T10:04:00.000Z',
+    });
+    expect(body.nextCursor).toBe(expectedCursor);
+  });
+
+  it('filters activity projection by direction and rejects invalid filter', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'activity:space.post_liked_by_other:user_2:spost_1:user_test_1',
+          type: 'post_liked_by_other',
+          action_type: 'space.post_liked_by_other',
+          direction: 'incoming',
+          category: 'social',
+          actor_user_id: 'user_2',
+          actor_display_name: 'User Two',
+          actor_avatar_url: null,
+          actor_role_label: null,
+          title: 'Someone liked your post',
+          description: 'Hello Space',
+          related_post_id: 'spost_1',
+          related_entity_type: 'space_post',
+          related_entity_id: 'spost_1',
+          occurred_at: '2026-03-14T10:02:00.000Z',
+        },
+      ],
+    });
+
+    const incomingResponse = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/activity?filter=incoming', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const incomingBody = await readJson<{ items: Array<{ actionType: string; direction: string }> }>(incomingResponse);
+    expect(incomingResponse.status).toBe(200);
+    expect(incomingBody.items[0]).toMatchObject({
+      actionType: 'space.post_liked_by_other',
+      direction: 'incoming',
+    });
+
+    const invalidResponse = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/activity?filter=system', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const invalidBody = await readJson<{ error: { code: string } }>(invalidResponse);
+    expect(invalidResponse.status).toBe(400);
+    expect(invalidBody.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns public group feed without auth when group is public', async () => {

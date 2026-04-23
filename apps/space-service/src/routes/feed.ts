@@ -1,6 +1,8 @@
 import { type GatewayPrincipal } from '../middleware/auth';
-import { parsePositiveInt } from '../middleware/http';
+import { errorResponse, parsePositiveInt } from '../middleware/http';
 import { getActivityFeed, getGroupFeed, getHomeFeed, getProfileFeed } from '../services/spaceService';
+
+const ACTIVITY_FILTERS = new Set(['all', 'incoming', 'my_actions']);
 
 type Env = {
   DATABASE_URL?: string;
@@ -32,7 +34,16 @@ export async function handleFeedRoute(
   }
 
   if (path === '/v1/space/feed/activity' && request.method === 'GET' && principal) {
-    return getActivityFeed(env, principal, limit, cursor, requestId);
+    const filter = url.searchParams.get('filter') ?? 'all';
+    if (!ACTIVITY_FILTERS.has(filter)) {
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'filter must be one of: all, incoming, my_actions',
+        requestId,
+        400
+      );
+    }
+    return getActivityFeed(env, principal, filter as 'all' | 'incoming' | 'my_actions', limit, cursor, requestId);
   }
 
   return null;

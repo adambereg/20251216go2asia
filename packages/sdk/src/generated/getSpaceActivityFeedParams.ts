@@ -8,6 +8,7 @@
  */
 import type { CursorParameter } from "./cursorParameter";
 import type { FeedLimitParameter } from "./feedLimitParameter";
+import type { SpaceActivityFilterParameter } from "./spaceActivityFilterParameter";
 
 export type GetSpaceActivityFeedParams = {
   cursor?: CursorParameter;
@@ -16,4 +17,8 @@ export type GetSpaceActivityFeedParams = {
    * @maximum 100
    */
   limit?: FeedLimitParameter;
+  /**
+   * Activity feed filter. Defaults to `all`.
+   */
+  filter?: SpaceActivityFilterParameter;
 };

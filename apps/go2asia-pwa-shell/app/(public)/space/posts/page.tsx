@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Авторские публикации | Space Asia | Go2Asia',
-  description: 'Публичный baseline авторских публикаций в Space Asia',
+  description: 'Ваши публикации и репосты в Space Asia.',
 };
 
 export default function MyPostsPage() {

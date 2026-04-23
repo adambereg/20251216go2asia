@@ -458,6 +458,7 @@ paths:
         - $ref: "#/components/parameters/XRequestId"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/SpaceActivityFilter"
       responses:
         "200":
           description: OK
@@ -465,6 +466,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpaceActivityFeedResponse"
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "503":
@@ -561,6 +564,14 @@ components:
         type: integer
         minimum: 1
         maximum: 100
+    SpaceActivityFilter:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [all, incoming, my_actions]
+      description: Activity feed filter. Defaults to `all`.
 
   responses:
     Unauthorized:
@@ -963,14 +974,50 @@ components:
           type: string
           nullable: true
 
+    SpaceActivityActor:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        roleLabel:
+          type: string
+          nullable: true
+
     SpaceActivityFeedItem:
       type: object
-      required: [id, type, title, createdAt]
+      required: [id, type, actionType, direction, category, title, actor, createdAt]
       properties:
         id:
           type: string
         type:
           type: string
+          enum: [post_created, repost_created, group_joined, post_liked_by_other, post_reposted_by_other]
+          description: Deprecated alias for actionType without the `space.` prefix.
+        actionType:
+          type: string
+          enum:
+            [
+              space.post_created,
+              space.repost_created,
+              space.group_joined,
+              space.post_liked_by_other,
+              space.post_reposted_by_other,
+            ]
+        direction:
+          type: string
+          enum: [incoming, outgoing]
+        category:
+          type: string
+          enum: [social]
+        actor:
+          $ref: "#/components/schemas/SpaceActivityActor"
         title:
           type: string
         description:

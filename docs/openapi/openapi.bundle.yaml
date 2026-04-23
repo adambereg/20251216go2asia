@@ -413,6 +413,17 @@ components:
       required: true
       schema:
         type: string
+    SpaceActivityFilter:
+      description: Activity feed filter. Defaults to `all`.
+      in: query
+      name: filter
+      required: false
+      schema:
+        enum:
+          - all
+          - incoming
+          - my_actions
+        type: string
     StepId:
       in: path
       name: stepId
@@ -4079,13 +4090,48 @@ components:
         - rfPartnerId
         - rfOfferId
       type: object
+    SpaceActivityActor:
+      properties:
+        avatarUrl:
+          nullable: true
+          type: string
+        displayName:
+          nullable: true
+          type: string
+        roleLabel:
+          nullable: true
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+      type: object
     SpaceActivityFeedItem:
       properties:
+        actionType:
+          enum:
+            - space.post_created
+            - space.repost_created
+            - space.group_joined
+            - space.post_liked_by_other
+            - space.post_reposted_by_other
+          type: string
+        actor:
+          $ref: "#/components/schemas/SpaceActivityActor"
+        category:
+          enum:
+            - social
+          type: string
         createdAt:
           format: date-time
           type: string
         description:
           nullable: true
+          type: string
+        direction:
+          enum:
+            - incoming
+            - outgoing
           type: string
         id:
           type: string
@@ -4101,11 +4147,22 @@ components:
         title:
           type: string
         type:
+          description: Deprecated alias for actionType without the `space.` prefix.
+          enum:
+            - post_created
+            - repost_created
+            - group_joined
+            - post_liked_by_other
+            - post_reposted_by_other
           type: string
       required:
         - id
         - type
+        - actionType
+        - direction
+        - category
         - title
+        - actor
         - createdAt
       type: object
     SpaceActivityFeedResponse:
@@ -6906,6 +6963,7 @@ paths:
         - $ref: "#/components/parameters/XRequestId"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/FeedLimit"
+        - $ref: "#/components/parameters/SpaceActivityFilter"
       responses:
         "200":
           content:
@@ -6913,6 +6971,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpaceActivityFeedResponse"
           description: OK
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
