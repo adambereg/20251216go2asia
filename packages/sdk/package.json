@@ -14,6 +14,10 @@
       "types": "./src/atlas.ts",
       "default": "./src/atlas.ts"
     },
+    "./badges": {
+      "types": "./src/badges.ts",
+      "default": "./src/badges.ts"
+    },
     "./blog": {
       "types": "./src/blog.ts",
       "default": "./src/blog.ts"

@@ -24,6 +24,8 @@ tags:
     description: Service health checks
   - name: points
     description: Points balance and ledger operations
+  - name: badges
+    description: Off-chain badge catalog and user badge awards
   - name: internal
     description: Service-to-service APIs (authenticated)
 
@@ -119,6 +121,64 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/points/badges:
+    get:
+      tags: [badges]
+      operationId: listActiveBadges
+      summary: List active badge catalog entries
+      description: User-facing read endpoint (called via gateway). Returns active off-chain badge definitions only.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadgeCatalogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/points/badges/mine:
+    get:
+      tags: [badges]
+      operationId: listMyBadges
+      summary: List current user badge awards
+      description: User-facing read endpoint (called via gateway). Returns badge awards for the authenticated user only.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBadgesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/points/add:
     post:
       tags: [internal]
@@ -160,6 +220,48 @@ paths:
           $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /internal/points/badges/award:
+    post:
+      tags: [internal]
+      operationId: awardBadge
+      summary: Award an off-chain badge to a user (idempotent)
+      description: >
+        Service-to-service badge award endpoint.
+        Important:
+        - Badge awards are off-chain achievements only.
+        - Awarding a badge MUST NOT create a points transaction or mutate a points balance.
+        - `badgeCode`, `sourceType`, and `sourceId` are required to support auditability and idempotent award semantics.
+        - Repeating the same award returns `applied=false`; attempting to reuse the same badge for the same user with a different source returns 409 Conflict.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AwardBadgeRequest"
+      responses:
+        "200":
+          description: OK (applied or duplicate)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AwardBadgeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -213,6 +315,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
       description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
       content:
         application/json:
           schema:
@@ -368,3 +476,100 @@ components:
           description: True if a new transaction was created, false if duplicate
         balance:
           type: integer
+
+    BadgeCatalogItem:
+      type: object
+      required: [code, title, category, isActive]
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+        iconKey:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+
+    BadgeCatalogResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BadgeCatalogItem"
+
+    UserBadgeItem:
+      type: object
+      required: [badgeCode, title, awardedAt]
+      properties:
+        badgeCode:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        iconKey:
+          type: string
+          nullable: true
+        awardedAt:
+          type: string
+          format: date-time
+        sourceType:
+          type: string
+          nullable: true
+        sourceId:
+          type: string
+          nullable: true
+
+    UserBadgesResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserBadgeItem"
+
+    AwardBadgeRequest:
+      type: object
+      required: [userId, badgeCode, sourceType, sourceId]
+      properties:
+        userId:
+          type: string
+        badgeCode:
+          type: string
+        sourceType:
+          type: string
+        sourceId:
+          type: string
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    AwardBadgeResponse:
+      type: object
+      required: [badgeCode, userId, awardId, applied, awardedAt]
+      properties:
+        badgeCode:
+          type: string
+        userId:
+          type: string
+        awardId:
+          type: string
+        applied:
+          type: boolean
+        awardedAt:
+          type: string
+          format: date-time

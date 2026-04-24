@@ -36,6 +36,8 @@
 
 ### Points (Points Service)
 - `GET /v1/points/balance`
+- `GET /v1/points/badges`
+- `GET /v1/points/badges/mine?limit=...`
 - `GET /v1/points/transactions?limit=...&cursor=...`
 
 ### Referral (Referral Service)
@@ -121,6 +123,7 @@
 
 ### Points
 - `POST /internal/points/add`
+- `POST /internal/points/badges/award`
 
 ### Referral
 - `POST /internal/referral/generate-code`

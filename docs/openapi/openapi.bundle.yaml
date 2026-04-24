@@ -895,6 +895,77 @@ components:
       required:
         - mediaId
       type: object
+    AwardBadgeRequest:
+      properties:
+        badgeCode:
+          type: string
+        metadata:
+          additionalProperties: true
+          nullable: true
+          type: object
+        sourceId:
+          type: string
+        sourceType:
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - badgeCode
+        - sourceType
+        - sourceId
+      type: object
+    AwardBadgeResponse:
+      properties:
+        applied:
+          type: boolean
+        awardId:
+          type: string
+        awardedAt:
+          format: date-time
+          type: string
+        badgeCode:
+          type: string
+        userId:
+          type: string
+      required:
+        - badgeCode
+        - userId
+        - awardId
+        - applied
+        - awardedAt
+      type: object
+    BadgeCatalogItem:
+      properties:
+        category:
+          type: string
+        code:
+          type: string
+        description:
+          nullable: true
+          type: string
+        iconKey:
+          nullable: true
+          type: string
+        isActive:
+          type: boolean
+        title:
+          type: string
+      required:
+        - code
+        - title
+        - category
+        - isActive
+      type: object
+    BadgeCatalogResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/BadgeCatalogItem"
+          type: array
+      required:
+        - items
+      type: object
     ClaimReferralRequest:
       properties:
         code:
@@ -4654,6 +4725,44 @@ components:
         - targetId
         - reactionType
       type: object
+    UserBadgeItem:
+      properties:
+        awardedAt:
+          format: date-time
+          type: string
+        badgeCode:
+          type: string
+        category:
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        iconKey:
+          nullable: true
+          type: string
+        sourceId:
+          nullable: true
+          type: string
+        sourceType:
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+        - badgeCode
+        - title
+        - awardedAt
+      type: object
+    UserBadgesResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/UserBadgeItem"
+          type: array
+      required:
+        - items
+      type: object
     UserBalance:
       properties:
         balance:
@@ -4754,6 +4863,43 @@ paths:
       security:
         - ServiceAuth: []
       summary: Add points to a user (idempotent)
+      tags:
+        - internal
+  /internal/points/badges/award:
+    post:
+      description: |
+        Service-to-service badge award endpoint. Important: - Badge awards are off-chain achievements only. - Awarding a badge MUST NOT create a points transaction or mutate a points balance. - `badgeCode`, `sourceType`, and `sourceId` are required to support auditability and idempotent award semantics. - Repeating the same award returns `applied=false`; attempting to reuse the same badge for the same user with a different source returns 409 Conflict.
+      operationId: awardBadge
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AwardBadgeRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AwardBadgeResponse"
+          description: OK (applied or duplicate)
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - ServiceAuth: []
+      summary: Award an off-chain badge to a user (idempotent)
       tags:
         - internal
   /internal/referral/generate-code:
@@ -5616,6 +5762,64 @@ paths:
       summary: Attach media usage to a domain owner (authorized)
       tags:
         - media
+  /v1/points/badges:
+    get:
+      description: User-facing read endpoint (called via gateway). Returns active off-chain badge definitions only.
+      operationId: listActiveBadges
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadgeCatalogResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List active badge catalog entries
+      tags:
+        - badges
+  /v1/points/badges/mine:
+    get:
+      description: User-facing read endpoint (called via gateway). Returns badge awards for the authenticated user only.
+      operationId: listMyBadges
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - in: query
+          name: limit
+          required: false
+          schema:
+            default: 20
+            maximum: 100
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBadgesResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: List current user badge awards
+      tags:
+        - badges
   /v1/points/balance:
     get:
       description: User-facing read endpoint (called via gateway). Requires gateway-origin auth and asserted user context.
@@ -7609,6 +7813,8 @@ tags:
   - name: guru
   - description: Points balance and ledger operations
     name: points
+  - description: Off-chain badge catalog and user badge awards
+    name: badges
   - description: Service-to-service APIs (authenticated)
     name: internal
   - description: Quest runtime baseline contract.

@@ -7,6 +7,7 @@
  */
 
 export * as atlas from './atlas';
+export * as badges from './badges';
 export * as balance from './balance';
 export * as blog from './blog';
 export * as clerk from './clerk-integration';
