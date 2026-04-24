@@ -5,6 +5,7 @@ import { createNoopQuestEventPublisher } from './events/publisher';
 import { requireGatewayOrigin, requireServiceAuth } from './middleware/auth';
 import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
 import { handleQuestRoute } from './routes/quests';
+import { runScheduledQuestRewardReplay } from './services/questService';
 
 const SERVICE_NAME = 'quest-service';
 
@@ -81,7 +82,10 @@ function isProtectedRoute(method: string, path: string): boolean {
 }
 
 function isServiceRoute(method: string, path: string): boolean {
-  return method === 'POST' && path === '/internal/quests/rewards/replay-pending';
+  return (
+    (method === 'POST' && path === '/internal/quests/rewards/replay-pending') ||
+    (method === 'GET' && path === '/internal/quests/rewards/outbox/stats')
+  );
 }
 
 export default {
@@ -147,5 +151,28 @@ export default {
         durationMs: Date.now() - startedAt,
       });
     }
+  },
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const requestId = generateRequestId();
+    const logger = createLogger(requestId, SERVICE_NAME, {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
+
+    const summary = await runScheduledQuestRewardReplay(env, requestId);
+    if (summary instanceof Response) {
+      logger.warn('Scheduled quest reward replay did not complete', {
+        cron: controller.cron,
+        scheduledTime: controller.scheduledTime,
+        status: summary.status,
+      });
+      return;
+    }
+
+    logger.info('Scheduled quest reward replay completed', {
+      cron: controller.cron,
+      scheduledTime: controller.scheduledTime,
+      ...summary,
+    });
   },
 };

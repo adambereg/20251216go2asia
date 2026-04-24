@@ -10,6 +10,7 @@ import {
   getOwnedQuest,
   getOwnedQuestOperationalStats,
   getQuestProgress,
+  getQuestRewardOutboxStatsResponse,
   getQuestSubmissions,
   listOwnedQuests,
   listQuests,
@@ -43,6 +44,10 @@ export async function handleQuestRoute(
   if (path === '/internal/quests/rewards/replay-pending' && request.method === 'POST' && servicePrincipal) {
     const body = await readJsonObject(request);
     return replayPendingQuestRewardDeliveries(env, requestId, body, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/stats' && request.method === 'GET' && servicePrincipal) {
+    return getQuestRewardOutboxStatsResponse(env, requestId, servicePrincipal);
   }
 
   if (path === '/v1/quests' && request.method === 'GET') {

@@ -1508,6 +1508,101 @@ describe('quest-service pass #4', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('returns internal outbox stats with service auth', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'quest-service', { sub: 'ops-service' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          pending_count: 2,
+          delivered_count: 5,
+          failed_count: 1,
+          oldest_pending_created_at: '2026-04-10T09:00:00.000Z',
+          oldest_failed_created_at: '2026-04-10T08:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/stats', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      counts: { pending: number; delivered: number; failed: number };
+      oldestPending: { createdAt: string } | null;
+      oldestFailed: { createdAt: string } | null;
+      requestedBy: string;
+    }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      counts: { pending: 2, delivered: 5, failed: 1 },
+      oldestPending: { createdAt: '2026-04-10T09:00:00.000Z' },
+      oldestFailed: { createdAt: '2026-04-10T08:00:00.000Z' },
+      requestedBy: 'ops-service',
+    });
+  });
+
+  it('rejects unauthorized internal outbox stats requests', async () => {
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/stats'),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret', POINTS_SERVICE_URL: 'https://points.example' }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('runs scheduled replay using the shared pending replay helper', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ transactionId: 'ptx_1', applied: true, balance: 120 }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [buildRewardOutboxRow()],
+      })
+      .mockResolvedValueOnce({
+        rows: [buildRewardOutboxRow({ status: 'delivered', attempt_count: 1, delivered_at: '2026-04-10T09:00:01.000Z' })],
+      });
+
+    await worker.scheduled?.(
+      {
+        cron: '*/10 * * * *',
+        scheduledTime: Date.parse('2026-04-24T10:00:00.000Z'),
+      } as ScheduledController,
+      env,
+      {
+        waitUntil: vi.fn(),
+        passThroughOnException: vi.fn(),
+      } as unknown as ExecutionContext
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://points.example/internal/points/add',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
   it('returns minimum operational stats for owned quest', async () => {
     const env: Env = { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret' };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });

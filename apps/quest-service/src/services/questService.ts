@@ -16,6 +16,7 @@ import {
   getPublishedQuestById,
   getQuestById,
   getQuestProgressByQuestAndUser,
+  getQuestRewardOutboxStats,
   listQuestRewardOutboxByStatus,
   getQuestStepById,
   getSubmissionForReview,
@@ -37,6 +38,7 @@ import {
   markQuestRewardOutboxFailed,
   markQuestRewardOutboxPending,
   type QuestDifficulty,
+  type QuestRewardOutboxStatsRow,
   type QuestRewardOutboxRow,
   type QuestStatus,
   type QuestProgressRow,
@@ -139,6 +141,7 @@ const POINTS_SERVICE_NAME = 'points-service';
 const QUEST_REWARD_ACTION = 'quest_completed';
 const REPLAY_PENDING_REWARDS_DEFAULT_LIMIT = 20;
 const REPLAY_PENDING_REWARDS_MAX_LIMIT = 100;
+const SCHEDULED_REPLAY_REQUESTED_BY = 'cf-cron';
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -666,6 +669,74 @@ async function completeQuestProgressWithRewardDelivery(
   }
 
   return completion.progress;
+}
+
+type QuestRewardReplaySummary = {
+  processed: number;
+  delivered: number;
+  stillPending: number;
+  failed: number;
+  skipped: number;
+  limit: number;
+  requestedBy: string;
+};
+
+async function runQuestRewardReplay(
+  env: Env,
+  requestId: string,
+  input: {
+    limit: number;
+    requestedBy: string;
+  }
+): Promise<QuestRewardReplaySummary | Response> {
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const rows = await listQuestRewardOutboxByStatus(db, {
+    status: 'pending',
+    limit: input.limit,
+  });
+
+  let delivered = 0;
+  let stillPending = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (row.status !== 'pending') {
+      skipped += 1;
+      continue;
+    }
+
+    const result = await callPointsService(env, requestId, {
+      userId: row.user_id,
+      amount: row.points_amount,
+      action: QUEST_REWARD_ACTION,
+      externalId: row.external_id,
+      sourceEventId: row.source_event_id ?? `quest.completed:${row.quest_progress_id}`,
+      metadata: row.metadata ?? {},
+    });
+    await applyRewardDeliveryResult(db, row, result);
+
+    if (result.outcome === 'delivered') {
+      delivered += 1;
+    } else if (result.outcome === 'pending') {
+      stillPending += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  return {
+    processed: rows.length,
+    delivered,
+    stillPending,
+    failed,
+    skipped,
+    limit: input.limit,
+    requestedBy: input.requestedBy,
+  };
 }
 
 function hasRole(principal: GatewayPrincipal, role: string): boolean {
@@ -1998,56 +2069,54 @@ export async function replayPendingQuestRewardDeliveries(
 ): Promise<Response> {
   const parsed = parseReplayPendingRewardsInput(body);
   if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid replay payload', requestId, 400);
+  const summary = await runQuestRewardReplay(env, requestId, {
+    limit: parsed.limit,
+    requestedBy: principal.service,
+  });
+  if (summary instanceof Response) return summary;
+  return json(summary, 200);
+}
 
+export async function getQuestRewardOutboxStatsResponse(
+  env: Env,
+  requestId: string,
+  principal: ServicePrincipal
+): Promise<Response> {
   const databaseUrl = requireDatabaseUrl(env, requestId);
   if (databaseUrl instanceof Response) return databaseUrl;
 
   const db = createDb(databaseUrl);
-  const rows = await listQuestRewardOutboxByStatus(db, {
-    status: 'pending',
-    limit: parsed.limit,
-  });
-
-  let delivered = 0;
-  let stillPending = 0;
-  let failed = 0;
-  let skipped = 0;
-
-  for (const row of rows) {
-    if (row.status !== 'pending') {
-      skipped += 1;
-      continue;
-    }
-
-    const result = await callPointsService(env, requestId, {
-      userId: row.user_id,
-      amount: row.points_amount,
-      action: QUEST_REWARD_ACTION,
-      externalId: row.external_id,
-      sourceEventId: row.source_event_id ?? `quest.completed:${row.quest_progress_id}`,
-      metadata: row.metadata ?? {},
-    });
-    await applyRewardDeliveryResult(db, row, result);
-
-    if (result.outcome === 'delivered') {
-      delivered += 1;
-    } else if (result.outcome === 'pending') {
-      stillPending += 1;
-    } else {
-      failed += 1;
-    }
-  }
-
+  const stats: QuestRewardOutboxStatsRow = await getQuestRewardOutboxStats(db);
   return json(
     {
-      processed: rows.length,
-      delivered,
-      stillPending,
-      failed,
-      skipped,
-      limit: parsed.limit,
+      counts: {
+        pending: stats.pending_count,
+        delivered: stats.delivered_count,
+        failed: stats.failed_count,
+      },
+      oldestPending: stats.oldest_pending_created_at
+        ? {
+            createdAt: asIso(stats.oldest_pending_created_at)!,
+          }
+        : null,
+      oldestFailed: stats.oldest_failed_created_at
+        ? {
+            createdAt: asIso(stats.oldest_failed_created_at)!,
+          }
+        : null,
       requestedBy: principal.service,
     },
     200
   );
+}
+
+export async function runScheduledQuestRewardReplay(
+  env: Env,
+  requestId: string,
+  limit = REPLAY_PENDING_REWARDS_DEFAULT_LIMIT
+): Promise<QuestRewardReplaySummary | Response> {
+  return runQuestRewardReplay(env, requestId, {
+    limit: Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, Math.max(1, limit)),
+    requestedBy: SCHEDULED_REPLAY_REQUESTED_BY,
+  });
 }

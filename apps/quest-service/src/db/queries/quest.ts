@@ -101,6 +101,14 @@ export type QuestRewardOutboxRow = {
   updated_at: string | Date;
 };
 
+export type QuestRewardOutboxStatsRow = {
+  pending_count: number;
+  delivered_count: number;
+  failed_count: number;
+  oldest_pending_created_at: string | Date | null;
+  oldest_failed_created_at: string | Date | null;
+};
+
 export type SubmissionReviewRow = QuestSubmissionRow & {
   quest_id: string;
   creator_pro_id: string;
@@ -1125,6 +1133,27 @@ export async function markQuestRewardOutboxFailed(
       updated_at
   `);
   return rowsOf<QuestRewardOutboxRow>(result)[0] ?? null;
+}
+
+export async function getQuestRewardOutboxStats(db: DbExecutor): Promise<QuestRewardOutboxStatsRow> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
+      COUNT(*) FILTER (WHERE status = 'delivered')::int AS delivered_count,
+      COUNT(*) FILTER (WHERE status = 'failed')::int AS failed_count,
+      MIN(created_at) FILTER (WHERE status = 'pending') AS oldest_pending_created_at,
+      MIN(created_at) FILTER (WHERE status = 'failed') AS oldest_failed_created_at
+    FROM quest_reward_outbox
+  `);
+  return (
+    rowsOf<QuestRewardOutboxStatsRow>(result)[0] ?? {
+      pending_count: 0,
+      delivered_count: 0,
+      failed_count: 0,
+      oldest_pending_created_at: null,
+      oldest_failed_created_at: null,
+    }
+  );
 }
 
 export async function getBlockingSubmissionForProgressStep(
