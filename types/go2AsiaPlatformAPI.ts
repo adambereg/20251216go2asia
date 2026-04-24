@@ -43,6 +43,7 @@ import type {
   GetGroupFeedParams,
   GetHomeFeedParams,
   GetProfileFeedParams,
+  GetReferralCodeParams,
   GetReferralTreeParams,
   GetSpaceActivityFeedParams,
   GetSpaceGroupFeedParams,
@@ -108,6 +109,7 @@ import type {
   ReactionsServiceAuthNotConfiguredResponse,
   ReactionsValidationErrorResponse,
   ReferralCodeResponse,
+  ReferralEarningsResponse,
   ReferralStatsResponse,
   ReferralTreeResponse,
   ReviewSubmissionRequest,
@@ -3502,12 +3504,80 @@ export type getReferralCodeResponseError = (
 
 export type getReferralCodeResponse = getReferralCodeResponseSuccess | getReferralCodeResponseError;
 
-export const getGetReferralCodeUrl = () => {
-  return `/v1/referral/code`;
+export const getGetReferralCodeUrl = (params?: GetReferralCodeParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/referral/code?${stringifiedParams}`
+    : `/v1/referral/code`;
 };
 
-export const getReferralCode = async (options?: RequestInit): Promise<getReferralCodeResponse> => {
-  return customInstance<getReferralCodeResponse>(getGetReferralCodeUrl(), {
+export const getReferralCode = async (
+  params?: GetReferralCodeParams,
+  options?: RequestInit
+): Promise<getReferralCodeResponse> => {
+  return customInstance<getReferralCodeResponse>(getGetReferralCodeUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns lightweight referral earnings composition for the current user. Referral Service remains owner of referral graph/activation facts, while Points Service remains ledger truth for applied earnings.
+
+ * @summary Get current user's referral earnings read model
+ */
+export type getReferralEarningsResponse200 = {
+  data: ReferralEarningsResponse;
+  status: 200;
+};
+
+export type getReferralEarningsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getReferralEarningsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getReferralEarningsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getReferralEarningsResponseSuccess = getReferralEarningsResponse200 & {
+  headers: Headers;
+};
+export type getReferralEarningsResponseError = (
+  | getReferralEarningsResponse401
+  | getReferralEarningsResponse500
+  | getReferralEarningsResponse503
+) & {
+  headers: Headers;
+};
+
+export type getReferralEarningsResponse =
+  | getReferralEarningsResponseSuccess
+  | getReferralEarningsResponseError;
+
+export const getGetReferralEarningsUrl = () => {
+  return `/v1/referral/earnings`;
+};
+
+export const getReferralEarnings = async (
+  options?: RequestInit
+): Promise<getReferralEarningsResponse> => {
+  return customInstance<getReferralEarningsResponse>(getGetReferralEarningsUrl(), {
     ...options,
     method: "GET",
   });

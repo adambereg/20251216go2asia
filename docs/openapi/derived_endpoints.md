@@ -42,6 +42,7 @@
 - `GET /v1/referral/code`
 - `GET /v1/referral/stats`
 - `GET /v1/referral/tree?depth=1|2`
+- `GET /v1/referral/earnings`
 - `POST /v1/referral/claim`
 
 ### Guru (Guru Service)
