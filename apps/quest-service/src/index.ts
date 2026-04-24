@@ -1,5 +1,5 @@
-import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 import { createDb, sql } from '@go2asia/db';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { createNoopQuestEventPublisher } from './events/publisher';
 import { requireGatewayOrigin } from './middleware/auth';
@@ -11,6 +11,7 @@ export interface Env {
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
   DATABASE_URL?: string;
+  POINTS_SERVICE_URL?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -25,6 +26,7 @@ function handleHealth(env: Env): Response {
 async function handleReady(env: Env): Promise<Response> {
   const checks = {
     databaseUrl: getSecretCheck(env.DATABASE_URL),
+    pointsServiceUrl: getSecretCheck(env.POINTS_SERVICE_URL),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
     databaseConnection: 'missing' as 'ok' | 'missing',
   };

@@ -1,4 +1,5 @@
 import { createDb } from '@go2asia/db';
+import { createLogger } from '@go2asia/logger';
 
 import {
   archiveQuest as archiveQuestRow,
@@ -53,6 +54,8 @@ import { errorResponse, json } from '../middleware/http';
 type Env = {
   DATABASE_URL?: string;
   ENVIRONMENT?: string;
+  POINTS_SERVICE_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 };
 
 type CreateQuestInput = {
@@ -125,6 +128,8 @@ const QUEST_VERIFICATION_TYPES: QuestVerificationType[] = ['auto', 'geo', 'qr', 
 const QUEST_PROOF_TYPES: QuestProofType[] = ['photo', 'geo', 'qr', 'space_post', 'text'];
 const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'space_post'];
 const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved', 'rejected'];
+const QUEST_SERVICE_NAME = 'quest-service';
+const POINTS_SERVICE_NAME = 'points-service';
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -316,6 +321,164 @@ function requireDatabaseUrl(env: Env, requestId: string): string | Response {
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
   }
   return env.DATABASE_URL;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function utf8ToBytes(input: string): Uint8Array {
+  return new TextEncoder().encode(input);
+}
+
+async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
+  const payloadB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(payload)));
+  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    utf8ToBytes(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+  return `${headerB64}.${payloadB64}.${bytesToBase64Url(signature)}`;
+}
+
+async function createServiceJwt(env: Env, targetService: string, requestId: string): Promise<string | null> {
+  if (!env.SERVICE_JWT_SECRET) return null;
+  const now = Math.floor(Date.now() / 1000);
+  return signHs256Jwt(
+    {
+      iss: 'go2asia-service-auth',
+      aud: targetService,
+      sub: QUEST_SERVICE_NAME,
+      iat: now,
+      exp: now + 300,
+      rid: requestId,
+    },
+    env.SERVICE_JWT_SECRET
+  );
+}
+
+async function callPointsService(
+  env: Env,
+  requestId: string,
+  input: {
+    userId: string;
+    amount: number;
+    action: 'quest_completed';
+    externalId: string;
+    sourceEventId: string;
+    metadata: Record<string, unknown>;
+  }
+): Promise<{ ok: boolean; error?: string }> {
+  const logger = createLogger(requestId, QUEST_SERVICE_NAME, { env: env.ENVIRONMENT });
+  if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
+    logger.warn('Points Service integration not configured', {
+      userId: input.userId,
+      action: input.action,
+    });
+    return { ok: false, error: 'Points Service not configured' };
+  }
+
+  const token = await createServiceJwt(env, POINTS_SERVICE_NAME, requestId);
+  if (!token) {
+    logger.error('Failed to create service JWT for Points Service');
+    return { ok: false, error: 'Service auth failed' };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const response = await fetch(`${env.POINTS_SERVICE_URL}/internal/points/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-Request-Id': requestId,
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      logger.warn('Quest reward delivery failed', {
+        userId: input.userId,
+        action: input.action,
+        externalId: input.externalId,
+        status: response.status,
+        body: text,
+      });
+      return { ok: false, error: `Points Service returned ${response.status}` };
+    }
+
+    logger.info('Quest reward delivered', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      amount: input.amount,
+    });
+    return { ok: true };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Quest reward delivery timed out', {
+        userId: input.userId,
+        action: input.action,
+        externalId: input.externalId,
+      });
+      return { ok: false, error: 'Timeout' };
+    }
+
+    logger.error('Quest reward delivery error', error, {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+    });
+    return { ok: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+async function deliverQuestCompletionReward(
+  env: Env,
+  requestId: string,
+  input: {
+    quest: QuestRow;
+    progressId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const amount = input.quest.reward_points;
+  if (typeof amount !== 'number' || amount < 1) return;
+
+  const questMetadata = extractQuestMetadataProjection(input.quest.geo_scope);
+  const metadata: Record<string, unknown> = {
+    questId: input.quest.id,
+    progressId: input.progressId,
+    completedAt: new Date().toISOString(),
+    rewardSource: 'quest.reward_points',
+  };
+  if (questMetadata?.slug) {
+    metadata.questSlug = questMetadata.slug;
+  }
+
+  await callPointsService(env, requestId, {
+    userId: input.userId,
+    amount,
+    action: 'quest_completed',
+    externalId: `quest:completed:${input.progressId}`,
+    sourceEventId: `quest.completed:${input.progressId}`,
+    metadata,
+  });
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -865,6 +1028,11 @@ async function publishSubmissionApprovedSequence(
         },
       })
     );
+    await deliverQuestCompletionReward(env, requestId, {
+      quest: input.quest,
+      progressId: input.progressId,
+      userId: input.submission.user_id,
+    });
   }
 }
 

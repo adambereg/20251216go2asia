@@ -21,6 +21,85 @@ import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import type { Env } from '../src/index';
 import worker from '../src/index';
 
+function buildQuestRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'quest_1',
+    title: 'Quest title',
+    description: null,
+    creator_pro_id: 'pro_1',
+    city_id: null,
+    geo_scope: null,
+    type: null,
+    theme: null,
+    difficulty: null,
+    status: 'published',
+    visibility: 'public',
+    reward_points: 120,
+    steps_count: 2,
+    published_at: '2026-04-10T07:00:00.000Z',
+    created_at: '2026-04-10T07:00:00.000Z',
+    updated_at: '2026-04-10T07:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function buildStepRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'qstep_2',
+    quest_id: 'quest_1',
+    order: 2,
+    type: 'challenge',
+    target_type: null,
+    target_id: null,
+    verification_type: 'manual',
+    requirements_json: {},
+    reward_points: null,
+    created_at: '2026-04-10T08:30:00.000Z',
+    ...overrides,
+  };
+}
+
+function buildSubmissionReviewRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'sub_1',
+    progress_id: 'qprog_1',
+    step_id: 'qstep_2',
+    user_id: 'user_1',
+    proof_type: 'photo',
+    proof_data: { mediaId: 'media_1' },
+    status: 'pending',
+    reviewed_by: null,
+    reviewed_at: null,
+    rejection_reason: null,
+    created_at: '2026-04-10T08:00:00.000Z',
+    updated_at: '2026-04-10T08:00:00.000Z',
+    quest_id: 'quest_1',
+    creator_pro_id: 'pro_1',
+    progress_status: 'pending_review',
+    current_step: 2,
+    step_order: 2,
+    ...overrides,
+  };
+}
+
+function buildApprovedSubmissionRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'sub_1',
+    progress_id: 'qprog_1',
+    step_id: 'qstep_2',
+    user_id: 'user_1',
+    proof_type: 'photo',
+    proof_data: { mediaId: 'media_1' },
+    status: 'approved',
+    reviewed_by: 'pro_1',
+    reviewed_at: '2026-04-10T09:00:00.000Z',
+    rejection_reason: null,
+    created_at: '2026-04-10T08:00:00.000Z',
+    updated_at: '2026-04-10T09:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('quest-service pass #4', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -1007,6 +1086,215 @@ describe('quest-service pass #4', () => {
     const body = await readJson<{ status: string; rejectionReason: string | null }>(response);
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ status: 'rejected', rejectionReason: 'Photo is blurry' });
+  });
+
+  it('delivers quest completion reward to points-service after approved final step', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'user_1',
+            status: 'completed',
+            current_step: null,
+            started_at: '2026-04-10T07:30:00.000Z',
+            completed_at: '2026-04-10T09:00:00.000Z',
+            created_at: '2026-04-10T07:30:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('approved');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://points.example/internal/points/add',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          Authorization: expect.stringMatching(/^Bearer /),
+          'X-Request-Id': expect.any(String),
+        }),
+      })
+    );
+
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      userId: 'user_1',
+      amount: 120,
+      action: 'quest_completed',
+      externalId: 'quest:completed:qprog_1',
+      sourceEventId: 'quest.completed:qprog_1',
+      metadata: {
+        questId: 'quest_1',
+        progressId: 'qprog_1',
+        rewardSource: 'quest.reward_points',
+      },
+    });
+    expect((payload.metadata as Record<string, unknown>).completedAt).toEqual(expect.any(String));
+  });
+
+  it('keeps approved completion response successful when points reward delivery fails', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const fetchMock = vi.fn().mockResolvedValue(new Response('upstream down', { status: 503 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'user_1',
+            status: 'completed',
+            current_step: null,
+            started_at: '2026-04-10T07:30:00.000Z',
+            completed_at: '2026-04-10T09:00:00.000Z',
+            created_at: '2026-04-10T07:30:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('approved');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips points reward delivery when completed quest has no reward points', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow({ reward_points: 0 })] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'user_1',
+            status: 'completed',
+            current_step: null,
+            started_at: '2026-04-10T07:30:00.000Z',
+            completed_at: '2026-04-10T09:00:00.000Z',
+            created_at: '2026-04-10T07:30:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not attempt quest reward delivery for already completed progress', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow({ id: 'qstep_1', order: 1, verification_type: 'auto' })] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'qprog_1',
+            quest_id: 'quest_1',
+            user_id: 'user_1',
+            status: 'completed',
+            current_step: null,
+            started_at: '2026-04-10T07:30:00.000Z',
+            completed_at: '2026-04-10T09:00:00.000Z',
+            created_at: '2026-04-10T07:30:00.000Z',
+            updated_at: '2026-04-10T09:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/quests/quest_1/steps/qstep_1/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ proofType: 'text', proofData: {} }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('CONFLICT');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns minimum operational stats for owned quest', async () => {

@@ -1,5 +1,5 @@
-import type { GatewayPrincipal } from '../middleware/auth';
 import type { QuestEventPublisher } from '../events/publisher';
+import type { GatewayPrincipal } from '../middleware/auth';
 import { readJsonObject } from '../middleware/http';
 import {
   addQuestStep,
@@ -24,6 +24,8 @@ import {
 type Env = {
   DATABASE_URL?: string;
   ENVIRONMENT?: string;
+  POINTS_SERVICE_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 };
 
 export async function handleQuestRoute(
