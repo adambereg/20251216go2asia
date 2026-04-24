@@ -36,6 +36,7 @@
 
 ### Points (Points Service)
 - `GET /v1/points/balance`
+- `GET /v1/points/connect-dashboard?transactionsLimit=...&badgesLimit=...`
 - `GET /v1/points/badges`
 - `GET /v1/points/badges/mine?limit=...`
 - `GET /v1/points/transactions?limit=...&cursor=...`

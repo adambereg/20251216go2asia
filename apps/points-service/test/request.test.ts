@@ -112,6 +112,239 @@ describe('points-service request hardening', () => {
     expect(body.message).toContain('claims');
   });
 
+  it('rejects missing gateway token on connect dashboard route', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/points/connect-dashboard'),
+      env
+    );
+
+    const body = await readJson<{ error: string; message: string }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error).toBe('UNAUTHORIZED');
+    expect(body.message).toContain('X-Gateway-Auth');
+  });
+
+  it('returns connect dashboard zero-state for current user without leaking metadata', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            total_referrals: 0,
+            activated_referrals: 0,
+            pending_referrals: 0,
+            total_earned_points: 0,
+          },
+        ],
+      });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_dashboard_empty' });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/points/connect-dashboard', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      balance: { points: number; updatedAt: string | null };
+      recentTransactions: unknown[];
+      referrals: {
+        totalEarnedPoints: number;
+        activatedReferrals: number;
+        pendingReferrals: number;
+        totalReferrals: number;
+      };
+      badges: { totalBadges: number; recent: unknown[] };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      balance: {
+        points: 0,
+        updatedAt: null,
+      },
+      recentTransactions: [],
+      referrals: {
+        totalEarnedPoints: 0,
+        activatedReferrals: 0,
+        pendingReferrals: 0,
+        totalReferrals: 0,
+      },
+      badges: {
+        totalBadges: 0,
+        recent: [],
+      },
+    });
+  });
+
+  it('returns bounded connect dashboard sections for current user only', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [{ balance: 420, updated_at: new Date('2026-04-24T08:00:00.000Z') }],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'tx_dash_1',
+            user_id: 'user_dashboard',
+            amount: 100,
+            reason: 'quest_completed',
+            source_service: 'quest-service',
+            source_event_id: 'quest.completed:qprog_1',
+            external_id: 'quest:completed:qprog_1',
+            metadata: { questId: 'quest_1' },
+            created_at: new Date('2026-04-24T09:00:00.000Z'),
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total: 3 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'award_2',
+            user_id: 'user_dashboard',
+            badge_id: 'first_quest_completed',
+            badge_name: 'First Quest Completed',
+            source_service: 'quest-service',
+            source_type: 'quest.completed',
+            source_id: 'qprog_1',
+            metadata: { hidden: true },
+            created_at: new Date('2026-04-24T09:05:00.000Z'),
+            earned_at: new Date('2026-04-24T09:05:00.000Z'),
+            badge_code: 'first_quest_completed',
+            badge_title: 'First Quest Completed',
+            badge_description: 'Completed your first quest',
+            badge_category: 'quest',
+            badge_icon_key: 'badges/first-quest.svg',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            total_referrals: 3,
+            activated_referrals: 1,
+            pending_referrals: 2,
+            total_earned_points: 100,
+          },
+        ],
+      });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_dashboard' });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/points/connect-dashboard?transactionsLimit=50&badgesLimit=100&userId=spoofed-user', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      balance: { points: number; updatedAt: string | null };
+      recentTransactions: Array<{
+        id: string;
+        amount: number;
+        action: string;
+        sourceService: string | null;
+        sourceEventId: string | null;
+        createdAt: string;
+        metadata?: unknown;
+      }>;
+      referrals: {
+        totalEarnedPoints: number;
+        activatedReferrals: number;
+        pendingReferrals: number;
+        totalReferrals: number;
+      };
+      badges: {
+        totalBadges: number;
+        recent: Array<{
+          badgeCode: string;
+          title: string;
+          category: string | null;
+          iconKey: string | null;
+          awardedAt: string;
+          sourceType?: unknown;
+          sourceId?: unknown;
+        }>;
+      };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.balance).toEqual({
+      points: 420,
+      updatedAt: '2026-04-24T08:00:00.000Z',
+    });
+    expect(body.recentTransactions).toEqual([
+      {
+        id: 'tx_dash_1',
+        amount: 100,
+        action: 'quest_completed',
+        sourceService: 'quest-service',
+        sourceEventId: 'quest.completed:qprog_1',
+        createdAt: '2026-04-24T09:00:00.000Z',
+      },
+    ]);
+    expect(body.badges).toEqual({
+      totalBadges: 3,
+      recent: [
+        {
+          badgeCode: 'first_quest_completed',
+          title: 'First Quest Completed',
+          category: 'quest',
+          iconKey: 'badges/first-quest.svg',
+          awardedAt: '2026-04-24T09:05:00.000Z',
+        },
+      ],
+    });
+    expect(body.referrals).toEqual({
+      totalEarnedPoints: 100,
+      activatedReferrals: 1,
+      pendingReferrals: 2,
+      totalReferrals: 3,
+    });
+    expect(body.recentTransactions.every((item) => !('metadata' in item))).toBe(true);
+    expect(body.badges.recent.every((item) => !('sourceType' in item) && !('sourceId' in item))).toBe(true);
+
+    const transactionQuery = executeMock.mock.calls[1]?.[0] as { values: unknown[] };
+    expect(transactionQuery.values).toContain('user_dashboard');
+    expect(transactionQuery.values).not.toContain('spoofed-user');
+    expect(transactionQuery.values).toContain(20);
+
+    const badgesQuery = executeMock.mock.calls[3]?.[0] as { values: unknown[] };
+    expect(badgesQuery.values).toContain('user_dashboard');
+    expect(badgesQuery.values).toContain(20);
+
+    const referralsQuery = executeMock.mock.calls[4]?.[0] as { values: unknown[]; strings: string[] };
+    expect(referralsQuery.values).toContain('user_dashboard');
+    expect(referralsQuery.strings.join('')).toContain('FROM referral_relations');
+    expect(referralsQuery.strings.join('')).toContain("pt.reason = 'referral_bonus_referrer'");
+    expect(referralsQuery.strings.join('')).toContain("pt.external_id = ('referral:first_login:' || rr.referrer_id || ':' || rr.referee_id)");
+  });
+
   it('returns 503 when service auth is not configured on internal route', async () => {
     const response = await worker.fetch(
       new Request('https://points.example/internal/points/add', {

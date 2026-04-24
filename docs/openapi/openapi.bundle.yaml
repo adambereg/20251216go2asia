@@ -995,6 +995,113 @@ components:
         - refereeId
         - code
       type: object
+    ConnectDashboardBadgeItem:
+      properties:
+        awardedAt:
+          format: date-time
+          type: string
+        badgeCode:
+          type: string
+        category:
+          nullable: true
+          type: string
+        iconKey:
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+        - badgeCode
+        - title
+        - awardedAt
+      type: object
+    ConnectDashboardBadges:
+      properties:
+        recent:
+          items:
+            $ref: "#/components/schemas/ConnectDashboardBadgeItem"
+          type: array
+        totalBadges:
+          minimum: 0
+          type: integer
+      required:
+        - totalBadges
+        - recent
+      type: object
+    ConnectDashboardBalance:
+      properties:
+        points:
+          minimum: 0
+          type: integer
+        updatedAt:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+        - points
+        - updatedAt
+      type: object
+    ConnectDashboardReferrals:
+      properties:
+        activatedReferrals:
+          minimum: 0
+          type: integer
+        pendingReferrals:
+          minimum: 0
+          type: integer
+        totalEarnedPoints:
+          minimum: 0
+          type: integer
+        totalReferrals:
+          minimum: 0
+          type: integer
+      required:
+        - totalEarnedPoints
+        - activatedReferrals
+        - pendingReferrals
+        - totalReferrals
+      type: object
+    ConnectDashboardResponse:
+      properties:
+        badges:
+          $ref: "#/components/schemas/ConnectDashboardBadges"
+        balance:
+          $ref: "#/components/schemas/ConnectDashboardBalance"
+        recentTransactions:
+          items:
+            $ref: "#/components/schemas/ConnectDashboardTransactionItem"
+          type: array
+        referrals:
+          $ref: "#/components/schemas/ConnectDashboardReferrals"
+      required:
+        - balance
+        - recentTransactions
+        - referrals
+        - badges
+      type: object
+    ConnectDashboardTransactionItem:
+      properties:
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        amount:
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        sourceEventId:
+          nullable: true
+          type: string
+        sourceService:
+          nullable: true
+          type: string
+      required:
+        - id
+        - amount
+        - action
+        - createdAt
+      type: object
     ContentArticleDto:
       properties:
         category:
@@ -5843,6 +5950,48 @@ paths:
       security:
         - GatewayAuth: []
       summary: Get current user points balance
+      tags:
+        - points
+  /v1/points/connect-dashboard:
+    get:
+      description: |
+        User-facing read endpoint (called via gateway). Returns a bounded convenience dashboard surface composed from real backend facts only. Important: - This endpoint is read-only and does not become source of truth. - Balance remains sourced from `user_balances`. - Transactions remain sourced from `points_transactions`. - Badge data remains sourced from `badges` and `user_badges`. - Referral summary is a lightweight convenience composition and does not move referral ownership into Points Service.
+      operationId: getConnectDashboard
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - in: query
+          name: transactionsLimit
+          required: false
+          schema:
+            default: 5
+            maximum: 20
+            minimum: 1
+            type: integer
+        - in: query
+          name: badgesLimit
+          required: false
+          schema:
+            default: 5
+            maximum: 20
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectDashboardResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get current user Connect dashboard read model
       tags:
         - points
   /v1/points/transactions:
