@@ -42,7 +42,29 @@ type Db = ReturnType<typeof createDb>;
 
 type DbExecResult<T> = { rows: T[] };
 
+type ReferralEarningsSummaryRow = {
+  total_referrals: number;
+  activated_referrals: number;
+  pending_referrals: number;
+  total_earned_points: number;
+};
+
+type ReferralRelationRow = {
+  referee_id: string;
+  registered_at: Date | string;
+  first_login_at: Date | string | null;
+};
+
+type ReferralPointsMatchRow = {
+  external_id: string;
+  id: string;
+  amount: number;
+  created_at: Date | string;
+};
+
 const SERVICE_NAME = 'referral-service';
+const REFERRAL_EARNINGS_DEFAULT_LIMIT = 20;
+const REFERRAL_EARNINGS_MAX_LIMIT = 100;
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -363,6 +385,116 @@ function parseNonNegativeIntOrDefault(value: string | undefined, defaultValue: n
 function getRows<T>(result: unknown): T[] {
   const rows = (result as Partial<DbExecResult<T>>).rows;
   return Array.isArray(rows) ? rows : [];
+}
+
+async function getReferralEarningsSummary(db: Db, referrerUserId: string): Promise<ReferralEarningsSummaryRow> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*)::int AS total_referrals,
+      COUNT(*) FILTER (WHERE rr.first_login_at IS NOT NULL)::int AS activated_referrals,
+      COUNT(*) FILTER (WHERE rr.first_login_at IS NULL)::int AS pending_referrals,
+      COALESCE(SUM(pt.amount), 0)::int AS total_earned_points
+    FROM referral_relations rr
+    LEFT JOIN points_transactions pt
+      ON pt.user_id = rr.referrer_id
+      AND pt.reason = 'referral_bonus_referrer'
+      AND pt.external_id = ('referral:first_login:' || rr.referrer_id || ':' || rr.referee_id)
+    WHERE rr.referrer_id = ${referrerUserId}
+  `);
+  return (
+    getRows<ReferralEarningsSummaryRow>(result)[0] ?? {
+      total_referrals: 0,
+      activated_referrals: 0,
+      pending_referrals: 0,
+      total_earned_points: 0,
+    }
+  );
+}
+
+async function listReferralRelationsForReferrer(
+  db: Db,
+  referrerUserId: string,
+  limit: number
+): Promise<ReferralRelationRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      referee_id,
+      registered_at,
+      first_login_at
+    FROM referral_relations
+    WHERE referrer_id = ${referrerUserId}
+    ORDER BY registered_at DESC, referee_id DESC
+    LIMIT ${limit}
+  `);
+  return getRows<ReferralRelationRow>(result);
+}
+
+function computeReferralExternalIds(referrerUserId: string, rows: ReferralRelationRow[]): string[] {
+  return rows.map((row) => makeReferralFirstLoginExternalId(referrerUserId, row.referee_id));
+}
+
+async function listReferralPointsMatches(
+  db: Db,
+  referrerUserId: string,
+  externalIds: string[]
+): Promise<ReferralPointsMatchRow[]> {
+  if (externalIds.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT
+      external_id,
+      id,
+      amount,
+      created_at
+    FROM points_transactions
+    WHERE user_id = ${referrerUserId}
+      AND reason = 'referral_bonus_referrer'
+      AND external_id = ANY(${externalIds}::text[])
+  `);
+  return getRows<ReferralPointsMatchRow>(result);
+}
+
+function parseReferralEarningsLimit(limitRaw: string | null): number {
+  if (!limitRaw) return REFERRAL_EARNINGS_DEFAULT_LIMIT;
+  const parsed = Number.parseInt(limitRaw, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return REFERRAL_EARNINGS_DEFAULT_LIMIT;
+  return Math.min(REFERRAL_EARNINGS_MAX_LIMIT, parsed);
+}
+
+function buildReferralEarningsResponse(
+  referrerUserId: string,
+  summary: ReferralEarningsSummaryRow,
+  relations: ReferralRelationRow[],
+  matches: ReferralPointsMatchRow[]
+) {
+  const matchesByExternalId = new Map(matches.map((row) => [row.external_id, row]));
+  const items = relations.map((row) => {
+    const pointsExternalId = makeReferralFirstLoginExternalId(referrerUserId, row.referee_id);
+    const match = matchesByExternalId.get(pointsExternalId) ?? null;
+    const isActivated = Boolean(row.first_login_at);
+    const status = !isActivated ? 'pending' : match ? 'rewarded' : 'reward_missing';
+
+    return {
+      refereeUserId: row.referee_id,
+      status,
+      activatedAt: row.first_login_at ? toIso(row.first_login_at) : null,
+      earnedPoints: match ? Number(match.amount ?? 0) : 0,
+      pointsAction: 'referral_bonus_referrer' as const,
+      pointsExternalId,
+      pointsTransactionId: match?.id ?? null,
+      pointsAppliedAt: match?.created_at ? toIso(match.created_at) : null,
+    };
+  });
+
+  return {
+    summary: {
+      totalEarnedPoints: Number(summary.total_earned_points ?? 0),
+      activatedReferrals: Number(summary.activated_referrals ?? 0),
+      pendingReferrals: Number(summary.pending_referrals ?? 0),
+      totalReferrals: Number(summary.total_referrals ?? 0),
+    },
+    items,
+  };
 }
 
 function isDevTestEnabled(env: Env): boolean {
@@ -783,6 +915,28 @@ export default {
           200,
           { 'Cache-Control': 'no-store' }
         );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/referral/earnings') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+        const userId = auth.principal.userId;
+        const limit = parseReferralEarningsLimit(url.searchParams.get('limit'));
+
+        const db = createDb(requireDatabase(env));
+        const summary = await getReferralEarningsSummary(db, userId);
+        const relations = await listReferralRelationsForReferrer(db, userId, limit);
+        const externalIds = computeReferralExternalIds(userId, relations);
+        const matches = await listReferralPointsMatches(db, userId, externalIds);
+
+        const res = json(buildReferralEarningsResponse(userId, summary, relations, matches), 200, {
+          'Cache-Control': 'no-store',
+        });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

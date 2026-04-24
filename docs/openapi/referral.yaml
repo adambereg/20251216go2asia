@@ -69,6 +69,15 @@ paths:
       parameters:
         - $ref: "#/components/parameters/XGatewayAuth"
         - $ref: "#/components/parameters/XRequestId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of referral earning items to return.
       responses:
         "200":
           description: OK
@@ -136,6 +145,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReferralTreeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/referral/earnings:
+    get:
+      tags: [referral]
+      operationId: getReferralEarnings
+      summary: Get current user's referral earnings read model
+      description: >
+        User-facing read endpoint (called via gateway). Returns lightweight referral earnings composition for the current user.
+        Referral Service remains owner of referral graph/activation facts, while Points Service remains ledger truth for applied earnings.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralEarningsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "503":
@@ -427,6 +463,73 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReferralTreeNode"
+
+    ReferralEarningsSummary:
+      type: object
+      required: [totalEarnedPoints, activatedReferrals, pendingReferrals, totalReferrals]
+      properties:
+        totalEarnedPoints:
+          type: integer
+          minimum: 0
+        activatedReferrals:
+          type: integer
+          minimum: 0
+        pendingReferrals:
+          type: integer
+          minimum: 0
+        totalReferrals:
+          type: integer
+          minimum: 0
+
+    ReferralEarningsItem:
+      type: object
+      required:
+        [
+          refereeUserId,
+          status,
+          activatedAt,
+          earnedPoints,
+          pointsAction,
+          pointsExternalId,
+          pointsTransactionId,
+          pointsAppliedAt,
+        ]
+      properties:
+        refereeUserId:
+          type: string
+        status:
+          type: string
+          enum: [pending, activated, rewarded, reward_missing]
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        earnedPoints:
+          type: integer
+          minimum: 0
+        pointsAction:
+          type: string
+          enum: [referral_bonus_referrer]
+        pointsExternalId:
+          type: string
+        pointsTransactionId:
+          type: string
+          nullable: true
+        pointsAppliedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReferralEarningsResponse:
+      type: object
+      required: [summary, items]
+      properties:
+        summary:
+          $ref: "#/components/schemas/ReferralEarningsSummary"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralEarningsItem"
 
     ClaimReferralRequest:
       type: object

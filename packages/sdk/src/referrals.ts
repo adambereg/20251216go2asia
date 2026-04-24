@@ -40,6 +40,29 @@ export interface ReferralTreeResponse {
   referrals: ReferralTreeNode[];
 }
 
+export interface ReferralEarningsSummary {
+  totalEarnedPoints: number;
+  activatedReferrals: number;
+  pendingReferrals: number;
+  totalReferrals: number;
+}
+
+export interface ReferralEarningsItem {
+  refereeUserId: string;
+  status: 'pending' | 'activated' | 'rewarded' | 'reward_missing';
+  activatedAt: string | null;
+  earnedPoints: number;
+  pointsAction: 'referral_bonus_referrer';
+  pointsExternalId: string;
+  pointsTransactionId: string | null;
+  pointsAppliedAt: string | null;
+}
+
+export interface ReferralEarningsResponse {
+  summary: ReferralEarningsSummary;
+  items: ReferralEarningsItem[];
+}
+
 export interface UseGetReferralCodeOptions {
   enabled?: boolean;
 }
@@ -50,6 +73,11 @@ export interface UseGetReferralStatsOptions {
 
 export interface GetReferralTreeParams {
   depth?: 1 | 2;
+  enabled?: boolean;
+}
+
+export interface UseGetReferralEarningsOptions {
+  limit?: number;
   enabled?: boolean;
 }
 
@@ -110,6 +138,29 @@ export const useGetReferralTree = (params?: GetReferralTreeParams) => {
     },
     enabled: params?.enabled ?? true,
     staleTime: 60 * 1000, // 1 minute
+    retry: 2,
+  });
+};
+
+/**
+ * Get current user's referral earnings read model
+ *
+ * @returns React Query hook for referral earnings composition
+ */
+export const useGetReferralEarnings = (options?: UseGetReferralEarningsOptions) => {
+  const limit = options?.limit;
+  const url = typeof limit === 'number' ? `/v1/referral/earnings?limit=${limit}` : '/v1/referral/earnings';
+
+  return useQuery<ReferralEarningsResponse>({
+    queryKey: ['referral', 'earnings', limit ?? null],
+    queryFn: async () => {
+      return customInstance<ReferralEarningsResponse>(
+        { method: 'GET' },
+        url
+      );
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 1000,
     retry: 2,
   });
 };
