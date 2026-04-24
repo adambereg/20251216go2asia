@@ -163,6 +163,21 @@ function buildCompletionWithOutboxRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function createExecutionContextHarness() {
+  const tasks: Promise<unknown>[] = [];
+  return {
+    ctx: {
+      waitUntil: vi.fn((promise: Promise<unknown>) => {
+        tasks.push(promise);
+      }),
+      passThroughOnException: vi.fn(),
+    } as unknown as ExecutionContext,
+    async drain() {
+      await Promise.allSettled(tasks);
+    },
+  };
+}
+
 describe('quest-service pass #4', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -1158,9 +1173,11 @@ describe('quest-service pass #4', () => {
       POINTS_SERVICE_URL: 'https://points.example',
     };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const execution = createExecutionContextHarness();
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -1179,13 +1196,16 @@ describe('quest-service pass #4', () => {
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
         body: JSON.stringify({ decision: 'approve' }),
       }),
-      env
+      env,
+      execution.ctx
     );
+    await execution.drain();
 
     const body = await readJson<{ status: string }>(response);
     expect(response.status).toBe(200);
     expect(body.status).toBe('approved');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(execution.ctx.waitUntil).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenCalledWith(
       'https://points.example/internal/points/add',
       expect.objectContaining({
@@ -1213,6 +1233,33 @@ describe('quest-service pass #4', () => {
       },
     });
     expect((payload.metadata as Record<string, unknown>).completedAt).toEqual(expect.any(String));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://points.example/internal/points/badges/award',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          Authorization: expect.stringMatching(/^Bearer /),
+          'X-Request-Id': expect.any(String),
+        }),
+      })
+    );
+
+    const badgeRequestInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
+    const badgePayload = JSON.parse(String(badgeRequestInit.body)) as Record<string, unknown>;
+    expect(badgePayload).toMatchObject({
+      userId: 'user_1',
+      badgeCode: 'first_quest_completed',
+      sourceType: 'quest.completed',
+      sourceId: 'qprog_1',
+      metadata: {
+        questId: 'quest_1',
+        progressId: 'qprog_1',
+        badgeSource: 'quest.completed',
+      },
+    });
+    expect((badgePayload.metadata as Record<string, unknown>).completedAt).toEqual(expect.any(String));
   });
 
   it('keeps approved completion response successful when points reward delivery fails', async () => {
@@ -1222,7 +1269,11 @@ describe('quest-service pass #4', () => {
       POINTS_SERVICE_URL: 'https://points.example',
     };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
-    const fetchMock = vi.fn().mockResolvedValue(new Response('upstream down', { status: 503 }));
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('upstream down', { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -1241,13 +1292,15 @@ describe('quest-service pass #4', () => {
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
         body: JSON.stringify({ decision: 'approve' }),
       }),
-      env
+      env,
+      execution.ctx
     );
+    await execution.drain();
 
     const body = await readJson<{ status: string }>(response);
     expect(response.status).toBe(200);
     expect(body.status).toBe('approved');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('marks reward outbox delivered when points-service returns duplicate accepted response', async () => {
@@ -1257,9 +1310,11 @@ describe('quest-service pass #4', () => {
       POINTS_SERVICE_URL: 'https://points.example',
     };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const execution = createExecutionContextHarness();
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ transactionId: 'ptx_1', applied: false, balance: 120 }), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ transactionId: 'ptx_1', applied: false, balance: 120 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -1278,11 +1333,13 @@ describe('quest-service pass #4', () => {
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
         body: JSON.stringify({ decision: 'approve' }),
       }),
-      env
+      env,
+      execution.ctx
     );
+    await execution.drain();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('marks reward outbox failed on non-retryable points conflict', async () => {
@@ -1292,9 +1349,13 @@ describe('quest-service pass #4', () => {
       POINTS_SERVICE_URL: 'https://points.example',
     };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: { code: 'Conflict', message: 'externalId conflict' } }), { status: 409 })
-    );
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { code: 'Conflict', message: 'externalId conflict' } }), { status: 409 })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -1313,21 +1374,26 @@ describe('quest-service pass #4', () => {
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
         body: JSON.stringify({ decision: 'approve' }),
       }),
-      env
+      env,
+      execution.ctx
     );
+    await execution.drain();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('skips points reward delivery when completed quest has no reward points', async () => {
+  it('skips points reward delivery but still awards first quest badge when completed quest has no reward points', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_SERVICE_URL: 'https://points.example',
     };
     const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
-    const fetchMock = vi.fn();
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     executeMock
@@ -1357,11 +1423,142 @@ describe('quest-service pass #4', () => {
         headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
         body: JSON.stringify({ decision: 'approve' }),
       }),
-      env
+      env,
+      execution.ctx
     );
+    await execution.drain();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://points.example/internal/points/badges/award',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('keeps approved completion response successful when badge auto-award fails', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('badge upstream down', { status: 503 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({ rows: [buildCompletionWithOutboxRow()] })
+      .mockResolvedValueOnce({
+        rows: [buildRewardOutboxRow({ status: 'delivered', attempt_count: 1, delivered_at: '2026-04-10T09:00:01.000Z' })],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env,
+      execution.ctx
+    );
+    await execution.drain();
+
+    const body = await readJson<{ status: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('approved');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats duplicate badge response as non-blocking after quest completion', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ awardId: 'badge_award_1', applied: false }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({ rows: [buildCompletionWithOutboxRow()] })
+      .mockResolvedValueOnce({
+        rows: [buildRewardOutboxRow({ status: 'delivered', attempt_count: 1, delivered_at: '2026-04-10T09:00:01.000Z' })],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env,
+      execution.ctx
+    );
+    await execution.drain();
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats badge conflict as non-blocking after quest completion', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const jwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_1', roles: ['pro'] });
+    const execution = createExecutionContextHarness();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, applied: true }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { code: 'CONFLICT', message: 'Badge already awarded with different source' } }), {
+          status: 409,
+        })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [buildSubmissionReviewRow()] })
+      .mockResolvedValueOnce({ rows: [buildQuestRow()] })
+      .mockResolvedValueOnce({ rows: [buildApprovedSubmissionRow()] })
+      .mockResolvedValueOnce({ rows: [buildStepRow()] })
+      .mockResolvedValueOnce({ rows: [buildCompletionWithOutboxRow()] })
+      .mockResolvedValueOnce({
+        rows: [buildRewardOutboxRow({ status: 'delivered', attempt_count: 1, delivered_at: '2026-04-10T09:00:01.000Z' })],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/v1/submissions/sub_1/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': jwt },
+        body: JSON.stringify({ decision: 'approve' }),
+      }),
+      env,
+      execution.ctx
+    );
+    await execution.drain();
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('does not attempt quest reward delivery for already completed progress', async () => {

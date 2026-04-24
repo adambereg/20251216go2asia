@@ -82,7 +82,7 @@
 
 | Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
 |---|---|---|---|---|---|---|
-| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; bounded integration `quest.completed -> points-service` допустима как reward ingestion baseline, а для надёжности доставки Quest может держать delivery outbox/replay state, scheduled replay только для `pending`, а также internal ops drilldown/requeue для `failed` rows, не становясь ledger SSOT |
+| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; bounded integration `quest.completed -> points-service` допустима как reward ingestion baseline, а для надёжности доставки Quest может держать delivery outbox/replay state, scheduled replay только для `pending`, а также internal ops drilldown/requeue для `failed` rows, не становясь ledger SSOT. Допустим также bounded non-blocking handoff `quest.completed -> /internal/points/badges/award` для первого off-chain badge без открытия broad rules/event-bus scope |
 
 ### AI/ML
 
@@ -113,7 +113,7 @@
 
 ### Что **фактически реализовано**
 - **Points**: реализовано как `apps/points-service` + таблицы `points_transactions`, `user_balances` (`packages/db/src/schema/points.ts`).
-- **Badges baseline**: реализовано как bounded off-chain contour внутри `apps/points-service` (`badges`, `user_badges`), без NFT/on-chain/tokenomics semantics и без изменения Points ledger ownership.
+- **Badges baseline**: реализовано как bounded off-chain contour внутри `apps/points-service` (`badges`, `user_badges`), без NFT/on-chain/tokenomics semantics и без изменения Points ledger ownership; первый auto-award может вызываться из `quest-service` через `POST /internal/points/badges/award` на подтверждённом `quest.completed`.
 - **Connect (UI)**: использует Points через SDK:
   - `packages/sdk/src/balance.ts` → `GET /v1/points/balance`
   - `packages/sdk/src/transactions.ts` → `GET /v1/points/transactions`

@@ -91,7 +91,7 @@ function isServiceRoute(method: string, path: string): boolean {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
     const logger = createLogger(requestId, 'quest-service', {
       env: env.ENVIRONMENT,
@@ -132,7 +132,7 @@ export default {
       }
 
       response =
-        (await handleQuestRoute(request, env, requestId, publisher, principal, servicePrincipal)) ??
+        (await handleQuestRoute(request, env, requestId, publisher, principal, servicePrincipal, ctx ?? null)) ??
         handleNotFound(path, requestId);
       return withRequestId(response, requestId);
     } catch (error) {

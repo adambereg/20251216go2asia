@@ -142,6 +142,8 @@ const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved
 const QUEST_SERVICE_NAME = 'quest-service';
 const POINTS_SERVICE_NAME = 'points-service';
 const QUEST_REWARD_ACTION = 'quest_completed';
+const QUEST_COMPLETION_BADGE_CODE = 'first_quest_completed';
+const QUEST_COMPLETION_BADGE_SOURCE_TYPE = 'quest.completed';
 const REPLAY_PENDING_REWARDS_DEFAULT_LIMIT = 20;
 const REPLAY_PENDING_REWARDS_MAX_LIMIT = 100;
 const SCHEDULED_REPLAY_REQUESTED_BY = 'cf-cron';
@@ -408,6 +410,14 @@ type PointsAddPayload = {
   metadata: Record<string, unknown>;
 };
 
+type BadgeAwardPayload = {
+  userId: string;
+  badgeCode: 'first_quest_completed';
+  sourceType: 'quest.completed';
+  sourceId: string;
+  metadata: Record<string, unknown>;
+};
+
 type RewardDeliveryResult =
   | { outcome: 'delivered'; detail: string; applied: boolean }
   | { outcome: 'pending'; detail: string }
@@ -437,6 +447,30 @@ function buildQuestCompletionRewardPayload(input: {
     action: QUEST_REWARD_ACTION,
     externalId: `quest:completed:${input.progressId}`,
     sourceEventId: `quest.completed:${input.progressId}`,
+    metadata,
+  };
+}
+
+function buildQuestCompletionBadgePayload(input: {
+  quest: QuestRow;
+  progressId: string;
+  userId: string;
+  completedAt: string;
+}): BadgeAwardPayload {
+  const metadata: Record<string, unknown> = {
+    questId: input.quest.id,
+    progressId: input.progressId,
+    completedAt: input.completedAt,
+    badgeSource: 'quest.completed',
+  };
+  const questMetadata = extractQuestMetadataProjection(input.quest.geo_scope);
+  if (questMetadata?.slug) metadata.questSlug = questMetadata.slug;
+
+  return {
+    userId: input.userId,
+    badgeCode: QUEST_COMPLETION_BADGE_CODE,
+    sourceType: QUEST_COMPLETION_BADGE_SOURCE_TYPE,
+    sourceId: input.progressId,
     metadata,
   };
 }
@@ -553,6 +587,123 @@ async function callPointsService(
     });
     return { outcome: 'pending', detail: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+async function interpretBadgeAwardResponse(
+  response: Response,
+  logger: ReturnType<typeof createLogger>,
+  input: BadgeAwardPayload
+): Promise<void> {
+  const responseText = await response.text().catch(() => '');
+  const parsed = responseText ? parseJsonObject(responseText) : null;
+
+  if (response.ok) {
+    const applied = typeof parsed?.applied === 'boolean' ? parsed.applied : true;
+    logger.info('Quest completion badge award accepted by Points Service', {
+      userId: input.userId,
+      badgeCode: input.badgeCode,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      applied,
+    });
+    return;
+  }
+
+  const context = {
+    userId: input.userId,
+    badgeCode: input.badgeCode,
+    sourceType: input.sourceType,
+    sourceId: input.sourceId,
+    status: response.status,
+    body: responseText,
+  };
+
+  if (response.status === 409) {
+    logger.warn('Quest completion badge award conflict (non-blocking)', context);
+    return;
+  }
+
+  if (response.status === 429 || response.status >= 500) {
+    logger.warn('Quest completion badge award failed with retryable response (non-blocking)', context);
+    return;
+  }
+
+  logger.error('Quest completion badge award failed with non-retryable response', context);
+}
+
+async function callBadgeAwardService(env: Env, requestId: string, input: BadgeAwardPayload): Promise<void> {
+  const logger = createLogger(requestId, QUEST_SERVICE_NAME, { env: env.ENVIRONMENT });
+  if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
+    logger.warn('Points badge award integration not configured', {
+      userId: input.userId,
+      badgeCode: input.badgeCode,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+    });
+    return;
+  }
+
+  const token = await createServiceJwt(env, POINTS_SERVICE_NAME, requestId);
+  if (!token) {
+    logger.error('Failed to create service JWT for badge award', {
+      userId: input.userId,
+      badgeCode: input.badgeCode,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+    });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const response = await fetch(`${env.POINTS_SERVICE_URL}/internal/points/badges/award`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-Request-Id': requestId,
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    await interpretBadgeAwardResponse(response, logger, input);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Quest completion badge award timed out (non-blocking)', {
+        userId: input.userId,
+        badgeCode: input.badgeCode,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+      });
+      return;
+    }
+
+    logger.error('Quest completion badge award failed with request error', error, {
+      userId: input.userId,
+      badgeCode: input.badgeCode,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+    });
+  }
+}
+
+async function scheduleQuestCompletionBadgeAward(
+  env: Env,
+  requestId: string,
+  input: BadgeAwardPayload,
+  executionContext?: ExecutionContext | null
+): Promise<void> {
+  const task = callBadgeAwardService(env, requestId, input);
+  if (executionContext) {
+    executionContext.waitUntil(task);
+    return;
+  }
+  await task;
 }
 
 async function applyRewardDeliveryResult(
@@ -678,6 +829,7 @@ async function completeQuestProgressWithRewardDelivery(
   env: Env,
   db: ReturnType<typeof createDb>,
   requestId: string,
+  executionContext: ExecutionContext | null | undefined,
   input: {
     quest: QuestRow;
     progressId: string;
@@ -701,13 +853,23 @@ async function completeQuestProgressWithRewardDelivery(
     userId: input.userId,
     completedAt,
   });
+  const badgePayload = buildQuestCompletionBadgePayload({
+    quest: input.quest,
+    progressId: input.progressId,
+    userId: input.userId,
+    completedAt,
+  });
 
   if (!payload) {
-    return advanceQuestProgress(db, {
+    const progress = await advanceQuestProgress(db, {
       progressId: input.progressId,
       nextStep: null,
       completed: true,
     });
+    if (progress) {
+      await scheduleQuestCompletionBadgeAward(env, requestId, badgePayload, executionContext);
+    }
+    return progress;
   }
 
   const completion = await completeQuestProgressAndEnsureRewardOutbox(db, {
@@ -723,6 +885,10 @@ async function completeQuestProgressWithRewardDelivery(
 
   if (completion.outbox) {
     await deliverQuestRewardOutboxRow(env, requestId, db, completion.outbox);
+  }
+
+  if (completion.progress) {
+    await scheduleQuestCompletionBadgeAward(env, requestId, badgePayload, executionContext);
   }
 
   return completion.progress;
@@ -1902,6 +2068,7 @@ export async function submitQuestStep(
     principal: GatewayPrincipal;
     requestId: string;
     publisher: QuestEventPublisher;
+    executionContext?: ExecutionContext | null;
   }
 ): Promise<Response> {
   const parsed = parseSubmitQuestStepInput(input.body);
@@ -1975,7 +2142,7 @@ export async function submitQuestStep(
   }
 
   const completed = step.order >= quest.steps_count;
-  await completeQuestProgressWithRewardDelivery(env, db, input.requestId, {
+  await completeQuestProgressWithRewardDelivery(env, db, input.requestId, input.executionContext, {
     quest,
     progressId: progress.id,
     userId: input.principal.userId,
@@ -2045,7 +2212,8 @@ export async function reviewQuestSubmission(
   body: Record<string, unknown> | null,
   principal: GatewayPrincipal,
   requestId: string,
-  publisher: QuestEventPublisher
+  publisher: QuestEventPublisher,
+  executionContext?: ExecutionContext | null
 ): Promise<Response> {
   const managePrincipalError = requireManagementPrincipal(principal, requestId);
   if (managePrincipalError) return managePrincipalError;
@@ -2101,7 +2269,7 @@ export async function reviewQuestSubmission(
   const step = await getQuestStepById(db, existing.quest_id, existing.step_id);
   if (!step) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
   const completed = existing.step_order >= quest.steps_count;
-  await completeQuestProgressWithRewardDelivery(env, db, requestId, {
+  await completeQuestProgressWithRewardDelivery(env, db, requestId, executionContext, {
     quest,
     progressId: existing.progress_id,
     userId: approved.user_id,

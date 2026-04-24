@@ -15,3 +15,4 @@ name = "go2asia-quest-service-staging"
 # Required vars/secrets:
 # - SERVICE_JWT_SECRET
 # - DATABASE_URL
+# - POINTS_SERVICE_URL

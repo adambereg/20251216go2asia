@@ -38,7 +38,8 @@ export async function handleQuestRoute(
   requestId: string,
   publisher: QuestEventPublisher,
   principal: GatewayPrincipal | null,
-  servicePrincipal: ServicePrincipal | null
+  servicePrincipal: ServicePrincipal | null,
+  executionContext?: ExecutionContext | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -138,6 +139,7 @@ export async function handleQuestRoute(
       principal,
       requestId,
       publisher,
+      executionContext,
     });
   }
 
@@ -149,7 +151,7 @@ export async function handleQuestRoute(
   const submissionReviewMatch = path.match(/^\/v1\/submissions\/([^/]+)\/review$/);
   if (submissionReviewMatch && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
-    return reviewQuestSubmission(env, submissionReviewMatch[1]!, body, principal, requestId, publisher);
+    return reviewQuestSubmission(env, submissionReviewMatch[1]!, body, principal, requestId, publisher, executionContext);
   }
 
   return null;

@@ -257,6 +257,7 @@ event-driven
 
 Quest does not calculate rewards.
 Quest may keep a bounded delivery outbox for its own `quest.completed` events, but balances and ledger truth remain in Points.
+Quest may also trigger bounded non-blocking off-chain badge awards for confirmed `quest.completed` via `POST /internal/points/badges/award`, while badge catalog and award truth remain in Points.
 
 ---
 
