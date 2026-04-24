@@ -46,7 +46,42 @@ type Db = ReturnType<typeof createDb>;
 
 type DbExecResult<T> = { rows: T[] };
 
+type BadgeCatalogRow = {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string;
+  icon_key: string | null;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+};
+
+type UserBadgeAwardRow = {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  badge_name: string;
+  source_service: string | null;
+  source_type: string | null;
+  source_id: string | null;
+  metadata: unknown;
+  created_at: Date;
+  earned_at: Date;
+};
+
+type UserBadgeWithCatalogRow = UserBadgeAwardRow & {
+  badge_code: string | null;
+  badge_title: string | null;
+  badge_description: string | null;
+  badge_category: string | null;
+  badge_icon_key: string | null;
+};
+
 const SERVICE_NAME = 'points-service';
+const BADGE_LIST_DEFAULT_LIMIT = 20;
+const BADGE_LIST_MAX_LIMIT = 100;
 
 /**
  * Phase 2 action contract (Points-only).
@@ -361,6 +396,27 @@ function parseIntOrDefault(value: string | undefined, defaultValue: number): num
   return Number.isFinite(n) ? n : defaultValue;
 }
 
+function parseLimit(value: string | null, defaultValue: number, maxValue: number): number {
+  if (!value) return defaultValue;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return defaultValue;
+  return Math.min(parsed, maxValue);
+}
+
+function parseOptionalString(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function parseJsonMetadata(value: unknown): Record<string, JsonValue> | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  return value as Record<string, JsonValue>;
+}
+
 function parseCursor(cursor: string): { createdAt: Date; id: string } | null {
   try {
     const raw = new TextDecoder().decode(base64UrlToBytes(cursor));
@@ -403,6 +459,117 @@ async function getUserBalance(db: Db, userId: string): Promise<{ balance: number
     balance: Number(row.balance ?? 0),
     updatedAt: row.updated_at instanceof Date ? row.updated_at : new Date(row.updated_at),
   };
+}
+
+function asIso(value: Date | string | null | undefined): string | null {
+  if (!value) return null;
+  return (value instanceof Date ? value : new Date(value)).toISOString();
+}
+
+function normalizeBadgeCatalogItem(row: BadgeCatalogRow) {
+  return {
+    code: row.code,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    iconKey: row.icon_key,
+    isActive: row.is_active,
+  };
+}
+
+function normalizeUserBadgeItem(row: UserBadgeWithCatalogRow) {
+  return {
+    badgeCode: row.badge_code ?? row.badge_id,
+    title: row.badge_title ?? row.badge_name,
+    description: row.badge_description,
+    category: row.badge_category,
+    iconKey: row.badge_icon_key,
+    awardedAt: asIso(row.earned_at)!,
+    sourceType: row.source_type,
+    sourceId: row.source_id,
+  };
+}
+
+async function listActiveBadges(db: Db): Promise<BadgeCatalogRow[]> {
+  const result = await db.execute(sql`
+    SELECT id, code, title, description, category, icon_key, is_active, created_at, updated_at
+    FROM badges
+    WHERE is_active = true
+    ORDER BY category ASC, title ASC, code ASC
+  `);
+  return getRows<BadgeCatalogRow>(result);
+}
+
+async function getBadgeByCode(db: Db, code: string): Promise<BadgeCatalogRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, code, title, description, category, icon_key, is_active, created_at, updated_at
+    FROM badges
+    WHERE code = ${code}
+    LIMIT 1
+  `);
+  return getRows<BadgeCatalogRow>(result)[0] ?? null;
+}
+
+async function getUserBadgeByUserAndBadge(db: Db, userId: string, badgeId: string): Promise<UserBadgeAwardRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, user_id, badge_id, badge_name, source_service, source_type, source_id, metadata, created_at, earned_at
+    FROM user_badges
+    WHERE user_id = ${userId} AND badge_id = ${badgeId}
+    LIMIT 1
+  `);
+  return getRows<UserBadgeAwardRow>(result)[0] ?? null;
+}
+
+async function listUserBadges(db: Db, userId: string, limit: number): Promise<UserBadgeWithCatalogRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      ub.id,
+      ub.user_id,
+      ub.badge_id,
+      ub.badge_name,
+      ub.source_service,
+      ub.source_type,
+      ub.source_id,
+      ub.metadata,
+      ub.created_at,
+      ub.earned_at,
+      b.code AS badge_code,
+      b.title AS badge_title,
+      b.description AS badge_description,
+      b.category AS badge_category,
+      b.icon_key AS badge_icon_key
+    FROM user_badges ub
+    LEFT JOIN badges b ON b.id = ub.badge_id
+    WHERE ub.user_id = ${userId}
+    ORDER BY ub.earned_at DESC, ub.id DESC
+    LIMIT ${limit}
+  `);
+  return getRows<UserBadgeWithCatalogRow>(result);
+}
+
+function decideBadgeAwardIdempotency(
+  existing: UserBadgeAwardRow,
+  incoming: {
+    sourceService: string;
+    sourceType: string;
+    sourceId: string;
+  }
+): 'duplicate' | 'conflict' {
+  const legacyAward =
+    !existing.source_service &&
+    !existing.source_type &&
+    !existing.source_id;
+  if (legacyAward) return 'duplicate';
+
+  if (
+    existing.source_service === incoming.sourceService &&
+    existing.source_type === incoming.sourceType &&
+    existing.source_id === incoming.sourceId
+  ) {
+    return 'duplicate';
+  }
+
+  return 'conflict';
 }
 
 async function getTransactionByExternalId(db: Db, externalId: string): Promise<null | {
@@ -487,6 +654,48 @@ export default {
       }
 
       // User-facing (gateway-origin) endpoints
+      if (request.method === 'GET' && path === '/v1/points/badges') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const items = await listActiveBadges(db);
+
+        const res = json(
+          { items: items.map(normalizeBadgeCatalogItem) },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/points/badges/mine') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const userId = auth.principal.userId;
+        const limit = parseLimit(url.searchParams.get('limit'), BADGE_LIST_DEFAULT_LIMIT, BADGE_LIST_MAX_LIMIT);
+        const db = createDb(requireDatabase(env));
+        const items = await listUserBadges(db, userId, limit);
+
+        const res = json(
+          {
+            items: items.map(normalizeUserBadgeItem),
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
       if (request.method === 'GET' && path === '/v1/points/balance') {
         const auth = await requireGatewayOrigin(request, env, requestId, logger);
         if (!auth.ok) {
@@ -582,6 +791,177 @@ export default {
       }
 
       // Internal endpoint
+      if (request.method === 'POST' && path === '/internal/points/badges/award') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const userId = body?.userId;
+        const badgeCode = parseOptionalString(body?.badgeCode);
+        const sourceType = parseOptionalString(body?.sourceType);
+        const sourceId = parseOptionalString(body?.sourceId);
+        const metadata = parseJsonMetadata(body?.metadata);
+
+        if (typeof userId !== 'string' || userId.trim().length === 0) {
+          const res = errorResponse('BadRequest', 'Missing userId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (!badgeCode) {
+          const res = errorResponse('BadRequest', 'Missing badgeCode', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (!sourceType) {
+          const res = errorResponse('BadRequest', 'Missing sourceType', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (!sourceId) {
+          const res = errorResponse('BadRequest', 'Missing sourceId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (body?.metadata !== undefined && metadata === undefined) {
+          const res = errorResponse('BadRequest', 'Invalid metadata', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const badge = await getBadgeByCode(db, badgeCode);
+        if (!badge) {
+          const res = errorResponse('NotFound', 'Badge not found', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        if (!badge.is_active) {
+          const res = errorResponse('Conflict', 'Badge is inactive', requestId, 409);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const callerService = auth.principal.service;
+        const existing = await getUserBadgeByUserAndBadge(db, userId, badge.id);
+        if (existing) {
+          const decision = decideBadgeAwardIdempotency(existing, {
+            sourceService: callerService,
+            sourceType,
+            sourceId,
+          });
+          if (decision === 'conflict') {
+            const res = errorResponse('Conflict', 'Badge already awarded with different source', requestId, 409);
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+
+          const res = json(
+            {
+              badgeCode: badge.code,
+              userId,
+              awardId: existing.id,
+              applied: false,
+              awardedAt: asIso(existing.earned_at),
+            },
+            200,
+            { 'Cache-Control': 'no-store' }
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const awardId = crypto.randomUUID();
+        const applyRes = await db.execute(sql`
+          INSERT INTO user_badges (
+            id,
+            user_id,
+            badge_id,
+            badge_name,
+            source_service,
+            source_type,
+            source_id,
+            metadata,
+            created_at,
+            earned_at
+          )
+          VALUES (
+            ${awardId},
+            ${userId},
+            ${badge.id},
+            ${badge.title},
+            ${callerService},
+            ${sourceType},
+            ${sourceId},
+            ${JSON.stringify(metadata ?? {})}::jsonb,
+            now(),
+            now()
+          )
+          ON CONFLICT (user_id, badge_id) DO NOTHING
+          RETURNING id, user_id, badge_id, badge_name, source_service, source_type, source_id, metadata, created_at, earned_at
+        `);
+
+        const inserted = getRows<UserBadgeAwardRow>(applyRes)[0] ?? null;
+        if (!inserted) {
+          const existingAfterConflict = await getUserBadgeByUserAndBadge(db, userId, badge.id);
+          if (!existingAfterConflict) {
+            logger.error('Badge award insert returned no rows but existing award was not found', {
+              userId,
+              badgeCode: badge.code,
+            });
+            const res = errorResponse('InternalError', 'Failed to award badge', requestId, 500);
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+
+          const decision = decideBadgeAwardIdempotency(existingAfterConflict, {
+            sourceService: callerService,
+            sourceType,
+            sourceId,
+          });
+          if (decision === 'conflict') {
+            const res = errorResponse('Conflict', 'Badge already awarded with different source', requestId, 409);
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+
+          const res = json(
+            {
+              badgeCode: badge.code,
+              userId,
+              awardId: existingAfterConflict.id,
+              applied: false,
+              awardedAt: asIso(existingAfterConflict.earned_at),
+            },
+            200,
+            { 'Cache-Control': 'no-store' }
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const res = json(
+          {
+            badgeCode: badge.code,
+            userId,
+            awardId: inserted.id,
+            applied: true,
+            awardedAt: asIso(inserted.earned_at),
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
       if (request.method === 'POST' && path === '/internal/points/add') {
         const auth = await requireServiceAuth(request, env, requestId, logger);
         if (!auth.ok) {

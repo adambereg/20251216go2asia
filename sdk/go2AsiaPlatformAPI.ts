@@ -13,7 +13,10 @@ import type {
   AttachMediaUsageRequest,
   AttachMediaUsageResponse,
   AttachSpacePostMediaRequest,
+  AwardBadgeRequest,
+  AwardBadgeResponse,
   BadRequestResponse,
+  BadgeCatalogResponse,
   ClaimReferralRequest,
   ClaimReferralResponse,
   ClerkWebhook200,
@@ -71,6 +74,7 @@ import type {
   ListCountryTabsParams,
   ListEventsParams,
   ListEventsResponse,
+  ListMyBadgesParams,
   ListMyReactionsParams,
   ListMyReactionsResponse,
   ListOwnedQuestsParams,
@@ -172,6 +176,7 @@ import type {
   UpdateDraftQuestStepRequest,
   UploadResult,
   UpsertReactionRequest,
+  UserBadgesResponse,
   UserBalance,
 } from "../packages/sdk/src/generated";
 
@@ -247,6 +252,78 @@ export const addPoints = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(addPointsRequest),
+  });
+};
+
+/**
+ * Service-to-service badge award endpoint. Important: - Badge awards are off-chain achievements only. - Awarding a badge MUST NOT create a points transaction or mutate a points balance. - `badgeCode`, `sourceType`, and `sourceId` are required to support auditability and idempotent award semantics. - Repeating the same award returns `applied=false`; attempting to reuse the same badge for the same user with a different source returns 409 Conflict.
+
+ * @summary Award an off-chain badge to a user (idempotent)
+ */
+export type awardBadgeResponse200 = {
+  data: AwardBadgeResponse;
+  status: 200;
+};
+
+export type awardBadgeResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type awardBadgeResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type awardBadgeResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type awardBadgeResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type awardBadgeResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type awardBadgeResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type awardBadgeResponseSuccess = awardBadgeResponse200 & {
+  headers: Headers;
+};
+export type awardBadgeResponseError = (
+  | awardBadgeResponse400
+  | awardBadgeResponse401
+  | awardBadgeResponse404
+  | awardBadgeResponse409
+  | awardBadgeResponse500
+  | awardBadgeResponse503
+) & {
+  headers: Headers;
+};
+
+export type awardBadgeResponse = awardBadgeResponseSuccess | awardBadgeResponseError;
+
+export const getAwardBadgeUrl = () => {
+  return `/internal/points/badges/award`;
+};
+
+export const awardBadge = async (
+  awardBadgeRequest: AwardBadgeRequest,
+  options?: RequestInit
+): Promise<awardBadgeResponse> => {
+  return customInstance<awardBadgeResponse>(getAwardBadgeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(awardBadgeRequest),
   });
 };
 
@@ -1886,6 +1963,121 @@ export const attachMediaUsage = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(attachMediaUsageRequest),
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns active off-chain badge definitions only.
+ * @summary List active badge catalog entries
+ */
+export type listActiveBadgesResponse200 = {
+  data: BadgeCatalogResponse;
+  status: 200;
+};
+
+export type listActiveBadgesResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type listActiveBadgesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listActiveBadgesResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listActiveBadgesResponseSuccess = listActiveBadgesResponse200 & {
+  headers: Headers;
+};
+export type listActiveBadgesResponseError = (
+  | listActiveBadgesResponse401
+  | listActiveBadgesResponse500
+  | listActiveBadgesResponse503
+) & {
+  headers: Headers;
+};
+
+export type listActiveBadgesResponse =
+  | listActiveBadgesResponseSuccess
+  | listActiveBadgesResponseError;
+
+export const getListActiveBadgesUrl = () => {
+  return `/v1/points/badges`;
+};
+
+export const listActiveBadges = async (
+  options?: RequestInit
+): Promise<listActiveBadgesResponse> => {
+  return customInstance<listActiveBadgesResponse>(getListActiveBadgesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns badge awards for the authenticated user only.
+ * @summary List current user badge awards
+ */
+export type listMyBadgesResponse200 = {
+  data: UserBadgesResponse;
+  status: 200;
+};
+
+export type listMyBadgesResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type listMyBadgesResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type listMyBadgesResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type listMyBadgesResponseSuccess = listMyBadgesResponse200 & {
+  headers: Headers;
+};
+export type listMyBadgesResponseError = (
+  | listMyBadgesResponse401
+  | listMyBadgesResponse500
+  | listMyBadgesResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMyBadgesResponse = listMyBadgesResponseSuccess | listMyBadgesResponseError;
+
+export const getListMyBadgesUrl = (params?: ListMyBadgesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/points/badges/mine?${stringifiedParams}`
+    : `/v1/points/badges/mine`;
+};
+
+export const listMyBadges = async (
+  params?: ListMyBadgesParams,
+  options?: RequestInit
+): Promise<listMyBadgesResponse> => {
+  return customInstance<listMyBadgesResponse>(getListMyBadgesUrl(params), {
+    ...options,
+    method: "GET",
   });
 };
 

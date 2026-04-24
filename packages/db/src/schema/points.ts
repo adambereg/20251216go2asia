@@ -1,10 +1,10 @@
 /**
  * Points Service schema
- * 
- * Tables: points_transactions, user_balances, user_badges
+ *
+ * Tables: points_transactions, user_balances, badges, user_badges
  */
 
-import { pgTable, text, timestamp, integer, varchar, jsonb } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, integer, varchar, jsonb } from 'drizzle-orm/pg-core';
 
 export const pointsTransactions = pgTable('points_transactions', {
   id: text('id').primaryKey(),
@@ -24,17 +24,27 @@ export const userBalances = pgTable('user_balances', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+export const badges = pgTable('badges', {
+  id: text('id').primaryKey(),
+  code: varchar('code', { length: 100 }).notNull().unique(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 100 }).notNull(),
+  iconKey: text('icon_key'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const userBadges = pgTable('user_badges', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(), // No FK - user_id from Clerk, deletion not supported in MVP
   badgeId: varchar('badge_id', { length: 100 }).notNull(),
   badgeName: varchar('badge_name', { length: 255 }).notNull(),
+  sourceService: varchar('source_service', { length: 100 }),
+  sourceType: varchar('source_type', { length: 100 }),
+  sourceId: text('source_id'),
+  metadata: jsonb('metadata').notNull().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
   earnedAt: timestamp('earned_at').notNull().defaultNow(),
 });
-
-
-
-
-
-
-
