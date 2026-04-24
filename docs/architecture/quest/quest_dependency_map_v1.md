@@ -254,6 +254,7 @@ event-driven
 ## Rule
 
 Quest does not calculate rewards.
+Quest may keep a bounded delivery outbox for its own `quest.completed` events, but balances and ledger truth remain in Points.
 
 ---
 

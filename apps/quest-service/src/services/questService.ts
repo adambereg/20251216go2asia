@@ -5,6 +5,7 @@ import {
   archiveQuest as archiveQuestRow,
   advanceQuestProgress,
   approveSubmission,
+  completeQuestProgressAndEnsureRewardOutbox,
   countActiveQuestProgress,
   countManagedQuests,
   countQuestProgressStats,
@@ -15,6 +16,7 @@ import {
   getPublishedQuestById,
   getQuestById,
   getQuestProgressByQuestAndUser,
+  listQuestRewardOutboxByStatus,
   getQuestStepById,
   getSubmissionForReview,
   insertQuest,
@@ -31,7 +33,11 @@ import {
   resequenceQuestSteps,
   setProgressPendingReview,
   syncQuestStepsCount,
+  markQuestRewardOutboxDelivered,
+  markQuestRewardOutboxFailed,
+  markQuestRewardOutboxPending,
   type QuestDifficulty,
+  type QuestRewardOutboxRow,
   type QuestStatus,
   type QuestProgressRow,
   type QuestProofType,
@@ -48,8 +54,8 @@ import {
 } from '../db/queries/quest';
 import type { QuestDomainEvent, QuestDomainEventType } from '../events/contracts';
 import type { QuestEventPublisher } from '../events/publisher';
-import type { GatewayPrincipal } from '../middleware/auth';
-import { errorResponse, json } from '../middleware/http';
+import type { GatewayPrincipal, ServicePrincipal } from '../middleware/auth';
+import { errorResponse, json, parseJsonObject } from '../middleware/http';
 
 type Env = {
   DATABASE_URL?: string;
@@ -130,6 +136,9 @@ const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'spa
 const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved', 'rejected'];
 const QUEST_SERVICE_NAME = 'quest-service';
 const POINTS_SERVICE_NAME = 'points-service';
+const QUEST_REWARD_ACTION = 'quest_completed';
+const REPLAY_PENDING_REWARDS_DEFAULT_LIMIT = 20;
+const REPLAY_PENDING_REWARDS_MAX_LIMIT = 100;
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -365,31 +374,123 @@ async function createServiceJwt(env: Env, targetService: string, requestId: stri
   );
 }
 
+type PointsAddPayload = {
+  userId: string;
+  amount: number;
+  action: 'quest_completed';
+  externalId: string;
+  sourceEventId: string;
+  metadata: Record<string, unknown>;
+};
+
+type RewardDeliveryResult =
+  | { outcome: 'delivered'; detail: string; applied: boolean }
+  | { outcome: 'pending'; detail: string }
+  | { outcome: 'failed'; detail: string };
+
+function buildQuestCompletionRewardPayload(input: {
+  quest: QuestRow;
+  progressId: string;
+  userId: string;
+  completedAt: string;
+}): PointsAddPayload | null {
+  const amount = input.quest.reward_points;
+  if (typeof amount !== 'number' || amount < 1) return null;
+
+  const metadata: Record<string, unknown> = {
+    questId: input.quest.id,
+    progressId: input.progressId,
+    completedAt: input.completedAt,
+    rewardSource: 'quest.reward_points',
+  };
+  const questMetadata = extractQuestMetadataProjection(input.quest.geo_scope);
+  if (questMetadata?.slug) metadata.questSlug = questMetadata.slug;
+
+  return {
+    userId: input.userId,
+    amount,
+    action: QUEST_REWARD_ACTION,
+    externalId: `quest:completed:${input.progressId}`,
+    sourceEventId: `quest.completed:${input.progressId}`,
+    metadata,
+  };
+}
+
+async function interpretPointsDeliveryResponse(
+  response: Response,
+  logger: ReturnType<typeof createLogger>,
+  input: PointsAddPayload
+): Promise<RewardDeliveryResult> {
+  const responseText = await response.text().catch(() => '');
+  const parsed = responseText ? parseJsonObject(responseText) : null;
+
+  if (response.ok) {
+    const applied = parsed?.applied;
+    const normalizedApplied = typeof applied === 'boolean' ? applied : true;
+    logger.info('Quest reward delivery accepted by Points Service', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      amount: input.amount,
+      applied: normalizedApplied,
+    });
+    return {
+      outcome: 'delivered',
+      detail: normalizedApplied ? 'Points applied reward' : 'Points accepted duplicate reward',
+      applied: normalizedApplied,
+    };
+  }
+
+  if (response.status === 409) {
+    logger.error('Quest reward delivery conflict', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      status: response.status,
+      body: responseText,
+    });
+    return { outcome: 'failed', detail: `Points conflict 409 for ${input.externalId}` };
+  }
+
+  if (response.status === 429 || response.status >= 500) {
+    logger.warn('Quest reward delivery is retryable', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      status: response.status,
+      body: responseText,
+    });
+    return { outcome: 'pending', detail: `Points retryable response ${response.status}` };
+  }
+
+  logger.error('Quest reward delivery failed with non-retryable response', {
+    userId: input.userId,
+    action: input.action,
+    externalId: input.externalId,
+    status: response.status,
+    body: responseText,
+  });
+  return { outcome: 'failed', detail: `Points non-retryable response ${response.status}` };
+}
+
 async function callPointsService(
   env: Env,
   requestId: string,
-  input: {
-    userId: string;
-    amount: number;
-    action: 'quest_completed';
-    externalId: string;
-    sourceEventId: string;
-    metadata: Record<string, unknown>;
-  }
-): Promise<{ ok: boolean; error?: string }> {
+  input: PointsAddPayload
+): Promise<RewardDeliveryResult> {
   const logger = createLogger(requestId, QUEST_SERVICE_NAME, { env: env.ENVIRONMENT });
   if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
     logger.warn('Points Service integration not configured', {
       userId: input.userId,
       action: input.action,
     });
-    return { ok: false, error: 'Points Service not configured' };
+    return { outcome: 'pending', detail: 'Points Service not configured' };
   }
 
   const token = await createServiceJwt(env, POINTS_SERVICE_NAME, requestId);
   if (!token) {
     logger.error('Failed to create service JWT for Points Service');
-    return { ok: false, error: 'Service auth failed' };
+    return { outcome: 'pending', detail: 'Service auth failed' };
   }
 
   const controller = new AbortController();
@@ -408,26 +509,7 @@ async function callPointsService(
     });
 
     clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      logger.warn('Quest reward delivery failed', {
-        userId: input.userId,
-        action: input.action,
-        externalId: input.externalId,
-        status: response.status,
-        body: text,
-      });
-      return { ok: false, error: `Points Service returned ${response.status}` };
-    }
-
-    logger.info('Quest reward delivered', {
-      userId: input.userId,
-      action: input.action,
-      externalId: input.externalId,
-      amount: input.amount,
-    });
-    return { ok: true };
+    return interpretPointsDeliveryResponse(response, logger, input);
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
@@ -436,7 +518,7 @@ async function callPointsService(
         action: input.action,
         externalId: input.externalId,
       });
-      return { ok: false, error: 'Timeout' };
+      return { outcome: 'pending', detail: 'Timeout' };
     }
 
     logger.error('Quest reward delivery error', error, {
@@ -444,41 +526,43 @@ async function callPointsService(
       action: input.action,
       externalId: input.externalId,
     });
-    return { ok: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { outcome: 'pending', detail: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
-async function deliverQuestCompletionReward(
+async function applyRewardDeliveryResult(
+  db: ReturnType<typeof createDb>,
+  outbox: QuestRewardOutboxRow,
+  result: RewardDeliveryResult
+): Promise<void> {
+  if (result.outcome === 'delivered') {
+    await markQuestRewardOutboxDelivered(db, outbox.id);
+    return;
+  }
+
+  if (result.outcome === 'pending') {
+    await markQuestRewardOutboxPending(db, { outboxId: outbox.id, lastError: result.detail });
+    return;
+  }
+
+  await markQuestRewardOutboxFailed(db, { outboxId: outbox.id, lastError: result.detail });
+}
+
+async function deliverQuestRewardOutboxRow(
   env: Env,
   requestId: string,
-  input: {
-    quest: QuestRow;
-    progressId: string;
-    userId: string;
-  }
+  db: ReturnType<typeof createDb>,
+  outbox: QuestRewardOutboxRow
 ): Promise<void> {
-  const amount = input.quest.reward_points;
-  if (typeof amount !== 'number' || amount < 1) return;
-
-  const questMetadata = extractQuestMetadataProjection(input.quest.geo_scope);
-  const metadata: Record<string, unknown> = {
-    questId: input.quest.id,
-    progressId: input.progressId,
-    completedAt: new Date().toISOString(),
-    rewardSource: 'quest.reward_points',
-  };
-  if (questMetadata?.slug) {
-    metadata.questSlug = questMetadata.slug;
-  }
-
-  await callPointsService(env, requestId, {
-    userId: input.userId,
-    amount,
-    action: 'quest_completed',
-    externalId: `quest:completed:${input.progressId}`,
-    sourceEventId: `quest.completed:${input.progressId}`,
-    metadata,
+  const result = await callPointsService(env, requestId, {
+    userId: outbox.user_id,
+    amount: outbox.points_amount,
+    action: QUEST_REWARD_ACTION,
+    externalId: outbox.external_id,
+    sourceEventId: outbox.source_event_id ?? `quest.completed:${outbox.quest_progress_id}`,
+    metadata: outbox.metadata ?? {},
   });
+  await applyRewardDeliveryResult(db, outbox, result);
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -517,6 +601,71 @@ function parseOptionalObject(value: unknown): Record<string, unknown> | null | u
   if (value === null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   return value as Record<string, unknown>;
+}
+
+function parseReplayPendingRewardsInput(body: Record<string, unknown> | null): { limit: number } | null {
+  if (body === null) return { limit: REPLAY_PENDING_REWARDS_DEFAULT_LIMIT };
+  const parsedLimit = parseOptionalNonNegativeInt(body.limit);
+  if (parsedLimit === undefined || parsedLimit === null) {
+    return { limit: REPLAY_PENDING_REWARDS_DEFAULT_LIMIT };
+  }
+  return {
+    limit: Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, Math.max(1, parsedLimit)),
+  };
+}
+
+async function completeQuestProgressWithRewardDelivery(
+  env: Env,
+  db: ReturnType<typeof createDb>,
+  requestId: string,
+  input: {
+    quest: QuestRow;
+    progressId: string;
+    userId: string;
+    completed: boolean;
+    nextStep: number | null;
+  }
+): Promise<QuestProgressRow | null> {
+  if (!input.completed) {
+    return advanceQuestProgress(db, {
+      progressId: input.progressId,
+      nextStep: input.nextStep,
+      completed: false,
+    });
+  }
+
+  const completedAt = new Date().toISOString();
+  const payload = buildQuestCompletionRewardPayload({
+    quest: input.quest,
+    progressId: input.progressId,
+    userId: input.userId,
+    completedAt,
+  });
+
+  if (!payload) {
+    return advanceQuestProgress(db, {
+      progressId: input.progressId,
+      nextStep: null,
+      completed: true,
+    });
+  }
+
+  const completion = await completeQuestProgressAndEnsureRewardOutbox(db, {
+    progressId: input.progressId,
+    questId: input.quest.id,
+    userId: input.userId,
+    pointsAmount: payload.amount,
+    action: payload.action,
+    externalId: payload.externalId,
+    sourceEventId: payload.sourceEventId,
+    metadata: payload.metadata,
+  });
+
+  if (completion.outbox) {
+    await deliverQuestRewardOutboxRow(env, requestId, db, completion.outbox);
+  }
+
+  return completion.progress;
 }
 
 function hasRole(principal: GatewayPrincipal, role: string): boolean {
@@ -1028,11 +1177,6 @@ async function publishSubmissionApprovedSequence(
         },
       })
     );
-    await deliverQuestCompletionReward(env, requestId, {
-      quest: input.quest,
-      progressId: input.progressId,
-      userId: input.submission.user_id,
-    });
   }
 }
 
@@ -1703,10 +1847,12 @@ export async function submitQuestStep(
   }
 
   const completed = step.order >= quest.steps_count;
-  await advanceQuestProgress(db, {
+  await completeQuestProgressWithRewardDelivery(env, db, input.requestId, {
+    quest,
     progressId: progress.id,
-    nextStep: completed ? null : step.order + 1,
+    userId: input.principal.userId,
     completed,
+    nextStep: completed ? null : step.order + 1,
   });
   await publishSubmissionApprovedSequence(env, input.requestId, input.publisher, input.principal, {
     quest,
@@ -1827,10 +1973,12 @@ export async function reviewQuestSubmission(
   const step = await getQuestStepById(db, existing.quest_id, existing.step_id);
   if (!step) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
   const completed = existing.step_order >= quest.steps_count;
-  await advanceQuestProgress(db, {
+  await completeQuestProgressWithRewardDelivery(env, db, requestId, {
+    quest,
     progressId: existing.progress_id,
-    nextStep: completed ? null : existing.step_order + 1,
+    userId: approved.user_id,
     completed,
+    nextStep: completed ? null : existing.step_order + 1,
   });
   await publishSubmissionApprovedSequence(env, requestId, publisher, principal, {
     quest,
@@ -1840,4 +1988,66 @@ export async function reviewQuestSubmission(
     completed,
   });
   return json(normalizeQuestSubmission(approved), 200);
+}
+
+export async function replayPendingQuestRewardDeliveries(
+  env: Env,
+  requestId: string,
+  body: Record<string, unknown> | null,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const parsed = parseReplayPendingRewardsInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid replay payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const rows = await listQuestRewardOutboxByStatus(db, {
+    status: 'pending',
+    limit: parsed.limit,
+  });
+
+  let delivered = 0;
+  let stillPending = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (row.status !== 'pending') {
+      skipped += 1;
+      continue;
+    }
+
+    const result = await callPointsService(env, requestId, {
+      userId: row.user_id,
+      amount: row.points_amount,
+      action: QUEST_REWARD_ACTION,
+      externalId: row.external_id,
+      sourceEventId: row.source_event_id ?? `quest.completed:${row.quest_progress_id}`,
+      metadata: row.metadata ?? {},
+    });
+    await applyRewardDeliveryResult(db, row, result);
+
+    if (result.outcome === 'delivered') {
+      delivered += 1;
+    } else if (result.outcome === 'pending') {
+      stillPending += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  return json(
+    {
+      processed: rows.length,
+      delivered,
+      stillPending,
+      failed,
+      skipped,
+      limit: parsed.limit,
+      requestedBy: principal.service,
+    },
+    200
+  );
 }

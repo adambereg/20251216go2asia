@@ -2,9 +2,11 @@ import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { createNoopQuestEventPublisher } from './events/publisher';
-import { requireGatewayOrigin } from './middleware/auth';
+import { requireGatewayOrigin, requireServiceAuth } from './middleware/auth';
 import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
 import { handleQuestRoute } from './routes/quests';
+
+const SERVICE_NAME = 'quest-service';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -78,6 +80,10 @@ function isProtectedRoute(method: string, path: string): boolean {
   return false;
 }
 
+function isServiceRoute(method: string, path: string): boolean {
+  return method === 'POST' && path === '/internal/quests/rewards/replay-pending';
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
@@ -102,7 +108,15 @@ export default {
       }
 
       let principal = null;
-      if (isProtectedRoute(request.method, path)) {
+      let servicePrincipal = null;
+      if (isServiceRoute(request.method, path)) {
+        const auth = await requireServiceAuth(request, env, requestId, logger, SERVICE_NAME);
+        if (!auth.ok) {
+          response = withRequestId(auth.res, requestId);
+          return response;
+        }
+        servicePrincipal = auth.principal;
+      } else if (isProtectedRoute(request.method, path)) {
         const auth = await requireGatewayOrigin(request, env, requestId, logger);
         if (!auth.ok) {
           response = withRequestId(auth.res, requestId);
@@ -111,7 +125,9 @@ export default {
         principal = auth.principal;
       }
 
-      response = (await handleQuestRoute(request, env, requestId, publisher, principal)) ?? handleNotFound(path, requestId);
+      response =
+        (await handleQuestRoute(request, env, requestId, publisher, principal, servicePrincipal)) ??
+        handleNotFound(path, requestId);
       return withRequestId(response, requestId);
     } catch (error) {
       logger.error('Unhandled error', error, { method: request.method, path });
