@@ -84,7 +84,9 @@ function isProtectedRoute(method: string, path: string): boolean {
 function isServiceRoute(method: string, path: string): boolean {
   return (
     (method === 'POST' && path === '/internal/quests/rewards/replay-pending') ||
-    (method === 'GET' && path === '/internal/quests/rewards/outbox/stats')
+    (method === 'GET' && path === '/internal/quests/rewards/outbox/stats') ||
+    (method === 'GET' && path === '/internal/quests/rewards/outbox/failed') ||
+    (method === 'POST' && path === '/internal/quests/rewards/outbox/requeue-failed')
   );
 }
 

@@ -312,6 +312,7 @@ quest.completed → event → points
 Current runtime note:
 
 - Quest keeps balances out of its domain, but may execute bounded `quest.completed -> points-service` delivery with quest-owned outbox/replay state.
+- Scheduled replay stays limited to `pending` outbox rows, while `failed` rows remain operator-controlled via internal drilldown and explicit requeue.
 - Downstream broad event transport wiring remains future scope; current MVP hardening is limited to quest reward delivery reliability.
 
 ---

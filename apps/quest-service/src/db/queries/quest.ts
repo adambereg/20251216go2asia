@@ -1035,6 +1035,107 @@ export async function listQuestRewardOutboxByStatus(
   return rowsOf<QuestRewardOutboxRow>(result);
 }
 
+export async function listFailedQuestRewardOutboxRows(
+  db: DbExecutor,
+  input: {
+    limit: number;
+  }
+): Promise<QuestRewardOutboxRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+    FROM quest_reward_outbox
+    WHERE status = 'failed'
+    ORDER BY updated_at DESC, id DESC
+    LIMIT ${input.limit}
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function getQuestRewardOutboxRowsByIds(db: DbExecutor, ids: string[]): Promise<QuestRewardOutboxRow[]> {
+  if (ids.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+    FROM quest_reward_outbox
+    WHERE id = ANY(${ids}::text[])
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function requeueFailedQuestRewardOutboxRows(
+  db: DbExecutor,
+  input: {
+    ids: string[];
+    reasonNote: string | null;
+  }
+): Promise<QuestRewardOutboxRow[]> {
+  if (input.ids.length === 0) return [];
+
+  const result = await db.execute(sql`
+    UPDATE quest_reward_outbox
+    SET
+      status = 'pending',
+      last_error = CASE
+        WHEN ${input.reasonNote} IS NULL THEN last_error
+        WHEN last_error IS NULL OR btrim(last_error) = '' THEN ${input.reasonNote}
+        ELSE last_error || E'\n' || ${input.reasonNote}
+      END,
+      updated_at = now()
+    WHERE id = ANY(${input.ids}::text[])
+      AND status = 'failed'
+    RETURNING
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
 export async function markQuestRewardOutboxDelivered(db: DbExecutor, outboxId: string): Promise<QuestRewardOutboxRow | null> {
   const result = await db.execute(sql`
     UPDATE quest_reward_outbox

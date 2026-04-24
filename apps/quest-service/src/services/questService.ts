@@ -12,12 +12,14 @@ import {
   countPendingQuestSubmissions,
   countPublishedQuests,
   countQuestSubmissions,
+  getQuestRewardOutboxRowsByIds,
   getBlockingSubmissionForProgressStep,
   getPublishedQuestById,
   getQuestById,
   getQuestProgressByQuestAndUser,
   getQuestRewardOutboxStats,
   listQuestRewardOutboxByStatus,
+  listFailedQuestRewardOutboxRows,
   getQuestStepById,
   getSubmissionForReview,
   insertQuest,
@@ -30,6 +32,7 @@ import {
   listQuestSteps,
   listQuestSubmissions,
   publishQuest as publishQuestRow,
+  requeueFailedQuestRewardOutboxRows,
   rejectSubmission,
   resequenceQuestSteps,
   setProgressPendingReview,
@@ -328,6 +331,25 @@ function normalizeQuestSubmission(submission: QuestSubmissionRow) {
   };
 }
 
+function normalizeQuestRewardOutboxRow(row: QuestRewardOutboxRow) {
+  return {
+    id: row.id,
+    questProgressId: row.quest_progress_id,
+    questId: row.quest_id,
+    userId: row.user_id,
+    pointsAmount: row.points_amount,
+    action: row.action,
+    externalId: row.external_id,
+    sourceEventId: row.source_event_id,
+    status: row.status,
+    attemptCount: row.attempt_count,
+    lastAttemptAt: asIso(row.last_attempt_at),
+    lastError: row.last_error,
+    createdAt: asIso(row.created_at),
+    updatedAt: asIso(row.updated_at),
+  };
+}
+
 function requireDatabaseUrl(env: Env, requestId: string): string | Response {
   if (!env.DATABASE_URL) {
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
@@ -614,6 +636,41 @@ function parseReplayPendingRewardsInput(body: Record<string, unknown> | null): {
   }
   return {
     limit: Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, Math.max(1, parsedLimit)),
+  };
+}
+
+function parseOutboxListLimit(searchParams: URLSearchParams): number | null {
+  const rawLimit = searchParams.get('limit');
+  if (rawLimit === null) return REPLAY_PENDING_REWARDS_DEFAULT_LIMIT;
+
+  const parsed = Number(rawLimit);
+  if (!Number.isInteger(parsed) || parsed < 1) return null;
+  return Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, parsed);
+}
+
+function parseRequeueFailedRewardsInput(
+  body: Record<string, unknown> | null
+): { ids: string[]; reason: string | null } | null {
+  if (!body) return null;
+
+  const rawIds = body.ids;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) return null;
+
+  const ids = Array.from(
+    new Set(
+      rawIds
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .map((value) => value.trim())
+    )
+  );
+  if (ids.length === 0 || ids.length > REPLAY_PENDING_REWARDS_MAX_LIMIT) return null;
+
+  const reason = parseOptionalString(body.reason, 240);
+  if (body.reason !== undefined && reason === undefined) return null;
+
+  return {
+    ids,
+    reason: reason ?? null,
   };
 }
 
@@ -2104,6 +2161,88 @@ export async function getQuestRewardOutboxStatsResponse(
             createdAt: asIso(stats.oldest_failed_created_at)!,
           }
         : null,
+      requestedBy: principal.service,
+    },
+    200
+  );
+}
+
+export async function listFailedQuestRewardOutboxResponse(
+  env: Env,
+  requestId: string,
+  url: URL,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const limit = parseOutboxListLimit(url.searchParams);
+  if (limit === null) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid failed outbox list limit', requestId, 400);
+  }
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const rows = await listFailedQuestRewardOutboxRows(db, { limit });
+  return json(
+    {
+      items: rows.map(normalizeQuestRewardOutboxRow),
+      limit,
+      requestedBy: principal.service,
+    },
+    200
+  );
+}
+
+export async function requeueFailedQuestRewardDeliveries(
+  env: Env,
+  requestId: string,
+  body: Record<string, unknown> | null,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const parsed = parseRequeueFailedRewardsInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid requeue payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const existingRows = await getQuestRewardOutboxRowsByIds(db, parsed.ids);
+  const existingById = new Map(existingRows.map((row) => [row.id, row]));
+
+  const requeueIds: string[] = [];
+  let notFound = 0;
+  let invalidStatus = 0;
+
+  for (const id of parsed.ids) {
+    const row = existingById.get(id);
+    if (!row) {
+      notFound += 1;
+      continue;
+    }
+    if (row.status !== 'failed') {
+      invalidStatus += 1;
+      continue;
+    }
+    requeueIds.push(id);
+  }
+
+  const reasonNote = parsed.reason ? `Manual requeue requested by ${principal.service}: ${parsed.reason}` : null;
+  const requeuedRows = await requeueFailedQuestRewardOutboxRows(db, {
+    ids: requeueIds,
+    reasonNote,
+  });
+
+  const requested = parsed.ids.length;
+  const requeued = requeuedRows.length;
+  const skipped = requested - requeued;
+
+  return json(
+    {
+      requested,
+      requeued,
+      skipped,
+      notFound,
+      invalidStatus,
       requestedBy: principal.service,
     },
     200

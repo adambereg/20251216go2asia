@@ -1563,6 +1563,271 @@ describe('quest-service pass #4', () => {
     expect(body.error.code).toBe('UNAUTHORIZED');
   });
 
+  it('rejects unauthorized failed outbox list requests', async () => {
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/failed'),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret', POINTS_SERVICE_URL: 'https://points.example' }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns failed outbox drilldown rows with default limit and compact shape', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'quest-service', { sub: 'ops-service' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        buildRewardOutboxRow({
+          id: 'qreward_failed_2',
+          quest_progress_id: 'qprog_2',
+          quest_id: 'quest_2',
+          user_id: 'user_2',
+          points_amount: 80,
+          external_id: 'quest:completed:qprog_2',
+          source_event_id: 'quest.completed:qprog_2',
+          status: 'failed',
+          attempt_count: 3,
+          last_attempt_at: '2026-04-10T09:30:00.000Z',
+          last_error: 'Points conflict 409 for quest:completed:qprog_2',
+          created_at: '2026-04-10T09:00:00.000Z',
+          updated_at: '2026-04-10T09:30:00.000Z',
+        }),
+        buildRewardOutboxRow({
+          id: 'qreward_failed_1',
+          status: 'failed',
+          attempt_count: 1,
+          last_attempt_at: '2026-04-10T09:10:00.000Z',
+          last_error: 'Points non-retryable response 400',
+          updated_at: '2026-04-10T09:10:00.000Z',
+        }),
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/failed', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        questProgressId: string;
+        questId: string;
+        userId: string;
+        pointsAmount: number;
+        action: string;
+        externalId: string;
+        sourceEventId: string | null;
+        status: string;
+        attemptCount: number;
+        lastAttemptAt: string | null;
+        lastError: string | null;
+        createdAt: string | null;
+        updatedAt: string | null;
+        metadata?: unknown;
+      }>;
+      limit: number;
+      requestedBy: string;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      limit: 20,
+      requestedBy: 'ops-service',
+    });
+    expect(body.items).toHaveLength(2);
+    expect(body.items[0]).toMatchObject({
+      id: 'qreward_failed_2',
+      questProgressId: 'qprog_2',
+      questId: 'quest_2',
+      userId: 'user_2',
+      pointsAmount: 80,
+      action: 'quest_completed',
+      externalId: 'quest:completed:qprog_2',
+      sourceEventId: 'quest.completed:qprog_2',
+      status: 'failed',
+      attemptCount: 3,
+      lastAttemptAt: '2026-04-10T09:30:00.000Z',
+      lastError: 'Points conflict 409 for quest:completed:qprog_2',
+      createdAt: '2026-04-10T09:00:00.000Z',
+      updatedAt: '2026-04-10T09:30:00.000Z',
+    });
+    expect(body.items.every((item) => !('metadata' in item))).toBe(true);
+
+    const query = executeMock.mock.calls[0]?.[0] as { strings: string[]; values: unknown[] };
+    expect(query.strings.join('')).toContain("WHERE status = 'failed'");
+    expect(query.strings.join('')).toContain('ORDER BY updated_at DESC, id DESC');
+  });
+
+  it('clamps failed outbox list limit to max 100', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'quest-service', { sub: 'ops-service' });
+
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/failed?limit=500', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: unknown[]; limit: number }>(response);
+    expect(response.status).toBe(200);
+    expect(body.limit).toBe(100);
+
+    const query = executeMock.mock.calls[0]?.[0] as { values: unknown[] };
+    expect(query.values.at(-1)).toBe(100);
+  });
+
+  it('rejects unauthorized failed outbox requeue requests', async () => {
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/requeue-failed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ['qreward_1'] }),
+      }),
+      { DATABASE_URL: 'postgres://example', SERVICE_JWT_SECRET: 'service-secret', POINTS_SERVICE_URL: 'https://points.example' }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('requeues selected failed outbox rows back to pending without delivering points', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'quest-service', { sub: 'ops-service' });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          buildRewardOutboxRow({
+            id: 'qreward_failed_1',
+            status: 'failed',
+            attempt_count: 2,
+            last_attempt_at: '2026-04-10T09:10:00.000Z',
+            last_error: 'Points conflict 409 for quest:completed:qprog_1',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          buildRewardOutboxRow({
+            id: 'qreward_failed_1',
+            status: 'pending',
+            attempt_count: 2,
+            last_attempt_at: '2026-04-10T09:10:00.000Z',
+            last_error:
+              'Points conflict 409 for quest:completed:qprog_1\nManual requeue requested by ops-service: reviewed with points ledger',
+            updated_at: '2026-04-10T10:00:00.000Z',
+          }),
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/requeue-failed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: ['qreward_failed_1'], reason: 'reviewed with points ledger' }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      requested: number;
+      requeued: number;
+      skipped: number;
+      notFound: number;
+      invalidStatus: number;
+      requestedBy: string;
+    }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      requested: 1,
+      requeued: 1,
+      skipped: 0,
+      notFound: 0,
+      invalidStatus: 0,
+      requestedBy: 'ops-service',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const updateQuery = executeMock.mock.calls[1]?.[0] as { strings: string[] };
+    expect(updateQuery.strings.join('')).toContain("status = 'pending'");
+  });
+
+  it('reports invalid status and not found rows during failed outbox requeue', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'quest-service', { sub: 'ops-service' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        buildRewardOutboxRow({ id: 'qreward_pending_1', status: 'pending' }),
+        buildRewardOutboxRow({ id: 'qreward_delivered_1', status: 'delivered', delivered_at: '2026-04-10T09:20:00.000Z' }),
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://quest.example/internal/quests/rewards/outbox/requeue-failed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: ['qreward_pending_1', 'qreward_delivered_1', 'qreward_missing_1'] }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      requested: number;
+      requeued: number;
+      skipped: number;
+      notFound: number;
+      invalidStatus: number;
+    }>(response);
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      requested: 3,
+      requeued: 0,
+      skipped: 3,
+      notFound: 1,
+      invalidStatus: 2,
+    });
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
   it('runs scheduled replay using the shared pending replay helper', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',

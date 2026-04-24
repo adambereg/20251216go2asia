@@ -5,6 +5,7 @@ import {
   addQuestStep,
   archiveQuest,
   createQuestDraft,
+  listFailedQuestRewardOutboxResponse,
   deleteQuestStepByOwner,
   getQuest,
   getOwnedQuest,
@@ -15,6 +16,7 @@ import {
   listOwnedQuests,
   listQuests,
   publishQuest,
+  requeueFailedQuestRewardDeliveries,
   replayPendingQuestRewardDeliveries,
   reviewQuestSubmission,
   startQuest,
@@ -48,6 +50,15 @@ export async function handleQuestRoute(
 
   if (path === '/internal/quests/rewards/outbox/stats' && request.method === 'GET' && servicePrincipal) {
     return getQuestRewardOutboxStatsResponse(env, requestId, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/failed' && request.method === 'GET' && servicePrincipal) {
+    return listFailedQuestRewardOutboxResponse(env, requestId, url, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/requeue-failed' && request.method === 'POST' && servicePrincipal) {
+    const body = await readJsonObject(request);
+    return requeueFailedQuestRewardDeliveries(env, requestId, body, servicePrincipal);
   }
 
   if (path === '/v1/quests' && request.method === 'GET') {

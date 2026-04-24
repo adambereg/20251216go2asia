@@ -211,6 +211,7 @@ Current runtime:
 
 - staged/noop publisher only (domain events are constructed, but external propagation is not yet wired as a production event bus)
 - bounded quest reward delivery may use quest-owned outbox/replay state for `quest.completed`, while Points remains the ledger/economic truth
+- scheduled replay should continue processing only `pending` reward rows; `failed` rows are operator-controlled and require internal drilldown plus explicit requeue before they can re-enter normal replay
 
 Target integrations:
 
