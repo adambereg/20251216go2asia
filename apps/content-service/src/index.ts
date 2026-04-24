@@ -2776,7 +2776,11 @@ async function callPointsService(
   action: string,
   externalId: string,
   requestId: string,
-  logger: ReturnType<typeof createLogger>
+  logger: ReturnType<typeof createLogger>,
+  options?: {
+    sourceEventId?: string;
+    metadata?: Record<string, unknown>;
+  }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
     logger.warn('Points Service integration not configured', { userId, action });
@@ -2805,6 +2809,8 @@ async function callPointsService(
         amount,
         action,
         externalId,
+        sourceEventId: options?.sourceEventId,
+        metadata: options?.metadata,
       }),
       signal: controller.signal,
     });
@@ -2850,9 +2856,13 @@ async function handleEventRegistration(
       userId,
       20,
       'event_registration',
-      `content:event_registration:${eventId}:${userId}:${Date.now()}`,
+      `content:event_registration:${eventId}:${userId}`,
       requestId,
-      logger
+      logger,
+      {
+        sourceEventId: `content:event_registration:${eventId}:${userId}`,
+        metadata: { eventId, mode: 'db_less_fallback' },
+      }
     );
     if (!pointsResult.ok) {
       logger.warn('Event registration points failed', { userId, eventId, error: pointsResult.error });
@@ -2887,7 +2897,11 @@ async function handleEventRegistration(
       'event_registration',
       `content:event_registration:${registrationId}`,
       requestId,
-      logger
+      logger,
+      {
+        sourceEventId: registrationId,
+        metadata: { eventId, registrationId },
+      }
     );
     if (!pointsResult.ok) {
       logger.warn('Event registration points failed (non-blocking)', { userId, eventId, error: pointsResult.error });

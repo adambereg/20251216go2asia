@@ -27,6 +27,7 @@ describe('referral-service bonus trigger (one-time applied via points externalId
     const r2 = await mockPointsAdd({ externalId: input2.externalId });
 
     expect(input2.externalId).toEqual(input1.externalId);
+    expect(input2.sourceEventId).toEqual(input1.sourceEventId);
     expect(r1.applied).toBe(true);
     expect(r2.applied).toBe(false);
     expect(seen.size).toBe(1);

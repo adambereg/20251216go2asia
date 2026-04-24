@@ -152,11 +152,15 @@ describe('content-service request hardening', () => {
         amount: number;
         action: string;
         externalId: string;
+        sourceEventId?: string;
+        metadata?: Record<string, unknown>;
       };
       expect(payload.userId).toBe('user_from_token');
       expect(payload.amount).toBe(20);
       expect(payload.action).toBe('event_registration');
-      expect(payload.externalId).toContain('content:event_registration:event_1:user_from_token:');
+      expect(payload.externalId).toBe('content:event_registration:event_1:user_from_token');
+      expect(payload.sourceEventId).toBe('content:event_registration:event_1:user_from_token');
+      expect(payload.metadata).toEqual({ eventId: 'event_1', mode: 'db_less_fallback' });
 
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,

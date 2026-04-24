@@ -178,7 +178,7 @@ import type {
 import { customInstance } from "../packages/sdk/src/mutator";
 
 /**
- * Idempotency policy (M3): - `externalId` is required and MUST be globally unique for Points Service. - If `externalId` already exists and payload differs (`amount` and/or `action`) => 409 Conflict and the event MUST be logged as an integration error.
+ * Idempotency policy (M3): - `externalId` is required and MUST be globally unique for Points Service. - If `externalId` already exists and the incoming ledger write does not match the previously accepted write => 409 Conflict and the event MUST be logged as an integration error. - `sourceService` is derived from the authenticated service JWT subject, not supplied by the caller. - `sourceEventId` is an optional caller-supplied audit pointer to the originating domain event or record.
 Limits policy (M3): - Per-action limits and a simple configurable per-user velocity cap are applied inside Points Service.
 
  * @summary Add points to a user (idempotent)
@@ -186,6 +186,11 @@ Limits policy (M3): - Per-action limits and a simple configurable per-user veloc
 export type addPointsResponse200 = {
   data: AddPointsResponse;
   status: 200;
+};
+
+export type addPointsResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
 };
 
 export type addPointsResponse401 = {
@@ -217,6 +222,7 @@ export type addPointsResponseSuccess = addPointsResponse200 & {
   headers: Headers;
 };
 export type addPointsResponseError = (
+  | addPointsResponse400
   | addPointsResponse401
   | addPointsResponse409
   | addPointsResponse429
