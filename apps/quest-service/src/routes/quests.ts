@@ -1,19 +1,23 @@
-import type { GatewayPrincipal } from '../middleware/auth';
 import type { QuestEventPublisher } from '../events/publisher';
+import type { GatewayPrincipal, ServicePrincipal } from '../middleware/auth';
 import { readJsonObject } from '../middleware/http';
 import {
   addQuestStep,
   archiveQuest,
   createQuestDraft,
+  listFailedQuestRewardOutboxResponse,
   deleteQuestStepByOwner,
   getQuest,
   getOwnedQuest,
   getOwnedQuestOperationalStats,
   getQuestProgress,
+  getQuestRewardOutboxStatsResponse,
   getQuestSubmissions,
   listOwnedQuests,
   listQuests,
   publishQuest,
+  requeueFailedQuestRewardDeliveries,
+  replayPendingQuestRewardDeliveries,
   reviewQuestSubmission,
   startQuest,
   submitQuestStep,
@@ -24,6 +28,8 @@ import {
 type Env = {
   DATABASE_URL?: string;
   ENVIRONMENT?: string;
+  POINTS_SERVICE_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 };
 
 export async function handleQuestRoute(
@@ -31,10 +37,29 @@ export async function handleQuestRoute(
   env: Env,
   requestId: string,
   publisher: QuestEventPublisher,
-  principal: GatewayPrincipal | null
+  principal: GatewayPrincipal | null,
+  servicePrincipal: ServicePrincipal | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
+
+  if (path === '/internal/quests/rewards/replay-pending' && request.method === 'POST' && servicePrincipal) {
+    const body = await readJsonObject(request);
+    return replayPendingQuestRewardDeliveries(env, requestId, body, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/stats' && request.method === 'GET' && servicePrincipal) {
+    return getQuestRewardOutboxStatsResponse(env, requestId, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/failed' && request.method === 'GET' && servicePrincipal) {
+    return listFailedQuestRewardOutboxResponse(env, requestId, url, servicePrincipal);
+  }
+
+  if (path === '/internal/quests/rewards/outbox/requeue-failed' && request.method === 'POST' && servicePrincipal) {
+    const body = await readJsonObject(request);
+    return requeueFailedQuestRewardDeliveries(env, requestId, body, servicePrincipal);
+  }
 
   if (path === '/v1/quests' && request.method === 'GET') {
     return listQuests(env, requestId, url);

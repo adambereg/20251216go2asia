@@ -138,6 +138,141 @@ describe('points-service request hardening', () => {
     expect(body.message).toContain('not configured');
   });
 
+  it('applies a new ledger write and stores audit fields', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_new', balance: 120 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'auth-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 20,
+          action: 'event_registration',
+          externalId: 'content:event_registration:event_1:user_1',
+          sourceEventId: 'content:event_registration:event_1:user_1',
+          metadata: { eventId: 'event_1', mode: 'db_less_fallback' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ applied: boolean; transactionId: string; balance: number }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(true);
+    expect(body.transactionId).toBe('tx_new');
+    expect(body.balance).toBe(120);
+
+    const insertQuery = executeMock.mock.calls[2]?.[0] as { values?: unknown[] };
+    expect(insertQuery.values).toEqual(
+      expect.arrayContaining([
+        'user_1',
+        20,
+        'event_registration',
+        'auth-service',
+        'content:event_registration:event_1:user_1',
+        'content:event_registration:event_1:user_1',
+      ])
+    );
+  });
+
+  it('lists transaction history with audit fields', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'tx_1',
+          user_id: 'user_from_token',
+          amount: 20,
+          reason: 'event_registration',
+          source_service: 'content-service',
+          source_event_id: 'registration_1',
+          external_id: 'content:event_registration:registration_1',
+          metadata: { eventId: 'event_1', registrationId: 'registration_1' },
+          created_at: new Date('2026-03-10T00:00:00.000Z'),
+        },
+      ],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_from_token' });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/points/transactions', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        sourceService?: string | null;
+        sourceEventId?: string | null;
+        metadata?: Record<string, unknown>;
+      }>;
+      nextCursor: string | null;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.nextCursor).toBeNull();
+    expect(body.items[0]?.id).toBe('tx_1');
+    expect(body.items[0]?.sourceService).toBe('content-service');
+    expect(body.items[0]?.sourceEventId).toBe('registration_1');
+    expect(body.items[0]?.metadata).toEqual({ eventId: 'event_1', registrationId: 'registration_1' });
+  });
+
+  it('returns 400 for invalid sourceEventId', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service');
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'registration',
+          externalId: 'ext_invalid_source_event',
+          sourceEventId: '   ',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string; message: string }>(response);
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe('BadRequest');
+    expect(body.message).toContain('sourceEventId');
+  });
+
   it('returns applied=false for duplicate externalId with the same payload', async () => {
     executeMock
       .mockResolvedValueOnce({
@@ -147,7 +282,10 @@ describe('points-service request hardening', () => {
             user_id: 'user_1',
             amount: 100,
             reason: 'registration',
+            source_service: 'auth-service',
+            source_event_id: 'clerk:user.created:user_1',
             external_id: 'ext_same',
+            metadata: {},
           },
         ],
       })
@@ -175,6 +313,7 @@ describe('points-service request hardening', () => {
           amount: 100,
           action: 'registration',
           externalId: 'ext_same',
+          sourceEventId: 'clerk:user.created:user_1',
         }),
       }),
       env
@@ -197,7 +336,10 @@ describe('points-service request hardening', () => {
           user_id: 'user_1',
           amount: 100,
           reason: 'registration',
+          source_service: 'auth-service',
+          source_event_id: 'clerk:user.created:user_1',
           external_id: 'ext_conflict',
+          metadata: {},
         },
       ],
     });
@@ -220,6 +362,7 @@ describe('points-service request hardening', () => {
           amount: 200,
           action: 'registration',
           externalId: 'ext_conflict',
+          sourceEventId: 'clerk:user.created:user_1',
         }),
       }),
       env

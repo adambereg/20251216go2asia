@@ -80,6 +80,35 @@ export type QuestSubmissionRow = {
   updated_at: string | Date;
 };
 
+export type QuestRewardOutboxStatus = 'pending' | 'delivered' | 'failed';
+
+export type QuestRewardOutboxRow = {
+  id: string;
+  quest_progress_id: string;
+  quest_id: string;
+  user_id: string;
+  points_amount: number;
+  action: string;
+  external_id: string;
+  source_event_id: string | null;
+  metadata: Record<string, unknown>;
+  status: QuestRewardOutboxStatus;
+  attempt_count: number;
+  last_attempt_at: string | Date | null;
+  delivered_at: string | Date | null;
+  last_error: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+export type QuestRewardOutboxStatsRow = {
+  pending_count: number;
+  delivered_count: number;
+  failed_count: number;
+  oldest_pending_created_at: string | Date | null;
+  oldest_failed_created_at: string | Date | null;
+};
+
 export type SubmissionReviewRow = QuestSubmissionRow & {
   quest_id: string;
   creator_pro_id: string;
@@ -790,6 +819,442 @@ export async function advanceQuestProgress(
       updated_at
   `);
   return rowsOf<QuestProgressRow>(result)[0] ?? null;
+}
+
+export async function completeQuestProgressAndEnsureRewardOutbox(
+  db: DbExecutor,
+  input: {
+    progressId: string;
+    questId: string;
+    userId: string;
+    pointsAmount: number;
+    action: string;
+    externalId: string;
+    sourceEventId: string | null;
+    metadata: Record<string, unknown>;
+  }
+): Promise<{ progress: QuestProgressRow | null; outbox: QuestRewardOutboxRow | null }> {
+  const result = await db.execute(sql`
+    WITH progress AS (
+      UPDATE quest_progress
+      SET
+        status = 'completed',
+        current_step = NULL,
+        completed_at = CASE WHEN completed_at IS NULL THEN now() ELSE completed_at END,
+        updated_at = now()
+      WHERE id = ${input.progressId}
+      RETURNING
+        id,
+        quest_id,
+        user_id,
+        status,
+        current_step,
+        started_at,
+        completed_at,
+        created_at,
+        updated_at
+    ),
+    outbox AS (
+      INSERT INTO quest_reward_outbox (
+        id,
+        quest_progress_id,
+        quest_id,
+        user_id,
+        points_amount,
+        action,
+        external_id,
+        source_event_id,
+        metadata,
+        status,
+        attempt_count,
+        created_at,
+        updated_at
+      )
+      SELECT
+        ${`qreward_${crypto.randomUUID()}`},
+        progress.id,
+        ${input.questId},
+        ${input.userId},
+        ${input.pointsAmount},
+        ${input.action},
+        ${input.externalId},
+        ${input.sourceEventId},
+        ${JSON.stringify(input.metadata ?? {})}::jsonb,
+        'pending',
+        0,
+        now(),
+        now()
+      FROM progress
+      ON CONFLICT (external_id) DO UPDATE
+      SET external_id = EXCLUDED.external_id
+      RETURNING
+        id,
+        quest_progress_id,
+        quest_id,
+        user_id,
+        points_amount,
+        action,
+        external_id,
+        source_event_id,
+        metadata,
+        status,
+        attempt_count,
+        last_attempt_at,
+        delivered_at,
+        last_error,
+        created_at,
+        updated_at
+    )
+    SELECT
+      progress.id AS progress_id,
+      progress.quest_id AS progress_quest_id,
+      progress.user_id AS progress_user_id,
+      progress.status AS progress_status,
+      progress.current_step AS progress_current_step,
+      progress.started_at AS progress_started_at,
+      progress.completed_at AS progress_completed_at,
+      progress.created_at AS progress_created_at,
+      progress.updated_at AS progress_updated_at,
+      outbox.id AS outbox_id,
+      outbox.quest_progress_id AS outbox_quest_progress_id,
+      outbox.quest_id AS outbox_quest_id,
+      outbox.user_id AS outbox_user_id,
+      outbox.points_amount AS outbox_points_amount,
+      outbox.action AS outbox_action,
+      outbox.external_id AS outbox_external_id,
+      outbox.source_event_id AS outbox_source_event_id,
+      outbox.metadata AS outbox_metadata,
+      outbox.status AS outbox_status,
+      outbox.attempt_count AS outbox_attempt_count,
+      outbox.last_attempt_at AS outbox_last_attempt_at,
+      outbox.delivered_at AS outbox_delivered_at,
+      outbox.last_error AS outbox_last_error,
+      outbox.created_at AS outbox_created_at,
+      outbox.updated_at AS outbox_updated_at
+    FROM progress
+    LEFT JOIN outbox ON true
+  `);
+
+  const row = rowsOf<{
+    progress_id: string | null;
+    progress_quest_id: string | null;
+    progress_user_id: string | null;
+    progress_status: QuestProgressStatus | null;
+    progress_current_step: number | null;
+    progress_started_at: string | Date | null;
+    progress_completed_at: string | Date | null;
+    progress_created_at: string | Date | null;
+    progress_updated_at: string | Date | null;
+    outbox_id: string | null;
+    outbox_quest_progress_id: string | null;
+    outbox_quest_id: string | null;
+    outbox_user_id: string | null;
+    outbox_points_amount: number | null;
+    outbox_action: string | null;
+    outbox_external_id: string | null;
+    outbox_source_event_id: string | null;
+    outbox_metadata: Record<string, unknown> | null;
+    outbox_status: QuestRewardOutboxStatus | null;
+    outbox_attempt_count: number | null;
+    outbox_last_attempt_at: string | Date | null;
+    outbox_delivered_at: string | Date | null;
+    outbox_last_error: string | null;
+    outbox_created_at: string | Date | null;
+    outbox_updated_at: string | Date | null;
+  }>(result)[0];
+
+  if (!row?.progress_id) {
+    return { progress: null, outbox: null };
+  }
+
+  return {
+    progress: {
+      id: row.progress_id,
+      quest_id: row.progress_quest_id!,
+      user_id: row.progress_user_id!,
+      status: row.progress_status!,
+      current_step: row.progress_current_step,
+      started_at: row.progress_started_at!,
+      completed_at: row.progress_completed_at,
+      created_at: row.progress_created_at!,
+      updated_at: row.progress_updated_at!,
+    },
+    outbox: row.outbox_id
+      ? {
+          id: row.outbox_id,
+          quest_progress_id: row.outbox_quest_progress_id!,
+          quest_id: row.outbox_quest_id!,
+          user_id: row.outbox_user_id!,
+          points_amount: row.outbox_points_amount!,
+          action: row.outbox_action!,
+          external_id: row.outbox_external_id!,
+          source_event_id: row.outbox_source_event_id,
+          metadata: row.outbox_metadata ?? {},
+          status: row.outbox_status!,
+          attempt_count: row.outbox_attempt_count ?? 0,
+          last_attempt_at: row.outbox_last_attempt_at,
+          delivered_at: row.outbox_delivered_at,
+          last_error: row.outbox_last_error,
+          created_at: row.outbox_created_at!,
+          updated_at: row.outbox_updated_at!,
+        }
+      : null,
+  };
+}
+
+export async function listQuestRewardOutboxByStatus(
+  db: DbExecutor,
+  input: {
+    status: QuestRewardOutboxStatus;
+    limit: number;
+  }
+): Promise<QuestRewardOutboxRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+    FROM quest_reward_outbox
+    WHERE status = ${input.status}
+    ORDER BY created_at ASC, id ASC
+    LIMIT ${input.limit}
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function listFailedQuestRewardOutboxRows(
+  db: DbExecutor,
+  input: {
+    limit: number;
+  }
+): Promise<QuestRewardOutboxRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+    FROM quest_reward_outbox
+    WHERE status = 'failed'
+    ORDER BY updated_at DESC, id DESC
+    LIMIT ${input.limit}
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function getQuestRewardOutboxRowsByIds(db: DbExecutor, ids: string[]): Promise<QuestRewardOutboxRow[]> {
+  if (ids.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+    FROM quest_reward_outbox
+    WHERE id = ANY(${ids}::text[])
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function requeueFailedQuestRewardOutboxRows(
+  db: DbExecutor,
+  input: {
+    ids: string[];
+    reasonNote: string | null;
+  }
+): Promise<QuestRewardOutboxRow[]> {
+  if (input.ids.length === 0) return [];
+
+  const result = await db.execute(sql`
+    UPDATE quest_reward_outbox
+    SET
+      status = 'pending',
+      last_error = CASE
+        WHEN ${input.reasonNote} IS NULL THEN last_error
+        WHEN last_error IS NULL OR btrim(last_error) = '' THEN ${input.reasonNote}
+        ELSE last_error || E'\n' || ${input.reasonNote}
+      END,
+      updated_at = now()
+    WHERE id = ANY(${input.ids}::text[])
+      AND status = 'failed'
+    RETURNING
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result);
+}
+
+export async function markQuestRewardOutboxDelivered(db: DbExecutor, outboxId: string): Promise<QuestRewardOutboxRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest_reward_outbox
+    SET
+      status = 'delivered',
+      attempt_count = attempt_count + 1,
+      last_attempt_at = now(),
+      delivered_at = COALESCE(delivered_at, now()),
+      last_error = NULL,
+      updated_at = now()
+    WHERE id = ${outboxId}
+    RETURNING
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result)[0] ?? null;
+}
+
+export async function markQuestRewardOutboxPending(
+  db: DbExecutor,
+  input: { outboxId: string; lastError: string | null }
+): Promise<QuestRewardOutboxRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest_reward_outbox
+    SET
+      status = 'pending',
+      attempt_count = attempt_count + 1,
+      last_attempt_at = now(),
+      last_error = ${input.lastError},
+      updated_at = now()
+    WHERE id = ${input.outboxId}
+    RETURNING
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result)[0] ?? null;
+}
+
+export async function markQuestRewardOutboxFailed(
+  db: DbExecutor,
+  input: { outboxId: string; lastError: string | null }
+): Promise<QuestRewardOutboxRow | null> {
+  const result = await db.execute(sql`
+    UPDATE quest_reward_outbox
+    SET
+      status = 'failed',
+      attempt_count = attempt_count + 1,
+      last_attempt_at = now(),
+      last_error = ${input.lastError},
+      updated_at = now()
+    WHERE id = ${input.outboxId}
+    RETURNING
+      id,
+      quest_progress_id,
+      quest_id,
+      user_id,
+      points_amount,
+      action,
+      external_id,
+      source_event_id,
+      metadata,
+      status,
+      attempt_count,
+      last_attempt_at,
+      delivered_at,
+      last_error,
+      created_at,
+      updated_at
+  `);
+  return rowsOf<QuestRewardOutboxRow>(result)[0] ?? null;
+}
+
+export async function getQuestRewardOutboxStats(db: DbExecutor): Promise<QuestRewardOutboxStatsRow> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
+      COUNT(*) FILTER (WHERE status = 'delivered')::int AS delivered_count,
+      COUNT(*) FILTER (WHERE status = 'failed')::int AS failed_count,
+      MIN(created_at) FILTER (WHERE status = 'pending') AS oldest_pending_created_at,
+      MIN(created_at) FILTER (WHERE status = 'failed') AS oldest_failed_created_at
+    FROM quest_reward_outbox
+  `);
+  return (
+    rowsOf<QuestRewardOutboxStatsRow>(result)[0] ?? {
+      pending_count: 0,
+      delivered_count: 0,
+      failed_count: 0,
+      oldest_pending_created_at: null,
+      oldest_failed_created_at: null,
+    }
+  );
 }
 
 export async function getBlockingSubmissionForProgressStep(

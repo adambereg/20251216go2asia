@@ -396,7 +396,11 @@ async function callPointsService(
   action: string,
   externalId: string,
   requestId: string,
-  logger: ReturnType<typeof createLogger>
+  logger: ReturnType<typeof createLogger>,
+  options?: {
+    sourceEventId?: string;
+    metadata?: Record<string, unknown>;
+  }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
     logger.warn('Points Service integration not configured', { userId, action });
@@ -425,6 +429,8 @@ async function callPointsService(
         amount,
         action,
         externalId,
+        sourceEventId: options?.sourceEventId,
+        metadata: options?.metadata,
       }),
       signal: controller.signal,
     });
@@ -641,7 +647,11 @@ async function handleClerkWebhook(
       'registration',
       `auth:user.created:${userId}`,
       requestId,
-      logger
+      logger,
+      {
+        sourceEventId: `clerk:user.created:${userId}`,
+        metadata: { clerkEventType: 'user.created' },
+      }
     );
     if (!pointsResult.ok) {
       logger.warn('Registration points failed (non-blocking)', {
@@ -667,9 +677,13 @@ async function handleClerkWebhook(
         userId,
         50,
         'first_login',
-        `auth:user.updated:first_login:${userId}:${Date.now()}`,
+        `auth:first_login:${userId}`,
         requestId,
-        logger
+        logger,
+        {
+          sourceEventId: `clerk:user.updated:first_login:${userId}`,
+          metadata: { clerkEventType: 'user.updated', reason: 'first_login' },
+        }
       );
       if (!pointsResult.ok) {
         logger.warn('First login points failed (non-blocking)', {

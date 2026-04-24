@@ -26,6 +26,7 @@ export const questProgressStatusEnum = pgEnum('quest_progress_status', [
 export const questSubmissionStatusEnum = pgEnum('quest_submission_status', ['pending', 'approved', 'rejected']);
 export const questProofTypeEnum = pgEnum('quest_proof_type', ['photo', 'geo', 'qr', 'space_post', 'text']);
 export const questTargetTypeEnum = pgEnum('quest_target_type', ['place', 'event', 'partner', 'space_post']);
+export const questRewardOutboxStatusEnum = pgEnum('quest_reward_outbox_status', ['pending', 'delivered', 'failed']);
 
 export const quests = pgTable(
   'quest',
@@ -171,5 +172,51 @@ export const questSubmissions = pgTable(
       table.createdAt
     ),
     idxUserCreatedAt: index('idx_quest_submission_user_created_at').on(table.userId, table.createdAt),
+  })
+);
+
+export const questRewardOutbox = pgTable(
+  'quest_reward_outbox',
+  {
+    id: text('id').primaryKey(),
+    questProgressId: text('quest_progress_id')
+      .notNull()
+      .references(() => questProgress.id, { onDelete: 'cascade' }),
+    questId: text('quest_id')
+      .notNull()
+      .references(() => quests.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(),
+    pointsAmount: integer('points_amount').notNull(),
+    action: text('action').notNull(),
+    externalId: text('external_id').notNull(),
+    sourceEventId: text('source_event_id'),
+    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    status: questRewardOutboxStatusEnum('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    lastAttemptAt: timestamp('last_attempt_at'),
+    deliveredAt: timestamp('delivered_at'),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueExternalId: unique('quest_reward_outbox_external_id_unique').on(table.externalId),
+    userIdNotBlank: check('quest_reward_outbox_user_id_not_blank_check', sql`(length(trim(${table.userId})) > 0)`),
+    actionNotBlank: check('quest_reward_outbox_action_not_blank_check', sql`(length(trim(${table.action})) > 0)`),
+    externalIdNotBlank: check(
+      'quest_reward_outbox_external_id_not_blank_check',
+      sql`(length(trim(${table.externalId})) > 0)`
+    ),
+    pointsAmountPositive: check('quest_reward_outbox_points_amount_positive_check', sql`(${table.pointsAmount} > 0)`),
+    metadataObject: check(
+      'quest_reward_outbox_metadata_object_check',
+      sql`jsonb_typeof(${table.metadata}) = 'object'`
+    ),
+    attemptCountNonNegative: check(
+      'quest_reward_outbox_attempt_count_non_negative_check',
+      sql`(${table.attemptCount} >= 0)`
+    ),
+    idxStatusCreatedAt: index('idx_quest_reward_outbox_status_created_at').on(table.status, table.createdAt),
+    idxProgressId: index('idx_quest_reward_outbox_progress_id').on(table.questProgressId),
   })
 );

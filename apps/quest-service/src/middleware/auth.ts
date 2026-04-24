@@ -9,6 +9,10 @@ export type GatewayPrincipal = {
   roles: string[];
 };
 
+export type ServicePrincipal = {
+  service: string;
+};
+
 export interface AuthEnv {
   SERVICE_JWT_SECRET?: string;
 }
@@ -149,6 +153,49 @@ export async function requireGatewayOrigin(
   logger: ReturnType<typeof createLogger>
 ): Promise<{ ok: true; principal: GatewayPrincipal } | { ok: false; res: Response }> {
   return verifyGatewayToken(request, env, requestId, logger);
+}
+
+export async function requireServiceAuth(
+  request: Request,
+  env: AuthEnv,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>,
+  audience: string
+): Promise<{ ok: true; principal: ServicePrincipal } | { ok: false; res: Response }> {
+  const secret = env.SERVICE_JWT_SECRET;
+  if (!secret) {
+    logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
+    return { ok: false, res: errorResponse('SERVICE_AUTH_NOT_CONFIGURED', 'Service auth is not configured', requestId, 503) };
+  }
+
+  const auth = request.headers.get('Authorization') ?? '';
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing Authorization: Bearer token', requestId, 401) };
+  }
+
+  const verified = await verifyHs256Jwt(match[1], secret);
+  if (!verified.ok) {
+    logger.warn('Invalid service token', { reason: verified.error });
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid service token', requestId, 401) };
+  }
+
+  const claims = validateServiceJwtClaims(verified.payload, {
+    iss: 'go2asia-service-auth',
+    aud: audience,
+  });
+  if (!claims.ok) {
+    logger.warn('Service token claims rejected', { reason: claims.error });
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid service token claims', requestId, 401) };
+  }
+
+  const service = getStringClaim(verified.payload, 'sub');
+  if (!service) {
+    logger.warn('Service token missing subject claim');
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing service subject in token', requestId, 401) };
+  }
+
+  return { ok: true, principal: { service } };
 }
 
 export async function getOptionalGatewayPrincipal(

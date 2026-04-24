@@ -315,7 +315,7 @@ async function requireServiceAuth(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>
-): Promise<{ ok: true } | { ok: false; res: Response }> {
+): Promise<{ ok: true; principal: { service: string } } | { ok: false; res: Response }> {
   const secret = env.SERVICE_JWT_SECRET;
   if (!secret) {
     logger.error('Missing SERVICE_JWT_SECRET (misconfiguration)');
@@ -341,7 +341,13 @@ async function requireServiceAuth(
     return { ok: false, res: errorResponse('UNAUTHORIZED', 'Invalid service token claims', requestId, 401) };
   }
 
-  return { ok: true };
+  const service = getStringClaim(verified.payload, 'sub');
+  if (!service) {
+    logger.warn('Service token missing subject claim');
+    return { ok: false, res: errorResponse('UNAUTHORIZED', 'Missing service subject in token', requestId, 401) };
+  }
+
+  return { ok: true, principal: { service } };
 }
 
 function requireDatabase(env: Env): string {
@@ -404,18 +410,29 @@ async function getTransactionByExternalId(db: Db, externalId: string): Promise<n
   user_id: string;
   amount: number;
   reason: string;
+  source_service: string | null;
+  source_event_id: string | null;
   external_id: string;
+  metadata: unknown;
 }> {
   const result = await db.execute(
     sql`
-      SELECT id, user_id, amount, reason, external_id
+      SELECT id, user_id, amount, reason, source_service, source_event_id, external_id, metadata
       FROM points_transactions
       WHERE external_id = ${externalId}
       LIMIT 1
     `
   );
-
-  return getRows<{ id: string; user_id: string; amount: number; reason: string; external_id: string }>(result)[0] ?? null;
+  return getRows<{
+    id: string;
+    user_id: string;
+    amount: number;
+    reason: string;
+    source_service: string | null;
+    source_event_id: string | null;
+    external_id: string;
+    metadata: unknown;
+  }>(result)[0] ?? null;
 }
 
 async function enforceVelocityCap(
@@ -510,7 +527,7 @@ export default {
 
         const result = await db.execute(
           sql`
-            SELECT id, user_id, amount, reason, external_id, metadata, created_at
+            SELECT id, user_id, amount, reason, source_service, source_event_id, external_id, metadata, created_at
             FROM points_transactions
             WHERE user_id = ${userId}
             ${cursorClause}
@@ -524,6 +541,8 @@ export default {
           user_id: string;
           amount: number;
           reason: string;
+          source_service: string | null;
+          source_event_id: string | null;
           external_id: string;
           metadata: unknown;
           created_at: Date;
@@ -538,6 +557,8 @@ export default {
           userId: t.user_id,
           amount: Number(t.amount),
           action: t.reason,
+          sourceService: t.source_service,
+          sourceEventId: t.source_event_id,
           externalId: t.external_id,
           createdAt: (t.created_at instanceof Date ? t.created_at : new Date(t.created_at)).toISOString(),
           metadata: (t.metadata ?? {}) as JsonValue,
@@ -578,6 +599,7 @@ export default {
         const amount = body?.amount;
         const action = body?.action;
         const externalId = body?.externalId;
+        const sourceEventId = body?.sourceEventId;
         const metadata = body?.metadata;
 
         if (typeof userId !== 'string' || userId.length === 0) {
@@ -604,20 +626,57 @@ export default {
           return res;
         }
 
+        if (sourceEventId !== undefined && (typeof sourceEventId !== 'string' || sourceEventId.trim().length === 0)) {
+          const res = errorResponse('BadRequest', 'Invalid sourceEventId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
         const db = createDb(requireDatabase(env));
+        const callerService = auth.principal.service;
+        const normalizedSourceEventId = typeof sourceEventId === 'string' ? sourceEventId.trim() : null;
 
         // Idempotency lookup
         const existing = await getTransactionByExternalId(db, externalId);
         if (existing) {
           const decision = decideExternalIdIdempotency(
-            { transactionId: existing.id, amount: existing.amount, action: existing.reason },
-            { amount, action }
+            {
+              transactionId: existing.id,
+              userId: existing.user_id,
+              amount: existing.amount,
+              action: existing.reason,
+              sourceService: existing.source_service,
+              sourceEventId: existing.source_event_id,
+              metadata: existing.metadata,
+            },
+            {
+              userId,
+              amount,
+              action,
+              sourceService: callerService,
+              sourceEventId: normalizedSourceEventId,
+              metadata,
+            }
           );
           if (decision.kind === 'conflict') {
             logger.error('Idempotency conflict (integration error)', {
               externalId,
-              existing: { amount: existing.amount, action: existing.reason },
-              incoming: { amount, action },
+              existing: {
+                userId: existing.user_id,
+                amount: existing.amount,
+                action: existing.reason,
+                sourceService: existing.source_service,
+                sourceEventId: existing.source_event_id,
+                metadata: existing.metadata ?? {},
+              },
+              incoming: {
+                userId,
+                amount,
+                action,
+                sourceService: callerService,
+                sourceEventId: normalizedSourceEventId,
+                metadata: metadata ?? {},
+              },
             });
             const res = errorResponse('Conflict', 'externalId already exists with different payload', requestId, 409);
             res.headers.set('X-Request-Id', requestId);
@@ -672,6 +731,8 @@ export default {
               user_id,
               amount,
               reason,
+              source_service,
+              source_event_id,
               external_id,
               metadata
             )
@@ -680,11 +741,13 @@ export default {
               ${userId},
               ${amount},
               ${action},
+              ${callerService},
+              ${normalizedSourceEventId},
               ${externalId},
               ${JSON.stringify(metadata ?? {})}::jsonb
             )
             ON CONFLICT (external_id) DO NOTHING
-            RETURNING id, user_id, amount, reason, external_id
+            RETURNING id, user_id, amount, reason, source_service, source_event_id, external_id, metadata
           ),
           up AS (
             INSERT INTO user_balances (user_id, balance, updated_at)
@@ -712,14 +775,43 @@ export default {
           }
 
           const decision2 = decideExternalIdIdempotency(
-            { transactionId: existing2.id, amount: existing2.amount, action: existing2.reason },
-            { amount, action }
+            {
+              transactionId: existing2.id,
+              userId: existing2.user_id,
+              amount: existing2.amount,
+              action: existing2.reason,
+              sourceService: existing2.source_service,
+              sourceEventId: existing2.source_event_id,
+              metadata: existing2.metadata,
+            },
+            {
+              userId,
+              amount,
+              action,
+              sourceService: callerService,
+              sourceEventId: normalizedSourceEventId,
+              metadata,
+            }
           );
           if (decision2.kind === 'conflict') {
             logger.error('Idempotency conflict after concurrent insert (integration error)', {
               externalId,
-              existing: { amount: existing2.amount, action: existing2.reason },
-              incoming: { amount, action },
+              existing: {
+                userId: existing2.user_id,
+                amount: existing2.amount,
+                action: existing2.reason,
+                sourceService: existing2.source_service,
+                sourceEventId: existing2.source_event_id,
+                metadata: existing2.metadata ?? {},
+              },
+              incoming: {
+                userId,
+                amount,
+                action,
+                sourceService: callerService,
+                sourceEventId: normalizedSourceEventId,
+                metadata: metadata ?? {},
+              },
             });
             const res = errorResponse('Conflict', 'externalId already exists with different payload', requestId, 409);
             res.headers.set('X-Request-Id', requestId);

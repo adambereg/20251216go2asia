@@ -15,7 +15,22 @@ export interface PointsTransaction {
   id: string;
   userId: string;
   amount: number;
-  action: 'registration' | 'first_login' | 'referral_bonus_referee' | 'referral_bonus_referrer' | 'event_registration';
+  action:
+    | 'registration'
+    | 'first_login'
+    | 'referral_bonus_referee'
+    | 'referral_bonus_referrer'
+    | 'event_registration'
+    | 'space_post_created'
+    | 'space_repost_created'
+    | 'space_reaction_created'
+    | 'quest_completed'
+    | 'rielt_listing_created'
+    | 'rf_partner_verified'
+    | 'rf_voucher_claimed'
+    | 'rf_voucher_redeemed';
+  sourceService?: string | null;
+  sourceEventId?: string | null;
   externalId: string;
   createdAt: string;
   metadata?: Record<string, unknown>;

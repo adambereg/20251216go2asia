@@ -316,6 +316,13 @@
       "when": 1776952900000,
       "tag": "0042_space_activity_projection_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1777005000000,
+      "tag": "0043_quest_reward_outbox_v1",
+      "breakpoints": true
     }
   ]
 }

@@ -391,7 +391,14 @@ async function callPointsAdd(
   env: Env,
   requestId: string,
   logger: ReturnType<typeof createLogger>,
-  input: { userId: string; amount: number; action: string; externalId: string; metadata?: Record<string, unknown> }
+  input: {
+    userId: string;
+    amount: number;
+    action: string;
+    externalId: string;
+    sourceEventId?: string;
+    metadata?: Record<string, unknown>;
+  }
 ): Promise<{ ok: true; applied: boolean | null } | { ok: false; error: string; status?: number }> {
   if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
     logger.warn('Points Service integration not configured', { userId: input.userId, action: input.action });
@@ -420,6 +427,7 @@ async function callPointsAdd(
         amount: input.amount,
         action: input.action,
         externalId: input.externalId,
+        sourceEventId: input.sourceEventId,
         metadata: input.metadata ?? undefined,
       }),
       signal: controller.signal,

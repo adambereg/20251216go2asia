@@ -1,16 +1,20 @@
-import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 import { createDb, sql } from '@go2asia/db';
+import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { createNoopQuestEventPublisher } from './events/publisher';
-import { requireGatewayOrigin } from './middleware/auth';
+import { requireGatewayOrigin, requireServiceAuth } from './middleware/auth';
 import { getSecretCheck, handleNotFound, json, withRequestId } from './middleware/http';
 import { handleQuestRoute } from './routes/quests';
+import { runScheduledQuestRewardReplay } from './services/questService';
+
+const SERVICE_NAME = 'quest-service';
 
 export interface Env {
   ENVIRONMENT?: string;
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
   DATABASE_URL?: string;
+  POINTS_SERVICE_URL?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -25,6 +29,7 @@ function handleHealth(env: Env): Response {
 async function handleReady(env: Env): Promise<Response> {
   const checks = {
     databaseUrl: getSecretCheck(env.DATABASE_URL),
+    pointsServiceUrl: getSecretCheck(env.POINTS_SERVICE_URL),
     serviceJwtSecret: getSecretCheck(env.SERVICE_JWT_SECRET),
     databaseConnection: 'missing' as 'ok' | 'missing',
   };
@@ -76,6 +81,15 @@ function isProtectedRoute(method: string, path: string): boolean {
   return false;
 }
 
+function isServiceRoute(method: string, path: string): boolean {
+  return (
+    (method === 'POST' && path === '/internal/quests/rewards/replay-pending') ||
+    (method === 'GET' && path === '/internal/quests/rewards/outbox/stats') ||
+    (method === 'GET' && path === '/internal/quests/rewards/outbox/failed') ||
+    (method === 'POST' && path === '/internal/quests/rewards/outbox/requeue-failed')
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
@@ -100,7 +114,15 @@ export default {
       }
 
       let principal = null;
-      if (isProtectedRoute(request.method, path)) {
+      let servicePrincipal = null;
+      if (isServiceRoute(request.method, path)) {
+        const auth = await requireServiceAuth(request, env, requestId, logger, SERVICE_NAME);
+        if (!auth.ok) {
+          response = withRequestId(auth.res, requestId);
+          return response;
+        }
+        servicePrincipal = auth.principal;
+      } else if (isProtectedRoute(request.method, path)) {
         const auth = await requireGatewayOrigin(request, env, requestId, logger);
         if (!auth.ok) {
           response = withRequestId(auth.res, requestId);
@@ -109,7 +131,9 @@ export default {
         principal = auth.principal;
       }
 
-      response = (await handleQuestRoute(request, env, requestId, publisher, principal)) ?? handleNotFound(path, requestId);
+      response =
+        (await handleQuestRoute(request, env, requestId, publisher, principal, servicePrincipal)) ??
+        handleNotFound(path, requestId);
       return withRequestId(response, requestId);
     } catch (error) {
       logger.error('Unhandled error', error, { method: request.method, path });
@@ -129,5 +153,28 @@ export default {
         durationMs: Date.now() - startedAt,
       });
     }
+  },
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const requestId = generateRequestId();
+    const logger = createLogger(requestId, SERVICE_NAME, {
+      env: env.ENVIRONMENT,
+      version: env.VERSION,
+    });
+
+    const summary = await runScheduledQuestRewardReplay(env, requestId);
+    if (summary instanceof Response) {
+      logger.warn('Scheduled quest reward replay did not complete', {
+        cron: controller.cron,
+        scheduledTime: controller.scheduledTime,
+        status: summary.status,
+      });
+      return;
+    }
+
+    logger.info('Scheduled quest reward replay completed', {
+      cron: controller.cron,
+      scheduledTime: controller.scheduledTime,
+      ...summary,
+    });
   },
 };

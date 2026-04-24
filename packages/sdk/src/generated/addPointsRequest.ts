@@ -19,5 +19,7 @@ export interface AddPointsRequest {
   /** Idempotency key (SSOT) */
   externalId: string;
   metadata?: AddPointsRequestMetadata;
+  /** Optional caller-supplied audit pointer to the originating domain event or record. */
+  sourceEventId?: string;
   userId: string;
 }

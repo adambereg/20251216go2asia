@@ -17,5 +17,15 @@ export interface PointsTransaction {
   externalId: string;
   id: string;
   metadata?: PointsTransactionMetadata;
+  /**
+   * Optional audit pointer to the originating domain event or record.
+   * @nullable
+   */
+  sourceEventId?: string | null;
+  /**
+   * Authenticated internal caller that produced the ledger write.
+   * @nullable
+   */
+  sourceService?: string | null;
   userId: string;
 }

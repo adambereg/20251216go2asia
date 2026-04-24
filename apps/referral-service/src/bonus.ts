@@ -11,13 +11,16 @@ export function buildReferrerFirstLoginBonusPointsInput(input: {
   amount: number;
   action: 'referral_bonus_referrer';
   externalId: string;
+  sourceEventId: string;
   metadata: { refereeUserId: string };
 } {
+  const externalId = makeReferralFirstLoginExternalId(input.referrerId, input.refereeId);
   return {
     userId: input.referrerId,
     amount: input.bonus,
     action: 'referral_bonus_referrer',
-    externalId: makeReferralFirstLoginExternalId(input.referrerId, input.refereeId),
+    externalId,
+    sourceEventId: externalId,
     metadata: { refereeUserId: input.refereeId },
   };
 }

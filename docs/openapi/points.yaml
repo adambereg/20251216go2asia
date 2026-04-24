@@ -127,7 +127,9 @@ paths:
       description: >
         Idempotency policy (M3):
         - `externalId` is required and MUST be globally unique for Points Service.
-        - If `externalId` already exists and payload differs (`amount` and/or `action`) => 409 Conflict and the event MUST be logged as an integration error.
+        - If `externalId` already exists and the incoming ledger write does not match the previously accepted write => 409 Conflict and the event MUST be logged as an integration error.
+        - `sourceService` is derived from the authenticated service JWT subject, not supplied by the caller.
+        - `sourceEventId` is an optional caller-supplied audit pointer to the originating domain event or record.
 
         Limits policy (M3):
         - Per-action limits and a simple configurable per-user velocity cap are applied inside Points Service.
@@ -148,6 +150,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AddPointsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "503":
@@ -191,6 +195,12 @@ components:
   responses:
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Bad request
       content:
         application/json:
           schema:
@@ -240,18 +250,14 @@ components:
 
     ErrorResponse:
       type: object
-      required: [error]
+      required: [error, message]
       properties:
         error:
-          type: object
-          required: [code, message]
-          properties:
-            code:
-              type: string
-              example: "UNAUTHORIZED"
-            message:
-              type: string
-              example: "Invalid Authorization token"
+          type: string
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          example: "Invalid Authorization token"
         requestId:
           type: string
 
@@ -288,6 +294,14 @@ components:
           description: Signed points delta
         action:
           $ref: "#/components/schemas/PointsAction"
+        sourceService:
+          type: string
+          nullable: true
+          description: Authenticated internal caller that produced the ledger write.
+        sourceEventId:
+          type: string
+          nullable: true
+          description: Optional audit pointer to the originating domain event or record.
         externalId:
           type: string
         createdAt:
@@ -336,6 +350,9 @@ components:
         externalId:
           type: string
           description: Idempotency key (SSOT)
+        sourceEventId:
+          type: string
+          description: Optional caller-supplied audit pointer to the originating domain event or record.
         metadata:
           type: object
           additionalProperties: true

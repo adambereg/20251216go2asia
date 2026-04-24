@@ -82,7 +82,7 @@
 
 | Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
 |---|---|---|---|---|---|---|
-| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; полноценные cross-service integrations (Points/Space/Pulse/RF hooks) поэтапно |
+| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; bounded integration `quest.completed -> points-service` допустима как reward ingestion baseline, а для надёжности доставки Quest может держать delivery outbox/replay state, scheduled replay только для `pending`, а также internal ops drilldown/requeue для `failed` rows, не становясь ledger SSOT |
 
 ### AI/ML
 

@@ -1,19 +1,25 @@
 import { createDb } from '@go2asia/db';
+import { createLogger } from '@go2asia/logger';
 
 import {
   archiveQuest as archiveQuestRow,
   advanceQuestProgress,
   approveSubmission,
+  completeQuestProgressAndEnsureRewardOutbox,
   countActiveQuestProgress,
   countManagedQuests,
   countQuestProgressStats,
   countPendingQuestSubmissions,
   countPublishedQuests,
   countQuestSubmissions,
+  getQuestRewardOutboxRowsByIds,
   getBlockingSubmissionForProgressStep,
   getPublishedQuestById,
   getQuestById,
   getQuestProgressByQuestAndUser,
+  getQuestRewardOutboxStats,
+  listQuestRewardOutboxByStatus,
+  listFailedQuestRewardOutboxRows,
   getQuestStepById,
   getSubmissionForReview,
   insertQuest,
@@ -26,11 +32,17 @@ import {
   listQuestSteps,
   listQuestSubmissions,
   publishQuest as publishQuestRow,
+  requeueFailedQuestRewardOutboxRows,
   rejectSubmission,
   resequenceQuestSteps,
   setProgressPendingReview,
   syncQuestStepsCount,
+  markQuestRewardOutboxDelivered,
+  markQuestRewardOutboxFailed,
+  markQuestRewardOutboxPending,
   type QuestDifficulty,
+  type QuestRewardOutboxStatsRow,
+  type QuestRewardOutboxRow,
   type QuestStatus,
   type QuestProgressRow,
   type QuestProofType,
@@ -47,12 +59,14 @@ import {
 } from '../db/queries/quest';
 import type { QuestDomainEvent, QuestDomainEventType } from '../events/contracts';
 import type { QuestEventPublisher } from '../events/publisher';
-import type { GatewayPrincipal } from '../middleware/auth';
-import { errorResponse, json } from '../middleware/http';
+import type { GatewayPrincipal, ServicePrincipal } from '../middleware/auth';
+import { errorResponse, json, parseJsonObject } from '../middleware/http';
 
 type Env = {
   DATABASE_URL?: string;
   ENVIRONMENT?: string;
+  POINTS_SERVICE_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 };
 
 type CreateQuestInput = {
@@ -125,6 +139,12 @@ const QUEST_VERIFICATION_TYPES: QuestVerificationType[] = ['auto', 'geo', 'qr', 
 const QUEST_PROOF_TYPES: QuestProofType[] = ['photo', 'geo', 'qr', 'space_post', 'text'];
 const QUEST_TARGET_TYPES: QuestTargetType[] = ['place', 'event', 'partner', 'space_post'];
 const QUEST_SUBMISSION_STATUSES: QuestSubmissionStatus[] = ['pending', 'approved', 'rejected'];
+const QUEST_SERVICE_NAME = 'quest-service';
+const POINTS_SERVICE_NAME = 'points-service';
+const QUEST_REWARD_ACTION = 'quest_completed';
+const REPLAY_PENDING_REWARDS_DEFAULT_LIMIT = 20;
+const REPLAY_PENDING_REWARDS_MAX_LIMIT = 100;
+const SCHEDULED_REPLAY_REQUESTED_BY = 'cf-cron';
 
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
@@ -311,11 +331,263 @@ function normalizeQuestSubmission(submission: QuestSubmissionRow) {
   };
 }
 
+function normalizeQuestRewardOutboxRow(row: QuestRewardOutboxRow) {
+  return {
+    id: row.id,
+    questProgressId: row.quest_progress_id,
+    questId: row.quest_id,
+    userId: row.user_id,
+    pointsAmount: row.points_amount,
+    action: row.action,
+    externalId: row.external_id,
+    sourceEventId: row.source_event_id,
+    status: row.status,
+    attemptCount: row.attempt_count,
+    lastAttemptAt: asIso(row.last_attempt_at),
+    lastError: row.last_error,
+    createdAt: asIso(row.created_at),
+    updatedAt: asIso(row.updated_at),
+  };
+}
+
 function requireDatabaseUrl(env: Env, requestId: string): string | Response {
   if (!env.DATABASE_URL) {
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);
   }
   return env.DATABASE_URL;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function utf8ToBytes(input: string): Uint8Array {
+  return new TextEncoder().encode(input);
+}
+
+async function signHs256Jwt(payload: Record<string, unknown>, secret: string): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const headerB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(header)));
+  const payloadB64 = bytesToBase64Url(utf8ToBytes(JSON.stringify(payload)));
+  const data = utf8ToBytes(`${headerB64}.${payloadB64}`);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    utf8ToBytes(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+  return `${headerB64}.${payloadB64}.${bytesToBase64Url(signature)}`;
+}
+
+async function createServiceJwt(env: Env, targetService: string, requestId: string): Promise<string | null> {
+  if (!env.SERVICE_JWT_SECRET) return null;
+  const now = Math.floor(Date.now() / 1000);
+  return signHs256Jwt(
+    {
+      iss: 'go2asia-service-auth',
+      aud: targetService,
+      sub: QUEST_SERVICE_NAME,
+      iat: now,
+      exp: now + 300,
+      rid: requestId,
+    },
+    env.SERVICE_JWT_SECRET
+  );
+}
+
+type PointsAddPayload = {
+  userId: string;
+  amount: number;
+  action: 'quest_completed';
+  externalId: string;
+  sourceEventId: string;
+  metadata: Record<string, unknown>;
+};
+
+type RewardDeliveryResult =
+  | { outcome: 'delivered'; detail: string; applied: boolean }
+  | { outcome: 'pending'; detail: string }
+  | { outcome: 'failed'; detail: string };
+
+function buildQuestCompletionRewardPayload(input: {
+  quest: QuestRow;
+  progressId: string;
+  userId: string;
+  completedAt: string;
+}): PointsAddPayload | null {
+  const amount = input.quest.reward_points;
+  if (typeof amount !== 'number' || amount < 1) return null;
+
+  const metadata: Record<string, unknown> = {
+    questId: input.quest.id,
+    progressId: input.progressId,
+    completedAt: input.completedAt,
+    rewardSource: 'quest.reward_points',
+  };
+  const questMetadata = extractQuestMetadataProjection(input.quest.geo_scope);
+  if (questMetadata?.slug) metadata.questSlug = questMetadata.slug;
+
+  return {
+    userId: input.userId,
+    amount,
+    action: QUEST_REWARD_ACTION,
+    externalId: `quest:completed:${input.progressId}`,
+    sourceEventId: `quest.completed:${input.progressId}`,
+    metadata,
+  };
+}
+
+async function interpretPointsDeliveryResponse(
+  response: Response,
+  logger: ReturnType<typeof createLogger>,
+  input: PointsAddPayload
+): Promise<RewardDeliveryResult> {
+  const responseText = await response.text().catch(() => '');
+  const parsed = responseText ? parseJsonObject(responseText) : null;
+
+  if (response.ok) {
+    const applied = parsed?.applied;
+    const normalizedApplied = typeof applied === 'boolean' ? applied : true;
+    logger.info('Quest reward delivery accepted by Points Service', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      amount: input.amount,
+      applied: normalizedApplied,
+    });
+    return {
+      outcome: 'delivered',
+      detail: normalizedApplied ? 'Points applied reward' : 'Points accepted duplicate reward',
+      applied: normalizedApplied,
+    };
+  }
+
+  if (response.status === 409) {
+    logger.error('Quest reward delivery conflict', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      status: response.status,
+      body: responseText,
+    });
+    return { outcome: 'failed', detail: `Points conflict 409 for ${input.externalId}` };
+  }
+
+  if (response.status === 429 || response.status >= 500) {
+    logger.warn('Quest reward delivery is retryable', {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+      status: response.status,
+      body: responseText,
+    });
+    return { outcome: 'pending', detail: `Points retryable response ${response.status}` };
+  }
+
+  logger.error('Quest reward delivery failed with non-retryable response', {
+    userId: input.userId,
+    action: input.action,
+    externalId: input.externalId,
+    status: response.status,
+    body: responseText,
+  });
+  return { outcome: 'failed', detail: `Points non-retryable response ${response.status}` };
+}
+
+async function callPointsService(
+  env: Env,
+  requestId: string,
+  input: PointsAddPayload
+): Promise<RewardDeliveryResult> {
+  const logger = createLogger(requestId, QUEST_SERVICE_NAME, { env: env.ENVIRONMENT });
+  if (!env.POINTS_SERVICE_URL || !env.SERVICE_JWT_SECRET) {
+    logger.warn('Points Service integration not configured', {
+      userId: input.userId,
+      action: input.action,
+    });
+    return { outcome: 'pending', detail: 'Points Service not configured' };
+  }
+
+  const token = await createServiceJwt(env, POINTS_SERVICE_NAME, requestId);
+  if (!token) {
+    logger.error('Failed to create service JWT for Points Service');
+    return { outcome: 'pending', detail: 'Service auth failed' };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const response = await fetch(`${env.POINTS_SERVICE_URL}/internal/points/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-Request-Id': requestId,
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return interpretPointsDeliveryResponse(response, logger, input);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Quest reward delivery timed out', {
+        userId: input.userId,
+        action: input.action,
+        externalId: input.externalId,
+      });
+      return { outcome: 'pending', detail: 'Timeout' };
+    }
+
+    logger.error('Quest reward delivery error', error, {
+      userId: input.userId,
+      action: input.action,
+      externalId: input.externalId,
+    });
+    return { outcome: 'pending', detail: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+async function applyRewardDeliveryResult(
+  db: ReturnType<typeof createDb>,
+  outbox: QuestRewardOutboxRow,
+  result: RewardDeliveryResult
+): Promise<void> {
+  if (result.outcome === 'delivered') {
+    await markQuestRewardOutboxDelivered(db, outbox.id);
+    return;
+  }
+
+  if (result.outcome === 'pending') {
+    await markQuestRewardOutboxPending(db, { outboxId: outbox.id, lastError: result.detail });
+    return;
+  }
+
+  await markQuestRewardOutboxFailed(db, { outboxId: outbox.id, lastError: result.detail });
+}
+
+async function deliverQuestRewardOutboxRow(
+  env: Env,
+  requestId: string,
+  db: ReturnType<typeof createDb>,
+  outbox: QuestRewardOutboxRow
+): Promise<void> {
+  const result = await callPointsService(env, requestId, {
+    userId: outbox.user_id,
+    amount: outbox.points_amount,
+    action: QUEST_REWARD_ACTION,
+    externalId: outbox.external_id,
+    sourceEventId: outbox.source_event_id ?? `quest.completed:${outbox.quest_progress_id}`,
+    metadata: outbox.metadata ?? {},
+  });
+  await applyRewardDeliveryResult(db, outbox, result);
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -354,6 +626,174 @@ function parseOptionalObject(value: unknown): Record<string, unknown> | null | u
   if (value === null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   return value as Record<string, unknown>;
+}
+
+function parseReplayPendingRewardsInput(body: Record<string, unknown> | null): { limit: number } | null {
+  if (body === null) return { limit: REPLAY_PENDING_REWARDS_DEFAULT_LIMIT };
+  const parsedLimit = parseOptionalNonNegativeInt(body.limit);
+  if (parsedLimit === undefined || parsedLimit === null) {
+    return { limit: REPLAY_PENDING_REWARDS_DEFAULT_LIMIT };
+  }
+  return {
+    limit: Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, Math.max(1, parsedLimit)),
+  };
+}
+
+function parseOutboxListLimit(searchParams: URLSearchParams): number | null {
+  const rawLimit = searchParams.get('limit');
+  if (rawLimit === null) return REPLAY_PENDING_REWARDS_DEFAULT_LIMIT;
+
+  const parsed = Number(rawLimit);
+  if (!Number.isInteger(parsed) || parsed < 1) return null;
+  return Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, parsed);
+}
+
+function parseRequeueFailedRewardsInput(
+  body: Record<string, unknown> | null
+): { ids: string[]; reason: string | null } | null {
+  if (!body) return null;
+
+  const rawIds = body.ids;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) return null;
+
+  const ids = Array.from(
+    new Set(
+      rawIds
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .map((value) => value.trim())
+    )
+  );
+  if (ids.length === 0 || ids.length > REPLAY_PENDING_REWARDS_MAX_LIMIT) return null;
+
+  const reason = parseOptionalString(body.reason, 240);
+  if (body.reason !== undefined && reason === undefined) return null;
+
+  return {
+    ids,
+    reason: reason ?? null,
+  };
+}
+
+async function completeQuestProgressWithRewardDelivery(
+  env: Env,
+  db: ReturnType<typeof createDb>,
+  requestId: string,
+  input: {
+    quest: QuestRow;
+    progressId: string;
+    userId: string;
+    completed: boolean;
+    nextStep: number | null;
+  }
+): Promise<QuestProgressRow | null> {
+  if (!input.completed) {
+    return advanceQuestProgress(db, {
+      progressId: input.progressId,
+      nextStep: input.nextStep,
+      completed: false,
+    });
+  }
+
+  const completedAt = new Date().toISOString();
+  const payload = buildQuestCompletionRewardPayload({
+    quest: input.quest,
+    progressId: input.progressId,
+    userId: input.userId,
+    completedAt,
+  });
+
+  if (!payload) {
+    return advanceQuestProgress(db, {
+      progressId: input.progressId,
+      nextStep: null,
+      completed: true,
+    });
+  }
+
+  const completion = await completeQuestProgressAndEnsureRewardOutbox(db, {
+    progressId: input.progressId,
+    questId: input.quest.id,
+    userId: input.userId,
+    pointsAmount: payload.amount,
+    action: payload.action,
+    externalId: payload.externalId,
+    sourceEventId: payload.sourceEventId,
+    metadata: payload.metadata,
+  });
+
+  if (completion.outbox) {
+    await deliverQuestRewardOutboxRow(env, requestId, db, completion.outbox);
+  }
+
+  return completion.progress;
+}
+
+type QuestRewardReplaySummary = {
+  processed: number;
+  delivered: number;
+  stillPending: number;
+  failed: number;
+  skipped: number;
+  limit: number;
+  requestedBy: string;
+};
+
+async function runQuestRewardReplay(
+  env: Env,
+  requestId: string,
+  input: {
+    limit: number;
+    requestedBy: string;
+  }
+): Promise<QuestRewardReplaySummary | Response> {
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const rows = await listQuestRewardOutboxByStatus(db, {
+    status: 'pending',
+    limit: input.limit,
+  });
+
+  let delivered = 0;
+  let stillPending = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (row.status !== 'pending') {
+      skipped += 1;
+      continue;
+    }
+
+    const result = await callPointsService(env, requestId, {
+      userId: row.user_id,
+      amount: row.points_amount,
+      action: QUEST_REWARD_ACTION,
+      externalId: row.external_id,
+      sourceEventId: row.source_event_id ?? `quest.completed:${row.quest_progress_id}`,
+      metadata: row.metadata ?? {},
+    });
+    await applyRewardDeliveryResult(db, row, result);
+
+    if (result.outcome === 'delivered') {
+      delivered += 1;
+    } else if (result.outcome === 'pending') {
+      stillPending += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  return {
+    processed: rows.length,
+    delivered,
+    stillPending,
+    failed,
+    skipped,
+    limit: input.limit,
+    requestedBy: input.requestedBy,
+  };
 }
 
 function hasRole(principal: GatewayPrincipal, role: string): boolean {
@@ -1535,10 +1975,12 @@ export async function submitQuestStep(
   }
 
   const completed = step.order >= quest.steps_count;
-  await advanceQuestProgress(db, {
+  await completeQuestProgressWithRewardDelivery(env, db, input.requestId, {
+    quest,
     progressId: progress.id,
-    nextStep: completed ? null : step.order + 1,
+    userId: input.principal.userId,
     completed,
+    nextStep: completed ? null : step.order + 1,
   });
   await publishSubmissionApprovedSequence(env, input.requestId, input.publisher, input.principal, {
     quest,
@@ -1659,10 +2101,12 @@ export async function reviewQuestSubmission(
   const step = await getQuestStepById(db, existing.quest_id, existing.step_id);
   if (!step) return errorResponse('NOT_FOUND', 'Quest step not found', requestId, 404);
   const completed = existing.step_order >= quest.steps_count;
-  await advanceQuestProgress(db, {
+  await completeQuestProgressWithRewardDelivery(env, db, requestId, {
+    quest,
     progressId: existing.progress_id,
-    nextStep: completed ? null : existing.step_order + 1,
+    userId: approved.user_id,
     completed,
+    nextStep: completed ? null : existing.step_order + 1,
   });
   await publishSubmissionApprovedSequence(env, requestId, publisher, principal, {
     quest,
@@ -1672,4 +2116,146 @@ export async function reviewQuestSubmission(
     completed,
   });
   return json(normalizeQuestSubmission(approved), 200);
+}
+
+export async function replayPendingQuestRewardDeliveries(
+  env: Env,
+  requestId: string,
+  body: Record<string, unknown> | null,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const parsed = parseReplayPendingRewardsInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid replay payload', requestId, 400);
+  const summary = await runQuestRewardReplay(env, requestId, {
+    limit: parsed.limit,
+    requestedBy: principal.service,
+  });
+  if (summary instanceof Response) return summary;
+  return json(summary, 200);
+}
+
+export async function getQuestRewardOutboxStatsResponse(
+  env: Env,
+  requestId: string,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const stats: QuestRewardOutboxStatsRow = await getQuestRewardOutboxStats(db);
+  return json(
+    {
+      counts: {
+        pending: stats.pending_count,
+        delivered: stats.delivered_count,
+        failed: stats.failed_count,
+      },
+      oldestPending: stats.oldest_pending_created_at
+        ? {
+            createdAt: asIso(stats.oldest_pending_created_at)!,
+          }
+        : null,
+      oldestFailed: stats.oldest_failed_created_at
+        ? {
+            createdAt: asIso(stats.oldest_failed_created_at)!,
+          }
+        : null,
+      requestedBy: principal.service,
+    },
+    200
+  );
+}
+
+export async function listFailedQuestRewardOutboxResponse(
+  env: Env,
+  requestId: string,
+  url: URL,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const limit = parseOutboxListLimit(url.searchParams);
+  if (limit === null) {
+    return errorResponse('VALIDATION_ERROR', 'Invalid failed outbox list limit', requestId, 400);
+  }
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const rows = await listFailedQuestRewardOutboxRows(db, { limit });
+  return json(
+    {
+      items: rows.map(normalizeQuestRewardOutboxRow),
+      limit,
+      requestedBy: principal.service,
+    },
+    200
+  );
+}
+
+export async function requeueFailedQuestRewardDeliveries(
+  env: Env,
+  requestId: string,
+  body: Record<string, unknown> | null,
+  principal: ServicePrincipal
+): Promise<Response> {
+  const parsed = parseRequeueFailedRewardsInput(body);
+  if (!parsed) return errorResponse('VALIDATION_ERROR', 'Invalid requeue payload', requestId, 400);
+
+  const databaseUrl = requireDatabaseUrl(env, requestId);
+  if (databaseUrl instanceof Response) return databaseUrl;
+
+  const db = createDb(databaseUrl);
+  const existingRows = await getQuestRewardOutboxRowsByIds(db, parsed.ids);
+  const existingById = new Map(existingRows.map((row) => [row.id, row]));
+
+  const requeueIds: string[] = [];
+  let notFound = 0;
+  let invalidStatus = 0;
+
+  for (const id of parsed.ids) {
+    const row = existingById.get(id);
+    if (!row) {
+      notFound += 1;
+      continue;
+    }
+    if (row.status !== 'failed') {
+      invalidStatus += 1;
+      continue;
+    }
+    requeueIds.push(id);
+  }
+
+  const reasonNote = parsed.reason ? `Manual requeue requested by ${principal.service}: ${parsed.reason}` : null;
+  const requeuedRows = await requeueFailedQuestRewardOutboxRows(db, {
+    ids: requeueIds,
+    reasonNote,
+  });
+
+  const requested = parsed.ids.length;
+  const requeued = requeuedRows.length;
+  const skipped = requested - requeued;
+
+  return json(
+    {
+      requested,
+      requeued,
+      skipped,
+      notFound,
+      invalidStatus,
+      requestedBy: principal.service,
+    },
+    200
+  );
+}
+
+export async function runScheduledQuestRewardReplay(
+  env: Env,
+  requestId: string,
+  limit = REPLAY_PENDING_REWARDS_DEFAULT_LIMIT
+): Promise<QuestRewardReplaySummary | Response> {
+  return runQuestRewardReplay(env, requestId, {
+    limit: Math.min(REPLAY_PENDING_REWARDS_MAX_LIMIT, Math.max(1, limit)),
+    requestedBy: SCHEDULED_REPLAY_REQUESTED_BY,
+  });
 }
