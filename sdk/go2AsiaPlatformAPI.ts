@@ -22,6 +22,7 @@ import type {
   ClerkWebhook200,
   ClerkWebhookBody,
   ConflictResponse,
+  ConnectDashboardResponse,
   ContentArticleDto,
   ContentBlogPostDetailDto,
   ContentEventDto,
@@ -43,6 +44,7 @@ import type {
   GenerateCodeRequest,
   GenerateCodeResponse,
   GetActivityFeedParams,
+  GetConnectDashboardParams,
   GetGroupFeedParams,
   GetHomeFeedParams,
   GetProfileFeedParams,
@@ -2130,6 +2132,72 @@ export const getPointsBalance = async (
   options?: RequestInit
 ): Promise<getPointsBalanceResponse> => {
   return customInstance<getPointsBalanceResponse>(getGetPointsBalanceUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns a bounded convenience dashboard surface composed from real backend facts only. Important: - This endpoint is read-only and does not become source of truth. - Balance remains sourced from `user_balances`. - Transactions remain sourced from `points_transactions`. - Badge data remains sourced from `badges` and `user_badges`. - Referral summary is a lightweight convenience composition and does not move referral ownership into Points Service.
+
+ * @summary Get current user Connect dashboard read model
+ */
+export type getConnectDashboardResponse200 = {
+  data: ConnectDashboardResponse;
+  status: 200;
+};
+
+export type getConnectDashboardResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getConnectDashboardResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getConnectDashboardResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getConnectDashboardResponseSuccess = getConnectDashboardResponse200 & {
+  headers: Headers;
+};
+export type getConnectDashboardResponseError = (
+  | getConnectDashboardResponse401
+  | getConnectDashboardResponse500
+  | getConnectDashboardResponse503
+) & {
+  headers: Headers;
+};
+
+export type getConnectDashboardResponse =
+  | getConnectDashboardResponseSuccess
+  | getConnectDashboardResponseError;
+
+export const getGetConnectDashboardUrl = (params?: GetConnectDashboardParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/points/connect-dashboard?${stringifiedParams}`
+    : `/v1/points/connect-dashboard`;
+};
+
+export const getConnectDashboard = async (
+  params?: GetConnectDashboardParams,
+  options?: RequestInit
+): Promise<getConnectDashboardResponse> => {
+  return customInstance<getConnectDashboardResponse>(getGetConnectDashboardUrl(params), {
     ...options,
     method: "GET",
   });

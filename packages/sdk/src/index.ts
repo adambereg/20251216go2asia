@@ -11,6 +11,7 @@ export * as badges from './badges';
 export * as balance from './balance';
 export * as blog from './blog';
 export * as clerk from './clerk-integration';
+export * as connectDashboard from './connectDashboard';
 export * as content from './content';
 export * as guides from './guides';
 export * as media from './media';

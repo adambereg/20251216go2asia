@@ -50,6 +50,10 @@
       "types": "./src/clerk-integration.ts",
       "default": "./src/clerk-integration.ts"
     },
+    "./connectDashboard": {
+      "types": "./src/connectDashboard.ts",
+      "default": "./src/connectDashboard.ts"
+    },
     "./mutator": {
       "types": "./src/mutator.ts",
       "default": "./src/mutator.ts"

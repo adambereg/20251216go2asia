@@ -79,9 +79,32 @@ type UserBadgeWithCatalogRow = UserBadgeAwardRow & {
   badge_icon_key: string | null;
 };
 
+type PointsTransactionRow = {
+  id: string;
+  user_id: string;
+  amount: number;
+  reason: string;
+  source_service: string | null;
+  source_event_id: string | null;
+  external_id: string;
+  metadata: unknown;
+  created_at: Date | string;
+};
+
+type ReferralDashboardSummaryRow = {
+  total_referrals: number;
+  activated_referrals: number;
+  pending_referrals: number;
+  total_earned_points: number;
+};
+
 const SERVICE_NAME = 'points-service';
 const BADGE_LIST_DEFAULT_LIMIT = 20;
 const BADGE_LIST_MAX_LIMIT = 100;
+const DASHBOARD_TRANSACTIONS_DEFAULT_LIMIT = 5;
+const DASHBOARD_TRANSACTIONS_MAX_LIMIT = 20;
+const DASHBOARD_BADGES_DEFAULT_LIMIT = 5;
+const DASHBOARD_BADGES_MAX_LIMIT = 20;
 
 /**
  * Phase 2 action contract (Points-only).
@@ -461,6 +484,25 @@ async function getUserBalance(db: Db, userId: string): Promise<{ balance: number
   };
 }
 
+async function getDashboardBalance(db: Db, userId: string): Promise<{ points: number; updatedAt: string | null }> {
+  const result = await db.execute(
+    sql`SELECT balance, updated_at FROM user_balances WHERE user_id = ${userId} LIMIT 1`
+  );
+
+  const row = getRows<{ balance: number; updated_at: Date | string }>(result)[0];
+  if (!row) {
+    return {
+      points: 0,
+      updatedAt: null,
+    };
+  }
+
+  return {
+    points: Number(row.balance ?? 0),
+    updatedAt: asIso(row.updated_at),
+  };
+}
+
 function asIso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   return (value instanceof Date ? value : new Date(value)).toISOString();
@@ -487,6 +529,27 @@ function normalizeUserBadgeItem(row: UserBadgeWithCatalogRow) {
     awardedAt: asIso(row.earned_at)!,
     sourceType: row.source_type,
     sourceId: row.source_id,
+  };
+}
+
+function normalizeDashboardTransactionItem(row: PointsTransactionRow) {
+  return {
+    id: row.id,
+    amount: Number(row.amount),
+    action: row.reason,
+    sourceService: row.source_service,
+    sourceEventId: row.source_event_id,
+    createdAt: asIso(row.created_at)!,
+  };
+}
+
+function normalizeDashboardBadgeItem(row: UserBadgeWithCatalogRow) {
+  return {
+    badgeCode: row.badge_code ?? row.badge_id,
+    title: row.badge_title ?? row.badge_name,
+    category: row.badge_category,
+    iconKey: row.badge_icon_key,
+    awardedAt: asIso(row.earned_at)!,
   };
 }
 
@@ -545,6 +608,50 @@ async function listUserBadges(db: Db, userId: string, limit: number): Promise<Us
     LIMIT ${limit}
   `);
   return getRows<UserBadgeWithCatalogRow>(result);
+}
+
+async function countUserBadges(db: Db, userId: string): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM user_badges
+    WHERE user_id = ${userId}
+  `);
+  return Number(getRows<{ total: number }>(result)[0]?.total ?? 0);
+}
+
+async function listDashboardTransactions(db: Db, userId: string, limit: number): Promise<PointsTransactionRow[]> {
+  const result = await db.execute(sql`
+    SELECT id, user_id, amount, reason, source_service, source_event_id, external_id, metadata, created_at
+    FROM points_transactions
+    WHERE user_id = ${userId}
+    ORDER BY created_at DESC, id DESC
+    LIMIT ${limit}
+  `);
+  return getRows<PointsTransactionRow>(result);
+}
+
+async function getDashboardReferralSummary(db: Db, userId: string): Promise<ReferralDashboardSummaryRow> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*)::int AS total_referrals,
+      COUNT(*) FILTER (WHERE rr.first_login_at IS NOT NULL)::int AS activated_referrals,
+      COUNT(*) FILTER (WHERE rr.first_login_at IS NULL)::int AS pending_referrals,
+      COALESCE(SUM(pt.amount), 0)::int AS total_earned_points
+    FROM referral_relations rr
+    LEFT JOIN points_transactions pt
+      ON pt.user_id = rr.referrer_id
+      AND pt.reason = 'referral_bonus_referrer'
+      AND pt.external_id = ('referral:first_login:' || rr.referrer_id || ':' || rr.referee_id)
+    WHERE rr.referrer_id = ${userId}
+  `);
+  return (
+    getRows<ReferralDashboardSummaryRow>(result)[0] ?? {
+      total_referrals: 0,
+      activated_referrals: 0,
+      pending_referrals: 0,
+      total_earned_points: 0,
+    }
+  );
 }
 
 function decideBadgeAwardIdempotency(
@@ -708,6 +815,55 @@ export default {
         const { balance, updatedAt } = await getUserBalance(db, userId);
 
         const res = json({ userId, balance, updatedAt: updatedAt.toISOString() }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/points/connect-dashboard') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+        const userId = auth.principal.userId;
+        const transactionsLimit = parseLimit(
+          url.searchParams.get('transactionsLimit'),
+          DASHBOARD_TRANSACTIONS_DEFAULT_LIMIT,
+          DASHBOARD_TRANSACTIONS_MAX_LIMIT
+        );
+        const badgesLimit = parseLimit(
+          url.searchParams.get('badgesLimit'),
+          DASHBOARD_BADGES_DEFAULT_LIMIT,
+          DASHBOARD_BADGES_MAX_LIMIT
+        );
+
+        const db = createDb(requireDatabase(env));
+        const [balance, transactions, totalBadges, recentBadges, referrals] = await Promise.all([
+          getDashboardBalance(db, userId),
+          listDashboardTransactions(db, userId, transactionsLimit),
+          countUserBadges(db, userId),
+          listUserBadges(db, userId, badgesLimit),
+          getDashboardReferralSummary(db, userId),
+        ]);
+
+        const res = json(
+          {
+            balance,
+            recentTransactions: transactions.map(normalizeDashboardTransactionItem),
+            referrals: {
+              totalEarnedPoints: Number(referrals.total_earned_points ?? 0),
+              activatedReferrals: Number(referrals.activated_referrals ?? 0),
+              pendingReferrals: Number(referrals.pending_referrals ?? 0),
+              totalReferrals: Number(referrals.total_referrals ?? 0),
+            },
+            badges: {
+              totalBadges,
+              recent: recentBadges.map(normalizeDashboardBadgeItem),
+            },
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

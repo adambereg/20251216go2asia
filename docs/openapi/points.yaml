@@ -83,6 +83,54 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /v1/points/connect-dashboard:
+    get:
+      tags: [points]
+      operationId: getConnectDashboard
+      summary: Get current user Connect dashboard read model
+      description: >
+        User-facing read endpoint (called via gateway). Returns a bounded convenience dashboard surface composed from real backend facts only.
+        Important:
+        - This endpoint is read-only and does not become source of truth.
+        - Balance remains sourced from `user_balances`.
+        - Transactions remain sourced from `points_transactions`.
+        - Badge data remains sourced from `badges` and `user_badges`.
+        - Referral summary is a lightweight convenience composition and does not move referral ownership into Points Service.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - name: transactionsLimit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+        - name: badgesLimit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectDashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /v1/points/transactions:
     get:
       tags: [points]
@@ -430,6 +478,100 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    ConnectDashboardBalance:
+      type: object
+      required: [points, updatedAt]
+      properties:
+        points:
+          type: integer
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ConnectDashboardTransactionItem:
+      type: object
+      required: [id, amount, action, createdAt]
+      properties:
+        id:
+          type: string
+        amount:
+          type: integer
+        action:
+          $ref: "#/components/schemas/PointsAction"
+        sourceService:
+          type: string
+          nullable: true
+        sourceEventId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ConnectDashboardReferrals:
+      type: object
+      required: [totalEarnedPoints, activatedReferrals, pendingReferrals, totalReferrals]
+      properties:
+        totalEarnedPoints:
+          type: integer
+          minimum: 0
+        activatedReferrals:
+          type: integer
+          minimum: 0
+        pendingReferrals:
+          type: integer
+          minimum: 0
+        totalReferrals:
+          type: integer
+          minimum: 0
+
+    ConnectDashboardBadgeItem:
+      type: object
+      required: [badgeCode, title, awardedAt]
+      properties:
+        badgeCode:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          nullable: true
+        iconKey:
+          type: string
+          nullable: true
+        awardedAt:
+          type: string
+          format: date-time
+
+    ConnectDashboardBadges:
+      type: object
+      required: [totalBadges, recent]
+      properties:
+        totalBadges:
+          type: integer
+          minimum: 0
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectDashboardBadgeItem"
+
+    ConnectDashboardResponse:
+      type: object
+      required: [balance, recentTransactions, referrals, badges]
+      properties:
+        balance:
+          $ref: "#/components/schemas/ConnectDashboardBalance"
+        recentTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectDashboardTransactionItem"
+        referrals:
+          $ref: "#/components/schemas/ConnectDashboardReferrals"
+        badges:
+          $ref: "#/components/schemas/ConnectDashboardBadges"
 
     TransactionsPage:
       type: object
