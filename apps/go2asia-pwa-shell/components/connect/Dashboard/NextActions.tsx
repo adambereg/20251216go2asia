@@ -28,9 +28,6 @@ export function NextActions({ actions }: NextActionsProps) {
                     <span className="text-sm font-medium text-emerald-600">
                       +{action.reward.points || 0} Points
                     </span>
-                    {action.reward.nft && (
-                      <span className="text-xs text-purple-600">+ NFT</span>
-                    )}
                   </div>
                   <Button
                     variant="primary"
