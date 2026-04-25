@@ -2,17 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@go2asia/ui';
-import { X, Copy, Share2, QrCode } from 'lucide-react';
+import { X, Copy, Share2 } from 'lucide-react';
 
 interface InviteModalProps {
   isOpen: boolean;
   onClose: () => void;
   referralLink: string;
-  referralQR?: string;
-  kind?: 'user' | 'business';
 }
 
-export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 'user' }: InviteModalProps) {
+export function InviteModal({ isOpen, onClose, referralLink }: InviteModalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -25,7 +23,7 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 
     if (navigator.share) {
       navigator.share({
         title: 'Присоединяйся к Go2Asia',
-        text: 'Присоединяйся к Go2Asia и получай награды!',
+        text: 'Присоединяйся к Go2Asia и отслеживай начисления Points.',
         url: referralLink,
       });
     } else {
@@ -44,19 +42,11 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 
 
   if (!isOpen) return null;
 
-  const title = kind === 'business' ? 'Пригласить бизнес‑партнёра' : 'Пригласить друга';
-  const missionsTitle = kind === 'business' ? 'Что получит партнёр:' : 'Миссии реферала:';
-  const missions =
-    kind === 'business'
-      ? ['Заполнить профиль компании', 'Добавить 1 оффер/услугу', 'Пройти онбординг RF/PRO (если доступно)']
-      : ['Завершить 1 квест', 'Оставить отзыв в RF', 'Опубликовать пост в Space'];
-
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full">
-        {/* Заголовок */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900">{title}</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900">Пригласить друга</h3>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -65,11 +55,10 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 
           </button>
         </div>
 
-        {/* Реферальная ссылка */}
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-slate-700 mb-2 block">
-              Реферальная ссылка
+              Ссылка для приглашения
             </label>
             <div className="flex gap-2">
               <input
@@ -80,32 +69,17 @@ export function InviteModal({ isOpen, onClose, referralLink, referralQR, kind = 
               />
               <Button variant="secondary" onClick={handleCopy} size="sm">
                 <Copy size={16} />
-                {copied ? 'Скопировано!' : 'Копировать'}
+                {copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}
               </Button>
             </div>
           </div>
 
-          {/* QR код (если есть) */}
-          {referralQR && (
-            <div className="text-center">
-              <div className="inline-block p-4 bg-white border-2 border-slate-200 rounded-lg">
-                <QrCode className="w-32 h-32 text-slate-400" />
-              </div>
-              <p className="text-xs text-slate-500 mt-2">QR-код для приглашения</p>
-            </div>
-          )}
-
-          {/* Миссии реферала */}
           <div className="p-4 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium text-slate-700 mb-2">{missionsTitle}</p>
-            <ul className="text-sm text-slate-600 space-y-1">
-              {missions.map((m) => (
-                <li key={m}>• {m}</li>
-              ))}
-            </ul>
+            <p className="text-sm text-slate-600">
+              Поделитесь ссылкой с другом. Когда приглашённый пользователь станет активным, начисление появится в истории Points.
+            </p>
           </div>
 
-          {/* Кнопки шаринга */}
           <div className="flex gap-2">
             <Button variant="secondary" onClick={handleShare} className="flex-1">
               <Share2 size={16} className="mr-2" />

@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Кошелёк | Connect Asia | Go2Asia',
-  description: 'Управляйте балансом Points, G2A токенов и NFT бейджей',
+  description: 'История Points и начислений за вашу активность',
 };
 
 export default function WalletPage() {

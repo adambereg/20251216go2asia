@@ -1,148 +1,206 @@
 'use client';
 
 import { ConnectHero, ConnectNav } from '../Shared';
-import { LevelProgress } from './LevelProgress';
 import { AchievementsList } from './AchievementsList';
-import { Card, Badge } from '@go2asia/ui';
-import { Lock, Unlock, Sparkles } from 'lucide-react';
-import type { LevelsData } from '../types';
-import { mockLevelsData } from '../mockData';
-import { getDataSource } from '@/mocks/dto';
+import { Badge, Button, Card, SkeletonCard } from '@go2asia/ui';
+import { AlertCircle, Award, RefreshCw } from 'lucide-react';
+import { useGetBadgeCatalog, useGetMyBadges, type BadgeCatalogItem, type UserBadgeItem } from '@go2asia/sdk/badges';
+import type { BadgeAchievement } from '../types';
 
-interface LevelsViewProps {
-  initialData?: LevelsData;
+const BADGE_COPY: Record<string, { title: string; description: string; emptyHint: string; category: string }> = {
+  first_quest_completed: {
+    title: 'Первый квест завершён',
+    description: 'Вы завершили первый квест в Go2Asia.',
+    emptyHint: 'Завершите первый квест, чтобы получить этот бейдж.',
+    category: 'Квесты',
+  },
+  first_referral_activated: {
+    title: 'Первый активный реферал',
+    description: 'Первый приглашённый пользователь стал активным.',
+    emptyHint: 'Пригласите друга и дождитесь его активации.',
+    category: 'Рефералы',
+  },
+  first_space_post: {
+    title: 'Первый пост в Space',
+    description: 'Вы сделали первую публикацию в Space Asia.',
+    emptyHint: 'Опубликуйте первый пост в Space, когда эта возможность будет подключена к бейджам.',
+    category: 'Space',
+  },
+};
+
+function normalizeCategory(category: string | null | undefined) {
+  if (!category) return 'Go2Asia';
+  const normalized = category.toLowerCase();
+  if (normalized.includes('quest') || normalized.includes('квест')) return 'Квесты';
+  if (normalized.includes('referral') || normalized.includes('реферал')) return 'Рефералы';
+  if (normalized.includes('space')) return 'Space';
+  return 'Go2Asia';
 }
 
-export function LevelsView({ initialData = mockLevelsData }: LevelsViewProps) {
-  const dataSource = getDataSource();
-  const currentLevel = initialData.level.current;
-  const nextLevel = currentLevel + 1;
+function fromCatalogItem(item: BadgeCatalogItem, awarded?: UserBadgeItem): BadgeAchievement {
+  const copy = BADGE_COPY[item.code];
+  return {
+    key: item.code,
+    title: copy?.title ?? item.title,
+    description: copy?.description ?? item.description ?? '',
+    category: copy?.category ?? normalizeCategory(item.category),
+    iconKey: item.iconKey,
+    awardedAt: awarded?.awardedAt ?? null,
+    isEarned: Boolean(awarded),
+    emptyHint: copy?.emptyHint,
+  };
+}
 
-  const levels = Array.from({ length: 10 }, (_, i) => {
-    const lvl = i + 1;
-    const locked = lvl > currentLevel;
-    const benefits: string[] = [
-      lvl === 1 ? 'Базовый доступ к экосистеме' : '',
-      lvl === 2 ? 'Множитель Points +5%' : '',
-      lvl === 3 ? 'Доступ к ежедневным миссиям' : '',
-      lvl === 4 ? 'Множитель Points +10%' : '',
-      lvl === 5 ? 'Доступ к сезонным миссиям' : '',
-      lvl === 6 ? 'Приоритетные награды' : '',
-      lvl === 7 ? 'Спецпредложения от партнёров' : '',
-      lvl === 8 ? 'Множитель Points +20%' : '',
-      lvl === 9 ? 'Доступ к эксклюзивным ивентам' : '',
-      lvl === 10 ? 'Максимальный множитель +30%' : '',
-    ].filter(Boolean);
-    return { lvl, locked, benefits };
-  });
+function fromAwardedOnly(item: UserBadgeItem): BadgeAchievement {
+  const copy = BADGE_COPY[item.badgeCode];
+  return {
+    key: item.badgeCode,
+    title: copy?.title ?? item.title,
+    description: copy?.description ?? item.description ?? '',
+    category: copy?.category ?? normalizeCategory(item.category),
+    iconKey: item.iconKey,
+    awardedAt: item.awardedAt,
+    isEarned: true,
+    emptyHint: copy?.emptyHint,
+  };
+}
+
+export function LevelsView() {
+  const {
+    data: catalogData,
+    isLoading: catalogLoading,
+    isError: catalogError,
+    refetch: refetchCatalog,
+  } = useGetBadgeCatalog();
+  const {
+    data: myBadgesData,
+    isLoading: myBadgesLoading,
+    isError: myBadgesError,
+    refetch: refetchMyBadges,
+  } = useGetMyBadges({ limit: 100 });
+
+  const isLoading = catalogLoading || myBadgesLoading;
+  const hasError = catalogError || myBadgesError;
+
+  const badgesByCode = new Map((myBadgesData?.items ?? []).map((badge) => [badge.badgeCode, badge]));
+  const catalogBadges = (catalogData?.items ?? [])
+    .filter((badge) => badge.isActive)
+    .map((badge) => fromCatalogItem(badge, badgesByCode.get(badge.code)));
+  const catalogCodes = new Set(catalogBadges.map((badge) => badge.key));
+  const awardedOnlyBadges = (myBadgesData?.items ?? [])
+    .filter((badge) => !catalogCodes.has(badge.badgeCode))
+    .map(fromAwardedOnly);
+  const badges = [...catalogBadges, ...awardedOnlyBadges];
+  const earnedCount = badges.filter((badge) => badge.isEarned).length;
+
+  const handleRetry = () => {
+    refetchCatalog();
+    refetchMyBadges();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <ConnectHero subtitle="Ваши достижения в Go2Asia." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+          <ConnectNav />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-sm text-slate-600 mb-4">Загружаем данные Connect…</p>
+          <div className="space-y-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <ConnectHero subtitle="Ваши достижения в Go2Asia." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+          <ConnectNav />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="p-6 bg-red-50 border border-red-200">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800 mb-1">Не удалось загрузить бейджи</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 mt-3"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Повторить
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Центр экономики и геймификации Go2Asia" badgeText={dataSource === 'mock' ? 'MOCK DATA' : undefined} />
+      <ConnectHero subtitle="Ваши достижения в Go2Asia." />
 
-      {/* Навигация */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <ConnectNav />
       </div>
 
-      {/* Основной контент */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Уровни и достижения</h1>
-          <p className="text-slate-600 mt-1">Твой прогресс в экосистеме Go2Asia</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Бейджи и достижения</h1>
+          <p className="text-slate-600 mt-1">Смотрите полученные и доступные бейджи Connect.</p>
         </div>
 
-        {/* Прогресс уровня */}
-        <LevelProgress level={initialData.level} />
-
-        {/* Что откроется на следующем уровне */}
-        <Card className="p-6 mb-8 bg-purple-50 border border-purple-200">
+        <Card className="p-6 mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 text-purple-700">
-                <Sparkles className="w-5 h-5" />
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-emerald-100 text-emerald-700">
+                <Award className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-purple-900">Что откроется на уровне {nextLevel}</h2>
-                <p className="text-sm text-purple-900/80 mt-1">
-                  Продолжай качать XP, чтобы получить новые возможности
-                </p>
+                <p className="text-sm text-slate-600">Получено бейджей</p>
+                <p className="text-3xl font-bold text-slate-900 mt-1">{earnedCount}</p>
               </div>
             </div>
-            <Badge className="bg-purple-200 text-purple-800">Скоро</Badge>
           </div>
-          <ul className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-purple-900/90">
-            <li>→ Приоритетный доступ к событиям</li>
-            <li>→ Специальные предложения от партнёров</li>
-            <li>→ Ускоренный рост XP</li>
-            <li>→ Бонус к наградам в сезоне</li>
-          </ul>
-          <p className="text-xs text-purple-900/70 mt-3">
-            Зачем повышать уровень? Каждый новый уровень даёт реальную ценность: больше возможностей и ускоренный рост.
+          <p className="text-sm text-slate-600 mt-4">
+            Бейджи отмечают подтверждённые действия в Go2Asia. Сейчас здесь показаны только off-chain бейджи из каталога и ваши полученные бейджи.
           </p>
         </Card>
 
-        {/* Все уровни */}
-        <div className="mb-10">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Все уровни</h2>
-          <div className="space-y-3">
-            {levels.map(({ lvl, locked, benefits }) => (
-              <Card
-                key={lvl}
-                className={`p-4 border ${
-                  lvl === currentLevel
-                    ? 'border-emerald-300 bg-emerald-50'
-                    : locked
-                      ? 'border-slate-200 bg-white opacity-80'
-                      : 'border-slate-200 bg-white'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2 rounded-lg ${
-                        locked ? 'bg-slate-100 text-slate-500' : 'bg-emerald-100 text-emerald-700'
-                      }`}
-                    >
-                      {locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900">Уровень {lvl}</p>
-                        {lvl === currentLevel ? (
-                          <Badge className="bg-emerald-200 text-emerald-800">Текущий</Badge>
-                        ) : locked ? (
-                          <Badge className="bg-slate-100 text-slate-600">Закрыт</Badge>
-                        ) : null}
-                      </div>
-                      {benefits.length > 0 ? (
-                        <p className="text-sm text-slate-600 mt-1">{benefits[0]}</p>
-                      ) : (
-                        <p className="text-sm text-slate-600 mt-1">—</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-500 text-right">
-                    {locked ? 'ещё не доступен' : 'доступен'}
-                  </div>
-                </div>
-                {benefits.length > 1 ? (
-                  <ul className="mt-3 text-xs text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-1">
-                    {benefits.slice(1).map((b) => (
-                      <li key={b}>• {b}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Достижения */}
         <div>
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Достижения</h2>
-          <AchievementsList achievements={initialData.achievements} />
+          {badges.length > 0 ? (
+            <AchievementsList badges={badges} />
+          ) : (
+            <Card className="p-8 text-center">
+              <p className="text-slate-600 font-medium">У вас пока нет бейджей.</p>
+              <p className="text-sm text-slate-500 mt-1">Завершите первый квест, чтобы получить первый бейдж.</p>
+            </Card>
+          )}
         </div>
+
+        <Card className="p-5 mt-6 bg-slate-50 border border-slate-200">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Уровни в разработке</p>
+              <p className="text-sm text-slate-600 mt-1">
+                Мы не показываем прогресс уровней без backend-данных. Пока отслеживайте Points и бейджи.
+              </p>
+            </div>
+            <Badge className="bg-slate-100 text-slate-600">Появится позже</Badge>
+          </div>
+        </Card>
       </div>
     </div>
   );

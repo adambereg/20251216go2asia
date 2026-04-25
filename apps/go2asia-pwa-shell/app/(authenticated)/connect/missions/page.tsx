@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Миссии | Connect Asia | Go2Asia',
-  description: 'Выполняйте задания и получайте награды',
+  description: 'Персональные задания Connect появятся позже',
 };
 
 export default function MissionsPage() {
