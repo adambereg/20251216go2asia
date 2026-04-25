@@ -31,8 +31,16 @@ export type MissionType = 'daily' | 'weekly' | 'seasonal';
 /** Тип реферала */
 export type ReferralType = 'user' | 'partner';
 
-/** Статус реферала в воронке */
-export type ReferralFunnelStage = 'registered' | 'active' | 'completed_mission' | 'inactive';
+/** Статус реферала в воронке и earnings read model */
+export type ReferralFunnelStage =
+  | 'registered'
+  | 'active'
+  | 'completed_mission'
+  | 'inactive'
+  | 'pending'
+  | 'activated'
+  | 'rewarded'
+  | 'reward_missing';
 
 // =============================================================================
 // Балансы
@@ -161,6 +169,9 @@ export interface Referral {
     g2a: number;
   };
   invited_at: string;
+  activated_at?: string | null;
+  points_applied_at?: string | null;
+  status_helper_text?: string;
   missions_completed?: number;
   missions_total?: number;
 }
@@ -170,6 +181,8 @@ export interface ReferralStats {
   total_partners: number;
   earned_points: number;
   earned_g2a: number;
+  activated_referrals?: number;
+  pending_referrals?: number;
 }
 
 // =============================================================================
@@ -252,6 +265,7 @@ export interface LevelsData {
 export interface ReferralsData {
   stats: ReferralStats;
   referrals: Referral[];
+  referral_code?: string;
   referral_link: string;
   referral_qr?: string;
 }

@@ -1,196 +1,203 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { ConnectHero, ConnectNav, DemoModeBanner } from '../Shared';
+import { useMemo, useState } from 'react';
+import { ConnectHero, ConnectNav } from '../Shared';
 import { InviteModal } from './InviteModal';
-import { useGetReferralCode, useGetReferralStats, useGetReferralTree } from '@go2asia/sdk/referrals';
-import type { ReferralsData, ReferralStats as ReferralStatsType, Referral } from '../types';
-import { mockReferralsData } from '../mockData';
+import {
+  useGetReferralCode,
+  useGetReferralEarnings,
+  useGetReferralStats,
+  useGetReferralTree,
+  type ReferralEarningsItem,
+  type ReferralTreeNode,
+} from '@go2asia/sdk/referrals';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Button, Card, SkeletonCard } from '@go2asia/ui';
+import type { Referral, ReferralsData, ReferralStats as ReferralStatsType } from '../types';
 import { ReferralsContent } from './ReferralsContent';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 
 interface ReferralsViewProps {
   initialData?: ReferralsData;
 }
 
-/**
- * Error object structure from API
- */
-interface ApiError {
-  error?: {
-    code?: string;
-    message?: string;
-  };
-  status?: number;
-  requestId?: string;
-}
-
-function isFallbackError(error: unknown): boolean {
-  // No error => no fallback
-  if (!error) return false;
-
-  const apiError = error as ApiError;
-  const status = apiError.status || 0;
-
-  // Auth errors are handled separately (redirect/UX), not "demo mode"
-  if (status === 401 || status === 403) return false;
-
-  // Network / timeout / CORS (treated as status=0 by SDK)
-  if (status === 0) return true;
-
-  // Only fallback for "API unavailable / not found / server errors"
-  return status === 404 || status >= 500;
-}
-
-function handleApiError(error: unknown, router: ReturnType<typeof useRouter>) {
-  const apiError = error as ApiError;
-  const status = apiError.status || 0;
-
-  if (status === 0 || !status) {
-    toast.error('Проверьте подключение к интернету');
-    return;
-  }
-
-  if (status === 401) {
-    const currentPath = window.location.pathname + window.location.search;
-    router.push(`/sign-in?redirect_url=${encodeURIComponent(currentPath)}`);
-    return;
-  }
-
-  if (status === 403) {
-    toast.error('У вас нет доступа к этому ресурсу');
-    return;
-  }
-
-  if (status >= 500) {
-    toast.error('Произошла ошибка сервера. Попробуйте позже');
-    return;
-  }
-
-  toast.error(apiError.error?.message || 'Произошла ошибка');
-}
-
 function shortUserLabel(userId: string) {
-  const tail = userId.length > 8 ? userId.slice(-8) : userId;
-  return `Пользователь • ${tail}`;
+  const tail = userId.slice(-4).toUpperCase();
+  return `Пользователь …${tail}`;
+}
+
+function buildReferralLink(code: string) {
+  if (!code) return '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://go2asia.space';
+  return `${origin}/sign-up?ref=${encodeURIComponent(code)}`;
+}
+
+function getStatusHelperText(item: ReferralEarningsItem) {
+  if (item.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
+  if (item.status === 'pending') return 'Пользователь приглашён, но ещё не стал активным.';
+  if (item.status === 'activated') return 'Пользователь стал активным, начисление может ещё обрабатываться.';
+  return 'Points за приглашение уже начислены.';
+}
+
+function mapEarningItem(item: ReferralEarningsItem, registeredAt?: string): Referral {
+  return {
+    id: item.refereeUserId,
+    type: 'user',
+    name: shortUserLabel(item.refereeUserId),
+    status: item.status,
+    earned_rewards: { points: item.earnedPoints, g2a: 0 },
+    invited_at: registeredAt ?? item.activatedAt ?? item.pointsAppliedAt ?? '',
+    activated_at: item.activatedAt,
+    points_applied_at: item.pointsAppliedAt,
+    status_helper_text: getStatusHelperText(item),
+  };
+}
+
+function mapTreeNode(node: ReferralTreeNode): Referral {
+  return {
+    id: node.userId,
+    type: 'user',
+    name: shortUserLabel(node.userId),
+    status: node.isActive ? 'activated' : 'pending',
+    earned_rewards: { points: 0, g2a: 0 },
+    invited_at: node.registeredAt,
+    activated_at: node.firstLoginAt ?? null,
+    status_helper_text: node.isActive
+      ? 'Пользователь стал активным, начисление может ещё обрабатываться.'
+      : 'Пользователь приглашён, но ещё не стал активным.',
+  };
 }
 
 export function ReferralsView({ initialData }: ReferralsViewProps) {
-  const router = useRouter();
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteKind, setInviteKind] = useState<'user' | 'business'>('user');
 
   const {
     data: referralCodeData,
     isLoading: codeLoading,
-    error: codeError,
+    isError: codeError,
     refetch: refetchCode,
   } = useGetReferralCode();
   const {
     data: referralStatsData,
     isLoading: statsLoading,
-    error: statsError,
+    isError: statsError,
     refetch: refetchStats,
   } = useGetReferralStats();
-  
-  // Загружаем дерево рефералов из API
   const {
     data: referralTreeData,
     isLoading: treeLoading,
-    error: treeError,
+    isError: treeError,
     refetch: refetchTree,
   } = useGetReferralTree({ depth: 2 });
+  const {
+    data: referralEarningsData,
+    isLoading: earningsLoading,
+    isError: earningsError,
+    refetch: refetchEarnings,
+  } = useGetReferralEarnings({ limit: 50 });
 
-  useEffect(() => {
-    if (codeError) handleApiError(codeError, router);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeError]);
-
-  useEffect(() => {
-    if (statsError) handleApiError(statsError, router);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statsError]);
-
-  useEffect(() => {
-    if (treeError) handleApiError(treeError, router);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [treeError]);
-
-  const isFallback = isFallbackError(codeError) || isFallbackError(statsError) || isFallbackError(treeError);
   const handleRetry = () => {
     refetchCode();
     refetchStats();
     refetchTree();
+    refetchEarnings();
   };
 
-  // Преобразуем данные из API в формат компонента
   const data = useMemo(() => {
     if (initialData) return initialData;
 
-    if (isFallback) return mockReferralsData;
-
+    const earningsSummary = referralEarningsData?.summary;
     const stats: ReferralStatsType = {
-      total_users: referralStatsData?.directReferralsCount ?? 0,
+      total_users: earningsSummary?.totalReferrals ?? referralStatsData?.directReferralsCount ?? 0,
       total_partners: 0,
-      earned_points: 0,
+      earned_points: earningsSummary?.totalEarnedPoints ?? 0,
       earned_g2a: 0,
+      activated_referrals: earningsSummary?.activatedReferrals,
+      pending_referrals: earningsSummary?.pendingReferrals,
     };
 
-    const referrals: Referral[] = [];
-
-    const direct = referralTreeData?.referrals ?? [];
-    for (const d of direct) {
-      referrals.push({
-        id: d.userId,
-        type: 'user',
-        name: shortUserLabel(d.userId),
-        avatar: undefined,
-        status: d.isActive ? 'active' : 'registered',
-        earned_rewards: { points: 0, g2a: 0 },
-        invited_at: d.registeredAt,
-      });
-
-      const children = d.subReferrals ?? [];
-      for (const sr of children) {
-        referrals.push({
-          id: sr.userId,
-          parent_referral_id: d.userId,
-          type: 'user',
-          name: shortUserLabel(sr.userId),
-          avatar: undefined,
-          status: sr.isActive ? 'active' : 'registered',
-          earned_rewards: { points: 0, g2a: 0 },
-          invited_at: sr.registeredAt,
-        });
+    const registeredById = new Map<string, string>();
+    for (const node of referralTreeData?.referrals ?? []) {
+      registeredById.set(node.userId, node.registeredAt);
+      for (const child of node.subReferrals ?? []) {
+        registeredById.set(child.userId, child.registeredAt);
       }
     }
 
+    const referralsById = new Map<string, Referral>();
+
+    for (const node of referralTreeData?.referrals ?? []) {
+      referralsById.set(node.userId, mapTreeNode(node));
+    }
+
+    for (const item of referralEarningsData?.items ?? []) {
+      referralsById.set(item.refereeUserId, mapEarningItem(item, registeredById.get(item.refereeUserId)));
+    }
+
+    const referrals = Array.from(referralsById.values()).sort((a, b) => {
+      const left = a.invited_at ? new Date(a.invited_at).getTime() : 0;
+      const right = b.invited_at ? new Date(b.invited_at).getTime() : 0;
+      return right - left;
+    });
+
     const code = referralCodeData?.code || referralStatsData?.code || '';
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://go2asia.space';
-    const referralLink = code ? `${origin}/sign-up?ref=${encodeURIComponent(code)}` : mockReferralsData.referral_link;
 
     return {
       stats,
       referrals,
-      referral_link: referralLink,
-      referral_qr: mockReferralsData.referral_qr,
+      referral_code: code,
+      referral_link: buildReferralLink(code),
     };
-  }, [referralCodeData?.code, referralStatsData, referralTreeData, initialData, isFallback]);
+  }, [referralCodeData?.code, referralStatsData, referralTreeData, referralEarningsData, initialData]);
 
-  const isLoading = codeLoading || statsLoading || treeLoading;
+  const isLoading = codeLoading || statsLoading || treeLoading || earningsLoading;
+  const hasError = codeError || statsError || treeError || earningsError;
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Центр экономики и геймификации Go2Asia" />
+        <ConnectHero subtitle="Приглашайте друзей и отслеживайте начисления Points." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <p className="text-slate-600">Загрузка данных рефералов...</p>
+          <p className="text-sm text-slate-600 mb-4">Загружаем данные Connect…</p>
+          <div className="space-y-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <ConnectHero subtitle="Приглашайте друзей и отслеживайте начисления Points." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+          <ConnectNav />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="p-6 bg-red-50 border border-red-200">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800 mb-1">
+                  Не удалось загрузить данные Connect. Попробуйте ещё раз.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 mt-3"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Повторить
+                </Button>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     );
@@ -199,36 +206,24 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
   return (
     <>
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero
-          subtitle="Центр экономики и геймификации Go2Asia"
-          badgeText={isFallback ? 'DEMO MODE' : undefined}
-        />
+        <ConnectHero subtitle="Приглашайте друзей и отслеживайте начисления Points." />
 
-        {/* Навигация */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0">
-          {isFallback && <DemoModeBanner onRetry={handleRetry} />}
-        </div>
-
         <ReferralsContent
           data={data}
-          onInvite={(kind) => {
-            setInviteKind(kind);
+          onInvite={() => {
             setInviteModalOpen(true);
           }}
         />
       </div>
 
-      {/* Модал приглашения */}
       <InviteModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
         referralLink={data.referral_link}
-        referralQR={data.referral_qr}
-        kind={inviteKind}
       />
     </>
   );
