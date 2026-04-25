@@ -4,8 +4,8 @@ import { AnalyticsView } from '@/components/connect/Analytics/AnalyticsView';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Аналитика | Connect Asia | Go2Asia',
-  description: 'Отслеживайте эффективность и источники наград',
+  title: 'Статистика | Connect Asia | Go2Asia',
+  description: 'Расширенная статистика Connect появится позже',
 };
 
 export default function AnalyticsPage() {

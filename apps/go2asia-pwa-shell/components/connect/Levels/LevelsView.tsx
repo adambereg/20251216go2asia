@@ -2,7 +2,7 @@
 
 import { ConnectHero, ConnectNav } from '../Shared';
 import { AchievementsList } from './AchievementsList';
-import { Button, Card, SkeletonCard } from '@go2asia/ui';
+import { Badge, Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Award, RefreshCw } from 'lucide-react';
 import { useGetBadgeCatalog, useGetMyBadges, type BadgeCatalogItem, type UserBadgeItem } from '@go2asia/sdk/badges';
 import type { BadgeAchievement } from '../types';
@@ -189,6 +189,18 @@ export function LevelsView() {
             </Card>
           )}
         </div>
+
+        <Card className="p-5 mt-6 bg-slate-50 border border-slate-200">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Уровни в разработке</p>
+              <p className="text-sm text-slate-600 mt-1">
+                Мы не показываем прогресс уровней без backend-данных. Пока отслеживайте Points и бейджи.
+              </p>
+            </div>
+            <Badge className="bg-slate-100 text-slate-600">Появится позже</Badge>
+          </div>
+        </Card>
       </div>
     </div>
   );
