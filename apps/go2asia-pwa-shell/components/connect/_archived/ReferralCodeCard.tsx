@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card } from '@go2asia/ui';
 import { Users, Copy, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';

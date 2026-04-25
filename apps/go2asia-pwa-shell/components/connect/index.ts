@@ -5,7 +5,3 @@
 
 // Типы
 export * from './types';
-
-// Mock данные
-export * from './mockData';
-

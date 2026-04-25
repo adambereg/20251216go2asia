@@ -1,9 +1,10 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { useState } from 'react';
 import { Card, Button } from '@go2asia/ui';
 import { Wallet } from 'lucide-react';
-import { TransactionList } from './TransactionList';
+import { TransactionList } from '../Wallet/TransactionList';
 import { BridgeModal } from './BridgeModal';
 import type { WalletData } from '../types';
 

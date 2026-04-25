@@ -3,6 +3,7 @@
  * Mock данные для разработки UI модуля Connect
  */
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import type {
   DashboardData,
   WalletData,
@@ -20,7 +21,7 @@ import type {
   Season,
   Balances,
   Level,
-} from './types';
+} from '../types';
 
 // =============================================================================
 // Балансы

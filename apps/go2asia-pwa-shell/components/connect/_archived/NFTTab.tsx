@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { useState, useMemo } from 'react';
 import { Card, Chip } from '@go2asia/ui';
 import { Award } from 'lucide-react';

@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card, Badge } from '@go2asia/ui';
 import { User, Store, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Avatar } from '@go2asia/ui';

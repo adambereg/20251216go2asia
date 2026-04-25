@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card } from '@go2asia/ui';
 import { Award } from 'lucide-react';
 import type { Level } from '../types';

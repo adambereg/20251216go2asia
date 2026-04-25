@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@go2asia/ui';
 

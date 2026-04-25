@@ -1,8 +1,9 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card } from '@go2asia/ui';
 import { Coins } from 'lucide-react';
-import { TransactionList } from './TransactionList';
+import { TransactionList } from '../Wallet/TransactionList';
 import type { WalletData } from '../types';
 
 interface PointsTabProps {

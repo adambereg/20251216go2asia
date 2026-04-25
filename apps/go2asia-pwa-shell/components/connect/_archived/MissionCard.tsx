@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card, Button, Badge } from '@go2asia/ui';
 import { ArrowRight, Clock, Coins, Award, CheckCircle2 } from 'lucide-react';
 import { ModuleIcon } from '../Shared';

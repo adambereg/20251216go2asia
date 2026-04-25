@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Card } from '@go2asia/ui';
 import { Users, Store, Coins, Wallet } from 'lucide-react';
 import type { ReferralStats as ReferralStatsType } from '../types';

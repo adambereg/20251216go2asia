@@ -1,5 +1,6 @@
 'use client';
 
+// Legacy Connect artifact. Do not reuse without backend-truth validation.
 import { Chip } from '@go2asia/ui';
 import type { ModuleType, MissionType, MissionStatus } from '../types';
 
