@@ -1,95 +1,64 @@
 'use client';
 
-import { Card } from '@go2asia/ui';
-import { CheckCircle2, Lock, Award } from 'lucide-react';
-import type { Achievement } from '../types';
-import { ModuleIcon } from '../Shared';
+import { Badge, Card } from '@go2asia/ui';
+import { Award, CheckCircle2, Clock } from 'lucide-react';
+import type { BadgeAchievement } from '../types';
 
 interface AchievementCardProps {
-  achievement: Achievement;
+  badge: BadgeAchievement;
 }
 
-export function AchievementCard({ achievement }: AchievementCardProps) {
-  const progressPercent = (achievement.progress / achievement.max_progress) * 100;
-  const isCompleted = achievement.status === 'completed';
-  const isLocked = achievement.status === 'locked';
+function formatAwardedAt(awardedAt: string | null | undefined) {
+  if (!awardedAt) return null;
+  const date = new Date(awardedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
+export function AchievementCard({ badge }: AchievementCardProps) {
+  const awardedAt = formatAwardedAt(badge.awardedAt);
 
   return (
-    <Card className={`p-4 ${isLocked ? 'opacity-60' : ''}`}>
+    <Card className={`p-4 ${badge.isEarned ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
       <div className="flex items-start gap-4">
-        {/* Иконка */}
         <div
           className={`p-3 rounded-lg flex-shrink-0 ${
-            isCompleted
-              ? 'bg-emerald-100'
-              : isLocked
-                ? 'bg-slate-100'
-                : 'bg-blue-100'
+            badge.isEarned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
           }`}
         >
-          {isCompleted ? (
-            <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-          ) : isLocked ? (
-            <Lock className="w-6 h-6 text-slate-400" />
+          {badge.isEarned ? (
+            <CheckCircle2 className="w-6 h-6" />
           ) : (
-            <Award className="w-6 h-6 text-blue-600" />
+            <Award className="w-6 h-6" />
           )}
         </div>
 
-        {/* Контент */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-900">{achievement.name}</h3>
-              <p className="text-sm text-slate-600 mt-1">{achievement.description}</p>
+              <h3 className="font-semibold text-slate-900">{badge.title}</h3>
+              <p className="text-sm text-slate-600 mt-1">{badge.description}</p>
             </div>
-            {achievement.module && (
-              <div className="p-1.5 bg-slate-100 rounded-lg">
-                <ModuleIcon module={achievement.module} size={16} className="text-slate-600" />
-              </div>
-            )}
+            <Badge className={badge.isEarned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+              {badge.isEarned ? 'Получен' : 'Пока не получен'}
+            </Badge>
           </div>
 
-          {/* Прогресс */}
-          {!isLocked && (
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
-                <span>Прогресс</span>
-                <span>
-                  {achievement.progress} / {achievement.max_progress}
-                </span>
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    isCompleted ? 'bg-emerald-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${Math.min(progressPercent, 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+            <span className="rounded-md bg-slate-100 px-2 py-1">Категория: {badge.category}</span>
+            {awardedAt ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-emerald-700">
+                <Clock className="w-3 h-3" />
+                Получен {awardedAt}
+              </span>
+            ) : null}
+          </div>
 
-          {/* Подсказка */}
-          {achievement.hint && !isCompleted && (
-            <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded">
-              <span className="font-medium">Как добрать:</span> {achievement.hint}
+          {badge.emptyHint && !badge.isEarned ? (
+            <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded mt-3">
+              {badge.emptyHint}
             </div>
-          )}
-
-          {/* Награда */}
-          {isCompleted && (
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              {achievement.reward.points && (
-                <span className="text-emerald-600 font-medium">
-                  +{achievement.reward.points} Points
-                </span>
-              )}
-              {achievement.reward.nft && (
-                <span className="text-purple-600 font-medium">+ NFT</span>
-              )}
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </Card>

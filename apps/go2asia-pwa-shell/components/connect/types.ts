@@ -114,6 +114,17 @@ export interface Achievement {
   module?: ModuleType;
 }
 
+export interface BadgeAchievement {
+  key: string;
+  title: string;
+  description: string;
+  category: string;
+  iconKey?: string | null;
+  awardedAt?: string | null;
+  isEarned: boolean;
+  emptyHint?: string;
+}
+
 // =============================================================================
 // NFT Бейджи
 // =============================================================================

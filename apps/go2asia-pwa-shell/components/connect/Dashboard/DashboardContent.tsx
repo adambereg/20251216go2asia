@@ -133,9 +133,11 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             </p>
           )}
 
-          <Button variant="secondary" size="sm" className="w-full" disabled>
-            Смотреть бейджи
-          </Button>
+          <Link href="/connect/levels">
+            <Button variant="secondary" size="sm" className="w-full">
+              Смотреть бейджи
+            </Button>
+          </Link>
         </Card>
       </div>
 
