@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card, Chip, Button } from '@go2asia/ui';
-import { ModuleIcon } from '../Shared';
-import type { Transaction, ModuleType } from '../types';
+import type { Transaction } from '../types';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -11,25 +10,68 @@ interface TransactionListProps {
   hasMore?: boolean;
 }
 
+type CategoryFilter = 'all' | 'quest' | 'referrals' | 'events' | 'other';
+
+const ACTION_LABELS: Record<string, string> = {
+  registration: 'Регистрация',
+  first_login: 'Первый вход',
+  quest_completed: 'Квест завершён',
+  referral_bonus_referrer: 'Бонус за приглашённого пользователя',
+  referral_bonus_referee: 'Бонус за регистрацию по приглашению',
+  event_registration: 'Регистрация на событие',
+  space_post_created: 'Публикация в Space',
+  rf_voucher_redeemed: 'RF-ваучер использован',
+  rielt_listing_created: 'Объявление в Rielt',
+  badge_awarded: 'Бейдж получен',
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  'quest-service': 'Quest Asia',
+  'referral-service': 'Referral',
+  'points-service': 'Points',
+  'content-service': 'Go2Asia',
+  'pulse-service': 'Pulse Asia',
+  'space-service': 'Space Asia',
+  'rf-service': 'Russian Friendly',
+  'rielt-service': 'Rielt Market',
+};
+
+function getString(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+function getActionLabel(transaction: Transaction) {
+  const action = getString(transaction.metadata?.action);
+  return ACTION_LABELS[action] ?? 'Активность Go2Asia';
+}
+
+function getSourceLabel(transaction: Transaction) {
+  const sourceService = getString(transaction.metadata?.sourceService);
+  if (!sourceService) return 'Go2Asia';
+  return SOURCE_LABELS[sourceService] ?? 'Go2Asia';
+}
+
+function getCategory(transaction: Transaction): Exclude<CategoryFilter, 'all'> {
+  const action = getString(transaction.metadata?.action);
+  const sourceService = getString(transaction.metadata?.sourceService);
+
+  if (action === 'quest_completed' || sourceService === 'quest-service') return 'quest';
+  if (action.startsWith('referral_') || sourceService === 'referral-service') return 'referrals';
+  if (action === 'event_registration' || sourceService === 'pulse-service' || sourceService === 'content-service') return 'events';
+  return 'other';
+}
+
 export function TransactionList({ transactions, onLoadMore, hasMore }: TransactionListProps) {
-  const [selectedModule, setSelectedModule] = useState<ModuleType | 'all'>('all');
-  const [selectedType, setSelectedType] = useState<'all' | 'credit' | 'debit'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<'all' | 'today' | 'week' | 'month'>('all');
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
 
-    // Фильтр по модулю
-    if (selectedModule !== 'all') {
-      result = result.filter((tx) => tx.module === selectedModule);
+    if (selectedCategory !== 'all') {
+      result = result.filter((tx) => getCategory(tx) === selectedCategory);
     }
 
-    // Фильтр по типу
-    if (selectedType !== 'all') {
-      result = result.filter((tx) => tx.type === selectedType);
-    }
-
-    // Фильтр по периоду
     if (selectedPeriod !== 'all') {
       const now = new Date();
       result = result.filter((tx) => {
@@ -51,7 +93,7 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
     }
 
     return result;
-  }, [transactions, selectedModule, selectedType, selectedPeriod]);
+  }, [transactions, selectedCategory, selectedPeriod]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -72,53 +114,29 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
     }
   };
 
-  const modules: (ModuleType | 'all')[] = [
-    'all',
-    'space',
-    'atlas',
-    'pulse',
-    'rf',
-    'quest',
-    'guru',
+  const categories: { value: CategoryFilter; label: string }[] = [
+    { value: 'all', label: 'Все' },
+    { value: 'quest', label: 'Квесты' },
+    { value: 'referrals', label: 'Рефералы' },
+    { value: 'events', label: 'События' },
+    { value: 'other', label: 'Другое' },
   ];
 
   return (
     <div className="space-y-4">
       {/* Фильтры */}
       <div className="space-y-3">
-        {/* По модулю */}
         <div>
-          <h4 className="text-sm font-semibold text-slate-700 mb-2">Модуль</h4>
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">Источник</h4>
           <div className="flex flex-wrap gap-2">
-            {modules.map((module) => (
+            {categories.map((category) => (
               <Chip
-                key={module}
+                key={category.value}
                 size="sm"
-                selected={selectedModule === module}
-                onClick={() => setSelectedModule(module)}
+                selected={selectedCategory === category.value}
+                onClick={() => setSelectedCategory(category.value)}
               >
-                {module === 'all' ? 'Все' : module}
-              </Chip>
-            ))}
-          </div>
-        </div>
-
-        {/* По типу */}
-        <div>
-          <h4 className="text-sm font-semibold text-slate-700 mb-2">Тип</h4>
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'credit', 'debit'] as const).map((type) => (
-              <Chip
-                key={type}
-                size="sm"
-                selected={selectedType === type}
-                onClick={() => setSelectedType(type)}
-              >
-                {type === 'all'
-                  ? 'Все'
-                  : type === 'credit'
-                    ? 'Начисления'
-                    : 'Списания'}
+                {category.label}
               </Chip>
             ))}
           </div>
@@ -155,16 +173,16 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
             {filteredTransactions.map((transaction) => (
               <Card key={transaction.id} className="p-4">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-slate-100 rounded-lg">
-                    <ModuleIcon module={transaction.module} size={20} className="text-slate-600" />
-                  </div>
+                  <div className="p-2 bg-emerald-100 rounded-lg text-sm font-semibold text-emerald-700">Pt</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900">
-                          {transaction.description}
+                          {getActionLabel(transaction)}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">{formatDate(transaction.created_at)}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {getSourceLabel(transaction)} · {formatDate(transaction.created_at)}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span
@@ -173,19 +191,10 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
                           }`}
                         >
                           {transaction.type === 'credit' ? '+' : '-'}
-                          {transaction.amount} {transaction.currency === 'points' ? 'Points' : 'G2A'}
+                          {transaction.amount} Points
                         </span>
                       </div>
                     </div>
-                    {transaction.tags && transaction.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {transaction.tags.map((tag) => (
-                          <Chip key={tag} size="sm">
-                            {tag}
-                          </Chip>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </Card>
@@ -200,9 +209,9 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
           </>
         ) : (
           <Card className="p-8 text-center">
-            <p className="text-slate-500">Транзакции не найдены</p>
+            <p className="text-slate-500">История начислений появится здесь после первых действий.</p>
             <p className="text-sm text-slate-400 mt-1">
-              Попробуйте изменить фильтры
+              Если фильтры включены, попробуйте выбрать “Все”.
             </p>
           </Card>
         )}
