@@ -440,6 +440,11 @@ async function listReferralPointsMatches(
 ): Promise<ReferralPointsMatchRow[]> {
   if (externalIds.length === 0) return [];
 
+  const externalIdList = sql.join(
+    externalIds.map((externalId) => sql`${externalId}`),
+    sql`, `
+  );
+
   const result = await db.execute(sql`
     SELECT
       external_id,
@@ -449,7 +454,7 @@ async function listReferralPointsMatches(
     FROM points_transactions
     WHERE user_id = ${referrerUserId}
       AND reason = 'referral_bonus_referrer'
-      AND external_id = ANY(${externalIds}::text[])
+      AND external_id IN (${externalIdList})
   `);
   return getRows<ReferralPointsMatchRow>(result);
 }
