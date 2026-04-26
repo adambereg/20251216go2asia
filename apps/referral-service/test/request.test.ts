@@ -10,10 +10,21 @@ const { createDbMock, executeMock } = vi.hoisted(() => {
 
 vi.mock('@go2asia/db', () => ({
   createDb: createDbMock,
-  sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
-    strings: [...strings],
-    values,
-  }),
+  sql: Object.assign(
+    (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      strings: [...strings],
+      values,
+    }),
+    {
+      join: (chunks: Array<{ strings?: string[]; values?: unknown[] }>, separator: { strings?: string[] }) => ({
+        strings: chunks.flatMap((chunk, index) => [
+          ...(index > 0 ? separator.strings ?? [] : []),
+          ...(chunk.strings ?? []),
+        ]),
+        values: chunks.flatMap((chunk) => chunk.values ?? []),
+      }),
+    }
+  ),
 }));
 
 import worker, { type Env } from '../src/index';
@@ -323,6 +334,8 @@ describe('referral-service request hardening', () => {
     expect(pointsQuery.values).toContain('user_referrer');
     expect(pointsQuery.strings.join('')).toContain('FROM points_transactions');
     expect(pointsQuery.strings.join('')).toContain("reason = 'referral_bonus_referrer'");
+    expect(pointsQuery.strings.join('')).toContain('external_id IN');
+    expect(pointsQuery.strings.join('')).not.toContain('ANY(');
   });
 
   it('clamps referral earnings limit to max 100', async () => {

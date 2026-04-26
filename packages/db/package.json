@@ -40,6 +40,8 @@
     "db:sync:rielt-media-r2": "cross-env ENVIRONMENT=staging tsx src/syncRieltMediaFromR2.ts",
     "db:import:blog-md": "cross-env ENVIRONMENT=staging tsx src/importBlogFromMarkdown.ts",
     "db:verify:blog-canon": "cross-env ENVIRONMENT=staging tsx src/verifyBlogCanon.ts",
+    "db:seed:connect-demo": "cross-env ENVIRONMENT=staging tsx src/seedConnectDemo.ts",
+    "db:verify:connect-demo": "cross-env ENVIRONMENT=staging tsx src/verifyConnectDemo.ts",
     "db:city-mapping:pilot:preview": "cross-env ENVIRONMENT=staging tsx src/prepareCityMappingPilot.ts",
     "typecheck": "tsc --noEmit"
   },
