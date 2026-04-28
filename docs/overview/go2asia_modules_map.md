@@ -1,9 +1,28 @@
+Canon notice — legacy / superseded
+
+This document reflects an earlier service map where Connect, Atlas, Pulse, Voucher and NFT were described as separate runtime services.
+Current Platform Canon v2 supersedes this model:
+- Connect Asia is a product/UI hub, not a backend-domain service.
+- There is no runtime `apps/connect-service` app.
+- Current MVP runtime uses `apps/content-service` for Atlas / Pulse / Blog content.
+- RF/Voucher ownership belongs to the RF/business layer in current canon.
+- NFT / Blockchain Gateway references are future-layer references, not current runtime.
+
+See:
+- `docs/architecture/platform/go2asia_ecosystem_overview_v2.md`
+- `docs/architecture/platform/go2asia_backend_services_architecture_v2.md`
+- `docs/architecture/platform/go2asia_interface_architecture_v2.md`
+- `docs/architecture/platform/go2asia_canon_alignment_backlog_v1.md`
+
 Карта клиентских модулей и их связей с микросервисами
 
 Документ описывает карту всех клиентских модулей Go2Asia (микрофронтендов), их назначение, входные и выходные данные, используемые микросервисы, типы событий, роли пользователей, а также связи между модулями экосистемы.
 Этот файл является ключевым интеграционным документом для мультиагентной разработки.
-________________________________________
+
+---
+
 1. Обзор модульной структуры Go2Asia
+
 Go2Asia состоит из набора независимых микрофронтендов, которые подключаются к общей PWA Shell:
 PWA Shell (Next.js)
   ├── Atlas
@@ -18,8 +37,11 @@ PWA Shell (Next.js)
   └── Settings / Profile / Auth
 Все модули используют общий UI Kit и общие дизайн-токены.
 Каждый модуль связан с одним или несколькими микросервисами backend.
-________________________________________
-2. Карта модулей и соответствующих микросервисов
+
+---
+
+1. Карта модулей и соответствующих микросервисов
+
 Ниже представлена подробная таблица:
 2.1. Полная таблица соответствия FE-модулей и backend-сервисов
 Клиентский модуль	Основные микросервисы	Дополнительные интеграции	Основные сущности
@@ -33,8 +55,11 @@ Rielt Asia	rielt_service	reactions_service, guru_service, connect_service	объ
 Guru Asia	guru_service	atlas_service, pulse_service, rf_service, rielt_service, quest_service, user_service	места рядом, события рядом, PRO рядом
 Space Asia	content_service	reactions_service, notification_service, connect_service	посты, репосты, треды
 Profile / Connect UI	user_service	points_service, nft_service, connect_service	профиль, баланс, NFT, достижения
-________________________________________
-3. Подробные карты модулей
+
+---
+
+1. Подробные карты модулей
+
 Теперь — развернутая структура каждого модуля.
 
 3.1. Atlas Asia
@@ -175,8 +200,11 @@ POST /reactions (repost)
 •	points_service
 •	nft_service
 •	connect_service
-________________________________________
-4. Интеграционная диаграмма модулей
+
+---
+
+1. Интеграционная диаграмма модулей
+
 Atlas ─┬─► Guru ◄─┬─ Pulse
        │          │
        │          ├─ RF
@@ -196,8 +224,11 @@ Rielt ───────────► Connect ─────► Points (з
 Guru — главный узел UX.
 Connect — главный узел экономики.
 Reactions — главный узел коммуникаций.
-________________________________________
-5. Карта типов данных по модулям
+
+---
+
+1. Карта типов данных по модулям
+
 Модуль	Основные данные	Вспомогательные
 Atlas	countries, cities, places	reactions
 Pulse	events	atlas_places
@@ -208,8 +239,11 @@ Rielt	listings	reactions, threads
 Guru	geo-feed	all nearby domains
 Space	posts	reactions, threads
 Connect UI	balances, nft	referrals
-________________________________________
-6. Карта событий по модулям
+
+---
+
+1. Карта событий по модулям
+
 Модуль	Генерируемые события
 Quest	quest.completed / quest.purchased
 RF	voucher.purchased / premium_voucher.purchased
@@ -218,8 +252,11 @@ Space	repost.created
 Reactions	reaction.created
 Referral	referral.joined / referral.activated
 User	user.vip_upgraded
-________________________________________
-7. Модули и их зависимости
+
+---
+
+1. Модули и их зависимости
+
 Сильные зависимости
 •	Guru зависит практически от всех доменов.
 •	Connect зависит от всех событий.
@@ -230,8 +267,11 @@ ________________________________________
 Симметричные связи
 •	RF ↔ Space (отзывы).
 •	Quest ↔ Atlas (локационные квесты).
-________________________________________
-8. Использование файла в разработке
+
+---
+
+1. Использование файла в разработке
+
 Этот документ служит:
 •	картой микрофронтендов,
 •	картой API-связей,
@@ -240,4 +280,3 @@ ________________________________________
 •	основой для тестов,
 •	контекстом для Cursor и мультиагентной разработки,
 •	документом для DevOps и архитекторов.
-

@@ -1,3 +1,18 @@
+# Canon notice — legacy / superseded
+
+This document reflects an earlier architecture where Connect was described as a backend service.
+Current Platform Canon v2 supersedes this model:
+- Connect Asia is a product/UI hub, not a backend-domain service.
+- There is no runtime `apps/connect-service` app.
+- Points Service owns ledger/balances/reward execution.
+- Missions Service is a future orchestration/reward-intent layer, not part of current runtime.
+
+See:
+- `docs/architecture/platform/go2asia_ecosystem_overview_v2.md`
+- `docs/architecture/platform/go2asia_backend_services_architecture_v2.md`
+- `docs/architecture/platform/go2asia_interface_architecture_v2.md`
+- `docs/architecture/platform/go2asia_canon_alignment_backlog_v1.md`
+
 # Connect Service — API Contracts
 
 Версия: **v1**  

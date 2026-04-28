@@ -1,3 +1,19 @@
+# Canon notice — legacy / superseded
+
+This playbook contains legacy references to Connect Service and older service names.
+Current Platform Canon v2 supersedes those backend ownership assumptions:
+- Connect Asia is a product/UI hub, not a backend-domain service.
+- There is no runtime `apps/connect-service` app.
+- Current MVP runtime uses `apps/content-service` for Atlas / Pulse / Blog content.
+- Points Service owns ledger/balances/reward execution.
+- Missions Service is a future orchestration/reward-intent layer, not part of current runtime.
+
+See:
+- `docs/architecture/platform/go2asia_ecosystem_overview_v2.md`
+- `docs/architecture/platform/go2asia_backend_services_architecture_v2.md`
+- `docs/architecture/platform/go2asia_interface_architecture_v2.md`
+- `docs/architecture/platform/go2asia_canon_alignment_backlog_v1.md`
+
 # 🎨 Frontend Playbook Go2Asia v2
 
 > **Полное руководство по фронтенд-разработке экосистемы Go2Asia с мультиагентной архитектурой**
