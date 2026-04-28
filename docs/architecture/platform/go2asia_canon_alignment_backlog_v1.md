@@ -16,6 +16,11 @@ P0 docs-only pass status (2026-04-28):
 - CA-002: completed for `docs/ops/service_inventory.md`. The inventory now reflects actual `apps/*` runtime and Platform Canon v2 service categories.
 - CA-010: completed as a standalone baseline document: `docs/architecture/platform/pre_missions_reward_baseline_v1.md`.
 
+P1 decision lock status (2026-04-28):
+
+- Completed for CA-006, CA-008, CA-009 and CA-014 in `docs/architecture/platform/go2asia_p1_decisions_v1.md`.
+- Remaining P1 implementation details stay future work; no code/API/UI/DB changes are implied by this lock.
+
 2. Canon Baseline
 
 Текущий Platform Canon v2 задает следующие правила:
@@ -151,6 +156,7 @@ CA-006: Rielt voucher-first vs hybrid inquiry decision
 - Area: Rielt CTA alignment.
 - Canon rule: Rielt v1 должен быть voucher-first и не должен становиться booking/chat/inquiry-first.
 - Current drift: Rielt detail UI содержит voucher-first presentation fields, но рабочий flow все еще сильно поддерживает direct listing inquiry.
+- Decision locked: strict voucher-first. Rielt is listing discovery; RF owns partner identity; voucher layer is the canonical claim/redeem baseline.
 - Evidence / paths:
   - `apps/go2asia-pwa-shell/components/rielt/ListingDetail/CTAPanel.tsx`
   - `apps/go2asia-pwa-shell/components/rielt/types.ts`
@@ -184,6 +190,7 @@ CA-008: Geo SSOT and city resolver alignment
 - Area: Geo SSOT alignment.
 - Canon rule: Atlas/content-service - primary geo truth для countries, cities, districts и places. Domain-specific geo должен быть bounded и не становиться competing canonical geography.
 - Current drift: Geo распределено между Atlas/content, Rielt listing coordinates, Pulse event coordinates, Quest `geoScope` и duplicated UI fallback city centers.
+- Decision locked: Atlas-backed Geo Resolver is the target policy; UI fallback city centers are temporary UX fallback, not canonical geo truth.
 - Evidence / paths:
   - `packages/db/src/schema/content.ts`
   - `packages/db/src/schema/rielt.ts`
@@ -203,6 +210,7 @@ CA-009: Quest geo proof backend truth decision
 - Area: Geo / Quest proof validation.
 - Canon rule: UI может помогать proof flow, но backend владеет validation truth.
 - Current drift: Quest UI делает geo check-in calculations и захватывает geolocation/manual coordinates. Server-side proof truth boundary требует явного решения.
+- Decision locked: permanent hybrid validation model. Client assists; backend decides production completion through validation or backend-controlled review policy.
 - Evidence / paths:
   - `apps/go2asia-pwa-shell/components/quest/utils/validation.ts`
   - `apps/go2asia-pwa-shell/components/quest/QuestRunner/Steps/StepGeoCheckin.tsx`
@@ -286,6 +294,7 @@ CA-014: Badges/NFT future ownership boundary
 - Area: Badges / NFT / future economy.
 - Canon rule: Current economy - off-chain first. Badges могут существовать как off-chain achievements; NFT/on-chain - future и не владеют Points ledger или Mission progress.
 - Current drift: Current runtime показывает badges через Points Service, а legacy docs описывают `nft_service` и Blockchain Gateway как active reward infrastructure.
+- Decision locked: badges stay off-chain achievement/reputation markers in current runtime; NFT/Token/TON/on-chain layer remains post-release future.
 - Evidence / paths:
   - `apps/points-service/src/index.ts`
   - `packages/sdk/src/badges.ts`
@@ -330,11 +339,14 @@ CA-014: Badges/NFT future ownership boundary
 - No immediate conversion of future target services into runtime services.
 - No architectural redesign beyond backlog classification and decision tracking.
 
-8. Product / Architecture Questions Requiring Owner Decision
+8. Resolved Decisions (P1 Decision Lock)
 
-- Должен ли Rielt v1 быть strict voucher-first или explicitly hybrid MVP с bounded direct inquiry?
+- CA-006 — Rielt voucher-first: locked as strict voucher-first. Rielt is listing discovery; RF owns partner identity; voucher layer is the canonical claim/redeem baseline.
+- CA-008 — Geo resolver policy: locked as Atlas-backed Geo Resolver target. UI fallback city centers remain temporary UX fallback, not canonical geo truth.
+- CA-009 — Quest geo proof: locked as permanent hybrid validation model. Client assists; backend decides production completion through validation or backend-controlled review policy.
+- CA-014 — Badges vs NFT: locked as off-chain badges for current runtime. NFT/Token/TON/on-chain layer remains post-release future.
+
+9. Product / Architecture Questions Requiring Owner Decision
+
 - Какова формальная роль `organizer-service`: bounded domain, support workflow, experiment или legacy/transitional contour?
-- Какой production standard нужен для Quest geo proof: обязательная server-side validation, server-side validation только для некоторых task types или client-side UX check плюс manual review?
 - Какой pre-Missions reward baseline принять: какие сервисы могут вызывать Points напрямую, какие actions допустимы и какие metadata/idempotency обязательны?
-- Когда Badges должны выйти из Points-related APIs, если вообще должны, и что остается strictly future NFT/on-chain?
-- Какая authoritative city center / geo resolver policy действует до зрелого Geo Service?
