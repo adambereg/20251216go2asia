@@ -90,7 +90,7 @@ export function formatCityLabel(value?: string | null): string {
 
 export function describeQuestExperience(item: Pick<QuestSummaryResponse, 'theme' | 'stepsCount' | 'difficulty'>): string {
   if (item.theme === 'city_discovery') return 'Спокойный городской маршрут';
-  if (item.theme === 'photo_mission') return 'Фото-миссия с проверкой результата';
+  if (item.theme === 'photo_task') return 'Фото-задание с проверкой результата';
   if (item.theme === 'mixed_route') return 'Насыщенный маршрут на несколько остановок';
   if ((item.stepsCount ?? 0) >= 5) return 'Маршрут на полдня';
   if (item.difficulty === 'easy') return 'Подходит для первого знакомства';

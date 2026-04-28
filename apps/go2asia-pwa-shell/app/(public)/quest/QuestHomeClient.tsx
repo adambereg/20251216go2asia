@@ -16,7 +16,7 @@ import { describeQuestExperience, formatCityLabel, formatDifficultyLabel } from 
 import { getQuestCardMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from './questRuntimeMetadata';
 
 function getQuestBadge(item: QuestSummaryResponse): string {
-  if (item.theme === 'photo_mission') return 'Фото-миссия';
+  if (item.theme === 'photo_task') return 'Фото-задание';
   if (item.theme === 'mixed_route') return 'Маршрут на полдня';
   if (item.theme === 'city_discovery') return 'Городская прогулка';
   if (item.stepsCount >= 5) return 'Длинный маршрут';
@@ -64,7 +64,7 @@ export function QuestHomeClient() {
       <ModuleHero
         icon={Target}
         title="Quest Asia"
-        description="Маршруты и задания, которые можно пройти по шагам: прогулки, фото-миссии и более длинные городские сценарии."
+        description="Маршруты и задания, которые можно пройти по шагам: прогулки, фото-задания и более длинные городские сценарии."
         gradientFrom="from-purple-500"
         gradientTo="to-purple-600"
       />

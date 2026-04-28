@@ -124,7 +124,7 @@ type NormalizedTarget = {
 
 const QUEST_FILES = [
   'content/quest/q1–q6/Q1-Morning-Walk-Through-Old-Phuket.md',
-  'content/quest/q1–q6/Q2-Sunset-Viewpoint-Photo-Mission.md',
+  'content/quest/q1–q6/Q2-Sunset-Viewpoint-Photo-Task.md',
   'content/quest/q1–q6/Q3-Russian-Friendly-Coffee-Break-Route.md',
   'content/quest/q1–q6/Q4-Night-Market-Event-Check-In.md',
   'content/quest/q1–q6/Q5-One-Day-Explorer-Route.md',
