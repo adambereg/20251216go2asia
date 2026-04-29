@@ -267,6 +267,9 @@ paths:
       tags: [rf]
       operationId: rfClaimVoucher
       summary: Claim voucher for active offer (idempotent by user+key)
+      description: >
+        Claim is allowed only for active public offers of active RF partners.
+        Runtime status uses `claimed`; in product semantics this corresponds to an issued voucher.
       security:
         - GatewayAuth: []
       parameters:
@@ -296,6 +299,10 @@ paths:
           $ref: "#/components/responses/RfConflict"
         "429":
           $ref: "#/components/responses/RfRateLimited"
+        "500":
+          $ref: "#/components/responses/RfInternalError"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
 
   /v1/rf/me/vouchers:
     get:
@@ -321,6 +328,10 @@ paths:
       tags: [rf]
       operationId: rfRedeemVoucher
       summary: Redeem voucher by partner owner
+      description: >
+        Redeem is an owner-authorized partner-side flow. The authenticated actor must own
+        the partner in path, and voucher relation (voucher.partnerId, voucher.offerId, offer.partnerId)
+        must be consistent.
       security:
         - GatewayAuth: []
       parameters:
@@ -344,6 +355,8 @@ paths:
           $ref: "#/components/responses/RfConflict"
         "429":
           $ref: "#/components/responses/RfRateLimited"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
 
   /v1/rf/pro/links:
     get:
@@ -435,8 +448,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      description: >
+        Required idempotency key for claim operation. Same user + same key replays the same
+        claim result without creating duplicate business effects.
       schema:
         type: string
+        minLength: 1
+        maxLength: 160
     RfPartnerId:
       name: partnerId
       in: path
@@ -495,6 +513,18 @@ components:
             $ref: "#/components/schemas/RfErrorResponse"
     RfRateLimited:
       description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfInternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+    RfServiceUnavailable:
+      description: Service unavailable or not configured
       content:
         application/json:
           schema:
@@ -627,6 +657,9 @@ components:
         status:
           type: string
           enum: [claimed, redeemed, cancelled]
+          description: >
+            Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps
+            to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
         code:
           type: string
         claimedAt:

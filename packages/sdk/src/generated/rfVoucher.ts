@@ -18,6 +18,8 @@ export interface RfVoucher {
   partnerId: string;
   /** @nullable */
   redeemedAt?: string | null;
+  /** Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
+   */
   status: RfVoucherStatus;
   updatedAt: string;
 }

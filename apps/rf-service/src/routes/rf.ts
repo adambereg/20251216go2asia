@@ -173,6 +173,9 @@ export async function handleRfRoute(
     if (!idempotencyKey) {
       return errorResponse('MISSING_IDEMPOTENCY_KEY', 'Idempotency-Key is required for voucher claim', requestId, 400);
     }
+    if (idempotencyKey.length > 160) {
+      return errorResponse('INVALID_IDEMPOTENCY_KEY', 'Idempotency-Key must be <= 160 characters', requestId, 400);
+    }
     if (shouldThrottleWrite(principal.userId, 'claim')) {
       return errorResponse('RATE_LIMITED', 'Too many voucher claim requests. Please retry later.', requestId, 429);
     }

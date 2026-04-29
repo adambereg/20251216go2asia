@@ -7,4 +7,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Required idempotency key for claim operation. Same user + same key replays the same claim result without creating duplicate business effects.
+
+ */
 export type RfIdempotencyKeyParameter = string;

@@ -126,6 +126,7 @@ import type {
   RfCreatePartnerRequest,
   RfCreateProLinkRequest,
   RfForbiddenResponse,
+  RfInternalErrorResponse,
   RfNotFoundResponse,
   RfOffer,
   RfOfferListResponse,
@@ -135,6 +136,7 @@ import type {
   RfProLinkListResponse,
   RfRateLimitedResponse,
   RfRedeemResponse,
+  RfServiceUnavailableResponse,
   RfUnauthorizedResponse,
   RfValidationErrorResponse,
   RfVoucherListResponse,
@@ -4122,6 +4124,8 @@ export const rfActivateOffer = async (
 };
 
 /**
+ * Redeem is an owner-authorized partner-side flow. The authenticated actor must own the partner in path, and voucher relation (voucher.partnerId, voucher.offerId, offer.partnerId) must be consistent.
+
  * @summary Redeem voucher by partner owner
  */
 export type rfRedeemVoucherResponse200 = {
@@ -4154,6 +4158,11 @@ export type rfRedeemVoucherResponse429 = {
   status: 429;
 };
 
+export type rfRedeemVoucherResponse503 = {
+  data: RfServiceUnavailableResponse;
+  status: 503;
+};
+
 export type rfRedeemVoucherResponseSuccess = rfRedeemVoucherResponse200 & {
   headers: Headers;
 };
@@ -4163,6 +4172,7 @@ export type rfRedeemVoucherResponseError = (
   | rfRedeemVoucherResponse404
   | rfRedeemVoucherResponse409
   | rfRedeemVoucherResponse429
+  | rfRedeemVoucherResponse503
 ) & {
   headers: Headers;
 };
@@ -4282,6 +4292,8 @@ export const rfGetOffer = async (
 };
 
 /**
+ * Claim is allowed only for active public offers of active RF partners. Runtime status uses `claimed`; in product semantics this corresponds to an issued voucher.
+
  * @summary Claim voucher for active offer (idempotent by user+key)
  */
 export type rfClaimVoucherResponse200 = {
@@ -4319,6 +4331,16 @@ export type rfClaimVoucherResponse429 = {
   status: 429;
 };
 
+export type rfClaimVoucherResponse500 = {
+  data: RfInternalErrorResponse;
+  status: 500;
+};
+
+export type rfClaimVoucherResponse503 = {
+  data: RfServiceUnavailableResponse;
+  status: 503;
+};
+
 export type rfClaimVoucherResponseSuccess = (
   | rfClaimVoucherResponse200
   | rfClaimVoucherResponse201
@@ -4331,6 +4353,8 @@ export type rfClaimVoucherResponseError = (
   | rfClaimVoucherResponse404
   | rfClaimVoucherResponse409
   | rfClaimVoucherResponse429
+  | rfClaimVoucherResponse500
+  | rfClaimVoucherResponse503
 ) & {
   headers: Headers;
 };
