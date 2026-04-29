@@ -1,3 +1,18 @@
+# Canon notice — legacy / superseded by Platform Canon v2
+
+This document was written during the transition away from standalone Connect Service thinking.
+Current Platform Canon v2 is the higher-level SSOT:
+- Connect Asia is a product/UI hub, not a backend-domain service.
+- There is no runtime `apps/connect-service` app.
+- Points Service owns ledger/balances/reward execution.
+- Missions Service is a future orchestration/reward-intent layer, not part of current runtime.
+
+See:
+- `docs/architecture/platform/go2asia_ecosystem_overview_v2.md`
+- `docs/architecture/platform/go2asia_backend_services_architecture_v2.md`
+- `docs/architecture/platform/go2asia_interface_architecture_v2.md`
+- `docs/architecture/platform/go2asia_canon_alignment_backlog_v1.md`
+
 # Connect Service Production Architecture v1
 
 Current production architecture note: there is no standalone connect-service in the MVP. This document describes production runtime architecture of Connect-facing surfaces across Points, Referral, Quest, and Gateway.

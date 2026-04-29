@@ -384,7 +384,7 @@ Quest must emit events:
 - **Quest domain / Quest Service**: owner of quest definitions, progression state, submissions, and validation lifecycle.
 - **Reward intent**: quest/step reward configuration and trigger semantics in Quest; **balances/ledger execution** remain in Points.
 - **Proof vs source truth**: Quest stores proof payloads and validation outcomes; canonical truth for events/attendance is Pulse, for partner/branch identity is RF, and for geo/place identity is Atlas.
-- **Legacy terms mapping**: `mission`/`checkpoint`/`run` may appear in older docs; canonical terms in this package are `quest`, `quest_step`, `quest_progress`, `quest_submission`.
+- **Reserved ecosystem term**: `Mission` belongs to the future ecosystem orchestration layer. Older Quest docs that used that word for local work units should be read as `quest_step` / product-facing task; canonical engineering terms in this package are `quest`, `quest_step`, `quest_progress`, `quest_submission`.
 
 ---
 

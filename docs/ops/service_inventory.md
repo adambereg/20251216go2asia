@@ -1,148 +1,93 @@
-# Service Inventory (repo → docs mapping)
+# Service Inventory (repo -> Platform Canon v2 mapping)
 
-Дата: 2025-12-26  
-Статус: **Source of truth по фактической реализации** (в репозитории)
+Дата: 2026-04-28  
+Статус: **Source of truth по фактической runtime-реализации в `apps/*`**
 
 ## Зачем этот документ
 
-`docs/knowledge/backend_microservice.md` описывает **целевую** микросервисную картину (полную экосистему).  
-Этот файл фиксирует **фактическое состояние** репозитория и даёт маппинг “что в docs задумано” → “что реально есть в repo” с доказательствами (пути/эндпоинты/схемы).
+Этот файл фиксирует фактическое состояние приложений в репозитории и их статус относительно Platform Canon v2:
 
----
+- `docs/architecture/platform/go2asia_ecosystem_overview_v2.md`
+- `docs/architecture/platform/go2asia_backend_services_architecture_v2.md`
+- `docs/architecture/platform/go2asia_interface_architecture_v2.md`
+- `docs/architecture/platform/go2asia_canon_alignment_backlog_v1.md`
 
-## 1) Фактические backend-приложения в репозитории (apps/*)
+Он не заменяет domain docs. Его задача - не дать старым документам снова трактовать future или legacy service names как текущую runtime truth.
 
-> Все backend-сервисы в `apps/*` реализованы как **Cloudflare Workers** (есть `wrangler.toml` и `src/index.ts`).
+## Canon runtime notes
 
-| App (repo) | Тип | Entrypoint | Основные префиксы/маршруты | OpenAPI/SDK | DB/схемы/миграции | Evidence |
-|---|---|---|---|---|---|---|
-| `apps/api-gateway` | Cloudflare Worker (API Gateway) | `apps/api-gateway/src/index.ts` | `/health`, `/ready`, `/v1/_debug/routes`, прокси по префиксам: `/v1/auth/*`, `/v1/users/*`, `/v1/content/*` (+ alias `/v1/api/content/*`), `/v1/media/*` (canonical media surface; fallback в `content-service`), `/v1/points/*`, `/v1/referral/*`. Зарезервированные Phase 2: `/v1/space/*`, `/v1/quests/*`, `/v1/submissions/*`, `/v1/rielt/*`, `/v1/guru/*`, `/v1/rf/*` — до настройки `*_SERVICE_URL` возвращают `501 ROUTE_RESERVED_NOT_ENABLED` | OpenAPI через gateway (единый контракт) | Нет собственной БД | `apps/api-gateway/src/index.ts`, `apps/api-gateway/wrangler.toml` |
-| `apps/auth-service` | Cloudflare Worker | `apps/auth-service/src/index.ts` | `POST /v1/auth/webhook/clerk`, `POST /v1/users/ensure`, `/health` | описано в `docs/openapi/openapi.bundle.yaml` (paths `/v1/auth/*`, `/v1/users/ensure`) | Использует `DATABASE_URL` + схемы `packages/db/src/schema/auth.ts` | `apps/auth-service/src/index.ts`, `packages/db/src/schema/auth.ts` |
-| `apps/content-service` | Cloudflare Worker | `apps/content-service/src/index.ts` | Public content: `GET /v1/content/countries|cities|places|articles|events`, detail: `GET /v1/content/places/{idOrSlug}`, `GET /v1/content/articles/{slug}`, `GET /v1/content/events/{id}`, action: `POST /v1/content/events/{id}/register`, media baseline: signed upload flow behind canonical gateway surface `/v1/media/*`, debug: `GET /v1/content/_debug/db` | описано в `docs/openapi/openapi.bundle.yaml` + есть серверные helpers в `packages/sdk/src/content.ts`, `packages/sdk/src/media.ts` | Использует `DATABASE_URL` + схемы `packages/db/src/schema/content.ts` (+ миграции `packages/db/migrations/*`) | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts`, `packages/db/migrations/*`, `packages/sdk/src/content.ts`, `packages/sdk/src/media.ts` |
-| `apps/points-service` | Cloudflare Worker | `apps/points-service/src/index.ts` | User-facing: `GET /v1/points/balance`, `GET /v1/points/connect-dashboard`, `GET /v1/points/transactions`, `GET /v1/points/badges`, `GET /v1/points/badges/mine`; internal: `POST /internal/points/add`, `POST /internal/points/badges/award`; `/health` | описано в `docs/openapi/openapi.bundle.yaml` + hooks: `packages/sdk/src/balance.ts`, `packages/sdk/src/connectDashboard.ts`, `packages/sdk/src/transactions.ts`, `packages/sdk/src/badges.ts` | Использует `DATABASE_URL` + схемы `packages/db/src/schema/points.ts` (+ миграции) | `apps/points-service/src/index.ts`, `packages/db/src/schema/points.ts`, `packages/sdk/src/balance.ts` |
-| `apps/referral-service` | Cloudflare Worker | `apps/referral-service/src/index.ts` | User-facing: `GET /v1/referral/code|stats|tree|earnings`, `POST /v1/referral/claim`; `/health` | описано в `docs/openapi/openapi.bundle.yaml` + hooks: `packages/sdk/src/referrals.ts` | Использует `DATABASE_URL` + схемы `packages/db/src/schema/referral.ts` (+ миграции) | `apps/referral-service/src/index.ts`, `packages/db/src/schema/referral.ts`, `packages/sdk/src/referrals.ts` |
-| `apps/token-service` | Cloudflare Worker (skeleton) | `apps/token-service/src/index.ts` | Только `/health` (и 404 на остальные) | **Нет** API контрактов/SDK под “tokenomics” | Нет БД | `apps/token-service/src/index.ts` |
+- There is no runtime `apps/connect-service`.
+- There is no runtime `apps/missions-service`.
+- Connect Asia is a product/UI hub, not a backend-domain service.
+- `GET /v1/points/connect-dashboard` inside `apps/points-service` is only a read-model / UI aggregation endpoint. It must not become a hidden Connect backend owner.
+- `apps/content-service` is the current MVP runtime owner for Atlas / Pulse / Blog content surfaces. Legacy `atlas_service` and `pulse_service` docs are superseded for current runtime planning.
+- RF/Voucher ownership belongs to the RF/business layer in current canon. Legacy `voucher_service` docs are superseded for current runtime planning.
+- Legacy `nft_service` and Blockchain Gateway docs are future-layer references, not current runtime services.
+- `apps/token-service` exists only as a future/skeleton baseline and must not be treated as mature tokenomics.
 
----
+## 1. Current runtime applications in `apps/*`
 
-## 2) Shared backend packages (packages/*), влияющие на сервисы
+| App | Category | Runtime role | Evidence |
+| --- | --- | --- | --- |
+| `apps/api-gateway` | BFF/composition/read-model | Edge gateway and proxy by route prefix. Does not own domain logic. | `apps/api-gateway/src/index.ts`, `apps/api-gateway/wrangler.toml` |
+| `apps/auth-service` | domain service | Auth/identity webhook and user materialization. | `apps/auth-service/src/index.ts`, `packages/db/src/schema/auth.ts` |
+| `apps/content-service` | domain service | Runtime owner for Atlas / Pulse / Blog content: countries, cities, places, articles, events and event registration. | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` |
+| `apps/media-service` | support/service utility | Media storage/signing/pipeline support. Does not own product domains. | `apps/media-service/src/index.ts` |
+| `apps/points-service` | domain service | Points ledger, balances, transactions, reward execution, current off-chain badges baseline, and Connect dashboard read-model. | `apps/points-service/src/index.ts`, `packages/db/src/schema/points.ts` |
+| `apps/referral-service` | domain service | Referral codes, relations, tree, earnings and first-login reward integration. | `apps/referral-service/src/index.ts`, `packages/db/src/schema/referral.ts` |
+| `apps/token-service` | future/skeleton | Health-only baseline for future tokenomics. Not mature G2A/token engine. | `apps/token-service/src/index.ts` |
+| `apps/space-service` | domain service | Space UGC/social publication contour. | `apps/space-service/src/index.ts` |
+| `apps/feed-service` | BFF/composition/read-model | Feed projection/composition over Space/Reactions. | `apps/feed-service/src/index.ts` |
+| `apps/reactions-service` | domain service | Reactions and structured interaction contour. | `apps/reactions-service/src/index.ts` |
+| `apps/quest-service` | domain service | Quest routes, tasks/steps, progress, submissions, proof/review and reward handoff. | `apps/quest-service/src/index.ts`, `apps/quest-service/src/services/questService.ts` |
+| `apps/rf-service` | domain service | RF partners, offers, vouchers, branches, business lines and related partner workflows. | `apps/rf-service/src/index.ts` |
+| `apps/rielt-service` | domain service | Housing/listing/inquiry domain with RF partner/offer references. | `apps/rielt-service/src/index.ts` |
+| `apps/guru-service` | BFF/composition/read-model | Nearby composition over domain services. Not Geo Service and not geo/domain truth owner. | `apps/guru-service/src/index.ts`, `apps/guru-service/src/routes/nearby.ts` |
+| `apps/organizer-service` | legacy/unclear or provisional domain until classified | Trips/organizer contour exists, but Platform Canon v2 does not yet classify its final role. | `apps/organizer-service/src/index.ts`, `apps/organizer-service/src/routes/trips.ts` |
+| `apps/go2asia-pwa-shell` | frontend application | Next.js PWA frontend shell. Not a backend service. | `apps/go2asia-pwa-shell/package.json` |
 
-- **`packages/db`**: единый пакет БД + Drizzle + миграции.
-  - **Миграции**: `packages/db/migrations/*`
-  - **Схемы по доменам**: `packages/db/src/schema/{auth,content,points,referral}.ts`
-- **`packages/sdk`**: клиентский SDK (React Query hooks + server-safe helpers), который ходит в API Gateway.
-  - Base URL/headers/auth: `packages/sdk/src/mutator.ts` + `packages/sdk/src/clerk-integration.ts`
-  - Примеры реальных вызовов: `packages/sdk/src/balance.ts` (`/v1/points/balance`), `packages/sdk/src/referrals.ts` (`/v1/referral/*`), `packages/sdk/src/content.ts` (`/v1/content/*`)
-- **`packages/logger`**: корреляция/`X-Request-Id` и структурный логинг (используется во всех воркерах).
-- **`docs/openapi/openapi.bundle.yaml`**: фактический API контракт с реальными paths (в отличие от `docs/openapi/openapi.yaml`, где `paths: {}`).
+## 2. Legacy service names and current interpretation
 
----
+| Legacy / target name in older docs | Current runtime interpretation | Planning rule |
+| --- | --- | --- |
+| `connect_service` / Connect Service | No runtime app. Connect is UI/product hub. `connect-dashboard` is a read-model inside Points Service. | Do not create or target `apps/connect-service` unless Platform Canon v2 is explicitly updated. |
+| `missions_service` / Missions Service | No runtime app. Future orchestration/reward-intent layer. | Direct Points calls are allowed only under the pre-Missions baseline; they are not a replacement for future reward intents. |
+| `atlas_service` | Superseded for current MVP by `apps/content-service` for Atlas content surfaces. | Do not treat `docs/backend/atlas_service/*` as current runtime service inventory. |
+| `pulse_service` | Superseded for current MVP by `apps/content-service` for Pulse event surfaces. | Do not target a runtime `apps/pulse-service` in current MVP planning. |
+| `voucher_service` | Superseded for current canon by RF/Voucher ownership in `apps/rf-service` and related RF docs. | Do not introduce a separate voucher owner without architecture decision. |
+| `nft_service` | Future Badges/NFT layer reference. Current badges are off-chain and exposed through Points-related APIs. | Treat as future-layer docs, not runtime truth. |
+| Blockchain Gateway Service | Future on-chain execution layer. | Not current runtime. Do not mix with Points MVP. |
+| Token Service | `apps/token-service` exists as skeleton only. | Keep separate from Points and Connect. Do not treat as mature tokenomics. |
 
-## 3) Mapping: сервисы из `docs/knowledge/backend_microservice.md` → реализация в repo
+## 3. Current economy/reward baseline
 
-Статусы:
-- **Implemented**: есть сервис/эндпоинты и используется.
-- **Partial**: есть часть функциональности или сервис “слит” в другой, или только M3/MVP.
-- **Not started**: отсутствует в repo.
-- **Deprecated**: описание/метаданные устарели и вводят в заблуждение.
-- **Merged-into-other**: отдельного сервиса нет, обязанности покрываются другим компонентом.
+Current runtime before mature Missions Service:
 
-### Core
+- Points Service owns ledger, balances, transactions and reward execution.
+- Allowed current producers call `POST /internal/points/add` through service-to-service auth:
+  - `apps/auth-service`
+  - `apps/content-service`
+  - `apps/quest-service`
+  - `apps/referral-service`
+- `apps/points-service` receives and executes the internal call.
+- UI must not write ledger.
+- Connect dashboard must remain read-only aggregation.
+- Seed/demo scripts are not production reward path.
 
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| User (Identity) Service | auth + базовый профиль/роль + выдача JWT | `apps/auth-service` + Clerk (SSO) | **Partial (Merged-into-other)** | `apps/auth-service/src/index.ts` (`/v1/users/ensure`), `packages/db/src/schema/auth.ts`, gateway routes `/v1/users/*` → auth | F1 | Зафиксировать, что отдельного `user-service` нет: “User Service = auth-service + Clerk” (см. ADR по терминологии, если нужно) |
-| Guru Service | geo-агрегатор “рядом” | нет | **Not started** | нет `apps/guru-service` | F2 | Пометить как F2/Later; не учитывать как “реально существующий сервис” |
+Detailed baseline: `docs/architecture/platform/pre_missions_reward_baseline_v1.md`.
 
-### Content
+## 4. Shared packages and contracts
 
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Atlas Service | страны/города/места | **слито** в `apps/content-service` (`/v1/content/countries|cities|places`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (routes), `packages/db/src/schema/content.ts` | F1 | Явно отметить в docs: сейчас Atlas/Pulse/Blog реализованы как единый `content-service` |
-| Pulse Service | события + регистрации | **слито** в `apps/content-service` (`/v1/content/events/*`, `/register`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts` (event routes + register) | F1 | Аналогично: Pulse пока не отдельный сервис |
-| Media Service (Blog) | статьи | **слито** в `apps/content-service` (`/v1/content/articles/*`) | **Partial (Merged-into-other)** | `apps/content-service/src/index.ts`, `packages/db/src/schema/content.ts` (articles) | F1 | Это строка про blog/articles контур. Canonical platform media baseline (`/v1/media/*`, asset domain) зафиксирован отдельно в `docs/architecture/media/*`; content fallback трактуется как transitional, не ownership truth. |
+- `packages/db`: shared Drizzle schemas and migrations.
+- `packages/sdk`: frontend/server SDK helpers against API Gateway and service paths.
+- `packages/logger`: structured logging and request correlation.
+- `docs/openapi/openapi.bundle.yaml`: current bundled OpenAPI contract.
 
-### Social
+## 5. Non-goals for this inventory
 
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Space Service (UGC) | UGC посты/репосты (social-first), без inline-комментов под контентом | `apps/space-service` (`/v1/space/*`) | **Implemented (Phase 2 baseline)** | `apps/space-service/src/index.ts`, gateway `/v1/space/*` wiring | F2 | Зафиксировать как текущий social publication contour; не путать с `content-service` (Atlas/Pulse/Blog) |
-| Feed Service | ленты Space | `apps/feed-service` (`/v1/feed/*`) | **Implemented (separate service)** | `apps/feed-service/src/index.ts`, gateway `/v1/feed/*` wiring | F2 | Отражать как отдельный read/composition контур |
-| Reactions Service | реакции/ratings/threads и др. interaction-артефакты (без inline) | `apps/reactions-service` (`/v1/reactions/*`) | **Implemented (separate service)** | `apps/reactions-service/src/index.ts`, gateway `/v1/reactions/*` wiring | F2 | Отражать как interaction-контур; ownership публикаций остаётся в Space Service |
-
-### Commerce
-
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Rielt Service | жильё/листинги | нет | **Not started** | нет | F2/Later | Пометить как “Later” (если это не ранний скоуп) |
-| Voucher Service | ваучеры RF | нет | **Not started** | нет | F2 | RF как capstone Ф2 → зависит от Space/Quest/Points |
-| Russian Friendly (Partner) Service | RF партнёры/кабинеты/интеграции | нет | **Not started** | нет | F2 (capstone) | См. обновлённую RF-документацию `docs/modules/rf_partners/*` |
-
-### Gamification
-
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Quest Service | квесты/прогресс/submission-валидация (reward intents/events без ledger ownership) | `apps/quest-service` (`/v1/quests`, `/v1/submissions/*`) | **Implemented (core runtime), integration maturity partial** | `apps/quest-service/src/index.ts`, gateway `/v1/quests*` proxy | F2 | Разделять: runtime уже есть; bounded integration `quest.completed -> points-service` допустима как reward ingestion baseline, а для надёжности доставки Quest может держать delivery outbox/replay state, scheduled replay только для `pending`, а также internal ops drilldown/requeue для `failed` rows, не становясь ledger SSOT |
-
-### AI/ML
-
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Recommendation Service | рекомендации/ранжирование | нет | **Not started** | нет | Later | Явно пометить как future |
-| Content Moderation & Analysis | AI-модерация | нет | **Not started** | нет | Later | Явно пометить как future |
-
-### Tokenomics
-
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Token (Connect) Service | общий движок токеномики (Points + G2A + NFT + правила) | `apps/token-service` существует, но **только skeleton** | **Partial (skeleton only)** | `apps/token-service/src/index.ts` (`/health` only) | F2/Later | Разрулить терминологию Token/Points/Connect (см. ADR по терминологии) |
-| Points Service | балансы/транзакции Points | `apps/points-service` | **Implemented** | endpoints `/v1/points/*` (см. `apps/points-service/src/index.ts`, `docs/openapi/openapi.bundle.yaml`) | F1 | Зафиксировать: фактически Points уже есть и используется UI через SDK |
-| NFT Service | NFT бейджи | нет | **Not started** | нет | Later | future |
-| Blockchain Gateway Service | TON mint/burn/transfer | нет | **Not started** | нет | Later | future |
-
-### Technical
-
-| Service (docs) | Expected responsibilities | Repo implementation | Status | Evidence | Phase target | Decision & next action |
-|---|---|---|---|---|---|---|
-| Notification Service | email/push/telegram | нет (как отдельный сервис) | **Not started** | нет | F2/Later | future |
-| Logging & Analytics Service | централизованные логи/метрики | частично как пакеты/подход (logger + request id), но не сервис | **Partial (Merged-into-other)** | `packages/logger`, `X-Request-Id` в `packages/sdk/src/mutator.ts` | F1 | В docs разделять “компонент/инструменты” vs “отдельный микросервис” |
-
----
-
-## 4) Терминология Token / Points / Connect (обязательная фиксация)
-
-### Что **фактически реализовано**
-- **Points**: реализовано как `apps/points-service` + таблицы `points_transactions`, `user_balances` (`packages/db/src/schema/points.ts`).
-- **Badges baseline**: реализовано как bounded off-chain contour внутри `apps/points-service` (`badges`, `user_badges`), без NFT/on-chain/tokenomics semantics и без изменения Points ledger ownership.
-- **Connect Dashboard read model**: реализован как bounded convenience endpoint внутри `apps/points-service` (`GET /v1/points/connect-dashboard`), а не как отдельный `connect-service`; ownership исходных фактов остаётся у Points/Referral доменов.
-- **Connect (UI)**: использует Points через SDK:
-  - `packages/sdk/src/balance.ts` → `GET /v1/points/balance`
-  - `packages/sdk/src/transactions.ts` → `GET /v1/points/transactions`
-- **Token Service**: как backend-движок токеномики **не реализован**; `apps/token-service` — только `/health`.
-
-### Где встречается термин “Token Service”
-- UI: `apps/go2asia-pwa-shell/components/connect/Wallet/WalletView.tsx` содержит комментарий “Загружаем баланс из Token Service”, хотя вызовы идут в `/v1/points/*`.
-- Docs: `docs/knowledge/backend_microservice.md` и `docs/knowledge/go2asia_overview_structured.md` используют “Token (Connect) Service” как центральный компонент.
-
-### План синхронизации терминов (без поломки API)
-- **Сейчас**: считать SSOT по Points = `points-service`, а “Connect” = frontend-название модуля.
-- **Документация**: пометить “Token (Connect) Service” как **Later / not started**, а “Points Service” как **Implemented**.
-- **Совместимость API**: сохранить `/v1/points/*` как основной публичный контракт; не вводить `/v1/token/*` до появления реального tokenomics engine.
-- **Нейминг**: не называть `apps/token-service` “реализованным Tokenomics сервисом”, пока он skeleton.
-
----
-
-## 5) Space / Content / Feed / Reactions (обязательная фиксация)
-
-Факт repo:
-- В repo есть `apps/content-service`, но он обслуживает **Atlas/Pulse/Blog** (`/v1/content/*`) и **не** является Space backend.
-- В repo уже есть отдельные сервисы `apps/space-service`, `apps/feed-service`, `apps/reactions-service` с gateway-контуром `/v1/space/*`, `/v1/feed/*`, `/v1/reactions/*`.
-- Модель коммуникации: **social-first без inline-комментариев под объектами** (см. `docs/decisions/adr_0020_no_inline_comments_social_first.md`).
-
-Решение для документации:
-- В `docs/knowledge/backend_microservice.md` не трактовать `content-service` как “Space Content Service”.
-- Для планирования Ф2 использовать “Space Service (UGC) / Feed / Reactions” как отдельный уже реализованный контур и придерживаться social-first модели (репосты + реакции).
-
-
-
-
+- No code changes.
+- No service creation.
+- No OpenAPI changes.
+- No DB migrations.
+- No deletion of legacy docs.
+- No global replacement of old service names.

@@ -31,24 +31,24 @@ const QUEST_MEDIA_BY_ID: Record<string, QuestMediaContent> = {
     },
   },
   quest_sunset_viewpoint_002: {
-    coverKey: 'quests/phuket/sunset-viewpoint-photo-mission/cover.jpg',
+    coverKey: 'quests/phuket/sunset-viewpoint-photo-task/cover.jpg',
     coverAlt: 'Закатный вид с обзорной площадки Пхукета',
     gallery: [
-      { key: 'quests/phuket/sunset-viewpoint-photo-mission/gallery/01.jpg', alt: 'Дорожка к обзорной площадке' },
-      { key: 'quests/phuket/sunset-viewpoint-photo-mission/gallery/02.jpg', alt: 'Закатный панорамный вид' },
+      { key: 'quests/phuket/sunset-viewpoint-photo-task/gallery/01.jpg', alt: 'Дорожка к обзорной площадке' },
+      { key: 'quests/phuket/sunset-viewpoint-photo-task/gallery/02.jpg', alt: 'Закатный панорамный вид' },
     ],
     steps: {
       step_sunset_001: {
-        key: 'quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_001/01.jpg',
+        key: 'quests/phuket/sunset-viewpoint-photo-task/steps/step_sunset_001/01.jpg',
         alt: 'Старт маршрута к смотровой',
       },
       step_sunset_002: {
-        key: 'quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_002/01.jpg',
+        key: 'quests/phuket/sunset-viewpoint-photo-task/steps/step_sunset_002/01.jpg',
         alt: 'Фото-подтверждение закатного вида',
       },
       step_sunset_003: {
-        key: 'quests/phuket/sunset-viewpoint-photo-mission/steps/step_sunset_003/01.jpg',
-        alt: 'Финальное подтверждение миссии',
+        key: 'quests/phuket/sunset-viewpoint-photo-task/steps/step_sunset_003/01.jpg',
+        alt: 'Финальное подтверждение задания',
       },
     },
   },
