@@ -880,6 +880,99 @@ describe('rf-service request', () => {
     expect(body.error.code).toBe('INVALID_IDEMPOTENCY_KEY');
   });
 
+  it('requires auth for voucher summary', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const response = await worker.fetch(new Request('https://rf.example/v1/rf/me/vouchers/summary'), env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns zero voucher summary for current user with no vouchers', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          total_vouchers: 0,
+          active_vouchers: 0,
+          used_vouchers: 0,
+          cancelled_vouchers: 0,
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/me/vouchers/summary', {
+        headers: {
+          'X-Gateway-Auth': userToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      totalVouchers: number;
+      activeVouchers: number;
+      usedVouchers: number;
+      cancelledVouchers: number;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      totalVouchers: 0,
+      activeVouchers: 0,
+      usedVouchers: 0,
+      cancelledVouchers: 0,
+    });
+    expect(executeMock).toHaveBeenCalledTimes(1);
+    expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+  });
+
+  it('counts current user voucher summary by RF runtime status', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          total_vouchers: 4,
+          active_vouchers: 2,
+          used_vouchers: 1,
+          cancelled_vouchers: 1,
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/me/vouchers/summary', {
+        headers: {
+          'X-Gateway-Auth': userToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      totalVouchers: number;
+      activeVouchers: number;
+      usedVouchers: number;
+      cancelledVouchers: number;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      totalVouchers: 4,
+      activeVouchers: 2,
+      usedVouchers: 1,
+      cancelledVouchers: 1,
+    });
+    expect(executeMock).toHaveBeenCalledTimes(1);
+    expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+  });
+
   it('supports PRO link flow (create + accept)', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });

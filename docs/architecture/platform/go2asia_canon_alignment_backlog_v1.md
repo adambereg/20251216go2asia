@@ -27,6 +27,9 @@ P1 decision lock status (2026-04-28):
 - RF-005 in progress: PRO trust-chain visibility baseline (`docs/architecture/rf/rf_pro_trust_visibility_v1.md`).
 - RF-IMPL-001 completed: claim/redeem execution hardening in `rf-service` (`apps/rf-service/src/store.ts`, `apps/rf-service/test/request.test.ts`, `docs/openapi/rf.yaml`).
 - Connect-001 completed: runtime contract lock (`docs/architecture/connect/connect_runtime_contract_lock_v1.md`).
+- Connect-002 in progress: user economy snapshot baseline (`docs/architecture/connect/connect_user_economy_snapshot_v1.md`).
+- Connect-003 completed (contract-only): voucher visibility read-only contract (`docs/architecture/connect/connect_voucher_visibility_contract_v1.md`).
+- Connect-003-IMPL completed: RF-owned voucher summary read endpoint (`GET /v1/rf/me/vouchers/summary`).
 
 2. Canon Baseline
 

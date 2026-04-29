@@ -49,6 +49,13 @@ export interface Voucher {
   updatedAt: string;
 }
 
+export interface VoucherSummary {
+  totalVouchers: number;
+  activeVouchers: number;
+  usedVouchers: number;
+  cancelledVouchers: number;
+}
+
 export interface ProLink {
   id: string;
   partnerId: string;
@@ -663,6 +670,32 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
     ORDER BY created_at DESC, id DESC
   `);
   return rowsOf<VoucherRow>(result).map(toVoucher);
+}
+
+export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrincipal): Promise<VoucherSummary> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*)::int AS total_vouchers,
+      COUNT(*) FILTER (WHERE status = 'claimed')::int AS active_vouchers,
+      COUNT(*) FILTER (WHERE status = 'redeemed')::int AS used_vouchers,
+      COUNT(*) FILTER (WHERE status = 'cancelled')::int AS cancelled_vouchers
+    FROM rf_voucher
+    WHERE issued_to_user_id = ${principal.userId}
+  `);
+  const row =
+    rowsOf<{
+      total_vouchers: number;
+      active_vouchers: number;
+      used_vouchers: number;
+      cancelled_vouchers: number;
+    }>(result)[0] ?? null;
+
+  return {
+    totalVouchers: Number(row?.total_vouchers ?? 0),
+    activeVouchers: Number(row?.active_vouchers ?? 0),
+    usedVouchers: Number(row?.used_vouchers ?? 0),
+    cancelledVouchers: Number(row?.cancelled_vouchers ?? 0),
+  };
 }
 
 export async function redeemVoucher(

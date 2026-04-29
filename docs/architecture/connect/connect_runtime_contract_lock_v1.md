@@ -252,3 +252,7 @@ Lock decisions:
 - no Missions implementation;
 - no token/NFT implementation.
 
+Status update:
+
+- Connect-002 snapshot defined in `docs/architecture/connect/connect_user_economy_snapshot_v1.md`.
+

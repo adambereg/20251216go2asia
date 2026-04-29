@@ -9,6 +9,7 @@ import {
   createOffer,
   createPartner,
   createProLink,
+  getMyVoucherSummary,
   getPublicOfferById,
   getPublicPartnerById,
   listMyVouchers,
@@ -197,6 +198,11 @@ export async function handleRfRoute(
   if (request.method === 'GET' && path === '/v1/rf/me/vouchers') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     return json({ items: await listMyVouchers(db, principal), nextCursor: null });
+  }
+
+  if (request.method === 'GET' && path === '/v1/rf/me/vouchers/summary') {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    return json(await getMyVoucherSummary(db, principal));
   }
 
   const redeemMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/vouchers\/([^/]+)\/redeem$/);

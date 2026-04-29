@@ -299,6 +299,7 @@ export * from "./rfValidationErrorResponse";
 export * from "./rfVoucher";
 export * from "./rfVoucherListResponse";
 export * from "./rfVoucherStatus";
+export * from "./rfVoucherSummary";
 export * from "./rfXGatewayAuthParameter";
 export * from "./rieltArchiveResponse";
 export * from "./rieltArchiveResponseAllOf";
