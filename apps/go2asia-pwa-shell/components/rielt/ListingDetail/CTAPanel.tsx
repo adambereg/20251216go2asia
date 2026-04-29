@@ -42,13 +42,13 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
   const voucherCount = listing.presentation?.vouchersCount ?? 0;
-  const hasRfContext = Boolean(listing.rfPartnerId || listing.rfOfferId || listing.rfVoucher || listing.isRF || voucherCount > 0);
+  const hasRfTruth = Boolean(listing.rfPartnerId);
   const rfCatalogHref = buildRfVoucherRoute(listing);
-  const primaryCtaLabel = hasRfContext
+  const primaryCtaLabel = hasRfTruth
     ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Открыть предложение' : 'Открыть RF-предложения')
     : 'Смотреть похожие варианты';
-  const primaryCtaHref = hasRfContext ? rfCatalogHref : '/rielt/search';
-  const secondaryVoucherCta = hasRfContext ? listing.presentation?.secondaryCtaLabel : undefined;
+  const primaryCtaHref = hasRfTruth ? rfCatalogHref : '/rielt/search';
+  const secondaryVoucherCta = hasRfTruth ? listing.presentation?.secondaryCtaLabel : undefined;
 
   const buildIdempotencyKey = () => {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -137,7 +137,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         {primaryCtaLabel}
       </Link>
 
-      {hasRfContext ? (
+      {hasRfTruth ? (
         <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">RF</span>

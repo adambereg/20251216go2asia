@@ -27,14 +27,14 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
   const hasAmenityChips = Boolean(listing.amenities.wifi || listing.amenities.workspace || listing.amenities.kitchen);
   const precision = resolveGeoPrecision(listing);
   const voucherCount = listing.presentation?.vouchersCount ?? 0;
-  const hasRfLink = Boolean(listing.rfPartnerId || listing.rfOfferId);
-  const rfContextLabel = voucherCount > 0
-    ? `Ваучеров: ${voucherCount}`
-    : listing.rfVoucher
-      ? 'Доступен ваучер'
-      : hasRfLink
-        ? 'Связано с RF'
-        : null;
+  const hasRfTruth = Boolean(listing.rfPartnerId);
+  const rfContextLabel = hasRfTruth
+    ? voucherCount > 0
+      ? `Ваучеров: ${voucherCount}`
+      : listing.rfVoucher
+        ? 'Ваучер доступен'
+        : 'RF-партнёр'
+    : null;
 
   return (
     <Link
@@ -52,19 +52,14 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         
         {/* Бейджи */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-2">
-          {listing.isRF && (
+          {hasRfTruth && (
             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
-              RF
+              RF-партнёр
             </span>
           )}
-          {listing.rfVoucher && (
+          {hasRfTruth && listing.rfVoucher && (
             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               Есть RF-предложение
-            </span>
-          )}
-          {hasRfLink && !listing.rfVoucher && (
-            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
-              Связано с RF
             </span>
           )}
           {listing.proVerification?.verified && (
