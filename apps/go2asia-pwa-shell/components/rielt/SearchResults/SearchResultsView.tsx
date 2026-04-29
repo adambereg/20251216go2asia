@@ -104,7 +104,7 @@ export function SearchResultsView({
       ) : null}
       {hasGuidedContext ? (
         <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
-          Некоторые выбранные параметры помогают точнее сформулировать запрос владельцу.
+          Некоторые выбранные параметры помогают точнее подобрать варианты размещения.
         </div>
       ) : null}
 

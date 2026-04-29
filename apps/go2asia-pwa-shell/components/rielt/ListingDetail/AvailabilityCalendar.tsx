@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import type { Listing } from '../types';
-import { isDateAvailable, formatDate } from '../utils/calendar';
+import { isDateAvailable } from '../utils/calendar';
 
 interface AvailabilityCalendarProps {
   listing: Listing;
@@ -82,7 +82,7 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
       {listing.availability.instantBooking && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
           <span className="text-green-800 font-medium">
-            ✓ Мгновенное бронирование доступно
+            ✓ Доступность можно уточнить быстро
           </span>
         </div>
       )}
@@ -98,7 +98,6 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
 
         {/* Дни */}
         {days.map((date, index) => {
-          const dateStr = date.toISOString().split('T')[0];
           const isAvailable = isDateAvailable(date, calendar);
           const isPast = date < today;
           const isSelected =

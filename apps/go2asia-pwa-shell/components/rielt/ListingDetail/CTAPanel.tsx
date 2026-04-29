@@ -2,10 +2,11 @@
 
 /**
  * Rielt.Market Asia - CTAPanel
- * Sticky panel with truthful first-pass inquiry flow.
+ * Sticky panel with voucher-first discovery flow.
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Heart, Share2 } from 'lucide-react';
 import { createListingInquiry } from '@go2asia/sdk/rielt';
 import type { Listing } from '../types';
@@ -14,6 +15,14 @@ interface CTAPanelProps {
   listing: Listing;
   selectedDates: { checkIn?: Date; checkOut?: Date };
   onDatesChange: (dates: { checkIn?: Date; checkOut?: Date }) => void;
+}
+
+function buildRfVoucherRoute(listing: Listing): string {
+  if (listing.rfPartnerId) {
+    return `/rf/vouchers?partner=${encodeURIComponent(listing.rfPartnerId)}`;
+  }
+
+  return '/rf/vouchers';
 }
 
 export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProps) {
@@ -32,9 +41,14 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
     : listing.pricing.perNight;
 
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
-  const primaryVoucherCta = listing.presentation?.primaryCtaLabel || listing.rfVoucher?.title;
-  const secondaryVoucherCta = listing.presentation?.secondaryCtaLabel;
-  const voucherFirst = listing.presentation?.voucherEntryMode === 'voucher_first';
+  const voucherCount = listing.presentation?.vouchersCount ?? 0;
+  const hasRfContext = Boolean(listing.rfPartnerId || listing.rfOfferId || listing.rfVoucher || listing.isRF || voucherCount > 0);
+  const rfCatalogHref = buildRfVoucherRoute(listing);
+  const primaryCtaLabel = hasRfContext
+    ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Открыть предложение' : 'Открыть RF-предложения')
+    : 'Смотреть похожие варианты';
+  const primaryCtaHref = hasRfContext ? rfCatalogHref : '/rielt/search';
+  const secondaryVoucherCta = hasRfContext ? listing.presentation?.secondaryCtaLabel : undefined;
 
   const buildIdempotencyKey = () => {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -46,7 +60,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
   const handleRequest = async () => {
     if (!message.trim()) {
       setInquiryStatus('error');
-      setInquiryText('Введите сообщение для запроса.');
+      setInquiryText('Введите сообщение для уточнения.');
       return;
     }
 
@@ -65,11 +79,11 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         buildIdempotencyKey()
       );
       setInquiryStatus('success');
-      setInquiryText('Запрос отправлен.');
+      setInquiryText('Сообщение отправлено.');
       setMessage('');
     } catch (error) {
       const payload = error as { error?: { code?: string; message?: string }; status?: number };
-      const errorMessage = payload?.error?.message ?? 'Не удалось отправить запрос. Попробуйте ещё раз.';
+      const errorMessage = payload?.error?.message ?? 'Не удалось отправить сообщение. Попробуйте ещё раз.';
       setInquiryStatus('error');
       setInquiryText(errorMessage);
     }
@@ -112,49 +126,58 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
       <div className="rounded-lg border border-slate-200 p-3 mb-5">
         <p className="text-xs text-slate-600">
-          Онлайн-бронирование и оплата пока не подключены. Чтобы уточнить условия, отправьте запрос владельцу.
+          Rielt показывает объект и контекст размещения. Ваучеры и RF-предложения открываются в RF Asia; Rielt не подтверждает бронирование.
         </p>
       </div>
 
-      {listing.rfVoucher ? (
+      <Link
+        href={primaryCtaHref}
+        className="mb-5 flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+      >
+        {primaryCtaLabel}
+      </Link>
+
+      {hasRfContext ? (
         <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">Акция</span>
-            <span className="text-sm font-semibold text-emerald-900">{listing.rfVoucher.title}</span>
+            <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-xs font-bold">RF</span>
+            <span className="text-sm font-semibold text-emerald-900">
+              {listing.rfVoucher?.title ?? (voucherCount > 0 ? `Ваучеров: ${voucherCount}` : 'Russian Friendly контекст')}
+            </span>
           </div>
-          <p className="text-sm text-emerald-800 mb-3">{listing.rfVoucher.description}</p>
-          {primaryVoucherCta ? (
-            <button
-              type="button"
-              className="w-full px-4 py-2 border border-emerald-300 text-emerald-800 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
-            >
-              {primaryVoucherCta}
-            </button>
-          ) : null}
+          <p className="text-sm text-emerald-800 mb-3">
+            {listing.rfVoucher?.description ??
+              'Для этого объекта есть RF-сигнал. Активация и условия ваучеров остаются в RF Asia.'}
+          </p>
           {secondaryVoucherCta ? (
-            <button
-              type="button"
-              className="w-full mt-2 px-4 py-2 border border-emerald-300 text-emerald-800 rounded-lg font-medium hover:bg-emerald-100 transition-colors"
+            <Link
+              href={rfCatalogHref}
+              className="mt-2 block w-full rounded-lg border border-emerald-300 px-4 py-2 text-center font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
             >
               {secondaryVoucherCta}
-            </button>
+            </Link>
           ) : null}
-          <p className="text-xs text-emerald-800 mt-2">Условия акции уточняются при запросе.</p>
+          <p className="text-xs text-emerald-800 mt-2">
+            Получение и активация ваучеров происходят в RF Asia. Rielt не подтверждает бронирование.
+          </p>
         </div>
       ) : null}
 
       {/* Кнопки действий */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-900">
-          {voucherFirst ? 'Или отправьте запрос владельцу' : 'Отправьте запрос владельцу'}
+          Оставить сообщение по объекту
         </h3>
+        <p className="text-xs text-slate-500">
+          Это вторичный канал для уточнения деталей размещения после выбора подходящего варианта.
+        </p>
         <div className="space-y-2">
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             rows={3}
             className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-            placeholder="Напишите ваш запрос по объявлению"
+            placeholder="Напишите, какие детали размещения хотите уточнить"
           />
           <input
             value={contactName}
@@ -179,7 +202,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             disabled={inquiryStatus === 'submitting'}
             className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl font-semibold transition-colors"
           >
-            {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить запрос'}
+            {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить сообщение'}
           </button>
           {inquiryText ? (
             <p className={inquiryStatus === 'success' ? 'text-xs text-emerald-700' : 'text-xs text-red-700'}>

@@ -8,7 +8,7 @@
 
 - Rielt = strict voucher-first discovery;
 - RF = partner/business identity;
-- voucher claim/redeem = canonical inquiry baseline;
+- voucher claim/redeem = RF/voucher-layer lifecycle baseline, not Rielt execution;
 - no chat baseline;
 - no booking baseline;
 - no direct inquiry baseline;
@@ -47,6 +47,8 @@ Rielt не может:
 - `rf_partner_id` может быть без `rf_offer_id`, если listing привязан только к partner;
 - `rf_offer_id` должен соответствовать тому же partner;
 - сейчас refs могут быть soft/transitional;
+- Rielt stores only soft references to RF partner/offer and routes users into RF;
+- `rf_offer_id` is optional and must not be inferred from `RfVoucher.id` or any post-claim voucher id;
 - strict validation переносится в future implementation slice.
 
 ## 5. Soft Refs Now / Strict Validation Later
@@ -80,6 +82,8 @@ Primary CTA в Rielt должен быть voucher-oriented:
 - open partner offer;
 - get accommodation bonus.
 
+В Rielt это означает handoff/deep link в RF surface, а не локальное выполнение claim/redeem.
+
 Не primary:
 
 - message owner;
@@ -100,7 +104,7 @@ Primary CTA в Rielt должен быть voucher-oriented:
 
 - `listing_id`;
 - `rf_partner_id`;
-- `rf_offer_id`;
+- `rf_offer_id` when an explicit offer mapping exists;
 - user context;
 - `return_url` / source context;
 - optional urgency mode:

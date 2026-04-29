@@ -26,6 +26,15 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
   const priceLabel = listing.rentalType === 'long-term' ? 'месяц' : 'ночь';
   const hasAmenityChips = Boolean(listing.amenities.wifi || listing.amenities.workspace || listing.amenities.kitchen);
   const precision = resolveGeoPrecision(listing);
+  const voucherCount = listing.presentation?.vouchersCount ?? 0;
+  const hasRfLink = Boolean(listing.rfPartnerId || listing.rfOfferId);
+  const rfContextLabel = voucherCount > 0
+    ? `Ваучеров: ${voucherCount}`
+    : listing.rfVoucher
+      ? 'Доступен ваучер'
+      : hasRfLink
+        ? 'Связано с RF'
+        : null;
 
   return (
     <Link
@@ -46,6 +55,16 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
           {listing.isRF && (
             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               RF
+            </span>
+          )}
+          {listing.rfVoucher && (
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
+              Есть RF-предложение
+            </span>
+          )}
+          {hasRfLink && !listing.rfVoucher && (
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
+              Связано с RF
             </span>
           )}
           {listing.proVerification?.verified && (
@@ -139,9 +158,9 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
             </span>
             <span className="text-sm text-slate-600 ml-1">/ {priceLabel}</span>
           </div>
-          {listing.presentation?.vouchersCount ? (
+          {rfContextLabel ? (
             <span className="text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ваучеров: {listing.presentation.vouchersCount}
+              {rfContextLabel}
             </span>
           ) : null}
         </div>

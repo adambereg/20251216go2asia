@@ -4018,6 +4018,14 @@ components:
           format: date-time
           nullable: true
           type: string
+        rfOfferId:
+          description: Optional Rielt soft reference to an RF offer for voucher-first entry routing. Rielt does not own claim/redeem lifecycle.
+          nullable: true
+          type: string
+        rfPartnerId:
+          description: Optional Rielt soft reference to an RF partner for voucher-first entry routing.
+          nullable: true
+          type: string
         slug:
           type: string
         title:

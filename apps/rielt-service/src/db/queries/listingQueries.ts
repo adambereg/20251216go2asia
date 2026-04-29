@@ -29,6 +29,8 @@ export type PublicListingRow = {
   city_id: string | null;
   atlas_place_id: string | null;
   atlas_container_place_id: string | null;
+  rf_partner_id: string | null;
+  rf_offer_id: string | null;
   city_label: string | null;
   public_geo_precision: 'approximate' | 'area' | 'city' | 'none';
   public_geo_lat: number | string | null;
@@ -762,6 +764,8 @@ export async function listPublishedListings(
       l.city_id,
       l.atlas_place_id,
       l.atlas_container_place_id,
+      l.rf_partner_id,
+      l.rf_offer_id,
       COALESCE(c.names ->> 'ru', c.name, l.city_id) AS city_label,
       CASE
         WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 'approximate'
@@ -864,6 +868,8 @@ export async function getPublishedListingByIdOrSlug(
       l.city_id,
       l.atlas_place_id,
       l.atlas_container_place_id,
+      l.rf_partner_id,
+      l.rf_offer_id,
       COALESCE(c.names ->> 'ru', c.name, l.city_id) AS city_label,
       CASE
         WHEN l.lat IS NOT NULL AND l.lng IS NOT NULL THEN 'approximate'
@@ -985,6 +991,8 @@ export async function listPublishedListingsNearby(
         b.city_id,
         b.atlas_place_id,
         b.atlas_container_place_id,
+        b.rf_partner_id,
+        b.rf_offer_id,
         COALESCE(c.names ->> 'ru', c.name, b.city_id) AS city_label,
         CASE
           WHEN b.lat IS NOT NULL AND b.lng IS NOT NULL THEN 'approximate'

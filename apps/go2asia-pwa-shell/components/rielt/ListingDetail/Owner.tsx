@@ -2,11 +2,11 @@
 
 /**
  * Rielt.Market Asia - Owner
- * Владелец/Агент (профиль, чат)
+ * Контакт по объекту
  */
 
 import Image from 'next/image';
-import { MessageCircle, Star, Clock, CheckCircle } from 'lucide-react';
+import { MessageCircle, Star, Clock } from 'lucide-react';
 import Link from 'next/link';
 import type { Listing } from '../types';
 
@@ -19,7 +19,7 @@ export function Owner({ listing }: OwnerProps) {
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">Владелец</h2>
+      <h2 className="text-2xl font-bold text-slate-900 mb-4">Контакт по объекту</h2>
       
       <div className="flex items-start gap-4">
         {/* Аватар */}
@@ -82,13 +82,13 @@ export function Owner({ listing }: OwnerProps) {
             </div>
           )}
 
-          {/* Кнопка "Написать" */}
+          {/* Контактный профиль */}
           <Link
             href={`/space/users/${owner.id}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
-            Написать владельцу
+            Уточнить детали
           </Link>
         </div>
       </div>

@@ -51,6 +51,8 @@ export interface RieltListingDto {
   areaSqm: number | null;
   geo: RieltGeoDto;
   media: RieltMediaDto;
+  rfPartnerId?: string | null;
+  rfOfferId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   publishedAt: string | null;

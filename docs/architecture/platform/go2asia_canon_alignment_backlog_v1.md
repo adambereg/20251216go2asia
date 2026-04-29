@@ -23,7 +23,8 @@ P1 decision lock status (2026-04-28):
 - RF-001 contract lock documented: `docs/architecture/rf/rf_runtime_contract_lock_v1.md` (docs-only boundary lock between current runtime and target/future RF scope).
 - RF-002 in progress: voucher lifecycle contract baseline hardening (`docs/architecture/rf/rf_voucher_lifecycle_contract_v1.md`).
 - RF-003 in progress: partner-offer-voucher relation hardening + terminology alignment (`docs/architecture/rf/rf_runtime_contract_lock_v1.md`, `docs/architecture/rf/rf_voucher_lifecycle_contract_v1.md`).
-- RF-004 in progress: Rielt voucher-first contract support (`docs/architecture/rf/rf_rielt_voucher_first_contract_v1.md`).
+- RF-004 completed/in progress: Rielt data contract supports optional RF partner/offer soft references for voucher-first routing (`docs/architecture/rf/rf_rielt_voucher_first_contract_v1.md`).
+- Rielt-001 completed: voucher-first UI baseline aligned with RF/Voucher boundaries; no fake `rfOfferId`/`rfPartnerId`; no claim/redeem in Rielt.
 - RF-005 in progress: PRO trust-chain visibility baseline (`docs/architecture/rf/rf_pro_trust_visibility_v1.md`).
 - RF-IMPL-001 completed: claim/redeem execution hardening in `rf-service` (`apps/rf-service/src/store.ts`, `apps/rf-service/test/request.test.ts`, `docs/openapi/rf.yaml`).
 - Connect-001 completed: runtime contract lock (`docs/architecture/connect/connect_runtime_contract_lock_v1.md`).
