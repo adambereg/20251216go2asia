@@ -6,9 +6,9 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfErrorResponse } from "./rfErrorResponse";
 
 /**
- * Required idempotency key for claim operation. Same user + same key replays the same claim result without creating duplicate business effects.
-
+ * Service unavailable or not configured
  */
-export type RfIdempotencyKeyParameter = string;
+export type RfServiceUnavailableResponse = RfErrorResponse;

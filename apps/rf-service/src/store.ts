@@ -308,6 +308,17 @@ async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow |
   return rowsOf<OfferRow>(result)[0] ?? null;
 }
 
+async function getActivePartnerById(db: DbExecutor, partnerId: string): Promise<Pick<PartnerRow, 'id'> | null> {
+  const result = await db.execute(sql`
+    SELECT id
+    FROM rf_partner
+    WHERE id = ${partnerId}
+      AND status = 'active'
+    LIMIT 1
+  `);
+  return rowsOf<Pick<PartnerRow, 'id'>>(result)[0] ?? null;
+}
+
 async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partnerId: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
     SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
@@ -574,6 +585,14 @@ export async function claimVoucher(
   if (offer.status !== 'active') {
     return { ok: false, code: 'RF_OFFER_INACTIVE', message: 'RF offer is not active', status: 409 };
   }
+  if (offer.visibility !== 'public') {
+    return { ok: false, code: 'RF_OFFER_NOT_CLAIMABLE', message: 'RF offer is not publicly claimable', status: 409 };
+  }
+
+  const activePartner = await getActivePartnerById(db, offer.partner_id);
+  if (!activePartner) {
+    return { ok: false, code: 'RF_PARTNER_INACTIVE', message: 'RF partner is not active', status: 409 };
+  }
 
   const existing = await getClaimableVoucherByOfferAndUser(db, offer.id, principal.userId);
   if (existing) {
@@ -668,6 +687,16 @@ export async function redeemVoucher(
   }
   if (voucher.status !== 'claimed') {
     return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
+  }
+
+  const voucherOffer = await getOfferById(db, voucher.offer_id);
+  if (!voucherOffer || voucherOffer.partner_id !== voucher.partner_id || voucherOffer.partner_id !== input.partnerId) {
+    return {
+      ok: false,
+      code: 'RF_VOUCHER_RELATION_INVALID',
+      message: 'RF voucher offer/partner relation is invalid',
+      status: 409,
+    };
   }
 
   const updateResult = await db.execute(sql`

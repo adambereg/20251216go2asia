@@ -7,6 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
+
+ */
 export type RfVoucherStatus = (typeof RfVoucherStatus)[keyof typeof RfVoucherStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare

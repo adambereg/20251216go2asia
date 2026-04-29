@@ -239,6 +239,10 @@ describe('rf-service request', () => {
           },
         ],
       })
+      // claim #1: active partner check
+      .mockResolvedValueOnce({
+        rows: [{ id: 'rf_partner_1' }],
+      })
       // claim #1: existing voucher lookup
       .mockResolvedValueOnce({ rows: [] })
       // claim #1: insert voucher
@@ -317,6 +321,22 @@ describe('rf-service request', () => {
             redeemed_at: null,
             created_at: '2026-03-21T10:03:00.000Z',
             updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // redeem #1: offer relation lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:02:00.000Z',
           },
         ],
       })
@@ -472,6 +492,392 @@ describe('rf-service request', () => {
     expect(redeem2.status).toBe(200);
     expect(redeem2Body.applied).toBe(false);
     expect(redeem2Body.voucher.status).toBe('redeemed');
+  });
+
+  it('enforces auth on claim/redeem protected routes', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const claim = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': 'claim-auth-check' },
+      }),
+      env
+    );
+    const claimBody = await readJson<{ error: { code: string } }>(claim);
+    expect(claim.status).toBe(401);
+    expect(claimBody.error.code).toBe('UNAUTHORIZED');
+
+    const redeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_1/redeem', {
+        method: 'POST',
+      }),
+      env
+    );
+    const redeemBody = await readJson<{ error: { code: string } }>(redeem);
+    expect(redeem.status).toBe(401);
+    expect(redeemBody.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('fails claim for non-existing, inactive and non-public offers', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      // claim (missing offer): idempotency lookup, offer lookup
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      // claim (inactive offer): idempotency lookup, offer lookup
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_inactive',
+            partner_id: 'rf_partner_1',
+            title: 'Inactive Offer',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'draft',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+          },
+        ],
+      })
+      // claim (non-public offer): idempotency lookup, offer lookup
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_private',
+            partner_id: 'rf_partner_1',
+            title: 'Private Offer',
+            offer_type: 'discount',
+            visibility: 'pro_only',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+          },
+        ],
+      });
+
+    const missing = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_missing/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-missing-offer',
+        },
+      }),
+      env
+    );
+    const missingBody = await readJson<{ error: { code: string } }>(missing);
+    expect(missing.status).toBe(404);
+    expect(missingBody.error.code).toBe('RF_OFFER_NOT_FOUND');
+
+    const inactive = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_inactive/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-inactive-offer',
+        },
+      }),
+      env
+    );
+    const inactiveBody = await readJson<{ error: { code: string } }>(inactive);
+    expect(inactive.status).toBe(409);
+    expect(inactiveBody.error.code).toBe('RF_OFFER_INACTIVE');
+
+    const nonPublic = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_private/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-non-public-offer',
+        },
+      }),
+      env
+    );
+    const nonPublicBody = await readJson<{ error: { code: string } }>(nonPublic);
+    expect(nonPublic.status).toBe(409);
+    expect(nonPublicBody.error.code).toBe('RF_OFFER_NOT_CLAIMABLE');
+  });
+
+  it('keeps claim deterministic for repeated request with different idempotency key', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      // claim #1
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            code: 'RF-000001',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'claim-key-1',
+            voucher_id: 'rf_voucher_1',
+            created_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // claim #2 (different key, same user+offer)
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            code: 'RF-000001',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const claim1 = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-key-1',
+        },
+      }),
+      env
+    );
+    const claim1Body = await readJson<{ voucher: { id: string; status: string }; idempotentReplay: boolean }>(claim1);
+    expect(claim1.status).toBe(201);
+    expect(claim1Body.voucher.status).toBe('claimed');
+
+    const claim2 = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-key-2',
+        },
+      }),
+      env
+    );
+    const claim2Body = await readJson<{ voucher: { id: string; status: string }; idempotentReplay: boolean }>(claim2);
+    expect(claim2.status).toBe(201);
+    expect(claim2Body.idempotentReplay).toBe(false);
+    expect(claim2Body.voucher.id).toBe(claim1Body.voucher.id);
+    expect(claim2Body.voucher.status).toBe('claimed');
+  });
+
+  it('validates redeem ownership and invalid voucher status', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const wrongOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_2' });
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      // wrong owner: owned partner check
+      .mockResolvedValueOnce({ rows: [] })
+      // cancelled voucher path: owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // cancelled voucher path: voucher lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_cancelled',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'cancelled',
+            code: 'RF-000999',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const wrongOwnerRedeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_1/redeem', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': wrongOwnerToken,
+        },
+      }),
+      env
+    );
+    const wrongOwnerBody = await readJson<{ error: { code: string } }>(wrongOwnerRedeem);
+    expect(wrongOwnerRedeem.status).toBe(404);
+    expect(wrongOwnerBody.error.code).toBe('RF_PARTNER_NOT_FOUND');
+
+    const cancelledRedeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_cancelled/redeem', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+        },
+      }),
+      env
+    );
+    const cancelledBody = await readJson<{ error: { code: string } }>(cancelledRedeem);
+    expect(cancelledRedeem.status).toBe(409);
+    expect(cancelledBody.error.code).toBe('RF_VOUCHER_CANCELLED');
+  });
+
+  it('rejects redeem when voucher and offer relation is inconsistent', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      // owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // voucher lookup (claimed)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            code: 'RF-000001',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // offer lookup with inconsistent partner relation
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_other',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:02:00.000Z',
+          },
+        ],
+      });
+
+    const redeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_1/redeem', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(redeem);
+    expect(redeem.status).toBe(409);
+    expect(body.error.code).toBe('RF_VOUCHER_RELATION_INVALID');
+  });
+
+  it('rejects Idempotency-Key longer than storage limit', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const longKey = 'x'.repeat(161);
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': longKey,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('INVALID_IDEMPOTENCY_KEY');
   });
 
   it('supports PRO link flow (create + accept)', async () => {

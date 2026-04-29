@@ -244,10 +244,14 @@ components:
       schema:
         type: string
     RfIdempotencyKey:
+      description: |
+        Required idempotency key for claim operation. Same user + same key replays the same claim result without creating duplicate business effects.
       in: header
       name: Idempotency-Key
       required: true
       schema:
+        maxLength: 160
+        minLength: 1
         type: string
     RfOfferId:
       in: path
@@ -635,6 +639,12 @@ components:
           schema:
             $ref: "#/components/schemas/RfErrorResponse"
       description: Forbidden
+    RfInternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Internal server error
     RfNotFound:
       content:
         application/json:
@@ -647,6 +657,12 @@ components:
           schema:
             $ref: "#/components/schemas/RfErrorResponse"
       description: Too many requests
+    RfServiceUnavailable:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RfErrorResponse"
+      description: Service unavailable or not configured
     RfUnauthorized:
       content:
         application/json:
@@ -3644,6 +3660,8 @@ components:
           nullable: true
           type: string
         status:
+          description: |
+            Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
           enum:
             - claimed
             - redeemed
@@ -6943,6 +6961,8 @@ paths:
         - rf
   /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem:
     post:
+      description: |
+        Redeem is an owner-authorized partner-side flow. The authenticated actor must own the partner in path, and voucher relation (voucher.partnerId, voucher.offerId, offer.partnerId) must be consistent.
       operationId: rfRedeemVoucher
       parameters:
         - $ref: "#/components/parameters/RfXGatewayAuth"
@@ -6965,6 +6985,8 @@ paths:
           $ref: "#/components/responses/RfConflict"
         "429":
           $ref: "#/components/responses/RfRateLimited"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
       security:
         - GatewayAuth: []
       summary: Redeem voucher by partner owner
@@ -7021,6 +7043,8 @@ paths:
         - rf
   /v1/rf/offers/{offerId}/claim:
     post:
+      description: |
+        Claim is allowed only for active public offers of active RF partners. Runtime status uses `claimed`; in product semantics this corresponds to an issued voucher.
       operationId: rfClaimVoucher
       parameters:
         - $ref: "#/components/parameters/RfXGatewayAuth"
@@ -7049,6 +7073,10 @@ paths:
           $ref: "#/components/responses/RfConflict"
         "429":
           $ref: "#/components/responses/RfRateLimited"
+        "500":
+          $ref: "#/components/responses/RfInternalError"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
       security:
         - GatewayAuth: []
       summary: Claim voucher for active offer (idempotent by user+key)

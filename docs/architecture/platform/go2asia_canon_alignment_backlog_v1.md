@@ -20,6 +20,12 @@ P1 decision lock status (2026-04-28):
 
 - Completed for CA-006, CA-008, CA-009 and CA-014 in `docs/architecture/platform/go2asia_p1_decisions_v1.md`.
 - Remaining P1 implementation details stay future work; no code/API/UI/DB changes are implied by this lock.
+- RF-001 contract lock documented: `docs/architecture/rf/rf_runtime_contract_lock_v1.md` (docs-only boundary lock between current runtime and target/future RF scope).
+- RF-002 in progress: voucher lifecycle contract baseline hardening (`docs/architecture/rf/rf_voucher_lifecycle_contract_v1.md`).
+- RF-003 in progress: partner-offer-voucher relation hardening + terminology alignment (`docs/architecture/rf/rf_runtime_contract_lock_v1.md`, `docs/architecture/rf/rf_voucher_lifecycle_contract_v1.md`).
+- RF-004 in progress: Rielt voucher-first contract support (`docs/architecture/rf/rf_rielt_voucher_first_contract_v1.md`).
+- RF-005 in progress: PRO trust-chain visibility baseline (`docs/architecture/rf/rf_pro_trust_visibility_v1.md`).
+- RF-IMPL-001 completed: claim/redeem execution hardening in `rf-service` (`apps/rf-service/src/store.ts`, `apps/rf-service/test/request.test.ts`, `docs/openapi/rf.yaml`).
 
 2. Canon Baseline
 
