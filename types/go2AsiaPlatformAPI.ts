@@ -140,6 +140,7 @@ import type {
   RfUnauthorizedResponse,
   RfValidationErrorResponse,
   RfVoucherListResponse,
+  RfVoucherSummary,
   RieltArchiveResponse,
   RieltConflictResponse,
   RieltCreateInquiryRequest,
@@ -4226,6 +4227,45 @@ export const rfListMyVouchers = async (
   options?: RequestInit
 ): Promise<rfListMyVouchersResponse> => {
   return customInstance<rfListMyVouchersResponse>(getRfListMyVouchersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * Read-only RF-owned voucher summary for the authenticated user. Counts are based on RF runtime statuses; `claimed` is the active/issued product-semantic bucket.
+
+ * @summary Get current user voucher summary
+ */
+export type rfGetMyVoucherSummaryResponse200 = {
+  data: RfVoucherSummary;
+  status: 200;
+};
+
+export type rfGetMyVoucherSummaryResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfGetMyVoucherSummaryResponseSuccess = rfGetMyVoucherSummaryResponse200 & {
+  headers: Headers;
+};
+export type rfGetMyVoucherSummaryResponseError = rfGetMyVoucherSummaryResponse401 & {
+  headers: Headers;
+};
+
+export type rfGetMyVoucherSummaryResponse =
+  | rfGetMyVoucherSummaryResponseSuccess
+  | rfGetMyVoucherSummaryResponseError;
+
+export const getRfGetMyVoucherSummaryUrl = () => {
+  return `/v1/rf/me/vouchers/summary`;
+};
+
+export const rfGetMyVoucherSummary = async (
+  options?: RequestInit
+): Promise<rfGetMyVoucherSummaryResponse> => {
+  return customInstance<rfGetMyVoucherSummaryResponse>(getRfGetMyVoucherSummaryUrl(), {
     ...options,
     method: "GET",
   });

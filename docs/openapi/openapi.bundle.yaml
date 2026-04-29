@@ -3694,6 +3694,29 @@ components:
         - items
         - nextCursor
       type: object
+    RfVoucherSummary:
+      properties:
+        activeVouchers:
+          description: Count of vouchers with runtime status `claimed`.
+          minimum: 0
+          type: integer
+        cancelledVouchers:
+          description: Count of vouchers with runtime status `cancelled`.
+          minimum: 0
+          type: integer
+        totalVouchers:
+          minimum: 0
+          type: integer
+        usedVouchers:
+          description: Count of vouchers with runtime status `redeemed`.
+          minimum: 0
+          type: integer
+      required:
+        - totalVouchers
+        - activeVouchers
+        - usedVouchers
+        - cancelledVouchers
+      type: object
     RieltArchiveResponse:
       allOf:
         - $ref: "#/components/schemas/RieltOwnerListingEnvelope"
@@ -7011,6 +7034,27 @@ paths:
       summary: List current user vouchers
       tags:
         - rf
+  /v1/rf/me/vouchers/summary:
+    get:
+      description: |
+        Read-only RF-owned voucher summary for the authenticated user. Counts are based on RF runtime statuses; `claimed` is the active/issued product-semantic bucket.
+      operationId: rfGetMyVoucherSummary
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfVoucherSummary"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+      security:
+        - GatewayAuth: []
+      summary: Get current user voucher summary
+      tags:
+        - rf
   /v1/rf/offers:
     get:
       operationId: rfListOffers
@@ -8024,6 +8068,7 @@ tags:
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
           - /v1/rf/offers/{offerId}/claim
           - /v1/rf/me/vouchers
+          - /v1/rf/me/vouchers/summary
           - /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem
           - /v1/rf/pro/links
           - /v1/rf/pro/links/{proLinkId}/accept
