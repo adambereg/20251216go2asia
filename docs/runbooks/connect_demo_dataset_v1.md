@@ -49,6 +49,21 @@ Verification surfaces:
 
 The script stores no secrets and does not mint tokens. Provide tokens explicitly for the target environment.
 
+For existing Clerk seed users, prefer the dev-only wrapper:
+
+```powershell
+node apps/api-gateway/scripts/apply-connect-voucher-demo-with-clerk.mjs --apply
+```
+
+The wrapper:
+
+- loads `.env.local` / `.env` without printing secret values;
+- resolves `oleg.tran.seed@example.com` as the RF owner (`pro`);
+- resolves `irina.belova.seed@example.com` as the voucher recipient (`spacer`);
+- mints short-lived Clerk JWTs in memory using the existing `mintClerkJwtForUser` helper;
+- runs `apps/rf-service/scripts/seed-connect-voucher-demo.mjs --apply` with `RF_DEMO_AUTH_HEADER=Authorization`;
+- does not write tokens to disk.
+
 Required for apply:
 
 ```powershell
@@ -84,6 +99,12 @@ The apply flow is API-based and uses RF-owned endpoints only:
 
 ```powershell
 node apps/rf-service/scripts/seed-connect-voucher-demo.mjs --apply
+```
+
+Or, for existing Clerk seed users:
+
+```powershell
+node apps/api-gateway/scripts/apply-connect-voucher-demo-with-clerk.mjs --apply
 ```
 
 Execution order:
