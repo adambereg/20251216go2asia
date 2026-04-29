@@ -6,6 +6,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { customInstance } from './mutator';
+import type { RfVoucherSummary } from './generated/rfVoucherSummary';
+
+export type { RfVoucherSummary } from './generated/rfVoucherSummary';
 
 export interface RfPartnerDto {
   id: string;
@@ -111,11 +114,24 @@ export async function fetchMyVouchers(): Promise<RfVoucherListResponse | null> {
   }
 }
 
+export async function fetchMyVoucherSummary(): Promise<RfVoucherSummary> {
+  return customInstance<RfVoucherSummary>({ method: 'GET' }, '/v1/rf/me/vouchers/summary');
+}
+
 export function useRfPartners() {
   return useQuery<RfPartnerListResponse | null, Error>({
     queryKey: ['rf', 'partners'],
     queryFn: fetchRfPartners,
     staleTime: 30_000,
+  });
+}
+
+export function useRfVoucherSummary() {
+  return useQuery<RfVoucherSummary, Error>({
+    queryKey: ['rf', 'me', 'vouchers', 'summary'],
+    queryFn: fetchMyVoucherSummary,
+    staleTime: 30_000,
+    retry: 1,
   });
 }
 

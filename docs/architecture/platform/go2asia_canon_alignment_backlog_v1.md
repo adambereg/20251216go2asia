@@ -30,6 +30,8 @@ P1 decision lock status (2026-04-28):
 - Connect-002 in progress: user economy snapshot baseline (`docs/architecture/connect/connect_user_economy_snapshot_v1.md`).
 - Connect-003 completed (contract-only): voucher visibility read-only contract (`docs/architecture/connect/connect_voucher_visibility_contract_v1.md`).
 - Connect-003-IMPL completed: RF-owned voucher summary read endpoint (`GET /v1/rf/me/vouchers/summary`).
+- Connect Demo Dataset v1 prepared pending env/auth: API-based RF voucher demo script and runbook (`apps/rf-service/scripts/seed-connect-voucher-demo.mjs`, `docs/runbooks/connect_demo_dataset_v1.md`).
+- Connect UI Voucher Summary Integration completed: Connect Dashboard reads RF-owned voucher summary without local lifecycle logic.
 
 2. Canon Baseline
 
