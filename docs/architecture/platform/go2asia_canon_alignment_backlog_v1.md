@@ -26,6 +26,7 @@ P1 decision lock status (2026-04-28):
 - RF-004 in progress: Rielt voucher-first contract support (`docs/architecture/rf/rf_rielt_voucher_first_contract_v1.md`).
 - RF-005 in progress: PRO trust-chain visibility baseline (`docs/architecture/rf/rf_pro_trust_visibility_v1.md`).
 - RF-IMPL-001 completed: claim/redeem execution hardening in `rf-service` (`apps/rf-service/src/store.ts`, `apps/rf-service/test/request.test.ts`, `docs/openapi/rf.yaml`).
+- Connect-001 completed: runtime contract lock (`docs/architecture/connect/connect_runtime_contract_lock_v1.md`).
 
 2. Canon Baseline
 
