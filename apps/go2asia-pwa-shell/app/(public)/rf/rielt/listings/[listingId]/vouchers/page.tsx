@@ -17,7 +17,15 @@ interface ListingVoucherPageProps {
 }
 
 function getOfferTypeLabel(type: RfRieltListingOfferDto['type']) {
-  return type === 'premium' ? 'Premium voucher' : 'Базовый ваучер';
+  return type === 'premium' ? 'Premium-ваучер' : 'Базовый ваучер';
+}
+
+function getOfferBenefit(offer: RfRieltListingOfferDto) {
+  return offer.benefit?.trim() || offer.description?.trim() || offer.applicabilityNote?.trim() || offer.title;
+}
+
+function getOfferConditions(offer: RfRieltListingOfferDto) {
+  return offer.applicabilityNote?.trim() || 'Условия уточняются у партнёра.';
 }
 
 function getFallbackPartnerId(contextPartnerId: string | null | undefined, queryPartnerId: string | undefined) {
@@ -38,31 +46,52 @@ function PartnerFallback({ partnerId }: { partnerId: string | null }) {
 }
 
 function OfferCard({ offer }: { offer: RfRieltListingOfferDto }) {
+  const typeLabel = getOfferTypeLabel(offer.type);
+
   return (
     <article className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h2 className="text-lg font-semibold text-slate-900">{offer.title}</h2>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{typeLabel}</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">{offer.title}</h2>
+          </div>
           <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-            {getOfferTypeLabel(offer.type)}
+            Скоро будет доступно
           </span>
         </div>
-        <p className="text-sm font-medium text-slate-800">{offer.benefit}</p>
+
         {offer.description ? <p className="text-sm text-slate-600">{offer.description}</p> : null}
-        {offer.applicabilityNote ? (
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">{offer.applicabilityNote}</p>
-        ) : null}
-        <p className="text-xs text-slate-500">
-          Получение ваучера будет выполнено в RF. Claim/redeem для этого read-only этапа ещё не подключён.
-        </p>
+
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Выгода</h3>
+          <p className="mt-1 text-sm font-medium text-emerald-950">{getOfferBenefit(offer)}</p>
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Условия</h3>
+          <p className="mt-1 text-sm text-slate-700">{getOfferConditions(offer)}</p>
+        </div>
+
+        <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-800">Как это работает</h3>
+          <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-blue-950">
+            <li>Выберите подходящий ваучер для этого объекта.</li>
+            <li>На следующем этапе оформление будет происходить в RF Asia.</li>
+            <li>После получения вы сможете связаться по объекту и показать ваучер.</li>
+          </ol>
+        </div>
       </div>
-      <button
-        type="button"
-        disabled
-        className="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white opacity-60"
-      >
-        Получить ваучер
-      </button>
+      <div className="mt-5">
+        <button
+          type="button"
+          disabled
+          className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white opacity-60"
+        >
+          Получить ваучер
+        </button>
+        <p className="mt-2 text-center text-xs text-slate-500">Получение ваучера будет подключено на следующем этапе.</p>
+      </div>
     </article>
   );
 }
@@ -75,7 +104,7 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero compact subtitle="RF-контекст для объекта Rielt: только релевантные предложения, без claim/redeem на этом этапе." />
+      <RFHero compact subtitle="Предложения, привязанные к выбранному объекту Rielt. Оформление ваучера будет происходить в RF Asia." />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>
@@ -95,6 +124,10 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
               {context.partner.displayName}
             </p>
           ) : null}
+          <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-3 text-sm text-emerald-950">
+            Эти предложения привязаны к выбранному объекту. Получение ваучера будет происходить в RF Asia на следующем этапе.
+            Rielt не подтверждает бронирование.
+          </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={`/rielt/listings/${encodeURIComponent(listingId)}`}
@@ -108,13 +141,13 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
 
         {!context ? (
           <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            RF-контекст объекта временно недоступен. Claim/redeem не выполнялся.
+            RF-контекст объекта временно недоступен. Попробуйте открыть страницу позже или перейти к предложениям партнёра.
           </section>
         ) : context.offers.length === 0 ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
             <h2 className="text-lg font-semibold text-slate-900">Для этого объекта пока нет активных RF-ваучеров</h2>
             <p className="mt-2">
-              Mapping listing to offers пустой или скрыт. Можно посмотреть общий partner-level каталог как fallback.
+              Можно посмотреть общий каталог предложений партнёра. Он не означает, что все предложения применимы к этому объекту.
             </p>
             <div className="mt-4">
               <PartnerFallback partnerId={fallbackPartnerId} />

@@ -345,6 +345,9 @@ Current implementation note:
 - RF exposes read-only `GET /v1/rf/rielt/listings/{listingId}/offers`.
 - Frontend route `/rf/rielt/listings/[listingId]/vouchers` renders mapped offers.
 - Offer CTA is visible as disabled read-only placeholder.
+- Stage 3 read-only voucher cards show voucher type, benefit, conditions, and next-step explanation.
+- CTA remains disabled; claim flow is still Stage 4.
+- No booking, chat, or redeem semantics are introduced by the read-only cards.
 - If mapping is empty, the page links to `/rf/vouchers?partner=<rfPartnerId>`.
 
 ## Implementation Notes
