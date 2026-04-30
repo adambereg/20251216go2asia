@@ -83,6 +83,11 @@ export interface RfVoucherListResponse {
   nextCursor: string | null;
 }
 
+export interface RfClaimResponse {
+  voucher: RfVoucherDto;
+  idempotentReplay: boolean;
+}
+
 export interface RfCreatePartnerRequest {
   displayName: string;
   countryId: string;
@@ -124,6 +129,25 @@ export async function fetchRfRieltListingOffers(listingId: string): Promise<RfRi
   } catch {
     return null;
   }
+}
+
+function createRfClaimIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `rf-claim-${crypto.randomUUID()}`;
+  }
+  return `rf-claim-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export async function claimRfOffer(offerId: string, idempotencyKey = createRfClaimIdempotencyKey()): Promise<RfClaimResponse> {
+  return customInstance<RfClaimResponse>(
+    {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    },
+    `/v1/rf/offers/${encodeURIComponent(offerId)}/claim`
+  );
 }
 
 export async function createBusinessPartner(input: RfCreatePartnerRequest): Promise<RfPartnerDto> {

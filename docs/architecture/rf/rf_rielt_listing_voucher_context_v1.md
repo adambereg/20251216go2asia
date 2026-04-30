@@ -344,10 +344,9 @@ Current implementation note:
 
 - RF exposes read-only `GET /v1/rf/rielt/listings/{listingId}/offers`.
 - Frontend route `/rf/rielt/listings/[listingId]/vouchers` renders mapped offers.
-- Offer CTA is visible as disabled read-only placeholder.
 - Stage 3 read-only voucher cards show voucher type, benefit, conditions, and next-step explanation.
-- CTA remains disabled; claim flow is still Stage 4.
-- No booking, chat, or redeem semantics are introduced by the read-only cards.
+- Stage 3 introduced disabled CTA as a placeholder before claim integration.
+- No booking, chat, or redeem semantics are introduced by the listing voucher cards.
 - If mapping is empty, the page links to `/rf/vouchers?partner=<rfPartnerId>`.
 
 ## Implementation Notes
@@ -387,6 +386,13 @@ Expected output:
 - User selects one offer.
 - RF creates voucher claim.
 - RF shows confirmation and post-claim coordination actions.
+
+Current implementation note:
+
+- Listing voucher page calls RF-owned `POST /v1/rf/offers/{offerId}/claim`.
+- Claim remains in RF; Rielt does not perform claim and does not store voucher status.
+- Success state displays listing context and post-claim actions: return to listing, my vouchers, partner offers.
+- No booking, chat, or redeem semantics are introduced.
 
 ## Open Questions
 
