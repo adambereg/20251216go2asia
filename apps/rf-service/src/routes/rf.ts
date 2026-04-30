@@ -12,6 +12,7 @@ import {
   getMyVoucherSummary,
   getPublicOfferById,
   getPublicPartnerById,
+  getRieltListingOfferContext,
   listMyVouchers,
   listProLinks,
   listPublicOffers,
@@ -78,6 +79,13 @@ export async function handleRfRoute(
 
   if (request.method === 'GET' && path === '/v1/rf/offers') {
     return json({ items: await listPublicOffers(db), nextCursor: null });
+  }
+
+  const rieltListingId = getPathParam(path, /^\/v1\/rf\/rielt\/listings\/([^/]+)\/offers$/);
+  if (request.method === 'GET' && rieltListingId) {
+    const context = await getRieltListingOfferContext(db, rieltListingId);
+    if (!context) return errorResponse('RF_RIELT_LISTING_NOT_FOUND', 'Rielt listing was not found', requestId, 404);
+    return json(context);
   }
 
   const partnerId = getPathParam(path, /^\/v1\/rf\/partners\/([^/]+)$/);

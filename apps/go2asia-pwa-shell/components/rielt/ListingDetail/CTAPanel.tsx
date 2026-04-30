@@ -19,7 +19,11 @@ interface CTAPanelProps {
 
 function buildRfVoucherRoute(listing: Listing): string {
   if (listing.rfPartnerId) {
-    return `/rf/vouchers?partner=${encodeURIComponent(listing.rfPartnerId)}`;
+    const params = new URLSearchParams({
+      partner: listing.rfPartnerId,
+      return_url: `/rielt/listings/${listing.id}`,
+    });
+    return `/rf/rielt/listings/${encodeURIComponent(listing.id)}/vouchers?${params.toString()}`;
   }
 
   return '/rf/vouchers';

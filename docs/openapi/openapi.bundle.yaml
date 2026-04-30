@@ -271,6 +271,12 @@ components:
       required: true
       schema:
         type: string
+    RfRieltListingId:
+      in: path
+      name: listingId
+      required: true
+      schema:
+        type: string
     RfVoucherId:
       in: path
       name: voucherId
@@ -3636,6 +3642,69 @@ components:
       required:
         - voucher
         - applied
+      type: object
+    RfRieltListingOffer:
+      allOf:
+        - $ref: "#/components/schemas/RfOffer"
+        - properties:
+            applicabilityNote:
+              nullable: true
+              type: string
+            availability:
+              enum:
+                - available
+              type: string
+            benefit:
+              type: string
+            description:
+              nullable: true
+              type: string
+            priority:
+              minimum: 0
+              type: integer
+            type:
+              enum:
+                - basic
+                - premium
+              type: string
+          required:
+            - type
+            - benefit
+            - description
+            - availability
+            - applicabilityNote
+            - priority
+          type: object
+    RfRieltListingOfferContext:
+      properties:
+        listing:
+          $ref: "#/components/schemas/RfRieltListingSummary"
+        offers:
+          items:
+            $ref: "#/components/schemas/RfRieltListingOffer"
+          type: array
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfPartner"
+            - type: "null"
+      required:
+        - listing
+        - partner
+        - offers
+      type: object
+    RfRieltListingSummary:
+      properties:
+        id:
+          type: string
+        rfPartnerId:
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+        - rfPartnerId
       type: object
     RfVoucher:
       properties:
@@ -7237,6 +7306,25 @@ paths:
       summary: Accept PRO link by partner owner
       tags:
         - rf
+  /v1/rf/rielt/listings/{listingId}/offers:
+    get:
+      description: |
+        Read-only RF-owned listing voucher context. Returns public active RF offers explicitly mapped to the Rielt listing. Does not claim or redeem vouchers.
+      operationId: rfGetRieltListingOffers
+      parameters:
+        - $ref: "#/components/parameters/RfRieltListingId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRieltListingOfferContext"
+          description: OK
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      summary: Get RF offers mapped to a Rielt listing
+      tags:
+        - rf
   /v1/rielt/listings:
     get:
       operationId: rieltListPublicListings
@@ -8071,6 +8159,7 @@ tags:
           - /v1/rf/partners/{partnerId}
           - /v1/rf/offers
           - /v1/rf/offers/{offerId}
+          - /v1/rf/rielt/listings/{listingId}/offers
           - /v1/rf/business/partners
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate

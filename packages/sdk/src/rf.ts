@@ -36,6 +36,25 @@ export interface RfOfferDto {
   updatedAt: string;
 }
 
+export interface RfRieltListingOfferDto extends RfOfferDto {
+  type: 'basic' | 'premium';
+  benefit: string;
+  description: string | null;
+  availability: 'available';
+  applicabilityNote: string | null;
+  priority: number;
+}
+
+export interface RfRieltListingOfferContextResponse {
+  listing: {
+    id: string;
+    title: string;
+    rfPartnerId: string | null;
+  };
+  partner: RfPartnerDto | null;
+  offers: RfRieltListingOfferDto[];
+}
+
 export interface RfVoucherDto {
   id: string;
   offerId: string;
@@ -91,6 +110,17 @@ export async function fetchRfPartner(partnerId: string): Promise<RfPartnerDto | 
 export async function fetchRfOffers(): Promise<RfOfferListResponse | null> {
   try {
     return await customInstance<RfOfferListResponse>({ method: 'GET' }, '/v1/rf/offers');
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchRfRieltListingOffers(listingId: string): Promise<RfRieltListingOfferContextResponse | null> {
+  try {
+    return await customInstance<RfRieltListingOfferContextResponse>(
+      { method: 'GET' },
+      `/v1/rf/rielt/listings/${encodeURIComponent(listingId)}/offers`
+    );
   } catch {
     return null;
   }

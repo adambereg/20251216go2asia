@@ -973,6 +973,76 @@ describe('rf-service request', () => {
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
   });
 
+  it('returns read-only RF offers mapped to a Rielt listing', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rielt_phuket_karon_002',
+            title: 'Семейные апартаменты в Кароне',
+            rf_partner_id: 'rf_partner_1',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Скидка 5% на аренду',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+            mapping_status: 'active',
+            offer_kind: 'basic',
+            priority: 10,
+            applicability_note: 'Для этого объекта Rielt',
+            partner_slug: 'voucher-partner',
+            partner_display_name: 'Voucher Partner',
+            partner_country_id: 'country_th',
+            partner_city_id: 'city_phuket',
+            partner_atlas_place_id: null,
+            partner_host_atlas_place_id: null,
+            partner_status: 'active',
+            partner_owner_user_id: 'partner_owner_1',
+            partner_created_at: '2026-03-21T10:00:00.000Z',
+            partner_updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers'),
+      env
+    );
+    const body = await readJson<{
+      listing: { id: string; title: string; rfPartnerId: string | null };
+      partner: { id: string; displayName: string } | null;
+      offers: Array<{ id: string; type: string; applicabilityNote: string | null }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.listing).toEqual({
+      id: 'rielt_phuket_karon_002',
+      title: 'Семейные апартаменты в Кароне',
+      rfPartnerId: 'rf_partner_1',
+    });
+    expect(body.partner).toEqual(expect.objectContaining({ id: 'rf_partner_1', displayName: 'Voucher Partner' }));
+    expect(body.offers).toEqual([
+      expect.objectContaining({
+        id: 'rf_offer_1',
+        type: 'basic',
+        applicabilityNote: 'Для этого объекта Rielt',
+      }),
+    ]);
+    expect(executeMock).toHaveBeenCalledTimes(2);
+  });
+
   it('supports PRO link flow (create + accept)', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });

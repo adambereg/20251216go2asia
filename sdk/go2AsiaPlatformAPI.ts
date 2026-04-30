@@ -136,6 +136,7 @@ import type {
   RfProLinkListResponse,
   RfRateLimitedResponse,
   RfRedeemResponse,
+  RfRieltListingOfferContext,
   RfServiceUnavailableResponse,
   RfUnauthorizedResponse,
   RfValidationErrorResponse,
@@ -4613,6 +4614,46 @@ export const rfAcceptProLink = async (
   return customInstance<rfAcceptProLinkResponse>(getRfAcceptProLinkUrl(proLinkId), {
     ...options,
     method: "POST",
+  });
+};
+
+/**
+ * Read-only RF-owned listing voucher context. Returns public active RF offers explicitly mapped to the Rielt listing. Does not claim or redeem vouchers.
+
+ * @summary Get RF offers mapped to a Rielt listing
+ */
+export type rfGetRieltListingOffersResponse200 = {
+  data: RfRieltListingOfferContext;
+  status: 200;
+};
+
+export type rfGetRieltListingOffersResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfGetRieltListingOffersResponseSuccess = rfGetRieltListingOffersResponse200 & {
+  headers: Headers;
+};
+export type rfGetRieltListingOffersResponseError = rfGetRieltListingOffersResponse404 & {
+  headers: Headers;
+};
+
+export type rfGetRieltListingOffersResponse =
+  | rfGetRieltListingOffersResponseSuccess
+  | rfGetRieltListingOffersResponseError;
+
+export const getRfGetRieltListingOffersUrl = (listingId: string) => {
+  return `/v1/rf/rielt/listings/${listingId}/offers`;
+};
+
+export const rfGetRieltListingOffers = async (
+  listingId: string,
+  options?: RequestInit
+): Promise<rfGetRieltListingOffersResponse> => {
+  return customInstance<rfGetRieltListingOffersResponse>(getRfGetRieltListingOffersUrl(listingId), {
+    ...options,
+    method: "GET",
   });
 };
 

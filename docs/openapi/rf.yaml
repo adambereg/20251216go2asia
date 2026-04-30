@@ -57,6 +57,7 @@ tags:
           - /v1/rf/partners/{partnerId}
           - /v1/rf/offers
           - /v1/rf/offers/{offerId}
+          - /v1/rf/rielt/listings/{listingId}/offers
           - /v1/rf/business/partners
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
@@ -201,6 +202,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RfOffer"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/rielt/listings/{listingId}/offers:
+    get:
+      tags: [rf]
+      operationId: rfGetRieltListingOffers
+      summary: Get RF offers mapped to a Rielt listing
+      description: >
+        Read-only RF-owned listing voucher context. Returns public active RF offers explicitly
+        mapped to the Rielt listing. Does not claim or redeem vouchers.
+      parameters:
+        - $ref: "#/components/parameters/RfRieltListingId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRieltListingOfferContext"
         "404":
           $ref: "#/components/responses/RfNotFound"
 
@@ -490,6 +511,12 @@ components:
       required: true
       schema:
         type: string
+    RfRieltListingId:
+      name: listingId
+      in: path
+      required: true
+      schema:
+        type: string
     RfVoucherId:
       name: voucherId
       in: path
@@ -664,6 +691,57 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    RfRieltListingSummary:
+      type: object
+      required: [id, title, rfPartnerId]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        rfPartnerId:
+          type: string
+          nullable: true
+
+    RfRieltListingOffer:
+      allOf:
+        - $ref: "#/components/schemas/RfOffer"
+        - type: object
+          required: [type, benefit, description, availability, applicabilityNote, priority]
+          properties:
+            type:
+              type: string
+              enum: [basic, premium]
+            benefit:
+              type: string
+            description:
+              type: string
+              nullable: true
+            availability:
+              type: string
+              enum: [available]
+            applicabilityNote:
+              type: string
+              nullable: true
+            priority:
+              type: integer
+              minimum: 0
+
+    RfRieltListingOfferContext:
+      type: object
+      required: [listing, partner, offers]
+      properties:
+        listing:
+          $ref: "#/components/schemas/RfRieltListingSummary"
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfPartner"
+            - type: "null"
+        offers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfRieltListingOffer"
 
     RfVoucher:
       type: object

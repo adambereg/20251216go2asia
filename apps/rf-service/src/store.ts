@@ -9,6 +9,8 @@ export type PartnerStatus = 'active' | 'archived';
 export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
 export type ProLinkStatus = 'pending' | 'active' | 'ended';
+export type RieltListingOfferStatus = 'active' | 'hidden';
+export type RieltListingOfferKind = 'basic' | 'premium';
 
 export interface Partner {
   id: string;
@@ -34,6 +36,25 @@ export interface Offer {
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RieltListingOfferContext {
+  listing: {
+    id: string;
+    title: string;
+    rfPartnerId: string | null;
+  };
+  partner: Partner | null;
+  offers: Array<
+    Offer & {
+      type: RieltListingOfferKind;
+      benefit: string;
+      description: string | null;
+      availability: 'available';
+      applicabilityNote: string | null;
+      priority: number;
+    }
+  >;
 }
 
 export interface Voucher {
@@ -100,6 +121,29 @@ type OfferRow = {
   created_by_user_id: string;
   created_at: string | Date;
   updated_at: string | Date;
+};
+
+type RieltListingSummaryRow = {
+  id: string;
+  title: string;
+  rf_partner_id: string | null;
+};
+
+type RieltListingOfferMappingRow = OfferRow & {
+  mapping_status: RieltListingOfferStatus;
+  offer_kind: RieltListingOfferKind;
+  priority: number;
+  applicability_note: string | null;
+  partner_slug: string;
+  partner_display_name: string;
+  partner_country_id: string;
+  partner_city_id: string;
+  partner_atlas_place_id: string | null;
+  partner_host_atlas_place_id: string | null;
+  partner_status: PartnerStatus;
+  partner_owner_user_id: string;
+  partner_created_at: string | Date;
+  partner_updated_at: string | Date;
 };
 
 type VoucherRow = {
@@ -172,6 +216,22 @@ function toOffer(row: OfferRow): Offer {
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
   };
+}
+
+function toPartnerFromMappingRow(row: RieltListingOfferMappingRow): Partner {
+  return toPartner({
+    id: row.partner_id,
+    slug: row.partner_slug,
+    display_name: row.partner_display_name,
+    country_id: row.partner_country_id,
+    city_id: row.partner_city_id,
+    atlas_place_id: row.partner_atlas_place_id,
+    host_atlas_place_id: row.partner_host_atlas_place_id,
+    status: row.partner_status,
+    owner_user_id: row.partner_owner_user_id,
+    created_at: row.partner_created_at,
+    updated_at: row.partner_updated_at,
+  });
 }
 
 function toVoucher(row: VoucherRow): Voucher {
@@ -458,6 +518,81 @@ export async function getPublicOfferById(db: DbExecutor, offerId: string): Promi
   `);
   const row = rowsOf<OfferRow>(result)[0];
   return row ? toOffer(row) : null;
+}
+
+export async function getRieltListingOfferContext(db: DbExecutor, listingId: string): Promise<RieltListingOfferContext | null> {
+  const listingResult = await db.execute(sql`
+    SELECT id, title, rf_partner_id
+    FROM rielt_listing
+    WHERE id = ${listingId}
+      AND status = 'published'
+      AND deleted_at IS NULL
+    LIMIT 1
+  `);
+  const listing = rowsOf<RieltListingSummaryRow>(listingResult)[0] ?? null;
+  if (!listing) return null;
+
+  const mappedOffersResult = await db.execute(sql`
+    SELECT
+      o.id,
+      o.partner_id,
+      o.title,
+      o.offer_type,
+      o.visibility,
+      o.status,
+      o.created_by_user_id,
+      o.created_at,
+      o.updated_at,
+      m.status AS mapping_status,
+      m.offer_kind,
+      m.priority,
+      m.applicability_note,
+      p.slug AS partner_slug,
+      p.display_name AS partner_display_name,
+      p.country_id AS partner_country_id,
+      p.city_id AS partner_city_id,
+      p.atlas_place_id AS partner_atlas_place_id,
+      p.host_atlas_place_id AS partner_host_atlas_place_id,
+      p.status AS partner_status,
+      p.owner_user_id AS partner_owner_user_id,
+      p.created_at AS partner_created_at,
+      p.updated_at AS partner_updated_at
+    FROM rielt_listing_rf_offer m
+    INNER JOIN rf_offer o ON o.id = m.rf_offer_id AND o.partner_id = m.rf_partner_id
+    INNER JOIN rf_partner p ON p.id = m.rf_partner_id
+    WHERE m.listing_id = ${listingId}
+      AND m.status = 'active'
+      AND o.status = 'active'
+      AND o.visibility = 'public'
+      AND p.status = 'active'
+    ORDER BY m.priority ASC, o.created_at DESC, o.id DESC
+  `);
+  const mappedOffers = rowsOf<RieltListingOfferMappingRow>(mappedOffersResult);
+  const firstMapped = mappedOffers[0] ?? null;
+  const partner =
+    firstMapped !== null
+      ? toPartnerFromMappingRow(firstMapped)
+      : listing.rf_partner_id
+        ? await getPublicPartnerById(db, listing.rf_partner_id)
+        : null;
+
+  return {
+    listing: {
+      id: listing.id,
+      title: listing.title,
+      rfPartnerId: listing.rf_partner_id ?? partner?.id ?? null,
+    },
+    partner,
+    offers: mappedOffers.map((row) => ({
+      ...toOffer(row),
+      type: row.offer_kind,
+      benefit: row.title,
+      description: null,
+      availability: 'available' as const,
+      applicabilityNote: row.applicability_note ?? null,
+      priority: Number(row.priority ?? 100),
+    })),
+  };
 }
 
 export async function createPartner(

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, integer, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { places } from './content';
 
@@ -17,6 +17,8 @@ export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
   'account_support',
 ]);
 export const rfIdempotencyOperationEnum = pgEnum('rf_idempotency_operation', ['voucher_claim']);
+export const rfRieltListingOfferStatusEnum = pgEnum('rf_rielt_listing_offer_status', ['active', 'hidden']);
+export const rfRieltListingOfferKindEnum = pgEnum('rf_rielt_listing_offer_kind', ['basic', 'premium']);
 
 export const rfPartners = pgTable(
   'rf_partner',
@@ -82,6 +84,41 @@ export const rfOffers = pgTable(
       table.updatedAt
     ),
     idxStatusVisibilityUpdatedAt: index('idx_rf_offer_status_visibility_updated_at').on(table.status, table.visibility, table.updatedAt),
+  })
+);
+
+export const rfRieltListingOffers = pgTable(
+  'rielt_listing_rf_offer',
+  {
+    listingId: text('listing_id').notNull(),
+    partnerId: varchar('rf_partner_id', { length: 80 })
+      .notNull()
+      .references(() => rfPartners.id, { onDelete: 'cascade' }),
+    offerId: varchar('rf_offer_id', { length: 80 })
+      .notNull()
+      .references(() => rfOffers.id, { onDelete: 'cascade' }),
+    status: rfRieltListingOfferStatusEnum('status').notNull().default('active'),
+    offerKind: rfRieltListingOfferKindEnum('offer_kind').notNull().default('basic'),
+    priority: integer('priority').notNull().default(100),
+    applicabilityNote: text('applicability_note'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    listingIdNotBlank: check('rielt_listing_rf_offer_listing_id_not_blank_check', sql`(length(trim(${table.listingId})) > 0)`),
+    priorityNonNegative: check('rielt_listing_rf_offer_priority_non_negative_check', sql`(${table.priority} >= 0)`),
+    uniqueListingOffer: uniqueIndex('rielt_listing_rf_offer_listing_offer_unique').on(table.listingId, table.offerId),
+    idxListingStatusPriority: index('idx_rielt_listing_rf_offer_listing_status_priority').on(
+      table.listingId,
+      table.status,
+      table.priority
+    ),
+    idxPartnerStatusPriority: index('idx_rielt_listing_rf_offer_partner_status_priority').on(
+      table.partnerId,
+      table.status,
+      table.priority
+    ),
+    idxOfferId: index('idx_rielt_listing_rf_offer_offer_id').on(table.offerId),
   })
 );
 
