@@ -391,6 +391,8 @@ Current implementation note:
 
 - Listing voucher page calls RF-owned `POST /v1/rf/offers/{offerId}/claim`.
 - Claim remains in RF; Rielt does not perform claim and does not store voucher status.
+- Listing voucher page hydrates already claimed offers from `GET /v1/rf/me/vouchers` so reload keeps claimed CTAs disabled.
+- `/rf/my-vouchers` separates server RF vouchers from local planning/saved offers.
 - Success state displays listing context and post-claim actions: return to listing, my vouchers, partner offers.
 - No booking, chat, or redeem semantics are introduced.
 

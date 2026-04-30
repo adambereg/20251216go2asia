@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { claimRfOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
@@ -95,6 +95,39 @@ export function ListingVoucherOffersClient({
 }: ListingVoucherOffersClientProps) {
   const { isLoaded, isSignedIn } = useAuth();
   const [claimStates, setClaimStates] = useState<ClaimStateByOffer>({});
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+
+    let cancelled = false;
+
+    async function hydrateClaimedOffers() {
+      const currentVouchers = await fetchMyVouchers();
+      if (cancelled || !currentVouchers) return;
+
+      const offerIds = new Set(offers.map((offer) => offer.id));
+      const nextStates = currentVouchers.items.reduce<ClaimStateByOffer>((acc, voucher) => {
+        if (!offerIds.has(voucher.offerId)) return acc;
+        if (voucher.status !== 'claimed' && voucher.status !== 'redeemed') return acc;
+        acc[voucher.offerId] = {
+          status: 'success',
+          message: 'Ваучер уже получен.',
+          voucher,
+        };
+        return acc;
+      }, {});
+
+      if (Object.keys(nextStates).length > 0) {
+        setClaimStates((current) => ({ ...nextStates, ...current }));
+      }
+    }
+
+    void hydrateClaimedOffers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, offers]);
 
   const setOfferState = (offerId: string, state: ClaimState) => {
     setClaimStates((current) => ({ ...current, [offerId]: state }));
