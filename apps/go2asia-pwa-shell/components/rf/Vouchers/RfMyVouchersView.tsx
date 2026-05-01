@@ -16,10 +16,18 @@ function getVoucherStatusLabel(status: RfVoucherDto['status']) {
   return 'Отменён';
 }
 
+function getVoucherStatusBadgeClass(status: RfVoucherDto['status']) {
+  if (status === 'claimed') return 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200';
+  if (status === 'redeemed') return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
+  return 'bg-red-100 text-red-800 ring-1 ring-red-200';
+}
+
+function isListingVoucher(voucher: RfVoucherDto) {
+  return voucher.claimScope === 'listing' && Boolean(voucher.listingContext);
+}
+
 function getVoucherScopeLabel(voucher: RfVoucherDto) {
-  return voucher.claimScope === 'listing' && voucher.listingContext
-    ? 'Ваучер для объекта'
-    : 'Ваучер партнёра';
+  return isListingVoucher(voucher) ? 'Ваучер для объекта' : 'Ваучер партнёра';
 }
 
 function getVoucherOfferTitle(voucher: RfVoucherDto) {
@@ -40,6 +48,14 @@ function getVoucherTerms(voucher: RfVoucherDto) {
 
 function getVoucherValidityLabel(voucher: RfVoucherDto) {
   return voucher.validityLabel || 'Срок действия уточняется у партнёра';
+}
+
+function getVoucherShortValidityLabel() {
+  return 'Срок: уточняется';
+}
+
+function getVoucherShortUsageLabel(voucher: RfVoucherDto) {
+  return isListingVoucher(voucher) ? 'Покажите ваучер представителю объекта' : 'Покажите ваучер партнёру';
 }
 
 function getVoucherUsageInstruction(voucher: RfVoucherDto) {
@@ -71,6 +87,9 @@ export function RfMyVouchersView() {
   const [serverVouchers, setServerVouchers] = useState<RfVoucherDto[] | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+  const listingVouchers = serverVouchers?.filter(isListingVoucher) ?? [];
+  const partnerVouchers = serverVouchers?.filter((voucher) => !isListingVoucher(voucher)) ?? [];
+  const showVoucherGroups = listingVouchers.length > 0 && partnerVouchers.length > 0;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -132,97 +151,141 @@ export function RfMyVouchersView() {
             {serverError}
           </div>
         ) : serverVouchers && serverVouchers.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {serverVouchers.map((voucher) => (
-              <li
-                key={voucher.id}
-                className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-900">
-                        {getVoucherScopeLabel(voucher)}
-                      </p>
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-900">
-                        {getVoucherStatusLabel(voucher.status)}
-                      </span>
-                    </div>
-                    {voucher.claimScope === 'listing' && voucher.listingContext ? (
-                      <p className="mt-2 text-sm text-slate-700">
-                        Объект:{' '}
-                        {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-sm text-slate-700">
-                      Партнёр: {getVoucherPartnerName(voucher)}
-                    </p>
-                    <p className="mt-3 text-base font-semibold text-slate-950">
-                      {getVoucherOfferTitle(voucher)}
-                    </p>
-                    <dl className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                      <div>
-                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                          Выгода
-                        </dt>
-                        <dd className="mt-1">{getVoucherBenefit(voucher)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                          Условия
-                        </dt>
-                        <dd className="mt-1">{getVoucherTerms(voucher)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                          Срок действия
-                        </dt>
-                        <dd className="mt-1">{getVoucherValidityLabel(voucher)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                          Код
-                        </dt>
-                        <dd className="mt-1 font-mono text-slate-900">{voucher.code}</dd>
-                      </div>
-                    </dl>
-                    <div className="mt-3 rounded-lg border border-emerald-100 bg-white/70 p-3 text-sm text-slate-700">
-                      <p>{getVoucherUsageInstruction(voucher)}</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {getVoucherUsageContactHint(voucher)}
-                      </p>
-                    </div>
-                    <details className="mt-3 text-xs text-slate-500">
-                      <summary className="cursor-pointer font-medium text-slate-600">
-                        Технические детали
-                      </summary>
-                      <div className="mt-2 space-y-1">
-                        <p>voucherId: {voucher.id}</p>
-                        <p>offerId: {voucher.offerId}</p>
-                        <p>partnerId: {voucher.partnerId}</p>
-                      </div>
-                    </details>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {voucher.claimScope === 'listing' && voucher.listingContext ? (
-                      <Link
-                        href={`/rf/rielt/listings/${encodeURIComponent(voucher.listingContext.listingId)}/vouchers`}
-                        className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-800"
+          <div className="mt-4 space-y-5">
+            {[
+              { title: 'Для объектов', items: listingVouchers },
+              { title: 'От партнёров', items: partnerVouchers },
+            ].map((group) =>
+              group.items.length > 0 ? (
+                <div key={group.title} className="space-y-2">
+                  {showVoucherGroups ? (
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {group.title}
+                    </h3>
+                  ) : null}
+                  <ul className="space-y-3">
+                    {group.items.map((voucher) => (
+                      <li
+                        key={voucher.id}
+                        className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-md"
                       >
-                        Ваучеры этого объекта
-                      </Link>
-                    ) : null}
-                    <Link
-                      href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
-                    >
-                      Предложения партнёра
-                    </Link>
-                  </div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+                                {getVoucherScopeLabel(voucher)}
+                              </p>
+                              <span
+                                className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${getVoucherStatusBadgeClass(voucher.status)}`}
+                              >
+                                {getVoucherStatusLabel(voucher.status)}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-base font-semibold text-slate-950">
+                              {getVoucherOfferTitle(voucher)}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-700">
+                              {getVoucherPartnerName(voucher)}
+                            </p>
+                            {isListingVoucher(voucher) && voucher.listingContext ? (
+                              <p className="mt-1 truncate text-sm text-slate-600">
+                                Объект:{' '}
+                                {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
+                              </p>
+                            ) : null}
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+                              <span className="rounded-full bg-white/80 px-2 py-1">
+                                {getVoucherShortValidityLabel()}
+                              </span>
+                              <span className="rounded-full bg-white/80 px-2 py-1">
+                                {getVoucherShortUsageLabel(voucher)}
+                              </span>
+                              <span className="rounded-full bg-white/80 px-2 py-1 font-mono text-slate-800">
+                                {voucher.code}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:justify-end">
+                            {isListingVoucher(voucher) && voucher.listingContext ? (
+                              <Link
+                                href={`/rf/rielt/listings/${encodeURIComponent(voucher.listingContext.listingId)}/vouchers`}
+                                className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-800"
+                              >
+                                Ваучеры этого объекта
+                              </Link>
+                            ) : null}
+                            <Link
+                              href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:bg-slate-50"
+                            >
+                              Предложения партнёра
+                            </Link>
+                          </div>
+                        </div>
+
+                        <details className="group/details mt-3 border-t border-emerald-100 pt-2 text-sm text-slate-700">
+                          <summary className="cursor-pointer list-none font-medium text-emerald-900 transition hover:text-emerald-700">
+                            <span className="inline-flex items-center gap-1">
+                              Условия и использование
+                              <span className="transition-transform duration-200 group-open/details:rotate-180">
+                                ▾
+                              </span>
+                            </span>
+                          </summary>
+                          <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-200 ease-out group-open/details:grid-rows-[1fr]">
+                            <div className="overflow-hidden">
+                              <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <div>
+                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                    Выгода
+                                  </dt>
+                                  <dd className="mt-1">{getVoucherBenefit(voucher)}</dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                    Условия
+                                  </dt>
+                                  <dd className="mt-1">{getVoucherTerms(voucher)}</dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                    Срок действия
+                                  </dt>
+                                  <dd className="mt-1">{getVoucherValidityLabel(voucher)}</dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                    Код
+                                  </dt>
+                                  <dd className="mt-1 font-mono text-slate-900">{voucher.code}</dd>
+                                </div>
+                              </dl>
+                              <div className="mt-3 rounded-lg border border-emerald-100 bg-white/70 p-3">
+                                <p>{getVoucherUsageInstruction(voucher)}</p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {getVoucherUsageContactHint(voucher)}
+                                </p>
+                              </div>
+                              <details className="mt-3 text-xs text-slate-500">
+                                <summary className="cursor-pointer font-medium text-slate-600">
+                                  Технические детали
+                                </summary>
+                                <div className="mt-2 space-y-1">
+                                  <p>voucherId: {voucher.id}</p>
+                                  <p>offerId: {voucher.offerId}</p>
+                                  <p>partnerId: {voucher.partnerId}</p>
+                                </div>
+                              </details>
+                            </div>
+                          </div>
+                        </details>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </li>
-            ))}
-          </ul>
+              ) : null
+            )}
+          </div>
         ) : (
           <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             Полученных RF-ваучеров пока нет.
