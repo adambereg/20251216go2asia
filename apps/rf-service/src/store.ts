@@ -8,6 +8,7 @@ type DbExecutor = Pick<Db, 'execute'>;
 export type PartnerStatus = 'active' | 'archived';
 export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
+export type VoucherClaimScope = 'partner' | 'listing';
 export type ProLinkStatus = 'pending' | 'active' | 'ended';
 export type RieltListingOfferStatus = 'active' | 'hidden';
 export type RieltListingOfferKind = 'basic' | 'premium';
@@ -63,6 +64,12 @@ export interface Voucher {
   partnerId: string;
   issuedToUserId: string;
   status: VoucherStatus;
+  claimScope: VoucherClaimScope;
+  listingContext: {
+    source: 'rielt';
+    listingId: string;
+    listingTitle: string | null;
+  } | null;
   code: string;
   claimedAt: string;
   redeemedAt: string | null;
@@ -152,11 +159,26 @@ type VoucherRow = {
   partner_id: string;
   issued_to_user_id: string;
   status: VoucherStatus;
+  claim_scope?: VoucherClaimScope | null;
+  rielt_listing_id?: string | null;
+  rielt_listing_title_snapshot?: string | null;
   code: string;
   claimed_at: string | Date;
   redeemed_at: string | Date | null;
   created_at: string | Date;
   updated_at: string | Date;
+};
+
+type ListingClaimContextRow = {
+  listing_id: string;
+  listing_title: string;
+  listing_rf_partner_id: string | null;
+  mapping_partner_id: string;
+  offer_id: string;
+  offer_partner_id: string;
+  offer_status: OfferStatus;
+  offer_visibility: Offer['visibility'];
+  partner_status: PartnerStatus;
 };
 
 type ProLinkRow = {
@@ -235,12 +257,23 @@ function toPartnerFromMappingRow(row: RieltListingOfferMappingRow): Partner {
 }
 
 function toVoucher(row: VoucherRow): Voucher {
+  const claimScope = row.claim_scope ?? 'partner';
+  const listingId = row.rielt_listing_id ?? null;
   return {
     id: row.id,
     offerId: row.offer_id,
     partnerId: row.partner_id,
     issuedToUserId: row.issued_to_user_id,
     status: row.status,
+    claimScope,
+    listingContext:
+      claimScope === 'listing' && listingId
+        ? {
+            source: 'rielt',
+            listingId,
+            listingTitle: row.rielt_listing_title_snapshot ?? null,
+          }
+        : null,
     code: row.code,
     claimedAt: asIso(row.claimed_at) ?? new Date(0).toISOString(),
     redeemedAt: asIso(row.redeemed_at),
@@ -388,7 +421,20 @@ async function getActivePartnerById(db: DbExecutor, partnerId: string): Promise<
 
 async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partnerId: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
-    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
     FROM rf_voucher
     WHERE id = ${voucherId}
       AND partner_id = ${partnerId}
@@ -399,7 +445,20 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
 
 async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: string, idempotencyKey: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
-    SELECT v.id, v.offer_id, v.partner_id, v.issued_to_user_id, v.status, v.code, v.claimed_at, v.redeemed_at, v.created_at, v.updated_at
+    SELECT
+      v.id,
+      v.offer_id,
+      v.partner_id,
+      v.issued_to_user_id,
+      v.status,
+      v.claim_scope,
+      v.rielt_listing_id,
+      v.rielt_listing_title_snapshot,
+      v.code,
+      v.claimed_at,
+      v.redeemed_at,
+      v.created_at,
+      v.updated_at
     FROM rf_claim_idempotency ci
     INNER JOIN rf_voucher v ON v.id = ci.voucher_id
     WHERE ci.operation = 'voucher_claim'
@@ -412,15 +471,92 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
 
 async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string, userId: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
-    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
     FROM rf_voucher
     WHERE offer_id = ${offerId}
       AND issued_to_user_id = ${userId}
+      AND claim_scope = 'partner'
       AND status IN ('claimed', 'redeemed')
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   `);
   return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getClaimableVoucherByListingOfferAndUser(
+  db: DbExecutor,
+  listingId: string,
+  offerId: string,
+  userId: string
+): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+    FROM rf_voucher
+    WHERE rielt_listing_id = ${listingId}
+      AND offer_id = ${offerId}
+      AND issued_to_user_id = ${userId}
+      AND claim_scope = 'listing'
+      AND status IN ('claimed', 'redeemed')
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getListingClaimContext(db: DbExecutor, listingId: string, offerId: string): Promise<ListingClaimContextRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      l.id AS listing_id,
+      l.title AS listing_title,
+      l.rf_partner_id AS listing_rf_partner_id,
+      m.rf_partner_id AS mapping_partner_id,
+      o.id AS offer_id,
+      o.partner_id AS offer_partner_id,
+      o.status AS offer_status,
+      o.visibility AS offer_visibility,
+      p.status AS partner_status
+    FROM rielt_listing l
+    INNER JOIN rielt_listing_rf_offer m
+      ON m.listing_id = l.id
+      AND m.rf_offer_id = ${offerId}
+      AND m.status = 'active'
+    INNER JOIN rf_offer o
+      ON o.id = m.rf_offer_id
+      AND o.partner_id = m.rf_partner_id
+    INNER JOIN rf_partner p
+      ON p.id = m.rf_partner_id
+    WHERE l.id = ${listingId}
+      AND l.status = 'published'
+      AND l.deleted_at IS NULL
+    LIMIT 1
+  `);
+  return rowsOf<ListingClaimContextRow>(result)[0] ?? null;
 }
 
 async function insertClaimIdempotency(
@@ -741,6 +877,8 @@ export async function claimVoucher(
     return { ok: true, voucher: toVoucher(existing), idempotentReplay: false };
   }
 
+  // This legacy endpoint remains partner-scoped. Listing-scoped claims must use
+  // a dedicated endpoint that validates listing mapping and claim context.
   const voucherId = nextId('rf_voucher');
   const voucherCode = toVoucherCode(voucherId);
   const insertResult = await db.execute(sql`
@@ -750,6 +888,7 @@ export async function claimVoucher(
       partner_id,
       issued_to_user_id,
       status,
+      claim_scope,
       code,
       claimed_at,
       redeemed_at,
@@ -762,15 +901,29 @@ export async function claimVoucher(
       ${offer.partner_id},
       ${principal.userId},
       'claimed',
+      'partner',
       ${voucherCode},
       now(),
       NULL,
       now(),
       now()
     )
-    ON CONFLICT (offer_id, issued_to_user_id) WHERE status IN ('claimed', 'redeemed')
+    ON CONFLICT (offer_id, issued_to_user_id) WHERE claim_scope = 'partner' AND status IN ('claimed', 'redeemed')
     DO NOTHING
-    RETURNING id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    RETURNING
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
   `);
   let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
 
@@ -797,9 +950,172 @@ export async function claimVoucher(
   return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
 }
 
+function isListingClaimVoucher(row: VoucherRow, listingId: string, offerId: string): boolean {
+  return row.offer_id === offerId && row.claim_scope === 'listing' && row.rielt_listing_id === listingId;
+}
+
+export async function claimVoucherForListing(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: { listingId: string; offerId: string; idempotencyKey: string }
+): Promise<ClaimResult> {
+  const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
+  if (replayVoucher) {
+    if (!isListingClaimVoucher(replayVoucher, input.listingId, input.offerId)) {
+      return {
+        ok: false,
+        code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+        message: 'Idempotency-Key was already used for a different voucher claim context',
+        status: 409,
+      };
+    }
+    return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
+  }
+
+  const context = await getListingClaimContext(db, input.listingId, input.offerId);
+  if (!context) {
+    return {
+      ok: false,
+      code: 'RF_RIELT_LISTING_OFFER_NOT_FOUND',
+      message: 'RF offer is not active for this Rielt listing',
+      status: 404,
+    };
+  }
+  if (context.offer_status !== 'active') {
+    return { ok: false, code: 'RF_OFFER_INACTIVE', message: 'RF offer is not active', status: 409 };
+  }
+  if (context.offer_visibility !== 'public') {
+    return { ok: false, code: 'RF_OFFER_NOT_CLAIMABLE', message: 'RF offer is not publicly claimable', status: 409 };
+  }
+  if (context.partner_status !== 'active') {
+    return { ok: false, code: 'RF_PARTNER_INACTIVE', message: 'RF partner is not active', status: 409 };
+  }
+  if (context.offer_partner_id !== context.mapping_partner_id) {
+    return {
+      ok: false,
+      code: 'RF_RIELT_LISTING_OFFER_RELATION_INVALID',
+      message: 'RF listing offer mapping relation is invalid',
+      status: 409,
+    };
+  }
+  if (context.listing_rf_partner_id !== null && context.listing_rf_partner_id !== context.mapping_partner_id) {
+    return {
+      ok: false,
+      code: 'RF_RIELT_LISTING_PARTNER_MISMATCH',
+      message: 'Rielt listing RF partner does not match the mapped RF offer partner',
+      status: 409,
+    };
+  }
+
+  const existingListingVoucher = await getClaimableVoucherByListingOfferAndUser(
+    db,
+    input.listingId,
+    input.offerId,
+    principal.userId
+  );
+  if (existingListingVoucher) {
+    return { ok: true, voucher: toVoucher(existingListingVoucher), idempotentReplay: false };
+  }
+
+  const voucherId = nextId('rf_voucher');
+  const voucherCode = toVoucherCode(voucherId);
+  const insertResult = await db.execute(sql`
+    INSERT INTO rf_voucher (
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${voucherId},
+      ${input.offerId},
+      ${context.mapping_partner_id},
+      ${principal.userId},
+      'claimed',
+      'listing',
+      ${input.listingId},
+      ${context.listing_title},
+      ${voucherCode},
+      now(),
+      NULL,
+      now(),
+      now()
+    )
+    ON CONFLICT (rielt_listing_id, offer_id, issued_to_user_id) WHERE claim_scope = 'listing' AND status IN ('claimed', 'redeemed')
+    DO NOTHING
+    RETURNING
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+  `);
+  let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
+
+  if (!voucherRow) {
+    voucherRow = await getClaimableVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId);
+    if (!voucherRow) {
+      return { ok: false, code: 'RF_VOUCHER_CLAIM_FAILED', message: 'Unable to claim listing voucher', status: 409 };
+    }
+  }
+
+  const idempotency = await insertClaimIdempotency(db, {
+    actorUserId: principal.userId,
+    idempotencyKey: input.idempotencyKey,
+    voucherId: voucherRow.id,
+  });
+  if (!idempotency) {
+    return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
+  }
+  if (idempotency.voucher_id !== voucherRow.id) {
+    const stableReplay = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
+    if (stableReplay && isListingClaimVoucher(stableReplay, input.listingId, input.offerId)) {
+      return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+    }
+    return {
+      ok: false,
+      code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+      message: 'Idempotency-Key was already used for a different voucher claim context',
+      status: 409,
+    };
+  }
+
+  return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
+}
+
 export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal): Promise<Voucher[]> {
   const result = await db.execute(sql`
-    SELECT id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
     FROM rf_voucher
     WHERE issued_to_user_id = ${principal.userId}
     ORDER BY created_at DESC, id DESC
@@ -876,7 +1192,20 @@ export async function redeemVoucher(
     WHERE id = ${input.voucherId}
       AND partner_id = ${input.partnerId}
       AND status = 'claimed'
-    RETURNING id, offer_id, partner_id, issued_to_user_id, status, code, claimed_at, redeemed_at, created_at, updated_at
+    RETURNING
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
   `);
   const updated = rowsOf<VoucherRow>(updateResult)[0];
   if (updated) return { ok: true, voucher: toVoucher(updated), applied: true };

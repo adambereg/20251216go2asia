@@ -3708,6 +3708,13 @@ components:
       type: object
     RfVoucher:
       properties:
+        claimScope:
+          description: |
+            Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
+          enum:
+            - partner
+            - listing
+          type: string
         claimedAt:
           format: date-time
           type: string
@@ -3720,6 +3727,25 @@ components:
           type: string
         issuedToUserId:
           type: string
+        listingContext:
+          anyOf:
+            - properties:
+                listingId:
+                  type: string
+                listingTitle:
+                  nullable: true
+                  type: string
+                source:
+                  enum:
+                    - rielt
+                  type: string
+              required:
+                - source
+                - listingId
+                - listingTitle
+              type: object
+            - type: "null"
+          nullable: true
         offerId:
           type: string
         partnerId:
@@ -3745,6 +3771,8 @@ components:
         - partnerId
         - issuedToUserId
         - status
+        - claimScope
+        - listingContext
         - code
         - claimedAt
         - createdAt
@@ -7325,6 +7353,53 @@ paths:
       summary: Get RF offers mapped to a Rielt listing
       tags:
         - rf
+  /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim:
+    post:
+      description: |
+        Claims a voucher in RF for a specific Rielt listing context. RF validates that the offer is actively mapped to the listing, the offer is public and active, and the partner is active. This endpoint does not replace the partner-scope claim endpoint.
+      operationId: rfClaimRieltListingVoucher
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfRieltListingId"
+        - $ref: "#/components/parameters/RfOfferId"
+        - $ref: "#/components/parameters/RfIdempotencyKey"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Idempotent replay
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Listing-scoped voucher created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfErrorResponse"
+          description: |
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+        "500":
+          $ref: "#/components/responses/RfInternalError"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Claim listing-scoped voucher for mapped Rielt offer
+      tags:
+        - rf
   /v1/rielt/listings:
     get:
       operationId: rieltListPublicListings
@@ -8160,6 +8235,7 @@ tags:
           - /v1/rf/offers
           - /v1/rf/offers/{offerId}
           - /v1/rf/rielt/listings/{listingId}/offers
+          - /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim
           - /v1/rf/business/partners
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate

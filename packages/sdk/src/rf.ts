@@ -61,6 +61,12 @@ export interface RfVoucherDto {
   partnerId: string;
   issuedToUserId: string;
   status: 'claimed' | 'redeemed' | 'cancelled';
+  claimScope?: 'partner' | 'listing';
+  listingContext?: {
+    source: 'rielt';
+    listingId: string;
+    listingTitle: string | null;
+  } | null;
   code: string;
   claimedAt: string;
   redeemedAt: string | null;
@@ -147,6 +153,22 @@ export async function claimRfOffer(offerId: string, idempotencyKey = createRfCla
       },
     },
     `/v1/rf/offers/${encodeURIComponent(offerId)}/claim`
+  );
+}
+
+export async function claimRfListingOffer(
+  listingId: string,
+  offerId: string,
+  idempotencyKey = createRfClaimIdempotencyKey()
+): Promise<RfClaimResponse> {
+  return customInstance<RfClaimResponse>(
+    {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    },
+    `/v1/rf/rielt/listings/${encodeURIComponent(listingId)}/offers/${encodeURIComponent(offerId)}/claim`
   );
 }
 

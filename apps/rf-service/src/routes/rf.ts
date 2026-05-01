@@ -6,6 +6,7 @@ import {
   acceptProLink,
   activateOffer,
   claimVoucher,
+  claimVoucherForListing,
   createOffer,
   createPartner,
   createProLink,
@@ -191,6 +192,37 @@ export async function handleRfRoute(
 
     const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
+      idempotencyKey,
+    });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(
+      {
+        voucher: result.voucher,
+        idempotentReplay: result.idempotentReplay,
+      },
+      result.idempotentReplay ? 200 : 201
+    );
+  }
+
+  const listingClaimMatch = path.match(/^\/v1\/rf\/rielt\/listings\/([^/]+)\/offers\/([^/]+)\/claim$/);
+  if (request.method === 'POST' && listingClaimMatch) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const idempotencyKey = request.headers.get('Idempotency-Key')?.trim();
+    if (!idempotencyKey) {
+      return errorResponse('MISSING_IDEMPOTENCY_KEY', 'Idempotency-Key is required for voucher claim', requestId, 400);
+    }
+    if (idempotencyKey.length > 160) {
+      return errorResponse('INVALID_IDEMPOTENCY_KEY', 'Idempotency-Key must be <= 160 characters', requestId, 400);
+    }
+    if (shouldThrottleWrite(principal.userId, 'claim')) {
+      return errorResponse('RATE_LIMITED', 'Too many voucher claim requests. Please retry later.', requestId, 429);
+    }
+
+    const listingId = decodeURIComponent(listingClaimMatch[1] ?? '');
+    const offerIdValue = decodeURIComponent(listingClaimMatch[2] ?? '');
+    const result = await claimVoucherForListing(db, principal, {
+      listingId,
+      offerId: offerIdValue,
       idempotencyKey,
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);

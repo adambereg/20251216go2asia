@@ -6,14 +6,21 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
+import type { RfVoucherListingContext } from "./rfVoucherListingContext";
 import type { RfVoucherStatus } from "./rfVoucherStatus";
 
 export interface RfVoucher {
+  /** Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
+   */
+  claimScope: RfVoucherClaimScope;
   claimedAt: string;
   code: string;
   createdAt: string;
   id: string;
   issuedToUserId: string;
+  /** @nullable */
+  listingContext: RfVoucherListingContext;
   offerId: string;
   partnerId: string;
   /** @nullable */

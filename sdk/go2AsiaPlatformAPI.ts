@@ -125,6 +125,7 @@ import type {
   RfCreateOfferRequest,
   RfCreatePartnerRequest,
   RfCreateProLinkRequest,
+  RfErrorResponse,
   RfForbiddenResponse,
   RfInternalErrorResponse,
   RfNotFoundResponse,
@@ -4655,6 +4656,96 @@ export const rfGetRieltListingOffers = async (
     ...options,
     method: "GET",
   });
+};
+
+/**
+ * Claims a voucher in RF for a specific Rielt listing context. RF validates that the offer is actively mapped to the listing, the offer is public and active, and the partner is active. This endpoint does not replace the partner-scope claim endpoint.
+
+ * @summary Claim listing-scoped voucher for mapped Rielt offer
+ */
+export type rfClaimRieltListingVoucherResponse200 = {
+  data: RfClaimResponse;
+  status: 200;
+};
+
+export type rfClaimRieltListingVoucherResponse201 = {
+  data: RfClaimResponse;
+  status: 201;
+};
+
+export type rfClaimRieltListingVoucherResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfClaimRieltListingVoucherResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfClaimRieltListingVoucherResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfClaimRieltListingVoucherResponse409 = {
+  data: RfErrorResponse;
+  status: 409;
+};
+
+export type rfClaimRieltListingVoucherResponse429 = {
+  data: RfRateLimitedResponse;
+  status: 429;
+};
+
+export type rfClaimRieltListingVoucherResponse500 = {
+  data: RfInternalErrorResponse;
+  status: 500;
+};
+
+export type rfClaimRieltListingVoucherResponse503 = {
+  data: RfServiceUnavailableResponse;
+  status: 503;
+};
+
+export type rfClaimRieltListingVoucherResponseSuccess = (
+  | rfClaimRieltListingVoucherResponse200
+  | rfClaimRieltListingVoucherResponse201
+) & {
+  headers: Headers;
+};
+export type rfClaimRieltListingVoucherResponseError = (
+  | rfClaimRieltListingVoucherResponse400
+  | rfClaimRieltListingVoucherResponse401
+  | rfClaimRieltListingVoucherResponse404
+  | rfClaimRieltListingVoucherResponse409
+  | rfClaimRieltListingVoucherResponse429
+  | rfClaimRieltListingVoucherResponse500
+  | rfClaimRieltListingVoucherResponse503
+) & {
+  headers: Headers;
+};
+
+export type rfClaimRieltListingVoucherResponse =
+  | rfClaimRieltListingVoucherResponseSuccess
+  | rfClaimRieltListingVoucherResponseError;
+
+export const getRfClaimRieltListingVoucherUrl = (listingId: string, offerId: string) => {
+  return `/v1/rf/rielt/listings/${listingId}/offers/${offerId}/claim`;
+};
+
+export const rfClaimRieltListingVoucher = async (
+  listingId: string,
+  offerId: string,
+  options?: RequestInit
+): Promise<rfClaimRieltListingVoucherResponse> => {
+  return customInstance<rfClaimRieltListingVoucherResponse>(
+    getRfClaimRieltListingVoucherUrl(listingId, offerId),
+    {
+      ...options,
+      method: "POST",
+    }
+  );
 };
 
 /**
