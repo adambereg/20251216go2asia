@@ -275,7 +275,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
               ))}
             </div>
             <p className="text-xs text-slate-500">
-              Часть дополнительных параметров помогает точнее сформулировать запрос владельцу.
+              Часть дополнительных параметров помогает точнее сформулировать критерии поиска.
             </p>
           </div>
         ) : null}
@@ -290,7 +290,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
           <ArrowRight className="w-5 h-5" />
         </button>
         <p className="text-xs text-slate-500">
-          Мы показываем отобранные варианты. Точные даты и условия подтверждаются после отправки запроса.
+          Мы показываем отобранные варианты. Точные даты и условия уточняются после выбора подходящего объекта.
         </p>
       </form>
     </div>

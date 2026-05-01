@@ -36,17 +36,61 @@ export interface RfOfferDto {
   updatedAt: string;
 }
 
+export interface RfRieltListingOfferDto extends RfOfferDto {
+  type: 'basic' | 'premium';
+  benefit: string;
+  description: string | null;
+  availability: 'available';
+  applicabilityNote: string | null;
+  priority: number;
+}
+
+export interface RfRieltListingOfferContextResponse {
+  listing: {
+    id: string;
+    title: string;
+    rfPartnerId: string | null;
+  };
+  partner: RfPartnerDto | null;
+  offers: RfRieltListingOfferDto[];
+}
+
 export interface RfVoucherDto {
   id: string;
   offerId: string;
   partnerId: string;
   issuedToUserId: string;
   status: 'claimed' | 'redeemed' | 'cancelled';
+  claimScope?: 'partner' | 'listing';
+  listingContext?: {
+    source: 'rielt';
+    listingId: string;
+    listingTitle: string | null;
+  } | null;
   code: string;
   claimedAt: string;
   redeemedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  offer?: {
+    id: string;
+    title: string;
+    benefit: string;
+    terms: string;
+    type: string;
+  };
+  partner?: {
+    id: string;
+    displayName: string;
+    cityId?: string | null;
+    countryId?: string | null;
+  };
+  validityLabel?: string;
+  usage?: {
+    instruction: string;
+    contactHint: string;
+    redeemStatus: string;
+  };
 }
 
 export interface RfPartnerListResponse {
@@ -62,6 +106,11 @@ export interface RfOfferListResponse {
 export interface RfVoucherListResponse {
   items: RfVoucherDto[];
   nextCursor: string | null;
+}
+
+export interface RfClaimResponse {
+  voucher: RfVoucherDto;
+  idempotentReplay: boolean;
 }
 
 export interface RfCreatePartnerRequest {
@@ -82,7 +131,10 @@ export async function fetchRfPartners(): Promise<RfPartnerListResponse | null> {
 
 export async function fetchRfPartner(partnerId: string): Promise<RfPartnerDto | null> {
   try {
-    return await customInstance<RfPartnerDto>({ method: 'GET' }, `/v1/rf/partners/${encodeURIComponent(partnerId)}`);
+    return await customInstance<RfPartnerDto>(
+      { method: 'GET' },
+      `/v1/rf/partners/${encodeURIComponent(partnerId)}`
+    );
   } catch {
     return null;
   }
@@ -95,6 +147,59 @@ export async function fetchRfOffers(): Promise<RfOfferListResponse | null> {
     return null;
   }
 }
+
+export async function fetchRfRieltListingOffers(
+  listingId: string
+): Promise<RfRieltListingOfferContextResponse | null> {
+  try {
+    return await customInstance<RfRieltListingOfferContextResponse>(
+      { method: 'GET' },
+      `/v1/rf/rielt/listings/${encodeURIComponent(listingId)}/offers`
+    );
+  } catch {
+    return null;
+  }
+}
+
+function createRfClaimIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `rf-claim-${crypto.randomUUID()}`;
+  }
+  return `rf-claim-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export async function claimRfOffer(
+  offerId: string,
+  idempotencyKey = createRfClaimIdempotencyKey()
+): Promise<RfClaimResponse> {
+  return customInstance<RfClaimResponse>(
+    {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    },
+    `/v1/rf/offers/${encodeURIComponent(offerId)}/claim`
+  );
+}
+
+export async function claimRfListingOffer(
+  listingId: string,
+  offerId: string,
+  idempotencyKey = createRfClaimIdempotencyKey()
+): Promise<RfClaimResponse> {
+  return customInstance<RfClaimResponse>(
+    {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    },
+    `/v1/rf/rielt/listings/${encodeURIComponent(listingId)}/offers/${encodeURIComponent(offerId)}/claim`
+  );
+}
+
+export const claimRfRieltListingOffer = claimRfListingOffer;
 
 export async function createBusinessPartner(input: RfCreatePartnerRequest): Promise<RfPartnerDto> {
   return customInstance<RfPartnerDto>(

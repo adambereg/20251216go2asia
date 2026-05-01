@@ -140,6 +140,8 @@ function toPublicListingDto(row: PublicListingRow, media?: ListingPublicMedia) {
     bathrooms: row.bathrooms,
     areaSqm: toNumber(row.area_sqm),
     geo: toPublicGeo(row),
+    rfPartnerId: row.rf_partner_id ?? null,
+    rfOfferId: row.rf_offer_id ?? null,
     media: {
       coverUrl: media?.coverUrl ?? null,
       photos: media?.photos ?? [],

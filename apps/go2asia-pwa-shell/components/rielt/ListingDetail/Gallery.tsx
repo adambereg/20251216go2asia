@@ -97,7 +97,7 @@ export function Gallery({ listing }: GalleryProps) {
           )}
           {listing.isInstant && (
             <div className="px-3 py-1.5 bg-purple-500 text-white rounded-lg font-semibold text-sm shadow-lg">
-              Мгновенное бронирование
+              Быстрый отклик
             </div>
           )}
         </div>

@@ -57,6 +57,8 @@ tags:
           - /v1/rf/partners/{partnerId}
           - /v1/rf/offers
           - /v1/rf/offers/{offerId}
+          - /v1/rf/rielt/listings/{listingId}/offers
+          - /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim
           - /v1/rf/business/partners
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
@@ -203,6 +205,76 @@ paths:
                 $ref: "#/components/schemas/RfOffer"
         "404":
           $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/rielt/listings/{listingId}/offers:
+    get:
+      tags: [rf]
+      operationId: rfGetRieltListingOffers
+      summary: Get RF offers mapped to a Rielt listing
+      description: >
+        Read-only RF-owned listing voucher context. Returns public active RF offers explicitly
+        mapped to the Rielt listing. Does not claim or redeem vouchers.
+      parameters:
+        - $ref: "#/components/parameters/RfRieltListingId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRieltListingOfferContext"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim:
+    post:
+      tags: [rf]
+      operationId: rfClaimRieltListingVoucher
+      summary: Claim listing-scoped voucher for mapped Rielt offer
+      description: >
+        Claims a voucher in RF for a specific Rielt listing context. RF validates that
+        the offer is actively mapped to the listing, the offer is public and active,
+        and the partner is active. This endpoint does not replace the partner-scope
+        claim endpoint.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfRieltListingId"
+        - $ref: "#/components/parameters/RfOfferId"
+        - $ref: "#/components/parameters/RfIdempotencyKey"
+      responses:
+        "200":
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+        "201":
+          description: Listing-scoped voucher created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          description: >
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfErrorResponse"
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+        "500":
+          $ref: "#/components/responses/RfInternalError"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
 
   /v1/rf/business/partners/{partnerId}/offers:
     post:
@@ -490,6 +562,12 @@ components:
       required: true
       schema:
         type: string
+    RfRieltListingId:
+      name: listingId
+      in: path
+      required: true
+      schema:
+        type: string
     RfVoucherId:
       name: voucherId
       in: path
@@ -607,7 +685,8 @@ components:
 
     RfPartner:
       type: object
-      required: [id, slug, displayName, countryId, cityId, status, ownerUserId, createdAt, updatedAt]
+      required:
+        [id, slug, displayName, countryId, cityId, status, ownerUserId, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -639,7 +718,8 @@ components:
 
     RfOffer:
       type: object
-      required: [id, partnerId, title, offerType, visibility, status, createdByUserId, createdAt, updatedAt]
+      required:
+        [id, partnerId, title, offerType, visibility, status, createdByUserId, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -665,9 +745,73 @@ components:
           type: string
           format: date-time
 
+    RfRieltListingSummary:
+      type: object
+      required: [id, title, rfPartnerId]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        rfPartnerId:
+          type: string
+          nullable: true
+
+    RfRieltListingOffer:
+      allOf:
+        - $ref: "#/components/schemas/RfOffer"
+        - type: object
+          required: [type, benefit, description, availability, applicabilityNote, priority]
+          properties:
+            type:
+              type: string
+              enum: [basic, premium]
+            benefit:
+              type: string
+            description:
+              type: string
+              nullable: true
+            availability:
+              type: string
+              enum: [available]
+            applicabilityNote:
+              type: string
+              nullable: true
+            priority:
+              type: integer
+              minimum: 0
+
+    RfRieltListingOfferContext:
+      type: object
+      required: [listing, partner, offers]
+      properties:
+        listing:
+          $ref: "#/components/schemas/RfRieltListingSummary"
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfPartner"
+            - type: "null"
+        offers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfRieltListingOffer"
+
     RfVoucher:
       type: object
-      required: [id, offerId, partnerId, issuedToUserId, status, code, claimedAt, createdAt, updatedAt]
+      required:
+        [
+          id,
+          offerId,
+          partnerId,
+          issuedToUserId,
+          status,
+          claimScope,
+          listingContext,
+          code,
+          claimedAt,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -683,6 +827,27 @@ components:
           description: >
             Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps
             to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
+        claimScope:
+          type: string
+          enum: [partner, listing]
+          description: >
+            Scope used for voucher uniqueness. Partner scope is unique by offer and user;
+            listing scope is unique by Rielt listing, offer and user.
+        listingContext:
+          nullable: true
+          anyOf:
+            - type: object
+              required: [source, listingId, listingTitle]
+              properties:
+                source:
+                  type: string
+                  enum: [rielt]
+                listingId:
+                  type: string
+                listingTitle:
+                  type: string
+                  nullable: true
+            - type: "null"
         code:
           type: string
         claimedAt:
@@ -698,6 +863,50 @@ components:
         updatedAt:
           type: string
           format: date-time
+        offer:
+          type: object
+          description: Optional wallet read enrichment for human-readable voucher display.
+          required: [id, title, benefit, terms, type]
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            benefit:
+              type: string
+            terms:
+              type: string
+            type:
+              type: string
+        partner:
+          type: object
+          description: Optional wallet read enrichment for human-readable partner display.
+          required: [id, displayName]
+          properties:
+            id:
+              type: string
+            displayName:
+              type: string
+            cityId:
+              type: string
+              nullable: true
+            countryId:
+              type: string
+              nullable: true
+        validityLabel:
+          type: string
+          description: Optional human-readable validity note for wallet display.
+        usage:
+          type: object
+          description: Optional human-readable usage guidance for wallet display.
+          required: [instruction, contactHint, redeemStatus]
+          properties:
+            instruction:
+              type: string
+            contactHint:
+              type: string
+            redeemStatus:
+              type: string
 
     RfProLink:
       type: object

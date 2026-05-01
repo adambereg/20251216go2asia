@@ -233,6 +233,8 @@ export interface Listing {
   
   // Бейджи и статусы
   isRF?: boolean;                          // Russian Friendly
+  rfPartnerId?: string | null;              // Soft reference to RF partner
+  rfOfferId?: string | null;                // Soft reference to RF offer (not voucher id)
   rfVoucher?: RFVoucher;                    // RF-ваучер
   proVerification?: PROVerification;       // PRO-проверка
   presentation?: ListingPresentationMeta;   // Forward-compatible presentation/meta

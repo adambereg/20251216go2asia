@@ -18,6 +18,7 @@ import { Button } from '@go2asia/ui';
 function isNavActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
   if (href === '/rf') return pathname === '/rf';
+  if (href === '/rf/vouchers' && pathname.startsWith('/rf/rielt/listings/')) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

@@ -880,6 +880,99 @@ describe('rf-service request', () => {
     expect(body.error.code).toBe('INVALID_IDEMPOTENCY_KEY');
   });
 
+  it('requires auth for listing current user vouchers', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const response = await worker.fetch(new Request('https://rf.example/v1/rf/me/vouchers'), env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns enriched wallet vouchers for the current user', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_listing_1',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'redeemed',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_phuket_karon_002',
+          rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+          code: 'RF-LIST01',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: '2026-03-22T10:03:00.000Z',
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-22T10:03:00.000Z',
+          wallet_offer_id: 'rf_offer_1',
+          wallet_offer_title: 'Скидка 5% на аренду',
+          wallet_offer_type: 'discount',
+          wallet_offer_kind: 'premium',
+          wallet_offer_terms: 'Для этого объекта Rielt',
+          wallet_partner_id: 'rf_partner_1',
+          wallet_partner_display_name: 'Voucher Partner',
+          wallet_partner_city_id: 'city_phuket',
+          wallet_partner_country_id: 'country_th',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/me/vouchers', {
+        headers: {
+          'X-Gateway-Auth': userToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        offer: { id: string; title: string; benefit: string; terms: string; type: string };
+        partner: { id: string; displayName: string; cityId: string | null; countryId: string | null };
+        validityLabel: string;
+        usage: { instruction: string; contactHint: string; redeemStatus: string };
+      }>;
+      nextCursor: string | null;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.nextCursor).toBeNull();
+    expect(body.items[0]).toEqual(
+      expect.objectContaining({
+        id: 'rf_voucher_listing_1',
+        offer: {
+          id: 'rf_offer_1',
+          title: 'Скидка 5% на аренду',
+          benefit: 'Скидка 5% на аренду',
+          terms: 'Для этого объекта Rielt',
+          type: 'premium',
+        },
+        partner: {
+          id: 'rf_partner_1',
+          displayName: 'Voucher Partner',
+          cityId: 'city_phuket',
+          countryId: 'country_th',
+        },
+        validityLabel: 'Срок действия уточняется у партнёра',
+        usage: {
+          instruction: 'Покажите ваучер представителю объекта и уточните применение выгоды.',
+          contactHint: 'Свяжитесь с представителем объекта перед использованием.',
+          redeemStatus: 'Использован',
+        },
+      })
+    );
+    expect(executeMock).toHaveBeenCalledTimes(1);
+    expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+  });
+
   it('requires auth for voucher summary', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
 
@@ -971,6 +1064,565 @@ describe('rf-service request', () => {
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+  });
+
+  it('claims a listing-scoped voucher and replays it idempotently', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      // claim #1: idempotency lookup
+      .mockResolvedValueOnce({ rows: [] })
+      // claim #1: listing/mapping/offer/partner context
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            listing_id: 'rielt_phuket_karon_002',
+            listing_title: 'Семейные апартаменты в Кароне',
+            listing_rf_partner_id: 'rf_partner_1',
+            mapping_partner_id: 'rf_partner_1',
+            offer_id: 'rf_offer_1',
+            offer_partner_id: 'rf_partner_1',
+            offer_status: 'active',
+            offer_visibility: 'public',
+            partner_status: 'active',
+          },
+        ],
+      })
+      // claim #1: existing listing voucher lookup
+      .mockResolvedValueOnce({ rows: [] })
+      // claim #1: existing partner voucher lookup
+      .mockResolvedValueOnce({ rows: [] })
+      // claim #1: insert listing voucher
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_karon_002',
+            rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+            code: 'RF-LIST01',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // claim #1: insert claim idempotency
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'listing-claim-1',
+            voucher_id: 'rf_voucher_listing_1',
+            created_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // claim #2: idempotency replay lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_karon_002',
+            rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+            code: 'RF-LIST01',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const claim1 = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-1',
+        },
+      }),
+      env
+    );
+    const claim1Body = await readJson<{
+      voucher: { id: string; claimScope: string; listingContext: { listingId: string; listingTitle: string | null } | null };
+      idempotentReplay: boolean;
+    }>(claim1);
+    expect(claim1.status).toBe(201);
+    expect(claim1Body.idempotentReplay).toBe(false);
+    expect(claim1Body.voucher).toEqual(
+      expect.objectContaining({
+        id: 'rf_voucher_listing_1',
+        claimScope: 'listing',
+        listingContext: {
+          source: 'rielt',
+          listingId: 'rielt_phuket_karon_002',
+          listingTitle: 'Семейные апартаменты в Кароне',
+        },
+      })
+    );
+
+    const claim2 = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-1',
+        },
+      }),
+      env
+    );
+    const claim2Body = await readJson<{ voucher: { id: string; claimScope: string }; idempotentReplay: boolean }>(claim2);
+    expect(claim2.status).toBe(200);
+    expect(claim2Body.idempotentReplay).toBe(true);
+    expect(claim2Body.voucher.id).toBe('rf_voucher_listing_1');
+    expect(claim2Body.voucher.claimScope).toBe('listing');
+  });
+
+  it('allows partner-scope and listing-scoped claims for the same offer', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      // partner claim
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_partner_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-PART01',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'partner-claim-before-listing',
+            voucher_id: 'rf_voucher_partner_1',
+            created_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // listing claim for the same offer
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            listing_id: 'rielt_phuket_karon_002',
+            listing_title: 'Семейные апартаменты в Кароне',
+            listing_rf_partner_id: 'rf_partner_1',
+            mapping_partner_id: 'rf_partner_1',
+            offer_id: 'rf_offer_1',
+            offer_partner_id: 'rf_partner_1',
+            offer_status: 'active',
+            offer_visibility: 'public',
+            partner_status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_karon_002',
+            rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+            code: 'RF-LIST01',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'listing-claim-after-partner',
+            voucher_id: 'rf_voucher_listing_1',
+            created_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const partnerClaim = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'partner-claim-before-listing',
+        },
+      }),
+      env
+    );
+    const partnerBody = await readJson<{ voucher: { id: string; claimScope: string }; idempotentReplay: boolean }>(partnerClaim);
+    expect(partnerClaim.status).toBe(201);
+    expect(partnerBody.voucher).toEqual(expect.objectContaining({ id: 'rf_voucher_partner_1', claimScope: 'partner' }));
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-after-partner',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { id: string; claimScope: string; listingContext: { listingId: string } | null } }>(response);
+    expect(response.status).toBe(201);
+    expect(body.voucher).toEqual(
+      expect.objectContaining({
+        id: 'rf_voucher_listing_1',
+        claimScope: 'listing',
+        listingContext: expect.objectContaining({ listingId: 'rielt_phuket_karon_002' }),
+      })
+    );
+  });
+
+  it('allows the same offer to be claimed for two different Rielt listings', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            listing_id: 'rielt_phuket_karon_002',
+            listing_title: 'Семейные апартаменты в Кароне',
+            listing_rf_partner_id: 'rf_partner_1',
+            mapping_partner_id: 'rf_partner_1',
+            offer_id: 'rf_offer_1',
+            offer_partner_id: 'rf_partner_1',
+            offer_status: 'active',
+            offer_visibility: 'public',
+            partner_status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_karon',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_karon_002',
+            rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+            code: 'RF-KARON',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'listing-claim-karon',
+            voucher_id: 'rf_voucher_listing_karon',
+            created_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            listing_id: 'rielt_phuket_bangtao_014',
+            listing_title: '2BR в Laguna на месяц+',
+            listing_rf_partner_id: 'rf_partner_1',
+            mapping_partner_id: 'rf_partner_1',
+            offer_id: 'rf_offer_1',
+            offer_partner_id: 'rf_partner_1',
+            offer_status: 'active',
+            offer_visibility: 'public',
+            partner_status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_laguna',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_bangtao_014',
+            rielt_listing_title_snapshot: '2BR в Laguna на месяц+',
+            code: 'RF-LAGUNA',
+            claimed_at: '2026-03-21T10:04:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:04:00.000Z',
+            updated_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'listing-claim-laguna',
+            voucher_id: 'rf_voucher_listing_laguna',
+            created_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      });
+
+    const karon = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-karon',
+        },
+      }),
+      env
+    );
+    const karonBody = await readJson<{ voucher: { id: string; listingContext: { listingId: string } | null } }>(karon);
+    expect(karon.status).toBe(201);
+    expect(karonBody.voucher.listingContext?.listingId).toBe('rielt_phuket_karon_002');
+
+    const laguna = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_bangtao_014/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-laguna',
+        },
+      }),
+      env
+    );
+    const lagunaBody = await readJson<{ voucher: { id: string; listingContext: { listingId: string } | null } }>(laguna);
+    expect(laguna.status).toBe(201);
+    expect(lagunaBody.voucher.id).toBe('rf_voucher_listing_laguna');
+    expect(lagunaBody.voucher.listingContext?.listingId).toBe('rielt_phuket_bangtao_014');
+  });
+
+  it('returns the existing listing-scoped voucher for duplicate listing claim with a different key', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            listing_id: 'rielt_phuket_karon_002',
+            listing_title: 'Семейные апартаменты в Кароне',
+            listing_rf_partner_id: 'rf_partner_1',
+            mapping_partner_id: 'rf_partner_1',
+            offer_id: 'rf_offer_1',
+            offer_partner_id: 'rf_partner_1',
+            offer_status: 'active',
+            offer_visibility: 'public',
+            partner_status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_listing_1',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            claim_scope: 'listing',
+            rielt_listing_id: 'rielt_phuket_karon_002',
+            rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+            code: 'RF-LIST01',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-existing-different-key',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { id: string; claimScope: string }; idempotentReplay: boolean }>(response);
+    expect(response.status).toBe(201);
+    expect(body.idempotentReplay).toBe(false);
+    expect(body.voucher).toEqual(expect.objectContaining({ id: 'rf_voucher_listing_1', claimScope: 'listing' }));
+  });
+
+  it('rejects listing claim idempotency replay for a different context', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_listing_other',
+          offer_id: 'rf_offer_other',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_phuket_bangtao_014',
+          rielt_listing_title_snapshot: '2BR в Laguna на месяц+',
+          code: 'RF-OTHER',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-21T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'listing-claim-mismatch',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH');
+  });
+
+  it('returns read-only RF offers mapped to a Rielt listing', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rielt_phuket_karon_002',
+            title: 'Семейные апартаменты в Кароне',
+            rf_partner_id: 'rf_partner_1',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Скидка 5% на аренду',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:01:00.000Z',
+            mapping_status: 'active',
+            offer_kind: 'basic',
+            priority: 10,
+            applicability_note: 'Для этого объекта Rielt',
+            partner_slug: 'voucher-partner',
+            partner_display_name: 'Voucher Partner',
+            partner_country_id: 'country_th',
+            partner_city_id: 'city_phuket',
+            partner_atlas_place_id: null,
+            partner_host_atlas_place_id: null,
+            partner_status: 'active',
+            partner_owner_user_id: 'partner_owner_1',
+            partner_created_at: '2026-03-21T10:00:00.000Z',
+            partner_updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/rielt/listings/rielt_phuket_karon_002/offers'),
+      env
+    );
+    const body = await readJson<{
+      listing: { id: string; title: string; rfPartnerId: string | null };
+      partner: { id: string; displayName: string } | null;
+      offers: Array<{ id: string; type: string; applicabilityNote: string | null }>;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.listing).toEqual({
+      id: 'rielt_phuket_karon_002',
+      title: 'Семейные апартаменты в Кароне',
+      rfPartnerId: 'rf_partner_1',
+    });
+    expect(body.partner).toEqual(expect.objectContaining({ id: 'rf_partner_1', displayName: 'Voucher Partner' }));
+    expect(body.offers).toEqual([
+      expect.objectContaining({
+        id: 'rf_offer_1',
+        type: 'basic',
+        applicabilityNote: 'Для этого объекта Rielt',
+      }),
+    ]);
+    expect(executeMock).toHaveBeenCalledTimes(2);
   });
 
   it('supports PRO link flow (create + accept)', async () => {

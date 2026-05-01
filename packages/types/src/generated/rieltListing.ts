@@ -26,6 +26,16 @@ export interface RieltListing {
   price: RieltPrice;
   /** @nullable */
   publishedAt?: string | null;
+  /**
+   * Optional Rielt soft reference to an RF offer for voucher-first entry routing. Rielt does not own claim/redeem lifecycle.
+   * @nullable
+   */
+  rfOfferId?: string | null;
+  /**
+   * Optional Rielt soft reference to an RF partner for voucher-first entry routing.
+   * @nullable
+   */
+  rfPartnerId?: string | null;
   slug: string;
   title: string;
   /** @nullable */

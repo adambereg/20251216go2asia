@@ -271,6 +271,12 @@ components:
       required: true
       schema:
         type: string
+    RfRieltListingId:
+      in: path
+      name: listingId
+      required: true
+      schema:
+        type: string
     RfVoucherId:
       in: path
       name: voucherId
@@ -3637,8 +3643,78 @@ components:
         - voucher
         - applied
       type: object
+    RfRieltListingOffer:
+      allOf:
+        - $ref: "#/components/schemas/RfOffer"
+        - properties:
+            applicabilityNote:
+              nullable: true
+              type: string
+            availability:
+              enum:
+                - available
+              type: string
+            benefit:
+              type: string
+            description:
+              nullable: true
+              type: string
+            priority:
+              minimum: 0
+              type: integer
+            type:
+              enum:
+                - basic
+                - premium
+              type: string
+          required:
+            - type
+            - benefit
+            - description
+            - availability
+            - applicabilityNote
+            - priority
+          type: object
+    RfRieltListingOfferContext:
+      properties:
+        listing:
+          $ref: "#/components/schemas/RfRieltListingSummary"
+        offers:
+          items:
+            $ref: "#/components/schemas/RfRieltListingOffer"
+          type: array
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfPartner"
+            - type: "null"
+      required:
+        - listing
+        - partner
+        - offers
+      type: object
+    RfRieltListingSummary:
+      properties:
+        id:
+          type: string
+        rfPartnerId:
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+        - rfPartnerId
+      type: object
     RfVoucher:
       properties:
+        claimScope:
+          description: |
+            Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
+          enum:
+            - partner
+            - listing
+          type: string
         claimedAt:
           format: date-time
           type: string
@@ -3651,8 +3727,64 @@ components:
           type: string
         issuedToUserId:
           type: string
+        listingContext:
+          anyOf:
+            - properties:
+                listingId:
+                  type: string
+                listingTitle:
+                  nullable: true
+                  type: string
+                source:
+                  enum:
+                    - rielt
+                  type: string
+              required:
+                - source
+                - listingId
+                - listingTitle
+              type: object
+            - type: "null"
+          nullable: true
+        offer:
+          description: Optional wallet read enrichment for human-readable voucher display.
+          properties:
+            benefit:
+              type: string
+            id:
+              type: string
+            terms:
+              type: string
+            title:
+              type: string
+            type:
+              type: string
+          required:
+            - id
+            - title
+            - benefit
+            - terms
+            - type
+          type: object
         offerId:
           type: string
+        partner:
+          description: Optional wallet read enrichment for human-readable partner display.
+          properties:
+            cityId:
+              nullable: true
+              type: string
+            countryId:
+              nullable: true
+              type: string
+            displayName:
+              type: string
+            id:
+              type: string
+          required:
+            - id
+            - displayName
+          type: object
         partnerId:
           type: string
         redeemedAt:
@@ -3670,12 +3802,31 @@ components:
         updatedAt:
           format: date-time
           type: string
+        usage:
+          description: Optional human-readable usage guidance for wallet display.
+          properties:
+            contactHint:
+              type: string
+            instruction:
+              type: string
+            redeemStatus:
+              type: string
+          required:
+            - instruction
+            - contactHint
+            - redeemStatus
+          type: object
+        validityLabel:
+          description: Optional human-readable validity note for wallet display.
+          type: string
       required:
         - id
         - offerId
         - partnerId
         - issuedToUserId
         - status
+        - claimScope
+        - listingContext
         - code
         - claimedAt
         - createdAt
@@ -4016,6 +4167,14 @@ components:
           $ref: "#/components/schemas/RieltPrice"
         publishedAt:
           format: date-time
+          nullable: true
+          type: string
+        rfOfferId:
+          description: Optional Rielt soft reference to an RF offer for voucher-first entry routing. Rielt does not own claim/redeem lifecycle.
+          nullable: true
+          type: string
+        rfPartnerId:
+          description: Optional Rielt soft reference to an RF partner for voucher-first entry routing.
           nullable: true
           type: string
         slug:
@@ -7229,6 +7388,72 @@ paths:
       summary: Accept PRO link by partner owner
       tags:
         - rf
+  /v1/rf/rielt/listings/{listingId}/offers:
+    get:
+      description: |
+        Read-only RF-owned listing voucher context. Returns public active RF offers explicitly mapped to the Rielt listing. Does not claim or redeem vouchers.
+      operationId: rfGetRieltListingOffers
+      parameters:
+        - $ref: "#/components/parameters/RfRieltListingId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfRieltListingOfferContext"
+          description: OK
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      summary: Get RF offers mapped to a Rielt listing
+      tags:
+        - rf
+  /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim:
+    post:
+      description: |
+        Claims a voucher in RF for a specific Rielt listing context. RF validates that the offer is actively mapped to the listing, the offer is public and active, and the partner is active. This endpoint does not replace the partner-scope claim endpoint.
+      operationId: rfClaimRieltListingVoucher
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfRieltListingId"
+        - $ref: "#/components/parameters/RfOfferId"
+        - $ref: "#/components/parameters/RfIdempotencyKey"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Idempotent replay
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfClaimResponse"
+          description: Listing-scoped voucher created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfErrorResponse"
+          description: |
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+        "429":
+          $ref: "#/components/responses/RfRateLimited"
+        "500":
+          $ref: "#/components/responses/RfInternalError"
+        "503":
+          $ref: "#/components/responses/RfServiceUnavailable"
+      security:
+        - GatewayAuth: []
+      summary: Claim listing-scoped voucher for mapped Rielt offer
+      tags:
+        - rf
   /v1/rielt/listings:
     get:
       operationId: rieltListPublicListings
@@ -8063,6 +8288,8 @@ tags:
           - /v1/rf/partners/{partnerId}
           - /v1/rf/offers
           - /v1/rf/offers/{offerId}
+          - /v1/rf/rielt/listings/{listingId}/offers
+          - /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim
           - /v1/rf/business/partners
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate

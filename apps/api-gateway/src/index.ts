@@ -771,6 +771,7 @@ function isProtectedRfRoute(method: string, path: string): boolean {
   if (path.startsWith('/v1/rf/pro/')) return true;
   if (path.startsWith('/v1/rf/me/')) return true;
   if (method === 'POST' && /^\/v1\/rf\/offers\/[^/]+\/claim$/.test(path)) return true;
+  if (method === 'POST' && /^\/v1\/rf\/rielt\/listings\/[^/]+\/offers\/[^/]+\/claim$/.test(path)) return true;
   if (path.startsWith('/v1/rf/internal/')) return true;
   return false;
 }

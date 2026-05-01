@@ -654,6 +654,14 @@ components:
           $ref: "#/components/schemas/RieltGeo"
         media:
           $ref: "#/components/schemas/RieltMedia"
+        rfPartnerId:
+          type: string
+          nullable: true
+          description: Optional Rielt soft reference to an RF partner for voucher-first entry routing.
+        rfOfferId:
+          type: string
+          nullable: true
+          description: Optional Rielt soft reference to an RF offer for voucher-first entry routing. Rielt does not own claim/redeem lifecycle.
         createdAt:
           type: string
           format: date-time

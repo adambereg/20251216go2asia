@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, integer, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { places } from './content';
 
@@ -8,6 +8,7 @@ export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', '
 export const rfOfferTypeEnum = pgEnum('rf_offer_type', ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related']);
 export const rfOfferVisibilityEnum = pgEnum('rf_offer_visibility', ['public', 'pro_only', 'invite_only']);
 export const rfVoucherStatusEnum = pgEnum('rf_voucher_status', ['claimed', 'redeemed', 'cancelled']);
+export const rfVoucherClaimScopeEnum = pgEnum('rf_voucher_claim_scope', ['partner', 'listing']);
 export const rfProLinkStatusEnum = pgEnum('rf_pro_link_status', ['pending', 'active', 'ended']);
 export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
   'onboarding',
@@ -17,6 +18,8 @@ export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
   'account_support',
 ]);
 export const rfIdempotencyOperationEnum = pgEnum('rf_idempotency_operation', ['voucher_claim']);
+export const rfRieltListingOfferStatusEnum = pgEnum('rf_rielt_listing_offer_status', ['active', 'hidden']);
+export const rfRieltListingOfferKindEnum = pgEnum('rf_rielt_listing_offer_kind', ['basic', 'premium']);
 
 export const rfPartners = pgTable(
   'rf_partner',
@@ -85,6 +88,41 @@ export const rfOffers = pgTable(
   })
 );
 
+export const rfRieltListingOffers = pgTable(
+  'rielt_listing_rf_offer',
+  {
+    listingId: text('listing_id').notNull(),
+    partnerId: varchar('rf_partner_id', { length: 80 })
+      .notNull()
+      .references(() => rfPartners.id, { onDelete: 'cascade' }),
+    offerId: varchar('rf_offer_id', { length: 80 })
+      .notNull()
+      .references(() => rfOffers.id, { onDelete: 'cascade' }),
+    status: rfRieltListingOfferStatusEnum('status').notNull().default('active'),
+    offerKind: rfRieltListingOfferKindEnum('offer_kind').notNull().default('basic'),
+    priority: integer('priority').notNull().default(100),
+    applicabilityNote: text('applicability_note'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    listingIdNotBlank: check('rielt_listing_rf_offer_listing_id_not_blank_check', sql`(length(trim(${table.listingId})) > 0)`),
+    priorityNonNegative: check('rielt_listing_rf_offer_priority_non_negative_check', sql`(${table.priority} >= 0)`),
+    uniqueListingOffer: uniqueIndex('rielt_listing_rf_offer_listing_offer_unique').on(table.listingId, table.offerId),
+    idxListingStatusPriority: index('idx_rielt_listing_rf_offer_listing_status_priority').on(
+      table.listingId,
+      table.status,
+      table.priority
+    ),
+    idxPartnerStatusPriority: index('idx_rielt_listing_rf_offer_partner_status_priority').on(
+      table.partnerId,
+      table.status,
+      table.priority
+    ),
+    idxOfferId: index('idx_rielt_listing_rf_offer_offer_id').on(table.offerId),
+  })
+);
+
 export const rfVouchers = pgTable(
   'rf_voucher',
   {
@@ -97,6 +135,9 @@ export const rfVouchers = pgTable(
       .references(() => rfPartners.id, { onDelete: 'cascade' }),
     issuedToUserId: varchar('issued_to_user_id', { length: 128 }).notNull(),
     status: rfVoucherStatusEnum('status').notNull().default('claimed'),
+    claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull().default('partner'),
+    rieltListingId: text('rielt_listing_id'),
+    rieltListingTitleSnapshot: text('rielt_listing_title_snapshot'),
     code: varchar('code', { length: 32 }).notNull(),
     claimedAt: timestamp('claimed_at').notNull().defaultNow(),
     redeemedAt: timestamp('redeemed_at'),
@@ -107,9 +148,12 @@ export const rfVouchers = pgTable(
     issuedToNotBlank: check('rf_voucher_issued_to_user_id_not_blank_check', sql`(length(trim(${table.issuedToUserId})) > 0)`),
     codeNotBlank: check('rf_voucher_code_not_blank_check', sql`(length(trim(${table.code})) > 0)`),
     uniqueCode: unique('rf_voucher_code_unique').on(table.code),
-    uniqueOfferUserActiveVoucher: uniqueIndex('rf_voucher_offer_user_active_unique')
+    uniquePartnerOfferUserActiveVoucher: uniqueIndex('rf_voucher_offer_user_partner_unique')
       .on(table.offerId, table.issuedToUserId)
-      .where(sql`${table.status} IN ('claimed', 'redeemed')`),
+      .where(sql`${table.claimScope} = 'partner' AND ${table.status} IN ('claimed', 'redeemed')`),
+    uniqueListingOfferUserActiveVoucher: uniqueIndex('rf_voucher_listing_offer_user_active_unique')
+      .on(table.rieltListingId, table.offerId, table.issuedToUserId)
+      .where(sql`${table.claimScope} = 'listing' AND ${table.status} IN ('claimed', 'redeemed')`),
     idxPartnerStatusClaimedAt: index('idx_rf_voucher_partner_status_claimed_at').on(table.partnerId, table.status, table.claimedAt),
     idxIssuedToStatusClaimedAt: index('idx_rf_voucher_issued_to_status_claimed_at').on(table.issuedToUserId, table.status, table.claimedAt),
   })

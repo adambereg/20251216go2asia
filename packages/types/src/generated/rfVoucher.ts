@@ -6,15 +6,29 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
+import type { RfVoucherListingContext } from "./rfVoucherListingContext";
+import type { RfVoucherOffer } from "./rfVoucherOffer";
+import type { RfVoucherPartner } from "./rfVoucherPartner";
 import type { RfVoucherStatus } from "./rfVoucherStatus";
+import type { RfVoucherUsage } from "./rfVoucherUsage";
 
 export interface RfVoucher {
+  /** Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
+   */
+  claimScope: RfVoucherClaimScope;
   claimedAt: string;
   code: string;
   createdAt: string;
   id: string;
   issuedToUserId: string;
+  /** @nullable */
+  listingContext: RfVoucherListingContext;
+  /** Optional wallet read enrichment for human-readable voucher display. */
+  offer?: RfVoucherOffer;
   offerId: string;
+  /** Optional wallet read enrichment for human-readable partner display. */
+  partner?: RfVoucherPartner;
   partnerId: string;
   /** @nullable */
   redeemedAt?: string | null;
@@ -22,4 +36,8 @@ export interface RfVoucher {
    */
   status: RfVoucherStatus;
   updatedAt: string;
+  /** Optional human-readable usage guidance for wallet display. */
+  usage?: RfVoucherUsage;
+  /** Optional human-readable validity note for wallet display. */
+  validityLabel?: string;
 }
