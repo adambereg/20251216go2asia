@@ -16,6 +16,10 @@ function getVoucherStatusLabel(status: RfVoucherDto['status']) {
   return 'Отменён';
 }
 
+function getVoucherScopeLabel(voucher: RfVoucherDto) {
+  return voucher.claimScope === 'listing' && voucher.listingContext ? 'Ваучер для объекта' : 'Ваучер партнёра';
+}
+
 export function RfMyVouchersView() {
   const { isLoaded, isSignedIn } = useAuth();
   const rows = useRfMyLocalVouchers();
@@ -78,20 +82,35 @@ export function RfMyVouchersView() {
               <li key={voucher.id} className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="font-semibold text-slate-900">RF-ваучер</p>
-                    <p className="mt-1 text-xs text-slate-600">offerId: {voucher.offerId}</p>
-                    <p className="mt-1 text-xs text-slate-600">partnerId: {voucher.partnerId}</p>
+                    <p className="font-semibold text-slate-900">{getVoucherScopeLabel(voucher)}</p>
+                    {voucher.claimScope === 'listing' && voucher.listingContext ? (
+                      <p className="mt-1 text-sm text-slate-700">
+                        Объект: {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
+                      </p>
+                    ) : null}
                     <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-900">
                       {getVoucherStatusLabel(voucher.status)}
                     </span>
                     <p className="mt-2 text-xs text-slate-600">Код: {voucher.code}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">offerId: {voucher.offerId}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">partnerId: {voucher.partnerId}</p>
                   </div>
-                  <Link
-                    href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
-                  >
-                    Предложения партнёра
-                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    {voucher.claimScope === 'listing' && voucher.listingContext ? (
+                      <Link
+                        href={`/rf/rielt/listings/${encodeURIComponent(voucher.listingContext.listingId)}/vouchers`}
+                        className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-800"
+                      >
+                        Ваучеры этого объекта
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
+                    >
+                      Предложения партнёра
+                    </Link>
+                  </div>
                 </div>
               </li>
             ))}

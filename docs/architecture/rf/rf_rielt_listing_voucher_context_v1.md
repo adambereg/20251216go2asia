@@ -389,10 +389,11 @@ Expected output:
 
 Current implementation note:
 
-- Listing voucher page calls RF-owned `POST /v1/rf/offers/{offerId}/claim`.
+- Listing voucher page now calls RF-owned listing-scoped claim through `POST /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim`.
 - Claim remains in RF; Rielt does not perform claim and does not store voucher status.
-- Listing voucher page hydrates already claimed offers from `GET /v1/rf/me/vouchers` so reload keeps claimed CTAs disabled.
-- `/rf/my-vouchers` separates server RF vouchers from local planning/saved offers.
+- Listing voucher page hydrates already claimed offers from `GET /v1/rf/me/vouchers` and compares `claimScope + listingContext.listingId + offerId`.
+- Partner-scope vouchers no longer mark listing-specific cards as claimed.
+- `/rf/my-vouchers` separates server RF vouchers from local planning/saved offers and displays listing context where present.
 - Success state displays listing context and post-claim actions: return to listing, my vouchers, partner offers.
 - No booking, chat, or redeem semantics are introduced.
 

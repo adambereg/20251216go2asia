@@ -527,6 +527,13 @@ Existing mapping:
 - Listing page status compares `offerId + listingId`.
 - `/rf/my-vouchers` displays listing-scoped and partner-wide vouchers distinctly.
 
+Current implementation note:
+
+- The Rielt listing voucher page calls the RF listing-scoped claim helper for `listingId + offerId`.
+- Listing card hydration uses server vouchers only and marks a card as claimed only when `claimScope = listing`, `offerId` matches, and `listingContext.listingId` matches the current listing.
+- Partner-scope vouchers no longer mark listing-specific voucher cards as claimed.
+- `/rf/my-vouchers` displays listing context when present and links back to the listing voucher page.
+
 ### Stage 5f: Staging Verification
 
 - Map same offer to two listings intentionally.

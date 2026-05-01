@@ -172,6 +172,8 @@ export async function claimRfListingOffer(
   );
 }
 
+export const claimRfRieltListingOffer = claimRfListingOffer;
+
 export async function createBusinessPartner(input: RfCreatePartnerRequest): Promise<RfPartnerDto> {
   return customInstance<RfPartnerDto>(
     {

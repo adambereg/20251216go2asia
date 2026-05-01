@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
-import { claimRfOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
+import { claimRfRieltListingOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfRieltListingOfferDto, RfVoucherDto } from '@go2asia/sdk/rf';
 
 type ClaimState =
@@ -16,6 +16,7 @@ type ClaimStateByOffer = Record<string, ClaimState>;
 
 interface ListingVoucherOffersClientProps {
   offers: RfRieltListingOfferDto[];
+  listingId: string;
   listingTitle: string;
   returnHref: string;
   partnerHref: string | null;
@@ -39,6 +40,9 @@ function getErrorMessage(error: unknown) {
   const status = payload?.status;
 
   if (status === 401 || code === 'UNAUTHORIZED') return 'Войдите, чтобы получить ваучер.';
+  if (code === 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH') {
+    return 'Этот запрос уже использовался для другого ваучера. Обновите страницу и попробуйте снова.';
+  }
   if (code === 'RF_OFFER_NOT_FOUND' || code === 'RF_OFFER_INACTIVE' || code === 'RF_OFFER_NOT_CLAIMABLE' || code === 'RF_PARTNER_INACTIVE') {
     return 'Это предложение сейчас недоступно.';
   }
@@ -52,6 +56,19 @@ function getErrorMessage(error: unknown) {
 
 function createInitialClaimState(): ClaimState {
   return { status: 'idle', message: null, voucher: null };
+}
+
+function isActiveVoucherStatus(status: RfVoucherDto['status']) {
+  return status === 'claimed' || status === 'redeemed';
+}
+
+function isListingVoucherForOffer(voucher: RfVoucherDto, offerId: string, listingId: string) {
+  return (
+    isActiveVoucherStatus(voucher.status) &&
+    voucher.claimScope === 'listing' &&
+    voucher.offerId === offerId &&
+    voucher.listingContext?.listingId === listingId
+  );
 }
 
 function PostClaimActions({
@@ -89,6 +106,7 @@ function PostClaimActions({
 
 export function ListingVoucherOffersClient({
   offers,
+  listingId,
   listingTitle,
   returnHref,
   partnerHref,
@@ -108,7 +126,7 @@ export function ListingVoucherOffersClient({
       const offerIds = new Set(offers.map((offer) => offer.id));
       const nextStates = currentVouchers.items.reduce<ClaimStateByOffer>((acc, voucher) => {
         if (!offerIds.has(voucher.offerId)) return acc;
-        if (voucher.status !== 'claimed' && voucher.status !== 'redeemed') return acc;
+        if (!isListingVoucherForOffer(voucher, voucher.offerId, listingId)) return acc;
         acc[voucher.offerId] = {
           status: 'success',
           message: 'Ваучер уже получен.',
@@ -127,7 +145,7 @@ export function ListingVoucherOffersClient({
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, offers]);
+  }, [isLoaded, isSignedIn, listingId, offers]);
 
   const setOfferState = (offerId: string, state: ClaimState) => {
     setClaimStates((current) => ({ ...current, [offerId]: state }));
@@ -145,7 +163,7 @@ export function ListingVoucherOffersClient({
     try {
       const currentVouchers = await fetchMyVouchers();
       const existingVoucher = currentVouchers?.items.find(
-        (voucher) => voucher.offerId === offer.id && (voucher.status === 'claimed' || voucher.status === 'redeemed')
+        (voucher) => isListingVoucherForOffer(voucher, offer.id, listingId)
       );
       if (existingVoucher) {
         setOfferState(offer.id, {
@@ -156,10 +174,10 @@ export function ListingVoucherOffersClient({
         return;
       }
 
-      const result = await claimRfOffer(offer.id);
+      const result = await claimRfRieltListingOffer(listingId, offer.id);
       setOfferState(offer.id, {
         status: 'success',
-        message: result.idempotentReplay ? 'Ваучер уже получен.' : `Вы получили ваучер: ${offer.title}.`,
+        message: result.idempotentReplay ? 'Ваучер уже получен.' : 'Ваучер получен.',
         voucher: result.voucher,
       });
     } catch (error) {

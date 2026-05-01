@@ -69,8 +69,8 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
             </p>
           ) : null}
           <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-3 text-sm text-emerald-950">
-            Эти предложения привязаны к выбранному объекту. Получение ваучера будет происходить в RF Asia на следующем этапе.
-            Rielt не подтверждает бронирование.
+            Эти предложения привязаны к выбранному объекту. Полученный ваучер будет сохранён в RF Asia и появится в разделе
+            «Мои ваучеры» с привязкой к объекту. Rielt не подтверждает бронирование.
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -100,6 +100,7 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
         ) : (
           <ListingVoucherOffersClient
             offers={context.offers}
+            listingId={context.listing.id}
             listingTitle={context.listing.title}
             returnHref={returnHref}
             partnerHref={partnerHref}
