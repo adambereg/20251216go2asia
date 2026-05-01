@@ -20,6 +20,15 @@ function getVoucherScopeLabel(voucher: RfVoucherDto) {
   return voucher.claimScope === 'listing' && voucher.listingContext ? 'Ваучер для объекта' : 'Ваучер партнёра';
 }
 
+async function fetchMyVouchersWithTimeout() {
+  return Promise.race([
+    fetchMyVouchers(),
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), 10_000);
+    }),
+  ]);
+}
+
 export function RfMyVouchersView() {
   const { isLoaded, isSignedIn } = useAuth();
   const rows = useRfMyLocalVouchers();
@@ -40,15 +49,23 @@ export function RfMyVouchersView() {
     async function loadServerVouchers() {
       setServerLoading(true);
       setServerError('');
-      const response = await fetchMyVouchers();
-      if (cancelled) return;
-      if (!response) {
-        setServerVouchers(null);
-        setServerError('Не удалось загрузить полученные ваучеры. Попробуйте позже.');
-      } else {
-        setServerVouchers(response.items);
+      try {
+        const response = await fetchMyVouchersWithTimeout();
+        if (cancelled) return;
+        if (!response) {
+          setServerVouchers(null);
+          setServerError('Не удалось загрузить полученные ваучеры. Попробуйте позже.');
+        } else {
+          setServerVouchers(response.items);
+        }
+      } catch {
+        if (!cancelled) {
+          setServerVouchers(null);
+          setServerError('Не удалось загрузить полученные ваучеры. Попробуйте позже.');
+        }
+      } finally {
+        if (!cancelled) setServerLoading(false);
       }
-      setServerLoading(false);
     }
 
     void loadServerVouchers();
