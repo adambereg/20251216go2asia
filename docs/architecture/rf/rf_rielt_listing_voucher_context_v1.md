@@ -394,6 +394,7 @@ Current implementation note:
 - Listing voucher page hydrates already claimed offers from `GET /v1/rf/me/vouchers` and compares `claimScope + listingContext.listingId + offerId`.
 - Partner-scope vouchers no longer mark listing-specific cards as claimed.
 - `/rf/my-vouchers` separates server RF vouchers from local planning/saved offers and displays listing context where present.
+- `/rf/my-vouchers` now uses the enriched server wallet response for human-readable offer, partner, validity, and usage copy. This is read-only join-based enrichment with no DB migration or snapshot guarantee.
 - Success state displays listing context and post-claim actions: return to listing, my vouchers, partner offers.
 - No booking, chat, or redeem semantics are introduced.
 

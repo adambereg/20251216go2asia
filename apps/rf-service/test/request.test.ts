@@ -880,6 +880,99 @@ describe('rf-service request', () => {
     expect(body.error.code).toBe('INVALID_IDEMPOTENCY_KEY');
   });
 
+  it('requires auth for listing current user vouchers', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const response = await worker.fetch(new Request('https://rf.example/v1/rf/me/vouchers'), env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns enriched wallet vouchers for the current user', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_listing_1',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'redeemed',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_phuket_karon_002',
+          rielt_listing_title_snapshot: 'Семейные апартаменты в Кароне',
+          code: 'RF-LIST01',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: '2026-03-22T10:03:00.000Z',
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-22T10:03:00.000Z',
+          wallet_offer_id: 'rf_offer_1',
+          wallet_offer_title: 'Скидка 5% на аренду',
+          wallet_offer_type: 'discount',
+          wallet_offer_kind: 'premium',
+          wallet_offer_terms: 'Для этого объекта Rielt',
+          wallet_partner_id: 'rf_partner_1',
+          wallet_partner_display_name: 'Voucher Partner',
+          wallet_partner_city_id: 'city_phuket',
+          wallet_partner_country_id: 'country_th',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/me/vouchers', {
+        headers: {
+          'X-Gateway-Auth': userToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      items: Array<{
+        id: string;
+        offer: { id: string; title: string; benefit: string; terms: string; type: string };
+        partner: { id: string; displayName: string; cityId: string | null; countryId: string | null };
+        validityLabel: string;
+        usage: { instruction: string; contactHint: string; redeemStatus: string };
+      }>;
+      nextCursor: string | null;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.nextCursor).toBeNull();
+    expect(body.items[0]).toEqual(
+      expect.objectContaining({
+        id: 'rf_voucher_listing_1',
+        offer: {
+          id: 'rf_offer_1',
+          title: 'Скидка 5% на аренду',
+          benefit: 'Скидка 5% на аренду',
+          terms: 'Для этого объекта Rielt',
+          type: 'premium',
+        },
+        partner: {
+          id: 'rf_partner_1',
+          displayName: 'Voucher Partner',
+          cityId: 'city_phuket',
+          countryId: 'country_th',
+        },
+        validityLabel: 'Срок действия уточняется у партнёра',
+        usage: {
+          instruction: 'Покажите ваучер представителю объекта и уточните применение выгоды.',
+          contactHint: 'Свяжитесь с представителем объекта перед использованием.',
+          redeemStatus: 'Использован',
+        },
+      })
+    );
+    expect(executeMock).toHaveBeenCalledTimes(1);
+    expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+  });
+
   it('requires auth for voucher summary', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
 

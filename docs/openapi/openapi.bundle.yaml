@@ -3746,8 +3746,45 @@ components:
               type: object
             - type: "null"
           nullable: true
+        offer:
+          description: Optional wallet read enrichment for human-readable voucher display.
+          properties:
+            benefit:
+              type: string
+            id:
+              type: string
+            terms:
+              type: string
+            title:
+              type: string
+            type:
+              type: string
+          required:
+            - id
+            - title
+            - benefit
+            - terms
+            - type
+          type: object
         offerId:
           type: string
+        partner:
+          description: Optional wallet read enrichment for human-readable partner display.
+          properties:
+            cityId:
+              nullable: true
+              type: string
+            countryId:
+              nullable: true
+              type: string
+            displayName:
+              type: string
+            id:
+              type: string
+          required:
+            - id
+            - displayName
+          type: object
         partnerId:
           type: string
         redeemedAt:
@@ -3764,6 +3801,23 @@ components:
           type: string
         updatedAt:
           format: date-time
+          type: string
+        usage:
+          description: Optional human-readable usage guidance for wallet display.
+          properties:
+            contactHint:
+              type: string
+            instruction:
+              type: string
+            redeemStatus:
+              type: string
+          required:
+            - instruction
+            - contactHint
+            - redeemStatus
+          type: object
+        validityLabel:
+          description: Optional human-readable validity note for wallet display.
           type: string
       required:
         - id

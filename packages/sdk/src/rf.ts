@@ -72,6 +72,25 @@ export interface RfVoucherDto {
   redeemedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  offer?: {
+    id: string;
+    title: string;
+    benefit: string;
+    terms: string;
+    type: string;
+  };
+  partner?: {
+    id: string;
+    displayName: string;
+    cityId?: string | null;
+    countryId?: string | null;
+  };
+  validityLabel?: string;
+  usage?: {
+    instruction: string;
+    contactHint: string;
+    redeemStatus: string;
+  };
 }
 
 export interface RfPartnerListResponse {
@@ -112,7 +131,10 @@ export async function fetchRfPartners(): Promise<RfPartnerListResponse | null> {
 
 export async function fetchRfPartner(partnerId: string): Promise<RfPartnerDto | null> {
   try {
-    return await customInstance<RfPartnerDto>({ method: 'GET' }, `/v1/rf/partners/${encodeURIComponent(partnerId)}`);
+    return await customInstance<RfPartnerDto>(
+      { method: 'GET' },
+      `/v1/rf/partners/${encodeURIComponent(partnerId)}`
+    );
   } catch {
     return null;
   }
@@ -126,7 +148,9 @@ export async function fetchRfOffers(): Promise<RfOfferListResponse | null> {
   }
 }
 
-export async function fetchRfRieltListingOffers(listingId: string): Promise<RfRieltListingOfferContextResponse | null> {
+export async function fetchRfRieltListingOffers(
+  listingId: string
+): Promise<RfRieltListingOfferContextResponse | null> {
   try {
     return await customInstance<RfRieltListingOfferContextResponse>(
       { method: 'GET' },
@@ -144,7 +168,10 @@ function createRfClaimIdempotencyKey(): string {
   return `rf-claim-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export async function claimRfOffer(offerId: string, idempotencyKey = createRfClaimIdempotencyKey()): Promise<RfClaimResponse> {
+export async function claimRfOffer(
+  offerId: string,
+  idempotencyKey = createRfClaimIdempotencyKey()
+): Promise<RfClaimResponse> {
   return customInstance<RfClaimResponse>(
     {
       method: 'POST',

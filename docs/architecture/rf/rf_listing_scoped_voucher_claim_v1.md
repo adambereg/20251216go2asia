@@ -533,6 +533,8 @@ Current implementation note:
 - Listing card hydration uses server vouchers only and marks a card as claimed only when `claimScope = listing`, `offerId` matches, and `listingContext.listingId` matches the current listing.
 - Partner-scope vouchers no longer mark listing-specific voucher cards as claimed.
 - `/rf/my-vouchers` displays listing context when present and links back to the listing voucher page.
+- Wallet enrichment is currently read-only: `GET /v1/rf/me/vouchers` joins existing RF offer, RF partner, and listing-offer mapping rows to return optional human-readable `offer`, `partner`, `validityLabel`, and `usage` fields.
+- The enrichment does not require a DB migration and does not create snapshot guarantees yet; production hardening may later add voucher snapshot fields for immutable display copy.
 
 ### Stage 5f: Staging Verification
 

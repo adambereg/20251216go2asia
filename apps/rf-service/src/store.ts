@@ -75,6 +75,25 @@ export interface Voucher {
   redeemedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  offer?: {
+    id: string;
+    title: string;
+    benefit: string;
+    terms: string;
+    type: string;
+  };
+  partner?: {
+    id: string;
+    displayName: string;
+    cityId: string | null;
+    countryId: string | null;
+  };
+  validityLabel?: string;
+  usage?: {
+    instruction: string;
+    contactHint: string;
+    redeemStatus: string;
+  };
 }
 
 export interface VoucherSummary {
@@ -167,6 +186,15 @@ type VoucherRow = {
   redeemed_at: string | Date | null;
   created_at: string | Date;
   updated_at: string | Date;
+  wallet_offer_id?: string | null;
+  wallet_offer_title?: string | null;
+  wallet_offer_type?: Offer['offerType'] | null;
+  wallet_offer_kind?: RieltListingOfferKind | null;
+  wallet_offer_terms?: string | null;
+  wallet_partner_id?: string | null;
+  wallet_partner_display_name?: string | null;
+  wallet_partner_city_id?: string | null;
+  wallet_partner_country_id?: string | null;
 };
 
 type ListingClaimContextRow = {
@@ -256,10 +284,10 @@ function toPartnerFromMappingRow(row: RieltListingOfferMappingRow): Partner {
   });
 }
 
-function toVoucher(row: VoucherRow): Voucher {
+function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolean }): Voucher {
   const claimScope = row.claim_scope ?? 'partner';
   const listingId = row.rielt_listing_id ?? null;
-  return {
+  const voucher: Voucher = {
     id: row.id,
     offerId: row.offer_id,
     partnerId: row.partner_id,
@@ -280,6 +308,36 @@ function toVoucher(row: VoucherRow): Voucher {
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
   };
+
+  if (!options?.includeWalletEnrichment) {
+    return voucher;
+  }
+
+  const offerTitle = row.wallet_offer_title ?? 'RF-ваучер';
+  const isListingScope = claimScope === 'listing';
+  voucher.offer = {
+    id: row.wallet_offer_id ?? row.offer_id,
+    title: offerTitle,
+    type: row.wallet_offer_kind ?? row.wallet_offer_type ?? 'partner',
+    benefit: row.wallet_offer_title ?? 'Выгода уточняется у партнёра',
+    terms: row.wallet_offer_terms ?? 'Условия уточняются у партнёра',
+  };
+  voucher.partner = {
+    id: row.wallet_partner_id ?? row.partner_id,
+    displayName: row.wallet_partner_display_name ?? 'Партнёр уточняется',
+    cityId: row.wallet_partner_city_id ?? null,
+    countryId: row.wallet_partner_country_id ?? null,
+  };
+  voucher.validityLabel = 'Срок действия уточняется у партнёра';
+  voucher.usage = {
+    instruction: isListingScope
+      ? 'Покажите ваучер представителю объекта и уточните применение выгоды.'
+      : 'Покажите ваучер партнёру и уточните применение выгоды.',
+    contactHint: isListingScope ? 'Свяжитесь с представителем объекта перед использованием.' : 'Свяжитесь с партнёром перед использованием.',
+    redeemStatus: row.status === 'redeemed' ? 'Использован' : 'Ожидает использования',
+  };
+
+  return voucher;
 }
 
 function toProLink(row: ProLinkRow): ProLink {
@@ -1103,24 +1161,39 @@ export async function claimVoucherForListing(
 export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal): Promise<Voucher[]> {
   const result = await db.execute(sql`
     SELECT
-      id,
-      offer_id,
-      partner_id,
-      issued_to_user_id,
-      status,
-      claim_scope,
-      rielt_listing_id,
-      rielt_listing_title_snapshot,
-      code,
-      claimed_at,
-      redeemed_at,
-      created_at,
-      updated_at
-    FROM rf_voucher
-    WHERE issued_to_user_id = ${principal.userId}
-    ORDER BY created_at DESC, id DESC
+      v.id,
+      v.offer_id,
+      v.partner_id,
+      v.issued_to_user_id,
+      v.status,
+      v.claim_scope,
+      v.rielt_listing_id,
+      v.rielt_listing_title_snapshot,
+      v.code,
+      v.claimed_at,
+      v.redeemed_at,
+      v.created_at,
+      v.updated_at,
+      o.id AS wallet_offer_id,
+      o.title AS wallet_offer_title,
+      o.offer_type AS wallet_offer_type,
+      m.offer_kind AS wallet_offer_kind,
+      m.applicability_note AS wallet_offer_terms,
+      p.id AS wallet_partner_id,
+      p.display_name AS wallet_partner_display_name,
+      p.city_id AS wallet_partner_city_id,
+      p.country_id AS wallet_partner_country_id
+    FROM rf_voucher v
+    LEFT JOIN rf_offer o ON o.id = v.offer_id
+    LEFT JOIN rf_partner p ON p.id = v.partner_id
+    LEFT JOIN rielt_listing_rf_offer m
+      ON v.claim_scope = 'listing'
+      AND m.listing_id = v.rielt_listing_id
+      AND m.rf_offer_id = v.offer_id
+    WHERE v.issued_to_user_id = ${principal.userId}
+    ORDER BY v.created_at DESC, v.id DESC
   `);
-  return rowsOf<VoucherRow>(result).map(toVoucher);
+  return rowsOf<VoucherRow>(result).map((row) => toVoucher(row, { includeWalletEnrichment: true }));
 }
 
 export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrincipal): Promise<VoucherSummary> {
