@@ -1,11 +1,36 @@
 'use client';
 
-import { Coins } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Coins, LockKeyhole } from 'lucide-react';
 import { Card, Button } from '@go2asia/ui';
 import type { ConnectDashboardBalance } from '@go2asia/sdk/connectDashboard';
+import { customInstance } from '@go2asia/sdk/mutator';
 
 interface BalanceCardsProps {
   balance: ConnectDashboardBalance;
+}
+
+type WalletSummary = {
+  availablePoints: number;
+  lockedPoints: number;
+  networkPoints: number;
+  totalPoints: number;
+  estimatedUnlockablePoints: number;
+  vipStatus: { isActive: boolean };
+  proStatus: { isActive: boolean };
+};
+
+function useGetWalletSummary() {
+  return useQuery<WalletSummary>({
+    queryKey: ['wallet', 'summary'],
+    queryFn: async () => customInstance<WalletSummary>({ method: 'GET' }, '/v1/wallet/summary'),
+    staleTime: 30 * 1000,
+    retry: 2,
+  });
+}
+
+function formatPoints(value: number | null | undefined) {
+  return (value ?? 0).toLocaleString('ru-RU');
 }
 
 function formatUpdatedAt(updatedAt: string | null) {
@@ -15,8 +40,12 @@ function formatUpdatedAt(updatedAt: string | null) {
 }
 
 export function BalanceCards({ balance }: BalanceCardsProps) {
+  const { data: walletSummary, isError: walletSummaryError } = useGetWalletSummary();
   const updatedAt = formatUpdatedAt(balance.updatedAt);
-  const hasPoints = balance.points > 0;
+  const totalPoints = walletSummary?.totalPoints ?? balance.points;
+  const availablePoints = walletSummary?.availablePoints ?? balance.points;
+  const lockedPoints = walletSummary?.lockedPoints ?? 0;
+  const hasPoints = totalPoints > 0;
 
   return (
     <div className="grid grid-cols-1 gap-4 mb-8">
@@ -28,14 +57,19 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
             </div>
             <div>
               <h3 className="text-sm font-medium text-slate-600">Ваши Points</h3>
-              <p className="text-3xl font-bold text-slate-900">{balance.points.toLocaleString('ru-RU')} Points</p>
+              <p className="text-3xl font-bold text-slate-900">{formatPoints(totalPoints)} Points</p>
               <p className="text-sm text-slate-500 mt-2">
                 {hasPoints
-                  ? 'Points отражают вашу активность в Go2Asia.'
+                  ? 'Total Points отражают доступные и заблокированные начисления в Connect Asia.'
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
               {updatedAt && (
                 <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>
+              )}
+              {walletSummaryError && (
+                <p className="text-xs text-amber-700 mt-2">
+                  Структура Points временно недоступна, показываем текущий баланс.
+                </p>
               )}
             </div>
           </div>
@@ -43,6 +77,29 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
           <Button variant="secondary" size="sm" className="md:w-auto w-full" onClick={() => (window.location.href = '/connect/wallet')}>
             Смотреть историю
           </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-slate-500">Available Points</p>
+                <p className="text-xl font-bold text-slate-900">{formatPoints(availablePoints)}</p>
+              </div>
+              <Coins className="w-4 h-4 text-emerald-600" />
+            </div>
+            <p className="text-xs text-slate-500 mt-2">Доступны сейчас.</p>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-amber-800">Locked Points</p>
+                <p className="text-xl font-bold text-amber-950">{formatPoints(lockedPoints)}</p>
+              </div>
+              <LockKeyhole className="w-4 h-4 text-amber-700" />
+            </div>
+            <p className="text-xs text-amber-800 mt-2">Ожидают активации условий.</p>
+          </div>
         </div>
       </Card>
     </div>
