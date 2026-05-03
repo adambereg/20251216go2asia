@@ -57,6 +57,7 @@ export type RouteGroup =
   | 'content-engagement'
   | 'media'
   | 'points'
+  | 'wallet'
   | 'referral'
   | 'space'
   | 'organizer'
