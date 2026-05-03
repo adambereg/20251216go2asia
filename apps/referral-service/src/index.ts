@@ -594,6 +594,45 @@ async function callPointsAdd(
   }
 }
 
+async function awardLockedReferralPoints(
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>,
+  input: { referrerId: string; refereeId: string }
+): Promise<{
+  lockedGrant: { amount: number; currency: 'POINTS' };
+  externalId: string;
+  points: { ok: boolean; applied?: boolean | null; error?: string };
+}> {
+  const lockedPoints = parseNonNegativeIntOrDefault(env.REFERRAL_LOCKED_POINTS, 5000);
+  const externalId = makeReferralLockedExternalId(input.referrerId, input.refereeId);
+  let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
+
+  if (lockedPoints > 0) {
+    const pointsInput = buildReferrerLockedPointsInput({
+      referrerId: input.referrerId,
+      refereeId: input.refereeId,
+      amount: lockedPoints,
+    });
+    const result = await callPointsAdd(env, requestId, logger, pointsInput);
+    points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
+    if (!result.ok) {
+      logger.warn('Referral locked points failed (non-blocking)', {
+        referrerId: input.referrerId,
+        refereeId: input.refereeId,
+      });
+    }
+  } else {
+    points = { ok: true, applied: null };
+  }
+
+  return {
+    lockedGrant: { amount: lockedPoints, currency: 'POINTS' },
+    externalId,
+    points,
+  };
+}
+
 function toIso(input: unknown): string {
   if (input instanceof Date) return input.toISOString();
   const d = new Date(String(input));
@@ -1000,8 +1039,9 @@ export default {
             res.headers.set('X-Request-Id', requestId);
             return res;
           }
+          const locked = await awardLockedReferralPoints(env, requestId, logger, { referrerId, refereeId });
           const res = json(
-            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed' },
+            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed', ...locked },
             200,
             { 'Cache-Control': 'no-store' }
           );
@@ -1016,7 +1056,11 @@ export default {
           ON CONFLICT (referee_id) DO NOTHING
         `);
 
-        const res = json({ ok: true, claimed: true, referrerId, refereeId, code }, 200, { 'Cache-Control': 'no-store' });
+        const locked = await awardLockedReferralPoints(env, requestId, logger, { referrerId, refereeId });
+
+        const res = json({ ok: true, claimed: true, referrerId, refereeId, code, ...locked }, 200, {
+          'Cache-Control': 'no-store',
+        });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -1073,8 +1117,7 @@ export default {
 
         const db = createDb(requireDatabase(env));
 
-        // 1) Ensure first_login_at is set (idempotent). We still want to be able to retry the locked grant call,
-        // so we will attempt to call Points even if first_login_at was already set; points-service dedupes by externalId.
+        // Ensure first_login_at is set (idempotent). Locked referral grants are created when the relation is claimed/linked.
         const relRes = await db.execute(sql`
           SELECT referrer_id, first_login_at
           FROM referral_relations
@@ -1105,27 +1148,6 @@ export default {
           activated = rowCount > 0;
         }
 
-        // 2) Award locked referral Points. Unlock and network accrual belong to Slice 2.
-        const lockedPoints = parseNonNegativeIntOrDefault(env.REFERRAL_LOCKED_POINTS, 5000);
-        const externalId = makeReferralLockedExternalId(rel.referrer_id, userId);
-
-        let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
-        if (lockedPoints > 0) {
-          const pointsInput = buildReferrerLockedPointsInput({
-            referrerId: rel.referrer_id,
-            refereeId: userId,
-            amount: lockedPoints,
-          });
-          const result = await callPointsAdd(env, requestId, logger, pointsInput);
-          points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
-          if (!result.ok) {
-            logger.warn('Referral locked points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });
-          }
-        } else {
-          // Explicitly disabled by config
-          points = { ok: true, applied: null };
-        }
-
         const res = json(
           {
             ok: true,
@@ -1134,9 +1156,6 @@ export default {
             activated,
             updatedRows: activated ? 1 : 0,
             referrerId: rel.referrer_id,
-            lockedGrant: { amount: lockedPoints, currency: 'POINTS' },
-            externalId,
-            points,
           },
           200,
           { 'Cache-Control': 'no-store' }
@@ -1215,7 +1234,12 @@ export default {
             return res;
           }
 
-          const res = json({ refereeUserId, referrerUserId, linked: false }, 200);
+          const locked = await awardLockedReferralPoints(env, requestId, logger, {
+            referrerId: referrerUserId,
+            refereeId: refereeUserId,
+          });
+
+          const res = json({ refereeUserId, referrerUserId, linked: false, ...locked }, 200);
           res.headers.set('X-Request-Id', requestId);
           return res;
         }
@@ -1226,7 +1250,12 @@ export default {
           VALUES (${relId}, ${referrerUserId}, ${refereeUserId})
         `);
 
-        const res = json({ refereeUserId, referrerUserId, linked: true }, 200);
+        const locked = await awardLockedReferralPoints(env, requestId, logger, {
+          referrerId: referrerUserId,
+          refereeId: refereeUserId,
+        });
+
+        const res = json({ refereeUserId, referrerUserId, linked: true, ...locked }, 200);
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

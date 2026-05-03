@@ -28,6 +28,7 @@ describe('points-service request hardening', () => {
   it('computes wallet buckets from mixed ledger transactions', () => {
     expect(
       computeWalletBuckets([
+        { amount: 20, reason: 'first_login' },
         { amount: 1000, reason: 'space_post_created' },
         { amount: 5000, reason: 'referral_locked' },
         { amount: 100, reason: 'network_accrual_level_1' },
@@ -35,7 +36,7 @@ describe('points-service request hardening', () => {
         { amount: -200, reason: 'rf_voucher_claimed' },
       ])
     ).toEqual({
-      availablePoints: 800,
+      availablePoints: 820,
       lockedPoints: 5000,
       networkPoints: 120,
     });
@@ -108,6 +109,7 @@ describe('points-service request hardening', () => {
   it('returns wallet summary buckets for current user', async () => {
     executeMock.mockResolvedValueOnce({
       rows: [
+        { amount: 20, reason: 'first_login' },
         { amount: 1000, reason: 'space_post_created' },
         { amount: 5000, reason: 'referral_locked' },
         { amount: 100, reason: 'network_accrual_level_1' },
@@ -146,10 +148,10 @@ describe('points-service request hardening', () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      availablePoints: 800,
+      availablePoints: 820,
       lockedPoints: 5000,
       networkPoints: 120,
-      totalPoints: 5920,
+      totalPoints: 5940,
       estimatedUnlockablePoints: 5000,
       vipStatus: { isActive: true },
       proStatus: { isActive: true },

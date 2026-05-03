@@ -144,12 +144,59 @@ describe('referral-service request hardening', () => {
     expect(body.activated).toBe(false);
   });
 
-  it('awards 5000 locked referral points on first-login marker without legacy bonus action', async () => {
+  it('does not award points from first-login marker', async () => {
     executeMock
       .mockResolvedValueOnce({
         rows: [{ referrer_id: 'user_referrer', first_login_at: null }],
       })
       .mockResolvedValueOnce({ rowCount: 1, rows: [] });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'referral-service', {
+      sub: 'auth-service',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://referral.example/internal/referral/mark-first-login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: 'user_referee' }),
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        referrerId: string;
+        lockedGrant?: unknown;
+        points?: unknown;
+      }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body.referrerId).toBe('user_referrer');
+      expect(body.lockedGrant).toBeUndefined();
+      expect(body.points).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('awards 5000 locked referral points when referral claim creates relation', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [{ user_id: 'user_referrer' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body)) as {
@@ -183,34 +230,40 @@ describe('referral-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_SERVICE_URL: 'https://points.example',
     };
-    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'referral-service', {
-      sub: 'auth-service',
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, {
+      sub: 'user_referee',
     });
 
     try {
       const response = await worker.fetch(
-        new Request('https://referral.example/internal/referral/mark-first-login', {
+        new Request('https://referral.example/v1/referral/claim', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'X-Gateway-Auth': token,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId: 'user_referee' }),
+          body: JSON.stringify({ code: 'REF123' }),
         }),
         env
       );
 
       const body = await readJson<{
+        claimed: boolean;
         lockedGrant: { amount: number; currency: string };
         externalId: string;
         points: { ok: boolean; applied?: boolean | null };
       }>(response);
 
       expect(response.status).toBe(200);
+      expect(body.claimed).toBe(true);
       expect(body.lockedGrant).toEqual({ amount: 5000, currency: 'POINTS' });
       expect(body.externalId).toBe('referral:locked:user_referrer:user_referee');
       expect(body.points).toEqual({ ok: true, applied: true });
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const insertQuery = executeMock.mock.calls[2]?.[0] as { strings: string[]; values: unknown[] };
+      expect(insertQuery.strings.join('')).toContain('INSERT INTO referral_relations');
+      expect(insertQuery.values).toEqual(expect.arrayContaining(['user_referrer', 'user_referee']));
     } finally {
       vi.unstubAllGlobals();
     }

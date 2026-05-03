@@ -102,3 +102,41 @@ pnpm -C apps/api-gateway test
 ```
 
 Result: all completed successfully.
+
+## Verification Follow-up
+
+Follow-up request checked referral timing against the Economy SSOT rule:
+
+- locked referral Points must be visible when the referral relation is created;
+- `referral_locked` must remain locked;
+- VIP unlock belongs to a later slice;
+- `mark-first-login` must not create a spendable bonus.
+
+Finding:
+
+- The first Slice 1 implementation emitted `referral_locked` from `/internal/referral/mark-first-login`.
+- That was too late for users who had already claimed a referral link and were still pending activation.
+
+Fix applied:
+
+- `POST /v1/referral/claim` now awards `referral_locked = 5000` after a successful relation claim.
+- `/internal/referral/link` now awards `referral_locked = 5000` after a successful internal relation link.
+- Existing same-referrer relations also retry the locked grant idempotently, using `externalId = referral:locked:<referrerId>:<refereeId>`.
+- `/internal/referral/mark-first-login` now only updates `first_login_at`; it does not award Points.
+
+Real API check:
+
+- Attempted direct staging check for `GET https://staging.api.go2asia.space/v1/wallet/summary`.
+- Local PowerShell DNS resolution failed for `staging.api.go2asia.space`.
+- A remote fetch attempt returned `503 Service Unavailable`.
+- Because no authenticated user token was available in this session, a full authenticated staging payload check could not be completed from the agent.
+
+Additional verification run after the follow-up fix:
+
+```text
+pnpm -C apps/referral-service test
+pnpm -C apps/points-service test
+pnpm -C apps/api-gateway test
+```
+
+Result: all completed successfully.
