@@ -16,13 +16,29 @@ vi.mock('@go2asia/db', () => ({
   }),
 }));
 
-import worker, { type Env } from '../src/index';
+import worker, { computeWalletBuckets, type Env } from '../src/index';
 import { makeGatewayJwt, makeServiceJwt, readJson } from '../../../tests/helpers/worker-test';
 
 describe('points-service request hardening', () => {
   beforeEach(() => {
     createDbMock.mockClear();
     executeMock.mockReset();
+  });
+
+  it('computes wallet buckets from mixed ledger transactions', () => {
+    expect(
+      computeWalletBuckets([
+        { amount: 1000, reason: 'space_post_created' },
+        { amount: 5000, reason: 'referral_locked' },
+        { amount: 100, reason: 'network_accrual_level_1' },
+        { amount: 20, reason: 'network_accrual_level_2' },
+        { amount: -200, reason: 'rf_voucher_claimed' },
+      ])
+    ).toEqual({
+      availablePoints: 800,
+      lockedPoints: 5000,
+      networkPoints: 120,
+    });
   });
 
   it('accepts valid gateway token and derives userId from token subject', async () => {
@@ -87,6 +103,61 @@ describe('points-service request hardening', () => {
     expect(response.status).toBe(401);
     expect(body.error).toBe('UNAUTHORIZED');
     expect(body.message).toContain('X-Gateway-Auth');
+  });
+
+  it('returns wallet summary buckets for current user', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        { amount: 1000, reason: 'space_post_created' },
+        { amount: 5000, reason: 'referral_locked' },
+        { amount: 100, reason: 'network_accrual_level_1' },
+        { amount: 20, reason: 'network_accrual_level_2' },
+        { amount: -200, reason: 'rf_voucher_claimed' },
+      ],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, {
+      sub: 'user_wallet',
+      roles: ['vip_spacer', 'pro'],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/wallet/summary', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      availablePoints: number;
+      lockedPoints: number;
+      networkPoints: number;
+      totalPoints: number;
+      estimatedUnlockablePoints: number;
+      vipStatus: { isActive: boolean };
+      proStatus: { isActive: boolean };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      availablePoints: 800,
+      lockedPoints: 5000,
+      networkPoints: 120,
+      totalPoints: 5920,
+      estimatedUnlockablePoints: 5000,
+      vipStatus: { isActive: true },
+      proStatus: { isActive: true },
+    });
+
+    const query = executeMock.mock.calls[0]?.[0] as { values: unknown[]; strings: string[] };
+    expect(query.values).toContain('user_wallet');
+    expect(query.strings.join('')).toContain('FROM points_transactions');
   });
 
   it('rejects invalid gateway token claims on user route', async () => {

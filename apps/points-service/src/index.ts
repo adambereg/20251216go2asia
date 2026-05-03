@@ -91,6 +91,17 @@ type PointsTransactionRow = {
   created_at: Date | string;
 };
 
+type WalletBucketTransaction = {
+  amount: number;
+  reason: string;
+};
+
+export type WalletBuckets = {
+  availablePoints: number;
+  lockedPoints: number;
+  networkPoints: number;
+};
+
 type ReferralDashboardSummaryRow = {
   total_referrals: number;
   activated_referrals: number;
@@ -118,12 +129,16 @@ const ACTIONS_PHASE2 = new Set([
   'first_login',
   'referral_bonus_referee',
   'referral_bonus_referrer',
+  'referral_locked',
+  'referral_unlock',
   'event_registration',
 
   // Phase 2 (planned modules)
   'space_post_created',
   'space_repost_created',
   'space_reaction_created',
+  'network_accrual_level_1',
+  'network_accrual_level_2',
 
   'quest_completed',
 
@@ -363,7 +378,7 @@ async function requireGatewayOrigin(
     ok: true,
     principal: {
       userId,
-      roles: getStringArrayClaim(verified.payload, 'roles'),
+      roles: [...getStringArrayClaim(verified.payload, 'roles'), ...getStringArrayClaim(verified.payload, 'role')],
     },
   };
 }
@@ -465,6 +480,37 @@ function actionIsOneTimePerUser(action: string): boolean {
   return action === 'registration' || action === 'first_login';
 }
 
+function isNetworkAccrualAction(action: string): boolean {
+  return action === 'network_accrual_level_1' || action === 'network_accrual_level_2';
+}
+
+function hasRole(principal: GatewayPrincipal, role: string): boolean {
+  return principal.roles.some((item) => item.trim().toLowerCase() === role);
+}
+
+export function computeWalletBuckets(transactions: WalletBucketTransaction[]): WalletBuckets {
+  return transactions.reduce<WalletBuckets>(
+    (acc, transaction) => {
+      const amount = Number(transaction.amount ?? 0);
+      if (!Number.isFinite(amount) || amount === 0) return acc;
+
+      if (transaction.reason === 'referral_locked') {
+        acc.lockedPoints += amount;
+      } else if (transaction.reason === 'referral_unlock') {
+        acc.lockedPoints -= amount;
+        acc.availablePoints += amount;
+      } else if (isNetworkAccrualAction(transaction.reason)) {
+        acc.networkPoints += amount;
+      } else {
+        acc.availablePoints += amount;
+      }
+
+      return acc;
+    },
+    { availablePoints: 0, lockedPoints: 0, networkPoints: 0 }
+  );
+}
+
 function getRows<T>(result: unknown): T[] {
   const rows = (result as Partial<DbExecResult<T>>).rows;
   return Array.isArray(rows) ? rows : [];
@@ -501,6 +547,17 @@ async function getDashboardBalance(db: Db, userId: string): Promise<{ points: nu
     points: Number(row.balance ?? 0),
     updatedAt: asIso(row.updated_at),
   };
+}
+
+async function listWalletBucketTransactions(db: Db, userId: string): Promise<WalletBucketTransaction[]> {
+  const result = await db.execute(sql`
+    SELECT amount, reason
+    FROM points_transactions
+    WHERE user_id = ${userId}
+    ORDER BY created_at ASC, id ASC
+  `);
+
+  return getRows<WalletBucketTransaction>(result);
 }
 
 function asIso(value: Date | string | null | undefined): string | null {
@@ -815,6 +872,38 @@ export default {
         const { balance, updatedAt } = await getUserBalance(db, userId);
 
         const res = json({ userId, balance, updatedAt: updatedAt.toISOString() }, 200);
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'GET' && path === '/v1/wallet/summary') {
+        const auth = await requireGatewayOrigin(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const buckets = computeWalletBuckets(await listWalletBucketTransactions(db, auth.principal.userId));
+        const totalPoints = buckets.availablePoints + buckets.lockedPoints + buckets.networkPoints;
+
+        const res = json(
+          {
+            availablePoints: buckets.availablePoints,
+            lockedPoints: buckets.lockedPoints,
+            networkPoints: buckets.networkPoints,
+            totalPoints,
+            estimatedUnlockablePoints: buckets.lockedPoints,
+            vipStatus: {
+              isActive: hasRole(auth.principal, 'vip_spacer') || hasRole(auth.principal, 'vip'),
+            },
+            proStatus: {
+              isActive: hasRole(auth.principal, 'pro'),
+            },
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

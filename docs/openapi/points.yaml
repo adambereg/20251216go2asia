@@ -24,6 +24,8 @@ tags:
     description: Service health checks
   - name: points
     description: Points balance and ledger operations
+  - name: wallet
+    description: Economy wallet buckets and status summary
   - name: badges
     description: Off-chain badge catalog and user badge awards
   - name: internal
@@ -76,6 +78,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserBalance"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/wallet/summary:
+    get:
+      tags: [wallet]
+      operationId: getWalletSummary
+      summary: Get current user wallet summary
+      description: >
+        User-facing read endpoint (called via gateway). Returns ledger-based Points bucket projections for the
+        current user without changing the underlying `user_balances.balance` storage model.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletSummaryResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "503":
@@ -427,10 +456,14 @@ components:
         - first_login
         - referral_bonus_referee
         - referral_bonus_referrer
+        - referral_locked
+        - referral_unlock
         - event_registration
         - space_post_created
         - space_repost_created
         - space_reaction_created
+        - network_accrual_level_1
+        - network_accrual_level_2
         - quest_completed
         - rielt_listing_created
         - rf_partner_verified
@@ -478,6 +511,44 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    WalletStatus:
+      type: object
+      required: [isActive]
+      properties:
+        isActive:
+          type: boolean
+
+    WalletSummaryResponse:
+      type: object
+      required:
+        - availablePoints
+        - lockedPoints
+        - networkPoints
+        - totalPoints
+        - estimatedUnlockablePoints
+        - vipStatus
+        - proStatus
+      properties:
+        availablePoints:
+          type: integer
+          description: Ledger-projected spendable Points bucket.
+        lockedPoints:
+          type: integer
+          description: Ledger-projected locked Points bucket.
+        networkPoints:
+          type: integer
+          description: Ledger-projected network-generated Points bucket.
+        totalPoints:
+          type: integer
+          description: Sum of availablePoints, lockedPoints and networkPoints.
+        estimatedUnlockablePoints:
+          type: integer
+          description: Slice 1 estimate; currently equals lockedPoints.
+        vipStatus:
+          $ref: "#/components/schemas/WalletStatus"
+        proStatus:
+          $ref: "#/components/schemas/WalletStatus"
 
     ConnectDashboardBalance:
       type: object

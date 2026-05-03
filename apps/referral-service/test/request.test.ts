@@ -144,6 +144,78 @@ describe('referral-service request hardening', () => {
     expect(body.activated).toBe(false);
   });
 
+  it('awards 5000 locked referral points on first-login marker without legacy bonus action', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [{ referrer_id: 'user_referrer', first_login_at: null }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1, rows: [] });
+
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        userId: string;
+        amount: number;
+        action: string;
+        externalId: string;
+        sourceEventId: string;
+        metadata: Record<string, unknown>;
+      };
+
+      expect(body).toEqual({
+        userId: 'user_referrer',
+        amount: 5000,
+        action: 'referral_locked',
+        externalId: 'referral:locked:user_referrer:user_referee',
+        sourceEventId: 'referral:locked:user_referrer:user_referee',
+        metadata: { refereeUserId: 'user_referee', bucket: 'locked' },
+      });
+      expect(body.action).not.toBe('referral_bonus_referrer');
+
+      return new Response(JSON.stringify({ applied: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'referral-service', {
+      sub: 'auth-service',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://referral.example/internal/referral/mark-first-login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: 'user_referee' }),
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        lockedGrant: { amount: number; currency: string };
+        externalId: string;
+        points: { ok: boolean; applied?: boolean | null };
+      }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body.lockedGrant).toEqual({ amount: 5000, currency: 'POINTS' });
+      expect(body.externalId).toBe('referral:locked:user_referrer:user_referee');
+      expect(body.points).toEqual({ ok: true, applied: true });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('rejects self-claim for referral code', async () => {
     executeMock.mockResolvedValueOnce({
       rows: [{ user_id: 'user_self' }],
@@ -228,13 +300,13 @@ describe('referral-service request hardening', () => {
       .mockResolvedValueOnce({
         rows: [
           {
-            external_id: 'referral:first_login:user_referrer:user_activated_with_points',
+            external_id: 'referral:locked:user_referrer:user_activated_with_points',
             id: 'ptx_1',
             amount: 100,
             created_at: '2026-04-24T09:00:01.000Z',
           },
           {
-            external_id: 'referral:first_login:user_referrer:user_other',
+            external_id: 'referral:locked:user_referrer:user_other',
             id: 'ptx_ignored',
             amount: 999,
             created_at: '2026-04-24T09:05:00.000Z',
@@ -291,8 +363,8 @@ describe('referral-service request hardening', () => {
         status: 'pending',
         activatedAt: null,
         earnedPoints: 0,
-        pointsAction: 'referral_bonus_referrer',
-        pointsExternalId: 'referral:first_login:user_referrer:user_pending',
+        pointsAction: 'referral_locked',
+        pointsExternalId: 'referral:locked:user_referrer:user_pending',
         pointsTransactionId: null,
         pointsAppliedAt: null,
       },
@@ -301,8 +373,8 @@ describe('referral-service request hardening', () => {
         status: 'reward_missing',
         activatedAt: '2026-04-23T09:00:00.000Z',
         earnedPoints: 0,
-        pointsAction: 'referral_bonus_referrer',
-        pointsExternalId: 'referral:first_login:user_referrer:user_activated_without_points',
+        pointsAction: 'referral_locked',
+        pointsExternalId: 'referral:locked:user_referrer:user_activated_without_points',
         pointsTransactionId: null,
         pointsAppliedAt: null,
       },
@@ -311,8 +383,8 @@ describe('referral-service request hardening', () => {
         status: 'rewarded',
         activatedAt: '2026-04-24T09:00:00.000Z',
         earnedPoints: 100,
-        pointsAction: 'referral_bonus_referrer',
-        pointsExternalId: 'referral:first_login:user_referrer:user_activated_with_points',
+        pointsAction: 'referral_locked',
+        pointsExternalId: 'referral:locked:user_referrer:user_activated_with_points',
         pointsTransactionId: 'ptx_1',
         pointsAppliedAt: '2026-04-24T09:00:01.000Z',
       },
@@ -333,7 +405,7 @@ describe('referral-service request hardening', () => {
     const pointsQuery = executeMock.mock.calls[2]?.[0] as { values: unknown[]; strings: string[] };
     expect(pointsQuery.values).toContain('user_referrer');
     expect(pointsQuery.strings.join('')).toContain('FROM points_transactions');
-    expect(pointsQuery.strings.join('')).toContain("reason = 'referral_bonus_referrer'");
+    expect(pointsQuery.strings.join('')).toContain("reason = 'referral_locked'");
     expect(pointsQuery.strings.join('')).toContain('external_id IN');
     expect(pointsQuery.strings.join('')).not.toContain('ANY(');
   });

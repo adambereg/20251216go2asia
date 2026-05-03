@@ -38,6 +38,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'points.balance.get',
       routeGroup: 'points',
     });
+    expect(classifyRoute('GET', '/v1/wallet/summary')).toEqual({
+      routeKey: 'wallet.summary.get',
+      routeGroup: 'wallet',
+    });
     expect(classifyRoute('POST', '/v1/content/events/event_1/register')).toEqual({
       routeKey: 'content.events.register.post',
       routeGroup: 'content-engagement',
@@ -1292,6 +1296,63 @@ describe('api-gateway request hardening', () => {
       aud: 'internal',
       sub: 'user_from_jwt',
       roles: ['member'],
+    });
+  });
+
+  it('proxies wallet summary to points-service with gateway auth', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://points.example/v1/wallet/summary');
+      expect(request.headers.get('X-User-ID')).toBe('user_wallet');
+      const gatewayToken = request.headers.get('X-Gateway-Auth');
+      expect(gatewayToken).toBeTruthy();
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(gatewayToken!);
+
+      return new Response(
+        JSON.stringify({
+          availablePoints: 800,
+          lockedPoints: 5000,
+          networkPoints: 120,
+          totalPoints: 5920,
+          estimatedUnlockablePoints: 5000,
+          vipStatus: { isActive: true },
+          proStatus: { isActive: false },
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'user_wallet',
+      roles: ['vip_spacer'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/wallet/summary', {
+        headers: {
+          Authorization: 'Bearer real-user-token',
+        },
+      }),
+      {
+        POINTS_SERVICE_URL: 'https://points.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+        CLERK_SECRET_KEY: 'sk_test_123',
+      }
+    );
+
+    const body = await readJson<{ lockedPoints: number }>(response);
+    expect(response.status).toBe(200);
+    expect(body.lockedPoints).toBe(5000);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'user_wallet',
+      roles: ['vip_spacer'],
     });
   });
 

@@ -161,6 +161,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (normalizedPath.startsWith('/v1/points/')) {
     return { routeKey: `points.unknown.${normalizedMethod.toLowerCase()}`, routeGroup: 'points' };
   }
+  if (normalizedPath === '/v1/wallet/summary' && normalizedMethod === 'GET') {
+    return { routeKey: 'wallet.summary.get', routeGroup: 'wallet' };
+  }
 
   if (normalizedPath === '/v1/referral/code' && normalizedMethod === 'GET') {
     return { routeKey: 'referral.code.get', routeGroup: 'referral' };
@@ -884,6 +887,7 @@ async function routeRequest(
             host: safeHostFromUrl(env.MEDIA_SERVICE_URL ?? env.CONTENT_SERVICE_URL),
           },
           { prefix: '/v1/points/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
+          { prefix: '/v1/wallet/', var: 'POINTS_SERVICE_URL', host: safeHostFromUrl(env.POINTS_SERVICE_URL) },
           { prefix: '/v1/referral/', var: 'REFERRAL_SERVICE_URL', host: safeHostFromUrl(env.REFERRAL_SERVICE_URL) },
           // Phase 2 (planned): routes become active only when the corresponding *_SERVICE_URL var is configured
           { prefix: '/v1/space/', var: 'SPACE_SERVICE_URL', host: safeHostFromUrl(env.SPACE_SERVICE_URL) },
@@ -928,7 +932,7 @@ async function routeRequest(
     } else if (!env.MEDIA_SERVICE_URL) {
       downstreamPath = path.replace('/v1/media/', '/v1/content/media/');
     }
-  } else if (path.startsWith('/v1/points/')) {
+  } else if (path.startsWith('/v1/points/') || path.startsWith('/v1/wallet/')) {
     serviceUrl = env.POINTS_SERVICE_URL;
     if (!serviceUrl) missingVar = 'POINTS_SERVICE_URL';
   } else if (path.startsWith('/v1/referral/')) {
@@ -1037,6 +1041,7 @@ async function routeRequest(
 
   if (
     path.startsWith('/v1/points/') ||
+    path.startsWith('/v1/wallet/') ||
     path.startsWith('/v1/referral/') ||
     path.startsWith('/v1/users/') ||
     isContentRegister ||

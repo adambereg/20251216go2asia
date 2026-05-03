@@ -12,7 +12,7 @@
 import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
-import { buildReferrerFirstLoginBonusPointsInput, makeReferralFirstLoginExternalId } from './bonus';
+import { buildReferrerLockedPointsInput, makeReferralLockedExternalId } from './bonus';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -24,9 +24,8 @@ export interface Env {
   // Integrations
   POINTS_SERVICE_URL?: string;
 
-  // Economy config (MVP)
-  // e.g. "100"
-  REFERRAL_FIRST_LOGIN_BONUS?: string;
+  // Economy config (Slice 1): locked referral Points grant.
+  REFERRAL_LOCKED_POINTS?: string;
 }
 
 type GatewayPrincipal = {
@@ -397,8 +396,8 @@ async function getReferralEarningsSummary(db: Db, referrerUserId: string): Promi
     FROM referral_relations rr
     LEFT JOIN points_transactions pt
       ON pt.user_id = rr.referrer_id
-      AND pt.reason = 'referral_bonus_referrer'
-      AND pt.external_id = ('referral:first_login:' || rr.referrer_id || ':' || rr.referee_id)
+      AND pt.reason = 'referral_locked'
+      AND pt.external_id = ('referral:locked:' || rr.referrer_id || ':' || rr.referee_id)
     WHERE rr.referrer_id = ${referrerUserId}
   `);
   return (
@@ -430,7 +429,7 @@ async function listReferralRelationsForReferrer(
 }
 
 function computeReferralExternalIds(referrerUserId: string, rows: ReferralRelationRow[]): string[] {
-  return rows.map((row) => makeReferralFirstLoginExternalId(referrerUserId, row.referee_id));
+  return rows.map((row) => makeReferralLockedExternalId(referrerUserId, row.referee_id));
 }
 
 async function listReferralPointsMatches(
@@ -453,7 +452,7 @@ async function listReferralPointsMatches(
       created_at
     FROM points_transactions
     WHERE user_id = ${referrerUserId}
-      AND reason = 'referral_bonus_referrer'
+      AND reason = 'referral_locked'
       AND external_id IN (${externalIdList})
   `);
   return getRows<ReferralPointsMatchRow>(result);
@@ -474,7 +473,7 @@ function buildReferralEarningsResponse(
 ) {
   const matchesByExternalId = new Map(matches.map((row) => [row.external_id, row]));
   const items = relations.map((row) => {
-    const pointsExternalId = makeReferralFirstLoginExternalId(referrerUserId, row.referee_id);
+    const pointsExternalId = makeReferralLockedExternalId(referrerUserId, row.referee_id);
     const match = matchesByExternalId.get(pointsExternalId) ?? null;
     const isActivated = Boolean(row.first_login_at);
     const status = !isActivated ? 'pending' : match ? 'rewarded' : 'reward_missing';
@@ -484,7 +483,7 @@ function buildReferralEarningsResponse(
       status,
       activatedAt: row.first_login_at ? toIso(row.first_login_at) : null,
       earnedPoints: match ? Number(match.amount ?? 0) : 0,
-      pointsAction: 'referral_bonus_referrer' as const,
+      pointsAction: 'referral_locked' as const,
       pointsExternalId,
       pointsTransactionId: match?.id ?? null,
       pointsAppliedAt: match?.created_at ? toIso(match.created_at) : null,
@@ -1074,7 +1073,7 @@ export default {
 
         const db = createDb(requireDatabase(env));
 
-        // 1) Ensure first_login_at is set (idempotent). We still want to be able to retry the bonus call,
+        // 1) Ensure first_login_at is set (idempotent). We still want to be able to retry the locked grant call,
         // so we will attempt to call Points even if first_login_at was already set; points-service dedupes by externalId.
         const relRes = await db.execute(sql`
           SELECT referrer_id, first_login_at
@@ -1106,21 +1105,21 @@ export default {
           activated = rowCount > 0;
         }
 
-        // 2) Award bonus to referrer (MVP): +N Points for referrer on referee first login.
-        const bonus = parseNonNegativeIntOrDefault(env.REFERRAL_FIRST_LOGIN_BONUS, 100);
-        const externalId = makeReferralFirstLoginExternalId(rel.referrer_id, userId);
+        // 2) Award locked referral Points. Unlock and network accrual belong to Slice 2.
+        const lockedPoints = parseNonNegativeIntOrDefault(env.REFERRAL_LOCKED_POINTS, 5000);
+        const externalId = makeReferralLockedExternalId(rel.referrer_id, userId);
 
         let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
-        if (bonus > 0) {
-          const pointsInput = buildReferrerFirstLoginBonusPointsInput({
+        if (lockedPoints > 0) {
+          const pointsInput = buildReferrerLockedPointsInput({
             referrerId: rel.referrer_id,
             refereeId: userId,
-            bonus,
+            amount: lockedPoints,
           });
           const result = await callPointsAdd(env, requestId, logger, pointsInput);
           points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
           if (!result.ok) {
-            logger.warn('Referral bonus points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });
+            logger.warn('Referral locked points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });
           }
         } else {
           // Explicitly disabled by config
@@ -1135,7 +1134,7 @@ export default {
             activated,
             updatedRows: activated ? 1 : 0,
             referrerId: rel.referrer_id,
-            bonus: { amount: bonus, currency: 'POINTS' },
+            lockedGrant: { amount: lockedPoints, currency: 'POINTS' },
             externalId,
             points,
           },
