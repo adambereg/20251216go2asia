@@ -351,6 +351,13 @@
       "when": 1777530000000,
       "tag": "0047_rf_voucher_scope_aware_unique_indexes_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1777535000000,
+      "tag": "0048_rf_voucher_canonical_lifecycle_columns_v1",
+      "breakpoints": true
     }
   ]
 }
