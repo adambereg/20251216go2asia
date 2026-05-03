@@ -12,7 +12,7 @@
 import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
-import { buildReferrerFirstLoginBonusPointsInput, makeReferralFirstLoginExternalId } from './bonus';
+import { buildReferrerLockedPointsInput, makeReferralLockedExternalId } from './bonus';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -24,9 +24,8 @@ export interface Env {
   // Integrations
   POINTS_SERVICE_URL?: string;
 
-  // Economy config (MVP)
-  // e.g. "100"
-  REFERRAL_FIRST_LOGIN_BONUS?: string;
+  // Economy config (Slice 1): locked referral Points grant.
+  REFERRAL_LOCKED_POINTS?: string;
 }
 
 type GatewayPrincipal = {
@@ -53,6 +52,11 @@ type ReferralRelationRow = {
   referee_id: string;
   registered_at: Date | string;
   first_login_at: Date | string | null;
+};
+
+type ReferralLockedRepairRow = {
+  referrer_id: string;
+  referee_id: string;
 };
 
 type ReferralPointsMatchRow = {
@@ -397,8 +401,8 @@ async function getReferralEarningsSummary(db: Db, referrerUserId: string): Promi
     FROM referral_relations rr
     LEFT JOIN points_transactions pt
       ON pt.user_id = rr.referrer_id
-      AND pt.reason = 'referral_bonus_referrer'
-      AND pt.external_id = ('referral:first_login:' || rr.referrer_id || ':' || rr.referee_id)
+      AND pt.reason = 'referral_locked'
+      AND pt.external_id = ('referral:locked:' || rr.referrer_id || ':' || rr.referee_id)
     WHERE rr.referrer_id = ${referrerUserId}
   `);
   return (
@@ -430,7 +434,7 @@ async function listReferralRelationsForReferrer(
 }
 
 function computeReferralExternalIds(referrerUserId: string, rows: ReferralRelationRow[]): string[] {
-  return rows.map((row) => makeReferralFirstLoginExternalId(referrerUserId, row.referee_id));
+  return rows.map((row) => makeReferralLockedExternalId(referrerUserId, row.referee_id));
 }
 
 async function listReferralPointsMatches(
@@ -453,7 +457,7 @@ async function listReferralPointsMatches(
       created_at
     FROM points_transactions
     WHERE user_id = ${referrerUserId}
-      AND reason = 'referral_bonus_referrer'
+      AND reason = 'referral_locked'
       AND external_id IN (${externalIdList})
   `);
   return getRows<ReferralPointsMatchRow>(result);
@@ -474,7 +478,7 @@ function buildReferralEarningsResponse(
 ) {
   const matchesByExternalId = new Map(matches.map((row) => [row.external_id, row]));
   const items = relations.map((row) => {
-    const pointsExternalId = makeReferralFirstLoginExternalId(referrerUserId, row.referee_id);
+    const pointsExternalId = makeReferralLockedExternalId(referrerUserId, row.referee_id);
     const match = matchesByExternalId.get(pointsExternalId) ?? null;
     const isActivated = Boolean(row.first_login_at);
     const status = !isActivated ? 'pending' : match ? 'rewarded' : 'reward_missing';
@@ -484,7 +488,7 @@ function buildReferralEarningsResponse(
       status,
       activatedAt: row.first_login_at ? toIso(row.first_login_at) : null,
       earnedPoints: match ? Number(match.amount ?? 0) : 0,
-      pointsAction: 'referral_bonus_referrer' as const,
+      pointsAction: 'referral_locked' as const,
       pointsExternalId,
       pointsTransactionId: match?.id ?? null,
       pointsAppliedAt: match?.created_at ? toIso(match.created_at) : null,
@@ -593,6 +597,60 @@ async function callPointsAdd(
     logger.error('Points Service call error', error, { userId: input.userId, action: input.action });
     return { ok: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+async function awardLockedReferralPoints(
+  env: Env,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>,
+  input: { referrerId: string; refereeId: string }
+): Promise<{
+  lockedGrant: { amount: number; currency: 'POINTS' };
+  externalId: string;
+  points: { ok: boolean; applied?: boolean | null; error?: string };
+}> {
+  const lockedPoints = parseNonNegativeIntOrDefault(env.REFERRAL_LOCKED_POINTS, 5000);
+  const externalId = makeReferralLockedExternalId(input.referrerId, input.refereeId);
+  let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
+
+  if (lockedPoints > 0) {
+    const pointsInput = buildReferrerLockedPointsInput({
+      referrerId: input.referrerId,
+      refereeId: input.refereeId,
+      amount: lockedPoints,
+    });
+    const result = await callPointsAdd(env, requestId, logger, pointsInput);
+    points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
+    if (!result.ok) {
+      logger.warn('Referral locked points failed (non-blocking)', {
+        referrerId: input.referrerId,
+        refereeId: input.refereeId,
+      });
+    }
+  } else {
+    points = { ok: true, applied: null };
+  }
+
+  return {
+    lockedGrant: { amount: lockedPoints, currency: 'POINTS' },
+    externalId,
+    points,
+  };
+}
+
+async function listReferralRelationsMissingLockedPoints(db: Db, limit: number): Promise<ReferralLockedRepairRow[]> {
+  const result = await db.execute(sql`
+    SELECT rr.referrer_id, rr.referee_id
+    FROM referral_relations rr
+    LEFT JOIN points_transactions pt
+      ON pt.user_id = rr.referrer_id
+      AND pt.reason = 'referral_locked'
+      AND pt.external_id = ('referral:locked:' || rr.referrer_id || ':' || rr.referee_id)
+    WHERE pt.id IS NULL
+    ORDER BY rr.registered_at DESC NULLS LAST, rr.referee_id DESC
+    LIMIT ${limit}
+  `);
+  return getRows<ReferralLockedRepairRow>(result);
 }
 
 function toIso(input: unknown): string {
@@ -1001,8 +1059,9 @@ export default {
             res.headers.set('X-Request-Id', requestId);
             return res;
           }
+          const locked = await awardLockedReferralPoints(env, requestId, logger, { referrerId, refereeId });
           const res = json(
-            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed' },
+            { ok: true, claimed: false, referrerId, refereeId, code, reason: 'already_claimed', ...locked },
             200,
             { 'Cache-Control': 'no-store' }
           );
@@ -1017,7 +1076,11 @@ export default {
           ON CONFLICT (referee_id) DO NOTHING
         `);
 
-        const res = json({ ok: true, claimed: true, referrerId, refereeId, code }, 200, { 'Cache-Control': 'no-store' });
+        const locked = await awardLockedReferralPoints(env, requestId, logger, { referrerId, refereeId });
+
+        const res = json({ ok: true, claimed: true, referrerId, refereeId, code, ...locked }, 200, {
+          'Cache-Control': 'no-store',
+        });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -1074,8 +1137,7 @@ export default {
 
         const db = createDb(requireDatabase(env));
 
-        // 1) Ensure first_login_at is set (idempotent). We still want to be able to retry the bonus call,
-        // so we will attempt to call Points even if first_login_at was already set; points-service dedupes by externalId.
+        // Ensure first_login_at is set (idempotent). Locked referral grants are created when the relation is claimed/linked.
         const relRes = await db.execute(sql`
           SELECT referrer_id, first_login_at
           FROM referral_relations
@@ -1106,27 +1168,6 @@ export default {
           activated = rowCount > 0;
         }
 
-        // 2) Award bonus to referrer (MVP): +N Points for referrer on referee first login.
-        const bonus = parseNonNegativeIntOrDefault(env.REFERRAL_FIRST_LOGIN_BONUS, 100);
-        const externalId = makeReferralFirstLoginExternalId(rel.referrer_id, userId);
-
-        let points: { ok: boolean; applied?: boolean | null; error?: string } = { ok: false };
-        if (bonus > 0) {
-          const pointsInput = buildReferrerFirstLoginBonusPointsInput({
-            referrerId: rel.referrer_id,
-            refereeId: userId,
-            bonus,
-          });
-          const result = await callPointsAdd(env, requestId, logger, pointsInput);
-          points = result.ok ? { ok: true, applied: result.applied } : { ok: false, error: result.error };
-          if (!result.ok) {
-            logger.warn('Referral bonus points failed (non-blocking)', { referrerId: rel.referrer_id, refereeId: userId });
-          }
-        } else {
-          // Explicitly disabled by config
-          points = { ok: true, applied: null };
-        }
-
         const res = json(
           {
             ok: true,
@@ -1135,9 +1176,66 @@ export default {
             activated,
             updatedRows: activated ? 1 : 0,
             referrerId: rel.referrer_id,
-            bonus: { amount: bonus, currency: 'POINTS' },
-            externalId,
-            points,
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'POST' && path === '/internal/referral/repair-locked-points') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : {};
+        const limitRaw = body.limit;
+        const limit =
+          typeof limitRaw === 'number' && Number.isFinite(limitRaw) && limitRaw > 0
+            ? Math.min(Math.floor(limitRaw), 100)
+            : 25;
+        const dryRun = body.dryRun === true;
+
+        const db = createDb(requireDatabase(env));
+        const missing = await listReferralRelationsMissingLockedPoints(db, limit);
+        const repaired = [];
+
+        for (const row of missing) {
+          const externalId = makeReferralLockedExternalId(row.referrer_id, row.referee_id);
+          if (dryRun) {
+            repaired.push({
+              referrerId: row.referrer_id,
+              refereeId: row.referee_id,
+              externalId,
+              dryRun: true,
+            });
+            continue;
+          }
+
+          const result = await awardLockedReferralPoints(env, requestId, logger, {
+            referrerId: row.referrer_id,
+            refereeId: row.referee_id,
+          });
+          repaired.push({
+            referrerId: row.referrer_id,
+            refereeId: row.referee_id,
+            ...result,
+          });
+        }
+
+        const res = json(
+          {
+            ok: true,
+            dryRun,
+            scanned: missing.length,
+            repaired,
           },
           200,
           { 'Cache-Control': 'no-store' }
@@ -1216,7 +1314,12 @@ export default {
             return res;
           }
 
-          const res = json({ refereeUserId, referrerUserId, linked: false }, 200);
+          const locked = await awardLockedReferralPoints(env, requestId, logger, {
+            referrerId: referrerUserId,
+            refereeId: refereeUserId,
+          });
+
+          const res = json({ refereeUserId, referrerUserId, linked: false, ...locked }, 200);
           res.headers.set('X-Request-Id', requestId);
           return res;
         }
@@ -1227,7 +1330,12 @@ export default {
           VALUES (${relId}, ${referrerUserId}, ${refereeUserId})
         `);
 
-        const res = json({ refereeUserId, referrerUserId, linked: true }, 200);
+        const locked = await awardLockedReferralPoints(env, requestId, logger, {
+          referrerId: referrerUserId,
+          refereeId: refereeUserId,
+        });
+
+        const res = json({ refereeUserId, referrerUserId, linked: true, ...locked }, 200);
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

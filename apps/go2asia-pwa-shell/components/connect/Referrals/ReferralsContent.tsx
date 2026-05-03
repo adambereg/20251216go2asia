@@ -54,11 +54,11 @@ function getStatusBadgeClass(status: Referral['status']) {
 function getStatusHelperText(referral: Referral) {
   if (referral.status_helper_text) return referral.status_helper_text;
   if (referral.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
-  if (referral.status === 'rewarded' || referral.status === 'completed_mission') return 'Points за приглашение уже начислены.';
+  if (referral.status === 'rewarded' || referral.status === 'completed_mission') return 'Реферальные Points начислены и могут быть заблокированы до выполнения условий.';
   if (referral.status === 'activated' || referral.status === 'active') {
     return 'Пользователь стал активным, начисление может ещё обрабатываться.';
   }
-  return 'Пользователь приглашён, но ещё не стал активным.';
+  return 'Пользователь приглашён. Реферальные Points ожидают условий разблокировки.';
 }
 
 function formatDate(value: string) {
@@ -195,7 +195,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           </div>
         )}
         <p className="text-sm text-slate-600 mt-4">
-          Поделитесь ссылкой с другом. Когда приглашённый пользователь станет активным, начисление появится в истории Points.
+          Поделитесь ссылкой с другом. Реферальные Points могут быть заблокированы до выполнения условий активации.
         </p>
       </Card>
 
@@ -242,6 +242,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                     <p className="text-sm font-semibold text-emerald-700">
                       +{formatCompact(referral.earned_rewards.points)} Points
                     </p>
+                    {referral.earned_rewards.points > 0 && (
+                      <p className="text-xs text-amber-700 mt-1">Заблокировано до активации условий</p>
+                    )}
                   </div>
                 </div>
               </Card>

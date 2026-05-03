@@ -439,6 +439,8 @@ export * from "./userBadgeItem";
 export * from "./userBadgesResponse";
 export * from "./userBalance";
 export * from "./userRow";
+export * from "./walletStatus";
+export * from "./walletSummaryResponse";
 export * from "./xGatewayAuthOptionalParameter";
 export * from "./xGatewayAuthParameter";
 export * from "./xRequestIdParameter";

@@ -187,6 +187,7 @@ import type {
   UpsertReactionRequest,
   UserBadgesResponse,
   UserBalance,
+  WalletSummaryResponse,
 } from "../packages/sdk/src/generated";
 
 import { customInstance } from "../packages/sdk/src/mutator";
@@ -6479,5 +6480,58 @@ export const ensureUser = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(ensureUserRequest),
+  });
+};
+
+/**
+ * User-facing read endpoint (called via gateway). Returns ledger-based Points bucket projections for the current user without changing the underlying `user_balances.balance` storage model.
+
+ * @summary Get current user wallet summary
+ */
+export type getWalletSummaryResponse200 = {
+  data: WalletSummaryResponse;
+  status: 200;
+};
+
+export type getWalletSummaryResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getWalletSummaryResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getWalletSummaryResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getWalletSummaryResponseSuccess = getWalletSummaryResponse200 & {
+  headers: Headers;
+};
+export type getWalletSummaryResponseError = (
+  | getWalletSummaryResponse401
+  | getWalletSummaryResponse500
+  | getWalletSummaryResponse503
+) & {
+  headers: Headers;
+};
+
+export type getWalletSummaryResponse =
+  | getWalletSummaryResponseSuccess
+  | getWalletSummaryResponseError;
+
+export const getGetWalletSummaryUrl = () => {
+  return `/v1/wallet/summary`;
+};
+
+export const getWalletSummary = async (
+  options?: RequestInit
+): Promise<getWalletSummaryResponse> => {
+  return customInstance<getWalletSummaryResponse>(getGetWalletSummaryUrl(), {
+    ...options,
+    method: "GET",
   });
 };

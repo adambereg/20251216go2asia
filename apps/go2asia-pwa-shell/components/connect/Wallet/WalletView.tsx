@@ -1,13 +1,39 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ConnectHero, ConnectNav } from '../Shared';
 import { Button, Card, SkeletonCard } from '@go2asia/ui';
-import { AlertCircle, Coins, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertCircle, Coins, LockKeyhole, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { useGetBalance, type UserBalance } from '@go2asia/sdk/balance';
 import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transactions';
+import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
+
+type WalletSummary = {
+  availablePoints: number;
+  lockedPoints: number;
+  networkPoints: number;
+  totalPoints: number;
+  estimatedUnlockablePoints: number;
+  vipStatus: { isActive: boolean };
+  proStatus: { isActive: boolean };
+};
+
+function useGetWalletSummary() {
+  return useQuery<WalletSummary>({
+    queryKey: ['wallet', 'summary'],
+    queryFn: async () => customInstance<WalletSummary>({ method: 'GET' }, '/v1/wallet/summary'),
+    staleTime: 30 * 1000,
+    retry: 2,
+  });
+}
+
+function formatPoints(value: number | null | undefined) {
+  return (value ?? 0).toLocaleString('ru-RU');
+}
 
 function formatUpdatedAt(updatedAt: string | null | undefined) {
   if (!updatedAt) return null;
@@ -40,9 +66,45 @@ function toWalletTransaction(tx: PointsTransaction): Transaction {
   };
 }
 
-function PointsSummary({ balance }: { balance: UserBalance | undefined }) {
-  const points = balance?.balance ?? 0;
+function BucketStat({
+  label,
+  value,
+  description,
+  icon,
+}: {
+  label: string;
+  value: number;
+  description: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-slate-600">{label}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{formatPoints(value)}</p>
+        </div>
+        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">{icon}</div>
+      </div>
+      <p className="text-xs text-slate-500 mt-3">{description}</p>
+    </div>
+  );
+}
+
+function PointsSummary({
+  balance,
+  walletSummary,
+  walletSummaryLoading,
+  walletSummaryError,
+}: {
+  balance: UserBalance | undefined;
+  walletSummary: WalletSummary | undefined;
+  walletSummaryLoading: boolean;
+  walletSummaryError: boolean;
+}) {
+  const points = walletSummary?.totalPoints ?? balance?.balance ?? 0;
   const updatedAt = formatUpdatedAt(balance?.updatedAt);
+  const hasLockedVipCta = Boolean(walletSummary && walletSummary.lockedPoints > 0 && !walletSummary.vipStatus.isActive);
 
   return (
     <Card className="p-6 mb-6">
@@ -53,16 +115,74 @@ function PointsSummary({ balance }: { balance: UserBalance | undefined }) {
           </div>
           <div>
             <h2 className="text-sm font-medium text-slate-600">Points — след вашей активности</h2>
-            <p className="text-4xl font-bold text-slate-900 mt-1">{points.toLocaleString('ru-RU')} Points</p>
+            <p className="text-4xl font-bold text-slate-900 mt-1">{formatPoints(points)} Points</p>
             <p className="text-sm text-slate-600 mt-3">
               {points > 0
                 ? 'Points начисляются за действия в Go2Asia: квесты, события, приглашения и другие подтверждённые активности.'
                 : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
             </p>
             {updatedAt && <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>}
+            {walletSummaryError && (
+              <p className="text-xs text-amber-700 mt-2">
+                Структура Points временно недоступна, показываем текущий общий баланс.
+              </p>
+            )}
           </div>
         </div>
       </div>
+
+      {walletSummaryLoading && !walletSummary ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mt-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : walletSummary ? (
+        <div className="mt-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            <BucketStat
+              label="Available Points"
+              value={walletSummary.availablePoints}
+              description="Доступны сейчас для будущих трат Points."
+              icon={<Coins className="w-5 h-5" />}
+            />
+            <BucketStat
+              label="Locked Points"
+              value={walletSummary.lockedPoints}
+              description="Ожидают активации условий экономики."
+              icon={<LockKeyhole className="w-5 h-5" />}
+            />
+            <BucketStat
+              label="Network Points"
+              value={walletSummary.networkPoints}
+              description="Начисления от сети и реферальной экономики."
+              icon={<TrendingUp className="w-5 h-5" />}
+            />
+            <BucketStat
+              label="Estimated Unlockable"
+              value={walletSummary.estimatedUnlockablePoints}
+              description="Оценка ценности, которая будет доступна после активации."
+              icon={<Sparkles className="w-5 h-5" />}
+            />
+          </div>
+
+          {hasLockedVipCta && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-amber-950">У вас есть заблокированные Points</p>
+                <p className="text-sm text-amber-800 mt-1">
+                  Активируйте VIP, чтобы в будущем разблокировать накопленную ценность и получить доступ к тратам Points.
+                  Механика разблокировки появится в следующем этапе.
+                </p>
+              </div>
+              <Button variant="secondary" disabled>
+                Активировать VIP
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -73,6 +193,12 @@ export function WalletView() {
 
   const { data: balanceData, isLoading: balanceLoading, isError: balanceError, refetch: refetchBalance } =
     useGetBalance();
+  const {
+    data: walletSummary,
+    isLoading: walletSummaryLoading,
+    isError: walletSummaryError,
+    refetch: refetchWalletSummary,
+  } = useGetWalletSummary();
   
   const {
     data: transactionsData,
@@ -86,6 +212,7 @@ export function WalletView() {
 
   const handleRetry = () => {
     refetchBalance();
+    refetchWalletSummary();
     refetchTransactions();
   };
 
@@ -184,7 +311,12 @@ export function WalletView() {
           <p className="text-slate-600 mt-1">История Points и начислений за вашу активность.</p>
         </div>
 
-        <PointsSummary balance={balanceData} />
+        <PointsSummary
+          balance={balanceData}
+          walletSummary={walletSummary}
+          walletSummaryLoading={walletSummaryLoading}
+          walletSummaryError={walletSummaryError}
+        />
 
         <Card className="p-6 mb-6">
           <div className="flex items-center gap-2 mb-2 text-slate-900">

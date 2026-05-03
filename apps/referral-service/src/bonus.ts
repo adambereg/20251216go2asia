@@ -1,29 +1,26 @@
-export function makeReferralFirstLoginExternalId(referrerId: string, refereeId: string): string {
-  return `referral:first_login:${referrerId}:${refereeId}`;
+export function makeReferralLockedExternalId(referrerId: string, refereeId: string): string {
+  return `referral:locked:${referrerId}:${refereeId}`;
 }
 
-export function buildReferrerFirstLoginBonusPointsInput(input: {
+export function buildReferrerLockedPointsInput(input: {
   referrerId: string;
   refereeId: string;
-  bonus: number;
+  amount: number;
 }): {
   userId: string;
   amount: number;
-  action: 'referral_bonus_referrer';
+  action: 'referral_locked';
   externalId: string;
   sourceEventId: string;
-  metadata: { refereeUserId: string };
+  metadata: { refereeUserId: string; bucket: 'locked' };
 } {
-  const externalId = makeReferralFirstLoginExternalId(input.referrerId, input.refereeId);
+  const externalId = makeReferralLockedExternalId(input.referrerId, input.refereeId);
   return {
     userId: input.referrerId,
-    amount: input.bonus,
-    action: 'referral_bonus_referrer',
+    amount: input.amount,
+    action: 'referral_locked',
     externalId,
     sourceEventId: externalId,
-    metadata: { refereeUserId: input.refereeId },
+    metadata: { refereeUserId: input.refereeId, bucket: 'locked' },
   };
 }
-
-
-

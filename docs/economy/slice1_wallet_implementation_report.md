@@ -1,0 +1,198 @@
+# Slice 1 Wallet Implementation Report
+
+Status: implemented  
+Scope: Wallet / Points buckets baseline only
+
+## What Was Implemented
+
+- Added ledger-based wallet bucket projection in `apps/points-service/src/index.ts`.
+- Added `GET /v1/wallet/summary` in `points-service`.
+- Kept `user_balances.balance` unchanged.
+- Added Points actions:
+  - `referral_locked`
+  - `referral_unlock`
+  - `network_accrual_level_1`
+  - `network_accrual_level_2`
+- Changed referral first-login grant to emit `referral_locked` with `5000` Points by default.
+- Added gateway routing for `/v1/wallet/summary` to `POINTS_SERVICE_URL`.
+- Added OpenAPI contract for `/v1/wallet/summary`.
+- Regenerated OpenAPI bundle, generated types and generated SDK.
+- Added focused tests for bucket projection, wallet summary response, referral locked grant and gateway proxy.
+
+## Files Changed
+
+Source and tests:
+
+- `apps/points-service/src/index.ts`
+- `apps/points-service/test/request.test.ts`
+- `apps/referral-service/src/index.ts`
+- `apps/referral-service/src/bonus.ts`
+- `apps/referral-service/test/bonus_trigger_once.test.ts`
+- `apps/referral-service/test/request.test.ts`
+- `apps/api-gateway/src/index.ts`
+- `apps/api-gateway/test/request.test.ts`
+
+Contracts and generated artifacts:
+
+- `docs/openapi/points.yaml`
+- `docs/openapi/openapi.bundle.yaml`
+- `packages/types/src/generated/index.ts`
+- `packages/types/src/generated/pointsAction.ts`
+- `packages/types/src/generated/walletStatus.ts`
+- `packages/types/src/generated/walletSummaryResponse.ts`
+- `packages/sdk/src/generated/index.ts`
+- `packages/sdk/src/generated/pointsAction.ts`
+- `packages/sdk/src/generated/walletStatus.ts`
+- `packages/sdk/src/generated/walletSummaryResponse.ts`
+- `types/go2AsiaPlatformAPI.ts`
+- `sdk/go2AsiaPlatformAPI.ts`
+
+Report:
+
+- `docs/economy/slice1_wallet_implementation_report.md`
+
+## What Was Not Done
+
+- RF voucher business logic was not changed.
+- Premium vouchers were not implemented.
+- NFT inventory, NFT burn and NFT used flags were not implemented.
+- G2A, blockchain and Blockchain Gateway were not implemented.
+- VIP/PRO payments were not implemented.
+- Frontend was not changed.
+- Quest, token-service, RF and G2A domains were not changed.
+- Referral unlock after VIP purchase was not implemented.
+- Network accrual `10% / 2%` was not implemented.
+
+## Remaining Limitations
+
+- Wallet buckets are projections from `points_transactions`; no new storage tables or columns were added.
+- `availablePoints` includes legacy positive actions and any negative spend-like transactions outside locked/network categories.
+- `referral_unlock` is recognized by projection but no unlock producer exists yet.
+- `network_accrual_level_1` and `network_accrual_level_2` are recognized by projection but no network accrual producer exists yet.
+- `vipStatus.isActive` and `proStatus.isActive` are derived from gateway-provided roles only; there is no paid entitlement lifecycle yet.
+- Existing `/v1/points/balance` and `/v1/points/connect-dashboard` remain backward-compatible and still expose the legacy balance shape.
+
+## Readiness For Slice 2
+
+Slice 1 creates the backend baseline required for Slice 2:
+
+- locked referral grants now have a dedicated action and bucket;
+- wallet summary can expose locked value to the product;
+- future VIP activation can use `referral_unlock`;
+- future network accrual can use level-specific actions without changing wallet summary shape.
+
+Recommended next Slice 2 focus:
+
+- add VIP purchase/activation event boundary;
+- unlock `referral_locked` value through `referral_unlock`;
+- add VIP-gated network accrual `10% / 2%`;
+- add tests for unlock idempotency and network bucket projection.
+
+## Verification
+
+Commands run:
+
+```text
+pnpm openapi:bundle
+pnpm gen:types
+pnpm gen:sdk
+pnpm -C apps/points-service test
+pnpm -C apps/referral-service test
+pnpm -C apps/api-gateway test
+```
+
+Result: all completed successfully.
+
+## Staging/UI Verification
+
+Context:
+
+- In the current Connect / Referrals UI, the invited user is visible but the card shows `+0 Points`.
+- Frontend Connect is not required to render `/v1/wallet/summary` yet.
+
+UI finding:
+
+- `apps/go2asia-pwa-shell/components/connect/Referrals/ReferralsView.tsx` uses:
+  - `useGetReferralEarnings({ limit: 50 })`
+  - `useGetReferralTree({ depth: 2 })`
+- `apps/go2asia-pwa-shell/components/connect/Referrals/ReferralsContent.tsx` renders:
+  - summary: `data.stats.earned_points`
+  - card value: `referral.earned_rewards.points`
+- `earned_rewards.points` is mapped from `ReferralEarningsItem.earnedPoints`.
+- Therefore, the visible `+0 Points` is not read from `/v1/wallet/summary`; it is the old referral earnings read model.
+
+Backend expectation:
+
+- For a relation `(referrerId, refereeId)`, backend should have:
+  - `points_transactions.reason = 'referral_locked'`
+  - `points_transactions.amount = 5000`
+  - `points_transactions.external_id = 'referral:locked:<referrerId>:<refereeId>'`
+- `GET /v1/wallet/summary` for the referrer should include this value in `lockedPoints`.
+- `totalPoints` should equal `availablePoints + lockedPoints + networkPoints`.
+
+Staging limitation:
+
+- A direct authenticated staging DB/API verification for `phuketfitnest2023@gmail.com` was not completed from the agent because no DB access or authenticated user token was available in this session.
+- Earlier unauthenticated staging/API attempts did not produce a usable authenticated payload check.
+
+Additional fix:
+
+- Added internal repair endpoint:
+  - `POST /internal/referral/repair-locked-points`
+- It finds existing `referral_relations` rows missing a matching `referral_locked` transaction.
+- It repairs them through Points Service using the canonical idempotency key:
+  - `referral:locked:<referrerId>:<refereeId>`
+- It supports:
+  - `limit` with max `100`
+  - `dryRun: true`
+- The repair is idempotent because Points Service dedupes by `externalId`.
+
+Additional tests:
+
+- Added a referral-service test for repairing an existing relation missing locked Points.
+- Re-ran:
+
+```text
+pnpm -C apps/referral-service test
+pnpm -C apps/points-service test
+```
+
+Result: all completed successfully.
+
+## Verification Follow-up
+
+Follow-up request checked referral timing against the Economy SSOT rule:
+
+- locked referral Points must be visible when the referral relation is created;
+- `referral_locked` must remain locked;
+- VIP unlock belongs to a later slice;
+- `mark-first-login` must not create a spendable bonus.
+
+Finding:
+
+- The first Slice 1 implementation emitted `referral_locked` from `/internal/referral/mark-first-login`.
+- That was too late for users who had already claimed a referral link and were still pending activation.
+
+Fix applied:
+
+- `POST /v1/referral/claim` now awards `referral_locked = 5000` after a successful relation claim.
+- `/internal/referral/link` now awards `referral_locked = 5000` after a successful internal relation link.
+- Existing same-referrer relations also retry the locked grant idempotently, using `externalId = referral:locked:<referrerId>:<refereeId>`.
+- `/internal/referral/mark-first-login` now only updates `first_login_at`; it does not award Points.
+
+Real API check:
+
+- Attempted direct staging check for `GET https://staging.api.go2asia.space/v1/wallet/summary`.
+- Local PowerShell DNS resolution failed for `staging.api.go2asia.space`.
+- A remote fetch attempt returned `503 Service Unavailable`.
+- Because no authenticated user token was available in this session, a full authenticated staging payload check could not be completed from the agent.
+
+Additional verification run after the follow-up fix:
+
+```text
+pnpm -C apps/referral-service test
+pnpm -C apps/points-service test
+pnpm -C apps/api-gateway test
+```
+
+Result: all completed successfully.

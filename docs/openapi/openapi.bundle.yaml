@@ -2439,10 +2439,14 @@ components:
         - first_login
         - referral_bonus_referee
         - referral_bonus_referrer
+        - referral_locked
+        - referral_unlock
         - event_registration
         - space_post_created
         - space_repost_created
         - space_reaction_created
+        - network_accrual_level_1
+        - network_accrual_level_2
         - quest_completed
         - rielt_listing_created
         - rf_partner_verified
@@ -5108,6 +5112,43 @@ components:
         - role
         - created_at
         - updated_at
+      type: object
+    WalletStatus:
+      properties:
+        isActive:
+          type: boolean
+      required:
+        - isActive
+      type: object
+    WalletSummaryResponse:
+      properties:
+        availablePoints:
+          description: Ledger-projected spendable Points bucket.
+          type: integer
+        estimatedUnlockablePoints:
+          description: Slice 1 estimate; currently equals lockedPoints.
+          type: integer
+        lockedPoints:
+          description: Ledger-projected locked Points bucket.
+          type: integer
+        networkPoints:
+          description: Ledger-projected network-generated Points bucket.
+          type: integer
+        proStatus:
+          $ref: "#/components/schemas/WalletStatus"
+        totalPoints:
+          description: Sum of availablePoints, lockedPoints and networkPoints.
+          type: integer
+        vipStatus:
+          $ref: "#/components/schemas/WalletStatus"
+      required:
+        - availablePoints
+        - lockedPoints
+        - networkPoints
+        - totalPoints
+        - estimatedUnlockablePoints
+        - vipStatus
+        - proStatus
       type: object
   securitySchemes:
     BearerAuth:
@@ -8230,6 +8271,32 @@ paths:
       summary: Ensure current user exists in Neon (idempotent upsert)
       tags:
         - users
+  /v1/wallet/summary:
+    get:
+      description: |
+        User-facing read endpoint (called via gateway). Returns ledger-based Points bucket projections for the current user without changing the underlying `user_balances.balance` storage model.
+      operationId: getWalletSummary
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletSummaryResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Get current user wallet summary
+      tags:
+        - wallet
 servers:
   - description: Production API Gateway
     url: https://api.go2asia.space
@@ -8259,6 +8326,8 @@ tags:
   - name: guru
   - description: Points balance and ledger operations
     name: points
+  - description: Economy wallet buckets and status summary
+    name: wallet
   - description: Off-chain badge catalog and user badge awards
     name: badges
   - description: Service-to-service APIs (authenticated)
