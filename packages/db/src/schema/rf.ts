@@ -8,6 +8,14 @@ export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', '
 export const rfOfferTypeEnum = pgEnum('rf_offer_type', ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related']);
 export const rfOfferVisibilityEnum = pgEnum('rf_offer_visibility', ['public', 'pro_only', 'invite_only']);
 export const rfVoucherStatusEnum = pgEnum('rf_voucher_status', ['claimed', 'redeemed', 'cancelled']);
+export const rfVoucherCanonicalStatusEnum = pgEnum('rf_voucher_canonical_status', [
+  'available',
+  'locked',
+  'unlocked',
+  'redeemed',
+  'expired',
+  'cancelled',
+]);
 export const rfVoucherClaimScopeEnum = pgEnum('rf_voucher_claim_scope', ['partner', 'listing']);
 export const rfProLinkStatusEnum = pgEnum('rf_pro_link_status', ['pending', 'active', 'ended']);
 export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
@@ -135,12 +143,19 @@ export const rfVouchers = pgTable(
       .references(() => rfPartners.id, { onDelete: 'cascade' }),
     issuedToUserId: varchar('issued_to_user_id', { length: 128 }).notNull(),
     status: rfVoucherStatusEnum('status').notNull().default('claimed'),
+    canonicalStatus: rfVoucherCanonicalStatusEnum('canonical_status').notNull().default('available'),
+    contractVersion: integer('contract_version').notNull().default(1),
     claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull().default('partner'),
     rieltListingId: text('rielt_listing_id'),
     rieltListingTitleSnapshot: text('rielt_listing_title_snapshot'),
     code: varchar('code', { length: 32 }).notNull(),
     claimedAt: timestamp('claimed_at').notNull().defaultNow(),
     redeemedAt: timestamp('redeemed_at'),
+    expiresAt: timestamp('expires_at'),
+    cancelledAt: timestamp('cancelled_at'),
+    statusChangedAt: timestamp('status_changed_at').defaultNow(),
+    statusReason: text('status_reason'),
+    statusActorUserId: varchar('status_actor_user_id', { length: 128 }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
