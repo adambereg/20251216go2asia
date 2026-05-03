@@ -269,6 +269,79 @@ describe('referral-service request hardening', () => {
     }
   });
 
+  it('repairs missing locked points for existing referral relations idempotently', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [{ referrer_id: 'user_referrer', referee_id: 'user_referee' }],
+    });
+
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        userId: string;
+        amount: number;
+        action: string;
+        externalId: string;
+      };
+      expect(body).toEqual(
+        expect.objectContaining({
+          userId: 'user_referrer',
+          amount: 5000,
+          action: 'referral_locked',
+          externalId: 'referral:locked:user_referrer:user_referee',
+        })
+      );
+      return new Response(JSON.stringify({ applied: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'referral-service', {
+      sub: 'ops-tool',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://referral.example/internal/referral/repair-locked-points', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ limit: 10 }),
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        ok: boolean;
+        scanned: number;
+        repaired: Array<{ externalId: string; points: { ok: boolean; applied?: boolean | null } }>;
+      }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body.ok).toBe(true);
+      expect(body.scanned).toBe(1);
+      expect(body.repaired[0]).toMatchObject({
+        externalId: 'referral:locked:user_referrer:user_referee',
+        points: { ok: true, applied: true },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const query = executeMock.mock.calls[0]?.[0] as { strings: string[]; values: unknown[] };
+      expect(query.strings.join('')).toContain('LEFT JOIN points_transactions');
+      expect(query.strings.join('')).toContain("pt.reason = 'referral_locked'");
+      expect(query.values).toContain(10);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('rejects self-claim for referral code', async () => {
     executeMock.mockResolvedValueOnce({
       rows: [{ user_id: 'user_self' }],

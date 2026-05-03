@@ -54,6 +54,11 @@ type ReferralRelationRow = {
   first_login_at: Date | string | null;
 };
 
+type ReferralLockedRepairRow = {
+  referrer_id: string;
+  referee_id: string;
+};
+
 type ReferralPointsMatchRow = {
   external_id: string;
   id: string;
@@ -633,6 +638,21 @@ async function awardLockedReferralPoints(
   };
 }
 
+async function listReferralRelationsMissingLockedPoints(db: Db, limit: number): Promise<ReferralLockedRepairRow[]> {
+  const result = await db.execute(sql`
+    SELECT rr.referrer_id, rr.referee_id
+    FROM referral_relations rr
+    LEFT JOIN points_transactions pt
+      ON pt.user_id = rr.referrer_id
+      AND pt.reason = 'referral_locked'
+      AND pt.external_id = ('referral:locked:' || rr.referrer_id || ':' || rr.referee_id)
+    WHERE pt.id IS NULL
+    ORDER BY rr.registered_at DESC NULLS LAST, rr.referee_id DESC
+    LIMIT ${limit}
+  `);
+  return getRows<ReferralLockedRepairRow>(result);
+}
+
 function toIso(input: unknown): string {
   if (input instanceof Date) return input.toISOString();
   const d = new Date(String(input));
@@ -1156,6 +1176,66 @@ export default {
             activated,
             updatedRows: activated ? 1 : 0,
             referrerId: rel.referrer_id,
+          },
+          200,
+          { 'Cache-Control': 'no-store' }
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'POST' && path === '/internal/referral/repair-locked-points') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : {};
+        const limitRaw = body.limit;
+        const limit =
+          typeof limitRaw === 'number' && Number.isFinite(limitRaw) && limitRaw > 0
+            ? Math.min(Math.floor(limitRaw), 100)
+            : 25;
+        const dryRun = body.dryRun === true;
+
+        const db = createDb(requireDatabase(env));
+        const missing = await listReferralRelationsMissingLockedPoints(db, limit);
+        const repaired = [];
+
+        for (const row of missing) {
+          const externalId = makeReferralLockedExternalId(row.referrer_id, row.referee_id);
+          if (dryRun) {
+            repaired.push({
+              referrerId: row.referrer_id,
+              refereeId: row.referee_id,
+              externalId,
+              dryRun: true,
+            });
+            continue;
+          }
+
+          const result = await awardLockedReferralPoints(env, requestId, logger, {
+            referrerId: row.referrer_id,
+            refereeId: row.referee_id,
+          });
+          repaired.push({
+            referrerId: row.referrer_id,
+            refereeId: row.referee_id,
+            ...result,
+          });
+        }
+
+        const res = json(
+          {
+            ok: true,
+            dryRun,
+            scanned: missing.length,
+            repaired,
           },
           200,
           { 'Cache-Control': 'no-store' }

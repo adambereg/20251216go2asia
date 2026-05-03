@@ -103,6 +103,62 @@ pnpm -C apps/api-gateway test
 
 Result: all completed successfully.
 
+## Staging/UI Verification
+
+Context:
+
+- In the current Connect / Referrals UI, the invited user is visible but the card shows `+0 Points`.
+- Frontend Connect is not required to render `/v1/wallet/summary` yet.
+
+UI finding:
+
+- `apps/go2asia-pwa-shell/components/connect/Referrals/ReferralsView.tsx` uses:
+  - `useGetReferralEarnings({ limit: 50 })`
+  - `useGetReferralTree({ depth: 2 })`
+- `apps/go2asia-pwa-shell/components/connect/Referrals/ReferralsContent.tsx` renders:
+  - summary: `data.stats.earned_points`
+  - card value: `referral.earned_rewards.points`
+- `earned_rewards.points` is mapped from `ReferralEarningsItem.earnedPoints`.
+- Therefore, the visible `+0 Points` is not read from `/v1/wallet/summary`; it is the old referral earnings read model.
+
+Backend expectation:
+
+- For a relation `(referrerId, refereeId)`, backend should have:
+  - `points_transactions.reason = 'referral_locked'`
+  - `points_transactions.amount = 5000`
+  - `points_transactions.external_id = 'referral:locked:<referrerId>:<refereeId>'`
+- `GET /v1/wallet/summary` for the referrer should include this value in `lockedPoints`.
+- `totalPoints` should equal `availablePoints + lockedPoints + networkPoints`.
+
+Staging limitation:
+
+- A direct authenticated staging DB/API verification for `phuketfitnest2023@gmail.com` was not completed from the agent because no DB access or authenticated user token was available in this session.
+- Earlier unauthenticated staging/API attempts did not produce a usable authenticated payload check.
+
+Additional fix:
+
+- Added internal repair endpoint:
+  - `POST /internal/referral/repair-locked-points`
+- It finds existing `referral_relations` rows missing a matching `referral_locked` transaction.
+- It repairs them through Points Service using the canonical idempotency key:
+  - `referral:locked:<referrerId>:<refereeId>`
+- It supports:
+  - `limit` with max `100`
+  - `dryRun: true`
+- The repair is idempotent because Points Service dedupes by `externalId`.
+
+Additional tests:
+
+- Added a referral-service test for repairing an existing relation missing locked Points.
+- Re-ran:
+
+```text
+pnpm -C apps/referral-service test
+pnpm -C apps/points-service test
+```
+
+Result: all completed successfully.
+
 ## Verification Follow-up
 
 Follow-up request checked referral timing against the Economy SSOT rule:
