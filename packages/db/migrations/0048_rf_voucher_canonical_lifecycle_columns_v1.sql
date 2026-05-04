@@ -29,7 +29,7 @@ END $$;
 
 -- STEP 2: Add additive canonical lifecycle columns.
 ALTER TABLE "rf_voucher"
-  ADD COLUMN IF NOT EXISTS "canonical_status" "rf_voucher_canonical_status" DEFAULT 'available',
+  ADD COLUMN IF NOT EXISTS "canonical_status" "rf_voucher_canonical_status",
   ADD COLUMN IF NOT EXISTS "contract_version" integer DEFAULT 1 NOT NULL,
   ADD COLUMN IF NOT EXISTS "expires_at" timestamp,
   ADD COLUMN IF NOT EXISTS "cancelled_at" timestamp,
@@ -50,12 +50,8 @@ SET
 WHERE "status" IN ('claimed', 'redeemed', 'cancelled');
 --> statement-breakpoint
 
--- STEP 4: Best-effort historical cancellation timestamp for existing cancelled rows.
-UPDATE "rf_voucher"
-SET "cancelled_at" = COALESCE("cancelled_at", "updated_at")
-WHERE "status" = 'cancelled'
-  AND "cancelled_at" IS NULL;
---> statement-breakpoint
+-- STEP 4: Legacy cancelled rows intentionally keep cancelled_at NULL.
+-- updated_at is not a reliable cancellation timestamp and should not be used as audit data.
 
 -- STEP 5: Make the canonical lifecycle status required after backfill.
 ALTER TABLE "rf_voucher"
@@ -76,7 +72,7 @@ COMMENT ON COLUMN "rf_voucher"."expires_at"
 --> statement-breakpoint
 
 COMMENT ON COLUMN "rf_voucher"."cancelled_at"
-  IS 'Optional timestamp for voucher cancellation; existing cancelled rows are backfilled from updated_at as best effort.';
+  IS 'Optional timestamp for voucher cancellation; legacy cancelled rows may remain NULL because updated_at is not reliable audit data.';
 --> statement-breakpoint
 
 COMMENT ON COLUMN "rf_voucher"."status_changed_at"

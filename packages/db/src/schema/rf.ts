@@ -143,7 +143,7 @@ export const rfVouchers = pgTable(
       .references(() => rfPartners.id, { onDelete: 'cascade' }),
     issuedToUserId: varchar('issued_to_user_id', { length: 128 }).notNull(),
     status: rfVoucherStatusEnum('status').notNull().default('claimed'),
-    canonicalStatus: rfVoucherCanonicalStatusEnum('canonical_status').notNull().default('available'),
+    canonicalStatus: rfVoucherCanonicalStatusEnum('canonical_status').notNull(),
     contractVersion: integer('contract_version').notNull().default(1),
     claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull().default('partner'),
     rieltListingId: text('rielt_listing_id'),
