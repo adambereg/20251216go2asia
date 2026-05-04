@@ -113,6 +113,19 @@ export interface RfClaimResponse {
   idempotentReplay: boolean;
 }
 
+export interface RfRedeemVoucherInput {
+  partnerId: string;
+  voucherId: string;
+  gatewayAuthToken?: string;
+}
+
+export interface RfRedeemResponse {
+  voucher: RfVoucherDto & {
+    canonicalStatus?: string;
+  };
+  applied: boolean;
+}
+
 export interface RfCreatePartnerRequest {
   displayName: string;
   countryId: string;
@@ -200,6 +213,21 @@ export async function claimRfListingOffer(
 }
 
 export const claimRfRieltListingOffer = claimRfListingOffer;
+
+export async function redeemRfVoucher(input: RfRedeemVoucherInput): Promise<RfRedeemResponse> {
+  const headers =
+    input.gatewayAuthToken && input.gatewayAuthToken.trim().length > 0
+      ? { 'X-Gateway-Auth': input.gatewayAuthToken.trim() }
+      : undefined;
+
+  return customInstance<RfRedeemResponse>(
+    {
+      method: 'POST',
+      ...(headers ? { headers } : {}),
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(input.partnerId)}/vouchers/${encodeURIComponent(input.voucherId)}/redeem`
+  );
+}
 
 export async function createBusinessPartner(input: RfCreatePartnerRequest): Promise<RfPartnerDto> {
   return customInstance<RfPartnerDto>(

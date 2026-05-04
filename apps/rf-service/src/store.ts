@@ -8,6 +8,7 @@ type DbExecutor = Pick<Db, 'execute'>;
 export type PartnerStatus = 'active' | 'archived';
 export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
+export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type VoucherClaimScope = 'partner' | 'listing';
 export type ProLinkStatus = 'pending' | 'active' | 'ended';
 export type RieltListingOfferStatus = 'active' | 'hidden';
@@ -178,6 +179,7 @@ type VoucherRow = {
   partner_id: string;
   issued_to_user_id: string;
   status: VoucherStatus;
+  canonical_status?: VoucherCanonicalStatus | null;
   claim_scope?: VoucherClaimScope | null;
   rielt_listing_id?: string | null;
   rielt_listing_title_snapshot?: string | null;
@@ -236,6 +238,13 @@ function rowsOf<T>(result: unknown): T[] {
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
   return new Date(value).toISOString();
+}
+
+function getCanonicalStatus(voucher: Pick<VoucherRow, 'status' | 'canonical_status'>): VoucherCanonicalStatus {
+  if (voucher.canonical_status) return voucher.canonical_status;
+  if (voucher.status === 'claimed') return 'available';
+  if (voucher.status === 'redeemed') return 'redeemed';
+  return 'cancelled';
 }
 
 function toPartner(row: PartnerRow): Partner {
@@ -334,7 +343,7 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
       ? 'Покажите ваучер представителю объекта и уточните применение выгоды.'
       : 'Покажите ваучер партнёру и уточните применение выгоды.',
     contactHint: isListingScope ? 'Свяжитесь с представителем объекта перед использованием.' : 'Свяжитесь с партнёром перед использованием.',
-    redeemStatus: row.status === 'redeemed' ? 'Использован' : 'Ожидает использования',
+    redeemStatus: getCanonicalStatus(row) === 'redeemed' ? 'Использован' : 'Ожидает использования',
   };
 
   return voucher;
@@ -485,6 +494,7 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -509,6 +519,7 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.partner_id,
       v.issued_to_user_id,
       v.status,
+      v.canonical_status,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -535,6 +546,7 @@ async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -567,6 +579,7 @@ async function getClaimableVoucherByListingOfferAndUser(
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -946,6 +959,7 @@ export async function claimVoucher(
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       code,
       claimed_at,
@@ -959,6 +973,7 @@ export async function claimVoucher(
       ${offer.partner_id},
       ${principal.userId},
       'claimed',
+      'available',
       'partner',
       ${voucherCode},
       now(),
@@ -974,6 +989,7 @@ export async function claimVoucher(
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1084,6 +1100,7 @@ export async function claimVoucherForListing(
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1099,6 +1116,7 @@ export async function claimVoucherForListing(
       ${context.mapping_partner_id},
       ${principal.userId},
       'claimed',
+      'available',
       'listing',
       ${input.listingId},
       ${context.listing_title},
@@ -1116,6 +1134,7 @@ export async function claimVoucherForListing(
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1166,6 +1185,7 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.partner_id,
       v.issued_to_user_id,
       v.status,
+      v.canonical_status,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -1198,13 +1218,25 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
 
 export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrincipal): Promise<VoucherSummary> {
   const result = await db.execute(sql`
+    WITH voucher_states AS (
+      SELECT
+        COALESCE(
+          canonical_status::text,
+          CASE status::text
+            WHEN 'claimed' THEN 'available'
+            WHEN 'redeemed' THEN 'redeemed'
+            WHEN 'cancelled' THEN 'cancelled'
+          END
+        ) AS effective_status
+      FROM rf_voucher
+      WHERE issued_to_user_id = ${principal.userId}
+    )
     SELECT
       COUNT(*)::int AS total_vouchers,
-      COUNT(*) FILTER (WHERE status = 'claimed')::int AS active_vouchers,
-      COUNT(*) FILTER (WHERE status = 'redeemed')::int AS used_vouchers,
-      COUNT(*) FILTER (WHERE status = 'cancelled')::int AS cancelled_vouchers
-    FROM rf_voucher
-    WHERE issued_to_user_id = ${principal.userId}
+      COUNT(*) FILTER (WHERE effective_status IN ('available', 'locked', 'unlocked'))::int AS active_vouchers,
+      COUNT(*) FILTER (WHERE effective_status = 'redeemed')::int AS used_vouchers,
+      COUNT(*) FILTER (WHERE effective_status = 'cancelled')::int AS cancelled_vouchers
+    FROM voucher_states
   `);
   const row =
     rowsOf<{
@@ -1256,21 +1288,79 @@ export async function redeemVoucher(
     };
   }
 
+  const redemptionId = nextId('rf_voucher_redemption');
   const updateResult = await db.execute(sql`
-    UPDATE rf_voucher
-    SET
-      status = 'redeemed',
-      redeemed_at = now(),
-      updated_at = now()
-    WHERE id = ${input.voucherId}
-      AND partner_id = ${input.partnerId}
-      AND status = 'claimed'
-    RETURNING
+    WITH updated AS (
+      UPDATE rf_voucher
+      SET
+        status = 'redeemed',
+        canonical_status = 'redeemed',
+        redeemed_at = now(),
+        status_changed_at = now(),
+        updated_at = now()
+      WHERE id = ${input.voucherId}
+        AND partner_id = ${input.partnerId}
+        AND status = 'claimed'
+      RETURNING
+        id,
+        offer_id,
+        partner_id,
+        issued_to_user_id,
+        status,
+        canonical_status,
+        claim_scope,
+        rielt_listing_id,
+        rielt_listing_title_snapshot,
+        code,
+        claimed_at,
+        redeemed_at,
+        created_at,
+        updated_at
+    ),
+    redemption AS (
+      INSERT INTO rf_voucher_redemption (
+        id,
+        voucher_id,
+        user_id,
+        partner_id,
+        context_type,
+        context_ref,
+        result_status,
+        idempotency_key,
+        actor_user_id,
+        redeemed_at,
+        metadata,
+        correlation_id,
+        created_at,
+        updated_at
+      )
+      SELECT
+        ${redemptionId},
+        id,
+        issued_to_user_id,
+        partner_id,
+        'manual',
+        NULL,
+        'succeeded',
+        NULL,
+        ${principal.userId},
+        redeemed_at,
+        '{}'::jsonb,
+        NULL,
+        now(),
+        now()
+      FROM updated
+      ON CONFLICT (voucher_id) WHERE result_status = 'succeeded'
+      DO NOTHING
+      RETURNING id
+    )
+    SELECT
       id,
       offer_id,
       partner_id,
       issued_to_user_id,
       status,
+      canonical_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1279,6 +1369,7 @@ export async function redeemVoucher(
       redeemed_at,
       created_at,
       updated_at
+    FROM updated
   `);
   const updated = rowsOf<VoucherRow>(updateResult)[0];
   if (updated) return { ok: true, voucher: toVoucher(updated), applied: true };
