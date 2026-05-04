@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
-import { useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
+import { useRfLocalVoucherOwnerKey, useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
 import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotice';
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
@@ -83,7 +83,8 @@ async function fetchMyVouchersWithTimeout() {
 
 export function RfMyVouchersView() {
   const { isLoaded, isSignedIn } = useAuth();
-  const rows = useRfMyLocalVouchers();
+  const ownerKey = useRfLocalVoucherOwnerKey();
+  const rows = useRfMyLocalVouchers(ownerKey);
   const [serverVouchers, setServerVouchers] = useState<RfVoucherDto[] | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -297,7 +298,7 @@ export function RfMyVouchersView() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Сохранённые предложения</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Это локальный список планирования в этом браузере.
+            Список хранится локально в этом браузере и привязан к текущему аккаунту. Для гостя — к этому браузеру.
           </p>
         </div>
 
@@ -341,7 +342,7 @@ export function RfMyVouchersView() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => removeMyLocalVoucher(row.localId)}
+                      onClick={() => removeMyLocalVoucher(row.localId, ownerKey)}
                       className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800 hover:bg-red-100"
                     >
                       {rfMyVouchersPageContent.remove}

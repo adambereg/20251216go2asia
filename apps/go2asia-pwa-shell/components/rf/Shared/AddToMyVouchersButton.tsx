@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { BookmarkPlus } from 'lucide-react';
-import { useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
+import { useRfLocalVoucherOwnerKey, useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
 import { addMyLocalVoucher } from '@/lib/rfLocalUserState';
 
 export function AddToMyVouchersButton({
@@ -16,7 +16,8 @@ export function AddToMyVouchersButton({
   title: string;
   partnerDisplayName: string;
 }) {
-  const rows = useRfMyLocalVouchers();
+  const ownerKey = useRfLocalVoucherOwnerKey();
+  const rows = useRfMyLocalVouchers(ownerKey);
   const exists = rows.some((r) => r.offerId === offerId);
   const [justAdded, setJustAdded] = useState(false);
 
@@ -25,7 +26,7 @@ export function AddToMyVouchersButton({
       type="button"
       disabled={exists}
       onClick={() => {
-        const ok = addMyLocalVoucher({ offerId, partnerId, title, partnerDisplayName });
+        const ok = addMyLocalVoucher({ offerId, partnerId, title, partnerDisplayName }, ownerKey);
         if (ok) {
           setJustAdded(true);
           window.setTimeout(() => setJustAdded(false), 2000);

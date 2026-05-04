@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth, useUser } from '@clerk/nextjs';
 import {
+  getRfLocalVoucherOwnerKey,
   readFavorites,
   readMyLocalVouchers,
   type RfFavoritesState,
   type RfLocalVoucherEntry,
+  type RfLocalVoucherOwnerKey,
 } from '@/lib/rfLocalUserState';
 
 export function useRfFavorites(): RfFavoritesState {
@@ -21,10 +24,22 @@ export function useRfFavorites(): RfFavoritesState {
   return state;
 }
 
-export function useRfMyLocalVouchers(): RfLocalVoucherEntry[] {
+export function useRfLocalVoucherOwnerKey(): RfLocalVoucherOwnerKey {
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
+
+  if (!isLoaded || !isSignedIn) return null;
+
+  return getRfLocalVoucherOwnerKey({
+    userId,
+    email: user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? null,
+  });
+}
+
+export function useRfMyLocalVouchers(ownerKey?: RfLocalVoucherOwnerKey): RfLocalVoucherEntry[] {
   const [rows, setRows] = useState<RfLocalVoucherEntry[]>([]);
 
-  const refresh = useCallback(() => setRows(readMyLocalVouchers()), []);
+  const refresh = useCallback(() => setRows(readMyLocalVouchers(ownerKey)), [ownerKey]);
 
   useEffect(() => {
     refresh();

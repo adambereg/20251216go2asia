@@ -6,6 +6,12 @@
 export const RF_FAVORITES_STORAGE_KEY = 'go2asia.rf.favorites.v1';
 export const RF_MY_VOUCHERS_STORAGE_KEY = 'go2asia.rf.myVouchers.v1';
 
+export type RfLocalVoucherOwnerKey = string | null;
+export type RfLocalVoucherOwnerInput = {
+  userId?: string | null;
+  email?: string | null;
+};
+
 export type RfFavoritesState = {
   /** partnerId */
   places: string[];
@@ -38,6 +44,21 @@ function safeParse<T>(raw: string | null, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+export function getRfLocalVoucherOwnerKey(input: RfLocalVoucherOwnerInput): RfLocalVoucherOwnerKey {
+  const userId = input.userId?.trim();
+  if (userId) return `user:${userId}`;
+
+  const email = input.email?.trim().toLowerCase();
+  if (email) return `email:${email}`;
+
+  return null;
+}
+
+export function getRfMyVouchersStorageKey(ownerKey?: RfLocalVoucherOwnerKey): string {
+  if (!ownerKey) return RF_MY_VOUCHERS_STORAGE_KEY;
+  return `${RF_MY_VOUCHERS_STORAGE_KEY}:${encodeURIComponent(ownerKey)}`;
 }
 
 export function readFavorites(): RfFavoritesState {
@@ -77,23 +98,26 @@ export function toggleFavoriteOffer(offerId: string) {
   writeFavorites({ ...cur, offers: [...set] });
 }
 
-export function readMyLocalVouchers(): RfLocalVoucherEntry[] {
+export function readMyLocalVouchers(ownerKey?: RfLocalVoucherOwnerKey): RfLocalVoucherEntry[] {
   if (typeof window === 'undefined') return [];
   const data = safeParse<{ items: RfLocalVoucherEntry[] }>(
-    window.localStorage.getItem(RF_MY_VOUCHERS_STORAGE_KEY),
+    window.localStorage.getItem(getRfMyVouchersStorageKey(ownerKey)),
     { items: [] },
   );
   return Array.isArray(data.items) ? data.items : [];
 }
 
-export function writeMyLocalVouchers(items: RfLocalVoucherEntry[]) {
+export function writeMyLocalVouchers(items: RfLocalVoucherEntry[], ownerKey?: RfLocalVoucherOwnerKey) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(RF_MY_VOUCHERS_STORAGE_KEY, JSON.stringify({ items }));
+  window.localStorage.setItem(getRfMyVouchersStorageKey(ownerKey), JSON.stringify({ items }));
   emitUpdate();
 }
 
-export function addMyLocalVoucher(entry: Omit<RfLocalVoucherEntry, 'localId' | 'savedAt' | 'note'>) {
-  const items = readMyLocalVouchers();
+export function addMyLocalVoucher(
+  entry: Omit<RfLocalVoucherEntry, 'localId' | 'savedAt' | 'note'>,
+  ownerKey?: RfLocalVoucherOwnerKey,
+) {
+  const items = readMyLocalVouchers(ownerKey);
   if (items.some((i) => i.offerId === entry.offerId)) return false;
   const row: RfLocalVoucherEntry = {
     ...entry,
@@ -101,10 +125,10 @@ export function addMyLocalVoucher(entry: Omit<RfLocalVoucherEntry, 'localId' | '
     savedAt: new Date().toISOString(),
     note: 'local_planning_only',
   };
-  writeMyLocalVouchers([row, ...items]);
+  writeMyLocalVouchers([row, ...items], ownerKey);
   return true;
 }
 
-export function removeMyLocalVoucher(localId: string) {
-  writeMyLocalVouchers(readMyLocalVouchers().filter((i) => i.localId !== localId));
+export function removeMyLocalVoucher(localId: string, ownerKey?: RfLocalVoucherOwnerKey) {
+  writeMyLocalVouchers(readMyLocalVouchers(ownerKey).filter((i) => i.localId !== localId), ownerKey);
 }
