@@ -796,6 +796,66 @@ components:
           items:
             $ref: "#/components/schemas/RfRieltListingOffer"
 
+    RfVoucherCanonicalStatus:
+      type: string
+      enum: [available, locked, unlocked, redeemed, expired, cancelled]
+      description: >
+        Canonical RF Voucher Economy lifecycle status. During the transition window the
+        legacy `status` field remains the backwards-compatible runtime status; if
+        `canonicalStatus` is absent, clients may map `claimed` -> `available`,
+        `redeemed` -> `redeemed`, and `cancelled` -> `cancelled`.
+
+    RfVoucherRedemptionResultStatus:
+      type: string
+      enum: [succeeded, failed, duplicate]
+      description: Result status for a voucher redemption attempt.
+
+    RfVoucherRedemption:
+      type: object
+      description: >
+        Prepared RF redemption record shape for audit/history. The current public RF API
+        does not expose a list endpoint for redemption records yet.
+      required:
+        [id, voucherId, userId, partnerId, contextType, resultStatus, redeemedAt, metadata, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        voucherId:
+          type: string
+        userId:
+          type: string
+        partnerId:
+          type: string
+        contextType:
+          type: string
+        contextRef:
+          type: string
+          nullable: true
+        resultStatus:
+          $ref: "#/components/schemas/RfVoucherRedemptionResultStatus"
+        idempotencyKey:
+          type: string
+          nullable: true
+        actorUserId:
+          type: string
+          nullable: true
+        redeemedAt:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+        correlationId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     RfVoucher:
       type: object
       required:
@@ -827,6 +887,12 @@ components:
           description: >
             Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps
             to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
+        canonicalStatus:
+          allOf:
+            - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
+          description: >
+            Additive canonical lifecycle status. New runtime writes set this field; clients should
+            keep legacy `status` handling for compatibility during the transition window.
         claimScope:
           type: string
           enum: [partner, listing]
@@ -856,6 +922,28 @@ components:
         redeemedAt:
           type: string
           format: date-time
+          nullable: true
+        contractVersion:
+          type: integer
+          minimum: 1
+          description: RF voucher contract/lifecycle version. Stage 1+2 runtime writes version 1.
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        statusChangedAt:
+          type: string
+          format: date-time
+          nullable: true
+        statusReason:
+          type: string
+          nullable: true
+        statusActorUserId:
+          type: string
           nullable: true
         createdAt:
           type: string
@@ -977,15 +1065,15 @@ components:
         activeVouchers:
           type: integer
           minimum: 0
-          description: Count of vouchers with runtime status `claimed`.
+          description: Count of active/non-terminal vouchers. Runtime prefers canonical available/locked/unlocked with legacy claimed fallback.
         usedVouchers:
           type: integer
           minimum: 0
-          description: Count of vouchers with runtime status `redeemed`.
+          description: Count of redeemed vouchers. Runtime prefers canonical redeemed with legacy redeemed fallback.
         cancelledVouchers:
           type: integer
           minimum: 0
-          description: Count of vouchers with runtime status `cancelled`.
+          description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
 
     RfProLinkListResponse:
       type: object

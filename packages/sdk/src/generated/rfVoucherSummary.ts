@@ -9,19 +9,19 @@
 
 export interface RfVoucherSummary {
   /**
-   * Count of vouchers with runtime status `claimed`.
+   * Count of active/non-terminal vouchers. Runtime prefers canonical available/locked/unlocked with legacy claimed fallback.
    * @minimum 0
    */
   activeVouchers: number;
   /**
-   * Count of vouchers with runtime status `cancelled`.
+   * Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
    * @minimum 0
    */
   cancelledVouchers: number;
   /** @minimum 0 */
   totalVouchers: number;
   /**
-   * Count of vouchers with runtime status `redeemed`.
+   * Count of redeemed vouchers. Runtime prefers canonical redeemed with legacy redeemed fallback.
    * @minimum 0
    */
   usedVouchers: number;

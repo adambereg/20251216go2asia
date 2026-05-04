@@ -55,12 +55,16 @@ export interface RfRieltListingOfferContextResponse {
   offers: RfRieltListingOfferDto[];
 }
 
+export type RfVoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
+export type RfVoucherRedemptionResultStatus = 'succeeded' | 'failed' | 'duplicate';
+
 export interface RfVoucherDto {
   id: string;
   offerId: string;
   partnerId: string;
   issuedToUserId: string;
   status: 'claimed' | 'redeemed' | 'cancelled';
+  canonicalStatus?: RfVoucherCanonicalStatus;
   claimScope?: 'partner' | 'listing';
   listingContext?: {
     source: 'rielt';
@@ -70,6 +74,12 @@ export interface RfVoucherDto {
   code: string;
   claimedAt: string;
   redeemedAt: string | null;
+  contractVersion?: number;
+  expiresAt?: string | null;
+  cancelledAt?: string | null;
+  statusChangedAt?: string | null;
+  statusReason?: string | null;
+  statusActorUserId?: string | null;
   createdAt: string;
   updatedAt: string;
   offer?: {
@@ -113,6 +123,23 @@ export interface RfClaimResponse {
   idempotentReplay: boolean;
 }
 
+export interface RfVoucherRedemptionDto {
+  id: string;
+  voucherId: string;
+  userId: string;
+  partnerId: string;
+  contextType: string;
+  contextRef: string | null;
+  resultStatus: RfVoucherRedemptionResultStatus;
+  idempotencyKey: string | null;
+  actorUserId: string | null;
+  redeemedAt: string | null;
+  metadata: Record<string, unknown>;
+  correlationId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RfRedeemVoucherInput {
   partnerId: string;
   voucherId: string;
@@ -120,9 +147,7 @@ export interface RfRedeemVoucherInput {
 }
 
 export interface RfRedeemResponse {
-  voucher: RfVoucherDto & {
-    canonicalStatus?: string;
-  };
+  voucher: RfVoucherDto;
   applied: boolean;
 }
 

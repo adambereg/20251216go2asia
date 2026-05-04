@@ -6,6 +6,7 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfVoucherCanonicalStatus } from "./rfVoucherCanonicalStatus";
 import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
 import type { RfVoucherListingContext } from "./rfVoucherListingContext";
 import type { RfVoucherOffer } from "./rfVoucherOffer";
@@ -14,12 +15,24 @@ import type { RfVoucherStatus } from "./rfVoucherStatus";
 import type { RfVoucherUsage } from "./rfVoucherUsage";
 
 export interface RfVoucher {
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.
+   */
+  canonicalStatus?: RfVoucherCanonicalStatus;
   /** Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
    */
   claimScope: RfVoucherClaimScope;
   claimedAt: string;
   code: string;
+  /**
+   * RF voucher contract/lifecycle version. Stage 1+2 runtime writes version 1.
+   * @minimum 1
+   */
+  contractVersion?: number;
   createdAt: string;
+  /** @nullable */
+  expiresAt?: string | null;
   id: string;
   issuedToUserId: string;
   /** @nullable */
@@ -35,6 +48,12 @@ export interface RfVoucher {
   /** Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
    */
   status: RfVoucherStatus;
+  /** @nullable */
+  statusActorUserId?: string | null;
+  /** @nullable */
+  statusChangedAt?: string | null;
+  /** @nullable */
+  statusReason?: string | null;
   updatedAt: string;
   /** Optional human-readable usage guidance for wallet display. */
   usage?: RfVoucherUsage;
