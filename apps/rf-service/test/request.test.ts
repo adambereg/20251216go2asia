@@ -20,6 +20,12 @@ import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import worker, { type Env } from '../src/index';
 import { resetRfStoreForTests } from '../src/store';
 
+function executedSqlText(): string {
+  return executeMock.mock.calls
+    .map(([query]) => ((query as { strings?: string[] } | undefined)?.strings ?? []).join(' '))
+    .join('\n');
+}
+
 describe('rf-service request', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -492,6 +498,16 @@ describe('rf-service request', () => {
     expect(redeem2.status).toBe(200);
     expect(redeem2Body.applied).toBe(false);
     expect(redeem2Body.voucher.status).toBe('redeemed');
+
+    const sqlText = executedSqlText();
+    expect(sqlText).toContain('canonical_status');
+    expect(sqlText).toContain("'available'");
+    expect(sqlText).toContain("'redeemed'");
+    expect(sqlText).toContain('rf_voucher_redemption');
+    const redemptionStatementCount = executeMock.mock.calls.filter(([query]) =>
+      ((query as { strings?: string[] }).strings ?? []).join(' ').includes('rf_voucher_redemption')
+    ).length;
+    expect(redemptionStatementCount).toBe(1);
   });
 
   it('enforces auth on claim/redeem protected routes', async () => {
@@ -1025,7 +1041,7 @@ describe('rf-service request', () => {
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
   });
 
-  it('counts current user voucher summary by RF runtime status', async () => {
+  it('counts current user voucher summary by canonical lifecycle status with legacy-compatible output', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
 
@@ -1064,6 +1080,7 @@ describe('rf-service request', () => {
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
+    expect(executedSqlText()).toContain('canonical_status');
   });
 
   it('claims a listing-scoped voucher and replays it idempotently', async () => {
@@ -1189,6 +1206,8 @@ describe('rf-service request', () => {
     expect(claim2Body.idempotentReplay).toBe(true);
     expect(claim2Body.voucher.id).toBe('rf_voucher_listing_1');
     expect(claim2Body.voucher.claimScope).toBe('listing');
+    expect(executedSqlText()).toContain('canonical_status');
+    expect(executedSqlText()).toContain("'available'");
   });
 
   it('allows partner-scope and listing-scoped claims for the same offer', async () => {
