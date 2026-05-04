@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
-import { useRfLocalVoucherOwnerKey, useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
+import { useRfLocalVoucherOwnerState, useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
 import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotice';
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
@@ -83,8 +83,8 @@ async function fetchMyVouchersWithTimeout() {
 
 export function RfMyVouchersView() {
   const { isLoaded, isSignedIn } = useAuth();
-  const ownerKey = useRfLocalVoucherOwnerKey();
-  const rows = useRfMyLocalVouchers(ownerKey);
+  const localVoucherOwner = useRfLocalVoucherOwnerState();
+  const rows = useRfMyLocalVouchers(localVoucherOwner.ownerKey, localVoucherOwner.isReady);
   const [serverVouchers, setServerVouchers] = useState<RfVoucherDto[] | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -304,7 +304,11 @@ export function RfMyVouchersView() {
 
         <RfLocalStorageNotice>{rfMyVouchersPageContent.localWarning}</RfLocalStorageNotice>
 
-        {rows.length === 0 ? (
+        {!localVoucherOwner.isReady ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            Проверяем текущий аккаунт перед загрузкой сохранённых предложений...
+          </div>
+        ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
             {rfMyVouchersPageContent.empty}
           </div>
@@ -342,7 +346,7 @@ export function RfMyVouchersView() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => removeMyLocalVoucher(row.localId, ownerKey)}
+                      onClick={() => removeMyLocalVoucher(row.localId, localVoucherOwner.ownerKey)}
                       className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800 hover:bg-red-100"
                     >
                       {rfMyVouchersPageContent.remove}
