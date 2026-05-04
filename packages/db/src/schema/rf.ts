@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { places } from './content';
 
@@ -28,6 +28,11 @@ export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
 export const rfIdempotencyOperationEnum = pgEnum('rf_idempotency_operation', ['voucher_claim']);
 export const rfRieltListingOfferStatusEnum = pgEnum('rf_rielt_listing_offer_status', ['active', 'hidden']);
 export const rfRieltListingOfferKindEnum = pgEnum('rf_rielt_listing_offer_kind', ['basic', 'premium']);
+export const rfVoucherRedemptionResultStatusEnum = pgEnum('rf_voucher_redemption_result_status', [
+  'succeeded',
+  'failed',
+  'duplicate',
+]);
 
 export const rfPartners = pgTable(
   'rf_partner',
@@ -217,5 +222,39 @@ export const rfClaimIdempotency = pgTable(
       table.idempotencyKey
     ),
     idxVoucherId: index('idx_rf_claim_idempotency_voucher_id').on(table.voucherId),
+  })
+);
+
+export const rfVoucherRedemptions = pgTable(
+  'rf_voucher_redemption',
+  {
+    id: text('id').primaryKey(),
+    voucherId: varchar('voucher_id', { length: 80 })
+      .notNull()
+      .references(() => rfVouchers.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 128 }).notNull(),
+    partnerId: varchar('partner_id', { length: 80 })
+      .notNull()
+      .references(() => rfPartners.id, { onDelete: 'restrict' }),
+    contextType: text('context_type').notNull().default('manual'),
+    contextRef: text('context_ref'),
+    resultStatus: rfVoucherRedemptionResultStatusEnum('result_status').notNull(),
+    idempotencyKey: text('idempotency_key'),
+    actorUserId: varchar('actor_user_id', { length: 128 }),
+    redeemedAt: timestamp('redeemed_at'),
+    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    correlationId: text('correlation_id'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    idxVoucherCreatedAt: index('idx_rf_voucher_redemption_voucher_created_at').on(table.voucherId, table.createdAt),
+    idxPartnerCreatedAt: index('idx_rf_voucher_redemption_partner_created_at').on(table.partnerId, table.createdAt),
+    uniqueSucceededVoucher: uniqueIndex('rf_voucher_redemption_success_unique')
+      .on(table.voucherId)
+      .where(sql`${table.resultStatus} = 'succeeded'`),
+    uniqueIdempotencyKey: uniqueIndex('rf_voucher_redemption_idempotency_unique')
+      .on(table.actorUserId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
   })
 );

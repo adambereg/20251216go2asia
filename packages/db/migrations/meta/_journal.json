@@ -365,6 +365,13 @@
       "when": 1777540000000,
       "tag": "0049_rf_voucher_canonical_lifecycle_safety_fix_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1777545000000,
+      "tag": "0050_rf_voucher_redemption_table_v1",
+      "breakpoints": true
     }
   ]
 }
