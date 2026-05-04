@@ -174,8 +174,28 @@ export const rfVouchers = pgTable(
     uniqueListingOfferUserActiveVoucher: uniqueIndex('rf_voucher_listing_offer_user_active_unique')
       .on(table.rieltListingId, table.offerId, table.issuedToUserId)
       .where(sql`${table.claimScope} = 'listing' AND ${table.status} IN ('claimed', 'redeemed')`),
+    uniquePartnerOfferUserCanonicalVoucher: uniqueIndex('rf_voucher_offer_user_partner_canonical_unique')
+      .on(table.offerId, table.issuedToUserId)
+      .where(
+        sql`${table.claimScope} = 'partner' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked', 'redeemed')`
+      ),
+    uniqueListingOfferUserCanonicalVoucher: uniqueIndex('rf_voucher_listing_offer_user_canonical_unique')
+      .on(table.rieltListingId, table.offerId, table.issuedToUserId)
+      .where(
+        sql`${table.claimScope} = 'listing' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked', 'redeemed')`
+      ),
     idxPartnerStatusClaimedAt: index('idx_rf_voucher_partner_status_claimed_at').on(table.partnerId, table.status, table.claimedAt),
     idxIssuedToStatusClaimedAt: index('idx_rf_voucher_issued_to_status_claimed_at').on(table.issuedToUserId, table.status, table.claimedAt),
+    idxIssuedToCanonicalClaimedAt: index('idx_rf_voucher_issued_to_canonical_claimed_at').on(
+      table.issuedToUserId,
+      table.canonicalStatus,
+      table.claimedAt
+    ),
+    idxPartnerCanonicalClaimedAt: index('idx_rf_voucher_partner_canonical_claimed_at').on(
+      table.partnerId,
+      table.canonicalStatus,
+      table.claimedAt
+    ),
   })
 );
 
