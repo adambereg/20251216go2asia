@@ -6,6 +6,9 @@ import {
   proLinkedPartnerBoundaryCopy,
   proLinkedPartnerCreateNote,
   proLinkedPartnersEmptyState,
+  proOwnerAcceptBoundaryCopy,
+  proOwnerAcceptEndpointGapCopy,
+  proOwnerAcceptEndpointRecommendation,
 } from './rfProLinks';
 
 describe('RF PRO workspace helpers', () => {
@@ -32,7 +35,14 @@ describe('RF PRO workspace helpers', () => {
   });
 
   it('does not introduce reward, commission or payout copy', () => {
-    const stage51Copy = [proLinkedPartnersEmptyState, proLinkedPartnerBoundaryCopy, proLinkedPartnerCreateNote].join(' ');
+    const stage51Copy = [
+      proLinkedPartnersEmptyState,
+      proLinkedPartnerBoundaryCopy,
+      proLinkedPartnerCreateNote,
+      proOwnerAcceptBoundaryCopy,
+      proOwnerAcceptEndpointGapCopy,
+      proOwnerAcceptEndpointRecommendation,
+    ].join(' ');
 
     expect(stage51Copy).not.toMatch(/доход|комисси|вознагражден|начислен|выплат|reward|commission|payout/i);
   });

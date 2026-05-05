@@ -14,6 +14,7 @@ import {
   getPublicOfferById,
   getPublicPartnerById,
   getRieltListingOfferContext,
+  listPartnerProLinks,
   listMyVouchers,
   listProLinks,
   listPublicOffers,
@@ -268,6 +269,14 @@ export async function handleRfRoute(
   if (request.method === 'GET' && path === '/v1/rf/pro/links') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     return json({ items: await listProLinks(db, principal), nextCursor: null });
+  }
+
+  const partnerProLinksPartnerId = getPathParam(path, /^\/v1\/rf\/business\/partners\/([^/]+)\/pro-links$/);
+  if (request.method === 'GET' && partnerProLinksPartnerId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await listPartnerProLinks(db, principal, { partnerId: partnerProLinksPartnerId });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json({ items: result.items, nextCursor: null });
   }
 
   if (request.method === 'POST' && path === '/v1/rf/pro/links') {

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Store,
+  Handshake,
   Ticket,
   MessageSquare,
   BarChart3,
@@ -19,6 +20,7 @@ interface MerchantNavProps {
 
 const dashboardSections = [
   { href: '/rf/merchant#mw-my-partners', label: 'Партнёры', icon: Store },
+  { href: '/rf/merchant#mw-pro-requests', label: 'PRO-запросы', icon: Handshake },
   { href: '/rf/merchant#mw-offers', label: 'Офферы', icon: ListOrdered },
   { href: '/rf/merchant#mw-create-partner', label: 'Создать партнёра', icon: PlusCircle },
 ];

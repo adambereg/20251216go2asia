@@ -130,6 +130,9 @@ type RedeemResult =
 type ProLinkAcceptResult =
   | { ok: true; proLink: ProLink; applied: boolean }
   | { ok: false; code: string; message: string; status: number };
+type PartnerProLinksResult =
+  | { ok: true; items: ProLink[] }
+  | { ok: false; code: string; message: string; status: number };
 
 type PartnerRow = {
   id: string;
@@ -1533,6 +1536,42 @@ export async function listProLinks(db: DbExecutor, principal: GatewayPrincipal):
     ORDER BY created_at DESC, id DESC
   `);
   return rowsOf<ProLinkRow>(result).map(toProLink);
+}
+
+export async function listPartnerProLinks(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: { partnerId: string }
+): Promise<PartnerProLinksResult> {
+  const partnerResult = await db.execute(sql`
+    SELECT id, owner_user_id, status
+    FROM rf_partner
+    WHERE id = ${input.partnerId}
+    LIMIT 1
+  `);
+  const partner = rowsOf<Pick<PartnerRow, 'id' | 'owner_user_id' | 'status'>>(partnerResult)[0];
+  if (!partner || partner.status !== 'active') {
+    return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
+  }
+  if (partner.owner_user_id !== principal.userId) {
+    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Only partner owner can list PRO links', status: 403 };
+  }
+
+  const result = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE partner_id = ${input.partnerId}
+    ORDER BY
+      CASE status
+        WHEN 'pending' THEN 0
+        WHEN 'active' THEN 1
+        WHEN 'ended' THEN 2
+        ELSE 3
+      END ASC,
+      created_at DESC,
+      id DESC
+  `);
+  return { ok: true, items: rowsOf<ProLinkRow>(result).map(toProLink) };
 }
 
 export async function createProLink(

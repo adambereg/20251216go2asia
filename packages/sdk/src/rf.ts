@@ -323,6 +323,13 @@ export async function listProLinks(): Promise<RfProLinkListResponse> {
   return customInstance<RfProLinkListResponse>({ method: 'GET' }, '/v1/rf/pro/links');
 }
 
+export async function listPartnerProLinks(partnerId: string): Promise<RfProLinkListResponse> {
+  return customInstance<RfProLinkListResponse>(
+    { method: 'GET' },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/pro-links`
+  );
+}
+
 export async function createProLink(input: RfCreateProLinkRequest): Promise<RfProLinkDto> {
   return customInstance<RfProLinkDto>(
     {

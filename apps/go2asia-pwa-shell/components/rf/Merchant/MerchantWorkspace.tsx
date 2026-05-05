@@ -10,6 +10,11 @@ import {
   getRfCityLabel,
   getRfCountryLabel,
 } from '@/lib/rfFirstSliceContent';
+import {
+  proOwnerAcceptBoundaryCopy,
+  proOwnerAcceptEndpointGapCopy,
+  proOwnerAcceptEndpointRecommendation,
+} from '@/lib/rfProLinks';
 import { RfBusinessCreatePanel } from '@/components/rf/live/RfBusinessCreatePanel';
 import { OfferManagementPanel } from '@/components/rf/Merchant/Offers';
 
@@ -153,6 +158,41 @@ export function MerchantWorkspace() {
             })}
           </ul>
         )}
+      </section>
+
+      <section id="mw-pro-requests" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stage 5.1b gap</p>
+            <h2 className="text-lg font-semibold text-slate-900">PRO-запросы</h2>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">{proOwnerAcceptBoundaryCopy}</p>
+          </div>
+          {activePartner ? (
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+              Активный партнёр: {activePartner.displayName}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <p className="font-semibold">{proOwnerAcceptEndpointRecommendation}</p>
+          <p className="mt-1">{proOwnerAcceptEndpointGapCopy}</p>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Что уже работает</p>
+            <p className="mt-1 text-xs text-slate-600">
+              PRO может отправить pending-запрос через существующий rf_pro_link lifecycle.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Что нужно для live accept UI</p>
+            <p className="mt-1 text-xs text-slate-600">
+              Owner-scoped список запросов по owned partners, чтобы безопасно получить proLinkId для кнопки принятия.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section id="mw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

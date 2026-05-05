@@ -7290,6 +7290,32 @@ paths:
       summary: Activate partner offer
       tags:
         - rf
+  /v1/rf/business/partners/{partnerId}/pro-links:
+    get:
+      description: |
+        Owner-scoped read endpoint for incoming and historical PRO links on a partner. The authenticated actor must own the partner in path. The endpoint is read-only and does not accept, reject, reward or attribute claims/redeems.
+      operationId: rfListPartnerProLinks
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProLinkListResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: List PRO links for an owned partner
+      tags:
+        - rf
   /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem:
     post:
       description: |
@@ -8475,6 +8501,7 @@ tags:
           - /v1/rf/me/vouchers
           - /v1/rf/me/vouchers/summary
           - /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem
+          - /v1/rf/business/partners/{partnerId}/pro-links
           - /v1/rf/pro/links
           - /v1/rf/pro/links/{proLinkId}/accept
       contractClass: runtime-implemented

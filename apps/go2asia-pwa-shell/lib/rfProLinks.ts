@@ -29,6 +29,15 @@ export const proLinkedPartnerBoundaryCopy =
 export const proLinkedPartnerCreateNote =
   'На этом этапе используется partnerId. Выбор партнёра из каталога будет подключён позже.';
 
+export const proOwnerAcceptEndpointGapCopy =
+  'Запросы от PRO появятся здесь после добавления owner-side read endpoint. Сейчас PRO может создать pending-связь, но владелец не видит список запросов в кабинете.';
+
+export const proOwnerAcceptBoundaryCopy =
+  'Владелец партнёра подтверждает только рабочую связь. PRO не получает права владельца, не может создавать офферы или гасить ваучеры, а подтверждение не создаёт финансовых прав.';
+
+export const proOwnerAcceptEndpointRecommendation =
+  'Подтверждение запросов владельцем требует отдельного owner-side read endpoint.';
+
 export function getProLinkStatusLabel(status: RfProLinkDto['status']) {
   return proLinkStatusLabels[status];
 }
