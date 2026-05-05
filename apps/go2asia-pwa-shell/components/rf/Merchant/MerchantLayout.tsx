@@ -14,7 +14,7 @@ interface MerchantLayoutProps {
 
 export function MerchantLayout({ children }: MerchantLayoutProps) {
   const pathname = usePathname();
-  const isOpsMock = pathname?.startsWith('/rf/merchant/vouchers') || pathname?.startsWith('/rf/merchant/reviews');
+  const isOpsMock = pathname?.startsWith('/rf/merchant/reviews');
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -72,8 +72,8 @@ export function MerchantLayout({ children }: MerchantLayoutProps) {
 
           <main className="min-w-0">
             <p className="mb-6 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-              Данные подгружаются с RF API под вашим аккаунтом Clerk. Редактирование с этих экранов в Phase 3 не
-              сохраняется, кроме существующей формы создания партнёра.
+              Данные подгружаются с RF API под вашим аккаунтом Clerk. В Stage 3 подключены создание партнёра,
+              создание/активация офферов и live-погашение ваучера; остальные операции остаются ограниченными.
             </p>
             {isOpsMock ? (
               <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

@@ -134,9 +134,9 @@ export function RfMyVouchersView() {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры (сервер)</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Это серверные RF-ваучеры, выданные после нажатия “Получить ваучер”.
+          Это реальные RF-ваучеры из backend, выданные через claim-flow.
         </p>
 
         {!isLoaded ? (
@@ -297,6 +297,9 @@ export function RfMyVouchersView() {
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Сохранённые предложения</h2>
+          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-amber-700">
+            Локально, не ваучеры
+          </p>
           <p className="mt-1 text-sm text-slate-600">
             {localVoucherOwner.isReady && !localVoucherOwner.isSignedIn
               ? 'Список хранится локально в этом браузере.'

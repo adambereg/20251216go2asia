@@ -26,9 +26,13 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
     <div className="space-y-6">
       <RfLocalStorageNotice>
         {owner.isReady && !owner.isSignedIn
-          ? 'Список хранится локально в этом браузере. Это не облачная синхронизация: очистка данных сайта или другой браузер — без этих сохранений.'
+          ? 'Это локальный список (не ваучеры). Он хранится в этом браузере: очистка данных сайта или другой браузер — без этих сохранений.'
           : rfFavoritesPageContent.localWarning}
       </RfLocalStorageNotice>
+
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Избранное — это локальный список мест и предложений, не полученные RF-ваучеры.
+      </p>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">{rfFavoritesPageContent.placesTab}</h2>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@go2asia/ui';
-import { createBusinessPartner, fetchMyVouchers, type RfPartnerDto, type RfVoucherDto } from '@go2asia/sdk/rf';
+import { createBusinessPartner, type RfPartnerDto } from '@go2asia/sdk/rf';
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -14,7 +14,7 @@ function parseErrorMessage(error: unknown): string {
   return 'Unexpected error';
 }
 
-export function RfBusinessCreatePanel() {
+export function RfBusinessCreatePanel({ onCreated }: { onCreated?: (partner: RfPartnerDto) => void }) {
   const [displayName, setDisplayName] = useState('');
   const [countryId, setCountryId] = useState('');
   const [cityId, setCityId] = useState('');
@@ -24,10 +24,6 @@ export function RfBusinessCreatePanel() {
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [submitMessage, setSubmitMessage] = useState<string>('');
   const [createdPartner, setCreatedPartner] = useState<RfPartnerDto | null>(null);
-
-  const [voucherLoading, setVoucherLoading] = useState(false);
-  const [vouchers, setVouchers] = useState<RfVoucherDto[] | null>(null);
-  const [voucherError, setVoucherError] = useState<string>('');
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,40 +39,25 @@ export function RfBusinessCreatePanel() {
         hostAtlasPlaceId: hostAtlasPlaceId.trim() || null,
       });
       setCreatedPartner(partner);
+      onCreated?.(partner);
       setSubmitState('success');
-      setSubmitMessage('Partner created via live RF API.');
+      setSubmitMessage('Партнёр создан через live RF API. Список обновляется из RF.');
     } catch (error) {
       setSubmitState('error');
       setSubmitMessage(parseErrorMessage(error));
     }
   }
 
-  async function loadMyVouchers() {
-    setVoucherLoading(true);
-    setVoucherError('');
-    try {
-      const response = await fetchMyVouchers();
-      if (!response) {
-        setVoucherError('Unable to load vouchers right now.');
-        setVouchers(null);
-      } else {
-        setVouchers(response.items);
-      }
-    } finally {
-      setVoucherLoading(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Create RF business partner</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Создать партнёра</h2>
         <p className="text-sm text-slate-600 mt-2">
-          Live endpoint: <code>POST /v1/rf/business/partners</code>. Place refs are optional; do not invent values.
+          Использует существующий endpoint <code>POST /v1/rf/business/partners</code>. Atlas refs опциональны.
         </p>
         <form className="grid gap-4 mt-5 md:grid-cols-2" onSubmit={onSubmit}>
           <label className="text-sm text-slate-700 md:col-span-2">
-            Display name
+            Название партнёра
             <input
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               value={displayName}
@@ -105,7 +86,7 @@ export function RfBusinessCreatePanel() {
             />
           </label>
           <label className="text-sm text-slate-700">
-            Atlas place ID (optional)
+            Atlas place ID (опционально)
             <input
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
               value={atlasPlaceId}
@@ -114,7 +95,7 @@ export function RfBusinessCreatePanel() {
             />
           </label>
           <label className="text-sm text-slate-700">
-            Host Atlas place ID (optional)
+            Host Atlas place ID (опционально)
             <input
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
               value={hostAtlasPlaceId}
@@ -124,7 +105,7 @@ export function RfBusinessCreatePanel() {
           </label>
           <div className="md:col-span-2 flex items-center gap-3">
             <Button type="submit" variant="primary" disabled={submitState === 'submitting'}>
-              {submitState === 'submitting' ? 'Creating...' : 'Create partner'}
+              {submitState === 'submitting' ? 'Создаём...' : 'Создать партнёра'}
             </Button>
             {submitMessage ? (
               <span className={submitState === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-700'}>
@@ -137,41 +118,12 @@ export function RfBusinessCreatePanel() {
 
       {createdPartner ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="text-base font-semibold text-slate-900">Created partner</h3>
+          <h3 className="text-base font-semibold text-slate-900">Созданный партнёр</h3>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">
             {JSON.stringify(createdPartner, null, 2)}
           </pre>
         </section>
       ) : null}
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-slate-900">My vouchers (live read)</h3>
-          <Button type="button" variant="secondary" onClick={loadMyVouchers} disabled={voucherLoading}>
-            {voucherLoading ? 'Loading...' : 'Refresh'}
-          </Button>
-        </div>
-        <p className="text-sm text-slate-600 mt-2">
-          Uses <code>GET /v1/rf/me/vouchers</code>. Requires authenticated session.
-        </p>
-        {voucherError ? <p className="text-sm text-red-700 mt-3">{voucherError}</p> : null}
-        {vouchers ? (
-          vouchers.length === 0 ? (
-            <p className="text-sm text-slate-600 mt-3">No vouchers found for current account.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {vouchers.map((voucher) => (
-                <li key={voucher.id} className="rounded-lg border border-slate-200 p-3 text-sm">
-                  <p className="font-medium text-slate-900">{voucher.code}</p>
-                  <p className="text-slate-600 text-xs mt-1">
-                    status: {voucher.status} · partnerId: {voucher.partnerId} · offerId: {voucher.offerId}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )
-        ) : null}
-      </section>
     </div>
   );
 }

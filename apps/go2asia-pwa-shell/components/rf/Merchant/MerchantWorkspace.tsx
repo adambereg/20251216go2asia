@@ -12,16 +12,14 @@ import {
   summarizeMerchantPartner,
 } from '@/lib/rfMerchantWorkspace';
 import {
-  getOfferBadge,
-  getOfferSummaryLine,
   getPartnerLocation,
   getPartnerPresentation,
   getPartnerTrust,
   getRfCityLabel,
   getRfCountryLabel,
-  getVisibilityBadge,
 } from '@/lib/rfFirstSliceContent';
 import { RfBusinessCreatePanel } from '@/components/rf/live/RfBusinessCreatePanel';
+import { OfferManagementPanel } from '@/components/rf/Merchant/Offers';
 import { Check, ChevronRight, ExternalLink, Lock, Minus } from 'lucide-react';
 
 function BetaAction({
@@ -43,11 +41,11 @@ function BetaAction({
 
 export function MerchantWorkspace() {
   const { user, isLoaded: userLoaded } = useUser();
-  const { data: partnersRes, isLoading: partnersLoading, isError: partnersError } = useRfPartners();
-  const { data: offersRes, isLoading: offersLoading, isError: offersError } = useRfOffers();
+  const { data: partnersRes, isLoading: partnersLoading, isError: partnersError, refetch: refetchPartners } = useRfPartners();
+  const { data: offersRes, isLoading: offersLoading, isError: offersError, refetch: refetchOffers } = useRfOffers();
 
-  const partners = partnersRes?.items ?? [];
-  const offers = offersRes?.items ?? [];
+  const partners = useMemo(() => partnersRes?.items ?? [], [partnersRes?.items]);
+  const offers = useMemo(() => offersRes?.items ?? [], [offersRes?.items]);
 
   const myPartners = useMemo(() => {
     const uid = user?.id;
@@ -172,6 +170,64 @@ export function MerchantWorkspace() {
         )}
       </section>
 
+      <section id="mw-my-partners" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Мои партнёры</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Временный owner-scope: список построен из live `GET /v1/rf/partners` и фильтруется по ownerUserId текущего пользователя.
+            </p>
+          </div>
+          <a href="#mw-create-partner">
+            <Button type="button" variant="primary" size="sm">
+              Создать партнёра
+            </Button>
+          </a>
+        </div>
+        {myPartners.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            У текущего аккаунта пока нет партнёров в RF.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {myPartners.map((partner) => {
+              const partnerOffers = offers.filter((offer) => offer.partnerId === partner.id);
+              const activeOffers = partnerOffers.filter((offer) => offer.status === 'active').length;
+              return (
+                <li key={partner.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">{partner.displayName}</p>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          partner.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {partner.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {getRfCountryLabel(partner.countryId)} · {getRfCityLabel(partner.cityId)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Офферов: {partnerOffers.length} · активных: {activeOffers}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={activePartner?.id === partner.id ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setSelectedId(partner.id)}
+                  >
+                    {activePartner?.id === partner.id ? 'Выбран' : 'Открыть'}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {!activePartner && user?.id && !loading ? (
         <div className="grid gap-6 lg:grid-cols-3">
           <section id="mw-profile" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -183,7 +239,7 @@ export function MerchantWorkspace() {
           <section id="mw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Предложения</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Когда появится партнёр, здесь отобразится read-only список его офферов из RF API.
+              Когда появится партнёр, здесь отобразится live-управление его офферами из RF API.
             </p>
           </section>
           <section id="mw-public" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -308,45 +364,25 @@ export function MerchantWorkspace() {
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Предложения</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Операционный список офферов этого места из RF. Изменение статуса и типа здесь не выполняется.
+                  Базовое управление офферами через существующие RF endpoints: создание draft и активация.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <BetaAction hint="Создание оффера из UI не подключено к API.">Новое предложение</BetaAction>
-                <Link href={`/rf/vouchers?partner=${encodeURIComponent(activePartner.id)}`}>
-                  <Button type="button" variant="secondary" size="sm" className="gap-1">
-                    Как видят гости
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </div>
+              <Link href={`/rf/vouchers?partner=${encodeURIComponent(activePartner.id)}`}>
+                <Button type="button" variant="secondary" size="sm" className="gap-1">
+                  Как видят гости
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
             </div>
-            {summary?.offersForPartner.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-600">Офферов для этого партнёра в выборке API не найдено.</p>
-            ) : (
-              <ul className="mt-4 divide-y divide-slate-100">
-                {summary?.offersForPartner.map((offer) => {
-                  const badge = getOfferBadge(offer);
-                  const vis = getVisibilityBadge(offer.visibility);
-                  return (
-                    <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
-                        <p className="font-medium text-slate-900">{offer.title}</p>
-                        <p className="text-xs text-slate-500">{getOfferSummaryLine(offer)}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.tone}`}>{badge.label}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${vis.tone}`}>{vis.label}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <BetaAction hint="Редактирование не реализовано в этом baseline.">Редактировать</BetaAction>
-                        <BetaAction hint="Действие не выполняется.">Снять с публикации</BetaAction>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <div className="mt-4">
+              <OfferManagementPanel
+                partner={activePartner}
+                offers={summary?.offersForPartner ?? []}
+                onChanged={() => {
+                  void refetchOffers();
+                }}
+              />
+            </div>
             <p className="mt-4 text-xs text-slate-500">
               Ваучеры гостей и ручной ввод кода — в разделе{' '}
               <Link href="/rf/merchant/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
@@ -434,14 +470,18 @@ export function MerchantWorkspace() {
         </>
       ) : null}
 
-      <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+      <section id="mw-create-partner" className="scroll-mt-24 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
         <h2 className="text-sm font-semibold text-slate-900">Создание партнёра (live API, beta)</h2>
         <p className="mt-1 text-xs text-slate-600">
           Если партнёра ещё нет — форма ниже вызывает существующий endpoint. После создания обновите страницу, чтобы увидеть
           сводку.
         </p>
         <div className="mt-4">
-          <RfBusinessCreatePanel />
+          <RfBusinessCreatePanel
+            onCreated={() => {
+              void refetchPartners();
+            }}
+          />
         </div>
       </section>
     </div>

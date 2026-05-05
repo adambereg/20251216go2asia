@@ -28,7 +28,7 @@ const dashboardSections = [
 ];
 
 const opsRoutes = [
-  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers', badge: 'demo' },
+  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers', badge: 'live' },
   { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare, prefix: '/rf/merchant/reviews', badge: 'demo' },
   { href: '/rf/merchant/stats', label: 'Статистика', icon: BarChart3, prefix: '/rf/merchant/stats', badge: 'soon' },
   { href: '/rf/merchant/settings', label: 'Настройки', icon: Settings, prefix: '/rf/merchant/settings', badge: 'soon' },
