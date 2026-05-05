@@ -1,6 +1,6 @@
 # Connect RF Dashboard Projection v1
 
-Status: implemented as a bounded read-only dashboard enrichment for Connect x RF Stage 4.1.
+Status: implemented as bounded read-only dashboard enrichment for Connect x RF Stage 4.1 and Stage 4.2.
 
 ## Status
 
@@ -53,3 +53,48 @@ It is intentionally separate from Points balance cards and Connect wallet transa
 Recommended next slice: My RF vouchers projection / activity timeline placeholder.
 
 This should remain read-only unless a future RF-owned endpoint is introduced for paginated voucher lifecycle history.
+
+## Stage 4.2 — My RF Vouchers Projection / Activity Timeline Placeholder
+
+Stage 4.2 adds a separate Connect dashboard panel for the user's RF vouchers.
+
+Added:
+
+- active RF vouchers list, limited to five items;
+- used RF vouchers list, limited to five items;
+- compact cancelled / expired / other status note;
+- lifecycle activity derived only from voucher timestamps: `claimedAt`, `redeemedAt`, `statusChangedAt`;
+- empty, loading and soft error states;
+- links to `/rf/my-vouchers` and `/rf/vouchers`.
+
+Still read-only:
+
+- Connect shows RF state but does not mutate vouchers;
+- no claim action inside Connect;
+- no redeem action inside Connect;
+- no wallet transaction synthesis;
+- no reward, payout, commission or PRO attribution logic.
+
+Not included:
+
+- backend endpoints;
+- schema changes;
+- OpenAPI changes;
+- SDK generation;
+- wallet balance integration;
+- Points rewards;
+- PRO attribution;
+- partner revenue analytics;
+- merchant analytics;
+- G2A token, NFT or Totem mechanics.
+
+Data sources:
+
+- `fetchMyVouchers`;
+- shared projection helpers in `apps/go2asia-pwa-shell/lib/connectRfProjection.ts`;
+- RF-owned voucher fields: `status`, `canonicalStatus`, `claimedAt`, `redeemedAt`, `statusChangedAt`, `offer`, `partner`, `listingContext`.
+
+Future backend endpoint:
+
+- not required for Stage 4.2;
+- may become useful only for a paginated RF-owned activity timeline or redemption ledger history.
