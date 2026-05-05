@@ -1,9 +1,9 @@
-import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
+import type { RfOfferDto, RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import {
   buildPublicActiveOffersByPartner,
   getPartnerPresentation,
   getPartnerTrust,
-} from '@/lib/rfFirstSliceContent';
+} from './rfFirstSliceContent';
 
 export type ProScopeResolution = {
   partners: RfPartnerDto[];
@@ -26,6 +26,27 @@ export type ProNextStep = {
   href?: string;
   actionLabel?: string;
 };
+
+export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
+  return Array.from(new Set(proLinks.filter((link) => link.status === 'active').map((link) => link.partnerId)));
+}
+
+export function getLinkedPartnerOffers(offers: RfOfferDto[], activePartnerIds: Iterable<string>): RfOfferDto[] {
+  const activePartnerIdSet = new Set(activePartnerIds);
+  return offers
+    .filter((offer) => activePartnerIdSet.has(offer.partnerId))
+    .sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    });
+}
+
+export function formatOfferVisibilityLabel(visibility: RfOfferDto['visibility']): string {
+  if (visibility === 'pro_only') return 'Доступно для PRO';
+  if (visibility === 'invite_only') return 'По приглашению';
+  return 'Публично';
+}
 
 /**
  * На текущем этапе нет гарантированной live-модели assignment PRO->partner.

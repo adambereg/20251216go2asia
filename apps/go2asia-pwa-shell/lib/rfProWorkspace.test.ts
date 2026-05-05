@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { RfOfferDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import {
+  formatOfferVisibilityLabel,
+  getActiveLinkedPartnerIds,
+  getLinkedPartnerOffers,
+} from './rfProWorkspace';
+import {
+  canAcceptProLink,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
@@ -7,9 +14,40 @@ import {
   proLinkedPartnerCreateNote,
   proLinkedPartnersEmptyState,
   proOwnerAcceptBoundaryCopy,
+  proOwnerAcceptEmptyState,
   proOwnerAcceptEndpointGapCopy,
   proOwnerAcceptEndpointRecommendation,
+  proOwnerAcceptErrorState,
+  proOwnerAcceptLiveBoundaryCopy,
 } from './rfProLinks';
+
+function offer(overrides: Partial<RfOfferDto>): RfOfferDto {
+  return {
+    id: 'offer_1',
+    partnerId: 'partner_1',
+    title: 'Linked offer',
+    offerType: 'gift',
+    visibility: 'public',
+    status: 'active',
+    createdByUserId: 'owner_1',
+    createdAt: '2026-05-05T00:00:00.000Z',
+    updatedAt: '2026-05-05T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function proLink(overrides: Partial<RfProLinkDto>): RfProLinkDto {
+  return {
+    id: 'link_1',
+    partnerId: 'partner_1',
+    proUserId: 'pro_1',
+    status: 'active',
+    roleScope: 'curation',
+    createdAt: '2026-05-05T00:00:00.000Z',
+    updatedAt: '2026-05-05T00:00:00.000Z',
+    ...overrides,
+  };
+}
 
 describe('RF PRO workspace helpers', () => {
   it('formats PRO link status labels and descriptions', () => {
@@ -34,16 +72,56 @@ describe('RF PRO workspace helpers', () => {
     expect(proLinkedPartnersEmptyState).toContain('partnerId');
   });
 
+  it('allows accept action only for pending links', () => {
+    expect(canAcceptProLink({ status: 'pending' })).toBe(true);
+    expect(canAcceptProLink({ status: 'active' })).toBe(false);
+    expect(canAcceptProLink({ status: 'ended' })).toBe(false);
+  });
+
+  it('derives linked partner offers from active PRO links only', () => {
+    const activePartnerIds = getActiveLinkedPartnerIds([
+      proLink({ id: 'active_1', partnerId: 'partner_active', status: 'active' }),
+      proLink({ id: 'active_2', partnerId: 'partner_active', status: 'active' }),
+      proLink({ id: 'pending_1', partnerId: 'partner_pending', status: 'pending' }),
+      proLink({ id: 'ended_1', partnerId: 'partner_ended', status: 'ended' }),
+    ]);
+
+    const linkedOffers = getLinkedPartnerOffers(
+      [
+        offer({ id: 'active_new', partnerId: 'partner_active', status: 'active', createdAt: '2026-05-05T03:00:00.000Z' }),
+        offer({ id: 'draft_new', partnerId: 'partner_active', status: 'draft', createdAt: '2026-05-05T04:00:00.000Z' }),
+        offer({ id: 'active_old', partnerId: 'partner_active', status: 'active', createdAt: '2026-05-05T01:00:00.000Z' }),
+        offer({ id: 'pending_partner_offer', partnerId: 'partner_pending', status: 'active' }),
+        offer({ id: 'foreign_offer', partnerId: 'partner_foreign', status: 'active' }),
+      ],
+      activePartnerIds,
+    );
+
+    expect(activePartnerIds).toEqual(['partner_active']);
+    expect(linkedOffers.map((item) => item.id)).toEqual(['active_new', 'active_old', 'draft_new']);
+  });
+
+  it('formats offer visibility labels for PRO read-only offers', () => {
+    expect(formatOfferVisibilityLabel('public')).toBe('Публично');
+    expect(formatOfferVisibilityLabel('pro_only')).toBe('Доступно для PRO');
+    expect(formatOfferVisibilityLabel('invite_only')).toBe('По приглашению');
+  });
+
   it('does not introduce reward, commission or payout copy', () => {
     const stage51Copy = [
       proLinkedPartnersEmptyState,
       proLinkedPartnerBoundaryCopy,
       proLinkedPartnerCreateNote,
       proOwnerAcceptBoundaryCopy,
+      proOwnerAcceptEmptyState,
       proOwnerAcceptEndpointGapCopy,
       proOwnerAcceptEndpointRecommendation,
+      proOwnerAcceptErrorState,
+      proOwnerAcceptLiveBoundaryCopy,
     ].join(' ');
 
-    expect(stage51Copy).not.toMatch(/доход|комисси|вознагражден|начислен|выплат|reward|commission|payout/i);
+    expect(stage51Copy).not.toMatch(
+      /доход|комисси|вознагражден|начислен|выплат|reward|commission|payout|earnings|income/i,
+    );
   });
 });

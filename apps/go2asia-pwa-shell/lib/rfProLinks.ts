@@ -38,6 +38,19 @@ export const proOwnerAcceptBoundaryCopy =
 export const proOwnerAcceptEndpointRecommendation =
   'Подтверждение запросов владельцем требует отдельного owner-side read endpoint.';
 
+export const proOwnerAcceptLiveBoundaryCopy =
+  'Здесь владелец партнёра подтверждает рабочие связи с PRO. PRO не получает права владельца, не создаёт офферы и не гасит ваучеры.';
+
+export const proOwnerAcceptEmptyState =
+  'Для этого партнёра пока нет PRO-запросов.';
+
+export const proOwnerAcceptErrorState =
+  'Не удалось загрузить PRO-запросы.';
+
+export function canAcceptProLink(link: Pick<RfProLinkDto, 'status'>) {
+  return link.status === 'pending';
+}
+
 export function getProLinkStatusLabel(status: RfProLinkDto['status']) {
   return proLinkStatusLabels[status];
 }

@@ -9,6 +9,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   buildProFocusItems,
   buildProNextSteps,
+  formatOfferVisibilityLabel,
+  getActiveLinkedPartnerIds,
+  getLinkedPartnerOffers,
   getPartnerProHealth,
   resolveProScope,
   summarizeProScope,
@@ -93,6 +96,8 @@ export function PROWorkspace() {
   const summary = useMemo(() => summarizeProScope(scope.partners, offers), [scope.partners, offers]);
   const focus = useMemo(() => buildProFocusItems(scope.partners, offers), [scope.partners, offers]);
   const partnersById = useMemo(() => new Map(partners.map((partner) => [partner.id, partner])), [partners]);
+  const activeLinkedPartnerIds = useMemo(() => getActiveLinkedPartnerIds(proLinks), [proLinks]);
+  const linkedOffers = useMemo(() => getLinkedPartnerOffers(offers, activeLinkedPartnerIds), [offers, activeLinkedPartnerIds]);
   const nextSteps = useMemo(
     () => buildProNextSteps(scope.partners, offers, scope.isDerivedScope),
     [scope.partners, offers, scope.isDerivedScope],
@@ -378,9 +383,10 @@ export function PROWorkspace() {
       <section id="pw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Предложения партнёров</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.2 read-only</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Офферы связанных партнёров</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Read-only обзор офферов в PRO scope. Управление и редактирование — отдельный будущий этап.
+              Здесь отображаются офферы партнёров, с которыми у вас есть активная связь. Это read-only видимость.
             </p>
           </div>
           <Link href="/rf/vouchers">
@@ -391,8 +397,86 @@ export function PROWorkspace() {
           </Link>
         </div>
 
+        {proLinksLoading ? <p className="mt-4 text-sm text-slate-600">Загрузка активных связей PRO…</p> : null}
+
+        {proLinksError && !proLinksLoading ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Не удалось загрузить связи PRO. Офферы связанных партнёров временно недоступны.
+          </div>
+        ) : null}
+
+        {!proLinksLoading && !proLinksError && activeLinkedPartnerIds.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            У вас пока нет активных связей с партнёрами.
+          </p>
+        ) : null}
+
+        {!proLinksLoading && !proLinksError && activeLinkedPartnerIds.length > 0 && linkedOffers.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            У связанных партнёров пока нет доступных офферов.
+          </p>
+        ) : null}
+
+        {linkedOffers.length > 0 ? (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {linkedOffers.slice(0, 20).map((offer) => {
+              const badge = getOfferBadge(offer);
+              const vis = getVisibilityBadge(offer.visibility);
+              const partner = partnersById.get(offer.partnerId);
+              return (
+                <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">{offer.title}</p>
+                    <p className="text-xs text-slate-500">{getOfferSummaryLine(offer)}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      Партнёр:{' '}
+                      {partner ? (
+                        <Link href={`/rf/${encodeURIComponent(partner.id)}`} className="font-medium text-blue-700 hover:text-blue-800">
+                          {partner.displayName}
+                        </Link>
+                      ) : (
+                        offer.partnerId
+                      )}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.tone}`}>{badge.label}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${vis.tone}`}>
+                        {formatOfferVisibilityLabel(offer.visibility)}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {offer.status}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
+                    className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
+                  >
+                    Открыть в каталоге
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+
+        <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          Управление офферами остаётся только в Merchant cabinet: PRO не создаёт, не активирует, не редактирует и не гасит ваучеры в этом слое.
+        </p>
+      </section>
+
+      <section id="pw-derived-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Предложения в support scope (legacy/derived)</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Старый read-only обзор по derived scope. Канонический Stage 5.2 список выше строится только из active rf_pro_link.
+            </p>
+          </div>
+        </div>
+
         {summary.offersInScope.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">В текущем scope нет офферов.</p>
+          <p className="mt-4 text-sm text-slate-600">В derived scope нет офферов.</p>
         ) : (
           <ul className="mt-4 divide-y divide-slate-100">
             {summary.offersInScope.slice(0, 20).map((offer) => {
@@ -420,9 +504,6 @@ export function PROWorkspace() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-500">
-                      Изменить (beta позже)
-                    </span>
                     <Link
                       href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
                       className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"

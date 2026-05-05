@@ -2,24 +2,37 @@
 
 import { useMemo, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import type { RfPartnerDto } from '@go2asia/sdk/rf';
-import { useRfOffers, useRfPartners } from '@go2asia/sdk/rf';
+import type { RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
+import { acceptProLink, listPartnerProLinks, useRfOffers, useRfPartners } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getPartnerLocation,
   getRfCityLabel,
   getRfCountryLabel,
 } from '@/lib/rfFirstSliceContent';
 import {
-  proOwnerAcceptBoundaryCopy,
-  proOwnerAcceptEndpointGapCopy,
-  proOwnerAcceptEndpointRecommendation,
+  canAcceptProLink,
+  formatProLinkDate,
+  getProLinkRoleScopeLabel,
+  getProLinkStatusDescription,
+  getProLinkStatusLabel,
+  proOwnerAcceptEmptyState,
+  proOwnerAcceptErrorState,
+  proOwnerAcceptLiveBoundaryCopy,
 } from '@/lib/rfProLinks';
 import { RfBusinessCreatePanel } from '@/components/rf/live/RfBusinessCreatePanel';
 import { OfferManagementPanel } from '@/components/rf/Merchant/Offers';
 
+function proLinkStatusStyle(status: RfProLinkDto['status']) {
+  if (status === 'active') return 'bg-emerald-100 text-emerald-900';
+  if (status === 'pending') return 'bg-amber-100 text-amber-900';
+  return 'bg-slate-100 text-slate-700';
+}
+
 export function MerchantWorkspace() {
   const { user, isLoaded: userLoaded } = useUser();
+  const queryClient = useQueryClient();
   const { data: partnersRes, isLoading: partnersLoading, isError: partnersError, refetch: refetchPartners } = useRfPartners();
   const { data: offersRes, isLoading: offersLoading, isError: offersError, refetch: refetchOffers } = useRfOffers();
 
@@ -45,6 +58,29 @@ export function MerchantWorkspace() {
     () => (activePartner ? offers.filter((offer) => offer.partnerId === activePartner.id) : []),
     [activePartner, offers],
   );
+  const proLinksQueryKey = useMemo(
+    () => ['rf', 'business', 'partners', activePartner?.id ?? 'none', 'pro-links'] as const,
+    [activePartner?.id],
+  );
+  const {
+    data: partnerProLinksRes,
+    isLoading: proLinksLoading,
+    isError: proLinksError,
+    refetch: refetchPartnerProLinks,
+  } = useQuery({
+    queryKey: proLinksQueryKey,
+    queryFn: () => listPartnerProLinks(activePartner!.id),
+    enabled: Boolean(user?.id && activePartner?.id),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const acceptLinkMutation = useMutation({
+    mutationFn: acceptProLink,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: proLinksQueryKey });
+    },
+  });
+  const partnerProLinks = partnerProLinksRes?.items ?? [];
 
   const loading = !userLoaded || partnersLoading || offersLoading;
   const apiUnavailable =
@@ -163,9 +199,9 @@ export function MerchantWorkspace() {
       <section id="mw-pro-requests" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stage 5.1b gap</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.1d live</p>
             <h2 className="text-lg font-semibold text-slate-900">PRO-запросы</h2>
-            <p className="mt-1 max-w-3xl text-sm text-slate-600">{proOwnerAcceptBoundaryCopy}</p>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">{proOwnerAcceptLiveBoundaryCopy}</p>
           </div>
           {activePartner ? (
             <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
@@ -174,25 +210,95 @@ export function MerchantWorkspace() {
           ) : null}
         </div>
 
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-          <p className="font-semibold">{proOwnerAcceptEndpointRecommendation}</p>
-          <p className="mt-1">{proOwnerAcceptEndpointGapCopy}</p>
-        </div>
+        {!activePartner ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Выберите или создайте партнёра, чтобы увидеть PRO-запросы.
+          </p>
+        ) : null}
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Что уже работает</p>
-            <p className="mt-1 text-xs text-slate-600">
-              PRO может отправить pending-запрос через существующий rf_pro_link lifecycle.
-            </p>
+        {activePartner && proLinksLoading ? (
+          <p className="mt-4 text-sm text-slate-600">Загружаем PRO-запросы…</p>
+        ) : null}
+
+        {activePartner && proLinksError && !proLinksLoading ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p>{proOwnerAcceptErrorState}</p>
+            <button
+              type="button"
+              onClick={() => void refetchPartnerProLinks()}
+              className="mt-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-950 hover:bg-amber-100"
+            >
+              Повторить
+            </button>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Что нужно для live accept UI</p>
-            <p className="mt-1 text-xs text-slate-600">
-              Owner-scoped список запросов по owned partners, чтобы безопасно получить proLinkId для кнопки принятия.
-            </p>
-          </div>
-        </div>
+        ) : null}
+
+        {activePartner && !proLinksLoading && !proLinksError && partnerProLinks.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            {proOwnerAcceptEmptyState}
+          </p>
+        ) : null}
+
+        {activePartner && partnerProLinks.length > 0 ? (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {partnerProLinks.map((link) => {
+              const canAccept = canAcceptProLink(link);
+              const isAccepting = acceptLinkMutation.isPending && acceptLinkMutation.variables === link.id;
+              return (
+                <li key={link.id} className="flex flex-col gap-3 py-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">PRO: {link.proUserId}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${proLinkStatusStyle(link.status)}`}>
+                        {getProLinkStatusLabel(link.status)}
+                      </span>
+                      <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-900">
+                        {getProLinkRoleScopeLabel(link.roleScope)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600">{getProLinkStatusDescription(link.status)}</p>
+                    <dl className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <dt className="font-medium text-slate-500">partnerId</dt>
+                        <dd className="break-all text-slate-800">{link.partnerId}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-slate-500">proUserId</dt>
+                        <dd className="break-all text-slate-800">{link.proUserId}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-slate-500">createdAt</dt>
+                        <dd className="text-slate-800">{formatProLinkDate(link.createdAt)}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-slate-500">updatedAt</dt>
+                        <dd className="text-slate-800">{formatProLinkDate(link.updatedAt)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  {canAccept ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      disabled={acceptLinkMutation.isPending}
+                      onClick={() => acceptLinkMutation.mutate(link.id)}
+                    >
+                      {isAccepting ? 'Принимаем…' : 'Принять запрос'}
+                    </Button>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+
+        {acceptLinkMutation.isError ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            Не удалось принять запрос. Обновите список и попробуйте ещё раз.
+          </p>
+        ) : null}
       </section>
 
       <section id="mw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

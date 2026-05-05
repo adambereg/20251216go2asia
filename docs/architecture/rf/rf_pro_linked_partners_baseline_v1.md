@@ -118,3 +118,62 @@ Boundary:
 Next slice:
 
 - Stage 5.1d - replace the Merchant placeholder with a live pending request list and `Принять запрос` action using `listPartnerProLinks` + `acceptProLink`.
+
+## Stage 5.1d - Merchant Live Pending PRO Requests UI
+
+Status: implemented as bounded frontend UI.
+
+Merchant placeholder has been replaced with live UI in `/rf/merchant`:
+
+- reads selected partner links through `listPartnerProLinks(activePartner.id)`;
+- shows `proUserId`, `partnerId`, `status`, `roleScope`, `createdAt`, `updatedAt`;
+- shows pending, active and ended links;
+- pending links can be accepted through the existing `acceptProLink(proLinkId)`;
+- active and ended links are read-only;
+- after accept, the partner PRO links query is invalidated/refetched.
+
+Boundaries:
+
+- the owner confirms a working relationship only;
+- PRO does not become partner owner;
+- PRO cannot create offers in this stage;
+- PRO cannot redeem vouchers in this stage;
+- accepting a link does not create claim/redeem attribution;
+- no rewards, commissions, payouts, Points, G2A or NFT/Totem logic was added.
+
+Next slice:
+
+- Stage 5.2 - linked partner offers visibility baseline.
+- Future lifecycle controls: reject/end link.
+- Future identity enrichment: richer PRO profile display instead of raw `proUserId`.
+
+## Stage 5.2 - Linked Partner Offers Visibility Baseline
+
+Status: implemented as bounded frontend visibility layer.
+
+PRO cabinet now shows offers for partners where the current PRO has an active `rf_pro_link`:
+
+- reads PRO links through `listProLinks`;
+- filters links to `status === 'active'`;
+- derives `partnerId[]` from active links;
+- filters existing `useRfOffers()` data by those partner ids;
+- sorts active offers first, then other statuses, newest first inside each group;
+- labels `pro_only` offers as `Доступно для PRO`.
+
+This is derived visibility, not a new domain model.
+
+Boundaries:
+
+- read-only only;
+- no offer creation;
+- no offer activation;
+- no offer editing;
+- no voucher redeem action;
+- no claim/redeem attribution;
+- no rewards, commissions, payouts, Points, wallet, G2A or NFT/Totem logic.
+
+Next slice:
+
+- richer PRO identity display;
+- reject/end link lifecycle controls;
+- optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.

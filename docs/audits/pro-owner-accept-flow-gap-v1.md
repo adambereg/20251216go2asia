@@ -79,6 +79,15 @@ The endpoint closes the read-side gap:
 
 The endpoint is read-only. It does not add claim attribution, redeem attribution, rewards, commissions, payouts, Points, G2A or NFT/Totem logic.
 
-Next slice:
+Stage 5.1d resolves the flow end-to-end on the UI accept side:
 
-- Stage 5.1d - replace the Merchant placeholder with a live pending request list and `Принять запрос` action.
+- Merchant cabinet reads `listPartnerProLinks(activePartner.id)`;
+- pending links expose `Принять запрос`;
+- accept uses existing `acceptProLink(proLinkId)`;
+- active and ended links remain read-only.
+
+Remaining future work:
+
+- reject/end link lifecycle controls;
+- richer PRO identity display beyond raw `proUserId`;
+- linked partner offers visibility baseline.
