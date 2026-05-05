@@ -19,14 +19,14 @@ export function VoucherSummaryCard() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 mb-6">
+      <Card className="p-5">
         <div className="flex items-start gap-3 mb-5">
           <div className="p-2 bg-sky-100 rounded-lg">
             <Ticket className="w-5 h-5 text-sky-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Мои ваучеры</h3>
-            <p className="text-sm text-slate-600">Загружаем ваучеры из RF Asia…</p>
+            <h3 className="text-lg font-semibold text-slate-900">RF-ваучеры</h3>
+            <p className="text-sm text-slate-600">Загружаем сводку RF-ваучеров…</p>
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -40,13 +40,13 @@ export function VoucherSummaryCard() {
 
   if (isError || !summary) {
     return (
-      <Card className="p-6 mb-6 border border-amber-200 bg-amber-50">
+      <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-amber-900">Мои ваучеры</h3>
+            <h3 className="text-lg font-semibold text-amber-900">RF-ваучеры временно недоступны</h3>
             <p className="text-sm text-amber-900/80 mt-1">
-              Сейчас не удалось загрузить summary из RF Asia. Dashboard остаётся доступен, статусы ваучеров не подменяются локально.
+              Не удалось загрузить RF-сводку. Остальной dashboard остаётся доступен.
             </p>
             <Button variant="secondary" size="sm" className="mt-3" onClick={() => refetch()}>
               Повторить загрузку
@@ -60,25 +60,25 @@ export function VoucherSummaryCard() {
   const hasVouchers = summary.totalVouchers > 0;
 
   return (
-    <Card className="p-6 mb-6">
+    <Card className="p-5">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div className="flex items-start gap-3">
           <div className="p-2 bg-sky-100 rounded-lg">
             <Ticket className="w-5 h-5 text-sky-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Мои ваучеры</h3>
+            <h3 className="text-lg font-semibold text-slate-900">RF-ваучеры</h3>
             <p className="text-sm text-slate-600">
               {hasVouchers
-                ? 'Ваучеры из RF Asia. Статусы приходят из RF.'
-                : 'У вас пока нет ваучеров. Они появятся после получения предложений в RF Asia.'}
+                ? 'Короткая сводка по вашим RF-ваучерам.'
+                : 'У вас пока нет RF-ваучеров. Сначала найдите предложение в Russian Friendly.'}
             </p>
           </div>
         </div>
 
-        <Link href="/rf" className="md:w-auto w-full">
+        <Link href="/rf/vouchers" className="md:w-auto w-full">
           <Button variant="secondary" size="sm" className="w-full md:w-auto">
-            Найти ваучеры
+            Найти предложения
           </Button>
         </Link>
       </div>
