@@ -1,5 +1,7 @@
 'use client';
 
+// LEGACY: not used in Stage 3 UI.
+
 import { StatsCards } from './StatsCards';
 import { QuickActions } from './QuickActions';
 import { Card, CardContent } from '@go2asia/ui';

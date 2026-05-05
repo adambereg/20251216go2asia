@@ -1,6 +1,7 @@
 export { MerchantLayout } from './MerchantLayout';
 export { MerchantNav } from './MerchantNav';
 export { MerchantWorkspace } from './MerchantWorkspace';
+export { MerchantFeaturePlaceholder } from './MerchantFeaturePlaceholder';
 export * from './Dashboard';
 export * from './Vouchers';
 export * from './Reviews';

@@ -1,5 +1,7 @@
 'use client';
 
+// LEGACY: not used in Stage 3 UI.
+
 import { Card, CardContent } from '@go2asia/ui';
 import { Eye, Ticket, CheckCircle2, Star } from 'lucide-react';
 

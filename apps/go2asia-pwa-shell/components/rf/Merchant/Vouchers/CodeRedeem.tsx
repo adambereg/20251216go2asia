@@ -93,7 +93,7 @@ export function CodeRedeem() {
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-slate-900">Погашение ваучера</h3>
             <p className="mt-1 text-sm text-slate-600">
-              Только live RF API. Demo fallback и fake success отключены.
+              Проверяет ваучер через RF backend и фиксирует погашение для выбранного партнёра.
             </p>
           </div>
 
@@ -119,7 +119,7 @@ export function CodeRedeem() {
                 className="w-full rounded-lg border border-slate-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-slate-500">
-                Текущий backend redeem принимает voucherId в path; lookup по человекочитаемому коду остаётся вне Stage 3.
+                Используйте идентификатор ваучера из RF. Человекочитаемый поиск по коду появится в следующих версиях.
               </p>
             </div>
 
