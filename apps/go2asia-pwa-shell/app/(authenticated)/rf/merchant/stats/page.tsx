@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { MerchantFeaturePlaceholder } from '@/components/rf/Merchant/MerchantFeaturePlaceholder';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,15 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function MerchantStatsPage() {
-  return (
-    <main className="container mx-auto py-10">
-      <h1 className="text-2xl font-semibold mb-4">
-        Статистика партнёра
-      </h1>
-      <p className="text-muted-foreground max-w-2xl">
-        Раздел в разработке. Скоро здесь появится статистика просмотров,
-        ваучеров и отзывов для партнёров Russian Friendly.
-      </p>
-    </main>
-  );
+  return <MerchantFeaturePlaceholder title="Статистика партнёра" />;
 }

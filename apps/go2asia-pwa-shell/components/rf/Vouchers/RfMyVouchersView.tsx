@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
-import { useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
+import { useRfLocalVoucherOwnerState, useRfMyLocalVouchers } from '@/hooks/useRfLocalContour';
 import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotice';
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
@@ -83,7 +83,8 @@ async function fetchMyVouchersWithTimeout() {
 
 export function RfMyVouchersView() {
   const { isLoaded, isSignedIn } = useAuth();
-  const rows = useRfMyLocalVouchers();
+  const localVoucherOwner = useRfLocalVoucherOwnerState();
+  const rows = useRfMyLocalVouchers(localVoucherOwner.ownerKey, localVoucherOwner.isReady);
   const [serverVouchers, setServerVouchers] = useState<RfVoucherDto[] | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -133,9 +134,9 @@ export function RfMyVouchersView() {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры (сервер)</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Это серверные RF-ваучеры, выданные после нажатия “Получить ваучер”.
+          Это реальные RF-ваучеры из backend, выданные через claim-flow.
         </p>
 
         {!isLoaded ? (
@@ -296,14 +297,27 @@ export function RfMyVouchersView() {
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Сохранённые предложения</h2>
+          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-amber-700">
+            Локально, не ваучеры
+          </p>
           <p className="mt-1 text-sm text-slate-600">
-            Это локальный список планирования в этом браузере.
+            {localVoucherOwner.isReady && !localVoucherOwner.isSignedIn
+              ? 'Список хранится локально в этом браузере.'
+              : 'Список хранится локально в этом браузере и привязан к текущему аккаунту.'}
           </p>
         </div>
 
-        <RfLocalStorageNotice>{rfMyVouchersPageContent.localWarning}</RfLocalStorageNotice>
+        <RfLocalStorageNotice>
+          {localVoucherOwner.isReady && !localVoucherOwner.isSignedIn
+            ? 'Список хранится локально в этом браузере. Это не серверный ваучер.'
+            : rfMyVouchersPageContent.localWarning}
+        </RfLocalStorageNotice>
 
-        {rows.length === 0 ? (
+        {!localVoucherOwner.isReady ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            Проверяем текущий аккаунт перед загрузкой сохранённых предложений...
+          </div>
+        ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
             {rfMyVouchersPageContent.empty}
           </div>
@@ -341,7 +355,7 @@ export function RfMyVouchersView() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => removeMyLocalVoucher(row.localId)}
+                      onClick={() => removeMyLocalVoucher(row.localId, localVoucherOwner.ownerKey)}
                       className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800 hover:bg-red-100"
                     >
                       {rfMyVouchersPageContent.remove}

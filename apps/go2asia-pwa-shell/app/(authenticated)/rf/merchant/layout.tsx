@@ -1,4 +1,4 @@
-import { MerchantLayout } from '@/components/rf/Merchant';
+import { MerchantLayout } from '@/components/rf/Merchant/MerchantLayout';
 
 export default function MerchantDashboardLayout({
   children,

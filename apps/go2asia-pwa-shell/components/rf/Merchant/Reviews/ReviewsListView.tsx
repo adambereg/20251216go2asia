@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, Button, Badge } from '@go2asia/ui';
+// LEGACY: not used in Stage 3 UI.
+
+import { Card, CardContent, Button } from '@go2asia/ui';
 import { MessageSquare, Reply } from 'lucide-react';
 import { ReviewCard } from '../../Shared';
 import { mockReviews } from '../../mockData';

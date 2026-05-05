@@ -1,5 +1,7 @@
 'use client';
 
+// LEGACY: not used in Stage 3 UI.
+
 import { Card, CardContent, Button } from '@go2asia/ui';
 import { Plus, Ticket, MessageSquare, BarChart3 } from 'lucide-react';
 import Link from 'next/link';

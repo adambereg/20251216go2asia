@@ -10,9 +10,7 @@ import {
   BarChart3,
   Settings,
   ListOrdered,
-  MapPin,
-  ClipboardCheck,
-  ListTodo,
+  PlusCircle,
 } from 'lucide-react';
 
 interface MerchantNavProps {
@@ -20,16 +18,14 @@ interface MerchantNavProps {
 }
 
 const dashboardSections = [
-  { href: '/rf/merchant#mw-profile', label: 'Профиль', icon: Store },
-  { href: '/rf/merchant#mw-offers', label: 'Предложения', icon: ListOrdered },
-  { href: '/rf/merchant#mw-readiness', label: 'Статус', icon: ClipboardCheck },
-  { href: '/rf/merchant#mw-public', label: 'Публичный вид', icon: MapPin },
-  { href: '/rf/merchant#mw-next', label: 'Дальше', icon: ListTodo },
+  { href: '/rf/merchant#mw-my-partners', label: 'Партнёры', icon: Store },
+  { href: '/rf/merchant#mw-offers', label: 'Офферы', icon: ListOrdered },
+  { href: '/rf/merchant#mw-create-partner', label: 'Создать партнёра', icon: PlusCircle },
 ];
 
 const opsRoutes = [
-  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers', badge: 'demo' },
-  { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare, prefix: '/rf/merchant/reviews', badge: 'demo' },
+  { href: '/rf/merchant/vouchers', label: 'Ваучеры', icon: Ticket, prefix: '/rf/merchant/vouchers' },
+  { href: '/rf/merchant/reviews', label: 'Отзывы', icon: MessageSquare, prefix: '/rf/merchant/reviews', badge: 'soon' },
   { href: '/rf/merchant/stats', label: 'Статистика', icon: BarChart3, prefix: '/rf/merchant/stats', badge: 'soon' },
   { href: '/rf/merchant/settings', label: 'Настройки', icon: Settings, prefix: '/rf/merchant/settings', badge: 'soon' },
 ];

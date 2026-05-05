@@ -259,6 +259,16 @@ components:
       required: true
       schema:
         type: string
+    RfOptionalIdempotencyKey:
+      description: |
+        Optional idempotency key for redeem operation. When provided, RF stores it on the redemption ledger row and still guarantees a single succeeded redemption per voucher.
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema:
+        maxLength: 160
+        minLength: 1
+        type: string
     RfPartnerId:
       in: path
       name: partnerId
@@ -3712,6 +3722,15 @@ components:
       type: object
     RfVoucher:
       properties:
+        cancelledAt:
+          format: date-time
+          nullable: true
+          type: string
+        canonicalStatus:
+          allOf:
+            - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
+          description: |
+            Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.
         claimScope:
           description: |
             Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
@@ -3724,8 +3743,16 @@ components:
           type: string
         code:
           type: string
+        contractVersion:
+          description: RF voucher contract/lifecycle version. Stage 1+2 runtime writes version 1.
+          minimum: 1
+          type: integer
         createdAt:
           format: date-time
+          type: string
+        expiresAt:
+          format: date-time
+          nullable: true
           type: string
         id:
           type: string
@@ -3803,6 +3830,16 @@ components:
             - redeemed
             - cancelled
           type: string
+        statusActorUserId:
+          nullable: true
+          type: string
+        statusChangedAt:
+          format: date-time
+          nullable: true
+          type: string
+        statusReason:
+          nullable: true
+          type: string
         updatedAt:
           format: date-time
           type: string
@@ -3836,6 +3873,17 @@ components:
         - createdAt
         - updatedAt
       type: object
+    RfVoucherCanonicalStatus:
+      description: |
+        Canonical RF Voucher Economy lifecycle status. During the transition window the legacy `status` field remains the backwards-compatible runtime status; if `canonicalStatus` is absent, clients may map `claimed` -> `available`, `redeemed` -> `redeemed`, and `cancelled` -> `cancelled`.
+      enum:
+        - available
+        - locked
+        - unlocked
+        - redeemed
+        - expired
+        - cancelled
+      type: string
     RfVoucherListResponse:
       properties:
         items:
@@ -3849,21 +3897,81 @@ components:
         - items
         - nextCursor
       type: object
+    RfVoucherRedemption:
+      description: |
+        Prepared RF redemption record shape for audit/history. The current public RF API does not expose a list endpoint for redemption records yet.
+      properties:
+        actorUserId:
+          nullable: true
+          type: string
+        contextRef:
+          nullable: true
+          type: string
+        contextType:
+          type: string
+        correlationId:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        idempotencyKey:
+          nullable: true
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        partnerId:
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        resultStatus:
+          $ref: "#/components/schemas/RfVoucherRedemptionResultStatus"
+        updatedAt:
+          format: date-time
+          type: string
+        userId:
+          type: string
+        voucherId:
+          type: string
+      required:
+        - id
+        - voucherId
+        - userId
+        - partnerId
+        - contextType
+        - resultStatus
+        - redeemedAt
+        - metadata
+        - createdAt
+        - updatedAt
+      type: object
+    RfVoucherRedemptionResultStatus:
+      description: Result status for a voucher redemption attempt.
+      enum:
+        - succeeded
+        - failed
+        - duplicate
+      type: string
     RfVoucherSummary:
       properties:
         activeVouchers:
-          description: Count of vouchers with runtime status `claimed`.
+          description: Count of active/non-terminal vouchers. Runtime prefers canonical available/locked/unlocked with legacy claimed fallback.
           minimum: 0
           type: integer
         cancelledVouchers:
-          description: Count of vouchers with runtime status `cancelled`.
+          description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
           minimum: 0
           type: integer
         totalVouchers:
           minimum: 0
           type: integer
         usedVouchers:
-          description: Count of vouchers with runtime status `redeemed`.
+          description: Count of redeemed vouchers. Runtime prefers canonical redeemed with legacy redeemed fallback.
           minimum: 0
           type: integer
       required:
@@ -7191,6 +7299,7 @@ paths:
         - $ref: "#/components/parameters/RfXGatewayAuth"
         - $ref: "#/components/parameters/RfPartnerId"
         - $ref: "#/components/parameters/RfVoucherId"
+        - $ref: "#/components/parameters/RfOptionalIdempotencyKey"
       responses:
         "200":
           content:

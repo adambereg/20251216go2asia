@@ -65,6 +65,7 @@ export interface Voucher {
   partnerId: string;
   issuedToUserId: string;
   status: VoucherStatus;
+  canonicalStatus?: VoucherCanonicalStatus;
   claimScope: VoucherClaimScope;
   listingContext: {
     source: 'rielt';
@@ -74,6 +75,12 @@ export interface Voucher {
   code: string;
   claimedAt: string;
   redeemedAt: string | null;
+  contractVersion?: number;
+  expiresAt?: string | null;
+  cancelledAt?: string | null;
+  statusChangedAt?: string | null;
+  statusReason?: string | null;
+  statusActorUserId?: string | null;
   createdAt: string;
   updatedAt: string;
   offer?: {
@@ -180,6 +187,12 @@ type VoucherRow = {
   issued_to_user_id: string;
   status: VoucherStatus;
   canonical_status?: VoucherCanonicalStatus | null;
+  contract_version?: number | null;
+  expires_at?: string | Date | null;
+  cancelled_at?: string | Date | null;
+  status_changed_at?: string | Date | null;
+  status_reason?: string | null;
+  status_actor_user_id?: string | null;
   claim_scope?: VoucherClaimScope | null;
   rielt_listing_id?: string | null;
   rielt_listing_title_snapshot?: string | null;
@@ -302,6 +315,7 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     partnerId: row.partner_id,
     issuedToUserId: row.issued_to_user_id,
     status: row.status,
+    canonicalStatus: getCanonicalStatus(row),
     claimScope,
     listingContext:
       claimScope === 'listing' && listingId
@@ -314,6 +328,12 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     code: row.code,
     claimedAt: asIso(row.claimed_at) ?? new Date(0).toISOString(),
     redeemedAt: asIso(row.redeemed_at),
+    contractVersion: row.contract_version ?? undefined,
+    expiresAt: row.expires_at === undefined ? undefined : asIso(row.expires_at),
+    cancelledAt: row.cancelled_at === undefined ? undefined : asIso(row.cancelled_at),
+    statusChangedAt: row.status_changed_at === undefined ? undefined : asIso(row.status_changed_at),
+    statusReason: row.status_reason ?? undefined,
+    statusActorUserId: row.status_actor_user_id ?? undefined,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
   };
@@ -495,6 +515,12 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -511,6 +537,42 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
+async function getVoucherFromRedemptionIdempotency(
+  db: DbExecutor,
+  actorUserId: string,
+  idempotencyKey: string
+): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      v.id,
+      v.offer_id,
+      v.partner_id,
+      v.issued_to_user_id,
+      v.status,
+      v.canonical_status,
+      v.contract_version,
+      v.expires_at,
+      v.cancelled_at,
+      v.status_changed_at,
+      v.status_reason,
+      v.status_actor_user_id,
+      v.claim_scope,
+      v.rielt_listing_id,
+      v.rielt_listing_title_snapshot,
+      v.code,
+      v.claimed_at,
+      v.redeemed_at,
+      v.created_at,
+      v.updated_at
+    FROM rf_voucher_redemption r
+    INNER JOIN rf_voucher v ON v.id = r.voucher_id
+    WHERE r.actor_user_id = ${actorUserId}
+      AND r.idempotency_key = ${idempotencyKey}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
 async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: string, idempotencyKey: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
     SELECT
@@ -520,6 +582,12 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.issued_to_user_id,
       v.status,
       v.canonical_status,
+      v.contract_version,
+      v.expires_at,
+      v.cancelled_at,
+      v.status_changed_at,
+      v.status_reason,
+      v.status_actor_user_id,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -580,6 +648,12 @@ async function getClaimableVoucherByListingOfferAndUser(
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -961,9 +1035,13 @@ export async function claimVoucher(
       status,
       canonical_status,
       claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
       code,
       claimed_at,
       redeemed_at,
+      status_changed_at,
+      status_actor_user_id,
       created_at,
       updated_at
     )
@@ -975,9 +1053,13 @@ export async function claimVoucher(
       'claimed',
       'available',
       'partner',
+      NULL,
+      NULL,
       ${voucherCode},
       now(),
       NULL,
+      now(),
+      ${principal.userId},
       now(),
       now()
     )
@@ -990,6 +1072,12 @@ export async function claimVoucher(
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1101,6 +1189,12 @@ export async function claimVoucherForListing(
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1117,6 +1211,12 @@ export async function claimVoucherForListing(
       ${principal.userId},
       'claimed',
       'available',
+      1,
+      NULL,
+      NULL,
+      now(),
+      NULL,
+      ${principal.userId},
       'listing',
       ${input.listingId},
       ${context.listing_title},
@@ -1135,6 +1235,12 @@ export async function claimVoucherForListing(
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1186,6 +1292,12 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.issued_to_user_id,
       v.status,
       v.canonical_status,
+      v.contract_version,
+      v.expires_at,
+      v.cancelled_at,
+      v.status_changed_at,
+      v.status_reason,
+      v.status_actor_user_id,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -1257,11 +1369,26 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
 export async function redeemVoucher(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { partnerId: string; voucherId: string }
+  input: { partnerId: string; voucherId: string; idempotencyKey?: string | null; correlationId?: string | null }
 ): Promise<RedeemResult> {
   const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
   if (!partner) {
     return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
+  }
+
+  if (input.idempotencyKey) {
+    const replayVoucher = await getVoucherFromRedemptionIdempotency(db, principal.userId, input.idempotencyKey);
+    if (replayVoucher) {
+      if (replayVoucher.id === input.voucherId && replayVoucher.partner_id === input.partnerId) {
+        return { ok: true, voucher: toVoucher(replayVoucher), applied: false };
+      }
+      return {
+        ok: false,
+        code: 'RF_REDEEM_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+        message: 'Idempotency-Key was already used for a different voucher redeem context',
+        status: 409,
+      };
+    }
   }
 
   const voucher = await getVoucherByIdAndPartner(db, input.voucherId, input.partnerId);
@@ -1297,6 +1424,7 @@ export async function redeemVoucher(
         canonical_status = 'redeemed',
         redeemed_at = now(),
         status_changed_at = now(),
+        status_actor_user_id = ${principal.userId},
         updated_at = now()
       WHERE id = ${input.voucherId}
         AND partner_id = ${input.partnerId}
@@ -1308,6 +1436,12 @@ export async function redeemVoucher(
         issued_to_user_id,
         status,
         canonical_status,
+        contract_version,
+        expires_at,
+        cancelled_at,
+        status_changed_at,
+        status_reason,
+        status_actor_user_id,
         claim_scope,
         rielt_listing_id,
         rielt_listing_title_snapshot,
@@ -1342,11 +1476,11 @@ export async function redeemVoucher(
         'manual',
         NULL,
         'succeeded',
-        NULL,
+        ${input.idempotencyKey ?? null},
         ${principal.userId},
         redeemed_at,
         '{}'::jsonb,
-        NULL,
+        ${input.correlationId ?? null},
         now(),
         now()
       FROM updated
@@ -1361,6 +1495,12 @@ export async function redeemVoucher(
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,

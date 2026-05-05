@@ -23,7 +23,7 @@ export function CTAPanel({ partner, onGetVoucher, onSave, onShare }: CTAPanelPro
           {hasVouchers && (
             <Button variant="primary" size="lg" className="w-full" onClick={onGetVoucher}>
               <Ticket size={20} className="mr-2" />
-              Получить ваучер
+              Сохранить предложение
             </Button>
           )}
 
@@ -31,7 +31,7 @@ export function CTAPanel({ partner, onGetVoucher, onSave, onShare }: CTAPanelPro
           <div className="space-y-2">
             <Button variant="secondary" size="md" className="w-full" onClick={onSave}>
               <Bookmark size={18} className="mr-2" />
-              Сохранить
+              В избранное
             </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={onShare}>
               <Share2 size={18} className="mr-2" />

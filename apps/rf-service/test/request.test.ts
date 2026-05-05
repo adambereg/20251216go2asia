@@ -26,6 +26,37 @@ function executedSqlText(): string {
     .join('\n');
 }
 
+function executedStatements(): Array<{ text: string; values: unknown[] }> {
+  return executeMock.mock.calls.map(([query]) => {
+    const typed = query as { strings?: string[]; values?: unknown[] } | undefined;
+    return {
+      text: (typed?.strings ?? []).join(' ? '),
+      values: typed?.values ?? [],
+    };
+  });
+}
+
+function countSqlListItems(list: string): number {
+  return list
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean).length;
+}
+
+function expectInsertColumnValueParity(statement: string, tableName: string): void {
+  const insertStart = statement.search(new RegExp(`INSERT\\s+INTO\\s+${tableName}\\s*\\(`, 'i'));
+  expect(insertStart).toBeGreaterThanOrEqual(0);
+  const columnStart = statement.indexOf('(', insertStart);
+  const valuesKeyword = statement.search(/\)\s*VALUES\s*\(/i);
+  expect(valuesKeyword).toBeGreaterThan(columnStart);
+  const valueStart = statement.indexOf('(', valuesKeyword);
+  const valueEndMarker = statement.search(/\)\s*ON\s+CONFLICT/i);
+  expect(valueEndMarker).toBeGreaterThan(valueStart);
+  const columns = statement.slice(columnStart + 1, valuesKeyword);
+  const values = statement.slice(valueStart + 1, valueEndMarker);
+  expect(countSqlListItems(values)).toBe(countSqlListItems(columns));
+}
+
 describe('rf-service request', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -313,6 +344,8 @@ describe('rf-service request', () => {
           },
         ],
       })
+      // redeem #1: redemption idempotency lookup
+      .mockResolvedValueOnce({ rows: [] })
       // redeem #1: voucher lookup
       .mockResolvedValueOnce({
         rows: [
@@ -379,7 +412,7 @@ describe('rf-service request', () => {
           },
         ],
       })
-      // redeem #2: voucher lookup returns redeemed
+      // redeem #2: redemption idempotency replay lookup
       .mockResolvedValueOnce({
         rows: [
           {
@@ -436,6 +469,7 @@ describe('rf-service request', () => {
         method: 'POST',
         headers: {
           'X-Gateway-Auth': ownerToken,
+          'Idempotency-Key': 'redeem-1',
         },
       }),
       env
@@ -452,9 +486,11 @@ describe('rf-service request', () => {
       }),
       env
     );
-    const claim1Body = await readJson<{ voucher: { id: string }; idempotentReplay: boolean }>(claim1);
+    const claim1Body = await readJson<{ voucher: { id: string; canonicalStatus: string; claimScope: string }; idempotentReplay: boolean }>(claim1);
     expect(claim1.status).toBe(201);
     expect(claim1Body.idempotentReplay).toBe(false);
+    expect(claim1Body.voucher.canonicalStatus).toBe('available');
+    expect(claim1Body.voucher.claimScope).toBe('partner');
 
     const claim2 = await worker.fetch(
       new Request(`https://rf.example/v1/rf/offers/${offer.id}/claim`, {
@@ -476,6 +512,7 @@ describe('rf-service request', () => {
         method: 'POST',
         headers: {
           'X-Gateway-Auth': ownerToken,
+          'Idempotency-Key': 'redeem-1',
         },
       }),
       env
@@ -504,10 +541,17 @@ describe('rf-service request', () => {
     expect(sqlText).toContain("'available'");
     expect(sqlText).toContain("'redeemed'");
     expect(sqlText).toContain('rf_voucher_redemption');
-    const redemptionStatementCount = executeMock.mock.calls.filter(([query]) =>
-      ((query as { strings?: string[] }).strings ?? []).join(' ').includes('rf_voucher_redemption')
+    const partnerClaimInsert = executedStatements().find((statement) =>
+      statement.text.includes('INSERT INTO rf_voucher') && statement.text.includes("'partner'")
+    );
+    expect(partnerClaimInsert).toBeDefined();
+    expectInsertColumnValueParity(partnerClaimInsert?.text ?? '', 'rf_voucher');
+    const redeemStatement = executedStatements().find((statement) => statement.text.includes('rf_voucher_redemption'));
+    expect(redeemStatement?.values).toContain('redeem-1');
+    const redemptionInsertCount = executeMock.mock.calls.filter(([query]) =>
+      ((query as { strings?: string[] }).strings ?? []).join(' ').includes('INSERT INTO rf_voucher_redemption')
     ).length;
-    expect(redemptionStatementCount).toBe(1);
+    expect(redemptionInsertCount).toBe(1);
   });
 
   it('enforces auth on claim/redeem protected routes', async () => {
@@ -1174,11 +1218,17 @@ describe('rf-service request', () => {
       env
     );
     const claim1Body = await readJson<{
-      voucher: { id: string; claimScope: string; listingContext: { listingId: string; listingTitle: string | null } | null };
+      voucher: {
+        id: string;
+        canonicalStatus: string;
+        claimScope: string;
+        listingContext: { listingId: string; listingTitle: string | null } | null;
+      };
       idempotentReplay: boolean;
     }>(claim1);
     expect(claim1.status).toBe(201);
     expect(claim1Body.idempotentReplay).toBe(false);
+    expect(claim1Body.voucher.canonicalStatus).toBe('available');
     expect(claim1Body.voucher).toEqual(
       expect.objectContaining({
         id: 'rf_voucher_listing_1',
@@ -1208,6 +1258,14 @@ describe('rf-service request', () => {
     expect(claim2Body.voucher.claimScope).toBe('listing');
     expect(executedSqlText()).toContain('canonical_status');
     expect(executedSqlText()).toContain("'available'");
+    const listingClaimInsert = executedStatements().find((statement) =>
+      statement.text.includes('INSERT INTO rf_voucher') && statement.text.includes("'listing'")
+    );
+    expect(listingClaimInsert).toBeDefined();
+    expectInsertColumnValueParity(listingClaimInsert?.text ?? '', 'rf_voucher');
+    expect(listingClaimInsert?.text).toContain('contract_version');
+    expect(listingClaimInsert?.text).toContain('status_changed_at');
+    expect(listingClaimInsert?.text).toContain('status_actor_user_id');
   });
 
   it('allows partner-scope and listing-scoped claims for the same offer', async () => {
