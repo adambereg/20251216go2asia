@@ -433,6 +433,7 @@ paths:
         - $ref: "#/components/parameters/RfXGatewayAuth"
         - $ref: "#/components/parameters/RfPartnerId"
         - $ref: "#/components/parameters/RfVoucherId"
+        - $ref: "#/components/parameters/RfOptionalIdempotencyKey"
       responses:
         "200":
           description: Redeem processed
@@ -546,6 +547,17 @@ components:
       description: >
         Required idempotency key for claim operation. Same user + same key replays the same
         claim result without creating duplicate business effects.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 160
+    RfOptionalIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        Optional idempotency key for redeem operation. When provided, RF stores it on
+        the redemption ledger row and still guarantees a single succeeded redemption per voucher.
       schema:
         type: string
         minLength: 1

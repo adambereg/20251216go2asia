@@ -281,6 +281,7 @@ export * from "./rfOfferListResponse";
 export * from "./rfOfferOfferType";
 export * from "./rfOfferStatus";
 export * from "./rfOfferVisibility";
+export * from "./rfOptionalIdempotencyKeyParameter";
 export * from "./rfPartner";
 export * from "./rfPartnerListResponse";
 export * from "./rfPartnerStatus";

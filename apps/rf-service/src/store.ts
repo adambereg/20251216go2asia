@@ -537,6 +537,42 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
+async function getVoucherFromRedemptionIdempotency(
+  db: DbExecutor,
+  actorUserId: string,
+  idempotencyKey: string
+): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      v.id,
+      v.offer_id,
+      v.partner_id,
+      v.issued_to_user_id,
+      v.status,
+      v.canonical_status,
+      v.contract_version,
+      v.expires_at,
+      v.cancelled_at,
+      v.status_changed_at,
+      v.status_reason,
+      v.status_actor_user_id,
+      v.claim_scope,
+      v.rielt_listing_id,
+      v.rielt_listing_title_snapshot,
+      v.code,
+      v.claimed_at,
+      v.redeemed_at,
+      v.created_at,
+      v.updated_at
+    FROM rf_voucher_redemption r
+    INNER JOIN rf_voucher v ON v.id = r.voucher_id
+    WHERE r.actor_user_id = ${actorUserId}
+      AND r.idempotency_key = ${idempotencyKey}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
 async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: string, idempotencyKey: string): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
     SELECT
@@ -999,9 +1035,13 @@ export async function claimVoucher(
       status,
       canonical_status,
       claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
       code,
       claimed_at,
       redeemed_at,
+      status_changed_at,
+      status_actor_user_id,
       created_at,
       updated_at
     )
@@ -1013,9 +1053,13 @@ export async function claimVoucher(
       'claimed',
       'available',
       'partner',
+      NULL,
+      NULL,
       ${voucherCode},
       now(),
       NULL,
+      now(),
+      ${principal.userId},
       now(),
       now()
     )
@@ -1167,6 +1211,12 @@ export async function claimVoucherForListing(
       ${principal.userId},
       'claimed',
       'available',
+      1,
+      NULL,
+      NULL,
+      now(),
+      NULL,
+      ${principal.userId},
       'listing',
       ${input.listingId},
       ${context.listing_title},
@@ -1319,11 +1369,26 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
 export async function redeemVoucher(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { partnerId: string; voucherId: string }
+  input: { partnerId: string; voucherId: string; idempotencyKey?: string | null; correlationId?: string | null }
 ): Promise<RedeemResult> {
   const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
   if (!partner) {
     return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
+  }
+
+  if (input.idempotencyKey) {
+    const replayVoucher = await getVoucherFromRedemptionIdempotency(db, principal.userId, input.idempotencyKey);
+    if (replayVoucher) {
+      if (replayVoucher.id === input.voucherId && replayVoucher.partner_id === input.partnerId) {
+        return { ok: true, voucher: toVoucher(replayVoucher), applied: false };
+      }
+      return {
+        ok: false,
+        code: 'RF_REDEEM_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+        message: 'Idempotency-Key was already used for a different voucher redeem context',
+        status: 409,
+      };
+    }
   }
 
   const voucher = await getVoucherByIdAndPartner(db, input.voucherId, input.partnerId);
@@ -1359,6 +1424,7 @@ export async function redeemVoucher(
         canonical_status = 'redeemed',
         redeemed_at = now(),
         status_changed_at = now(),
+        status_actor_user_id = ${principal.userId},
         updated_at = now()
       WHERE id = ${input.voucherId}
         AND partner_id = ${input.partnerId}
@@ -1410,11 +1476,11 @@ export async function redeemVoucher(
         'manual',
         NULL,
         'succeeded',
-        NULL,
+        ${input.idempotencyKey ?? null},
         ${principal.userId},
         redeemed_at,
         '{}'::jsonb,
-        NULL,
+        ${input.correlationId ?? null},
         now(),
         now()
       FROM updated

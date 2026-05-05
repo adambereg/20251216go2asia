@@ -248,12 +248,16 @@ export async function handleRfRoute(
   const redeemMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/vouchers\/([^/]+)\/redeem$/);
   if (request.method === 'POST' && redeemMatch) {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const idempotencyKey = request.headers.get('Idempotency-Key')?.trim() || null;
+    if (idempotencyKey && idempotencyKey.length > 160) {
+      return errorResponse('INVALID_IDEMPOTENCY_KEY', 'Idempotency-Key must be <= 160 characters', requestId, 400);
+    }
     if (shouldThrottleWrite(principal.userId, 'redeem')) {
       return errorResponse('RATE_LIMITED', 'Too many voucher redeem requests. Please retry later.', requestId, 429);
     }
     const partnerIdValue = decodeURIComponent(redeemMatch[1] ?? '');
     const voucherId = decodeURIComponent(redeemMatch[2] ?? '');
-    const result = await redeemVoucher(db, principal, { partnerId: partnerIdValue, voucherId });
+    const result = await redeemVoucher(db, principal, { partnerId: partnerIdValue, voucherId, idempotencyKey, correlationId: requestId });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json({
       voucher: result.voucher,

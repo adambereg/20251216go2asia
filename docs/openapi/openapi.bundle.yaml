@@ -259,6 +259,16 @@ components:
       required: true
       schema:
         type: string
+    RfOptionalIdempotencyKey:
+      description: |
+        Optional idempotency key for redeem operation. When provided, RF stores it on the redemption ledger row and still guarantees a single succeeded redemption per voucher.
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema:
+        maxLength: 160
+        minLength: 1
+        type: string
     RfPartnerId:
       in: path
       name: partnerId
@@ -7289,6 +7299,7 @@ paths:
         - $ref: "#/components/parameters/RfXGatewayAuth"
         - $ref: "#/components/parameters/RfPartnerId"
         - $ref: "#/components/parameters/RfVoucherId"
+        - $ref: "#/components/parameters/RfOptionalIdempotencyKey"
       responses:
         "200":
           content:

@@ -57,6 +57,7 @@ export interface RfRieltListingOfferContextResponse {
 
 export type RfVoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type RfVoucherRedemptionResultStatus = 'succeeded' | 'failed' | 'duplicate';
+export type RfProLinkRoleScope = 'onboarding' | 'curation' | 'promotion' | 'moderation_support' | 'account_support';
 
 export interface RfVoucherDto {
   id: string;
@@ -143,6 +144,7 @@ export interface RfVoucherRedemptionDto {
 export interface RfRedeemVoucherInput {
   partnerId: string;
   voucherId: string;
+  idempotencyKey?: string;
   gatewayAuthToken?: string;
 }
 
@@ -157,6 +159,37 @@ export interface RfCreatePartnerRequest {
   cityId: string;
   atlasPlaceId?: string | null;
   hostAtlasPlaceId?: string | null;
+}
+
+export interface RfCreateOfferRequest {
+  title: string;
+  offerType: RfOfferDto['offerType'];
+  visibility: RfOfferDto['visibility'];
+}
+
+export interface RfProLinkDto {
+  id: string;
+  partnerId: string;
+  proUserId: string;
+  status: 'pending' | 'active' | 'ended';
+  roleScope: RfProLinkRoleScope;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RfProLinkListResponse {
+  items: RfProLinkDto[];
+  nextCursor: string | null;
+}
+
+export interface RfCreateProLinkRequest {
+  partnerId: string;
+  roleScope: RfProLinkRoleScope;
+}
+
+export interface RfAcceptProLinkResponse {
+  proLink: RfProLinkDto;
+  applied: boolean;
 }
 
 export async function fetchRfPartners(): Promise<RfPartnerListResponse | null> {
@@ -240,15 +273,18 @@ export async function claimRfListingOffer(
 export const claimRfRieltListingOffer = claimRfListingOffer;
 
 export async function redeemRfVoucher(input: RfRedeemVoucherInput): Promise<RfRedeemResponse> {
-  const headers =
-    input.gatewayAuthToken && input.gatewayAuthToken.trim().length > 0
-      ? { 'X-Gateway-Auth': input.gatewayAuthToken.trim() }
-      : undefined;
+  const headers: Record<string, string> = {};
+  if (input.gatewayAuthToken && input.gatewayAuthToken.trim().length > 0) {
+    headers['X-Gateway-Auth'] = input.gatewayAuthToken.trim();
+  }
+  if (input.idempotencyKey && input.idempotencyKey.trim().length > 0) {
+    headers['Idempotency-Key'] = input.idempotencyKey.trim();
+  }
 
   return customInstance<RfRedeemResponse>(
     {
       method: 'POST',
-      ...(headers ? { headers } : {}),
+      ...(Object.keys(headers).length > 0 ? { headers } : {}),
     },
     `/v1/rf/business/partners/${encodeURIComponent(input.partnerId)}/vouchers/${encodeURIComponent(input.voucherId)}/redeem`
   );
@@ -261,6 +297,48 @@ export async function createBusinessPartner(input: RfCreatePartnerRequest): Prom
       body: JSON.stringify(input),
     },
     '/v1/rf/business/partners'
+  );
+}
+
+export async function createOffer(partnerId: string, input: RfCreateOfferRequest): Promise<RfOfferDto> {
+  return customInstance<RfOfferDto>(
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/offers`
+  );
+}
+
+export async function activateOffer(partnerId: string, offerId: string): Promise<RfOfferDto> {
+  return customInstance<RfOfferDto>(
+    {
+      method: 'POST',
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/offers/${encodeURIComponent(offerId)}/activate`
+  );
+}
+
+export async function listProLinks(): Promise<RfProLinkListResponse> {
+  return customInstance<RfProLinkListResponse>({ method: 'GET' }, '/v1/rf/pro/links');
+}
+
+export async function createProLink(input: RfCreateProLinkRequest): Promise<RfProLinkDto> {
+  return customInstance<RfProLinkDto>(
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+    '/v1/rf/pro/links'
+  );
+}
+
+export async function acceptProLink(proLinkId: string): Promise<RfAcceptProLinkResponse> {
+  return customInstance<RfAcceptProLinkResponse>(
+    {
+      method: 'POST',
+    },
+    `/v1/rf/pro/links/${encodeURIComponent(proLinkId)}/accept`
   );
 }
 
