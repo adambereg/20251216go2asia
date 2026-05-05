@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import {
+  getRfFavoritesStorageKey,
   getRfLocalVoucherOwnerKey,
   getRfMyVouchersStorageKey,
   readFavorites,
@@ -12,24 +13,12 @@ import {
   type RfLocalVoucherOwnerKey,
 } from '@/lib/rfLocalUserState';
 
-export function useRfFavorites(): RfFavoritesState {
-  const [state, setState] = useState<RfFavoritesState>({ places: [], offers: [] });
-
-  useEffect(() => {
-    setState(readFavorites());
-    const on = () => setState(readFavorites());
-    window.addEventListener('rf-local-storage-update', on);
-    return () => window.removeEventListener('rf-local-storage-update', on);
-  }, []);
-
-  return state;
-}
-
 export type RfLocalVoucherOwnerState = {
   isReady: boolean;
   isSignedIn: boolean;
   ownerKey: RfLocalVoucherOwnerKey;
-  storageKey: string | null;
+  favoritesStorageKey: string | null;
+  myVouchersStorageKey: string | null;
 };
 
 export function useRfLocalVoucherOwnerState(): RfLocalVoucherOwnerState {
@@ -46,23 +35,47 @@ export function useRfLocalVoucherOwnerState(): RfLocalVoucherOwnerState {
   }, [email, isLoaded, isSignedIn, userId]);
 
   const isReady = isLoaded && (!isSignedIn || Boolean(ownerKey));
-  const storageKey = isReady ? getRfMyVouchersStorageKey(ownerKey) : null;
+  const favoritesStorageKey = isReady ? getRfFavoritesStorageKey(ownerKey) : null;
+  const myVouchersStorageKey = isReady ? getRfMyVouchersStorageKey(ownerKey) : null;
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development' || !storageKey) return;
-    console.debug('[RF local vouchers] active storage key', {
-      storageKey,
+    if (process.env.NODE_ENV !== 'development' || !favoritesStorageKey || !myVouchersStorageKey) return;
+    console.debug('[RF local state] active storage keys', {
+      favoritesStorageKey,
+      myVouchersStorageKey,
       ownerKey,
       isSignedIn,
     });
-  }, [isSignedIn, ownerKey, storageKey]);
+  }, [favoritesStorageKey, isSignedIn, myVouchersStorageKey, ownerKey]);
 
   return {
     isReady,
     isSignedIn: Boolean(isSignedIn),
     ownerKey,
-    storageKey,
+    favoritesStorageKey,
+    myVouchersStorageKey,
   };
+}
+
+export function useRfFavorites(ownerKey: RfLocalVoucherOwnerKey, enabled = true): RfFavoritesState {
+  const [state, setState] = useState<RfFavoritesState>({ places: [], offers: [] });
+
+  const refresh = useCallback(() => {
+    if (!enabled) {
+      setState({ places: [], offers: [] });
+      return;
+    }
+    setState(readFavorites(ownerKey));
+  }, [enabled, ownerKey]);
+
+  useEffect(() => {
+    refresh();
+    if (!enabled) return undefined;
+    window.addEventListener('rf-local-storage-update', refresh);
+    return () => window.removeEventListener('rf-local-storage-update', refresh);
+  }, [enabled, refresh]);
+
+  return state;
 }
 
 export function useRfMyLocalVouchers(

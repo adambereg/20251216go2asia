@@ -298,11 +298,17 @@ export function RfMyVouchersView() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Сохранённые предложения</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Список хранится локально в этом браузере и привязан к текущему аккаунту. Для гостя — к этому браузеру.
+            {localVoucherOwner.isReady && !localVoucherOwner.isSignedIn
+              ? 'Список хранится локально в этом браузере.'
+              : 'Список хранится локально в этом браузере и привязан к текущему аккаунту.'}
           </p>
         </div>
 
-        <RfLocalStorageNotice>{rfMyVouchersPageContent.localWarning}</RfLocalStorageNotice>
+        <RfLocalStorageNotice>
+          {localVoucherOwner.isReady && !localVoucherOwner.isSignedIn
+            ? 'Список хранится локально в этом браузере. Это не серверный ваучер.'
+            : rfMyVouchersPageContent.localWarning}
+        </RfLocalStorageNotice>
 
         {!localVoucherOwner.isReady ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">

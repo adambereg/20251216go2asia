@@ -56,46 +56,57 @@ export function getRfLocalVoucherOwnerKey(input: RfLocalVoucherOwnerInput): RfLo
   return null;
 }
 
-export function getRfMyVouchersStorageKey(ownerKey?: RfLocalVoucherOwnerKey): string {
-  if (!ownerKey) return RF_MY_VOUCHERS_STORAGE_KEY;
-  return `${RF_MY_VOUCHERS_STORAGE_KEY}:${encodeURIComponent(ownerKey)}`;
+function getRfOwnerScopedStorageKey(baseKey: string, ownerKey?: RfLocalVoucherOwnerKey): string {
+  if (!ownerKey) return baseKey;
+  return `${baseKey}:${encodeURIComponent(ownerKey)}`;
 }
 
-export function readFavorites(): RfFavoritesState {
+export function getRfFavoritesStorageKey(ownerKey?: RfLocalVoucherOwnerKey): string {
+  return getRfOwnerScopedStorageKey(RF_FAVORITES_STORAGE_KEY, ownerKey);
+}
+
+export function getRfMyVouchersStorageKey(ownerKey?: RfLocalVoucherOwnerKey): string {
+  return getRfOwnerScopedStorageKey(RF_MY_VOUCHERS_STORAGE_KEY, ownerKey);
+}
+
+export function readFavorites(ownerKey?: RfLocalVoucherOwnerKey): RfFavoritesState {
   if (typeof window === 'undefined') return { places: [], offers: [] };
-  const data = safeParse<RfFavoritesState>(window.localStorage.getItem(RF_FAVORITES_STORAGE_KEY), {
-    places: [],
-    offers: [],
-  });
+  const data = safeParse<RfFavoritesState>(
+    window.localStorage.getItem(getRfFavoritesStorageKey(ownerKey)),
+    {
+      places: [],
+      offers: [],
+    },
+  );
   return {
     places: Array.isArray(data.places) ? [...new Set(data.places)] : [],
     offers: Array.isArray(data.offers) ? [...new Set(data.offers)] : [],
   };
 }
 
-export function writeFavorites(next: RfFavoritesState) {
+export function writeFavorites(next: RfFavoritesState, ownerKey?: RfLocalVoucherOwnerKey) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(
-    RF_FAVORITES_STORAGE_KEY,
+    getRfFavoritesStorageKey(ownerKey),
     JSON.stringify({ places: [...new Set(next.places)], offers: [...new Set(next.offers)] }),
   );
   emitUpdate();
 }
 
-export function toggleFavoritePlace(partnerId: string) {
-  const cur = readFavorites();
+export function toggleFavoritePlace(partnerId: string, ownerKey?: RfLocalVoucherOwnerKey) {
+  const cur = readFavorites(ownerKey);
   const set = new Set(cur.places);
   if (set.has(partnerId)) set.delete(partnerId);
   else set.add(partnerId);
-  writeFavorites({ ...cur, places: [...set] });
+  writeFavorites({ ...cur, places: [...set] }, ownerKey);
 }
 
-export function toggleFavoriteOffer(offerId: string) {
-  const cur = readFavorites();
+export function toggleFavoriteOffer(offerId: string, ownerKey?: RfLocalVoucherOwnerKey) {
+  const cur = readFavorites(ownerKey);
   const set = new Set(cur.offers);
   if (set.has(offerId)) set.delete(offerId);
   else set.add(offerId);
-  writeFavorites({ ...cur, offers: [...set] });
+  writeFavorites({ ...cur, offers: [...set] }, ownerKey);
 }
 
 export function readMyLocalVouchers(ownerKey?: RfLocalVoucherOwnerKey): RfLocalVoucherEntry[] {

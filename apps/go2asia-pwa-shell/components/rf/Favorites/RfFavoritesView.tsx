@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
-import { useRfFavorites } from '@/hooks/useRfLocalContour';
+import { useRfFavorites, useRfLocalVoucherOwnerState } from '@/hooks/useRfLocalContour';
 import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotice';
 import { FavoriteOfferButton } from '@/components/rf/Shared/FavoriteOfferButton';
 import { FavoritePlaceButton } from '@/components/rf/Shared/FavoritePlaceButton';
 import { getOfferBadge, getOfferSummaryLine, rfFavoritesPageContent } from '@/lib/rfFirstSliceContent';
 
 export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]; offers: RfOfferDto[] }) {
-  const { places: placeIds, offers: offerIds } = useRfFavorites();
+  const owner = useRfLocalVoucherOwnerState();
+  const { places: placeIds, offers: offerIds } = useRfFavorites(owner.ownerKey, owner.isReady);
 
   const placeRows = placeIds
     .map((id) => partners.find((p) => p.id === id))
@@ -23,11 +24,17 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
 
   return (
     <div className="space-y-6">
-      <RfLocalStorageNotice>{rfFavoritesPageContent.localWarning}</RfLocalStorageNotice>
+      <RfLocalStorageNotice>
+        {owner.isReady && !owner.isSignedIn
+          ? 'Список хранится локально в этом браузере. Это не облачная синхронизация: очистка данных сайта или другой браузер — без этих сохранений.'
+          : rfFavoritesPageContent.localWarning}
+      </RfLocalStorageNotice>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">{rfFavoritesPageContent.placesTab}</h2>
-        {placeRows.length === 0 ? (
+        {!owner.isReady ? (
+          <p className="mt-3 text-sm text-slate-600">Проверяем текущий аккаунт перед загрузкой избранного...</p>
+        ) : placeRows.length === 0 ? (
           <p className="mt-3 text-sm text-slate-600">{rfFavoritesPageContent.emptyPlaces}</p>
         ) : (
           <ul className="mt-4 divide-y divide-slate-100">
@@ -48,7 +55,9 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">{rfFavoritesPageContent.offersTab}</h2>
-        {offerRows.length === 0 ? (
+        {!owner.isReady ? (
+          <p className="mt-3 text-sm text-slate-600">Проверяем текущий аккаунт перед загрузкой избранного...</p>
+        ) : offerRows.length === 0 ? (
           <p className="mt-3 text-sm text-slate-600">{rfFavoritesPageContent.emptyOffers}</p>
         ) : (
           <ul className="mt-4 divide-y divide-slate-100">
