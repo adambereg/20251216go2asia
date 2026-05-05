@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, ArrowRight, Clock3, History, ShieldCheck, Ticket } from 'lucide-react';
+import { AlertCircle, ArrowRight, Clock3, History, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
 import { fetchMyVouchers, type RfVoucherDto } from '@go2asia/sdk/rf';
 import {
@@ -118,7 +118,7 @@ export function RfVoucherProjectionPanel() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 mb-6">
+      <Card className="p-5">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-sky-100 p-2">
             <Ticket className="h-5 w-5 text-sky-600" />
@@ -138,13 +138,13 @@ export function RfVoucherProjectionPanel() {
 
   if (isError) {
     return (
-      <Card className="p-6 mb-6 border border-amber-200 bg-amber-50">
+      <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-amber-900">RF-ваучеры временно недоступны</h2>
             <p className="mt-1 text-sm text-amber-900/80">
-              Кошелёк Connect работает отдельно. Эта секция не создаёт локальные или тестовые RF-события.
+              Не удалось загрузить подробности RF-ваучеров. Остальной dashboard остаётся доступен.
             </p>
             <Button variant="secondary" size="sm" className="mt-3" onClick={() => refetch()}>
               Повторить загрузку
@@ -162,47 +162,32 @@ export function RfVoucherProjectionPanel() {
   const hasVouchers = vouchers.length > 0;
 
   return (
-    <Card className="p-6 mb-6">
+    <Card className="p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-sky-100 p-2">
             <Ticket className="h-5 w-5 text-sky-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Мои RF-ваучеры в Connect</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
             <p className="text-sm text-slate-600">
-              Connect показывает состояние, но не изменяет ваучеры.
+              Активные, использованные и последние lifecycle-события.
             </p>
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link href="/rf/my-vouchers">
             <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-              Открыть все RF-ваучеры
+              Все RF-ваучеры
             </Button>
           </Link>
-          <Link href="/rf/vouchers">
-            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-              Найти предложения
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-950">
-        <div className="flex items-start gap-2">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
-          <div>
-            <p className="font-semibold">RF-ваучеры не являются балансом кошелька.</p>
-            <p className="mt-1">Rewards и Points за ваучеры будут подключены позже.</p>
-          </div>
         </div>
       </div>
 
       {!hasVouchers ? (
-        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
           <p className="font-semibold text-slate-900">У вас пока нет RF-ваучеров</p>
-          <p className="mt-1">Сначала найдите предложение в Russian Friendly. Connect только показывает RF-состояние.</p>
+          <p className="mt-1">Сначала найдите предложение в Russian Friendly.</p>
           <Link href="/rf/vouchers" className="mt-3 inline-flex items-center text-sm font-medium text-sky-700 hover:underline">
             Найти предложения
             <ArrowRight className="ml-1 h-4 w-4" />

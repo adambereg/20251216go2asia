@@ -150,7 +150,7 @@ describe('connect RF projection helpers', () => {
     );
 
     expect(meaning.state).toBe('used');
-    expect(meaning.summary).toContain('не начисляет rewards');
+    expect(meaning.summary).toContain('RF-прогресса');
     expect(meaning.ctas.map((cta) => cta.href)).toEqual(['/rf/my-vouchers', '/rf/vouchers']);
   });
 

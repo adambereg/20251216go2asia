@@ -6,9 +6,7 @@ import Link from 'next/link';
 import type { ConnectDashboardResponse } from '@go2asia/sdk/connectDashboard';
 import { BalanceCards } from './BalanceCards';
 import { ActivityFeed } from './ActivityFeed';
-import { VoucherSummaryCard } from './VoucherSummaryCard';
-import { RfEconomicMeaningCard } from './RfEconomicMeaningCard';
-import { RfVoucherProjectionPanel } from './RfVoucherProjectionPanel';
+import { ConnectRfSection } from './ConnectRfSection';
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -57,9 +55,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
         <BalanceCards balance={dashboard.balance} />
       </div>
 
-      <VoucherSummaryCard />
-      <RfEconomicMeaningCard />
-      <RfVoucherProjectionPanel />
+      <ConnectRfSection />
 
       {/* Referral and badges summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

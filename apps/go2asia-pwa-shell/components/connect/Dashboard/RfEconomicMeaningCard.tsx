@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, ArrowRight, Compass, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowRight, Compass } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
 import { fetchMyVouchers, useRfVoucherSummary, type RfVoucherDto } from '@go2asia/sdk/rf';
 import { buildRfEconomicMeaning } from '@/lib/connectRfProjection';
@@ -30,7 +30,7 @@ export function RfEconomicMeaningCard() {
 
   if (summaryLoading || vouchersLoading) {
     return (
-      <Card className="p-6 mb-6">
+      <Card className="p-5">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-emerald-100 p-2">
             <Compass className="h-5 w-5 text-emerald-700" />
@@ -47,13 +47,13 @@ export function RfEconomicMeaningCard() {
 
   if (summaryError || vouchersError) {
     return (
-      <Card className="p-6 mb-6 border border-amber-200 bg-amber-50">
+      <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
           <div>
             <h2 className="text-lg font-semibold text-amber-900">RF-прогресс временно недоступен</h2>
             <p className="mt-1 text-sm text-amber-900/80">
-              Connect не подменяет RF-состояние локальными данными. Кошелёк и Points работают отдельно.
+              Не удалось интерпретировать RF-состояние. Сводка и детали могут загрузиться отдельно.
             </p>
           </div>
         </div>
@@ -64,7 +64,7 @@ export function RfEconomicMeaningCard() {
   const meaning = buildRfEconomicMeaning(vouchers, summary);
 
   return (
-    <Card className="p-6 mb-6 border border-emerald-100 bg-emerald-50/50">
+    <Card className="p-5 border border-emerald-100 bg-emerald-50/50">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-emerald-100 p-2">
@@ -88,7 +88,7 @@ export function RfEconomicMeaningCard() {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="mt-4">
         <ul className="space-y-2">
           {meaning.bullets.map((bullet) => (
             <li key={bullet} className="flex gap-2 text-sm text-slate-700">
@@ -97,20 +97,6 @@ export function RfEconomicMeaningCard() {
             </li>
           ))}
         </ul>
-
-        <div className="rounded-xl border border-emerald-100 bg-white p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-emerald-700" />
-            <h3 className="text-sm font-semibold text-slate-900">Что будет дальше</h3>
-          </div>
-          <ul className="space-y-1.5">
-            {meaning.futureNotes.map((note) => (
-              <li key={note} className="text-xs text-slate-600">
-                {note}
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </Card>
   );
