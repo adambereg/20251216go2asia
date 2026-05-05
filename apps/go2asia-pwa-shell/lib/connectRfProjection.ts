@@ -1,6 +1,22 @@
-import type { RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfVoucherDto, RfVoucherSummary } from '@go2asia/sdk/rf';
 
 export type RfVoucherEffectiveStatus = NonNullable<RfVoucherDto['canonicalStatus']>;
+
+export type RfEconomicMeaningState = 'empty' | 'active_only' | 'used' | 'inactive_only' | 'mixed';
+
+export interface RfEconomicMeaningCta {
+  label: string;
+  href: '/rf/vouchers' | '/rf/my-vouchers';
+}
+
+export interface RfEconomicMeaning {
+  state: RfEconomicMeaningState;
+  title: string;
+  summary: string;
+  bullets: string[];
+  ctas: RfEconomicMeaningCta[];
+  futureNotes: string[];
+}
 
 export interface RfVoucherTimelineItem {
   id: string;
@@ -132,4 +148,103 @@ export function buildRfVoucherTimelineItems(vouchers: RfVoucherDto[], limit = 5)
   return items
     .sort((left, right) => toTimestamp(right.occurredAt) - toTimestamp(left.occurredAt))
     .slice(0, limit);
+}
+
+export function buildRfEconomicMeaning(
+  vouchers: RfVoucherDto[],
+  summary?: RfVoucherSummary | null,
+): RfEconomicMeaning {
+  const split = splitRfVouchersByProjectionStatus(vouchers);
+  const total = summary?.totalVouchers ?? vouchers.length;
+  const activeCount = summary?.activeVouchers ?? split.active.length;
+  const usedCount = summary?.usedVouchers ?? split.used.length;
+  const cancelledCount = summary?.cancelledVouchers ?? split.cancelled.length;
+  const inactiveCount = cancelledCount + split.other.length;
+  const futureNotes = [
+    'Rewards за RF-активность появятся позже.',
+    'Points-связь будет включена отдельным этапом.',
+    'PRO attribution и выплаты не входят в текущую версию.',
+  ];
+
+  if (total === 0) {
+    return {
+      state: 'empty',
+      title: 'У вас пока нет RF-ваучеров',
+      summary: 'Вы ещё не начали пользоваться RF-предложениями.',
+      bullets: [
+        'Начните с сохранения или получения первого предложения.',
+        'Connect покажет здесь ваш RF-прогресс.',
+        'Сейчас это только объяснение состояния, без действий с ваучерами.',
+      ],
+      ctas: [{ label: 'Найти предложения', href: '/rf/vouchers' }],
+      futureNotes,
+    };
+  }
+
+  if (activeCount > 0 && usedCount > 0) {
+    return {
+      state: 'mixed',
+      title: 'Вы уже используете RF и у вас ещё есть активные возможности',
+      summary: 'Вы уже начали использовать RF-предложения.',
+      bullets: [
+        'У вас есть активные ваучеры, которые можно использовать у партнёров Russian Friendly.',
+        'История использования остаётся в RF и отображается в Connect только для понимания прогресса.',
+        'Rewards и Points за RF будут подключены позже.',
+      ],
+      ctas: [
+        { label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' },
+        { label: 'Найти предложения', href: '/rf/vouchers' },
+      ],
+      futureNotes,
+    };
+  }
+
+  if (activeCount > 0) {
+    return {
+      state: 'active_only',
+      title: 'У вас есть активные RF-возможности',
+      summary: 'Используйте ваучер у партнёра Russian Friendly.',
+      bullets: [
+        'Активные ваучеры можно открыть в RF-разделе.',
+        'Connect показывает состояние, но не изменяет ваучеры.',
+        'Rewards и Points за ваучеры будут подключены позже.',
+      ],
+      ctas: [{ label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' }],
+      futureNotes,
+    };
+  }
+
+  if (usedCount > 0) {
+    return {
+      state: 'used',
+      title: 'Вы уже начали использовать RF-предложения',
+      summary: 'Connect показывает историю использования, но не начисляет rewards за неё.',
+      bullets: [
+        'Использованные ваучеры остаются частью RF-истории.',
+        'Новые активные возможности можно найти в каталоге Russian Friendly.',
+        'Текущая версия не создаёт wallet-операции из RF-событий.',
+      ],
+      ctas: [
+        { label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' },
+        { label: 'Найти предложения', href: '/rf/vouchers' },
+      ],
+      futureNotes,
+    };
+  }
+
+  return {
+    state: 'inactive_only',
+    title: 'Сейчас нет активных RF-возможностей',
+    summary:
+      inactiveCount > 0
+        ? 'У вас есть только отменённые, истёкшие или другие неактивные RF-статусы.'
+        : 'Активные RF-возможности сейчас не найдены.',
+    bullets: [
+      'Найдите новые предложения в Russian Friendly.',
+      'Connect не восстанавливает и не меняет статусы ваучеров.',
+      'Будущая экономическая связка будет отдельным этапом.',
+    ],
+    ctas: [{ label: 'Найти предложения', href: '/rf/vouchers' }],
+    futureNotes,
+  };
 }

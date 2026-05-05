@@ -7,6 +7,7 @@ import type { ConnectDashboardResponse } from '@go2asia/sdk/connectDashboard';
 import { BalanceCards } from './BalanceCards';
 import { ActivityFeed } from './ActivityFeed';
 import { VoucherSummaryCard } from './VoucherSummaryCard';
+import { RfEconomicMeaningCard } from './RfEconomicMeaningCard';
 import { RfVoucherProjectionPanel } from './RfVoucherProjectionPanel';
 
 interface DashboardContentProps {
@@ -57,6 +58,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
       </div>
 
       <VoucherSummaryCard />
+      <RfEconomicMeaningCard />
       <RfVoucherProjectionPanel />
 
       {/* Referral and badges summary */}

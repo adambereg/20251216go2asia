@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfVoucherDto, RfVoucherSummary } from '@go2asia/sdk/rf';
 import {
+  buildRfEconomicMeaning,
   buildRfVoucherTimelineItems,
   formatRfVoucherLabel,
   formatRfVoucherPartnerName,
@@ -22,6 +23,16 @@ function voucher(overrides: Partial<RfVoucherDto>): RfVoucherDto {
     redeemedAt: null,
     createdAt: '2026-05-05T00:00:00.000Z',
     updatedAt: '2026-05-05T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function summary(overrides: Partial<RfVoucherSummary>): RfVoucherSummary {
+  return {
+    totalVouchers: 0,
+    activeVouchers: 0,
+    usedVouchers: 0,
+    cancelledVouchers: 0,
     ...overrides,
   };
 }
@@ -104,5 +115,75 @@ describe('connect RF projection helpers', () => {
 
     expect(formatRfVoucherLabel(fallbackVoucher)).toBe('RF-ваучер');
     expect(formatRfVoucherPartnerName(fallbackVoucher)).toBe('Партнёр RF');
+  });
+
+  it('builds empty RF economic meaning without money fields', () => {
+    const meaning = buildRfEconomicMeaning([], summary({}));
+
+    expect(meaning.state).toBe('empty');
+    expect(meaning.ctas).toEqual([{ label: 'Найти предложения', href: '/rf/vouchers' }]);
+    expect(Object.keys(meaning)).not.toEqual(expect.arrayContaining(['money', 'walletAmount', 'rewardPoints', 'payout', 'commission', 'tokenValue']));
+  });
+
+  it('builds active-only RF economic meaning', () => {
+    const meaning = buildRfEconomicMeaning(
+      [voucher({ id: 'active_1', canonicalStatus: 'available' })],
+      summary({ totalVouchers: 1, activeVouchers: 1 }),
+    );
+
+    expect(meaning.state).toBe('active_only');
+    expect(meaning.summary).toContain('Используйте ваучер');
+    expect(meaning.ctas.map((cta) => cta.href)).toEqual(['/rf/my-vouchers']);
+  });
+
+  it('builds used RF economic meaning', () => {
+    const meaning = buildRfEconomicMeaning(
+      [
+        voucher({
+          id: 'used_1',
+          status: 'redeemed',
+          canonicalStatus: 'redeemed',
+          redeemedAt: '2026-05-05T03:00:00.000Z',
+        }),
+      ],
+      summary({ totalVouchers: 1, usedVouchers: 1 }),
+    );
+
+    expect(meaning.state).toBe('used');
+    expect(meaning.summary).toContain('не начисляет rewards');
+    expect(meaning.ctas.map((cta) => cta.href)).toEqual(['/rf/my-vouchers', '/rf/vouchers']);
+  });
+
+  it('builds inactive-only RF economic meaning for cancelled or expired vouchers', () => {
+    const meaning = buildRfEconomicMeaning(
+      [
+        voucher({ id: 'cancelled_1', status: 'cancelled', canonicalStatus: 'cancelled' }),
+        voucher({ id: 'expired_1', canonicalStatus: 'expired' }),
+      ],
+      summary({ totalVouchers: 2, cancelledVouchers: 1 }),
+    );
+
+    expect(meaning.state).toBe('inactive_only');
+    expect(meaning.ctas).toEqual([{ label: 'Найти предложения', href: '/rf/vouchers' }]);
+  });
+
+  it('builds mixed RF economic meaning for active and used vouchers', () => {
+    const meaning = buildRfEconomicMeaning(
+      [
+        voucher({ id: 'active_1', canonicalStatus: 'available' }),
+        voucher({
+          id: 'used_1',
+          status: 'redeemed',
+          canonicalStatus: 'redeemed',
+          redeemedAt: '2026-05-05T03:00:00.000Z',
+        }),
+      ],
+      summary({ totalVouchers: 2, activeVouchers: 1, usedVouchers: 1 }),
+    );
+
+    expect(meaning.state).toBe('mixed');
+    expect(meaning.title).toContain('активные возможности');
+    expect(meaning.futureNotes).toContain('PRO attribution и выплаты не входят в текущую версию.');
+    expect(Object.keys(meaning)).not.toEqual(expect.arrayContaining(['money', 'walletAmount', 'rewardPoints', 'payout', 'commission', 'tokenValue']));
   });
 });

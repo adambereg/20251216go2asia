@@ -1,6 +1,6 @@
 # Connect RF Dashboard Projection v1
 
-Status: implemented as bounded read-only dashboard enrichment for Connect x RF Stage 4.1 and Stage 4.2.
+Status: implemented as bounded read-only dashboard enrichment for Connect x RF Stage 4.1, Stage 4.2 and Stage 4.3.
 
 ## Status
 
@@ -98,3 +98,51 @@ Future backend endpoint:
 
 - not required for Stage 4.2;
 - may become useful only for a paginated RF-owned activity timeline or redemption ledger history.
+
+## Stage 4.3 — Economic Meaning Layer
+
+Stage 4.3 adds a compact semantic layer above the existing RF data.
+
+Added:
+
+- pure helper `buildRfEconomicMeaning(vouchers, summary)`;
+- dashboard card "Ваш RF-прогресс";
+- short state explanation;
+- two to three product guidance bullets;
+- safe CTAs to `/rf/my-vouchers` and `/rf/vouchers`;
+- "Что будет дальше" soon note.
+
+This is semantic/read-only only:
+
+- Connect interprets already available RF state;
+- Connect does not create, claim, redeem, cancel or mutate vouchers;
+- Connect does not calculate money, savings, payouts, commissions or token value;
+- Connect does not create wallet transactions;
+- Connect does not attach PRO attribution.
+
+Supported states:
+
+- no RF vouchers: user has not started using RF offers yet;
+- active-only: user has active RF opportunities but no used vouchers;
+- used: user has used RF offers and can review that lifecycle;
+- inactive-only: user has only cancelled, expired or other inactive statuses;
+- mixed: user has already used RF and still has active opportunities.
+
+Not included:
+
+- backend endpoints;
+- schema changes;
+- OpenAPI changes;
+- SDK generation;
+- wallet balance integration;
+- Points rewards;
+- PRO rewards or attribution;
+- commissions;
+- payouts;
+- G2A token logic;
+- NFT / Totem mechanics;
+- merchant or partner revenue analytics.
+
+Next stage:
+
+- Connect UX Closure: reduce repetition, tune layout density, and keep RF meaning, RF voucher state and Points wallet clearly separated.
