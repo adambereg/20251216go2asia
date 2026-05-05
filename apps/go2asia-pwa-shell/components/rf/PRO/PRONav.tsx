@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   CheckSquare,
+  Handshake,
   ClipboardCheck,
   LayoutDashboard,
   ListOrdered,
@@ -22,7 +23,8 @@ interface PRONavProps {
 
 const workspaceSections = [
   { href: '/rf/pro#pw-overview', label: 'Обзор', icon: LayoutDashboard },
-  { href: '/rf/pro#pw-partners', label: 'Мои партнёры', icon: Store },
+  { href: '/rf/pro#pw-linked-partners', label: 'Связанные партнёры', icon: Handshake },
+  { href: '/rf/pro#pw-partners', label: 'Support scope', icon: Store },
   { href: '/rf/pro#pw-offers', label: 'Предложения', icon: ListOrdered },
   { href: '/rf/pro#pw-focus', label: 'Статус и фокус', icon: ClipboardCheck },
   { href: '/rf/pro#pw-public', label: 'Публичный RF view', icon: MapPin },
