@@ -1,4 +1,4 @@
-import type { RfCreatePartnerItemRequest, RfPartnerItemDto } from '@go2asia/sdk/rf';
+import type { RfCreatePartnerItemRequest, RfOfferDto, RfPartnerItemDto } from '@go2asia/sdk/rf';
 
 export const merchantItemCatalogBoundaryCopy =
   'Товары и услуги управляются владельцем бизнеса. PRO сможет видеть этот контекст позже только read-only и не создаёт и не редактирует каталог.';
@@ -45,6 +45,22 @@ export function getOfferItemDisplayLabel(itemId: string | null | undefined, item
   if (!itemId) return null;
   const item = findMerchantItemById(items, itemId);
   return item ? `Товар/услуга: ${item.title}` : 'Товар/услуга: недоступно';
+}
+
+export const safeItemFallback = 'Товар/услуга недоступна';
+
+export function formatItemSubtitle(item: RfPartnerItemDto | null | undefined): string | null {
+  if (!item) return null;
+  const priceLabel = formatMerchantItemPrice(item.priceFrom, item.currency)?.replace(/^от /, 'От ');
+  return [item.title, item.category ? `Категория: ${item.category}` : null, priceLabel]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export function getItemLabelForOffer(offer: Pick<RfOfferDto, 'itemId'>, item?: RfPartnerItemDto | null): string | null {
+  if (!offer.itemId) return null;
+  const subtitle = formatItemSubtitle(item);
+  return subtitle ?? safeItemFallback;
 }
 
 export type MerchantItemFormInput = {

@@ -505,10 +505,31 @@ Boundaries:
 
 ### Stage 1.4 - Public RF Display Update
 
-- show item label/context on offer cards;
-- add partner item catalog section;
-- show item context in voucher displays when present;
-- preserve legacy offer fallback.
+Status: implemented as a bounded frontend-only public display pass.
+
+Added public RF display:
+
+- Offer cards in the public offers catalog now show item context when an offer has itemId.
+- The RF landing best-offers block uses the same item fallback helper for item-linked offers.
+- Partner pages include a Товары и услуги block when partner offers are linked to items.
+- Partner offer rows show item context next to the offer title.
+- /rf/my-vouchers is item-aware for voucher offer payloads that include item binding data.
+- Offers and vouchers without itemId keep the previous offer.title-only fallback.
+- Missing item details use the explicit fallback Товар/услуга недоступна.
+
+Important public data boundary:
+
+- The current public RF API exposes rf_offer.item_id, but does not expose public item details such as item title, category or priceFrom.
+- The existing listPartnerItems(partnerId) path is a business/owner-gated endpoint and is not used by public RF pages.
+- Stage 1.4 therefore does not invent item names or pricing. It only renders item details when they are already present in context and otherwise uses the safe unavailable fallback.
+
+Boundaries:
+
+- No backend, schema, migration, OpenAPI or SDK generation changes.
+- Claim/redeem behavior is unchanged and remains offer-level.
+- Voucher behavior is unchanged.
+- No PRO UI or Connect changes.
+- No e-commerce behavior: no purchase flow, cart, SKU, payment or pricing logic.
 
 ### Stage 1.5 - PRO Visibility Alignment
 

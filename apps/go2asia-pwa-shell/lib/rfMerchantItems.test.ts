@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
   findMerchantItemById,
+  formatItemSubtitle,
   formatMerchantItemPrice,
   formatMerchantItemOptionLabel,
   getActiveMerchantItems,
+  getItemLabelForOffer,
   getMerchantItemStatusLabel,
   getOfferItemDisplayLabel,
   merchantItemOfferBindingCopy,
   merchantItemCatalogBoundaryCopy,
   normalizeOfferItemId,
+  safeItemFallback,
   validateMerchantItemForm,
 } from './rfMerchantItems';
-import type { RfPartnerItemDto } from '@go2asia/sdk/rf';
+import type { RfOfferDto, RfPartnerItemDto } from '@go2asia/sdk/rf';
 
 function item(overrides: Partial<RfPartnerItemDto> = {}): RfPartnerItemDto {
   return {
@@ -23,6 +26,22 @@ function item(overrides: Partial<RfPartnerItemDto> = {}): RfPartnerItemDto {
     priceFrom: 250,
     currency: 'THB',
     status: 'active',
+    createdAt: '2026-05-05T00:00:00.000Z',
+    updatedAt: '2026-05-05T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function offer(overrides: Partial<RfOfferDto> = {}): RfOfferDto {
+  return {
+    id: 'offer_1',
+    partnerId: 'partner_1',
+    itemId: null,
+    title: 'Breakfast offer',
+    offerType: 'discount',
+    visibility: 'public',
+    status: 'active',
+    createdByUserId: 'owner_1',
     createdAt: '2026-05-05T00:00:00.000Z',
     updatedAt: '2026-05-05T00:00:00.000Z',
     ...overrides,
@@ -105,9 +124,21 @@ describe('rf merchant item helpers', () => {
     expect(getOfferItemDisplayLabel(null, [item()])).toBeNull();
   });
 
+  it('formats public item subtitles without commerce actions', () => {
+    expect(formatItemSubtitle(item())).toBe('Завтрак · Категория: food · От 250 THB');
+    expect(formatItemSubtitle(item({ status: 'archived' }))).toBe('Завтрак · Категория: food · От 250 THB');
+    expect(formatItemSubtitle(null)).toBeNull();
+  });
+
+  it('returns item label for offer with safe legacy fallback', () => {
+    expect(getItemLabelForOffer(offer({ itemId: 'item_1' }), item())).toBe('Завтрак · Категория: food · От 250 THB');
+    expect(getItemLabelForOffer(offer({ itemId: 'missing_item' }), null)).toBe(safeItemFallback);
+    expect(getItemLabelForOffer(offer({ itemId: null }), null)).toBeNull();
+  });
+
   it('does not introduce economy or management-right confusion copy', () => {
-    const copy = `${merchantItemCatalogBoundaryCopy} ${merchantItemOfferBindingCopy}`.toLowerCase();
-    expect(copy).not.toMatch(/reward|commission|payout|earnings|income|доход|комисси|выплат|начислен/);
+    const copy = `${merchantItemCatalogBoundaryCopy} ${merchantItemOfferBindingCopy} ${safeItemFallback}`.toLowerCase();
+    expect(copy).not.toMatch(/купить|оплата|reward|commission|payout|earnings|income|доход|комисси|выплат|начислен/);
     expect(copy).toContain('read-only');
     expect(copy).toContain('уровне оффера');
   });
