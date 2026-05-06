@@ -476,6 +476,28 @@ Boundaries:
 
 ### Stage 1.3 - Offer Creation With Item Binding
 
+Status: implemented as a bounded frontend-only offer creation pass.
+
+Added Merchant UI:
+
+- Optional item selector in the Merchant create offer form.
+- Selector uses the same partner item query key as the item catalog: `['rf', 'business', 'partners', partner.id, 'items']`.
+- Default value is `Без привязки`, so offer creation still works without an item.
+- Only active items are selectable for new offers.
+- Archived items are not available for new offers.
+- Offer list displays linked item context when `offer.itemId` is present.
+- Missing item context falls back to `Товар/услуга: недоступно`.
+
+Boundaries:
+
+- No backend, schema, migration, OpenAPI or SDK generation changes.
+- `itemId` remains optional on offer creation.
+- Existing offers without item binding continue to work.
+- Claim/redeem and voucher behavior are unchanged and remain offer-level.
+- Public RF, PRO and Connect UI are unchanged.
+
+### Stage 1.3 - Original Planned Scope
+
 - add optional item selector to offer creation;
 - validate item belongs to selected partner;
 - keep item optional for backward compatibility;

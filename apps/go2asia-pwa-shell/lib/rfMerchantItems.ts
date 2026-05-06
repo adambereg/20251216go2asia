@@ -6,6 +6,9 @@ export const merchantItemCatalogBoundaryCopy =
 export const merchantItemOfferBindingNextStageCopy =
   'Привязка оффера к товару или услуге будет подключена следующим этапом.';
 
+export const merchantItemOfferBindingCopy =
+  'Привязка помогает понять, к какому товару или услуге относится оффер. Ваучер по-прежнему создаётся и погашается на уровне оффера.';
+
 export function getMerchantItemStatusLabel(status: RfPartnerItemDto['status']): string {
   return status === 'active' ? 'Активен' : 'В архиве';
 }
@@ -18,6 +21,30 @@ export function formatMerchantItemPrice(priceFrom: number | null, currency: stri
   if (priceFrom === null || currency === null) return null;
   const formattedPrice = priceFrom.toLocaleString('ru-RU', { maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ');
   return `от ${formattedPrice} ${currency.toUpperCase()}`;
+}
+
+export function formatMerchantItemOptionLabel(item: RfPartnerItemDto): string {
+  return [item.title, item.category, formatMerchantItemPrice(item.priceFrom, item.currency)].filter(Boolean).join(' · ');
+}
+
+export function getActiveMerchantItems(items: RfPartnerItemDto[]): RfPartnerItemDto[] {
+  return items.filter((item) => item.status === 'active');
+}
+
+export function findMerchantItemById(items: RfPartnerItemDto[], itemId: string | null | undefined): RfPartnerItemDto | null {
+  if (!itemId) return null;
+  return items.find((item) => item.id === itemId) ?? null;
+}
+
+export function normalizeOfferItemId(itemId: string): string | undefined {
+  const trimmed = itemId.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+export function getOfferItemDisplayLabel(itemId: string | null | undefined, items: RfPartnerItemDto[]): string | null {
+  if (!itemId) return null;
+  const item = findMerchantItemById(items, itemId);
+  return item ? `Товар/услуга: ${item.title}` : 'Товар/услуга: недоступно';
 }
 
 export type MerchantItemFormInput = {
