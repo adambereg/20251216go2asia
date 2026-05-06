@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero compact subtitle="Справка и onboarding по каталогу мест, предложениям и личным спискам." />
+      <RFHero compact subtitle="Справка и onboarding по каталогу партнёров, офферам и личным спискам." />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>

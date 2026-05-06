@@ -11,7 +11,6 @@ import {
   ListOrdered,
   ListTodo,
   MapPin,
-  Sparkles,
   Store,
   UserPlus,
   Award,
@@ -25,7 +24,7 @@ const workspaceSections = [
   { href: '/rf/pro#pw-overview', label: 'Обзор', icon: LayoutDashboard },
   { href: '/rf/pro#pw-linked-partners', label: 'Связанные партнёры', icon: Handshake },
   { href: '/rf/pro#pw-partners', label: 'Support scope', icon: Store },
-  { href: '/rf/pro#pw-offers', label: 'Предложения', icon: ListOrdered },
+  { href: '/rf/pro#pw-offers', label: 'Офферы партнёров', icon: ListOrdered },
   { href: '/rf/pro#pw-focus', label: 'Статус и фокус', icon: ClipboardCheck },
   { href: '/rf/pro#pw-public', label: 'Публичный RF view', icon: MapPin },
   { href: '/rf/pro#pw-next', label: 'Дальше', icon: ListTodo },
@@ -35,7 +34,7 @@ const operations = [
   { href: '/rf/pro/partners', label: 'Партнёры', icon: BarChart3, prefix: '/rf/pro/partners', badge: 'legacy' },
   { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare, prefix: '/rf/pro/verifications', badge: 'demo' },
   { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus, prefix: '/rf/pro/onboarding', badge: 'soon' },
-  { href: '/rf/pro/rewards', label: 'Вознаграждения', icon: Award, prefix: '/rf/pro/rewards', badge: 'soon' },
+  { href: '/rf/pro/rewards', label: 'Экономика PRO', icon: Award, prefix: '/rf/pro/rewards', badge: 'later' },
 ];
 
 export function PRONav({ variant = 'vertical' }: PRONavProps) {

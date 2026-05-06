@@ -19,6 +19,9 @@ import {
   proOwnerAcceptEndpointRecommendation,
   proOwnerAcceptErrorState,
   proOwnerAcceptLiveBoundaryCopy,
+  rfLinkedPartnerOffersLabel,
+  rfMerchantBusinessesLabel,
+  rfProLinkedPartnersLabel,
 } from './rfProLinks';
 
 function offer(overrides: Partial<RfOfferDto>): RfOfferDto {
@@ -68,8 +71,13 @@ describe('RF PRO workspace helpers', () => {
   });
 
   it('keeps the empty state focused on linked partners', () => {
-    expect(proLinkedPartnersEmptyState).toContain('Связанных партнёров пока нет');
-    expect(proLinkedPartnersEmptyState).toContain('partnerId');
+    expect(proLinkedPartnersEmptyState).toBe('У вас пока нет связанных партнёров.');
+  });
+
+  it('keeps role labels explicit for PRO, merchant and partner offers', () => {
+    expect(rfProLinkedPartnersLabel).toBe('Связанные партнёры');
+    expect(rfMerchantBusinessesLabel).toBe('Ваши бизнесы');
+    expect(rfLinkedPartnerOffersLabel).toBe('Офферы партнёров');
   });
 
   it('allows accept action only for pending links', () => {
@@ -118,6 +126,9 @@ describe('RF PRO workspace helpers', () => {
       proOwnerAcceptEndpointRecommendation,
       proOwnerAcceptErrorState,
       proOwnerAcceptLiveBoundaryCopy,
+      rfProLinkedPartnersLabel,
+      rfMerchantBusinessesLabel,
+      rfLinkedPartnerOffersLabel,
     ].join(' ');
 
     expect(stage51Copy).not.toMatch(

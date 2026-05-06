@@ -21,7 +21,13 @@ export const proLinkRoleScopeLabels: Record<RfProLinkRoleScope, string> = {
 };
 
 export const proLinkedPartnersEmptyState =
-  'Связанных партнёров пока нет. Можно отправить запрос по partnerId, если партнёр уже существует в RF.';
+  'У вас пока нет связанных партнёров.';
+
+export const rfProLinkedPartnersLabel = 'Связанные партнёры';
+
+export const rfMerchantBusinessesLabel = 'Ваши бизнесы';
+
+export const rfLinkedPartnerOffersLabel = 'Офферы партнёров';
 
 export const proLinkedPartnerBoundaryCopy =
   'Связанный партнёр — это бизнес, с которым вы работаете как PRO. Это не означает владение партнёром и не даёт права создавать офферы или гасить ваучеры.';
@@ -33,7 +39,7 @@ export const proOwnerAcceptEndpointGapCopy =
   'Запросы от PRO появятся здесь после добавления owner-side read endpoint. Сейчас PRO может создать pending-связь, но владелец не видит список запросов в кабинете.';
 
 export const proOwnerAcceptBoundaryCopy =
-  'Владелец партнёра подтверждает только рабочую связь. PRO не получает права владельца, не может создавать офферы или гасить ваучеры, а подтверждение не создаёт финансовых прав.';
+  'Владелец партнёра подтверждает только рабочую связь. PRO не получает права владельца, не может создавать офферы или гасить ваучеры, а подтверждение не запускает экономику PRO.';
 
 export const proOwnerAcceptEndpointRecommendation =
   'Подтверждение запросов владельцем требует отдельного owner-side read endpoint.';

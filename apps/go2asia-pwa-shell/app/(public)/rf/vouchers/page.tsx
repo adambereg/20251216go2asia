@@ -6,10 +6,10 @@ import { RFHero, RFMainNav } from '@/components/rf/Shared';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Предложения | Russian Friendly | Go2Asia',
-  description: 'Каталог публичных предложений партнёров Russian Friendly Asia',
+  title: 'Офферы | Russian Friendly | Go2Asia',
+  description: 'Каталог публичных офферов партнёров Russian Friendly Asia',
   openGraph: {
-    title: 'Предложения | Russian Friendly',
+    title: 'Офферы | Russian Friendly',
     description: 'Каталог выгод, скидок и бонусов',
     type: 'website',
   },

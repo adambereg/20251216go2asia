@@ -219,7 +219,7 @@ export function RfMyVouchersView() {
                               href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
                               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:bg-slate-50"
                             >
-                              Предложения партнёра
+                              Офферы партнёра
                             </Link>
                           </div>
                         </div>
@@ -296,7 +296,7 @@ export function RfMyVouchersView() {
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Сохранённые предложения</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Сохранённые офферы</h2>
           <p className="mt-1 text-xs font-medium uppercase tracking-wide text-amber-700">
             Локально, не ваучеры
           </p>
@@ -315,7 +315,7 @@ export function RfMyVouchersView() {
 
         {!localVoucherOwner.isReady ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-            Проверяем текущий аккаунт перед загрузкой сохранённых предложений...
+            Проверяем текущий аккаунт перед загрузкой сохранённых офферов...
           </div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
@@ -370,7 +370,7 @@ export function RfMyVouchersView() {
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href="/rf/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
-          К каталогу предложений
+          К каталогу офферов
         </Link>
         <Link href="/rf" className="font-medium text-blue-700 hover:text-blue-800">
           К каталогу мест

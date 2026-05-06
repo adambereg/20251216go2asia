@@ -14,7 +14,7 @@ export function PartnersListView() {
   const [selectedCategory, setSelectedCategory] = useState<PartnerCategory | 'all'>('all');
   const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
 
-  // В реальном приложении здесь будет загрузка партнёров текущего PRO-куратора
+  // Legacy/demo: live связанные партнёры показаны на главной странице PRO кабинета через rf_pro_link.
   let partners = mockPartners;
 
   // Фильтрация
@@ -41,11 +41,11 @@ export function PartnersListView() {
     <div className="space-y-6">
       {/* Заголовок */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Мои партнёры</h1>
-        <p className="text-slate-600">Legacy/demo список партнёров для операционного baseline PRO</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Партнёры (legacy/demo)</h1>
+        <p className="text-slate-600">Демо-список для старого операционного baseline PRO, без признака владения бизнесом.</p>
       </div>
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        Этот экран использует demo-данные и не отражает live assignment PRO-контур в API.
+        Этот экран использует demo-данные и не отражает live связи PRO. Актуальные связанные партнёры находятся на главной странице PRO кабинета.
       </div>
 
       {/* Поиск и фильтры */}

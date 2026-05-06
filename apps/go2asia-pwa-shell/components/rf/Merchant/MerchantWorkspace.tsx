@@ -20,6 +20,7 @@ import {
   proOwnerAcceptEmptyState,
   proOwnerAcceptErrorState,
   proOwnerAcceptLiveBoundaryCopy,
+  rfMerchantBusinessesLabel,
 } from '@/lib/rfProLinks';
 import { RfBusinessCreatePanel } from '@/components/rf/live/RfBusinessCreatePanel';
 import { OfferManagementPanel } from '@/components/rf/Merchant/Offers';
@@ -116,7 +117,7 @@ export function MerchantWorkspace() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Кабинет партнёра</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Управление партнёрами, офферами и погашением ваучеров RF. Данные берутся из live RF API.
+              Вы управляете своими партнёрами и офферами. Только владелец создаёт офферы и гасит ваучеры.
             </p>
           </div>
           <a href="#mw-create-partner">
@@ -130,9 +131,9 @@ export function MerchantWorkspace() {
       <section id="mw-my-partners" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Мои партнёры</h2>
+            <h2 className="text-lg font-semibold text-slate-900">{rfMerchantBusinessesLabel}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Партнёры, привязанные к текущему аккаунту.
+              Партнёры, которыми вы управляете как владелец.
             </p>
           </div>
           {myPartners.length > 1 ? (
@@ -154,7 +155,7 @@ export function MerchantWorkspace() {
         </div>
         {myPartners.length === 0 ? (
           <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            У текущего аккаунта пока нет партнёров в RF.
+            У вас пока нет бизнесов.
           </p>
         ) : (
           <ul className="mt-4 divide-y divide-slate-100">
@@ -303,9 +304,9 @@ export function MerchantWorkspace() {
 
       <section id="mw-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Мои офферы</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Офферы ваших бизнесов</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Создание draft-оффера и активация для выбранного партнёра.
+            Создание draft-оффера и активация доступны только владельцу выбранного бизнеса.
           </p>
         </div>
         {activePartner ? (
@@ -320,13 +321,13 @@ export function MerchantWorkspace() {
           </div>
         ) : (
           <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Создайте партнёра, чтобы управлять офферами.
+            Создайте бизнес, чтобы управлять офферами.
           </p>
         )}
       </section>
 
       <section id="mw-create-partner" className="scroll-mt-24 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
-        <h2 className="text-sm font-semibold text-slate-900">Создание партнёра</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Создание бизнеса</h2>
         <p className="mt-1 text-xs text-slate-600">
           Форма вызывает существующий RF endpoint и обновляет список партнёров после успешного создания.
         </p>

@@ -170,7 +170,7 @@ export function buildProFocusItems(scopePartners: RfPartnerDto[], offers: RfOffe
     items.push({
       id: 'all_good',
       title: 'Критичных gaps по текущим эвристикам не найдено',
-      detail: 'Проверьте вручную публичную витрину и предложения перед следующими итерациями.',
+      detail: 'Проверьте вручную публичную витрину и офферы перед следующими итерациями.',
       severity: 'ok',
     });
   }
@@ -220,7 +220,7 @@ export function buildProNextSteps(
     id: 'note_beta_limits',
     title: 'Учитывать ограничения PRO beta',
     detail:
-      'Этот кабинет не содержит live assignment automation, расширенную аналитику и incentive-движок. Это рабочий baseline для следующего этапа.',
+      'Этот кабинет не содержит автоматизацию assignment, расширенную аналитику и экономику PRO. Это рабочий baseline для следующего этапа.',
   });
 
   return steps;

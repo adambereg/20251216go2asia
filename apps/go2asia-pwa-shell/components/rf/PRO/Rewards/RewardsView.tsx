@@ -36,8 +36,11 @@ export function RewardsView() {
     <div className="space-y-6">
       {/* Заголовок */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Вознаграждения</h1>
-        <p className="text-slate-600">Отслеживайте заработанные Points и G2A</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Экономика PRO (позже)</h1>
+        <p className="text-slate-600">Экономика PRO появится в следующих этапах; текущий экран использует demo-данные.</p>
+      </div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        Вознаграждения будут подключены позже. Сейчас здесь нет live-начислений, балансов или транзакций RF.
       </div>
 
       {/* Баланс */}
@@ -49,7 +52,7 @@ export function RewardsView() {
                 <Award size={24} className="text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Всего Points</p>
+                <p className="text-sm text-slate-600">Demo Points</p>
                 <p className="text-3xl font-bold text-slate-900">
                   {curator.stats.totalRewards.toLocaleString('ru-RU')}
                 </p>
@@ -64,7 +67,7 @@ export function RewardsView() {
                 <Coins size={24} className="text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Баланс G2A</p>
+                <p className="text-sm text-slate-600">Demo G2A</p>
                 <p className="text-3xl font-bold text-slate-900">
                   {curator.stats.g2aBalance.toLocaleString('ru-RU')}
                 </p>
@@ -77,7 +80,7 @@ export function RewardsView() {
       {/* История транзакций */}
       <Card className="border-purple-200">
         <CardContent className="p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">История транзакций</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Demo-история</h3>
           <div className="space-y-3">
             {transactions.map((tx) => (
               <div

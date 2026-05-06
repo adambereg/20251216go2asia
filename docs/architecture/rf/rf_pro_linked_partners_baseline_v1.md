@@ -177,3 +177,40 @@ Next slice:
 - richer PRO identity display;
 - reject/end link lifecycle controls;
 - optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.
+
+## Stage 5.3 - UX / Role Clarity Closure
+
+Status: implemented as bounded UX/copy/semantics pass.
+
+Role separation:
+
+- public user uses the RF public surface through `Каталог партнёров`, `Офферы`, map, favorites and vouchers;
+- merchant/owner uses the owner cabinet to manage `Ваши бизнесы`, offers and voucher redemption;
+- PRO uses linked partner visibility through `Связанные партнёры` and read-only partner offers.
+
+Terminology updates:
+
+- PRO surfaces avoid ownership language such as "my partners" for linked partner relationships;
+- merchant surfaces use owner language: `Ваши бизнесы` and `Партнёры, которыми вы управляете`;
+- public RF navigation uses `Каталог партнёров` and `Офферы`;
+- legacy/demo PRO partner and economy screens are explicitly labelled as demo/later surfaces.
+
+Rights boundaries:
+
+- PRO can see linked partners and linked partner offers;
+- PRO cannot create, activate or edit offers;
+- PRO cannot redeem vouchers;
+- merchant owner remains the only role that manages offers and voucher redemption in this baseline.
+
+Economy boundary:
+
+- no backend, schema, OpenAPI or SDK changes were made;
+- no claim/redeem changes were made;
+- no rewards, commissions, payouts, Points, wallet, G2A or NFT/Totem logic was added;
+- future PRO economy copy is labelled as a later-stage placeholder rather than live behavior.
+
+Next slice:
+
+- richer PRO identity display;
+- reject/end link lifecycle controls;
+- optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.

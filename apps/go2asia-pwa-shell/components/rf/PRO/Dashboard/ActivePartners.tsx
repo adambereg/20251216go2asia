@@ -9,17 +9,17 @@ import { mockPartners } from '../../mockData';
 import { PARTNER_CATEGORY_LABELS } from '../../types';
 
 export function ActivePartners() {
-  // В реальном приложении здесь будет загрузка партнёров текущего PRO-куратора
+  // Legacy/demo: live связанные партнёры показаны на главной странице PRO кабинета через rf_pro_link.
   const activePartners = mockPartners.slice(0, 3);
 
   return (
     <Card className="border-purple-200">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Активные партнёры</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Партнёры в demo scope</h3>
           <Link href="/rf/pro/partners">
             <span className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 cursor-pointer">
-              Все партнёры
+              Demo список
               <ArrowRight size={16} />
             </span>
           </Link>

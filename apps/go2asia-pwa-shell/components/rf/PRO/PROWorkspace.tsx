@@ -24,6 +24,8 @@ import {
   proLinkedPartnerBoundaryCopy,
   proLinkedPartnerCreateNote,
   proLinkedPartnersEmptyState,
+  rfLinkedPartnerOffersLabel,
+  rfProLinkedPartnersLabel,
 } from '@/lib/rfProLinks';
 import {
   getOfferBadge,
@@ -81,9 +83,9 @@ export function PROWorkspace() {
     },
   });
 
-  const partners = partnersRes?.items ?? [];
-  const offers = offersRes?.items ?? [];
-  const proLinks = proLinksRes?.items ?? [];
+  const partners = useMemo(() => partnersRes?.items ?? [], [partnersRes?.items]);
+  const offers = useMemo(() => offersRes?.items ?? [], [offersRes?.items]);
+  const proLinks = useMemo(() => proLinksRes?.items ?? [], [proLinksRes?.items]);
   const loading = !userLoaded || partnersLoading || offersLoading;
 
   const apiUnavailable =
@@ -146,12 +148,12 @@ export function PROWorkspace() {
       <section id="pw-overview" className="scroll-mt-24">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Обзор</h1>
         <p className="mt-1 text-sm text-slate-600">
-          PRO workspace: сопровождение партнёров и усиление публичного RF-контура.
+          PRO кабинет: вы работаете с партнёрами как PRO. Это не означает владение бизнесом.
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Партнёров в scope</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Партнёров в legacy scope</p>
             <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.totalPartners}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -167,7 +169,7 @@ export function PROWorkspace() {
             <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.partnersNeedAttention}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Офферов в scope (всего)</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Офферов в legacy scope</p>
             <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.totalOffers}</p>
           </div>
         </div>
@@ -177,7 +179,7 @@ export function PROWorkspace() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.1 live</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">Связи с партнёрами</h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">{rfProLinkedPartnersLabel}</h2>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">{proLinkedPartnerBoundaryCopy}</p>
           </div>
           <button
@@ -191,15 +193,15 @@ export function PROWorkspace() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Owner / Merchant</p>
+            <p className="text-sm font-semibold text-slate-900">Владелец / кабинет партнёра</p>
             <p className="mt-1 text-xs text-slate-600">
-              Владеет партнёром, создаёт офферы и гасит ваучеры в merchant-кабинете.
+              Управляет своими бизнесами, создаёт офферы и гасит ваучеры.
             </p>
           </div>
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <p className="text-sm font-semibold text-emerald-950">PRO linked partner</p>
+            <p className="text-sm font-semibold text-emerald-950">PRO / связанный партнёр</p>
             <p className="mt-1 text-xs text-emerald-900">
-              PRO работает с партнёром, но не владеет им, не создаёт офферы и не гасит ваучеры в этом этапе.
+              PRO работает с партнёром, но не владеет бизнесом, не создаёт офферы и не гасит ваучеры.
             </p>
           </div>
         </div>
@@ -301,14 +303,14 @@ export function PROWorkspace() {
               Не удалось отправить запрос. Проверьте partnerId и доступ к RF API.
             </p>
           ) : null}
-          <p className="mt-3 text-xs text-slate-500">Подтверждение связи владельцем партнёра будет отдельным этапом.</p>
+          <p className="mt-3 text-xs text-slate-500">Подтверждение связи выполняет владелец бизнеса в кабинете партнёра.</p>
         </details>
       </section>
 
       <section id="pw-partners" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Партнёры в support scope (legacy/derived)</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Партнёры в legacy/support scope</h2>
             <p className="mt-1 text-sm text-slate-600">
               Derived слой для публичной видимости RF. Канонические Stage 5.1 связи показаны выше через rf_pro_link.
             </p>
@@ -384,14 +386,14 @@ export function PROWorkspace() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.2 read-only</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">Офферы связанных партнёров</h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">{rfLinkedPartnerOffersLabel}</h2>
             <p className="mt-1 text-sm text-slate-600">
               Здесь отображаются офферы партнёров, с которыми у вас есть активная связь. Это read-only видимость.
             </p>
           </div>
           <Link href="/rf/vouchers">
             <Button variant="secondary" size="sm" className="gap-1">
-              Общий каталог предложений
+              Общий каталог офферов
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </Link>
@@ -461,14 +463,14 @@ export function PROWorkspace() {
         ) : null}
 
         <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-          Управление офферами остаётся только в Merchant cabinet: PRO не создаёт, не активирует, не редактирует и не гасит ваучеры в этом слое.
+          Управление офферами остаётся только в кабинете партнёра: PRO не создаёт, не активирует, не редактирует офферы и не гасит ваучеры.
         </p>
       </section>
 
       <section id="pw-derived-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Предложения в support scope (legacy/derived)</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Офферы в legacy/support scope</h2>
             <p className="mt-1 text-sm text-slate-600">
               Старый read-only обзор по derived scope. Канонический Stage 5.2 список выше строится только из active rf_pro_link.
             </p>
@@ -549,7 +551,7 @@ export function PROWorkspace() {
       </section>
 
       <section id="pw-public" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Публичный RF view</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Публичный RF</h2>
         <p className="mt-1 text-sm text-slate-600">
           Быстрые переходы, чтобы проверить результат работы PRO глазами обычного пользователя.
         </p>
@@ -558,14 +560,14 @@ export function PROWorkspace() {
             href="/rf"
             className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-900 hover:bg-blue-100"
           >
-            Каталог мест
+            Каталог партнёров
             <ChevronRight className="h-4 w-4" />
           </Link>
           <Link
             href="/rf/vouchers"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
           >
-            Каталог предложений
+            Каталог офферов
           </Link>
           <Link
             href="/rf/map"

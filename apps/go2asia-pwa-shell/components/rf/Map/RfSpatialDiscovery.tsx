@@ -55,7 +55,7 @@ export function RfSpatialDiscovery({ partners, offers, initialCityId }: RfSpatia
       <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
         Пока нет партнёров для отображения на карте-обзоре. Загляните позже или откройте{' '}
         <Link href="/rf" className="font-medium text-blue-700 hover:text-blue-800">
-          каталог мест
+          каталог партнёров
         </Link>
         .
       </p>
@@ -91,7 +91,7 @@ export function RfSpatialDiscovery({ partners, offers, initialCityId }: RfSpatia
           <div className="rounded-2xl border border-slate-200 bg-slate-100 p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Ориентир на месте</p>
             <p className="mt-1 text-sm text-slate-700">
-              {getRfCityLabel(cityId)} — {rfMapPageContent.partnerCount(inCity.length)}, публичных активных предложений:{' '}
+              {getRfCityLabel(cityId)} — {rfMapPageContent.partnerCount(inCity.length)}, публичных активных офферов:{' '}
               {offerCountInCity}
             </p>
             <div className="mt-4 grid min-h-[180px] grid-cols-2 gap-2 sm:grid-cols-3">
@@ -139,9 +139,9 @@ export function RfSpatialDiscovery({ partners, offers, initialCityId }: RfSpatia
                   </p>
                   <p className="mt-1 text-xs text-slate-600">{profile.categoryLabel}</p>
                   {oc > 0 ? (
-                    <p className="mt-1 text-xs text-emerald-700">Публичных активных предложений: {oc}</p>
+                    <p className="mt-1 text-xs text-emerald-700">Публичных активных офферов: {oc}</p>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-500">Нет публичных активных предложений на витрине</p>
+                    <p className="mt-1 text-xs text-slate-500">Нет публичных активных офферов на витрине</p>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">

@@ -25,8 +25,8 @@ function isNavActive(pathname: string | null, href: string): boolean {
 type NavDef = { href: string; label: string; icon: LucideIcon };
 
 const publicNav: NavDef[] = [
-  { href: '/rf', label: 'Каталог мест', icon: MapPinned },
-  { href: '/rf/vouchers', label: 'Предложения', icon: Ticket },
+  { href: '/rf', label: 'Каталог партнёров', icon: MapPinned },
+  { href: '/rf/vouchers', label: 'Офферы', icon: Ticket },
   { href: '/rf/map', label: 'Карта', icon: Map },
   { href: '/rf/favorites', label: 'Избранное', icon: Heart },
   { href: '/rf/my-vouchers', label: 'Мои ваучеры', icon: WalletCards },
@@ -34,8 +34,8 @@ const publicNav: NavDef[] = [
 ];
 
 const cabinetNav: NavDef[] = [
-  { href: '/rf/merchant', label: 'Кабинет партнёра', icon: Store },
-  { href: '/rf/pro', label: 'PRO кабинет', icon: Briefcase },
+  { href: '/rf/merchant', label: 'Кабинет владельца', icon: Store },
+  { href: '/rf/pro', label: 'PRO видимость', icon: Briefcase },
 ];
 
 function NavButton({ item, active }: { item: NavDef; active: boolean }) {
@@ -87,7 +87,7 @@ export function RFMainNav() {
           })}
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
-          Кабинеты вынесены отдельно и не являются основным discovery-сценарием для гостя.
+          Владелец управляет бизнесами и офферами; PRO видит связанные партнёрства без owner-прав.
         </p>
       </div>
     </div>

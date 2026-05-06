@@ -61,7 +61,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
                 {rfMicrocopy.backToHub}
               </Link>
               <Link href="/rf/vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
-                Открыть предложения
+                Открыть офферы
               </Link>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
             href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
             className="text-sm font-medium text-blue-700 hover:text-blue-800"
           >
-            Предложения в каталоге
+            Офферы в каталоге
           </Link>
           <Link
             href={`/rf/map?city=${encodeURIComponent(partner.cityId)}`}
@@ -147,16 +147,16 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mt-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Предложения партнёра</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Офферы партнёра</h2>
               <p className="text-sm text-slate-600 mt-1">
-                Оферы из RF runtime для этого места. Избранное и «Мои ваучеры» сохраняются локально в браузере.
+                Офферы из RF runtime для этого партнёра. Избранное и «Мои ваучеры» сохраняются локально в браузере.
               </p>
             </div>
             <Link
               href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
               className="text-sm font-medium text-blue-700 hover:text-blue-800"
             >
-              Открыть в каталоге предложений →
+              Открыть в каталоге офферов →
             </Link>
           </div>
           {offersResponse === null ? (

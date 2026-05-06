@@ -23,7 +23,7 @@ export function CTAPanel({ partner, onGetVoucher, onSave, onShare }: CTAPanelPro
           {hasVouchers && (
             <Button variant="primary" size="lg" className="w-full" onClick={onGetVoucher}>
               <Ticket size={20} className="mr-2" />
-              Сохранить предложение
+              Сохранить оффер
             </Button>
           )}
 
