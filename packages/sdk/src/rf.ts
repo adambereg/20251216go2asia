@@ -192,6 +192,8 @@ export interface RfAcceptProLinkResponse {
   applied: boolean;
 }
 
+export type RfProLinkLifecycleResponse = RfAcceptProLinkResponse;
+
 export async function fetchRfPartners(): Promise<RfPartnerListResponse | null> {
   try {
     return await customInstance<RfPartnerListResponse>({ method: 'GET' }, '/v1/rf/partners');
@@ -346,6 +348,24 @@ export async function acceptProLink(proLinkId: string): Promise<RfAcceptProLinkR
       method: 'POST',
     },
     `/v1/rf/pro/links/${encodeURIComponent(proLinkId)}/accept`
+  );
+}
+
+export async function rejectProLink(proLinkId: string): Promise<RfProLinkLifecycleResponse> {
+  return customInstance<RfProLinkLifecycleResponse>(
+    {
+      method: 'POST',
+    },
+    `/v1/rf/pro/links/${encodeURIComponent(proLinkId)}/reject`
+  );
+}
+
+export async function endProLink(proLinkId: string): Promise<RfProLinkLifecycleResponse> {
+  return customInstance<RfProLinkLifecycleResponse>(
+    {
+      method: 'POST',
+    },
+    `/v1/rf/pro/links/${encodeURIComponent(proLinkId)}/end`
   );
 }
 

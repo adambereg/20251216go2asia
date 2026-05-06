@@ -430,7 +430,7 @@ export function PROWorkspace() {
 
         {!proLinksLoading && !proLinksError && activeLinkedPartnerIds.length === 0 ? (
           <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            У вас пока нет активных связей с партнёрами.
+            У вас пока нет активных связей с партнёрами. Завершённые связи остаются в списке выше, но не дают visibility офферов.
           </p>
         ) : null}
 
@@ -484,7 +484,7 @@ export function PROWorkspace() {
         ) : null}
 
         <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-          Управление офферами остаётся только в кабинете партнёра: PRO не создаёт, не активирует, не редактирует офферы и не гасит ваучеры.
+          Visibility строится только по active связям. Pending и ended связи не дают доступ к офферам. Управление офферами остаётся только в кабинете партнёра: PRO не создаёт, не активирует, не редактирует офферы и не гасит ваучеры.
         </p>
       </section>
 

@@ -7564,6 +7564,62 @@ paths:
       summary: Accept PRO link by partner owner
       tags:
         - rf
+  /v1/rf/pro/links/{proLinkId}/end:
+    post:
+      description: |
+        Owner-gated lifecycle operation. Active links become ended. Already ended links return an idempotent response. Pending links return conflict and should be rejected instead. This operation does not affect offers, vouchers, claim/redeem attribution, rewards, commissions or payouts.
+      operationId: rfEndProLink
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfProLinkId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfAcceptProLinkResponse"
+          description: Ended or already ended
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+      security:
+        - GatewayAuth: []
+      summary: End active PRO link by partner owner
+      tags:
+        - rf
+  /v1/rf/pro/links/{proLinkId}/reject:
+    post:
+      description: |
+        Owner-gated lifecycle operation. Pending links become ended. Already ended links return an idempotent response. Active links return conflict and must be ended instead. This operation does not affect offers, vouchers, claim/redeem attribution, rewards, commissions or payouts.
+      operationId: rfRejectProLink
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfProLinkId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfAcceptProLinkResponse"
+          description: Rejected or already ended
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+        "409":
+          $ref: "#/components/responses/RfConflict"
+      security:
+        - GatewayAuth: []
+      summary: Reject pending PRO link by partner owner
+      tags:
+        - rf
   /v1/rf/rielt/listings/{listingId}/offers:
     get:
       description: |
@@ -8504,6 +8560,8 @@ tags:
           - /v1/rf/business/partners/{partnerId}/pro-links
           - /v1/rf/pro/links
           - /v1/rf/pro/links/{proLinkId}/accept
+          - /v1/rf/pro/links/{proLinkId}/reject
+          - /v1/rf/pro/links/{proLinkId}/end
       contractClass: runtime-implemented
       plannedSurfaceDoc: docs/architecture/rf/rf_openapi_outline_v1.md
       stableRefPolicy:

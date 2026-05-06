@@ -8,12 +8,15 @@ import {
 import {
   buildProIdentityLabel,
   canAcceptProLink,
+  canEndProLink,
+  canRejectProLink,
   formatProUserId,
   getProIdentityFallback,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
   proIdentityFallbackNote,
+  proLinkLifecycleBoundaryCopy,
   proLinkedPartnerBoundaryCopy,
   proLinkedPartnerCreateNote,
   proLinkedPartnersEmptyState,
@@ -90,6 +93,16 @@ describe('RF PRO workspace helpers', () => {
     expect(canAcceptProLink({ status: 'ended' })).toBe(false);
   });
 
+  it('allows lifecycle actions only for valid PRO link states', () => {
+    expect(canRejectProLink({ status: 'pending' })).toBe(true);
+    expect(canRejectProLink({ status: 'active' })).toBe(false);
+    expect(canRejectProLink({ status: 'ended' })).toBe(false);
+
+    expect(canEndProLink({ status: 'pending' })).toBe(false);
+    expect(canEndProLink({ status: 'active' })).toBe(true);
+    expect(canEndProLink({ status: 'ended' })).toBe(false);
+  });
+
   it('builds PRO identity labels with display name, email and safe user id fallbacks', () => {
     expect(buildProIdentityLabel({ userId: 'user_raw', displayName: 'Иван Петров', email: 'pro@example.com' })).toBe(
       'Иван Петров',
@@ -141,6 +154,7 @@ describe('RF PRO workspace helpers', () => {
       proOwnerAcceptErrorState,
       proOwnerAcceptLiveBoundaryCopy,
       proIdentityFallbackNote,
+      proLinkLifecycleBoundaryCopy,
       rfProLinkedPartnersLabel,
       rfMerchantBusinessesLabel,
       rfLinkedPartnerOffersLabel,

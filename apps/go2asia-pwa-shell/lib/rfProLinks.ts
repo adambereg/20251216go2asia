@@ -53,6 +53,9 @@ export const proOwnerAcceptEndpointRecommendation =
 export const proOwnerAcceptLiveBoundaryCopy =
   'Здесь владелец партнёра подтверждает рабочие связи с PRO. PRO не получает права владельца, не создаёт офферы и не гасит ваучеры.';
 
+export const proLinkLifecycleBoundaryCopy =
+  'Отклонение или завершение связи не влияет на уже созданные офферы и не является экономическим решением. PRO не получает права владельца.';
+
 export const proOwnerAcceptEmptyState =
   'Для этого партнёра пока нет PRO-запросов.';
 
@@ -86,6 +89,14 @@ export function buildProIdentityLabel(identity: ProIdentityInput) {
 
 export function canAcceptProLink(link: Pick<RfProLinkDto, 'status'>) {
   return link.status === 'pending';
+}
+
+export function canRejectProLink(link: Pick<RfProLinkDto, 'status'>) {
+  return link.status === 'pending';
+}
+
+export function canEndProLink(link: Pick<RfProLinkDto, 'status'>) {
+  return link.status === 'active';
 }
 
 export function getProLinkStatusLabel(status: RfProLinkDto['status']) {

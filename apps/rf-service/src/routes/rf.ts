@@ -10,6 +10,7 @@ import {
   createOffer,
   createPartner,
   createProLink,
+  endProLink,
   getMyVoucherSummary,
   getPublicOfferById,
   getPublicPartnerById,
@@ -20,6 +21,7 @@ import {
   listPublicOffers,
   listPublicPartners,
   redeemVoucher,
+  rejectProLink,
   shouldThrottleWrite,
   validatePartnerGeoLinks,
 } from '../store';
@@ -299,6 +301,28 @@ export async function handleRfRoute(
   if (request.method === 'POST' && proLinkId) {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     const result = await acceptProLink(db, principal, { proLinkId });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json({
+      proLink: result.proLink,
+      applied: result.applied,
+    });
+  }
+
+  const rejectProLinkId = getPathParam(path, /^\/v1\/rf\/pro\/links\/([^/]+)\/reject$/);
+  if (request.method === 'POST' && rejectProLinkId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await rejectProLink(db, principal, { proLinkId: rejectProLinkId });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json({
+      proLink: result.proLink,
+      applied: result.applied,
+    });
+  }
+
+  const endProLinkId = getPathParam(path, /^\/v1\/rf\/pro\/links\/([^/]+)\/end$/);
+  if (request.method === 'POST' && endProLinkId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await endProLink(db, principal, { proLinkId: endProLinkId });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json({
       proLink: result.proLink,

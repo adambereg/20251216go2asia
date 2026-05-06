@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { customInstance, generated } from '@go2asia/sdk';
 import type { RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
-import { acceptProLink, listPartnerProLinks, useRfOffers, useRfPartners } from '@go2asia/sdk/rf';
+import { acceptProLink, endProLink, listPartnerProLinks, rejectProLink, useRfOffers, useRfPartners } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -15,12 +15,15 @@ import {
 import {
   buildProIdentityLabel,
   canAcceptProLink,
+  canEndProLink,
+  canRejectProLink,
   formatProLinkDate,
   formatProUserId,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
   proIdentityFallbackNote,
+  proLinkLifecycleBoundaryCopy,
   proOwnerAcceptEmptyState,
   proOwnerAcceptErrorState,
   proOwnerAcceptLiveBoundaryCopy,
@@ -88,6 +91,18 @@ export function MerchantWorkspace() {
   });
   const acceptLinkMutation = useMutation({
     mutationFn: acceptProLink,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: proLinksQueryKey });
+    },
+  });
+  const rejectLinkMutation = useMutation({
+    mutationFn: rejectProLink,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: proLinksQueryKey });
+    },
+  });
+  const endLinkMutation = useMutation({
+    mutationFn: endProLink,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: proLinksQueryKey });
     },
@@ -235,6 +250,7 @@ export function MerchantWorkspace() {
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.1d live</p>
             <h2 className="text-lg font-semibold text-slate-900">PRO-запросы</h2>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">{proOwnerAcceptLiveBoundaryCopy}</p>
+            <p className="mt-1 max-w-3xl text-xs text-slate-500">{proLinkLifecycleBoundaryCopy}</p>
           </div>
           {activePartner ? (
             <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
@@ -276,7 +292,13 @@ export function MerchantWorkspace() {
           <ul className="mt-4 divide-y divide-slate-100">
             {partnerProLinks.map((link) => {
               const canAccept = canAcceptProLink(link);
+              const canReject = canRejectProLink(link);
+              const canEnd = canEndProLink(link);
               const isAccepting = acceptLinkMutation.isPending && acceptLinkMutation.variables === link.id;
+              const isRejecting = rejectLinkMutation.isPending && rejectLinkMutation.variables === link.id;
+              const isEnding = endLinkMutation.isPending && endLinkMutation.variables === link.id;
+              const hasPendingLifecycleAction =
+                acceptLinkMutation.isPending || rejectLinkMutation.isPending || endLinkMutation.isPending;
               const proProfile = proProfilesByUserId.get(link.proUserId);
               const proIdentityLabel = buildProIdentityLabel({
                 userId: link.proUserId,
@@ -319,17 +341,41 @@ export function MerchantWorkspace() {
                     </dl>
                   </div>
 
-                  {canAccept ? (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="sm"
-                      disabled={acceptLinkMutation.isPending}
-                      onClick={() => acceptLinkMutation.mutate(link.id)}
-                    >
-                      {isAccepting ? 'Принимаем…' : 'Принять запрос'}
-                    </Button>
-                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {canAccept ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={hasPendingLifecycleAction}
+                        onClick={() => acceptLinkMutation.mutate(link.id)}
+                      >
+                        {isAccepting ? 'Принимаем…' : 'Принять запрос'}
+                      </Button>
+                    ) : null}
+                    {canReject ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={hasPendingLifecycleAction}
+                        onClick={() => rejectLinkMutation.mutate(link.id)}
+                      >
+                        {isRejecting ? 'Отклоняем…' : 'Отклонить'}
+                      </Button>
+                    ) : null}
+                    {canEnd ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={hasPendingLifecycleAction}
+                        onClick={() => endLinkMutation.mutate(link.id)}
+                      >
+                        {isEnding ? 'Завершаем…' : 'Завершить связь'}
+                      </Button>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -339,6 +385,16 @@ export function MerchantWorkspace() {
         {acceptLinkMutation.isError ? (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
             Не удалось принять запрос. Обновите список и попробуйте ещё раз.
+          </p>
+        ) : null}
+        {rejectLinkMutation.isError ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            Не удалось отклонить запрос. Обновите список и попробуйте ещё раз.
+          </p>
+        ) : null}
+        {endLinkMutation.isError ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            Не удалось завершить связь. Обновите список и попробуйте ещё раз.
           </p>
         ) : null}
       </section>

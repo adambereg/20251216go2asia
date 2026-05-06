@@ -217,6 +217,46 @@ Next slice:
 - optional RF-scoped PRO identity endpoint if Space profile projection becomes insufficient;
 - optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.
 
+## Stage 5.5 - Reject / End Link Lifecycle Controls
+
+Status: implemented as bounded lifecycle control pass.
+
+Backend/API/SDK lifecycle:
+
+- `POST /v1/rf/pro/links/{proLinkId}/reject` lets a partner owner reject a pending PRO link;
+- `POST /v1/rf/pro/links/{proLinkId}/end` lets a partner owner end an active PRO link;
+- both operations return the existing `{ proLink, applied }` response shape;
+- both operations are owner-gated through the linked partner owner;
+- `ended` links return idempotent success with `applied: false`;
+- invalid state transitions return `409`.
+
+UI lifecycle:
+
+- pending links show `Принять запрос` and `Отклонить`;
+- active links show `Завершить связь`;
+- ended links are read-only;
+- lifecycle copy explains that rejecting or ending a link does not affect existing offers and is not a payout/reward decision.
+
+Visibility:
+
+- linked partner offers visibility continues to use only active `rf_pro_link` rows;
+- pending links do not grant offer visibility;
+- ended links do not grant offer visibility and remain visible as historical/completed links.
+
+Boundaries:
+
+- no schema changes or migrations;
+- no claim/redeem attribution;
+- no Connect changes;
+- no rewards, commissions, payouts, Points, wallet, G2A or NFT/Totem logic;
+- no merchant financial analytics.
+
+Next slice:
+
+- optional RF-scoped PRO identity endpoint if Space profile projection becomes insufficient;
+- optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient;
+- future audit/history fields if product needs to distinguish rejected pending links from ended active links.
+
 ## Stage 5.3 - UX / Role Clarity Closure
 
 Status: implemented as bounded UX/copy/semantics pass.
