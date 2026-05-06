@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Карта | Russian Friendly | Go2Asia',
-  description: 'Географический обзор мест и предложений Russian Friendly Asia',
+  description: 'Географический обзор партнёров и офферов Russian Friendly Asia',
 };
 
 interface MapPageProps {
@@ -22,7 +22,7 @@ export default async function RfMapPage({ searchParams }: MapPageProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero compact subtitle="Ориентир по городам и зонам; связь с каталогом мест и предложений." />
+      <RFHero compact subtitle="Ориентир по городам и зонам; связь с каталогом партнёров и офферов." />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>

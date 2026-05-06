@@ -130,6 +130,10 @@ type RedeemResult =
 type ProLinkAcceptResult =
   | { ok: true; proLink: ProLink; applied: boolean }
   | { ok: false; code: string; message: string; status: number };
+type ProLinkLifecycleResult = ProLinkAcceptResult;
+type PartnerProLinksResult =
+  | { ok: true; items: ProLink[] }
+  | { ok: false; code: string; message: string; status: number };
 
 type PartnerRow = {
   id: string;
@@ -1535,6 +1539,42 @@ export async function listProLinks(db: DbExecutor, principal: GatewayPrincipal):
   return rowsOf<ProLinkRow>(result).map(toProLink);
 }
 
+export async function listPartnerProLinks(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: { partnerId: string }
+): Promise<PartnerProLinksResult> {
+  const partnerResult = await db.execute(sql`
+    SELECT id, owner_user_id, status
+    FROM rf_partner
+    WHERE id = ${input.partnerId}
+    LIMIT 1
+  `);
+  const partner = rowsOf<Pick<PartnerRow, 'id' | 'owner_user_id' | 'status'>>(partnerResult)[0];
+  if (!partner || partner.status !== 'active') {
+    return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
+  }
+  if (partner.owner_user_id !== principal.userId) {
+    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Only partner owner can list PRO links', status: 403 };
+  }
+
+  const result = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE partner_id = ${input.partnerId}
+    ORDER BY
+      CASE status
+        WHEN 'pending' THEN 0
+        WHEN 'active' THEN 1
+        WHEN 'ended' THEN 2
+        ELSE 3
+      END ASC,
+      created_at DESC,
+      id DESC
+  `);
+  return { ok: true, items: rowsOf<ProLinkRow>(result).map(toProLink) };
+}
+
 export async function createProLink(
   db: DbExecutor,
   principal: GatewayPrincipal,
@@ -1636,6 +1676,100 @@ export async function acceptProLink(
     return { ok: false, code: 'RF_PRO_LINK_ENDED', message: 'Cannot accept ended link', status: 409 };
   }
   return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot accept link in current state', status: 409 };
+}
+
+export async function rejectProLink(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: { proLinkId: string }
+): Promise<ProLinkLifecycleResult> {
+  const result = await db.execute(sql`
+    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    FROM rf_pro_link p
+    INNER JOIN rf_partner rp ON rp.id = p.partner_id
+    WHERE p.id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const row = rowsOf<(ProLinkRow & { owner_user_id: string })>(result)[0];
+  if (!row) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+
+  if (row.owner_user_id !== principal.userId) {
+    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Only partner owner can reject link', status: 403 };
+  }
+  if (row.status === 'ended') return { ok: true, proLink: toProLink(row), applied: false };
+  if (row.status === 'active') {
+    return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot reject active link; end it instead', status: 409 };
+  }
+
+  const updatedResult = await db.execute(sql`
+    UPDATE rf_pro_link
+    SET
+      status = 'ended',
+      updated_at = now()
+    WHERE id = ${input.proLinkId}
+      AND status = 'pending'
+    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+  `);
+  const updated = rowsOf<ProLinkRow>(updatedResult)[0];
+  if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
+
+  const latestResult = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const latest = rowsOf<ProLinkRow>(latestResult)[0];
+  if (!latest) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+  if (latest.status === 'ended') return { ok: true, proLink: toProLink(latest), applied: false };
+  return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot reject link in current state', status: 409 };
+}
+
+export async function endProLink(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: { proLinkId: string }
+): Promise<ProLinkLifecycleResult> {
+  const result = await db.execute(sql`
+    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    FROM rf_pro_link p
+    INNER JOIN rf_partner rp ON rp.id = p.partner_id
+    WHERE p.id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const row = rowsOf<(ProLinkRow & { owner_user_id: string })>(result)[0];
+  if (!row) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+
+  if (row.owner_user_id !== principal.userId) {
+    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: 'Only partner owner can end link', status: 403 };
+  }
+  if (row.status === 'ended') return { ok: true, proLink: toProLink(row), applied: false };
+  if (row.status === 'pending') {
+    return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot end pending link; reject it instead', status: 409 };
+  }
+
+  const updatedResult = await db.execute(sql`
+    UPDATE rf_pro_link
+    SET
+      status = 'ended',
+      updated_at = now()
+    WHERE id = ${input.proLinkId}
+      AND status = 'active'
+    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+  `);
+  const updated = rowsOf<ProLinkRow>(updatedResult)[0];
+  if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
+
+  const latestResult = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    FROM rf_pro_link
+    WHERE id = ${input.proLinkId}
+    LIMIT 1
+  `);
+  const latest = rowsOf<ProLinkRow>(latestResult)[0];
+  if (!latest) return { ok: false, code: 'RF_PRO_LINK_NOT_FOUND', message: 'RF PRO link not found', status: 404 };
+  if (latest.status === 'ended') return { ok: true, proLink: toProLink(latest), applied: false };
+  return { ok: false, code: 'RF_PRO_LINK_CONFLICT', message: 'Cannot end link in current state', status: 409 };
 }
 
 export function resetRfStoreForTests(): void {

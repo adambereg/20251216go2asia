@@ -44,7 +44,7 @@ function getErrorMessage(error: unknown) {
     return 'Этот запрос уже использовался для другого ваучера. Обновите страницу и попробуйте снова.';
   }
   if (code === 'RF_OFFER_NOT_FOUND' || code === 'RF_OFFER_INACTIVE' || code === 'RF_OFFER_NOT_CLAIMABLE' || code === 'RF_PARTNER_INACTIVE') {
-    return 'Это предложение сейчас недоступно.';
+    return 'Этот оффер сейчас недоступен.';
   }
   if (code === 'RATE_LIMITED') return 'Слишком много попыток. Попробуйте позже.';
   if (code === 'RF_VOUCHER_CLAIM_FAILED' || code === 'RF_CLAIM_IDEMPOTENCY_FAILED') {
@@ -97,7 +97,7 @@ function PostClaimActions({
           href={partnerHref}
           className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
         >
-          Посмотреть предложения партнёра
+          Посмотреть офферы партнёра
         </Link>
       ) : null}
     </div>

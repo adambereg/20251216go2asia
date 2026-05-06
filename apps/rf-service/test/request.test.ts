@@ -1818,4 +1818,460 @@ describe('rf-service request', () => {
     expect(acceptBody.applied).toBe(true);
     expect(acceptBody.proLink.status).toBe('active');
   });
+
+  it('lets partner owner list PRO links for owned partner', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            owner_user_id: 'partner_owner_1',
+            status: 'active',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_pro_link_pending',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_1',
+            status: 'pending',
+            role_scope: 'curation',
+            created_at: '2026-03-21T10:10:00.000Z',
+            updated_at: '2026-03-21T10:10:00.000Z',
+          },
+          {
+            id: 'rf_pro_link_active',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_2',
+            status: 'active',
+            role_scope: 'promotion',
+            created_at: '2026-03-21T10:05:00.000Z',
+            updated_at: '2026-03-21T10:06:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/pro-links', {
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      items: Array<{ id: string; partnerId: string; proUserId: string; status: string; roleScope: string }>;
+      nextCursor: string | null;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.nextCursor).toBeNull();
+    expect(body.items).toEqual([
+      expect.objectContaining({
+        id: 'rf_pro_link_pending',
+        partnerId: 'rf_partner_1',
+        proUserId: 'pro_user_1',
+        status: 'pending',
+        roleScope: 'curation',
+      }),
+      expect.objectContaining({
+        id: 'rf_pro_link_active',
+        partnerId: 'rf_partner_1',
+        proUserId: 'pro_user_2',
+        status: 'active',
+        roleScope: 'promotion',
+      }),
+    ]);
+    expect(executeMock).toHaveBeenCalledTimes(2);
+    const statements = executedStatements();
+    expect(statements[1].text).toContain('FROM rf_pro_link');
+    expect(statements[1].text).toContain('WHERE partner_id =');
+    expect(statements[1].values).toContain('rf_partner_1');
+  });
+
+  it('prevents non-owner from listing partner PRO links', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const nonOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'not_partner_owner' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_partner_1',
+          owner_user_id: 'partner_owner_1',
+          status: 'active',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/pro-links', {
+        headers: {
+          'X-Gateway-Auth': nonOwnerToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('RF_PARTNER_FORBIDDEN');
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns not found when listing PRO links for missing partner', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/missing_partner/pro-links', {
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_PARTNER_NOT_FOUND');
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('requires auth to list partner PRO links', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const response = await worker.fetch(new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/pro-links'), env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('lets partner owner reject pending PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_pro_link_pending',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_1',
+            status: 'pending',
+            role_scope: 'promotion',
+            created_at: '2026-03-21T10:10:00.000Z',
+            updated_at: '2026-03-21T10:10:00.000Z',
+            owner_user_id: 'partner_owner_1',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_pro_link_pending',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_1',
+            status: 'ended',
+            role_scope: 'promotion',
+            created_at: '2026-03-21T10:10:00.000Z',
+            updated_at: '2026-03-21T10:11:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_pending/reject', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ applied: boolean; proLink: { status: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(true);
+    expect(body.proLink.status).toBe('ended');
+  });
+
+  it('prevents non-owner from rejecting PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const nonOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'not_partner_owner' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_pending',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'pending',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_pending/reject', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': nonOwnerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('RF_PARTNER_FORBIDDEN');
+  });
+
+  it('returns not found when rejecting missing PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/missing_link/reject', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_PRO_LINK_NOT_FOUND');
+  });
+
+  it('returns conflict when rejecting active PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_active',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'active',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_active/reject', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_PRO_LINK_CONFLICT');
+  });
+
+  it('treats rejecting ended PRO link as idempotent', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_ended',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'ended',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_ended/reject', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ applied: boolean; proLink: { status: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(false);
+    expect(body.proLink.status).toBe('ended');
+  });
+
+  it('lets partner owner end active PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_pro_link_active',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_1',
+            status: 'active',
+            role_scope: 'promotion',
+            created_at: '2026-03-21T10:10:00.000Z',
+            updated_at: '2026-03-21T10:10:00.000Z',
+            owner_user_id: 'partner_owner_1',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_pro_link_active',
+            partner_id: 'rf_partner_1',
+            pro_user_id: 'pro_user_1',
+            status: 'ended',
+            role_scope: 'promotion',
+            created_at: '2026-03-21T10:10:00.000Z',
+            updated_at: '2026-03-21T10:11:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_active/end', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ applied: boolean; proLink: { status: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(true);
+    expect(body.proLink.status).toBe('ended');
+  });
+
+  it('prevents non-owner from ending PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const nonOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'not_partner_owner' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_active',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'active',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_active/end', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': nonOwnerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('RF_PARTNER_FORBIDDEN');
+  });
+
+  it('returns not found when ending missing PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/missing_link/end', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_PRO_LINK_NOT_FOUND');
+  });
+
+  it('returns conflict when ending pending PRO link', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_pending',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'pending',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_pending/end', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_PRO_LINK_CONFLICT');
+  });
+
+  it('treats ending ended PRO link as idempotent', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_pro_link_ended',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          status: 'ended',
+          role_scope: 'promotion',
+          created_at: '2026-03-21T10:10:00.000Z',
+          updated_at: '2026-03-21T10:10:00.000Z',
+          owner_user_id: 'partner_owner_1',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/links/rf_pro_link_ended/end', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ applied: boolean; proLink: { status: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(false);
+    expect(body.proLink.status).toBe('ended');
+  });
 });

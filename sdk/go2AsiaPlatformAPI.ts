@@ -4128,6 +4128,60 @@ export const rfActivateOffer = async (
 };
 
 /**
+ * Owner-scoped read endpoint for incoming and historical PRO links on a partner. The authenticated actor must own the partner in path. The endpoint is read-only and does not accept, reject, reward or attribute claims/redeems.
+
+ * @summary List PRO links for an owned partner
+ */
+export type rfListPartnerProLinksResponse200 = {
+  data: RfProLinkListResponse;
+  status: 200;
+};
+
+export type rfListPartnerProLinksResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfListPartnerProLinksResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfListPartnerProLinksResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfListPartnerProLinksResponseSuccess = rfListPartnerProLinksResponse200 & {
+  headers: Headers;
+};
+export type rfListPartnerProLinksResponseError = (
+  | rfListPartnerProLinksResponse401
+  | rfListPartnerProLinksResponse403
+  | rfListPartnerProLinksResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfListPartnerProLinksResponse =
+  | rfListPartnerProLinksResponseSuccess
+  | rfListPartnerProLinksResponseError;
+
+export const getRfListPartnerProLinksUrl = (partnerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/pro-links`;
+};
+
+export const rfListPartnerProLinks = async (
+  partnerId: string,
+  options?: RequestInit
+): Promise<rfListPartnerProLinksResponse> => {
+  return customInstance<rfListPartnerProLinksResponse>(getRfListPartnerProLinksUrl(partnerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
  * Redeem is an owner-authorized partner-side flow. The authenticated actor must own the partner in path, and voucher relation (voucher.partnerId, voucher.offerId, offer.partnerId) must be consistent.
 
  * @summary Redeem voucher by partner owner
@@ -4614,6 +4668,122 @@ export const rfAcceptProLink = async (
   options?: RequestInit
 ): Promise<rfAcceptProLinkResponse> => {
   return customInstance<rfAcceptProLinkResponse>(getRfAcceptProLinkUrl(proLinkId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * Owner-gated lifecycle operation. Active links become ended. Already ended links return an idempotent response. Pending links return conflict and should be rejected instead. This operation does not affect offers, vouchers, claim/redeem attribution, rewards, commissions or payouts.
+
+ * @summary End active PRO link by partner owner
+ */
+export type rfEndProLinkResponse200 = {
+  data: RfAcceptProLinkResponse;
+  status: 200;
+};
+
+export type rfEndProLinkResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfEndProLinkResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfEndProLinkResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfEndProLinkResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfEndProLinkResponseSuccess = rfEndProLinkResponse200 & {
+  headers: Headers;
+};
+export type rfEndProLinkResponseError = (
+  | rfEndProLinkResponse401
+  | rfEndProLinkResponse403
+  | rfEndProLinkResponse404
+  | rfEndProLinkResponse409
+) & {
+  headers: Headers;
+};
+
+export type rfEndProLinkResponse = rfEndProLinkResponseSuccess | rfEndProLinkResponseError;
+
+export const getRfEndProLinkUrl = (proLinkId: string) => {
+  return `/v1/rf/pro/links/${proLinkId}/end`;
+};
+
+export const rfEndProLink = async (
+  proLinkId: string,
+  options?: RequestInit
+): Promise<rfEndProLinkResponse> => {
+  return customInstance<rfEndProLinkResponse>(getRfEndProLinkUrl(proLinkId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+/**
+ * Owner-gated lifecycle operation. Pending links become ended. Already ended links return an idempotent response. Active links return conflict and must be ended instead. This operation does not affect offers, vouchers, claim/redeem attribution, rewards, commissions or payouts.
+
+ * @summary Reject pending PRO link by partner owner
+ */
+export type rfRejectProLinkResponse200 = {
+  data: RfAcceptProLinkResponse;
+  status: 200;
+};
+
+export type rfRejectProLinkResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfRejectProLinkResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfRejectProLinkResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfRejectProLinkResponse409 = {
+  data: RfConflictResponse;
+  status: 409;
+};
+
+export type rfRejectProLinkResponseSuccess = rfRejectProLinkResponse200 & {
+  headers: Headers;
+};
+export type rfRejectProLinkResponseError = (
+  | rfRejectProLinkResponse401
+  | rfRejectProLinkResponse403
+  | rfRejectProLinkResponse404
+  | rfRejectProLinkResponse409
+) & {
+  headers: Headers;
+};
+
+export type rfRejectProLinkResponse = rfRejectProLinkResponseSuccess | rfRejectProLinkResponseError;
+
+export const getRfRejectProLinkUrl = (proLinkId: string) => {
+  return `/v1/rf/pro/links/${proLinkId}/reject`;
+};
+
+export const rfRejectProLink = async (
+  proLinkId: string,
+  options?: RequestInit
+): Promise<rfRejectProLinkResponse> => {
+  return customInstance<rfRejectProLinkResponse>(getRfRejectProLinkUrl(proLinkId), {
     ...options,
     method: "POST",
   });

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RfMyVouchersPage() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero compact subtitle="Полученные RF-ваучеры из аккаунта и отдельный локальный список сохранённых предложений." />
+      <RFHero compact subtitle="Полученные RF-ваучеры из аккаунта и отдельный локальный список сохранённых офферов." />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>

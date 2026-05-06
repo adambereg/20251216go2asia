@@ -66,14 +66,14 @@ export function buildMerchantReadiness(partner: RfPartnerDto | null, offersForPa
     },
     {
       id: 'public_offers',
-      label: 'Есть публичные активные предложения',
+      label: 'Есть публичные активные офферы',
       ok: publicActive > 0,
       hint:
         publicActive > 0
           ? `На витрине: ${publicActive} публичных активных.`
           : anyActive
             ? 'Есть активные офферы, но ни один не публичный — проверьте visibility.'
-            : 'Нет активных предложений или все в черновике — добавьте оффер в RF ops-процессе (не из этого UI).',
+            : 'Нет активных офферов или все в черновике — добавьте оффер в RF ops-процессе (не из этого UI).',
     },
     {
       id: 'support_copy',
@@ -128,7 +128,7 @@ export function buildMerchantNextSteps(
   if (publicActive === 0) {
     steps.push({
       id: 'improve_offers',
-      title: 'Подготовить публичные предложения',
+      title: 'Подготовить публичные офферы',
       detail:
         'Создание/публикация офферов сейчас не выполняется из этого кабинета; планируйте изменения через RF ops или следующие этапы продукта.',
       href: `/rf/vouchers?partner=${encodeURIComponent(partner.id)}`,

@@ -14,11 +14,11 @@ import {
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Каталог мест Russian Friendly | Go2Asia',
+  title: 'Каталог партнёров Russian Friendly | Go2Asia',
   description: 'Каталог заведений и сервисов партнёров Russian Friendly в Юго-Восточной Азии',
   openGraph: {
-    title: 'Каталог мест Russian Friendly',
-    description: 'Подбор мест с бонусами и предложениями',
+    title: 'Каталог партнёров Russian Friendly',
+    description: 'Подбор партнёров с бонусами и офферами',
     type: 'website',
   },
 };
@@ -42,7 +42,7 @@ export default async function RFPage() {
     <div className="min-h-screen bg-slate-50">
       <RFHero
         compact
-        subtitle="Заведения и сервисы партнёров в ЮВА — ищите по городу, категории и доступным предложениям."
+        subtitle="Заведения и сервисы партнёров в ЮВА — ищите по городу, категории и доступным офферам."
       />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
@@ -59,11 +59,11 @@ export default async function RFPage() {
         <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Лучшие предложения</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Лучшие офферы</h2>
               <p className="mt-1 text-sm text-slate-600">{rfLandingContent.bestOffersLead}</p>
             </div>
             <Link href="/rf/vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
-              Все предложения →
+              Все офферы →
             </Link>
           </div>
           {offersResponse === null ? (
@@ -88,7 +88,7 @@ export default async function RFPage() {
                         href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
                         className="mt-2 inline-block text-xs font-medium text-blue-700 hover:text-blue-800"
                       >
-                        Смотреть в каталоге предложений →
+                        Смотреть в каталоге офферов →
                       </Link>
                     </article>
                   </li>
@@ -104,7 +104,7 @@ export default async function RFPage() {
           </Link>
           <span className="text-slate-300">·</span>
           <Link href="/rf/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
-            Все предложения
+            Все офферы
           </Link>
           <span className="text-slate-300">·</span>
           <Link href="/rf/favorites" className="font-medium text-blue-700 hover:text-blue-800">

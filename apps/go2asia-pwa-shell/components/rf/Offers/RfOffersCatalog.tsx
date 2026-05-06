@@ -219,7 +219,7 @@ export function RfOffersCatalog({
         <p className="mt-2 max-w-3xl text-sm text-slate-600">{rfOffersCatalogContent.pageSubtitle}</p>
         <nav className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
           <Link href="/rf" className="font-medium text-blue-700 hover:text-blue-800">
-            Каталог мест
+            Каталог партнёров
           </Link>
           <span className="text-slate-300">·</span>
           <Link href="/rf/map" className="font-medium text-blue-700 hover:text-blue-800">
@@ -353,7 +353,7 @@ export function RfOffersCatalog({
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">Тип предложения</span>
+            <span className="text-xs font-medium text-slate-500">Тип оффера</span>
             <button type="button" className={chipBase(offerTypes.size === 0)} onClick={() => setOfferTypes(new Set())}>
               Все
             </button>

@@ -57,7 +57,7 @@ export function VouchersListView() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Ваучеры</h1>
-          <p className="text-slate-600">Demo-слой специальных предложений для merchant baseline</p>
+          <p className="text-slate-600">Demo-слой специальных офферов для merchant baseline</p>
         </div>
         <Button variant="primary" disabled className="opacity-70">
           <Plus size={18} className="mr-2" />

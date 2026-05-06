@@ -73,8 +73,8 @@ export function PROLayout({ children }: PROLayoutProps) {
 
           <main className="min-w-0">
             <p className="mb-6 rounded-lg border border-purple-100 bg-white px-3 py-2 text-xs text-slate-600">
-              PRO scope в этом контуре может быть derived/support-layer, пока assignment logic не подтверждён отдельным
-              live контрактом API.
+              Stage 5.1 показывает live связи PRO с партнёрами через rf_pro_link. Legacy/demo разделы остаются отдельно
+              помеченными и не дают прав владельца партнёра.
             </p>
             {isOpsSurface ? (
               <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

@@ -31,7 +31,7 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
       </RfLocalStorageNotice>
 
       <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Избранное — это локальный список мест и предложений, не полученные RF-ваучеры.
+        Избранное — это локальный список партнёров и офферов, не полученные RF-ваучеры.
       </p>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -98,7 +98,7 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
           К каталогу мест
         </Link>
         <Link href="/rf/vouchers" className="font-medium text-blue-700 hover:text-blue-800">
-          К предложениям
+          К офферам
         </Link>
       </div>
     </div>

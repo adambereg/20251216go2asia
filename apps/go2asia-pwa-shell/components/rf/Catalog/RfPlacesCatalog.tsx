@@ -259,7 +259,7 @@ export function RfPlacesCatalog({
                 className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900"
               >
                 <option value="featured">По релевантности</option>
-                <option value="offers">Больше предложений</option>
+                <option value="offers">Больше офферов</option>
                 <option value="name">По названию</option>
               </select>
             </label>
@@ -505,7 +505,7 @@ function PlaceCard({
         {offerCount > 0 ? (
           <>
             <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800">
-              {offerCount} {offerCount === 1 ? 'предложение' : 'предложений'}
+              {offerCount} {offerCount === 1 ? 'оффер' : 'офферов'}
             </span>
             {offerBadges.map((b) => (
               <span key={b.label} className={`rounded-full px-2 py-1 text-xs font-medium ${b.tone}`}>
@@ -514,7 +514,7 @@ function PlaceCard({
             ))}
           </>
         ) : (
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">Нет публичных предложений</span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">Нет публичных офферов</span>
         )}
       </div>
       <p className="text-xs text-slate-500">{trust.note}</p>
@@ -533,7 +533,7 @@ function PlaceCard({
         href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
         className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
       >
-        Предложения
+        Офферы
       </Link>
       <Link
         href={`/rf/map?city=${encodeURIComponent(partner.cityId)}`}

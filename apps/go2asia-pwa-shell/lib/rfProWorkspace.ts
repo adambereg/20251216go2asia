@@ -1,9 +1,9 @@
-import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
+import type { RfOfferDto, RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import {
   buildPublicActiveOffersByPartner,
   getPartnerPresentation,
   getPartnerTrust,
-} from '@/lib/rfFirstSliceContent';
+} from './rfFirstSliceContent';
 
 export type ProScopeResolution = {
   partners: RfPartnerDto[];
@@ -26,6 +26,27 @@ export type ProNextStep = {
   href?: string;
   actionLabel?: string;
 };
+
+export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
+  return Array.from(new Set(proLinks.filter((link) => link.status === 'active').map((link) => link.partnerId)));
+}
+
+export function getLinkedPartnerOffers(offers: RfOfferDto[], activePartnerIds: Iterable<string>): RfOfferDto[] {
+  const activePartnerIdSet = new Set(activePartnerIds);
+  return offers
+    .filter((offer) => activePartnerIdSet.has(offer.partnerId))
+    .sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    });
+}
+
+export function formatOfferVisibilityLabel(visibility: RfOfferDto['visibility']): string {
+  if (visibility === 'pro_only') return 'Доступно для PRO';
+  if (visibility === 'invite_only') return 'По приглашению';
+  return 'Публично';
+}
 
 /**
  * На текущем этапе нет гарантированной live-модели assignment PRO->partner.
@@ -149,7 +170,7 @@ export function buildProFocusItems(scopePartners: RfPartnerDto[], offers: RfOffe
     items.push({
       id: 'all_good',
       title: 'Критичных gaps по текущим эвристикам не найдено',
-      detail: 'Проверьте вручную публичную витрину и предложения перед следующими итерациями.',
+      detail: 'Проверьте вручную публичную витрину и офферы перед следующими итерациями.',
       severity: 'ok',
     });
   }
@@ -199,7 +220,7 @@ export function buildProNextSteps(
     id: 'note_beta_limits',
     title: 'Учитывать ограничения PRO beta',
     detail:
-      'Этот кабинет не содержит live assignment automation, расширенную аналитику и incentive-движок. Это рабочий baseline для следующего этапа.',
+      'Этот кабинет не содержит автоматизацию assignment, расширенную аналитику и экономику PRO. Это рабочий baseline для следующего этапа.',
   });
 
   return steps;
