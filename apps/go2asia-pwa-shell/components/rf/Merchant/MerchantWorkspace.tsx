@@ -2,21 +2,25 @@
 
 import { useMemo, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { customInstance, generated } from '@go2asia/sdk';
 import type { RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import { acceptProLink, listPartnerProLinks, useRfOffers, useRfPartners } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getPartnerLocation,
   getRfCityLabel,
   getRfCountryLabel,
 } from '@/lib/rfFirstSliceContent';
 import {
+  buildProIdentityLabel,
   canAcceptProLink,
   formatProLinkDate,
+  formatProUserId,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
+  proIdentityFallbackNote,
   proOwnerAcceptEmptyState,
   proOwnerAcceptErrorState,
   proOwnerAcceptLiveBoundaryCopy,
@@ -29,6 +33,13 @@ function proLinkStatusStyle(status: RfProLinkDto['status']) {
   if (status === 'active') return 'bg-emerald-100 text-emerald-900';
   if (status === 'pending') return 'bg-amber-100 text-amber-900';
   return 'bg-slate-100 text-slate-700';
+}
+
+async function getSpaceProfile(userId: string) {
+  return customInstance<generated.SpaceProfileResponse>(
+    { method: 'GET' },
+    `/v1/space/profiles/${encodeURIComponent(userId)}`,
+  );
 }
 
 export function MerchantWorkspace() {
@@ -81,7 +92,28 @@ export function MerchantWorkspace() {
       await queryClient.invalidateQueries({ queryKey: proLinksQueryKey });
     },
   });
-  const partnerProLinks = partnerProLinksRes?.items ?? [];
+  const partnerProLinks = useMemo(() => partnerProLinksRes?.items ?? [], [partnerProLinksRes?.items]);
+  const proUserIds = useMemo(
+    () => Array.from(new Set(partnerProLinks.map((link) => link.proUserId).filter(Boolean))),
+    [partnerProLinks],
+  );
+  const proIdentityQueries = useQueries({
+    queries: proUserIds.map((proUserId) => ({
+      queryKey: ['space', 'profiles', proUserId] as const,
+      queryFn: () => getSpaceProfile(proUserId),
+      enabled: Boolean(user?.id && proUserId),
+      staleTime: 5 * 60_000,
+      retry: 1,
+    })),
+  });
+  const proProfilesByUserId = useMemo(() => {
+    const profiles = new Map<string, generated.SpaceProfileResponse>();
+    proIdentityQueries.forEach((query, index) => {
+      const profile = query.data;
+      if (profile) profiles.set(proUserIds[index], profile);
+    });
+    return profiles;
+  }, [proIdentityQueries, proUserIds]);
 
   const loading = !userLoaded || partnersLoading || offersLoading;
   const apiUnavailable =
@@ -245,11 +277,16 @@ export function MerchantWorkspace() {
             {partnerProLinks.map((link) => {
               const canAccept = canAcceptProLink(link);
               const isAccepting = acceptLinkMutation.isPending && acceptLinkMutation.variables === link.id;
+              const proProfile = proProfilesByUserId.get(link.proUserId);
+              const proIdentityLabel = buildProIdentityLabel({
+                userId: link.proUserId,
+                displayName: proProfile?.displayName,
+              });
               return (
                 <li key={link.id} className="flex flex-col gap-3 py-4 xl:flex-row xl:items-start xl:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-slate-900">PRO: {link.proUserId}</p>
+                      <p className="font-medium text-slate-900">{proIdentityLabel}</p>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${proLinkStatusStyle(link.status)}`}>
                         {getProLinkStatusLabel(link.status)}
                       </span>
@@ -257,6 +294,10 @@ export function MerchantWorkspace() {
                         {getProLinkRoleScopeLabel(link.roleScope)}
                       </span>
                     </div>
+                    <p className="mt-1 text-xs text-slate-600">
+                      PRO · {getProLinkRoleScopeLabel(link.roleScope)}
+                      {!proProfile ? ` · ${proIdentityFallbackNote}` : null}
+                    </p>
                     <p className="mt-1 text-xs text-slate-600">{getProLinkStatusDescription(link.status)}</p>
                     <dl className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
                       <div>
@@ -264,8 +305,8 @@ export function MerchantWorkspace() {
                         <dd className="break-all text-slate-800">{link.partnerId}</dd>
                       </div>
                       <div>
-                        <dt className="font-medium text-slate-500">proUserId</dt>
-                        <dd className="break-all text-slate-800">{link.proUserId}</dd>
+                        <dt className="font-medium text-slate-500">PRO technical id</dt>
+                        <dd className="break-all text-slate-800">{formatProUserId(link.proUserId)}</dd>
                       </div>
                       <div>
                         <dt className="font-medium text-slate-500">createdAt</dt>

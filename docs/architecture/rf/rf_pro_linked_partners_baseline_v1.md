@@ -178,6 +178,45 @@ Next slice:
 - reject/end link lifecycle controls;
 - optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.
 
+## Stage 5.4 - PRO Identity Display
+
+Status: implemented as bounded UX/data display pass.
+
+Merchant owner PRO requests now avoid using raw `proUserId` as the primary UX label:
+
+- display name is resolved through the existing public Space profile endpoint `GET /v1/space/profiles/{userId}` when available;
+- raw `proUserId` remains visible only as a secondary technical identifier, shortened for readability;
+- when no profile is available, the UI falls back to a shortened user id and the note `Профиль PRO будет подключён позже`;
+- role scope, status, `createdAt` and `updatedAt` remain visible.
+
+PRO cabinet also shows a compact current-account block from existing Clerk `useUser()` data:
+
+- name/display label when available;
+- email for the current signed-in account when Clerk exposes it;
+- shortened current user id as a technical reference;
+- no profile editing.
+
+Boundaries:
+
+- this is not a profile system;
+- this is not a social graph;
+- this is not a rating/review surface;
+- no backend, schema, OpenAPI or SDK generation changes were made;
+- no claim/redeem attribution was added;
+- no rewards, commissions, payouts, Points, wallet, G2A or NFT/Totem logic was added.
+
+Identity gap:
+
+- the current frontend-safe source can provide `displayName` from Space profile projection;
+- email for another PRO user is not exposed by the existing safe read surface;
+- see `docs/audits/pro-identity-display-gap-v1.md` for the documented future endpoint option.
+
+Next slice:
+
+- reject/end link lifecycle controls;
+- optional RF-scoped PRO identity endpoint if Space profile projection becomes insufficient;
+- optional partner-linked offers detail endpoint if frontend-derived filtering becomes insufficient.
+
 ## Stage 5.3 - UX / Role Clarity Closure
 
 Status: implemented as bounded UX/copy/semantics pass.

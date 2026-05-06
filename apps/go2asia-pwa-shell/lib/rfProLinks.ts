@@ -1,5 +1,11 @@
 import type { RfProLinkDto, RfProLinkRoleScope } from '@go2asia/sdk/rf';
 
+export type ProIdentityInput = {
+  userId?: string | null;
+  displayName?: string | null;
+  email?: string | null;
+};
+
 export const proLinkStatusLabels: Record<RfProLinkDto['status'], string> = {
   pending: 'Ожидает подтверждения',
   active: 'Активна',
@@ -52,6 +58,31 @@ export const proOwnerAcceptEmptyState =
 
 export const proOwnerAcceptErrorState =
   'Не удалось загрузить PRO-запросы.';
+
+export const proIdentityFallbackNote =
+  'Профиль PRO будет подключён позже.';
+
+export function formatProUserId(userId: string | null | undefined) {
+  const value = userId?.trim();
+  if (!value) return 'PRO user';
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 10)}...${value.slice(-4)}`;
+}
+
+export function getProIdentityFallback(userId: string | null | undefined) {
+  if (!userId?.trim()) return 'PRO профиль уточняется';
+  return `PRO ${formatProUserId(userId)}`;
+}
+
+export function buildProIdentityLabel(identity: ProIdentityInput) {
+  const displayName = identity.displayName?.trim();
+  if (displayName) return displayName;
+
+  const email = identity.email?.trim();
+  if (email) return email;
+
+  return getProIdentityFallback(identity.userId);
+}
 
 export function canAcceptProLink(link: Pick<RfProLinkDto, 'status'>) {
   return link.status === 'pending';

@@ -6,10 +6,14 @@ import {
   getLinkedPartnerOffers,
 } from './rfProWorkspace';
 import {
+  buildProIdentityLabel,
   canAcceptProLink,
+  formatProUserId,
+  getProIdentityFallback,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
+  proIdentityFallbackNote,
   proLinkedPartnerBoundaryCopy,
   proLinkedPartnerCreateNote,
   proLinkedPartnersEmptyState,
@@ -86,6 +90,16 @@ describe('RF PRO workspace helpers', () => {
     expect(canAcceptProLink({ status: 'ended' })).toBe(false);
   });
 
+  it('builds PRO identity labels with display name, email and safe user id fallbacks', () => {
+    expect(buildProIdentityLabel({ userId: 'user_raw', displayName: 'Иван Петров', email: 'pro@example.com' })).toBe(
+      'Иван Петров',
+    );
+    expect(buildProIdentityLabel({ userId: 'user_raw', email: 'pro@example.com' })).toBe('pro@example.com');
+    expect(formatProUserId('user_3BlJz1234567890abcdef')).toBe('user_3BlJz...cdef');
+    expect(getProIdentityFallback('user_3BlJz1234567890abcdef')).toBe('PRO user_3BlJz...cdef');
+    expect(buildProIdentityLabel({ userId: '' })).toBe('PRO профиль уточняется');
+  });
+
   it('derives linked partner offers from active PRO links only', () => {
     const activePartnerIds = getActiveLinkedPartnerIds([
       proLink({ id: 'active_1', partnerId: 'partner_active', status: 'active' }),
@@ -126,13 +140,14 @@ describe('RF PRO workspace helpers', () => {
       proOwnerAcceptEndpointRecommendation,
       proOwnerAcceptErrorState,
       proOwnerAcceptLiveBoundaryCopy,
+      proIdentityFallbackNote,
       rfProLinkedPartnersLabel,
       rfMerchantBusinessesLabel,
       rfLinkedPartnerOffersLabel,
     ].join(' ');
 
     expect(stage51Copy).not.toMatch(
-      /доход|комисси|вознагражден|начислен|выплат|reward|commission|payout|earnings|income/i,
+      /доход|комисси|вознагражден|начислен|выплат|reward|commission|payout|earnings|income|rating|рейтинг/i,
     );
   });
 });

@@ -17,7 +17,9 @@ import {
   summarizeProScope,
 } from '@/lib/rfProWorkspace';
 import {
+  buildProIdentityLabel,
   formatProLinkDate,
+  formatProUserId,
   getProLinkRoleScopeLabel,
   getProLinkStatusDescription,
   getProLinkStatusLabel,
@@ -104,6 +106,12 @@ export function PROWorkspace() {
     () => buildProNextSteps(scope.partners, offers, scope.isDerivedScope),
     [scope.partners, offers, scope.isDerivedScope],
   );
+  const currentProEmail = user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? null;
+  const currentProName = buildProIdentityLabel({
+    userId: user?.id,
+    displayName: user?.fullName ?? user?.username,
+    email: currentProEmail,
+  });
 
   function handleCreateLinkSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,6 +158,19 @@ export function PROWorkspace() {
         <p className="mt-1 text-sm text-slate-600">
           PRO кабинет: вы работаете с партнёрами как PRO. Это не означает владение бизнесом.
         </p>
+
+        <div className="mt-4 rounded-2xl border border-purple-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Ваш PRO-профиль</p>
+          <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{currentProName}</p>
+              <p className="text-sm text-slate-600">
+                PRO · текущий аккаунт{currentProEmail ? ` · ${currentProEmail}` : ''}
+              </p>
+            </div>
+            <p className="text-xs text-slate-500">ID: {formatProUserId(user.id)}</p>
+          </div>
+        </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
