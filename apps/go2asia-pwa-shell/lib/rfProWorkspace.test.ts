@@ -35,6 +35,7 @@ function offer(overrides: Partial<RfOfferDto>): RfOfferDto {
   return {
     id: 'offer_1',
     partnerId: 'partner_1',
+    itemId: null,
     title: 'Linked offer',
     offerType: 'gift',
     visibility: 'public',

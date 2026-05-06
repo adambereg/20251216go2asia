@@ -1,0 +1,2 @@
+export { MerchantItemCatalogPanel } from './MerchantItemCatalogPanel';
+

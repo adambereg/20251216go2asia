@@ -447,6 +447,27 @@ Boundaries:
 
 ### Stage 1.2 - Merchant Item Catalog UI
 
+Status: implemented as a bounded frontend-only Merchant cabinet pass.
+
+Added Merchant UI:
+
+- `Товары и услуги` section in `/rf/merchant` for the selected owned business.
+- Live item list from `listPartnerItems(activePartner.id)`.
+- Create form for `title`, `description`, `category`, `priceFrom`, `currency`.
+- Compact edit flow for active items.
+- Soft archive action for active items.
+- Archived items remain visible and visually muted.
+- Owner-only copy clarifies that PRO can see item context later read-only, but cannot create or edit items.
+
+Boundaries:
+
+- No backend, schema, migration, OpenAPI or SDK generation changes.
+- Offer creation item selector is not implemented in this stage.
+- Public RF and PRO UI are unchanged.
+- Claim/redeem and voucher behavior are unchanged.
+
+### Stage 1.2 - Original Planned Scope
+
 - show item list per owned partner;
 - create item;
 - edit item;

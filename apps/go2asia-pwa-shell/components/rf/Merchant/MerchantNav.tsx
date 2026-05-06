@@ -7,6 +7,7 @@ import {
   Store,
   Handshake,
   Ticket,
+  Package,
   MessageSquare,
   BarChart3,
   Settings,
@@ -20,6 +21,7 @@ interface MerchantNavProps {
 
 const dashboardSections = [
   { href: '/rf/merchant#mw-my-partners', label: 'Партнёры', icon: Store },
+  { href: '/rf/merchant#mw-items', label: 'Товары и услуги', icon: Package },
   { href: '/rf/merchant#mw-pro-requests', label: 'PRO-запросы', icon: Handshake },
   { href: '/rf/merchant#mw-offers', label: 'Офферы', icon: ListOrdered },
   { href: '/rf/merchant#mw-create-partner', label: 'Создать партнёра', icon: PlusCircle },

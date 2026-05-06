@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { activateOffer, createOffer, type RfOfferDto, type RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
 import { getOfferBadge, getOfferSummaryLine, getVisibilityBadge } from '@/lib/rfFirstSliceContent';
+import { merchantItemOfferBindingNextStageCopy } from '@/lib/rfMerchantItems';
 import { upsertOffer } from '@/lib/rfOfferManagement';
 
 const offerTypes: Array<{ value: RfOfferDto['offerType']; label: string }> = [
@@ -105,6 +106,7 @@ export function OfferManagementPanel({
     <div className="space-y-6">
       <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <h3 className="text-sm font-semibold text-slate-900">Создать оффер</h3>
+        <p className="mt-1 text-xs text-slate-600">{merchantItemOfferBindingNextStageCopy}</p>
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px_180px_auto] md:items-end">
           <label className="text-sm text-slate-700">
             Название
