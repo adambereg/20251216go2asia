@@ -6,13 +6,22 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { RfCreateOfferRequestOfferType } from "./rfCreateOfferRequestOfferType";
-import type { RfCreateOfferRequestVisibility } from "./rfCreateOfferRequestVisibility";
 
-export interface RfCreateOfferRequest {
+export interface RfCreatePartnerItemRequest {
   /** @nullable */
-  itemId?: string | null;
-  offerType: RfCreateOfferRequestOfferType;
+  category?: string | null;
+  /**
+   * @minLength 3
+   * @maxLength 3
+   * @nullable
+   */
+  currency?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  priceFrom?: number | null;
   title: string;
-  visibility: RfCreateOfferRequestVisibility;
 }

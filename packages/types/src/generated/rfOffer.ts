@@ -14,6 +14,8 @@ export interface RfOffer {
   createdAt: string;
   createdByUserId: string;
   id: string;
+  /** @nullable */
+  itemId: string | null;
   offerType: RfOfferOfferType;
   partnerId: string;
   status: RfOfferStatus;

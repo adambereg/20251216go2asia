@@ -57,6 +57,46 @@ function expectInsertColumnValueParity(statement: string, tableName: string): vo
   expect(countSqlListItems(values)).toBe(countSqlListItems(columns));
 }
 
+function partnerOwnerRow(ownerUserId = 'partner_owner_1') {
+  return {
+    id: 'rf_partner_1',
+    owner_user_id: ownerUserId,
+    status: 'active',
+  };
+}
+
+function partnerItemRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'rf_partner_item_1',
+    partner_id: 'rf_partner_1',
+    title: 'Thai Cooking Class',
+    description: 'Private class',
+    category: 'experience',
+    price_from: '120.00',
+    currency: 'USD',
+    status: 'active',
+    created_at: '2026-03-21T10:00:00.000Z',
+    updated_at: '2026-03-21T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function offerRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'rf_offer_1',
+    partner_id: 'rf_partner_1',
+    item_id: null,
+    title: 'Welcome Offer',
+    offer_type: 'discount',
+    visibility: 'public',
+    status: 'draft',
+    created_by_user_id: 'partner_owner_1',
+    created_at: '2026-03-21T10:01:00.000Z',
+    updated_at: '2026-03-21T10:01:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('rf-service request', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -2273,5 +2313,302 @@ describe('rf-service request', () => {
     expect(response.status).toBe(200);
     expect(body.applied).toBe(false);
     expect(body.proLink.status).toBe('ended');
+  });
+
+  it('lets partner owner create and list catalog items', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow({ currency: 'USD' })] })
+      .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow()] });
+
+    const created = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({
+          title: ' Thai Cooking Class ',
+          description: 'Private class',
+          category: 'experience',
+          priceFrom: 120,
+          currency: 'usd',
+        }),
+      }),
+      env
+    );
+    const createdBody = await readJson<{ currency: string; priceFrom: number }>(created);
+    expect(created.status).toBe(201);
+    expect(createdBody.currency).toBe('USD');
+    expect(createdBody.priceFrom).toBe(120);
+
+    const list = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const listBody = await readJson<{ items: Array<{ id: string }>; nextCursor: string | null }>(list);
+    expect(list.status).toBe(200);
+    expect(listBody.items).toEqual([expect.objectContaining({ id: 'rf_partner_item_1' })]);
+    expect(listBody.nextCursor).toBeNull();
+  });
+
+  it('lets partner owner update and archive catalog items', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow({ title: 'Updated Class', price_from: null, currency: null })] })
+      .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow()] })
+      .mockResolvedValueOnce({ rows: [partnerItemRow({ status: 'archived' })] });
+
+    const updated = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items/rf_partner_item_1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({ title: 'Updated Class', priceFrom: null, currency: null }),
+      }),
+      env
+    );
+    const updatedBody = await readJson<{ title: string; priceFrom: number | null; currency: string | null }>(updated);
+    expect(updated.status).toBe(200);
+    expect(updatedBody).toEqual(expect.objectContaining({ title: 'Updated Class', priceFrom: null, currency: null }));
+
+    const archived = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items/rf_partner_item_1/archive', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const archivedBody = await readJson<{ status: string }>(archived);
+    expect(archived.status).toBe(200);
+    expect(archivedBody.status).toBe('archived');
+  });
+
+  it('protects catalog item routes by partner ownership and partner existence', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const nonOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'not_owner' });
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock.mockResolvedValueOnce({ rows: [partnerOwnerRow('partner_owner_1')] }).mockResolvedValueOnce({ rows: [] });
+
+    const forbidden = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        headers: { 'X-Gateway-Auth': nonOwnerToken },
+      }),
+      env
+    );
+    const forbiddenBody = await readJson<{ error: { code: string } }>(forbidden);
+    expect(forbidden.status).toBe(403);
+    expect(forbiddenBody.error.code).toBe('RF_PARTNER_FORBIDDEN');
+
+    const missing = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/missing_partner/items', {
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const missingBody = await readJson<{ error: { code: string } }>(missing);
+    expect(missing.status).toBe(404);
+    expect(missingBody.error.code).toBe('RF_PARTNER_NOT_FOUND');
+  });
+
+  it('validates catalog item title and price fields', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock.mockResolvedValue({ rows: [partnerOwnerRow()] });
+
+    const emptyTitle = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({ title: '   ' }),
+      }),
+      env
+    );
+    expect(emptyTitle.status).toBe(400);
+
+    const negativePrice = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({ title: 'Class', priceFrom: -1, currency: 'USD' }),
+      }),
+      env
+    );
+    expect(negativePrice.status).toBe(400);
+
+    const priceWithoutCurrency = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({ title: 'Class', priceFrom: 10 }),
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(priceWithoutCurrency);
+    expect(priceWithoutCurrency.status).toBe(400);
+    expect(body.error.code).toBe('RF_PARTNER_ITEM_INVALID');
+  });
+
+  it('creates offer with a valid active partner item', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'catalog-partner',
+            display_name: 'Catalog Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [partnerItemRow()] })
+      .mockResolvedValueOnce({ rows: [offerRow({ item_id: 'rf_partner_item_1' })] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({
+          title: 'Item-linked offer',
+          itemId: 'rf_partner_item_1',
+          offerType: 'discount',
+          visibility: 'public',
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ itemId: string | null }>(response);
+    expect(response.status).toBe(201);
+    expect(body.itemId).toBe('rf_partner_item_1');
+  });
+
+  it('rejects offer binding to an item from another partner or archived item', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'catalog-partner',
+            display_name: 'Catalog Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [partnerItemRow({ partner_id: 'rf_partner_2' })] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'catalog-partner',
+            display_name: 'Catalog Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [partnerItemRow({ status: 'archived' })] });
+
+    const otherPartner = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({
+          title: 'Other item offer',
+          itemId: 'rf_partner_item_2',
+          offerType: 'discount',
+          visibility: 'public',
+        }),
+      }),
+      env
+    );
+    const otherBody = await readJson<{ error: { code: string } }>(otherPartner);
+    expect(otherPartner.status).toBe(404);
+    expect(otherBody.error.code).toBe('RF_PARTNER_ITEM_NOT_FOUND');
+
+    const archived = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({
+          title: 'Archived item offer',
+          itemId: 'rf_partner_item_1',
+          offerType: 'discount',
+          visibility: 'public',
+        }),
+      }),
+      env
+    );
+    const archivedBody = await readJson<{ error: { code: string } }>(archived);
+    expect(archived.status).toBe(409);
+    expect(archivedBody.error.code).toBe('RF_PARTNER_ITEM_ARCHIVED');
+  });
+
+  it('keeps offer creation working without item binding', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'catalog-partner',
+            display_name: 'Catalog Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [offerRow()] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': ownerToken },
+        body: JSON.stringify({
+          title: 'Legacy offer',
+          offerType: 'discount',
+          visibility: 'public',
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ itemId: string | null }>(response);
+    expect(response.status).toBe(201);
+    expect(body.itemId).toBeNull();
   });
 });

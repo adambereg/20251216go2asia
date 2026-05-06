@@ -1,9 +1,10 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { places } from './content';
 
 export const rfPartnerStatusEnum = pgEnum('rf_partner_status', ['active', 'archived']);
+export const rfPartnerItemStatusEnum = pgEnum('rf_partner_item_status', ['active', 'archived']);
 export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', 'archived']);
 export const rfOfferTypeEnum = pgEnum('rf_offer_type', ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related']);
 export const rfOfferVisibilityEnum = pgEnum('rf_offer_visibility', ['public', 'pro_only', 'invite_only']);
@@ -73,6 +74,34 @@ export const rfPartners = pgTable(
   })
 );
 
+export const rfPartnerItems = pgTable(
+  'rf_partner_item',
+  {
+    id: varchar('id', { length: 80 }).primaryKey(),
+    partnerId: varchar('partner_id', { length: 80 })
+      .notNull()
+      .references(() => rfPartners.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 240 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 80 }),
+    priceFrom: numeric('price_from', { precision: 12, scale: 2 }),
+    currency: varchar('currency', { length: 3 }),
+    status: rfPartnerItemStatusEnum('status').notNull().default('active'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    titleNotBlank: check('rf_partner_item_title_not_blank_check', sql`(length(trim(${table.title})) > 0)`),
+    priceNonNegative: check('rf_partner_item_price_from_non_negative_check', sql`(${table.priceFrom} IS NULL OR ${table.priceFrom} >= 0)`),
+    currencyRequiredWithPrice: check(
+      'rf_partner_item_currency_required_with_price_check',
+      sql`(${table.priceFrom} IS NULL OR (${table.currency} IS NOT NULL AND length(trim(${table.currency})) = 3))`
+    ),
+    idxPartnerStatusUpdatedAt: index('idx_rf_partner_item_partner_status_updated_at').on(table.partnerId, table.status, table.updatedAt),
+    idxPartnerTitle: index('idx_rf_partner_item_partner_title').on(table.partnerId, table.title),
+  })
+);
+
 export const rfOffers = pgTable(
   'rf_offer',
   {
@@ -80,6 +109,7 @@ export const rfOffers = pgTable(
     partnerId: varchar('partner_id', { length: 80 })
       .notNull()
       .references(() => rfPartners.id, { onDelete: 'cascade' }),
+    itemId: varchar('item_id', { length: 80 }).references(() => rfPartnerItems.id, { onDelete: 'set null' }),
     title: varchar('title', { length: 240 }).notNull(),
     offerType: rfOfferTypeEnum('offer_type').notNull(),
     visibility: rfOfferVisibilityEnum('visibility').notNull(),
@@ -97,6 +127,7 @@ export const rfOffers = pgTable(
       table.visibility,
       table.updatedAt
     ),
+    idxItemId: index('idx_rf_offer_item_id').on(table.itemId),
     idxStatusVisibilityUpdatedAt: index('idx_rf_offer_status_visibility_updated_at').on(table.status, table.visibility, table.updatedAt),
   })
 );

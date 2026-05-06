@@ -60,6 +60,9 @@ tags:
           - /v1/rf/rielt/listings/{listingId}/offers
           - /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim
           - /v1/rf/business/partners
+          - /v1/rf/business/partners/{partnerId}/items
+          - /v1/rf/business/partners/{partnerId}/items/{itemId}
+          - /v1/rf/business/partners/{partnerId}/items/{itemId}/archive
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
           - /v1/rf/offers/{offerId}/claim
@@ -161,6 +164,121 @@ paths:
           $ref: "#/components/responses/RfValidationError"
         "401":
           $ref: "#/components/responses/RfUnauthorized"
+
+  /v1/rf/business/partners/{partnerId}/items:
+    get:
+      tags: [rf]
+      operationId: rfListPartnerItems
+      summary: List product/service items for an owned partner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItemListResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+    post:
+      tags: [rf]
+      operationId: rfCreatePartnerItem
+      summary: Create product/service item for an owned partner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreatePartnerItemRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/business/partners/{partnerId}/items/{itemId}:
+    patch:
+      tags: [rf]
+      operationId: rfUpdatePartnerItem
+      summary: Update product/service item for an owned partner
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfPartnerItemId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfUpdatePartnerItemRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/business/partners/{partnerId}/items/{itemId}/archive:
+    post:
+      tags: [rf]
+      operationId: rfArchivePartnerItem
+      summary: Archive product/service item for an owned partner
+      description: >
+        Soft-archives an item. Existing offers keep their optional itemId reference;
+        claim/redeem and voucher uniqueness remain offer-level.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfPartnerItemId"
+      responses:
+        "200":
+          description: Archived or already archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
 
   /v1/rf/partners/{partnerId}:
     get:
@@ -661,6 +779,12 @@ components:
       required: true
       schema:
         type: string
+    RfPartnerItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
     RfOfferId:
       name: offerId
       in: path
@@ -824,12 +948,15 @@ components:
     RfOffer:
       type: object
       required:
-        [id, partnerId, title, offerType, visibility, status, createdByUserId, createdAt, updatedAt]
+        [id, partnerId, itemId, title, offerType, visibility, status, createdByUserId, createdAt, updatedAt]
       properties:
         id:
           type: string
         partnerId:
           type: string
+        itemId:
+          type: string
+          nullable: true
         title:
           type: string
         offerType:
@@ -843,6 +970,41 @@ components:
           enum: [draft, active, archived]
         createdByUserId:
           type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RfPartnerItem:
+      type: object
+      required: [id, partnerId, title, description, category, priceFrom, currency, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        priceFrom:
+          type: number
+          nullable: true
+          minimum: 0
+        currency:
+          type: string
+          nullable: true
+          minLength: 3
+          maxLength: 3
+        status:
+          type: string
+          enum: [active, archived]
         createdAt:
           type: string
           format: date-time
@@ -1148,6 +1310,18 @@ components:
           type: string
           nullable: true
 
+    RfPartnerItemListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfPartnerItem"
+        nextCursor:
+          type: string
+          nullable: true
+
     RfVoucherListResponse:
       type: object
       required: [items, nextCursor]
@@ -1242,12 +1416,58 @@ components:
       properties:
         title:
           type: string
+        itemId:
+          type: string
+          nullable: true
         offerType:
           type: string
           enum: [discount, bundle, gift, access, campaign, event_related]
         visibility:
           type: string
           enum: [public, pro_only, invite_only]
+
+    RfCreatePartnerItemRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        priceFrom:
+          type: number
+          nullable: true
+          minimum: 0
+        currency:
+          type: string
+          nullable: true
+          minLength: 3
+          maxLength: 3
+
+    RfUpdatePartnerItemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        priceFrom:
+          type: number
+          nullable: true
+          minimum: 0
+        currency:
+          type: string
+          nullable: true
+          minLength: 3
+          maxLength: 3
 
     RfCreateProLinkRequest:
       type: object

@@ -275,6 +275,12 @@ components:
       required: true
       schema:
         type: string
+    RfPartnerItemId:
+      in: path
+      name: itemId
+      required: true
+      schema:
+        type: string
     RfProLinkId:
       in: path
       name: proLinkId
@@ -3361,6 +3367,9 @@ components:
       type: object
     RfCreateOfferRequest:
       properties:
+        itemId:
+          nullable: true
+          type: string
         offerType:
           enum:
             - discount
@@ -3382,6 +3391,28 @@ components:
         - title
         - offerType
         - visibility
+      type: object
+    RfCreatePartnerItemRequest:
+      properties:
+        category:
+          nullable: true
+          type: string
+        currency:
+          maxLength: 3
+          minLength: 3
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        priceFrom:
+          minimum: 0
+          nullable: true
+          type: number
+        title:
+          type: string
+      required:
+        - title
       type: object
     RfCreatePartnerRequest:
       properties:
@@ -3461,6 +3492,9 @@ components:
           type: string
         id:
           type: string
+        itemId:
+          nullable: true
+          type: string
         offerType:
           enum:
             - discount
@@ -3492,6 +3526,7 @@ components:
       required:
         - id
         - partnerId
+        - itemId
         - title
         - offerType
         - visibility
@@ -3554,6 +3589,65 @@ components:
         - ownerUserId
         - createdAt
         - updatedAt
+      type: object
+    RfPartnerItem:
+      properties:
+        category:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        currency:
+          maxLength: 3
+          minLength: 3
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        id:
+          type: string
+        partnerId:
+          type: string
+        priceFrom:
+          minimum: 0
+          nullable: true
+          type: number
+        status:
+          enum:
+            - active
+            - archived
+          type: string
+        title:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - id
+        - partnerId
+        - title
+        - description
+        - category
+        - priceFrom
+        - currency
+        - status
+        - createdAt
+        - updatedAt
+      type: object
+    RfPartnerItemListResponse:
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RfPartnerItem"
+          type: array
+        nextCursor:
+          nullable: true
+          type: string
+      required:
+        - items
+        - nextCursor
       type: object
     RfPartnerListResponse:
       properties:
@@ -3719,6 +3813,26 @@ components:
         - id
         - title
         - rfPartnerId
+      type: object
+    RfUpdatePartnerItemRequest:
+      properties:
+        category:
+          nullable: true
+          type: string
+        currency:
+          maxLength: 3
+          minLength: 3
+          nullable: true
+          type: string
+        description:
+          nullable: true
+          type: string
+        priceFrom:
+          minimum: 0
+          nullable: true
+          type: number
+        title:
+          type: string
       type: object
     RfVoucher:
       properties:
@@ -7231,6 +7345,121 @@ paths:
       summary: Create partner (business owner flow)
       tags:
         - rf
+  /v1/rf/business/partners/{partnerId}/items:
+    get:
+      operationId: rfListPartnerItems
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItemListResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: List product/service items for an owned partner
+      tags:
+        - rf
+    post:
+      operationId: rfCreatePartnerItem
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfCreatePartnerItemRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+          description: Created
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Create product/service item for an owned partner
+      tags:
+        - rf
+  /v1/rf/business/partners/{partnerId}/items/{itemId}:
+    patch:
+      operationId: rfUpdatePartnerItem
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfPartnerItemId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfUpdatePartnerItemRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+          description: OK
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Update product/service item for an owned partner
+      tags:
+        - rf
+  /v1/rf/business/partners/{partnerId}/items/{itemId}/archive:
+    post:
+      description: |
+        Soft-archives an item. Existing offers keep their optional itemId reference; claim/redeem and voucher uniqueness remain offer-level.
+      operationId: rfArchivePartnerItem
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+        - $ref: "#/components/parameters/RfPartnerItemId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfPartnerItem"
+          description: Archived or already archived
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Archive product/service item for an owned partner
+      tags:
+        - rf
   /v1/rf/business/partners/{partnerId}/offers:
     post:
       operationId: rfCreateOffer
@@ -8551,6 +8780,9 @@ tags:
           - /v1/rf/rielt/listings/{listingId}/offers
           - /v1/rf/rielt/listings/{listingId}/offers/{offerId}/claim
           - /v1/rf/business/partners
+          - /v1/rf/business/partners/{partnerId}/items
+          - /v1/rf/business/partners/{partnerId}/items/{itemId}
+          - /v1/rf/business/partners/{partnerId}/items/{itemId}/archive
           - /v1/rf/business/partners/{partnerId}/offers
           - /v1/rf/business/partners/{partnerId}/offers/{offerId}/activate
           - /v1/rf/offers/{offerId}/claim

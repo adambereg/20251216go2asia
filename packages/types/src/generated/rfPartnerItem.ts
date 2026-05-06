@@ -6,20 +6,28 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { RfOfferOfferType } from "./rfOfferOfferType";
-import type { RfOfferStatus } from "./rfOfferStatus";
-import type { RfOfferVisibility } from "./rfOfferVisibility";
+import type { RfPartnerItemStatus } from "./rfPartnerItemStatus";
 
-export interface RfOffer {
-  createdAt: string;
-  createdByUserId: string;
-  id: string;
+export interface RfPartnerItem {
   /** @nullable */
-  itemId: string | null;
-  offerType: RfOfferOfferType;
+  category: string | null;
+  createdAt: string;
+  /**
+   * @minLength 3
+   * @maxLength 3
+   * @nullable
+   */
+  currency: string | null;
+  /** @nullable */
+  description: string | null;
+  id: string;
   partnerId: string;
-  status: RfOfferStatus;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  priceFrom: number | null;
+  status: RfPartnerItemStatus;
   title: string;
   updatedAt: string;
-  visibility: RfOfferVisibility;
 }

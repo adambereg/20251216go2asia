@@ -27,11 +27,25 @@ export interface RfPartnerDto {
 export interface RfOfferDto {
   id: string;
   partnerId: string;
+  itemId: string | null;
   title: string;
   offerType: 'discount' | 'bundle' | 'gift' | 'access' | 'campaign' | 'event_related';
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: 'draft' | 'active' | 'archived';
   createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RfPartnerItemDto {
+  id: string;
+  partnerId: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  priceFrom: number | null;
+  currency: string | null;
+  status: 'active' | 'archived';
   createdAt: string;
   updatedAt: string;
 }
@@ -114,6 +128,11 @@ export interface RfOfferListResponse {
   nextCursor: string | null;
 }
 
+export interface RfPartnerItemListResponse {
+  items: RfPartnerItemDto[];
+  nextCursor: string | null;
+}
+
 export interface RfVoucherListResponse {
   items: RfVoucherDto[];
   nextCursor: string | null;
@@ -163,8 +182,25 @@ export interface RfCreatePartnerRequest {
 
 export interface RfCreateOfferRequest {
   title: string;
+  itemId?: string | null;
   offerType: RfOfferDto['offerType'];
   visibility: RfOfferDto['visibility'];
+}
+
+export interface RfCreatePartnerItemRequest {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  priceFrom?: number | null;
+  currency?: string | null;
+}
+
+export interface RfUpdatePartnerItemRequest {
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  priceFrom?: number | null;
+  currency?: string | null;
 }
 
 export interface RfProLinkDto {
@@ -309,6 +345,46 @@ export async function createOffer(partnerId: string, input: RfCreateOfferRequest
       body: JSON.stringify(input),
     },
     `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/offers`
+  );
+}
+
+export async function listPartnerItems(partnerId: string): Promise<RfPartnerItemListResponse> {
+  return customInstance<RfPartnerItemListResponse>(
+    { method: 'GET' },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/items`
+  );
+}
+
+export async function createPartnerItem(partnerId: string, input: RfCreatePartnerItemRequest): Promise<RfPartnerItemDto> {
+  return customInstance<RfPartnerItemDto>(
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/items`
+  );
+}
+
+export async function updatePartnerItem(
+  partnerId: string,
+  itemId: string,
+  input: RfUpdatePartnerItemRequest
+): Promise<RfPartnerItemDto> {
+  return customInstance<RfPartnerItemDto>(
+    {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/items/${encodeURIComponent(itemId)}`
+  );
+}
+
+export async function archivePartnerItem(partnerId: string, itemId: string): Promise<RfPartnerItemDto> {
+  return customInstance<RfPartnerItemDto>(
+    {
+      method: 'POST',
+    },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/items/${encodeURIComponent(itemId)}/archive`
   );
 }
 
