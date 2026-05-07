@@ -379,6 +379,13 @@
       "when": 1777550000000,
       "tag": "0051_rf_voucher_canonical_indexes_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "5",
+      "when": 1778047920000,
+      "tag": "0052_rf_partner_item_catalog_v1",
+      "breakpoints": true
     }
   ]
 }

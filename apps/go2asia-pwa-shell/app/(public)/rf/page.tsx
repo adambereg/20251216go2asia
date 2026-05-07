@@ -10,6 +10,7 @@ import {
   rfLandingContent,
   rfMicrocopy,
 } from '@/lib/rfFirstSliceContent';
+import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,7 @@ export default async function RFPage() {
             <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {bestOffers.map((offer) => {
                 const badge = getOfferBadge(offer);
+                const itemLabel = getItemLabelForOffer(offer);
                 return (
                   <li key={offer.id}>
                     <article className="h-full rounded-xl border border-slate-200 p-4">
@@ -83,6 +85,12 @@ export default async function RFPage() {
                           {badge.label}
                         </span>
                       </div>
+                      {itemLabel ? (
+                        <p className="mt-2 text-xs text-slate-600">
+                          <span className="font-medium text-slate-700">Товар или услуга: </span>
+                          {itemLabel}
+                        </p>
+                      ) : null}
                       <p className="mt-2 text-xs text-slate-600">{getOfferSummaryLine(offer)}</p>
                       <Link
                         href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}

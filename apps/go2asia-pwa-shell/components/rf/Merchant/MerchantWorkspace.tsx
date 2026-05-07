@@ -30,6 +30,7 @@ import {
   rfMerchantBusinessesLabel,
 } from '@/lib/rfProLinks';
 import { RfBusinessCreatePanel } from '@/components/rf/live/RfBusinessCreatePanel';
+import { MerchantItemCatalogPanel } from '@/components/rf/Merchant/Items';
 import { OfferManagementPanel } from '@/components/rf/Merchant/Offers';
 
 function proLinkStatusStyle(status: RfProLinkDto['status']) {
@@ -241,6 +242,31 @@ export function MerchantWorkspace() {
               );
             })}
           </ul>
+        )}
+      </section>
+
+      <section id="mw-items" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Товары и услуги</h2>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">
+              Это каталог товаров и услуг выбранного бизнеса. Офферы будут привязываться к ним на следующем этапе.
+            </p>
+          </div>
+          {activePartner ? (
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+              Активный партнёр: {activePartner.displayName}
+            </span>
+          ) : null}
+        </div>
+        {activePartner ? (
+          <div className="mt-4">
+            <MerchantItemCatalogPanel partner={activePartner} />
+          </div>
+        ) : (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Создайте бизнес, чтобы управлять товарами и услугами.
+          </p>
         )}
       </section>
 

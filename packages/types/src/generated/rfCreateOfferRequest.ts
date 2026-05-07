@@ -10,6 +10,8 @@ import type { RfCreateOfferRequestOfferType } from "./rfCreateOfferRequestOfferT
 import type { RfCreateOfferRequestVisibility } from "./rfCreateOfferRequestVisibility";
 
 export interface RfCreateOfferRequest {
+  /** @nullable */
+  itemId?: string | null;
   offerType: RfCreateOfferRequestOfferType;
   title: string;
   visibility: RfCreateOfferRequestVisibility;

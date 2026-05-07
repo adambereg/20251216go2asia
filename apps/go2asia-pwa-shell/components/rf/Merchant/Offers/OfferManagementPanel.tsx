@@ -1,9 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { activateOffer, createOffer, type RfOfferDto, type RfPartnerDto } from '@go2asia/sdk/rf';
+import { activateOffer, createOffer, listPartnerItems, type RfOfferDto, type RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
+import { useQuery } from '@tanstack/react-query';
 import { getOfferBadge, getOfferSummaryLine, getVisibilityBadge } from '@/lib/rfFirstSliceContent';
+import {
+  findMerchantItemById,
+  formatMerchantItemOptionLabel,
+  getActiveMerchantItems,
+  getOfferItemDisplayLabel,
+  merchantItemOfferBindingCopy,
+  normalizeOfferItemId,
+} from '@/lib/rfMerchantItems';
 import { upsertOffer } from '@/lib/rfOfferManagement';
 
 const offerTypes: Array<{ value: RfOfferDto['offerType']; label: string }> = [
@@ -43,6 +52,7 @@ export function OfferManagementPanel({
   const [title, setTitle] = useState('');
   const [offerType, setOfferType] = useState<RfOfferDto['offerType']>('discount');
   const [visibility, setVisibility] = useState<RfOfferDto['visibility']>('public');
+  const [selectedItemId, setSelectedItemId] = useState('');
   const [creating, setCreating] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -51,6 +61,26 @@ export function OfferManagementPanel({
   useEffect(() => {
     setLocalOffers(offers);
   }, [offers]);
+
+  const {
+    data: itemsRes,
+    isLoading: itemsLoading,
+    isError: itemsError,
+  } = useQuery({
+    queryKey: ['rf', 'business', 'partners', partner.id, 'items'] as const,
+    queryFn: () => listPartnerItems(partner.id),
+    enabled: Boolean(partner.id),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const items = useMemo(() => itemsRes?.items ?? [], [itemsRes?.items]);
+  const activeItems = useMemo(() => getActiveMerchantItems(items), [items]);
+
+  useEffect(() => {
+    if (selectedItemId && !findMerchantItemById(activeItems, selectedItemId)) {
+      setSelectedItemId('');
+    }
+  }, [activeItems, selectedItemId]);
 
   const sortedOffers = useMemo(
     () =>
@@ -69,13 +99,16 @@ export function OfferManagementPanel({
     setMessage('');
     setError('');
     try {
+      const itemId = normalizeOfferItemId(selectedItemId);
       const created = await createOffer(partner.id, {
         title: normalizedTitle,
+        ...(itemId ? { itemId } : {}),
         offerType,
         visibility,
       });
       setLocalOffers((current) => upsertOffer(current, created));
       setTitle('');
+      setSelectedItemId('');
       setMessage('Оффер создан как draft.');
       onChanged?.();
     } catch (err) {
@@ -105,7 +138,8 @@ export function OfferManagementPanel({
     <div className="space-y-6">
       <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <h3 className="text-sm font-semibold text-slate-900">Создать оффер</h3>
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px_180px_auto] md:items-end">
+        <p className="mt-1 text-xs text-slate-600">{merchantItemOfferBindingCopy}</p>
+        <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_240px_180px_180px_auto] xl:items-end">
           <label className="text-sm text-slate-700">
             Название
             <input
@@ -115,6 +149,22 @@ export function OfferManagementPanel({
               required
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
+          </label>
+          <label className="text-sm text-slate-700">
+            Товар или услуга
+            <select
+              value={selectedItemId}
+              onChange={(event) => setSelectedItemId(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              disabled={itemsLoading || itemsError || activeItems.length === 0}
+            >
+              <option value="">Без привязки</option>
+              {activeItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {formatMerchantItemOptionLabel(item)}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="text-sm text-slate-700">
             Тип
@@ -148,6 +198,17 @@ export function OfferManagementPanel({
             {creating ? 'Создаём...' : 'Создать'}
           </Button>
         </div>
+        {itemsLoading ? <p className="mt-2 text-xs text-slate-500">Загружаем товары и услуги…</p> : null}
+        {itemsError ? (
+          <p className="mt-2 text-xs text-amber-700">
+            Не удалось загрузить товары и услуги. Оффер можно создать без привязки.
+          </p>
+        ) : null}
+        {!itemsLoading && !itemsError && activeItems.length === 0 ? (
+          <p className="mt-2 text-xs text-slate-500">
+            Сначала добавьте товар или услугу в каталоге, либо создайте оффер без привязки.
+          </p>
+        ) : null}
       </form>
 
       {message ? <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{message}</p> : null}
@@ -162,11 +223,13 @@ export function OfferManagementPanel({
           {sortedOffers.map((offer) => {
             const statusBadge = getOfferBadge(offer);
             const visibilityBadge = getVisibilityBadge(offer.visibility);
+            const itemDisplayLabel = getOfferItemDisplayLabel(offer.itemId, items);
             return (
               <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="font-medium text-slate-900">{offer.title}</p>
                   <p className="text-xs text-slate-500">{getOfferSummaryLine(offer)}</p>
+                  {itemDisplayLabel ? <p className="mt-1 text-xs text-slate-600">{itemDisplayLabel}</p> : null}
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.tone}`}>
                       {statusBadge.label}

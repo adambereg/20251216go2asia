@@ -9,6 +9,7 @@ import { useRfLocalVoucherOwnerState, useRfMyLocalVouchers } from '@/hooks/useRf
 import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotice';
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
+import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 
 function getVoucherStatusLabel(status: RfVoucherDto['status']) {
   if (status === 'claimed') return 'Получен';
@@ -32,6 +33,11 @@ function getVoucherScopeLabel(voucher: RfVoucherDto) {
 
 function getVoucherOfferTitle(voucher: RfVoucherDto) {
   return voucher.offer?.title || 'RF-ваучер';
+}
+
+function getVoucherItemLabel(voucher: RfVoucherDto) {
+  const offer = voucher.offer as ({ itemId?: string | null } & NonNullable<RfVoucherDto['offer']>) | undefined;
+  return getItemLabelForOffer({ itemId: offer?.itemId ?? null });
 }
 
 function getVoucherPartnerName(voucher: RfVoucherDto) {
@@ -165,66 +171,73 @@ export function RfMyVouchersView() {
                     </h3>
                   ) : null}
                   <ul className="space-y-3">
-                    {group.items.map((voucher) => (
-                      <li
-                        key={voucher.id}
-                        className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-md"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
-                                {getVoucherScopeLabel(voucher)}
+                    {group.items.map((voucher) => {
+                      const itemLabel = getVoucherItemLabel(voucher);
+                      return (
+                        <li
+                          key={voucher.id}
+                          className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-md"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+                                  {getVoucherScopeLabel(voucher)}
+                                </p>
+                                <span
+                                  className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${getVoucherStatusBadgeClass(voucher.status)}`}
+                                >
+                                  {getVoucherStatusLabel(voucher.status)}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-base font-semibold text-slate-950">
+                                {getVoucherOfferTitle(voucher)}
                               </p>
-                              <span
-                                className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${getVoucherStatusBadgeClass(voucher.status)}`}
-                              >
-                                {getVoucherStatusLabel(voucher.status)}
-                              </span>
-                            </div>
-                            <p className="mt-2 text-base font-semibold text-slate-950">
-                              {getVoucherOfferTitle(voucher)}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-700">
-                              {getVoucherPartnerName(voucher)}
-                            </p>
-                            {isListingVoucher(voucher) && voucher.listingContext ? (
-                              <p className="mt-1 truncate text-sm text-slate-600">
-                                Объект:{' '}
-                                {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
+                              {itemLabel ? (
+                                <p className="mt-1 text-sm text-slate-700">
+                                  <span className="font-medium text-slate-800">Товар или услуга: </span>
+                                  {itemLabel}
+                                </p>
+                              ) : null}
+                              <p className="mt-1 text-sm text-slate-700">
+                                {getVoucherPartnerName(voucher)}
                               </p>
-                            ) : null}
-                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
-                              <span className="rounded-full bg-white/80 px-2 py-1">
-                                {getVoucherShortValidityLabel()}
-                              </span>
-                              <span className="rounded-full bg-white/80 px-2 py-1">
-                                {getVoucherShortUsageLabel(voucher)}
-                              </span>
-                              <span className="rounded-full bg-white/80 px-2 py-1 font-mono text-slate-800">
-                                {voucher.code}
-                              </span>
+                              {isListingVoucher(voucher) && voucher.listingContext ? (
+                                <p className="mt-1 truncate text-sm text-slate-600">
+                                  Объект: {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
+                                </p>
+                              ) : null}
+                              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+                                <span className="rounded-full bg-white/80 px-2 py-1">
+                                  {getVoucherShortValidityLabel()}
+                                </span>
+                                <span className="rounded-full bg-white/80 px-2 py-1">
+                                  {getVoucherShortUsageLabel(voucher)}
+                                </span>
+                                <span className="rounded-full bg-white/80 px-2 py-1 font-mono text-slate-800">
+                                  {voucher.code}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2 sm:justify-end">
-                            {isListingVoucher(voucher) && voucher.listingContext ? (
+                            <div className="flex flex-wrap gap-2 sm:justify-end">
+                              {isListingVoucher(voucher) && voucher.listingContext ? (
+                                <Link
+                                  href={`/rf/rielt/listings/${encodeURIComponent(voucher.listingContext.listingId)}/vouchers`}
+                                  className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-800"
+                                >
+                                  Ваучеры этого объекта
+                                </Link>
+                              ) : null}
                               <Link
-                                href={`/rf/rielt/listings/${encodeURIComponent(voucher.listingContext.listingId)}/vouchers`}
-                                className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-800"
+                                href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:bg-slate-50"
                               >
-                                Ваучеры этого объекта
+                                Офферы партнёра
                               </Link>
-                            ) : null}
-                            <Link
-                              href={`/rf/vouchers?partner=${encodeURIComponent(voucher.partnerId)}`}
-                              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:bg-slate-50"
-                            >
-                              Офферы партнёра
-                            </Link>
+                            </div>
                           </div>
-                        </div>
 
-                        <details className="group/details mt-3 border-t border-emerald-100 pt-2 text-sm text-slate-700">
+                          <details className="group/details mt-3 border-t border-emerald-100 pt-2 text-sm text-slate-700">
                           <summary className="cursor-pointer list-none font-medium text-emerald-900 transition hover:text-emerald-700">
                             <span className="inline-flex items-center gap-1">
                               Условия и использование
@@ -279,9 +292,10 @@ export function RfMyVouchersView() {
                               </details>
                             </div>
                           </div>
-                        </details>
-                      </li>
-                    ))}
+                          </details>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ) : null

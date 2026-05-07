@@ -15,6 +15,7 @@ import {
   getVisibilityBadge,
   rfMicrocopy,
 } from '@/lib/rfFirstSliceContent';
+import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 
 interface PartnerPageProps {
   params: Promise<{ id: string }>;
@@ -71,6 +72,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
   }
 
   const offers = (offersResponse?.items ?? []).filter((offer) => offer.partnerId === partner.id);
+  const itemLinkedOffers = [...new Map(offers.filter((offer) => offer.itemId).map((offer) => [offer.itemId, offer])).values()];
   const trust = getPartnerTrust(partner);
   const profile = getPartnerPresentation(partner);
   const hasLocationLink = Boolean(partner.atlasPlaceId || partner.hostAtlasPlaceId);
@@ -144,6 +146,23 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
           </div>
         </section>
 
+        {itemLinkedOffers.length > 0 ? (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mt-6">
+            <h2 className="text-lg font-semibold text-slate-900">Товары и услуги</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Позиции каталога, к которым привязаны текущие офферы партнёра.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {itemLinkedOffers.map((offer) => (
+                <li key={offer.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <span className="font-medium text-slate-900">Товар или услуга: </span>
+                  {getItemLabelForOffer(offer)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mt-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -165,39 +184,48 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
             <p className="text-sm text-slate-600 mt-4">{rfMicrocopy.emptyPartnerOffers}</p>
           ) : (
             <ul className="mt-4 space-y-3">
-              {offers.map((offer) => (
-                <li key={offer.id} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-slate-900">{offer.title}</p>
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getOfferBadge(offer).tone}`}>
-                      {getOfferBadge(offer).label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-2">{getOfferSummaryLine(offer)}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getVisibilityBadge(offer.visibility).tone}`}
-                    >
-                      {getVisibilityBadge(offer.visibility).label}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <FavoriteOfferButton offerId={offer.id} />
-                    <AddToMyVouchersButton
-                      offerId={offer.id}
-                      partnerId={partner.id}
-                      title={offer.title}
-                      partnerDisplayName={partner.displayName}
-                    />
-                    <Link
-                      href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
-                      className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      В общем каталоге
-                    </Link>
-                  </div>
-                </li>
-              ))}
+              {offers.map((offer) => {
+                const itemLabel = getItemLabelForOffer(offer);
+                return (
+                  <li key={offer.id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <p className="text-sm font-medium text-slate-900">{offer.title}</p>
+                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getOfferBadge(offer).tone}`}>
+                        {getOfferBadge(offer).label}
+                      </span>
+                    </div>
+                    {itemLabel ? (
+                      <p className="mt-2 text-xs text-slate-600">
+                        <span className="font-medium text-slate-700">Товар или услуга: </span>
+                        {itemLabel}
+                      </p>
+                    ) : null}
+                    <p className="text-xs text-slate-600 mt-2">{getOfferSummaryLine(offer)}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getVisibilityBadge(offer.visibility).tone}`}
+                      >
+                        {getVisibilityBadge(offer.visibility).label}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <FavoriteOfferButton offerId={offer.id} />
+                      <AddToMyVouchersButton
+                        offerId={offer.id}
+                        partnerId={partner.id}
+                        title={offer.title}
+                        partnerDisplayName={partner.displayName}
+                      />
+                      <Link
+                        href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+                        className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        В общем каталоге
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

@@ -123,6 +123,7 @@ import type {
   RfClaimResponse,
   RfConflictResponse,
   RfCreateOfferRequest,
+  RfCreatePartnerItemRequest,
   RfCreatePartnerRequest,
   RfCreateProLinkRequest,
   RfErrorResponse,
@@ -132,6 +133,8 @@ import type {
   RfOffer,
   RfOfferListResponse,
   RfPartner,
+  RfPartnerItem,
+  RfPartnerItemListResponse,
   RfPartnerListResponse,
   RfProLink,
   RfProLinkListResponse,
@@ -140,6 +143,7 @@ import type {
   RfRieltListingOfferContext,
   RfServiceUnavailableResponse,
   RfUnauthorizedResponse,
+  RfUpdatePartnerItemRequest,
   RfValidationErrorResponse,
   RfVoucherListResponse,
   RfVoucherSummary,
@@ -4009,6 +4013,239 @@ export const rfCreatePartner = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(rfCreatePartnerRequest),
   });
+};
+
+/**
+ * @summary List product/service items for an owned partner
+ */
+export type rfListPartnerItemsResponse200 = {
+  data: RfPartnerItemListResponse;
+  status: 200;
+};
+
+export type rfListPartnerItemsResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfListPartnerItemsResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfListPartnerItemsResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfListPartnerItemsResponseSuccess = rfListPartnerItemsResponse200 & {
+  headers: Headers;
+};
+export type rfListPartnerItemsResponseError = (
+  | rfListPartnerItemsResponse401
+  | rfListPartnerItemsResponse403
+  | rfListPartnerItemsResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfListPartnerItemsResponse =
+  | rfListPartnerItemsResponseSuccess
+  | rfListPartnerItemsResponseError;
+
+export const getRfListPartnerItemsUrl = (partnerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/items`;
+};
+
+export const rfListPartnerItems = async (
+  partnerId: string,
+  options?: RequestInit
+): Promise<rfListPartnerItemsResponse> => {
+  return customInstance<rfListPartnerItemsResponse>(getRfListPartnerItemsUrl(partnerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * @summary Create product/service item for an owned partner
+ */
+export type rfCreatePartnerItemResponse201 = {
+  data: RfPartnerItem;
+  status: 201;
+};
+
+export type rfCreatePartnerItemResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfCreatePartnerItemResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfCreatePartnerItemResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfCreatePartnerItemResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfCreatePartnerItemResponseSuccess = rfCreatePartnerItemResponse201 & {
+  headers: Headers;
+};
+export type rfCreatePartnerItemResponseError = (
+  | rfCreatePartnerItemResponse400
+  | rfCreatePartnerItemResponse401
+  | rfCreatePartnerItemResponse403
+  | rfCreatePartnerItemResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfCreatePartnerItemResponse =
+  | rfCreatePartnerItemResponseSuccess
+  | rfCreatePartnerItemResponseError;
+
+export const getRfCreatePartnerItemUrl = (partnerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/items`;
+};
+
+export const rfCreatePartnerItem = async (
+  partnerId: string,
+  rfCreatePartnerItemRequest: RfCreatePartnerItemRequest,
+  options?: RequestInit
+): Promise<rfCreatePartnerItemResponse> => {
+  return customInstance<rfCreatePartnerItemResponse>(getRfCreatePartnerItemUrl(partnerId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfCreatePartnerItemRequest),
+  });
+};
+
+/**
+ * @summary Update product/service item for an owned partner
+ */
+export type rfUpdatePartnerItemResponse200 = {
+  data: RfPartnerItem;
+  status: 200;
+};
+
+export type rfUpdatePartnerItemResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfUpdatePartnerItemResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfUpdatePartnerItemResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfUpdatePartnerItemResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfUpdatePartnerItemResponseSuccess = rfUpdatePartnerItemResponse200 & {
+  headers: Headers;
+};
+export type rfUpdatePartnerItemResponseError = (
+  | rfUpdatePartnerItemResponse400
+  | rfUpdatePartnerItemResponse401
+  | rfUpdatePartnerItemResponse403
+  | rfUpdatePartnerItemResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfUpdatePartnerItemResponse =
+  | rfUpdatePartnerItemResponseSuccess
+  | rfUpdatePartnerItemResponseError;
+
+export const getRfUpdatePartnerItemUrl = (partnerId: string, itemId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/items/${itemId}`;
+};
+
+export const rfUpdatePartnerItem = async (
+  partnerId: string,
+  itemId: string,
+  rfUpdatePartnerItemRequest: RfUpdatePartnerItemRequest,
+  options?: RequestInit
+): Promise<rfUpdatePartnerItemResponse> => {
+  return customInstance<rfUpdatePartnerItemResponse>(getRfUpdatePartnerItemUrl(partnerId, itemId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfUpdatePartnerItemRequest),
+  });
+};
+
+/**
+ * Soft-archives an item. Existing offers keep their optional itemId reference; claim/redeem and voucher uniqueness remain offer-level.
+
+ * @summary Archive product/service item for an owned partner
+ */
+export type rfArchivePartnerItemResponse200 = {
+  data: RfPartnerItem;
+  status: 200;
+};
+
+export type rfArchivePartnerItemResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfArchivePartnerItemResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfArchivePartnerItemResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfArchivePartnerItemResponseSuccess = rfArchivePartnerItemResponse200 & {
+  headers: Headers;
+};
+export type rfArchivePartnerItemResponseError = (
+  | rfArchivePartnerItemResponse401
+  | rfArchivePartnerItemResponse403
+  | rfArchivePartnerItemResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfArchivePartnerItemResponse =
+  | rfArchivePartnerItemResponseSuccess
+  | rfArchivePartnerItemResponseError;
+
+export const getRfArchivePartnerItemUrl = (partnerId: string, itemId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/items/${itemId}/archive`;
+};
+
+export const rfArchivePartnerItem = async (
+  partnerId: string,
+  itemId: string,
+  options?: RequestInit
+): Promise<rfArchivePartnerItemResponse> => {
+  return customInstance<rfArchivePartnerItemResponse>(
+    getRfArchivePartnerItemUrl(partnerId, itemId),
+    {
+      ...options,
+      method: "POST",
+    }
+  );
 };
 
 /**

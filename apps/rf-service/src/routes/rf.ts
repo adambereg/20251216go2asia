@@ -5,16 +5,19 @@ import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
   acceptProLink,
   activateOffer,
+  archivePartnerItem,
   claimVoucher,
   claimVoucherForListing,
   createOffer,
   createPartner,
+  createPartnerItem,
   createProLink,
   endProLink,
   getMyVoucherSummary,
   getPublicOfferById,
   getPublicPartnerById,
   getRieltListingOfferContext,
+  listPartnerItems,
   listPartnerProLinks,
   listMyVouchers,
   listProLinks,
@@ -23,6 +26,7 @@ import {
   redeemVoucher,
   rejectProLink,
   shouldThrottleWrite,
+  updatePartnerItem,
   validatePartnerGeoLinks,
 } from '../store';
 
@@ -59,6 +63,20 @@ function isRoleScope(value: unknown): value is 'onboarding' | 'curation' | 'prom
     value === 'moderation_support' ||
     value === 'account_support'
   );
+}
+
+function optionalString(body: Record<string, unknown>, key: string): string | null | undefined {
+  if (!Object.prototype.hasOwnProperty.call(body, key)) return undefined;
+  const value = body[key];
+  if (value === null) return null;
+  return typeof value === 'string' ? value : undefined;
+}
+
+function optionalPriceFrom(body: Record<string, unknown>): number | null | undefined {
+  if (!Object.prototype.hasOwnProperty.call(body, 'priceFrom')) return undefined;
+  const value = body.priceFrom;
+  if (value === null) return null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 export async function handleRfRoute(
@@ -142,6 +160,60 @@ export async function handleRfRoute(
     return json(partner, 201);
   }
 
+  const businessPartnerItemsPartnerId = getPathParam(path, /^\/v1\/rf\/business\/partners\/([^/]+)\/items$/);
+  if (request.method === 'GET' && businessPartnerItemsPartnerId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await listPartnerItems(db, principal, businessPartnerItemsPartnerId);
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json({ items: result.items, nextCursor: null });
+  }
+
+  if (request.method === 'POST' && businessPartnerItemsPartnerId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const body = await readJsonObject(request);
+    if (!body) return errorResponse('INVALID_REQUEST', 'Expected JSON object body', requestId, 400);
+
+    const title = typeof body.title === 'string' ? body.title : '';
+    const result = await createPartnerItem(db, principal, businessPartnerItemsPartnerId, {
+      title,
+      description: optionalString(body, 'description'),
+      category: optionalString(body, 'category'),
+      priceFrom: optionalPriceFrom(body),
+      currency: optionalString(body, 'currency'),
+    });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(result.item, 201);
+  }
+
+  const businessPartnerItemMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/items\/([^/]+)$/);
+  if (request.method === 'PATCH' && businessPartnerItemMatch) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const body = await readJsonObject(request);
+    if (!body) return errorResponse('INVALID_REQUEST', 'Expected JSON object body', requestId, 400);
+    const result = await updatePartnerItem(db, principal, decodeURIComponent(businessPartnerItemMatch[1] ?? ''), decodeURIComponent(businessPartnerItemMatch[2] ?? ''), {
+      title: optionalString(body, 'title') ?? undefined,
+      description: optionalString(body, 'description'),
+      category: optionalString(body, 'category'),
+      priceFrom: optionalPriceFrom(body),
+      currency: optionalString(body, 'currency'),
+    });
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(result.item);
+  }
+
+  const businessPartnerItemArchiveMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/items\/([^/]+)\/archive$/);
+  if (request.method === 'POST' && businessPartnerItemArchiveMatch) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await archivePartnerItem(
+      db,
+      principal,
+      decodeURIComponent(businessPartnerItemArchiveMatch[1] ?? ''),
+      decodeURIComponent(businessPartnerItemArchiveMatch[2] ?? '')
+    );
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(result.item);
+  }
+
   const businessPartnerId = getPathParam(path, /^\/v1\/rf\/business\/partners\/([^/]+)\/offers$/);
   if (request.method === 'POST' && businessPartnerId) {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
@@ -155,12 +227,14 @@ export async function handleRfRoute(
 
     const result = await createOffer(db, principal, {
       partnerId: businessPartnerId,
+      itemId: typeof body.itemId === 'string' && body.itemId.trim().length > 0 ? body.itemId.trim() : null,
       title,
       offerType: body.offerType,
       visibility: body.visibility,
     });
     if ('error' in result) {
-      return errorResponse(result.status === 403 ? 'RF_PARTNER_FORBIDDEN' : 'RF_PARTNER_NOT_FOUND', result.error, requestId, result.status);
+      if (result.status === 409) return errorResponse('RF_PARTNER_ITEM_ARCHIVED', result.error, requestId, 409);
+      return errorResponse(result.status === 403 ? 'RF_PARTNER_FORBIDDEN' : result.error.includes('item') ? 'RF_PARTNER_ITEM_NOT_FOUND' : 'RF_PARTNER_NOT_FOUND', result.error, requestId, result.status);
     }
     return json(result, 201);
   }

@@ -6,6 +6,7 @@ import type { GatewayPrincipal } from './middleware/auth';
 type DbExecutor = Pick<Db, 'execute'>;
 
 export type PartnerStatus = 'active' | 'archived';
+export type PartnerItemStatus = 'active' | 'archived';
 export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
 export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
@@ -31,6 +32,7 @@ export interface Partner {
 export interface Offer {
   id: string;
   partnerId: string;
+  itemId: string | null;
   title: string;
   offerType: 'discount' | 'bundle' | 'gift' | 'access' | 'campaign' | 'event_related';
   visibility: 'public' | 'pro_only' | 'invite_only';
@@ -38,6 +40,35 @@ export interface Offer {
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RfPartnerItem {
+  id: string;
+  partnerId: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  priceFrom: number | null;
+  currency: string | null;
+  status: PartnerItemStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePartnerItemInput {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  priceFrom?: number | null;
+  currency?: string | null;
+}
+
+export interface UpdatePartnerItemInput {
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  priceFrom?: number | null;
+  currency?: string | null;
 }
 
 export interface RieltListingOfferContext {
@@ -134,6 +165,12 @@ type ProLinkLifecycleResult = ProLinkAcceptResult;
 type PartnerProLinksResult =
   | { ok: true; items: ProLink[] }
   | { ok: false; code: string; message: string; status: number };
+type PartnerItemsResult =
+  | { ok: true; items: RfPartnerItem[] }
+  | { ok: false; code: string; message: string; status: number };
+type PartnerItemResult =
+  | { ok: true; item: RfPartnerItem }
+  | { ok: false; code: string; message: string; status: number };
 
 type PartnerRow = {
   id: string;
@@ -152,11 +189,25 @@ type PartnerRow = {
 type OfferRow = {
   id: string;
   partner_id: string;
+  item_id?: string | null;
   title: string;
   offer_type: Offer['offerType'];
   visibility: Offer['visibility'];
   status: OfferStatus;
   created_by_user_id: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type PartnerItemRow = {
+  id: string;
+  partner_id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  price_from: string | number | null;
+  currency: string | null;
+  status: PartnerItemStatus;
   created_at: string | Date;
   updated_at: string | Date;
 };
@@ -284,11 +335,27 @@ function toOffer(row: OfferRow): Offer {
   return {
     id: row.id,
     partnerId: row.partner_id,
+    itemId: row.item_id ?? null,
     title: row.title,
     offerType: row.offer_type,
     visibility: row.visibility,
     status: row.status,
     createdByUserId: row.created_by_user_id,
+    createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+    updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function toPartnerItem(row: PartnerItemRow): RfPartnerItem {
+  return {
+    id: row.id,
+    partnerId: row.partner_id,
+    title: row.title,
+    description: row.description ?? null,
+    category: row.category ?? null,
+    priceFrom: row.price_from === null || row.price_from === undefined ? null : Number(row.price_from),
+    currency: row.currency ?? null,
+    status: row.status,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
   };
@@ -416,6 +483,62 @@ async function getOwnedActivePartner(db: DbExecutor, partnerId: string, ownerUse
   return rowsOf<PartnerRow>(result)[0] ?? null;
 }
 
+async function requireOwnedActivePartner(
+  db: DbExecutor,
+  partnerId: string,
+  ownerUserId: string,
+  action: string
+): Promise<{ ok: true; partner: Pick<PartnerRow, 'id' | 'owner_user_id' | 'status'> } | { ok: false; code: string; message: string; status: number }> {
+  const partnerResult = await db.execute(sql`
+    SELECT id, owner_user_id, status
+    FROM rf_partner
+    WHERE id = ${partnerId}
+    LIMIT 1
+  `);
+  const partner = rowsOf<Pick<PartnerRow, 'id' | 'owner_user_id' | 'status'>>(partnerResult)[0];
+  if (!partner || partner.status !== 'active') {
+    return { ok: false, code: 'RF_PARTNER_NOT_FOUND', message: 'RF partner not found', status: 404 };
+  }
+  if (partner.owner_user_id !== ownerUserId) {
+    return { ok: false, code: 'RF_PARTNER_FORBIDDEN', message: `Only partner owner can ${action}`, status: 403 };
+  }
+  return { ok: true, partner };
+}
+
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizePartnerItemInput(input: CreatePartnerItemInput | UpdatePartnerItemInput, isCreate: boolean) {
+  const title = input.title === undefined ? undefined : input.title.trim();
+  if ((isCreate || input.title !== undefined) && (!title || title.length === 0)) {
+    return { ok: false as const, code: 'RF_PARTNER_ITEM_INVALID', message: 'title is required', status: 400 };
+  }
+  if (input.priceFrom !== undefined && input.priceFrom !== null && input.priceFrom < 0) {
+    return { ok: false as const, code: 'RF_PARTNER_ITEM_INVALID', message: 'priceFrom must be greater than or equal to 0', status: 400 };
+  }
+
+  const hasPrice = input.priceFrom !== undefined && input.priceFrom !== null;
+  const currency = input.currency === undefined || input.currency === null ? null : input.currency.trim().toUpperCase();
+  if (hasPrice && !currency) {
+    return { ok: false as const, code: 'RF_PARTNER_ITEM_INVALID', message: 'currency is required when priceFrom is present', status: 400 };
+  }
+  if (currency !== null && !/^[A-Z]{3}$/.test(currency)) {
+    return { ok: false as const, code: 'RF_PARTNER_ITEM_INVALID', message: 'currency must be a 3-letter ISO code', status: 400 };
+  }
+
+  return {
+    ok: true as const,
+    title,
+    description: input.description === undefined ? undefined : normalizeOptionalText(input.description),
+    category: input.category === undefined ? undefined : normalizeOptionalText(input.category),
+    priceFrom: input.priceFrom === undefined ? undefined : input.priceFrom,
+    currency: input.currency === undefined ? undefined : currency,
+  };
+}
+
 type AtlasPlaceReferenceRow = {
   id: string;
   country_id: string | null;
@@ -491,12 +614,22 @@ export async function validatePartnerGeoLinks(
 
 async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
     LIMIT 1
   `);
   return rowsOf<OfferRow>(result)[0] ?? null;
+}
+
+async function getPartnerItemById(db: DbExecutor, itemId: string): Promise<PartnerItemRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, title, description, category, price_from, currency, status, created_at, updated_at
+    FROM rf_partner_item
+    WHERE id = ${itemId}
+    LIMIT 1
+  `);
+  return rowsOf<PartnerItemRow>(result)[0] ?? null;
 }
 
 async function getActivePartnerById(db: DbExecutor, partnerId: string): Promise<Pick<PartnerRow, 'id'> | null> {
@@ -783,7 +916,7 @@ export async function getPublicPartnerById(db: DbExecutor, partnerId: string): P
 
 export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE status = 'active'
       AND visibility = 'public'
@@ -794,7 +927,7 @@ export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
 
 export async function getPublicOfferById(db: DbExecutor, offerId: string): Promise<Offer | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
       AND status = 'active'
@@ -821,6 +954,7 @@ export async function getRieltListingOfferContext(db: DbExecutor, listingId: str
     SELECT
       o.id,
       o.partner_id,
+      o.item_id,
       o.title,
       o.offer_type,
       o.visibility,
@@ -922,11 +1056,145 @@ export async function createPartner(
   return toPartner(row);
 }
 
+export async function listPartnerItems(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  partnerId: string
+): Promise<PartnerItemsResult> {
+  const access = await requireOwnedActivePartner(db, partnerId, principal.userId, 'list partner items');
+  if (!access.ok) return access;
+
+  const result = await db.execute(sql`
+    SELECT id, partner_id, title, description, category, price_from, currency, status, created_at, updated_at
+    FROM rf_partner_item
+    WHERE partner_id = ${partnerId}
+    ORDER BY
+      CASE status
+        WHEN 'active' THEN 0
+        WHEN 'archived' THEN 1
+        ELSE 2
+      END ASC,
+      updated_at DESC,
+      id DESC
+  `);
+  return { ok: true, items: rowsOf<PartnerItemRow>(result).map(toPartnerItem) };
+}
+
+export async function createPartnerItem(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  partnerId: string,
+  input: CreatePartnerItemInput
+): Promise<PartnerItemResult> {
+  const access = await requireOwnedActivePartner(db, partnerId, principal.userId, 'create partner items');
+  if (!access.ok) return access;
+
+  const normalized = normalizePartnerItemInput(input, true);
+  if (!normalized.ok) return normalized;
+
+  const result = await db.execute(sql`
+    INSERT INTO rf_partner_item (
+      id,
+      partner_id,
+      title,
+      description,
+      category,
+      price_from,
+      currency,
+      status,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ${nextId('rf_partner_item')},
+      ${partnerId},
+      ${normalized.title},
+      ${normalized.description ?? null},
+      ${normalized.category ?? null},
+      ${normalized.priceFrom ?? null},
+      ${normalized.currency ?? null},
+      'active',
+      now(),
+      now()
+    )
+    RETURNING id, partner_id, title, description, category, price_from, currency, status, created_at, updated_at
+  `);
+  const row = rowsOf<PartnerItemRow>(result)[0];
+  if (!row) throw new Error('Failed to persist RF partner item');
+  return { ok: true, item: toPartnerItem(row) };
+}
+
+export async function updatePartnerItem(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  partnerId: string,
+  itemId: string,
+  input: UpdatePartnerItemInput
+): Promise<PartnerItemResult> {
+  const access = await requireOwnedActivePartner(db, partnerId, principal.userId, 'update partner items');
+  if (!access.ok) return access;
+
+  const current = await getPartnerItemById(db, itemId);
+  if (!current || current.partner_id !== partnerId) {
+    return { ok: false, code: 'RF_PARTNER_ITEM_NOT_FOUND', message: 'RF partner item not found', status: 404 };
+  }
+
+  const normalized = normalizePartnerItemInput(input, false);
+  if (!normalized.ok) return normalized;
+
+  const result = await db.execute(sql`
+    UPDATE rf_partner_item
+    SET
+      title = CASE WHEN ${normalized.title !== undefined} THEN ${normalized.title ?? null} ELSE title END,
+      description = CASE WHEN ${normalized.description !== undefined} THEN ${normalized.description ?? null} ELSE description END,
+      category = CASE WHEN ${normalized.category !== undefined} THEN ${normalized.category ?? null} ELSE category END,
+      price_from = CASE WHEN ${normalized.priceFrom !== undefined} THEN ${normalized.priceFrom ?? null} ELSE price_from END,
+      currency = CASE WHEN ${normalized.currency !== undefined} THEN ${normalized.currency ?? null} ELSE currency END,
+      updated_at = now()
+    WHERE id = ${itemId}
+      AND partner_id = ${partnerId}
+    RETURNING id, partner_id, title, description, category, price_from, currency, status, created_at, updated_at
+  `);
+  const row = rowsOf<PartnerItemRow>(result)[0];
+  if (!row) return { ok: false, code: 'RF_PARTNER_ITEM_NOT_FOUND', message: 'RF partner item not found', status: 404 };
+  return { ok: true, item: toPartnerItem(row) };
+}
+
+export async function archivePartnerItem(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  partnerId: string,
+  itemId: string
+): Promise<PartnerItemResult> {
+  const access = await requireOwnedActivePartner(db, partnerId, principal.userId, 'archive partner items');
+  if (!access.ok) return access;
+
+  const current = await getPartnerItemById(db, itemId);
+  if (!current || current.partner_id !== partnerId) {
+    return { ok: false, code: 'RF_PARTNER_ITEM_NOT_FOUND', message: 'RF partner item not found', status: 404 };
+  }
+  if (current.status === 'archived') return { ok: true, item: toPartnerItem(current) };
+
+  const result = await db.execute(sql`
+    UPDATE rf_partner_item
+    SET
+      status = 'archived',
+      updated_at = now()
+    WHERE id = ${itemId}
+      AND partner_id = ${partnerId}
+    RETURNING id, partner_id, title, description, category, price_from, currency, status, created_at, updated_at
+  `);
+  const row = rowsOf<PartnerItemRow>(result)[0];
+  if (!row) return { ok: false, code: 'RF_PARTNER_ITEM_NOT_FOUND', message: 'RF partner item not found', status: 404 };
+  return { ok: true, item: toPartnerItem(row) };
+}
+
 export async function createOffer(
   db: DbExecutor,
   principal: GatewayPrincipal,
   input: {
     partnerId: string;
+    itemId?: string | null;
     title: string;
     offerType: Offer['offerType'];
     visibility: Offer['visibility'];
@@ -935,11 +1203,19 @@ export async function createOffer(
   const partner = await getOwnedActivePartner(db, input.partnerId, principal.userId);
   if (!partner) return { error: 'Partner not found', status: 404 };
 
+  const itemId = input.itemId?.trim() || null;
+  if (itemId) {
+    const item = await getPartnerItemById(db, itemId);
+    if (!item || item.partner_id !== input.partnerId) return { error: 'Partner item not found', status: 404 };
+    if (item.status !== 'active') return { error: 'Partner item is archived', status: 409 };
+  }
+
   const id = nextId('rf_offer');
   const result = await db.execute(sql`
     INSERT INTO rf_offer (
       id,
       partner_id,
+      item_id,
       title,
       offer_type,
       visibility,
@@ -951,6 +1227,7 @@ export async function createOffer(
     VALUES (
       ${id},
       ${input.partnerId},
+      ${itemId},
       ${input.title},
       ${input.offerType},
       ${input.visibility},
@@ -959,7 +1236,7 @@ export async function createOffer(
       now(),
       now()
     )
-    RETURNING id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
   `);
   const row = rowsOf<OfferRow>(result)[0];
   if (!row) throw new Error('Failed to persist RF offer');
@@ -987,7 +1264,7 @@ export async function activateOffer(
     WHERE id = ${input.offerId}
       AND partner_id = ${input.partnerId}
       AND status = 'draft'
-    RETURNING id, partner_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
   `);
   const updated = rowsOf<OfferRow>(result)[0];
   if (updated) return toOffer(updated);
