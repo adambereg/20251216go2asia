@@ -6,6 +6,7 @@ import { LayoutGrid, List, Search } from 'lucide-react';
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
 import { AddToMyVouchersButton } from '@/components/rf/Shared/AddToMyVouchersButton';
+import { ClaimRfOfferButton } from '@/components/rf/Shared/ClaimRfOfferButton';
 import { FavoriteOfferButton } from '@/components/rf/Shared/FavoriteOfferButton';
 import {
   getCatalogCategoryFilterOptions,
@@ -25,6 +26,7 @@ import {
   getRfCountryLabel,
 } from '@/lib/rfFirstSliceContent';
 import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
+import { rfOfferClaimCopy } from '@/lib/rfOfferClaim';
 
 type SortKey = 'featured' | 'title' | 'partner';
 type ViewMode = 'grid' | 'list';
@@ -531,14 +533,15 @@ function OfferCard({
       </div>
       <p className="text-[11px] text-slate-500">{getOfferGuardText(offer)}</p>
       <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] text-slate-600">
-        <p className="font-medium text-slate-800">{rfOffersCatalogContent.claimNotReadyTitle}</p>
-        <p className="mt-0.5">{rfOffersCatalogContent.claimNotReadyBody}</p>
+        <p className="font-medium text-slate-800">{rfOfferClaimCopy.successHint}</p>
+        <p className="mt-0.5">{rfOfferClaimCopy.localSaveNote}</p>
       </div>
     </div>
   );
 
   const actions = (
     <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <ClaimRfOfferButton offerId={offer.id} />
       <Link
         href={`/rf/${encodeURIComponent(partner.id)}`}
         className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white hover:bg-blue-700"

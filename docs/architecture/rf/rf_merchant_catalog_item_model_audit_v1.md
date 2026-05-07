@@ -565,6 +565,28 @@ Boundaries:
 - No claim/redeem or voucher behavior changes.
 - No public RF or Connect changes.
 
+### Stage 1.6 - Offer Detail & Claim Usability Gap Audit
+
+Status: completed as a read-only diagnosis pass.
+
+- Confirmed backend already has public offer detail and partner-scope claim endpoints.
+- Confirmed public PWA did not yet use claimRfOffer.
+- Confirmed public/PRO item details remain unavailable because the public offer DTO exposes only itemId.
+- Recommended closing claim usability before building an offer detail page or public item summary read model.
+
+### Stage 1.7 - Public Offer Claim CTA Baseline
+
+Status: implemented as a bounded frontend-only public CTA wiring pass.
+
+- Public offer cards in /rf/vouchers now show Получить ваучер.
+- The CTA uses the existing claimRfOffer(offerId) SDK method.
+- Successful claims create real server-side RF vouchers visible in /rf/my-vouchers.
+- Local Сохранить оффер remains separate as a browser-local planning action.
+- No offer detail page was added.
+- No item public read model was added.
+- No backend, schema, migration, OpenAPI or SDK generation changes.
+- No PRO attribution, rewards, commissions, payouts, Points, G2A, NFT, Totem or Connect changes.
+
 ## 19. Final Recommendation
 
 Proceed with Option C - Hybrid.
