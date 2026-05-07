@@ -130,6 +130,7 @@ import type {
   RfErrorResponse,
   RfForbiddenResponse,
   RfInternalErrorResponse,
+  RfListProAttributedVouchersParams,
   RfNotFoundResponse,
   RfOffer,
   RfOfferListResponse,
@@ -137,6 +138,7 @@ import type {
   RfPartnerItem,
   RfPartnerItemListResponse,
   RfPartnerListResponse,
+  RfProAttributedVouchersResponse,
   RfProLink,
   RfProLinkListResponse,
   RfRateLimitedResponse,
@@ -4771,6 +4773,69 @@ export const rfGetPartner = async (
     ...options,
     method: "GET",
   });
+};
+
+/**
+ * Read-only RF-owned visibility for vouchers whose durable attribution fact is confirmed for the authenticated PRO. This endpoint does not expose voucher codes, raw user ids, share codes, attribution metadata, rewards, commissions or payout semantics.
+
+ * @summary List current PRO attributed vouchers
+ */
+export type rfListProAttributedVouchersResponse200 = {
+  data: RfProAttributedVouchersResponse;
+  status: 200;
+};
+
+export type rfListProAttributedVouchersResponse400 = {
+  data: RfValidationErrorResponse;
+  status: 400;
+};
+
+export type rfListProAttributedVouchersResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfListProAttributedVouchersResponseSuccess = rfListProAttributedVouchersResponse200 & {
+  headers: Headers;
+};
+export type rfListProAttributedVouchersResponseError = (
+  | rfListProAttributedVouchersResponse400
+  | rfListProAttributedVouchersResponse401
+) & {
+  headers: Headers;
+};
+
+export type rfListProAttributedVouchersResponse =
+  | rfListProAttributedVouchersResponseSuccess
+  | rfListProAttributedVouchersResponseError;
+
+export const getRfListProAttributedVouchersUrl = (params?: RfListProAttributedVouchersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/rf/pro/attributed-vouchers?${stringifiedParams}`
+    : `/v1/rf/pro/attributed-vouchers`;
+};
+
+export const rfListProAttributedVouchers = async (
+  params?: RfListProAttributedVouchersParams,
+  options?: RequestInit
+): Promise<rfListProAttributedVouchersResponse> => {
+  return customInstance<rfListProAttributedVouchersResponse>(
+    getRfListProAttributedVouchersUrl(params),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
 };
 
 /**

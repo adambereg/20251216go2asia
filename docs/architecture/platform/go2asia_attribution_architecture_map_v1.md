@@ -103,7 +103,7 @@ After that point, normal navigation, retry, replay, login completion, another sh
 
 | Module / surface | Durable object/action | Possible attribution | Maturity | Economy relevance |
 | --- | --- | --- | --- | --- |
-| **RF Asia** | `rf_voucher` claim; later redemption facts | PRO share, partner offer link, Rielt listing offer context, internal navigation | Canonicalized design; not implemented for attribution fields | High future relevance; dangerous to monetize before immutable facts exist |
+| **RF Asia** | `rf_voucher` claim; later redemption facts | PRO share, partner offer link, Rielt listing offer context, internal navigation | Durable voucher attribution implemented; PRO read-only visibility added | High future relevance; dangerous to monetize before immutable facts exist |
 | **Rielt Market** | Listing creation; requester inquiry/create/list flow; future contact handoff | Listing share, PRO/agent share, RF offer context, AI recommendation, internal search | Partial domain implementation, attribution conceptual | Medium/high; do not merge with RF voucher attribution |
 | **Quest Asia** | `quest_progress`, `quest_submission`, completion/proof lifecycle | Quest share, PRO-created quest, guide route, QR, place/event/partner step context | Domain model exists; attribution conceptual | High for future rewards, but dangerous before proof/completion canon is stable |
 | **Space Asia** | `space_post`, `repost`, group join/membership, profile/social surfaces | Creator share, repost chain, community invite, content share, internal feed | Partial social runtime; attribution conceptual | Medium; avoid turning social attribution into surveillance |
@@ -137,9 +137,9 @@ Current durable action:
 
 Current attribution state:
 
-- PRO links exist as `rf_pro_link`, but they express PRO-to-partner eligibility, not user traffic attribution;
-- public RF links currently use `partner` as a catalog filter, not a PRO attribution parameter;
-- RF vouchers do not yet store PRO attribution fields.
+- PRO links exist as `rf_pro_link`; active links validate public `shareCode` transport;
+- public RF links can carry `shareCode` while keeping internal PRO/link ids out of URLs;
+- RF vouchers store durable attribution fields, and RF exposes a PRO-safe read-only list for confirmed attributed vouchers.
 
 Canonical direction:
 
@@ -489,6 +489,14 @@ Explicitly deferred:
 RF is now the first implemented durable attribution owner in this map. The implementation remains voucher-only and RF-only: `rf_voucher` stores the durable attribution fact, while `rf_pro_link.share_code` is the scoped public transport for PRO share links.
 
 This marker does not change the map's non-goals: no centralized attribution service, no economy engine, no payout logic and no shared analytics runtime were introduced.
+
+---
+
+## Stage 5.0C Visibility Marker
+
+RF now also exposes a narrow read-only projection for the authenticated PRO: `GET /v1/rf/pro/attributed-vouchers`.
+
+The projection is still RF-owned, confirmed-attribution-only by default, and redacts raw user identity, share code, internal PRO/link ids and attribution metadata. It is not a Connect ownership move, a cross-domain service, a correction workflow or an analytics platform.
 
 ---
 

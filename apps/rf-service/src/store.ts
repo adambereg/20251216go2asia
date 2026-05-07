@@ -158,6 +158,41 @@ export interface VoucherSummary {
   cancelledVouchers: number;
 }
 
+export interface RfProAttributedVoucher {
+  voucherId: string;
+  offerId: string;
+  offerTitle: string;
+  partnerId: string;
+  partnerName: string;
+  status: VoucherStatus;
+  canonicalStatus: VoucherCanonicalStatus;
+  claimScope: VoucherClaimScope;
+  listingContext: {
+    source: 'rielt';
+    listingId: string;
+    listingTitle: string | null;
+  } | null;
+  attributionStatus: Extract<RfAttributionStatus, 'confirmed'>;
+  attributionSource: RfAttributionSource;
+  claimSource: RfClaimSource;
+  attributionConfirmedAt: string;
+  claimedAt: string;
+  redeemedAt: string | null;
+}
+
+export interface RfProAttributedVouchersList {
+  items: RfProAttributedVoucher[];
+  nextCursor: string | null;
+}
+
+export interface RfProAttributedVouchersFilters {
+  status?: VoucherStatus;
+  partnerId?: string;
+  claimScope?: VoucherClaimScope;
+  limit?: number;
+  cursor?: string | null;
+}
+
 export interface ProLink {
   id: string;
   partnerId: string;
@@ -302,6 +337,27 @@ type VoucherRow = {
   wallet_partner_display_name?: string | null;
   wallet_partner_city_id?: string | null;
   wallet_partner_country_id?: string | null;
+};
+
+type ProAttributedVoucherRow = Pick<
+  VoucherRow,
+  | 'id'
+  | 'offer_id'
+  | 'partner_id'
+  | 'status'
+  | 'canonical_status'
+  | 'claim_scope'
+  | 'rielt_listing_id'
+  | 'rielt_listing_title_snapshot'
+  | 'attribution_status'
+  | 'attribution_source'
+  | 'claim_source'
+  | 'attribution_confirmed_at'
+  | 'claimed_at'
+  | 'redeemed_at'
+> & {
+  offer_title: string;
+  partner_display_name: string;
 };
 
 type ListingClaimContextRow = {
@@ -512,6 +568,35 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
   return voucher;
 }
 
+function toProAttributedVoucher(row: ProAttributedVoucherRow): RfProAttributedVoucher {
+  const claimScope = row.claim_scope ?? 'partner';
+  const listingId = row.rielt_listing_id ?? null;
+  return {
+    voucherId: row.id,
+    offerId: row.offer_id,
+    offerTitle: row.offer_title,
+    partnerId: row.partner_id,
+    partnerName: row.partner_display_name,
+    status: row.status,
+    canonicalStatus: getCanonicalStatus(row),
+    claimScope,
+    listingContext:
+      claimScope === 'listing' && listingId
+        ? {
+            source: 'rielt',
+            listingId,
+            listingTitle: row.rielt_listing_title_snapshot ?? null,
+          }
+        : null,
+    attributionStatus: 'confirmed',
+    attributionSource: row.attribution_source ?? 'unknown',
+    claimSource: row.claim_source ?? 'unknown',
+    attributionConfirmedAt: asIso(row.attribution_confirmed_at ?? null) ?? asIso(row.claimed_at) ?? new Date(0).toISOString(),
+    claimedAt: asIso(row.claimed_at) ?? new Date(0).toISOString(),
+    redeemedAt: asIso(row.redeemed_at),
+  };
+}
+
 function toProLink(row: ProLinkRow): ProLink {
   return {
     id: row.id,
@@ -549,6 +634,22 @@ function toShareCode(): string {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `rfp_${raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)}`;
+}
+
+function clampProAttributedVouchersLimit(value: number | undefined): number {
+  if (!value || !Number.isFinite(value)) return 25;
+  return Math.max(1, Math.min(100, Math.floor(value)));
+}
+
+function parseProAttributedVouchersCursor(cursor: string | null | undefined): { claimedAt: string; voucherId: string } | null {
+  if (!cursor) return null;
+  const [claimedAt, voucherId] = cursor.split('|');
+  if (!claimedAt || !voucherId || Number.isNaN(Date.parse(claimedAt))) return null;
+  return { claimedAt, voucherId };
+}
+
+function encodeProAttributedVouchersCursor(item: RfProAttributedVoucher): string {
+  return `${item.claimedAt}|${item.voucherId}`;
 }
 
 function isAttributionSource(value: unknown): value is RfAttributionSource {
@@ -1884,6 +1985,61 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
     ORDER BY v.created_at DESC, v.id DESC
   `);
   return rowsOf<VoucherRow>(result).map((row) => toVoucher(row, { includeWalletEnrichment: true }));
+}
+
+export async function listProAttributedVouchers(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  input: RfProAttributedVouchersFilters = {}
+): Promise<RfProAttributedVouchersList> {
+  const limit = clampProAttributedVouchersLimit(input.limit);
+  const cursor = parseProAttributedVouchersCursor(input.cursor);
+  const status = input.status ?? null;
+  const partnerId = input.partnerId ?? null;
+  const claimScope = input.claimScope ?? null;
+  const cursorClaimedAt = cursor?.claimedAt ?? null;
+  const cursorVoucherId = cursor?.voucherId ?? null;
+
+  const result = await db.execute(sql`
+    SELECT
+      v.id,
+      v.offer_id,
+      v.partner_id,
+      v.status,
+      v.canonical_status,
+      v.claim_scope,
+      v.rielt_listing_id,
+      v.rielt_listing_title_snapshot,
+      v.attribution_status,
+      v.attribution_source,
+      v.claim_source,
+      v.attribution_confirmed_at,
+      v.claimed_at,
+      v.redeemed_at,
+      o.title AS offer_title,
+      p.display_name AS partner_display_name
+    FROM rf_voucher v
+    INNER JOIN rf_offer o ON o.id = v.offer_id
+    INNER JOIN rf_partner p ON p.id = v.partner_id
+    WHERE v.pro_attributed_user_id = ${principal.userId}
+      AND v.attribution_status = 'confirmed'
+      AND (${status}::text IS NULL OR v.status = ${status})
+      AND (${partnerId}::text IS NULL OR v.partner_id = ${partnerId})
+      AND (${claimScope}::text IS NULL OR v.claim_scope = ${claimScope})
+      AND (
+        ${cursorClaimedAt}::timestamptz IS NULL
+        OR v.claimed_at < ${cursorClaimedAt}::timestamptz
+        OR (v.claimed_at = ${cursorClaimedAt}::timestamptz AND v.id < ${cursorVoucherId})
+      )
+    ORDER BY v.claimed_at DESC, v.id DESC
+    LIMIT ${limit + 1}
+  `);
+  const rows = rowsOf<ProAttributedVoucherRow>(result);
+  const items = rows.slice(0, limit).map(toProAttributedVoucher);
+  return {
+    items,
+    nextCursor: rows.length > limit && items.length > 0 ? encodeProAttributedVouchersCursor(items[items.length - 1]!) : null,
+  };
 }
 
 export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrincipal): Promise<VoucherSummary> {

@@ -154,6 +154,37 @@ export interface RfVoucherListResponse {
   nextCursor: string | null;
 }
 
+export interface RfProAttributedVoucherDto {
+  voucherId: string;
+  offerId: string;
+  offerTitle: string;
+  partnerId: string;
+  partnerName: string;
+  status: RfVoucherDto['status'];
+  canonicalStatus: RfVoucherCanonicalStatus;
+  claimScope: NonNullable<RfVoucherDto['claimScope']>;
+  listingContext: RfVoucherDto['listingContext'];
+  attributionStatus: Extract<RfAttributionStatus, 'confirmed'>;
+  attributionSource: RfAttributionSource;
+  claimSource: RfClaimSource;
+  attributionConfirmedAt: string;
+  claimedAt: string;
+  redeemedAt: string | null;
+}
+
+export interface RfProAttributedVouchersResponse {
+  items: RfProAttributedVoucherDto[];
+  nextCursor: string | null;
+}
+
+export interface RfProAttributedVouchersQuery {
+  status?: RfVoucherDto['status'];
+  partnerId?: string;
+  claimScope?: NonNullable<RfVoucherDto['claimScope']>;
+  limit?: number;
+  cursor?: string | null;
+}
+
 export interface RfClaimResponse {
   voucher: RfVoucherDto;
   idempotentReplay: boolean;
@@ -438,6 +469,19 @@ export async function listProLinks(): Promise<RfProLinkListResponse> {
   return customInstance<RfProLinkListResponse>({ method: 'GET' }, '/v1/rf/pro/links');
 }
 
+export async function listProAttributedVouchers(
+  query: RfProAttributedVouchersQuery = {}
+): Promise<RfProAttributedVouchersResponse> {
+  const params = new URLSearchParams();
+  if (query.status) params.set('status', query.status);
+  if (query.partnerId) params.set('partnerId', query.partnerId);
+  if (query.claimScope) params.set('claimScope', query.claimScope);
+  if (query.limit) params.set('limit', String(query.limit));
+  if (query.cursor) params.set('cursor', query.cursor);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return customInstance<RfProAttributedVouchersResponse>({ method: 'GET' }, `/v1/rf/pro/attributed-vouchers${suffix}`);
+}
+
 export async function listPartnerProLinks(partnerId: string): Promise<RfProLinkListResponse> {
   return customInstance<RfProLinkListResponse>(
     { method: 'GET' },
@@ -516,5 +560,14 @@ export function useRfOffers() {
     queryKey: ['rf', 'offers'],
     queryFn: fetchRfOffers,
     staleTime: 30_000,
+  });
+}
+
+export function useRfProAttributedVouchers(query: RfProAttributedVouchersQuery = {}) {
+  return useQuery<RfProAttributedVouchersResponse, Error>({
+    queryKey: ['rf', 'pro', 'attributed-vouchers', query],
+    queryFn: () => listProAttributedVouchers(query),
+    staleTime: 30_000,
+    retry: 1,
   });
 }

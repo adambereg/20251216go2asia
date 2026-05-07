@@ -1,4 +1,4 @@
-import type { RfOfferDto, RfPartnerDto, RfProLinkDto } from '@go2asia/sdk/rf';
+import type { RfOfferDto, RfPartnerDto, RfProAttributedVoucherDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import {
   buildPublicActiveOffersByPartner,
   getPartnerPresentation,
@@ -27,6 +27,11 @@ export type ProNextStep = {
   actionLabel?: string;
 };
 
+export const proAttributedVouchersLabel = 'Attributed vouchers';
+export const proAttributedVouchersBoundaryCopy =
+  'Read-only visibility по подтверждённым RF attribution facts. Блок не меняет attribution и не добавляет экономическую интерпретацию.';
+export const proAttributedVouchersEmptyState = 'Пока нет ваучеров с подтверждённой PRO attribution.';
+
 export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
   return Array.from(new Set(proLinks.filter((link) => link.status === 'active').map((link) => link.partnerId)));
 }
@@ -46,6 +51,24 @@ export function formatOfferVisibilityLabel(visibility: RfOfferDto['visibility'])
   if (visibility === 'pro_only') return 'Доступно для PRO';
   if (visibility === 'invite_only') return 'По приглашению';
   return 'Публично';
+}
+
+export function sortProAttributedVouchers(items: RfProAttributedVoucherDto[]): RfProAttributedVoucherDto[] {
+  return [...items].sort((a, b) => {
+    const timeDiff = Date.parse(b.claimedAt) - Date.parse(a.claimedAt);
+    if (timeDiff !== 0) return timeDiff;
+    return b.voucherId.localeCompare(a.voucherId);
+  });
+}
+
+export function getProAttributedVoucherStatusLabel(status: RfProAttributedVoucherDto['status']): string {
+  if (status === 'redeemed') return 'Redeemed';
+  if (status === 'cancelled') return 'Cancelled';
+  return 'Claim recorded';
+}
+
+export function getProAttributedVoucherScopeLabel(claimScope: RfProAttributedVoucherDto['claimScope']): string {
+  return claimScope === 'listing' ? 'Listing context' : 'Partner offer';
 }
 
 /**

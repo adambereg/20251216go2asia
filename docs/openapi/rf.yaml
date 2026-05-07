@@ -70,6 +70,7 @@ tags:
           - /v1/rf/me/vouchers/summary
           - /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem
           - /v1/rf/business/partners/{partnerId}/pro-links
+          - /v1/rf/pro/attributed-vouchers
           - /v1/rf/pro/links
           - /v1/rf/pro/links/{proLinkId}/accept
           - /v1/rf/pro/links/{proLinkId}/reject
@@ -660,6 +661,62 @@ paths:
           $ref: "#/components/responses/RfUnauthorized"
         "404":
           $ref: "#/components/responses/RfNotFound"
+
+  /v1/rf/pro/attributed-vouchers:
+    get:
+      tags: [rf]
+      operationId: rfListProAttributedVouchers
+      summary: List current PRO attributed vouchers
+      description: >
+        Read-only RF-owned visibility for vouchers whose durable attribution fact is
+        confirmed for the authenticated PRO. This endpoint does not expose voucher
+        codes, raw user ids, share codes, attribution metadata, rewards, commissions
+        or payout semantics.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [claimed, redeemed, cancelled]
+        - name: partnerId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: claimScope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [partner, listing]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfProAttributedVouchersResponse"
+        "400":
+          $ref: "#/components/responses/RfValidationError"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
 
   /v1/rf/pro/links/{proLinkId}/accept:
     post:
@@ -1434,6 +1491,93 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RfVoucher"
+        nextCursor:
+          type: string
+          nullable: true
+
+    RfProAttributedVoucher:
+      type: object
+      description: >
+        PRO-safe read-only attribution visibility DTO. It intentionally omits voucher
+        code, issuedToUserId, raw PRO user ids, share codes and attribution metadata.
+      required:
+        [
+          voucherId,
+          offerId,
+          offerTitle,
+          partnerId,
+          partnerName,
+          status,
+          canonicalStatus,
+          claimScope,
+          listingContext,
+          attributionStatus,
+          attributionSource,
+          claimSource,
+          attributionConfirmedAt,
+          claimedAt,
+          redeemedAt,
+        ]
+      properties:
+        voucherId:
+          type: string
+        offerId:
+          type: string
+        offerTitle:
+          type: string
+        partnerId:
+          type: string
+        partnerName:
+          type: string
+        status:
+          type: string
+          enum: [claimed, redeemed, cancelled]
+        canonicalStatus:
+          $ref: "#/components/schemas/RfVoucherCanonicalStatus"
+        claimScope:
+          type: string
+          enum: [partner, listing]
+        listingContext:
+          nullable: true
+          anyOf:
+            - type: object
+              required: [source, listingId, listingTitle]
+              properties:
+                source:
+                  type: string
+                  enum: [rielt]
+                listingId:
+                  type: string
+                listingTitle:
+                  type: string
+                  nullable: true
+            - type: "null"
+        attributionStatus:
+          type: string
+          enum: [confirmed]
+        attributionSource:
+          $ref: "#/components/schemas/RfAttributionSource"
+        claimSource:
+          $ref: "#/components/schemas/RfClaimSource"
+        attributionConfirmedAt:
+          type: string
+          format: date-time
+        claimedAt:
+          type: string
+          format: date-time
+        redeemedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RfProAttributedVouchersResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RfProAttributedVoucher"
         nextCursor:
           type: string
           nullable: true

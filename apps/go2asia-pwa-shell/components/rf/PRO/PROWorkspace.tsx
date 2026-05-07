@@ -3,17 +3,30 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
-import { createProLink, listProLinks, useRfOffers, useRfPartners, type RfProLinkRoleScope } from '@go2asia/sdk/rf';
+import {
+  createProLink,
+  listProAttributedVouchers,
+  listProLinks,
+  useRfOffers,
+  useRfPartners,
+  type RfProLinkRoleScope,
+} from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   buildProFocusItems,
   buildProNextSteps,
   formatOfferVisibilityLabel,
+  getProAttributedVoucherScopeLabel,
+  getProAttributedVoucherStatusLabel,
   getActiveLinkedPartnerIds,
   getLinkedPartnerOffers,
   getPartnerProHealth,
+  proAttributedVouchersBoundaryCopy,
+  proAttributedVouchersEmptyState,
+  proAttributedVouchersLabel,
   resolveProScope,
+  sortProAttributedVouchers,
   summarizeProScope,
 } from '@/lib/rfProWorkspace';
 import {
@@ -78,6 +91,18 @@ export function PROWorkspace() {
     staleTime: 30_000,
     retry: 1,
   });
+  const {
+    data: attributedVouchersRes,
+    isLoading: attributedVouchersLoading,
+    isError: attributedVouchersError,
+    refetch: refetchAttributedVouchers,
+  } = useQuery({
+    queryKey: ['rf', 'pro', 'attributed-vouchers', { limit: 25 }],
+    queryFn: () => listProAttributedVouchers({ limit: 25 }),
+    enabled: Boolean(user?.id),
+    staleTime: 30_000,
+    retry: 1,
+  });
   const createLinkMutation = useMutation({
     mutationFn: createProLink,
     onSuccess: async () => {
@@ -89,6 +114,10 @@ export function PROWorkspace() {
   const partners = useMemo(() => partnersRes?.items ?? [], [partnersRes?.items]);
   const offers = useMemo(() => offersRes?.items ?? [], [offersRes?.items]);
   const proLinks = useMemo(() => proLinksRes?.items ?? [], [proLinksRes?.items]);
+  const attributedVouchers = useMemo(
+    () => sortProAttributedVouchers(attributedVouchersRes?.items ?? []),
+    [attributedVouchersRes?.items]
+  );
   const loading = !userLoaded || partnersLoading || offersLoading;
 
   const apiUnavailable =
@@ -499,6 +528,86 @@ export function PROWorkspace() {
         <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
           Visibility строится только по active связям. Pending и ended связи не дают доступ к офферам. Управление офферами остаётся только в кабинете партнёра: PRO не создаёт, не активирует, не редактирует офферы и не гасит ваучеры.
         </p>
+      </section>
+
+      <section id="pw-attributed-vouchers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.0C read-only</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">{proAttributedVouchersLabel}</h2>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">{proAttributedVouchersBoundaryCopy}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refetchAttributedVouchers()}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Обновить
+          </button>
+        </div>
+
+        {attributedVouchersLoading ? <p className="mt-4 text-sm text-slate-600">Загрузка attributed vouchers…</p> : null}
+
+        {attributedVouchersError && !attributedVouchersLoading ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Не удалось загрузить read-only attribution visibility. Попробуйте обновить блок позже.
+          </div>
+        ) : null}
+
+        {!attributedVouchersLoading && !attributedVouchersError && attributedVouchers.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            {proAttributedVouchersEmptyState}
+          </p>
+        ) : null}
+
+        {attributedVouchers.length > 0 ? (
+          <ul className="mt-4 divide-y divide-slate-100">
+            {attributedVouchers.map((voucher) => (
+              <li key={voucher.voucherId} className="py-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">{voucher.offerTitle}</p>
+                    <p className="mt-1 text-xs text-slate-600">Партнёр: {voucher.partnerName}</p>
+                    {voucher.listingContext ? (
+                      <p className="mt-1 text-xs text-slate-600">
+                        Listing: {voucher.listingContext.listingTitle ?? 'context recorded'}
+                      </p>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                        {voucher.attributionStatus}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {getProAttributedVoucherStatusLabel(voucher.status)}
+                      </span>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
+                        {getProAttributedVoucherScopeLabel(voucher.claimScope)}
+                      </span>
+                    </div>
+                  </div>
+                  <dl className="grid min-w-[240px] gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                    <div>
+                      <dt className="font-medium text-slate-500">claim source</dt>
+                      <dd className="text-slate-800">{voucher.claimSource}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-slate-500">confirmed at</dt>
+                      <dd className="text-slate-800">{formatProLinkDate(voucher.attributionConfirmedAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-slate-500">claim recorded</dt>
+                      <dd className="text-slate-800">{formatProLinkDate(voucher.claimedAt)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {attributedVouchersRes?.nextCursor ? (
+          <p className="mt-3 text-xs text-slate-500">Показана первая страница read-only visibility. Дальнейшая pagination UI будет добавлена отдельно.</p>
+        ) : null}
       </section>
 
       <section id="pw-derived-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

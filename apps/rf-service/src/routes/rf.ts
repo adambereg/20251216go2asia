@@ -20,6 +20,7 @@ import {
   listPartnerItems,
   listPartnerProLinks,
   listMyVouchers,
+  listProAttributedVouchers,
   listProLinks,
   listPublicOffers,
   listPublicPartners,
@@ -64,6 +65,20 @@ function isRoleScope(value: unknown): value is 'onboarding' | 'curation' | 'prom
     value === 'moderation_support' ||
     value === 'account_support'
   );
+}
+
+function isVoucherStatus(value: unknown): value is 'claimed' | 'redeemed' | 'cancelled' {
+  return value === 'claimed' || value === 'redeemed' || value === 'cancelled';
+}
+
+function isClaimScope(value: unknown): value is 'partner' | 'listing' {
+  return value === 'partner' || value === 'listing';
+}
+
+function parsePositiveLimit(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function optionalString(body: Record<string, unknown>, key: string): string | null | undefined {
@@ -371,6 +386,29 @@ export async function handleRfRoute(
   if (request.method === 'GET' && path === '/v1/rf/pro/links') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     return json({ items: await listProLinks(db, principal), nextCursor: null });
+  }
+
+  if (request.method === 'GET' && path === '/v1/rf/pro/attributed-vouchers') {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const status = url.searchParams.get('status');
+    const claimScope = url.searchParams.get('claimScope');
+    if (status && !isVoucherStatus(status)) {
+      return errorResponse('INVALID_REQUEST', 'status must be claimed, redeemed or cancelled', requestId, 400);
+    }
+    if (claimScope && !isClaimScope(claimScope)) {
+      return errorResponse('INVALID_REQUEST', 'claimScope must be partner or listing', requestId, 400);
+    }
+    const statusFilter = status && isVoucherStatus(status) ? status : undefined;
+    const claimScopeFilter = claimScope && isClaimScope(claimScope) ? claimScope : undefined;
+    return json(
+      await listProAttributedVouchers(db, principal, {
+        status: statusFilter,
+        partnerId: url.searchParams.get('partnerId') ?? undefined,
+        claimScope: claimScopeFilter,
+        limit: parsePositiveLimit(url.searchParams.get('limit')),
+        cursor: url.searchParams.get('cursor'),
+      })
+    );
   }
 
   const partnerProLinksPartnerId = getPathParam(path, /^\/v1\/rf\/business\/partners\/([^/]+)\/pro-links$/);

@@ -435,6 +435,18 @@ This canon does not:
 - Metadata must be small, bounded and non-PII.
 - Economy may later consume attribution facts, but does not define or mutate them in Stage 5.0.
 
+## Stage 5.0C Visibility Alignment
+
+RF Stage 5.0C adds a narrow read-only projection over the already durable voucher fact:
+
+- visibility is RF-owned and scoped to the authenticated PRO;
+- the default view is confirmed attribution only;
+- the projection does not mutate, correct, recalculate or reassign attribution;
+- the PRO-safe DTO omits raw user identity, share code, internal PRO/link ids and attribution metadata;
+- UI copy stays factual: attributed voucher, claim recorded, attribution status/source and confirmation timestamps.
+
+This preserves the Stage 5.0 canon: visibility may make immutable facts easier to inspect, but it does not become a new attribution owner or a financial interpretation layer.
+
 ## Stage 5.0B Runtime Alignment
 
 RF Stage 5.0B implements the first bounded durable attribution layer using this canon:

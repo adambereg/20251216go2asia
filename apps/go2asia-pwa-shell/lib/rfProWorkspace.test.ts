@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { RfOfferDto, RfProLinkDto } from '@go2asia/sdk/rf';
+import type { RfOfferDto, RfProAttributedVoucherDto, RfProLinkDto } from '@go2asia/sdk/rf';
 import {
   formatOfferVisibilityLabel,
   getActiveLinkedPartnerIds,
   getLinkedPartnerOffers,
+  getProAttributedVoucherScopeLabel,
+  getProAttributedVoucherStatusLabel,
+  proAttributedVouchersBoundaryCopy,
+  proAttributedVouchersEmptyState,
+  proAttributedVouchersLabel,
+  sortProAttributedVouchers,
 } from './rfProWorkspace';
 import {
   buildProIdentityLabel,
@@ -57,6 +63,27 @@ function proLink(overrides: Partial<RfProLinkDto>): RfProLinkDto {
     roleScope: 'curation',
     createdAt: '2026-05-05T00:00:00.000Z',
     updatedAt: '2026-05-05T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function attributedVoucher(overrides: Partial<RfProAttributedVoucherDto>): RfProAttributedVoucherDto {
+  return {
+    voucherId: 'voucher_1',
+    offerId: 'offer_1',
+    offerTitle: 'Welcome Offer',
+    partnerId: 'partner_1',
+    partnerName: 'Phuket Partner',
+    status: 'claimed',
+    canonicalStatus: 'available',
+    claimScope: 'partner',
+    listingContext: null,
+    attributionStatus: 'confirmed',
+    attributionSource: 'pro_link',
+    claimSource: 'pro_shared_link',
+    attributionConfirmedAt: '2026-05-05T00:00:00.000Z',
+    claimedAt: '2026-05-05T00:00:00.000Z',
+    redeemedAt: null,
     ...overrides,
   };
 }
@@ -142,6 +169,31 @@ describe('RF PRO workspace helpers', () => {
     expect(formatOfferVisibilityLabel('public')).toBe('Публично');
     expect(formatOfferVisibilityLabel('pro_only')).toBe('Доступно для PRO');
     expect(formatOfferVisibilityLabel('invite_only')).toBe('По приглашению');
+  });
+
+  it('keeps attributed voucher visibility read-only and sorted newest first', () => {
+    const items = sortProAttributedVouchers([
+      attributedVoucher({ voucherId: 'voucher_old', claimedAt: '2026-05-05T01:00:00.000Z' }),
+      attributedVoucher({ voucherId: 'voucher_new', claimedAt: '2026-05-05T03:00:00.000Z' }),
+      attributedVoucher({ voucherId: 'voucher_same_b', claimedAt: '2026-05-05T03:00:00.000Z' }),
+    ]);
+
+    expect(items.map((item) => item.voucherId)).toEqual(['voucher_same_b', 'voucher_new', 'voucher_old']);
+    expect(getProAttributedVoucherStatusLabel('claimed')).toBe('Claim recorded');
+    expect(getProAttributedVoucherScopeLabel('listing')).toBe('Listing context');
+  });
+
+  it('keeps attributed voucher copy factual and non-financial', () => {
+    const stage50cCopy = [
+      proAttributedVouchersLabel,
+      proAttributedVouchersBoundaryCopy,
+      proAttributedVouchersEmptyState,
+    ].join(' ');
+
+    expect(stage50cCopy).toContain('Read-only visibility');
+    expect(stage50cCopy).not.toMatch(
+      /earned|commission|reward|payout|income|balance|accrued|доход|комисси|вознагражден|начислен|выплат/i,
+    );
   });
 
   it('does not introduce reward, commission or payout copy', () => {

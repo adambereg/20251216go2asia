@@ -1357,6 +1357,112 @@ describe('rf-service request', () => {
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
   });
 
+  it('requires auth for PRO attributed voucher visibility', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+
+    const response = await worker.fetch(new Request('https://rf.example/v1/rf/pro/attributed-vouchers'), env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns PRO-safe confirmed attributed vouchers for the current PRO', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const proToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_2',
+          offer_id: 'rf_offer_2',
+          offer_title: 'Airport pickup',
+          partner_id: 'rf_partner_1',
+          partner_display_name: 'Phuket Partner',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_listing_1',
+          rielt_listing_title_snapshot: 'Karon family apartment',
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'pro_shared_link',
+          attribution_confirmed_at: '2026-05-07T10:02:00.000Z',
+          claimed_at: '2026-05-07T10:02:00.000Z',
+          redeemed_at: null,
+        },
+        {
+          id: 'rf_voucher_1',
+          offer_id: 'rf_offer_1',
+          offer_title: 'Welcome coffee',
+          partner_id: 'rf_partner_1',
+          partner_display_name: 'Phuket Partner',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_listing_1',
+          rielt_listing_title_snapshot: 'Karon family apartment',
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'pro_shared_link',
+          attribution_confirmed_at: '2026-05-07T10:01:00.000Z',
+          claimed_at: '2026-05-07T10:01:00.000Z',
+          redeemed_at: null,
+        },
+        {
+          id: 'rf_voucher_extra',
+          offer_id: 'rf_offer_extra',
+          offer_title: 'Extra page item',
+          partner_id: 'rf_partner_1',
+          partner_display_name: 'Phuket Partner',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: 'listing',
+          rielt_listing_id: 'rielt_listing_1',
+          rielt_listing_title_snapshot: 'Karon family apartment',
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'pro_shared_link',
+          attribution_confirmed_at: '2026-05-07T10:00:00.000Z',
+          claimed_at: '2026-05-07T10:00:00.000Z',
+          redeemed_at: null,
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/attributed-vouchers?limit=2&partnerId=rf_partner_1&claimScope=listing&status=claimed', {
+        headers: { 'X-Gateway-Auth': proToken },
+      }),
+      env
+    );
+    const body = await readJson<{
+      items: Array<Record<string, unknown> & { voucherId: string; listingContext: { listingTitle: string | null } | null }>;
+      nextCursor: string | null;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items.map((item) => item.voucherId)).toEqual(['rf_voucher_2', 'rf_voucher_1']);
+    expect(body.nextCursor).toBe('2026-05-07T10:01:00.000Z|rf_voucher_1');
+    expect(body.items[0]?.listingContext?.listingTitle).toBe('Karon family apartment');
+    expect(body.items[0]).toEqual(
+      expect.not.objectContaining({
+        issuedToUserId: expect.anything(),
+        code: expect.anything(),
+        shareCode: expect.anything(),
+        proUserId: expect.anything(),
+        proLinkId: expect.anything(),
+        metadata: expect.anything(),
+      })
+    );
+    expect(executedSqlText()).toContain('v.pro_attributed_user_id');
+    expect(executedSqlText()).toContain("v.attribution_status = 'confirmed'");
+    expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(
+      expect.arrayContaining(['pro_user_1', 'claimed', 'rf_partner_1', 'listing', 3])
+    );
+  });
+
   it('requires auth for voucher summary', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
 

@@ -22,7 +22,7 @@
 | **Offers** | `rf_offer` | `partnerId`, visibility (`public` / `pro_only` / `invite_only`), status |
 | **Vouchers** | `rf_voucher` | Server `id`, `offerId`, `partnerId`, `issuedToUserId`, lifecycle (`status`, `canonical_status`, …), `claim_scope` (`partner` \| `listing`), optional Rielt listing snapshot fields |
 | **RF service** | `apps/rf-service/src/store.ts`, `apps/rf-service/src/routes/rf.ts` | Authoritative create/read for vouchers and claims |
-| **OpenAPI** | `docs/openapi/rf.yaml` | `RfVoucher` DTO; listing “context” via `listingContext`; **no PRO / attribution fields** on voucher today |
+| **OpenAPI** | `docs/openapi/rf.yaml` | `RfVoucher.attribution` for voucher facts; `RfProAttributedVoucher` for PRO-safe read-only visibility; listing “context” via `listingContext` |
 | **SDK** | `packages/sdk/src/rf.ts` | `claimRfOffer(offerId)` — `POST` + `Idempotency-Key` header only; no body |
 | **Public catalog UI** | `apps/go2asia-pwa-shell/components/rf/Offers/RfOffersCatalog.tsx`, `app/(public)/rf/vouchers/page.tsx` | List/filter offers; `?partner=` query filters by partner |
 | **Claim CTA** | `apps/go2asia-pwa-shell/components/rf/Shared/ClaimRfOfferButton.tsx`, `lib/rfOfferClaim.ts` | Calls `claimRfOffer` after optional `fetchMyVouchers` short-circuit |
@@ -37,8 +37,8 @@
 | **API** | `createProLink`, `listProLinks`, owner lifecycle `accept` / `reject` / `end`; see `docs/openapi/rf.yaml`, `apps/rf-service/src/store.ts` |
 | **Stage 5 docs** | `docs/architecture/rf/rf_pro_linked_partners_baseline_v1.md` — explicitly: **no claim attribution, no redeem attribution** |
 | **Frontend** | `PROWorkspace.tsx`, `MerchantWorkspace.tsx`, `lib/rfProLinks.ts`, `lib/rfProWorkspace.ts` | Links and partner visibility; identity labels via Space profile where available |
-| **URL / share params** | PRO and catalog links use paths like `/rf/vouchers?partner=<partnerId>` (filter only). **No `pro`, `proUserId`, or `proLinkId` query param** in current navigation code. |
-| **Browser storage for PRO** | No dedicated PRO attribution key in localStorage/sessionStorage found in PWA RF contour (grep over `apps/go2asia-pwa-shell`). `sessionStorage` is used elsewhere (e.g. Clerk/referral setup), not for PRO referral. |
+| **URL / share params** | PRO and catalog links use paths like `/rf/vouchers?partner=<partnerId>&shareCode=<publicCode>`. **No `proUserId` or `proLinkId` query param** in public navigation code. |
+| **Browser storage for PRO** | Dedicated transient key `go2asia.rf.proAttribution.v1` in `sessionStorage`, with 24h TTL and claim-time payload consumption. |
 
 **Conclusion:** PRO **eligibility** (relationship partner ↔ PRO) exists in DB; PRO **traffic attribution** (end-user journey) is **not implemented** in URLs, storage, or voucher rows.
 
@@ -248,7 +248,7 @@ Existing idempotency key is per user + key. **Option A:** include normalized att
 
 - **No payout dashboard.**
 - **PRO workspace / share UX:** Short hint near partner/offers links: “При переходах по вашим ссылкам мы можем учитывать атрибуцию при получении ваучера” (copy review separately).
-- **Future:** read-only “Attributed vouchers” table — **Stage 5.0C** (see below), not baseline MVP.
+- **Stage 5.0C:** read-only “Attributed vouchers” visibility for the current PRO, backed by RF-owned durable voucher facts.
 
 ---
 
@@ -342,6 +342,19 @@ Implemented after this design pass as RF-only voucher attribution v1.
 - Idempotent replay and repeated claim return the existing voucher attribution; later share links cannot overwrite the first durable fact.
 
 No economy, payout, Points/G2A/NFT, Connect ownership or analytics-platform logic was introduced.
+
+---
+
+## Stage 5.0C Implementation Note
+
+Implemented as minimal RF-owned read-only visibility on top of Stage 5.0B facts.
+
+- API: `GET /v1/rf/pro/attributed-vouchers`.
+- Default behavior: current authenticated PRO only, `confirmed` attribution only, newest-first, safe default `limit`, cursor pagination.
+- Filters: voucher `status`, `partnerId`, `claimScope`, `limit`, `cursor`.
+- DTO: `RfProAttributedVoucher` / `RfProAttributedVouchersResponse` expose offer, partner, lifecycle, claim source and timestamps, but not voucher code, raw user identity, share code, `proUserId`, `proLinkId` or attribution metadata.
+- Frontend: PRO workspace has a read-only `Attributed vouchers` block with factual copy only.
+- Boundary: no mutation, correction, recalculation, Connect ownership, financial semantics, Points/G2A/NFT or analytics dashboard.
 
 ---
 
