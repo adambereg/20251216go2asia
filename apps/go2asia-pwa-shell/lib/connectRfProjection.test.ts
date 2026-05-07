@@ -33,6 +33,7 @@ function summary(overrides: Partial<RfVoucherSummary>): RfVoucherSummary {
     activeVouchers: 0,
     usedVouchers: 0,
     cancelledVouchers: 0,
+    expiredVouchers: 0,
     ...overrides,
   };
 }
