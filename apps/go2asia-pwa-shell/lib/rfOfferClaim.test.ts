@@ -29,6 +29,7 @@ describe('rf offer claim helpers', () => {
   it('formats success and idempotent replay copy', () => {
     expect(getRfOfferClaimSuccessMessage({ idempotentReplay: false })).toBe('Ваучер получен.');
     expect(getRfOfferClaimSuccessMessage({ idempotentReplay: true })).toBe('Ваучер уже получен.');
+    expect(getRfOfferClaimSuccessMessage({ idempotentReplay: false, createdNewInstance: false })).toBe('Ваучер уже получен.');
   });
 
   it('formats auth-required and common error copy', () => {
@@ -42,6 +43,9 @@ describe('rf offer claim helpers', () => {
     expect(isPartnerVoucherForOffer(voucher(), 'offer_1')).toBe(true);
     expect(isPartnerVoucherForOffer(voucher({ status: 'cancelled' }), 'offer_1')).toBe(false);
     expect(isPartnerVoucherForOffer(voucher({ status: 'claimed', canonicalStatus: 'expired' }), 'offer_1')).toBe(false);
+    expect(isPartnerVoucherForOffer(voucher({ status: 'claimed', canonicalStatus: 'locked' }), 'offer_1')).toBe(true);
+    expect(isPartnerVoucherForOffer(voucher({ status: 'claimed', canonicalStatus: 'unlocked' }), 'offer_1')).toBe(true);
+    expect(isPartnerVoucherForOffer(voucher({ status: 'redeemed', canonicalStatus: 'redeemed' }), 'offer_1', 'repeat_after_redeem')).toBe(false);
     expect(isPartnerVoucherForOffer(voucher({ claimScope: 'listing', listingContext: { source: 'rielt', listingId: 'listing_1', listingTitle: null } }), 'offer_1')).toBe(false);
     expect(isPartnerVoucherForOffer(voucher({ offerId: 'offer_2' }), 'offer_1')).toBe(false);
   });

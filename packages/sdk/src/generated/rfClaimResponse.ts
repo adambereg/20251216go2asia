@@ -6,9 +6,16 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfClaimResponseClaimBlockReason } from "./rfClaimResponseClaimBlockReason";
+import type { RfRepeatPolicy } from "./rfRepeatPolicy";
 import type { RfVoucher } from "./rfVoucher";
 
 export interface RfClaimResponse {
+  /** @nullable */
+  claimBlockReason?: RfClaimResponseClaimBlockReason;
+  /** True when this claim created a new voucher instance. False for idempotent replay or existing-voucher returns. */
+  createdNewInstance?: boolean;
   idempotentReplay: boolean;
+  repeatPolicy?: RfRepeatPolicy;
   voucher: RfVoucher;
 }

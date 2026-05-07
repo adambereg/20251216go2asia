@@ -578,7 +578,7 @@ export function PROWorkspace() {
                         {voucher.attributionStatus}
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                        {getProAttributedVoucherStatusLabel(voucher.status)}
+                        {getProAttributedVoucherStatusLabel(voucher)}
                       </span>
                       <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
                         {getProAttributedVoucherScopeLabel(voucher.claimScope)}

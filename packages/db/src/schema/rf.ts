@@ -8,6 +8,7 @@ export const rfPartnerItemStatusEnum = pgEnum('rf_partner_item_status', ['active
 export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', 'archived']);
 export const rfOfferTypeEnum = pgEnum('rf_offer_type', ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related']);
 export const rfOfferVisibilityEnum = pgEnum('rf_offer_visibility', ['public', 'pro_only', 'invite_only']);
+export const rfRepeatPolicyEnum = pgEnum('rf_repeat_policy', ['once_per_scope', 'repeat_after_redeem']);
 export const rfVoucherStatusEnum = pgEnum('rf_voucher_status', ['claimed', 'redeemed', 'cancelled']);
 export const rfVoucherCanonicalStatusEnum = pgEnum('rf_voucher_canonical_status', [
   'available',
@@ -123,6 +124,7 @@ export const rfOffers = pgTable(
     offerType: rfOfferTypeEnum('offer_type').notNull(),
     visibility: rfOfferVisibilityEnum('visibility').notNull(),
     status: rfOfferStatusEnum('status').notNull().default('draft'),
+    repeatPolicy: rfRepeatPolicyEnum('repeat_policy').notNull().default('once_per_scope'),
     createdByUserId: varchar('created_by_user_id', { length: 128 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -218,6 +220,8 @@ export const rfVouchers = pgTable(
     status: rfVoucherStatusEnum('status').notNull().default('claimed'),
     canonicalStatus: rfVoucherCanonicalStatusEnum('canonical_status').notNull(),
     contractVersion: integer('contract_version').notNull().default(1),
+    repeatPolicySnapshot: rfRepeatPolicyEnum('repeat_policy_snapshot').notNull().default('once_per_scope'),
+    issueSequence: integer('issue_sequence').notNull().default(1),
     claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull().default('partner'),
     rieltListingId: text('rielt_listing_id'),
     rieltListingTitleSnapshot: text('rielt_listing_title_snapshot'),
@@ -247,23 +251,34 @@ export const rfVouchers = pgTable(
     issuedToNotBlank: check('rf_voucher_issued_to_user_id_not_blank_check', sql`(length(trim(${table.issuedToUserId})) > 0)`),
     codeNotBlank: check('rf_voucher_code_not_blank_check', sql`(length(trim(${table.code})) > 0)`),
     attributionVersionPositive: check('rf_voucher_attribution_version_positive_check', sql`${table.attributionVersion} >= 1`),
+    issueSequencePositive: check('rf_voucher_issue_sequence_positive_check', sql`${table.issueSequence} >= 1`),
     uniqueCode: unique('rf_voucher_code_unique').on(table.code),
     uniquePartnerOfferUserActiveVoucher: uniqueIndex('rf_voucher_offer_user_partner_unique')
       .on(table.offerId, table.issuedToUserId)
-      .where(sql`${table.claimScope} = 'partner' AND ${table.status} IN ('claimed', 'redeemed')`),
+      .where(
+        sql`${table.claimScope} = 'partner' AND (${table.status} = 'claimed' OR (${table.status} = 'redeemed' AND ${table.repeatPolicySnapshot} = 'once_per_scope'))`
+      ),
     uniqueListingOfferUserActiveVoucher: uniqueIndex('rf_voucher_listing_offer_user_active_unique')
       .on(table.rieltListingId, table.offerId, table.issuedToUserId)
-      .where(sql`${table.claimScope} = 'listing' AND ${table.status} IN ('claimed', 'redeemed')`),
+      .where(
+        sql`${table.claimScope} = 'listing' AND (${table.status} = 'claimed' OR (${table.status} = 'redeemed' AND ${table.repeatPolicySnapshot} = 'once_per_scope'))`
+      ),
     uniquePartnerOfferUserCanonicalVoucher: uniqueIndex('rf_voucher_offer_user_partner_canonical_unique')
       .on(table.offerId, table.issuedToUserId)
       .where(
-        sql`${table.claimScope} = 'partner' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked', 'redeemed')`
+        sql`${table.claimScope} = 'partner' AND (${table.canonicalStatus} IN ('available', 'locked', 'unlocked') OR (${table.canonicalStatus} = 'redeemed' AND ${table.repeatPolicySnapshot} = 'once_per_scope'))`
       ),
     uniqueListingOfferUserCanonicalVoucher: uniqueIndex('rf_voucher_listing_offer_user_canonical_unique')
       .on(table.rieltListingId, table.offerId, table.issuedToUserId)
       .where(
-        sql`${table.claimScope} = 'listing' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked', 'redeemed')`
+        sql`${table.claimScope} = 'listing' AND (${table.canonicalStatus} IN ('available', 'locked', 'unlocked') OR (${table.canonicalStatus} = 'redeemed' AND ${table.repeatPolicySnapshot} = 'once_per_scope'))`
       ),
+    uniquePartnerOfferUserActiveCanonicalVoucher: uniqueIndex('rf_voucher_offer_user_partner_active_canonical_unique')
+      .on(table.offerId, table.issuedToUserId)
+      .where(sql`${table.claimScope} = 'partner' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked')`),
+    uniqueListingOfferUserActiveCanonicalVoucher: uniqueIndex('rf_voucher_listing_offer_user_active_canonical_unique')
+      .on(table.rieltListingId, table.offerId, table.issuedToUserId)
+      .where(sql`${table.claimScope} = 'listing' AND ${table.canonicalStatus} IN ('available', 'locked', 'unlocked')`),
     idxPartnerStatusClaimedAt: index('idx_rf_voucher_partner_status_claimed_at').on(table.partnerId, table.status, table.claimedAt),
     idxIssuedToStatusClaimedAt: index('idx_rf_voucher_issued_to_status_claimed_at').on(table.issuedToUserId, table.status, table.claimedAt),
     idxIssuedToCanonicalClaimedAt: index('idx_rf_voucher_issued_to_canonical_claimed_at').on(
@@ -279,6 +294,40 @@ export const rfVouchers = pgTable(
     idxProAttributionClaimedAt: index('idx_rf_voucher_pro_attribution_claimed_at')
       .on(table.proAttributedUserId, table.claimedAt)
       .where(sql`${table.proAttributedUserId} IS NOT NULL AND ${table.attributionStatus} = 'confirmed'`),
+  })
+);
+
+export const rfVoucherScopeConsumptionGuards = pgTable(
+  'rf_voucher_scope_consumption_guard',
+  {
+    id: text('id').primaryKey(),
+    offerId: varchar('offer_id', { length: 80 })
+      .notNull()
+      .references(() => rfOffers.id, { onDelete: 'cascade' }),
+    issuedToUserId: varchar('issued_to_user_id', { length: 128 }).notNull(),
+    claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull(),
+    scopeRef: text('scope_ref').notNull(),
+    consumedVoucherId: varchar('consumed_voucher_id', { length: 80 })
+      .notNull()
+      .references(() => rfVouchers.id, { onDelete: 'cascade' }),
+    repeatPolicySnapshot: rfRepeatPolicyEnum('repeat_policy_snapshot').notNull().default('once_per_scope'),
+    consumedAt: timestamp('consumed_at').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    issuedToNotBlank: check(
+      'rf_voucher_scope_consumption_guard_issued_to_not_blank_check',
+      sql`(length(trim(${table.issuedToUserId})) > 0)`
+    ),
+    scopeRefNotBlank: check('rf_voucher_scope_consumption_guard_scope_ref_not_blank_check', sql`(length(trim(${table.scopeRef})) > 0)`),
+    uniqueScopeConsumption: uniqueIndex('rf_voucher_scope_consumption_guard_scope_unique').on(
+      table.offerId,
+      table.issuedToUserId,
+      table.claimScope,
+      table.scopeRef
+    ),
+    idxConsumedVoucherId: index('idx_rf_voucher_scope_consumption_guard_voucher_id').on(table.consumedVoucherId),
   })
 );
 

@@ -1,4 +1,5 @@
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfRepeatPolicy } from '@go2asia/sdk/rf';
 
 export type RfVoucherEffectiveStatus = NonNullable<RfVoucherDto['canonicalStatus']>;
 
@@ -9,9 +10,13 @@ export function getRfVoucherEffectiveStatus(voucher: Pick<RfVoucherDto, 'status'
   return 'available';
 }
 
-export function isRfVoucherClaimBarrier(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): boolean {
+export function isRfVoucherClaimBarrier(
+  voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>,
+  repeatPolicy: RfRepeatPolicy = 'once_per_scope'
+): boolean {
   const status = getRfVoucherEffectiveStatus(voucher);
-  return status === 'available' || status === 'locked' || status === 'unlocked' || status === 'redeemed';
+  if (status === 'available' || status === 'locked' || status === 'unlocked') return true;
+  return status === 'redeemed' && repeatPolicy === 'once_per_scope';
 }
 
 export function getRfVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): string {

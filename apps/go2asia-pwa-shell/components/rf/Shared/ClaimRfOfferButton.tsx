@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { claimRfOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
-import type { RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfRepeatPolicy, RfVoucherDto } from '@go2asia/sdk/rf';
 import {
   getRfOfferClaimErrorMessage,
   getRfOfferClaimSuccessMessage,
@@ -23,7 +23,7 @@ function initialClaimState(): ClaimState {
   return { status: 'idle', message: null, voucher: null };
 }
 
-export function ClaimRfOfferButton({ offerId }: { offerId: string }) {
+export function ClaimRfOfferButton({ offerId, repeatPolicy = 'once_per_scope' }: { offerId: string; repeatPolicy?: RfRepeatPolicy }) {
   const { isLoaded, isSignedIn } = useAuth();
   const [state, setState] = useState<ClaimState>(initialClaimState);
   const [hasProAttribution, setHasProAttribution] = useState(false);
@@ -45,7 +45,7 @@ export function ClaimRfOfferButton({ offerId }: { offerId: string }) {
 
     try {
       const currentVouchers = await fetchMyVouchers();
-      const existingVoucher = currentVouchers?.items.find((voucher) => isPartnerVoucherForOffer(voucher, offerId));
+      const existingVoucher = currentVouchers?.items.find((voucher) => isPartnerVoucherForOffer(voucher, offerId, repeatPolicy));
       if (existingVoucher) {
         setState({ status: 'success', message: rfOfferClaimCopy.alreadyClaimed, voucher: existingVoucher });
         return;

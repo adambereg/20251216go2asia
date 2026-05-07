@@ -28,6 +28,7 @@ describe('rf voucher lifecycle helper', () => {
   it('keeps claim barrier only for active-like and redeemed states', () => {
     expect(isRfVoucherClaimBarrier(voucher({ canonicalStatus: 'available' }))).toBe(true);
     expect(isRfVoucherClaimBarrier(voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }))).toBe(true);
+    expect(isRfVoucherClaimBarrier(voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }), 'repeat_after_redeem')).toBe(false);
     expect(isRfVoucherClaimBarrier(voucher({ canonicalStatus: 'expired' }))).toBe(false);
     expect(isRfVoucherClaimBarrier(voucher({ canonicalStatus: 'cancelled', status: 'cancelled' }))).toBe(false);
   });

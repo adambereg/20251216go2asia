@@ -12,6 +12,7 @@ import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
 import type { RfVoucherListingContext } from "./rfVoucherListingContext";
 import type { RfVoucherOffer } from "./rfVoucherOffer";
 import type { RfVoucherPartner } from "./rfVoucherPartner";
+import type { RfRepeatPolicy } from "./rfRepeatPolicy";
 import type { RfVoucherStatus } from "./rfVoucherStatus";
 import type { RfVoucherUsage } from "./rfVoucherUsage";
 
@@ -36,6 +37,11 @@ export interface RfVoucher {
   /** @nullable */
   expiresAt?: string | null;
   id: string;
+  /**
+   * Monotonic voucher instance sequence within the normalized claim scope.
+   * @minimum 1
+   */
+  issueSequence?: number;
   issuedToUserId: string;
   /** @nullable */
   listingContext: RfVoucherListingContext;
@@ -47,6 +53,8 @@ export interface RfVoucher {
   partnerId: string;
   /** @nullable */
   redeemedAt?: string | null;
+  /** Repeat policy captured on this voucher instance at claim time. */
+  repeatPolicySnapshot?: RfRepeatPolicy;
   /** Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
    */
   status: RfVoucherStatus;

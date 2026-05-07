@@ -7,6 +7,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { RfOfferOfferType } from "./rfOfferOfferType";
+import type { RfRepeatPolicy } from "./rfRepeatPolicy";
 import type { RfOfferStatus } from "./rfOfferStatus";
 import type { RfOfferVisibility } from "./rfOfferVisibility";
 
@@ -18,6 +19,9 @@ export interface RfOffer {
   itemId: string | null;
   offerType: RfOfferOfferType;
   partnerId: string;
+  /** Offer-level repeatability policy. Missing value must be treated by clients as once_per_scope for backwards compatibility.
+   */
+  repeatPolicy?: RfRepeatPolicy;
   status: RfOfferStatus;
   title: string;
   updatedAt: string;

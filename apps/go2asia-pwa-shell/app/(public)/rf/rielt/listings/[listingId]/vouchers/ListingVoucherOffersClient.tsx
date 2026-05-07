@@ -61,9 +61,9 @@ function createInitialClaimState(): ClaimState {
   return { status: 'idle', message: null, voucher: null };
 }
 
-function isListingVoucherForOffer(voucher: RfVoucherDto, offerId: string, listingId: string) {
+function isListingVoucherForOffer(voucher: RfVoucherDto, offerId: string, listingId: string, repeatPolicy: RfRieltListingOfferDto['repeatPolicy'] = 'once_per_scope') {
   return (
-    isRfVoucherClaimBarrier(voucher) &&
+    isRfVoucherClaimBarrier(voucher, repeatPolicy) &&
     voucher.claimScope === 'listing' &&
     voucher.offerId === offerId &&
     voucher.listingContext?.listingId === listingId
@@ -131,7 +131,8 @@ export function ListingVoucherOffersClient({
       const offerIds = new Set(offers.map((offer) => offer.id));
       const nextStates = currentVouchers.items.reduce<ClaimStateByOffer>((acc, voucher) => {
         if (!offerIds.has(voucher.offerId)) return acc;
-        if (!isListingVoucherForOffer(voucher, voucher.offerId, listingId)) return acc;
+        const offer = offers.find((item) => item.id === voucher.offerId);
+        if (!isListingVoucherForOffer(voucher, voucher.offerId, listingId, offer?.repeatPolicy)) return acc;
         acc[voucher.offerId] = {
           status: 'success',
           message: 'Ваучер уже получен.',
@@ -168,7 +169,7 @@ export function ListingVoucherOffersClient({
     try {
       const currentVouchers = await fetchMyVouchers();
       const existingVoucher = currentVouchers?.items.find(
-        (voucher) => isListingVoucherForOffer(voucher, offer.id, listingId)
+        (voucher) => isListingVoucherForOffer(voucher, offer.id, listingId, offer.repeatPolicy)
       );
       if (existingVoucher) {
         setOfferState(offer.id, {

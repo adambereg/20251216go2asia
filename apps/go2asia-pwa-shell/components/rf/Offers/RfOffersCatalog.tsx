@@ -549,7 +549,7 @@ function OfferCard({
 
   const actions = (
     <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-      <ClaimRfOfferButton offerId={offer.id} />
+      <ClaimRfOfferButton offerId={offer.id} repeatPolicy={offer.repeatPolicy} />
       <Link
         href={`/rf/${encodeURIComponent(partner.id)}`}
         className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white hover:bg-blue-700"
