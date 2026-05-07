@@ -1,6 +1,6 @@
 # Economy Backend Alignment Audit v1
 
-Status: audit / discovery / planning pass  
+Status: audit / discovery / planning pass
 Scope: backend services, OpenAPI/SDK contracts, database schema/migrations, and backend assumptions that affect the Go2Asia Economy SSOT.  
 Date: 2026-05-02
 
@@ -25,12 +25,12 @@ Date: 2026-05-02
 Audit опирался на следующие SSOT-файлы:
 
 - `docs/economy/README.md`
-- `docs/economy/tokenomics/go2asia_tokenomiks_v1.md`
+- `docs/economy/tokenomics/go2asia_tokenomics_v1.md`
 - `docs/economy/vouchers/rf_voucher_economy_v1.md`
 - `docs/economy/vip/vip_value_system_v1.md`
 - `docs/economy/points/points_sink_design_v1.md`
 
-Примечание: `README.md` ссылается на `docs/economy/tokenomics/go2asia_tokenomics_v1.md`, но фактический файл в репозитории называется `go2asia_tokenomiks_v1.md`. Это naming hygiene issue, не экономический конфликт.
+Примечание: economy SSOT использует canonical spelling `tokenomics` в директории, README-ссылке и имени файла.
 
 Каноничные правила, использованные в audit:
 
