@@ -11,6 +11,8 @@ export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
 export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type VoucherClaimScope = 'partner' | 'listing';
+export type RfRepeatPolicy = 'once_per_scope' | 'repeat_after_redeem';
+export type RfClaimBlockReason = 'existing_active_voucher' | 'once_per_scope_consumed';
 export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
 export type RfAttributionSource = 'pro_link' | 'direct_offer' | 'internal_navigation' | 'unknown';
 export type RfClaimSource = 'public_rf_catalog' | 'public_offer_detail' | 'rielt_offer_detail' | 'pro_shared_link' | 'unknown';
@@ -40,6 +42,7 @@ export interface Offer {
   offerType: 'discount' | 'bundle' | 'gift' | 'access' | 'campaign' | 'event_related';
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: OfferStatus;
+  repeatPolicy?: RfRepeatPolicy;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -110,6 +113,8 @@ export interface Voucher {
   claimedAt: string;
   redeemedAt: string | null;
   contractVersion?: number;
+  repeatPolicySnapshot?: RfRepeatPolicy;
+  issueSequence?: number;
   expiresAt?: string | null;
   cancelledAt?: string | null;
   statusChangedAt?: string | null;
@@ -156,6 +161,7 @@ export interface VoucherSummary {
   activeVouchers: number;
   usedVouchers: number;
   cancelledVouchers: number;
+  expiredVouchers: number;
 }
 
 export interface RfProAttributedVoucher {
@@ -214,7 +220,14 @@ export interface RfClaimAttributionInput {
 }
 
 type ClaimResult =
-  | { ok: true; voucher: Voucher; idempotentReplay: boolean }
+  | {
+      ok: true;
+      voucher: Voucher;
+      idempotentReplay: boolean;
+      createdNewInstance?: boolean;
+      claimBlockReason?: RfClaimBlockReason | null;
+      repeatPolicy?: RfRepeatPolicy;
+    }
   | { ok: false; code: string; message: string; status: number };
 type RedeemResult =
   | { ok: true; voucher: Voucher; applied: boolean }
@@ -255,6 +268,7 @@ type OfferRow = {
   offer_type: Offer['offerType'];
   visibility: Offer['visibility'];
   status: OfferStatus;
+  repeat_policy?: RfRepeatPolicy | null;
   created_by_user_id: string;
   created_at: string | Date;
   updated_at: string | Date;
@@ -304,6 +318,8 @@ type VoucherRow = {
   status: VoucherStatus;
   canonical_status?: VoucherCanonicalStatus | null;
   contract_version?: number | null;
+  repeat_policy_snapshot?: RfRepeatPolicy | null;
+  issue_sequence?: number | null;
   expires_at?: string | Date | null;
   cancelled_at?: string | Date | null;
   status_changed_at?: string | Date | null;
@@ -369,6 +385,7 @@ type ListingClaimContextRow = {
   offer_partner_id: string;
   offer_status: OfferStatus;
   offer_visibility: Offer['visibility'];
+  offer_repeat_policy?: RfRepeatPolicy | null;
   partner_status: PartnerStatus;
 };
 
@@ -418,11 +435,27 @@ function asIso(value: string | Date | null): string | null {
   return new Date(value).toISOString();
 }
 
+function mapLegacyStatusToCanonical(status: VoucherStatus): VoucherCanonicalStatus {
+  if (status === 'claimed') return 'available';
+  if (status === 'redeemed') return 'redeemed';
+  return 'cancelled';
+}
+
 function getCanonicalStatus(voucher: Pick<VoucherRow, 'status' | 'canonical_status'>): VoucherCanonicalStatus {
   if (voucher.canonical_status) return voucher.canonical_status;
-  if (voucher.status === 'claimed') return 'available';
-  if (voucher.status === 'redeemed') return 'redeemed';
-  return 'cancelled';
+  return mapLegacyStatusToCanonical(voucher.status);
+}
+
+function isRedeemableCanonicalStatus(status: VoucherCanonicalStatus): boolean {
+  return status === 'available' || status === 'unlocked';
+}
+
+function getEffectiveRepeatPolicy(offer: Pick<OfferRow, 'repeat_policy'>): RfRepeatPolicy {
+  return offer.repeat_policy ?? 'once_per_scope';
+}
+
+function getVoucherRepeatPolicySnapshot(voucher: Pick<VoucherRow, 'repeat_policy_snapshot'>): RfRepeatPolicy {
+  return voucher.repeat_policy_snapshot ?? 'once_per_scope';
 }
 
 function toAttributionMetadata(value: unknown): Record<string, unknown> {
@@ -455,6 +488,7 @@ function toOffer(row: OfferRow): Offer {
     offerType: row.offer_type,
     visibility: row.visibility,
     status: row.status,
+    repeatPolicy: row.repeat_policy ?? 'once_per_scope',
     createdByUserId: row.created_by_user_id,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
@@ -515,6 +549,8 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     claimedAt: asIso(row.claimed_at) ?? new Date(0).toISOString(),
     redeemedAt: asIso(row.redeemed_at),
     contractVersion: row.contract_version ?? undefined,
+    repeatPolicySnapshot: row.repeat_policy_snapshot ?? 'once_per_scope',
+    issueSequence: row.issue_sequence ?? 1,
     expiresAt: row.expires_at === undefined ? undefined : asIso(row.expires_at),
     cancelledAt: row.cancelled_at === undefined ? undefined : asIso(row.cancelled_at),
     statusChangedAt: row.status_changed_at === undefined ? undefined : asIso(row.status_changed_at),
@@ -894,7 +930,7 @@ export async function validatePartnerGeoLinks(
 
 async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
     LIMIT 1
@@ -933,11 +969,24 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
       status,
       canonical_status,
       contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
       expires_at,
       cancelled_at,
       status_changed_at,
       status_reason,
       status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -968,6 +1017,8 @@ async function getVoucherFromRedemptionIdempotency(
       v.status,
       v.canonical_status,
       v.contract_version,
+      v.repeat_policy_snapshot,
+      v.issue_sequence,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1011,6 +1062,8 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.status,
       v.canonical_status,
       v.contract_version,
+      v.repeat_policy_snapshot,
+      v.issue_sequence,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1045,41 +1098,99 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
-async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string, userId: string): Promise<VoucherRow | null> {
+async function getClaimBarrierVoucherByOfferAndUser(
+  db: DbExecutor,
+  offerId: string,
+  userId: string,
+  repeatPolicy: RfRepeatPolicy
+): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
     SELECT
-      id,
-      offer_id,
-      partner_id,
-      issued_to_user_id,
-      status,
-      canonical_status,
-      contract_version,
-      expires_at,
-      cancelled_at,
-      status_changed_at,
-      status_reason,
-      status_actor_user_id,
-      claim_scope,
-      rielt_listing_id,
-      rielt_listing_title_snapshot,
-      code,
-      claimed_at,
-      redeemed_at,
-      created_at,
-      updated_at
+      id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
+      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      status_reason, status_actor_user_id, attribution_version, attribution_strategy,
+      attribution_status, attribution_source, claim_source, attribution_share_code,
+      pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
+      attribution_metadata, claim_scope, rielt_listing_id, rielt_listing_title_snapshot,
+      code, claimed_at, redeemed_at, created_at, updated_at
     FROM rf_voucher
     WHERE offer_id = ${offerId}
       AND issued_to_user_id = ${userId}
       AND claim_scope = 'partner'
-      AND status IN ('claimed', 'redeemed')
+      AND (
+        canonical_status IN ('available', 'locked', 'unlocked')
+        OR (${repeatPolicy} = 'once_per_scope' AND canonical_status = 'redeemed')
+        OR (canonical_status IS NULL AND (
+          status = 'claimed'
+          OR (${repeatPolicy} = 'once_per_scope' AND status = 'redeemed')
+        ))
+      )
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   `);
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
-async function getClaimableVoucherByListingOfferAndUser(
+async function getLatestRedeemedVoucherByOfferAndUser(db: DbExecutor, offerId: string, userId: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
+      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      status_reason, status_actor_user_id, attribution_version, attribution_strategy,
+      attribution_status, attribution_source, claim_source, attribution_share_code,
+      pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
+      attribution_metadata, claim_scope, rielt_listing_id, rielt_listing_title_snapshot,
+      code, claimed_at, redeemed_at, created_at, updated_at
+    FROM rf_voucher
+    WHERE offer_id = ${offerId}
+      AND issued_to_user_id = ${userId}
+      AND claim_scope = 'partner'
+      AND (
+        canonical_status = 'redeemed'
+        OR (canonical_status IS NULL AND status = 'redeemed')
+      )
+    ORDER BY redeemed_at DESC NULLS LAST, created_at DESC, id DESC
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getClaimBarrierVoucherByListingOfferAndUser(
+  db: DbExecutor,
+  listingId: string,
+  offerId: string,
+  userId: string,
+  repeatPolicy: RfRepeatPolicy
+): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
+      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      status_reason, status_actor_user_id, attribution_version, attribution_strategy,
+      attribution_status, attribution_source, claim_source, attribution_share_code,
+      pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
+      attribution_metadata, claim_scope, rielt_listing_id, rielt_listing_title_snapshot,
+      code, claimed_at, redeemed_at, created_at, updated_at
+    FROM rf_voucher
+    WHERE rielt_listing_id = ${listingId}
+      AND offer_id = ${offerId}
+      AND issued_to_user_id = ${userId}
+      AND claim_scope = 'listing'
+      AND (
+        canonical_status IN ('available', 'locked', 'unlocked')
+        OR (${repeatPolicy} = 'once_per_scope' AND canonical_status = 'redeemed')
+        OR (canonical_status IS NULL AND (
+          status = 'claimed'
+          OR (${repeatPolicy} = 'once_per_scope' AND status = 'redeemed')
+        ))
+      )
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getLatestRedeemedVoucherByListingOfferAndUser(
   db: DbExecutor,
   listingId: string,
   offerId: string,
@@ -1087,36 +1198,45 @@ async function getClaimableVoucherByListingOfferAndUser(
 ): Promise<VoucherRow | null> {
   const result = await db.execute(sql`
     SELECT
-      id,
-      offer_id,
-      partner_id,
-      issued_to_user_id,
-      status,
-      canonical_status,
-      contract_version,
-      expires_at,
-      cancelled_at,
-      status_changed_at,
-      status_reason,
-      status_actor_user_id,
-      claim_scope,
-      rielt_listing_id,
-      rielt_listing_title_snapshot,
-      code,
-      claimed_at,
-      redeemed_at,
-      created_at,
-      updated_at
+      id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
+      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      status_reason, status_actor_user_id, attribution_version, attribution_strategy,
+      attribution_status, attribution_source, claim_source, attribution_share_code,
+      pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
+      attribution_metadata, claim_scope, rielt_listing_id, rielt_listing_title_snapshot,
+      code, claimed_at, redeemed_at, created_at, updated_at
     FROM rf_voucher
     WHERE rielt_listing_id = ${listingId}
       AND offer_id = ${offerId}
       AND issued_to_user_id = ${userId}
       AND claim_scope = 'listing'
-      AND status IN ('claimed', 'redeemed')
-    ORDER BY created_at DESC, id DESC
+      AND (
+        canonical_status = 'redeemed'
+        OR (canonical_status IS NULL AND status = 'redeemed')
+      )
+    ORDER BY redeemed_at DESC NULLS LAST, created_at DESC, id DESC
     LIMIT 1
   `);
   return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getNextIssueSequenceForScope(
+  db: DbExecutor,
+  input: { offerId: string; userId: string; claimScope: VoucherClaimScope; listingId?: string | null }
+): Promise<number> {
+  const result = await db.execute(sql`
+    SELECT COALESCE(MAX(issue_sequence), 0)::int AS max_issue_sequence
+    FROM rf_voucher
+    WHERE offer_id = ${input.offerId}
+      AND issued_to_user_id = ${input.userId}
+      AND claim_scope = ${input.claimScope}
+      AND (
+        (${input.claimScope} = 'partner' AND rielt_listing_id IS NULL)
+        OR (${input.claimScope} = 'listing' AND rielt_listing_id = ${input.listingId ?? null})
+      )
+  `);
+  const row = rowsOf<{ max_issue_sequence: number }>(result)[0];
+  return Number(row?.max_issue_sequence ?? 0) + 1;
 }
 
 async function getListingClaimContext(db: DbExecutor, listingId: string, offerId: string): Promise<ListingClaimContextRow | null> {
@@ -1130,6 +1250,7 @@ async function getListingClaimContext(db: DbExecutor, listingId: string, offerId
       o.partner_id AS offer_partner_id,
       o.status AS offer_status,
       o.visibility AS offer_visibility,
+      o.repeat_policy AS offer_repeat_policy,
       p.status AS partner_status
     FROM rielt_listing l
     INNER JOIN rielt_listing_rf_offer m
@@ -1224,7 +1345,7 @@ export async function getPublicPartnerById(db: DbExecutor, partnerId: string): P
 
 export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE status = 'active'
       AND visibility = 'public'
@@ -1235,7 +1356,7 @@ export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
 
 export async function getPublicOfferById(db: DbExecutor, offerId: string): Promise<Offer | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
       AND status = 'active'
@@ -1267,6 +1388,7 @@ export async function getRieltListingOfferContext(db: DbExecutor, listingId: str
       o.offer_type,
       o.visibility,
       o.status,
+      o.repeat_policy,
       o.created_by_user_id,
       o.created_at,
       o.updated_at,
@@ -1544,7 +1666,7 @@ export async function createOffer(
       now(),
       now()
     )
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
   `);
   const row = rowsOf<OfferRow>(result)[0];
   if (!row) throw new Error('Failed to persist RF offer');
@@ -1572,7 +1694,7 @@ export async function activateOffer(
     WHERE id = ${input.offerId}
       AND partner_id = ${input.partnerId}
       AND status = 'draft'
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
   `);
   const updated = rowsOf<OfferRow>(result)[0];
   if (updated) return toOffer(updated);
@@ -1590,7 +1712,25 @@ export async function claimVoucher(
   input: { offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
-  if (replayVoucher) return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
+  if (replayVoucher) {
+    const replayScope = replayVoucher.claim_scope ?? 'partner';
+    if (replayVoucher.offer_id !== input.offerId || replayScope !== 'partner') {
+      return {
+        ok: false,
+        code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+        message: 'Idempotency-Key was already used for a different voucher claim context',
+        status: 409,
+      };
+    }
+    return {
+      ok: true,
+      voucher: toVoucher(replayVoucher),
+      idempotentReplay: true,
+      createdNewInstance: false,
+      claimBlockReason: null,
+      repeatPolicy: getVoucherRepeatPolicySnapshot(replayVoucher),
+    };
+  }
 
   const offer = await getOfferById(db, input.offerId);
   if (!offer) return { ok: false, code: 'RF_OFFER_NOT_FOUND', message: 'RF offer not found', status: 404 };
@@ -1606,12 +1746,37 @@ export async function claimVoucher(
     return { ok: false, code: 'RF_PARTNER_INACTIVE', message: 'RF partner is not active', status: 409 };
   }
 
-  const existing = await getClaimableVoucherByOfferAndUser(db, offer.id, principal.userId);
-  if (existing) {
-    return { ok: true, voucher: toVoucher(existing), idempotentReplay: false };
+  const repeatPolicy = getEffectiveRepeatPolicy(offer);
+  const barrierVoucher = await getClaimBarrierVoucherByOfferAndUser(db, offer.id, principal.userId, repeatPolicy);
+  if (barrierVoucher) {
+    const idempotency = await insertClaimIdempotency(db, {
+      actorUserId: principal.userId,
+      idempotencyKey: input.idempotencyKey,
+      voucherId: barrierVoucher.id,
+    });
+    if (!idempotency) {
+      return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
+    }
+    const claimBlockReason = getCanonicalStatus(barrierVoucher) === 'redeemed' ? 'once_per_scope_consumed' : 'existing_active_voucher';
+    return {
+      ok: true,
+      voucher: toVoucher(barrierVoucher),
+      idempotentReplay: false,
+      createdNewInstance: false,
+      claimBlockReason,
+      repeatPolicy,
+    };
   }
 
   const attribution = await resolveClaimAttribution(db, offer.partner_id, input.attribution);
+  const issueSequence =
+    repeatPolicy === 'repeat_after_redeem'
+      ? await getNextIssueSequenceForScope(db, {
+          offerId: offer.id,
+          userId: principal.userId,
+          claimScope: 'partner',
+        })
+      : 1;
 
   // This legacy endpoint remains partner-scoped. Listing-scoped claims must use
   // a dedicated endpoint that validates listing mapping and claim context.
@@ -1625,6 +1790,8 @@ export async function claimVoucher(
       issued_to_user_id,
       status,
       canonical_status,
+      repeat_policy_snapshot,
+      issue_sequence,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1644,6 +1811,7 @@ export async function claimVoucher(
       attribution_captured_at,
       attribution_confirmed_at,
       attribution_metadata,
+      contract_version,
       created_at,
       updated_at
     )
@@ -1654,6 +1822,8 @@ export async function claimVoucher(
       ${principal.userId},
       'claimed',
       'available',
+      ${repeatPolicy},
+      ${issueSequence},
       'partner',
       NULL,
       NULL,
@@ -1673,10 +1843,11 @@ export async function claimVoucher(
       ${attribution.capturedAt},
       ${attribution.confirmedAt},
       ${JSON.stringify(attribution.metadata)}::jsonb,
+      1,
       now(),
       now()
     )
-    ON CONFLICT (offer_id, issued_to_user_id) WHERE claim_scope = 'partner' AND status IN ('claimed', 'redeemed')
+    ON CONFLICT (offer_id, issued_to_user_id) WHERE claim_scope = 'partner' AND (canonical_status IN ('available', 'locked', 'unlocked') OR (canonical_status = 'redeemed' AND repeat_policy_snapshot = 'once_per_scope'))
     DO NOTHING
     RETURNING
       id,
@@ -1686,11 +1857,24 @@ export async function claimVoucher(
       status,
       canonical_status,
       contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
       expires_at,
       cancelled_at,
       status_changed_at,
       status_reason,
       status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1703,7 +1887,9 @@ export async function claimVoucher(
   let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
 
   if (!voucherRow) {
-    voucherRow = await getClaimableVoucherByOfferAndUser(db, offer.id, principal.userId);
+    voucherRow = repeatPolicy === 'once_per_scope'
+      ? await getLatestRedeemedVoucherByOfferAndUser(db, offer.id, principal.userId)
+      : await getClaimBarrierVoucherByOfferAndUser(db, offer.id, principal.userId, repeatPolicy);
     if (!voucherRow) {
       return { ok: false, code: 'RF_VOUCHER_CLAIM_FAILED', message: 'Unable to claim voucher', status: 409 };
     }
@@ -1719,10 +1905,33 @@ export async function claimVoucher(
   }
   if (idempotency.voucher_id !== voucherRow.id) {
     const stableReplay = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
-    if (stableReplay) return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+    const stableReplayScope = stableReplay?.claim_scope ?? 'partner';
+    if (stableReplay && stableReplay.offer_id === input.offerId && stableReplayScope === 'partner') {
+      return {
+        ok: true,
+        voucher: toVoucher(stableReplay),
+        idempotentReplay: true,
+        createdNewInstance: false,
+        claimBlockReason: null,
+        repeatPolicy,
+      };
+    }
+    return {
+      ok: false,
+      code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+      message: 'Idempotency-Key was already used for a different voucher claim context',
+      status: 409,
+    };
   }
 
-  return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
+  return {
+    ok: true,
+    voucher: toVoucher(voucherRow),
+    idempotentReplay: false,
+    createdNewInstance: true,
+    claimBlockReason: null,
+    repeatPolicy,
+  };
 }
 
 function isListingClaimVoucher(row: VoucherRow, listingId: string, offerId: string): boolean {
@@ -1744,7 +1953,14 @@ export async function claimVoucherForListing(
         status: 409,
       };
     }
-    return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
+    return {
+      ok: true,
+      voucher: toVoucher(replayVoucher),
+      idempotentReplay: true,
+      createdNewInstance: false,
+      claimBlockReason: null,
+      repeatPolicy: getVoucherRepeatPolicySnapshot(replayVoucher),
+    };
   }
 
   const context = await getListingClaimContext(db, input.listingId, input.offerId);
@@ -1782,17 +1998,44 @@ export async function claimVoucherForListing(
     };
   }
 
-  const existingListingVoucher = await getClaimableVoucherByListingOfferAndUser(
+  const repeatPolicy = context.offer_repeat_policy ?? 'once_per_scope';
+  const barrierListingVoucher = await getClaimBarrierVoucherByListingOfferAndUser(
     db,
     input.listingId,
     input.offerId,
-    principal.userId
+    principal.userId,
+    repeatPolicy
   );
-  if (existingListingVoucher) {
-    return { ok: true, voucher: toVoucher(existingListingVoucher), idempotentReplay: false };
+  if (barrierListingVoucher) {
+    const idempotency = await insertClaimIdempotency(db, {
+      actorUserId: principal.userId,
+      idempotencyKey: input.idempotencyKey,
+      voucherId: barrierListingVoucher.id,
+    });
+    if (!idempotency) {
+      return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
+    }
+    const claimBlockReason = getCanonicalStatus(barrierListingVoucher) === 'redeemed' ? 'once_per_scope_consumed' : 'existing_active_voucher';
+    return {
+      ok: true,
+      voucher: toVoucher(barrierListingVoucher),
+      idempotentReplay: false,
+      createdNewInstance: false,
+      claimBlockReason,
+      repeatPolicy,
+    };
   }
 
   const attribution = await resolveClaimAttribution(db, context.mapping_partner_id, input.attribution);
+  const issueSequence =
+    repeatPolicy === 'repeat_after_redeem'
+      ? await getNextIssueSequenceForScope(db, {
+          offerId: input.offerId,
+          userId: principal.userId,
+          claimScope: 'listing',
+          listingId: input.listingId,
+        })
+      : 1;
 
   const voucherId = nextId('rf_voucher');
   const voucherCode = toVoucherCode(voucherId);
@@ -1805,6 +2048,8 @@ export async function claimVoucherForListing(
       status,
       canonical_status,
       contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1838,6 +2083,8 @@ export async function claimVoucherForListing(
       'claimed',
       'available',
       1,
+      ${repeatPolicy},
+      ${issueSequence},
       NULL,
       NULL,
       now(),
@@ -1863,7 +2110,7 @@ export async function claimVoucherForListing(
       now(),
       now()
     )
-    ON CONFLICT (rielt_listing_id, offer_id, issued_to_user_id) WHERE claim_scope = 'listing' AND status IN ('claimed', 'redeemed')
+    ON CONFLICT (rielt_listing_id, offer_id, issued_to_user_id) WHERE claim_scope = 'listing' AND (canonical_status IN ('available', 'locked', 'unlocked') OR (canonical_status = 'redeemed' AND repeat_policy_snapshot = 'once_per_scope'))
     DO NOTHING
     RETURNING
       id,
@@ -1873,6 +2120,8 @@ export async function claimVoucherForListing(
       status,
       canonical_status,
       contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1901,7 +2150,9 @@ export async function claimVoucherForListing(
   let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
 
   if (!voucherRow) {
-    voucherRow = await getClaimableVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId);
+    voucherRow = repeatPolicy === 'once_per_scope'
+      ? await getLatestRedeemedVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId)
+      : await getClaimBarrierVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId, repeatPolicy);
     if (!voucherRow) {
       return { ok: false, code: 'RF_VOUCHER_CLAIM_FAILED', message: 'Unable to claim listing voucher', status: 409 };
     }
@@ -1918,7 +2169,14 @@ export async function claimVoucherForListing(
   if (idempotency.voucher_id !== voucherRow.id) {
     const stableReplay = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
     if (stableReplay && isListingClaimVoucher(stableReplay, input.listingId, input.offerId)) {
-      return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+      return {
+        ok: true,
+        voucher: toVoucher(stableReplay),
+        idempotentReplay: true,
+        createdNewInstance: false,
+        claimBlockReason: null,
+        repeatPolicy,
+      };
     }
     return {
       ok: false,
@@ -1928,7 +2186,14 @@ export async function claimVoucherForListing(
     };
   }
 
-  return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
+  return {
+    ok: true,
+    voucher: toVoucher(voucherRow),
+    idempotentReplay: false,
+    createdNewInstance: true,
+    claimBlockReason: null,
+    repeatPolicy,
+  };
 }
 
 export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal): Promise<Voucher[]> {
@@ -1941,6 +2206,8 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.status,
       v.canonical_status,
       v.contract_version,
+      v.repeat_policy_snapshot,
+      v.issue_sequence,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -2061,7 +2328,8 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
       COUNT(*)::int AS total_vouchers,
       COUNT(*) FILTER (WHERE effective_status IN ('available', 'locked', 'unlocked'))::int AS active_vouchers,
       COUNT(*) FILTER (WHERE effective_status = 'redeemed')::int AS used_vouchers,
-      COUNT(*) FILTER (WHERE effective_status = 'cancelled')::int AS cancelled_vouchers
+      COUNT(*) FILTER (WHERE effective_status = 'cancelled')::int AS cancelled_vouchers,
+      COUNT(*) FILTER (WHERE effective_status = 'expired')::int AS expired_vouchers
     FROM voucher_states
   `);
   const row =
@@ -2070,6 +2338,7 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
       active_vouchers: number;
       used_vouchers: number;
       cancelled_vouchers: number;
+      expired_vouchers: number;
     }>(result)[0] ?? null;
 
   return {
@@ -2077,6 +2346,7 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
     activeVouchers: Number(row?.active_vouchers ?? 0),
     usedVouchers: Number(row?.used_vouchers ?? 0),
     cancelledVouchers: Number(row?.cancelled_vouchers ?? 0),
+    expiredVouchers: Number(row?.expired_vouchers ?? 0),
   };
 }
 
@@ -2109,13 +2379,17 @@ export async function redeemVoucher(
   if (!voucher) {
     return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
   }
-  if (voucher.status === 'cancelled') {
+  const canonicalStatus = getCanonicalStatus(voucher);
+  if (canonicalStatus === 'cancelled') {
     return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
   }
-  if (voucher.status === 'redeemed') {
+  if (canonicalStatus === 'redeemed') {
     return { ok: true, voucher: toVoucher(voucher), applied: false };
   }
-  if (voucher.status !== 'claimed') {
+  if (canonicalStatus === 'expired') {
+    return { ok: false, code: 'RF_VOUCHER_EXPIRED', message: 'RF voucher is expired', status: 409 };
+  }
+  if (!isRedeemableCanonicalStatus(canonicalStatus)) {
     return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
   }
 
@@ -2130,6 +2404,7 @@ export async function redeemVoucher(
   }
 
   const redemptionId = nextId('rf_voucher_redemption');
+  const consumptionGuardId = nextId('rf_guard');
   const updateResult = await db.execute(sql`
     WITH updated AS (
       UPDATE rf_voucher
@@ -2142,7 +2417,10 @@ export async function redeemVoucher(
         updated_at = now()
       WHERE id = ${input.voucherId}
         AND partner_id = ${input.partnerId}
-        AND status = 'claimed'
+        AND (
+          canonical_status IN ('available', 'unlocked')
+          OR (canonical_status IS NULL AND status = 'claimed')
+        )
       RETURNING
         id,
         offer_id,
@@ -2151,6 +2429,8 @@ export async function redeemVoucher(
         status,
         canonical_status,
         contract_version,
+        repeat_policy_snapshot,
+        issue_sequence,
         expires_at,
         cancelled_at,
         status_changed_at,
@@ -2212,6 +2492,40 @@ export async function redeemVoucher(
       ON CONFLICT (voucher_id) WHERE result_status = 'succeeded'
       DO NOTHING
       RETURNING id
+    ),
+    consumption_guard AS (
+      INSERT INTO rf_voucher_scope_consumption_guard (
+        id,
+        offer_id,
+        issued_to_user_id,
+        claim_scope,
+        scope_ref,
+        consumed_voucher_id,
+        repeat_policy_snapshot,
+        consumed_at,
+        created_at,
+        updated_at
+      )
+      SELECT
+        ${consumptionGuardId},
+        offer_id,
+        issued_to_user_id,
+        COALESCE(claim_scope, 'partner'),
+        CASE WHEN COALESCE(claim_scope, 'partner') = 'partner' THEN '__partner__' ELSE rielt_listing_id END,
+        id,
+        COALESCE(repeat_policy_snapshot, 'once_per_scope'),
+        COALESCE(redeemed_at, status_changed_at, updated_at, now()),
+        now(),
+        now()
+      FROM updated
+      WHERE COALESCE(repeat_policy_snapshot, 'once_per_scope') = 'once_per_scope'
+        AND (
+          COALESCE(claim_scope, 'partner') = 'partner'
+          OR rielt_listing_id IS NOT NULL
+        )
+      ON CONFLICT (offer_id, issued_to_user_id, claim_scope, scope_ref)
+      DO NOTHING
+      RETURNING id
     )
     SELECT
       id,
@@ -2221,6 +2535,8 @@ export async function redeemVoucher(
       status,
       canonical_status,
       contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2254,9 +2570,13 @@ export async function redeemVoucher(
   if (!latest) {
     return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
   }
-  if (latest.status === 'redeemed') return { ok: true, voucher: toVoucher(latest), applied: false };
-  if (latest.status === 'cancelled') {
+  const latestCanonicalStatus = getCanonicalStatus(latest);
+  if (latestCanonicalStatus === 'redeemed') return { ok: true, voucher: toVoucher(latest), applied: false };
+  if (latestCanonicalStatus === 'cancelled') {
     return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
+  }
+  if (latestCanonicalStatus === 'expired') {
+    return { ok: false, code: 'RF_VOUCHER_EXPIRED', message: 'RF voucher is expired', status: 409 };
   }
   return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
 }

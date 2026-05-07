@@ -10,18 +10,7 @@ import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotic
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
 import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
-
-function getVoucherStatusLabel(status: RfVoucherDto['status']) {
-  if (status === 'claimed') return 'Получен';
-  if (status === 'redeemed') return 'Использован';
-  return 'Отменён';
-}
-
-function getVoucherStatusBadgeClass(status: RfVoucherDto['status']) {
-  if (status === 'claimed') return 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200';
-  if (status === 'redeemed') return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
-  return 'bg-red-100 text-red-800 ring-1 ring-red-200';
-}
+import { getRfVoucherStatusBadgeClass, getRfVoucherStatusLabel } from '@/lib/rfVoucherLifecycle';
 
 function isListingVoucher(voucher: RfVoucherDto) {
   return voucher.claimScope === 'listing' && Boolean(voucher.listingContext);
@@ -185,9 +174,9 @@ export function RfMyVouchersView() {
                                   {getVoucherScopeLabel(voucher)}
                                 </p>
                                 <span
-                                  className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${getVoucherStatusBadgeClass(voucher.status)}`}
+                                  className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${getRfVoucherStatusBadgeClass(voucher)}`}
                                 >
-                                  {getVoucherStatusLabel(voucher.status)}
+                                  {getRfVoucherStatusLabel(voucher)}
                                 </span>
                               </div>
                               <p className="mt-2 text-base font-semibold text-slate-950">

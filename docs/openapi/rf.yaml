@@ -692,6 +692,9 @@ paths:
         - name: status
           in: query
           required: false
+          description: >
+            Legacy compatibility filter by runtime `status`. Lifecycle reads should prefer
+            response `canonicalStatus`; `claimed` maps to canonical `available`.
           schema:
             type: string
             enum: [claimed, redeemed, cancelled]
@@ -1037,6 +1040,12 @@ components:
         status:
           type: string
           enum: [draft, active, archived]
+        repeatPolicy:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          description: >
+            Offer-level repeatability policy. Missing value must be treated by clients
+            as once_per_scope for backwards compatibility.
         createdByUserId:
           type: string
         createdAt:
@@ -1140,6 +1149,19 @@ components:
         legacy `status` field remains the backwards-compatible runtime status; if
         `canonicalStatus` is absent, clients may map `claimed` -> `available`,
         `redeemed` -> `redeemed`, and `cancelled` -> `cancelled`.
+
+    RfRepeatPolicy:
+      type: string
+      enum: [once_per_scope, repeat_after_redeem]
+      description: >
+        RF repeatability policy. `once_per_scope` preserves the current one-time
+        behavior; `repeat_after_redeem` allows a new voucher instance after a
+        redeemed voucher when no active instance exists.
+
+    RfClaimBlockReason:
+      type: string
+      enum: [existing_active_voucher, once_per_scope_consumed]
+      description: Server-side reason why a claim returned an existing voucher instead of creating a new instance.
 
     RfAttributionStatus:
       type: string
@@ -1313,8 +1335,9 @@ components:
           allOf:
             - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
           description: >
-            Additive canonical lifecycle status. New runtime writes set this field; clients should
-            keep legacy `status` handling for compatibility during the transition window.
+            Primary lifecycle field for RF voucher runtime semantics. New runtime writes set this
+            field consistently; clients should still keep legacy `status` fallback for backwards
+            compatibility during the transition window.
         claimScope:
           type: string
           enum: [partner, listing]
@@ -1349,6 +1372,14 @@ components:
           type: integer
           minimum: 1
           description: RF voucher contract/lifecycle version. Stage 1+2 runtime writes version 1.
+        repeatPolicySnapshot:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          description: Repeat policy captured on this voucher instance at claim time.
+        issueSequence:
+          type: integer
+          minimum: 1
+          description: Monotonic voucher instance sequence within the normalized claim scope.
         expiresAt:
           type: string
           format: date-time
@@ -1584,7 +1615,7 @@ components:
 
     RfVoucherSummary:
       type: object
-      required: [totalVouchers, activeVouchers, usedVouchers, cancelledVouchers]
+      required: [totalVouchers, activeVouchers, usedVouchers, cancelledVouchers, expiredVouchers]
       properties:
         totalVouchers:
           type: integer
@@ -1601,6 +1632,10 @@ components:
           type: integer
           minimum: 0
           description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
+        expiredVouchers:
+          type: integer
+          minimum: 0
+          description: Count of expired vouchers using canonical lifecycle status.
 
     RfProLinkListResponse:
       type: object
@@ -1622,6 +1657,16 @@ components:
           $ref: "#/components/schemas/RfVoucher"
         idempotentReplay:
           type: boolean
+        createdNewInstance:
+          type: boolean
+          description: True when this claim created a new voucher instance. False for idempotent replay or existing-voucher returns.
+        claimBlockReason:
+          nullable: true
+          anyOf:
+            - $ref: "#/components/schemas/RfClaimBlockReason"
+            - type: "null"
+        repeatPolicy:
+          $ref: "#/components/schemas/RfRepeatPolicy"
 
     RfRedeemResponse:
       type: object

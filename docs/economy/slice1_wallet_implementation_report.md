@@ -1,6 +1,6 @@
 # Slice 1 Wallet Implementation Report
 
-Status: implemented  
+Status: implemented
 Scope: Wallet / Points buckets baseline only
 
 ## What Was Implemented

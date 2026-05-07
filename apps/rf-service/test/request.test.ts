@@ -561,6 +561,8 @@ describe('rf-service request', () => {
     expect(redeem1.status).toBe(200);
     expect(redeem1Body.applied).toBe(true);
     expect(redeem1Body.voucher.status).toBe('redeemed');
+    expect(executedSqlText()).toContain('rf_voucher_scope_consumption_guard');
+    expect(executedSqlText()).toContain("repeat_policy_snapshot");
 
     const redeem2 = await worker.fetch(
       new Request(`https://rf.example/v1/rf/business/partners/${partner.id}/vouchers/${claim1Body.voucher.id}/redeem`, {
@@ -789,6 +791,17 @@ describe('rf-service request', () => {
             updated_at: '2026-03-21T10:03:00.000Z',
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'claim-key-2',
+            voucher_id: 'rf_voucher_1',
+            created_at: '2026-03-21T10:03:01.000Z',
+          },
+        ],
       });
 
     const claim1 = await worker.fetch(
@@ -820,6 +833,240 @@ describe('rf-service request', () => {
     expect(claim2Body.idempotentReplay).toBe(false);
     expect(claim2Body.voucher.id).toBe(claim1Body.voucher.id);
     expect(claim2Body.voucher.status).toBe('claimed');
+  });
+
+  it('creates a new voucher instance for repeat_after_redeem after redeemed history', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          offerRow({
+            id: 'rf_offer_repeat',
+            status: 'active',
+            visibility: 'public',
+            repeat_policy: 'repeat_after_redeem',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ max_issue_sequence: 1 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_repeat_2',
+            offer_id: 'rf_offer_repeat',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'available',
+            repeat_policy_snapshot: 'repeat_after_redeem',
+            issue_sequence: 2,
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-RPT002',
+            claimed_at: '2026-03-21T10:04:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:04:00.000Z',
+            updated_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'repeat-claim-2',
+            voucher_id: 'rf_voucher_repeat_2',
+            created_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_repeat/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'repeat-claim-2',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      createdNewInstance: boolean;
+      repeatPolicy: string;
+      voucher: { id: string; repeatPolicySnapshot: string; issueSequence: number; canonicalStatus: string };
+    }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.createdNewInstance).toBe(true);
+    expect(body.repeatPolicy).toBe('repeat_after_redeem');
+    expect(body.voucher).toEqual(
+      expect.objectContaining({
+        id: 'rf_voucher_repeat_2',
+        canonicalStatus: 'available',
+        repeatPolicySnapshot: 'repeat_after_redeem',
+        issueSequence: 2,
+      })
+    );
+    expect(executedSqlText()).toContain('MAX(issue_sequence)');
+  });
+
+  it('rejects partner claim replay when idempotency key context differs', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_1',
+          offer_id: 'rf_offer_other',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000001',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-21T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-key-ctx',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH');
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats legacy claim replay rows without claim_scope as partner scope', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_legacy',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: null,
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-LEGACY',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-21T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'legacy-claim-scope-replay',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ idempotentReplay: boolean; voucher: { id: string; claimScope: string; canonicalStatus: string } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.idempotentReplay).toBe(true);
+    expect(body.voucher.id).toBe('rf_voucher_legacy');
+    expect(body.voucher.claimScope).toBe('partner');
+    expect(body.voucher.canonicalStatus).toBe('available');
+  });
+
+  it('keeps first claim attribution immutable on idempotent replay with different payload', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_1',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          canonical_status: 'available',
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'public_rf_catalog',
+          attribution_share_code: 'rfp_first',
+          pro_attributed_user_id: 'pro_user_1',
+          pro_link_id: 'rf_pro_link_1',
+          attribution_captured_at: '2026-05-07T00:00:00.000Z',
+          attribution_confirmed_at: '2026-05-07T00:01:00.000Z',
+          attribution_metadata: { restoredFromSession: true },
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000001',
+          claimed_at: '2026-05-07T00:01:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-05-07T00:01:00.000Z',
+          updated_at: '2026-05-07T00:01:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-attributed',
+        },
+        body: JSON.stringify({
+          attribution: {
+            version: 1,
+            shareCode: 'rfp_second_attempt',
+            attributionSource: 'pro_link',
+            claimSource: 'pro_shared_link',
+            capturedAt: '2026-05-07T00:02:00.000Z',
+          },
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ idempotentReplay: boolean; voucher: { attribution: { status: string; shareCode: string | null; claimSource: string } } }>(
+      response
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.idempotentReplay).toBe(true);
+    expect(body.voucher.attribution.status).toBe('confirmed');
+    expect(body.voucher.attribution.shareCode).toBe('rfp_first');
+    expect(body.voucher.attribution.claimSource).toBe('public_rf_catalog');
   });
 
   it('persists valid PRO attribution on first successful claim', async () => {
@@ -1175,6 +1422,380 @@ describe('rf-service request', () => {
     expect(cancelledBody.error.code).toBe('RF_VOUCHER_CANCELLED');
   });
 
+  it('returns RF_VOUCHER_EXPIRED when redeem sees canonical expired status', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_expired',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'expired',
+            code: 'RF-EXPIRED',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      });
+
+    const redeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_expired/redeem', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(redeem);
+    expect(redeem.status).toBe(409);
+    expect(body.error.code).toBe('RF_VOUCHER_EXPIRED');
+  });
+
+  it('rejects redeem for locked voucher and allows redeem for unlocked voucher', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      // locked redeem: owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // locked redeem: voucher lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_locked',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'locked',
+            code: 'RF-LOCKED',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // unlocked redeem: owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // unlocked redeem: voucher lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_unlocked',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'unlocked',
+            code: 'RF-UNLOCK',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      // unlocked redeem: offer relation lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            title: 'Welcome Coffee',
+            offer_type: 'discount',
+            visibility: 'public',
+            status: 'active',
+            created_by_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:01:00.000Z',
+            updated_at: '2026-03-21T10:02:00.000Z',
+          },
+        ],
+      })
+      // unlocked redeem: update -> redeemed
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_unlocked',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'redeemed',
+            canonical_status: 'redeemed',
+            code: 'RF-UNLOCK',
+            claimed_at: '2026-03-21T10:03:00.000Z',
+            redeemed_at: '2026-03-21T10:04:00.000Z',
+            created_at: '2026-03-21T10:03:00.000Z',
+            updated_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      });
+
+    const lockedRedeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_locked/redeem', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const lockedBody = await readJson<{ error: { code: string } }>(lockedRedeem);
+    expect(lockedRedeem.status).toBe(409);
+    expect(lockedBody.error.code).toBe('RF_VOUCHER_NOT_CLAIMED');
+
+    const unlockedRedeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_unlocked/redeem', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const unlockedBody = await readJson<{ applied: boolean; voucher: { status: string; canonicalStatus?: string } }>(unlockedRedeem);
+    expect(unlockedRedeem.status).toBe(200);
+    expect(unlockedBody.applied).toBe(true);
+    expect(unlockedBody.voucher.status).toBe('redeemed');
+    expect(unlockedBody.voucher.canonicalStatus).toBe('redeemed');
+  });
+
+  it('returns attribution consistently for already redeemed voucher and redeem idempotency replay', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      // already redeemed: owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // already redeemed: voucher lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_redeemed',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'redeemed',
+            canonical_status: 'redeemed',
+            attribution_status: 'confirmed',
+            attribution_source: 'pro_link',
+            claim_source: 'pro_shared_link',
+            attribution_share_code: 'rfp_confirmed',
+            pro_attributed_user_id: 'pro_user_1',
+            pro_link_id: 'rf_pro_link_1',
+            attribution_captured_at: '2026-05-07T00:00:00.000Z',
+            attribution_confirmed_at: '2026-05-07T00:01:00.000Z',
+            attribution_metadata: { restoredFromSession: true },
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-000777',
+            claimed_at: '2026-05-07T00:01:00.000Z',
+            redeemed_at: '2026-05-07T00:02:00.000Z',
+            created_at: '2026-05-07T00:01:00.000Z',
+            updated_at: '2026-05-07T00:02:00.000Z',
+          },
+        ],
+      })
+      // idempotency replay: owned partner check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      // idempotency replay lookup
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_redeemed',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'redeemed',
+            canonical_status: 'redeemed',
+            attribution_status: 'confirmed',
+            attribution_source: 'pro_link',
+            claim_source: 'pro_shared_link',
+            attribution_share_code: 'rfp_confirmed',
+            pro_attributed_user_id: 'pro_user_1',
+            pro_link_id: 'rf_pro_link_1',
+            attribution_captured_at: '2026-05-07T00:00:00.000Z',
+            attribution_confirmed_at: '2026-05-07T00:01:00.000Z',
+            attribution_metadata: { restoredFromSession: true },
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-000777',
+            claimed_at: '2026-05-07T00:01:00.000Z',
+            redeemed_at: '2026-05-07T00:02:00.000Z',
+            created_at: '2026-05-07T00:01:00.000Z',
+            updated_at: '2026-05-07T00:02:00.000Z',
+          },
+        ],
+      });
+
+    const alreadyRedeemed = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_redeemed/redeem', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': ownerToken },
+      }),
+      env
+    );
+    const alreadyRedeemedBody = await readJson<{
+      applied: boolean;
+      voucher: { status: string; canonicalStatus?: string; attribution?: { status: string; shareCode: string | null } };
+    }>(alreadyRedeemed);
+    expect(alreadyRedeemed.status).toBe(200);
+    expect(alreadyRedeemedBody.applied).toBe(false);
+    expect(alreadyRedeemedBody.voucher.status).toBe('redeemed');
+    expect(alreadyRedeemedBody.voucher.canonicalStatus).toBe('redeemed');
+    expect(alreadyRedeemedBody.voucher.attribution?.status).toBe('confirmed');
+    expect(alreadyRedeemedBody.voucher.attribution?.shareCode).toBe('rfp_confirmed');
+
+    const replayRedeem = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_redeemed/redeem', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+          'Idempotency-Key': 'redeem-replay-1',
+        },
+      }),
+      env
+    );
+    const replayBody = await readJson<{
+      applied: boolean;
+      voucher: { status: string; canonicalStatus?: string; attribution?: { status: string; shareCode: string | null } };
+    }>(replayRedeem);
+    expect(replayRedeem.status).toBe(200);
+    expect(replayBody.applied).toBe(false);
+    expect(replayBody.voucher.status).toBe('redeemed');
+    expect(replayBody.voucher.canonicalStatus).toBe('redeemed');
+    expect(replayBody.voucher.attribution?.status).toBe('confirmed');
+    expect(replayBody.voucher.attribution?.shareCode).toBe('rfp_confirmed');
+  });
+
+  it('rejects redeem idempotency replay for a different voucher context', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_partner_1',
+            slug: 'voucher-partner',
+            display_name: 'Voucher Partner',
+            country_id: 'country_th',
+            city_id: 'city_phuket',
+            status: 'active',
+            owner_user_id: 'partner_owner_1',
+            created_at: '2026-03-21T10:00:00.000Z',
+            updated_at: '2026-03-21T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_other',
+            offer_id: 'rf_offer_1',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'redeemed',
+            canonical_status: 'redeemed',
+            code: 'RF-000778',
+            claimed_at: '2026-05-07T00:01:00.000Z',
+            redeemed_at: '2026-05-07T00:02:00.000Z',
+            created_at: '2026-05-07T00:01:00.000Z',
+            updated_at: '2026-05-07T00:02:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/business/partners/rf_partner_1/vouchers/rf_voucher_redeemed/redeem', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': ownerToken,
+          'Idempotency-Key': 'redeem-mismatch',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_REDEEM_IDEMPOTENCY_KEY_CONTEXT_MISMATCH');
+  });
+
   it('rejects redeem when voucher and offer relation is inconsistent', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
@@ -1438,7 +2059,13 @@ describe('rf-service request', () => {
       env
     );
     const body = await readJson<{
-      items: Array<Record<string, unknown> & { voucherId: string; listingContext: { listingTitle: string | null } | null }>;
+      items: Array<
+        Record<string, unknown> & {
+          voucherId: string;
+          canonicalStatus: string;
+          listingContext: { listingTitle: string | null } | null;
+        }
+      >;
       nextCursor: string | null;
     }>(response);
 
@@ -1446,6 +2073,7 @@ describe('rf-service request', () => {
     expect(body.items.map((item) => item.voucherId)).toEqual(['rf_voucher_2', 'rf_voucher_1']);
     expect(body.nextCursor).toBe('2026-05-07T10:01:00.000Z|rf_voucher_1');
     expect(body.items[0]?.listingContext?.listingTitle).toBe('Karon family apartment');
+    expect(body.items.every((item) => typeof item.canonicalStatus === 'string' && item.canonicalStatus.length > 0)).toBe(true);
     expect(body.items[0]).toEqual(
       expect.not.objectContaining({
         issuedToUserId: expect.anything(),
@@ -1461,6 +2089,53 @@ describe('rf-service request', () => {
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(
       expect.arrayContaining(['pro_user_1', 'claimed', 'rf_partner_1', 'listing', 3])
     );
+  });
+
+  it('keeps redeemed attributed vouchers visible for PRO when attribution is confirmed', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const proToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_redeemed_1',
+          offer_id: 'rf_offer_1',
+          offer_title: 'Welcome coffee',
+          partner_id: 'rf_partner_1',
+          partner_display_name: 'Phuket Partner',
+          status: 'redeemed',
+          canonical_status: 'redeemed',
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'pro_shared_link',
+          attribution_confirmed_at: '2026-05-07T10:01:00.000Z',
+          claimed_at: '2026-05-07T10:00:00.000Z',
+          redeemed_at: '2026-05-07T10:05:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/attributed-vouchers', {
+        headers: { 'X-Gateway-Auth': proToken },
+      }),
+      env
+    );
+    const body = await readJson<{ items: Array<{ voucherId: string; status: string; canonicalStatus: string; redeemedAt: string | null }> }>(
+      response
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]).toMatchObject({
+      voucherId: 'rf_voucher_redeemed_1',
+      status: 'redeemed',
+      canonicalStatus: 'redeemed',
+    });
+    expect(body.items[0]?.redeemedAt).toBe('2026-05-07T10:05:00.000Z');
   });
 
   it('requires auth for voucher summary', async () => {
@@ -1485,6 +2160,7 @@ describe('rf-service request', () => {
           active_vouchers: 0,
           used_vouchers: 0,
           cancelled_vouchers: 0,
+          expired_vouchers: 0,
         },
       ],
     });
@@ -1502,6 +2178,7 @@ describe('rf-service request', () => {
       activeVouchers: number;
       usedVouchers: number;
       cancelledVouchers: number;
+      expiredVouchers: number;
     }>(response);
 
     expect(response.status).toBe(200);
@@ -1510,6 +2187,7 @@ describe('rf-service request', () => {
       activeVouchers: 0,
       usedVouchers: 0,
       cancelledVouchers: 0,
+      expiredVouchers: 0,
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
@@ -1522,10 +2200,11 @@ describe('rf-service request', () => {
     executeMock.mockResolvedValueOnce({
       rows: [
         {
-          total_vouchers: 4,
+          total_vouchers: 5,
           active_vouchers: 2,
           used_vouchers: 1,
           cancelled_vouchers: 1,
+          expired_vouchers: 1,
         },
       ],
     });
@@ -1543,18 +2222,21 @@ describe('rf-service request', () => {
       activeVouchers: number;
       usedVouchers: number;
       cancelledVouchers: number;
+      expiredVouchers: number;
     }>(response);
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      totalVouchers: 4,
+      totalVouchers: 5,
       activeVouchers: 2,
       usedVouchers: 1,
       cancelledVouchers: 1,
+      expiredVouchers: 1,
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
     expect(executedSqlText()).toContain('canonical_status');
+    expect(executedSqlText()).toContain("effective_status = 'expired'");
   });
 
   it('claims a listing-scoped voucher and replays it idempotently', async () => {
@@ -2003,6 +2685,17 @@ describe('rf-service request', () => {
             redeemed_at: null,
             created_at: '2026-03-21T10:03:00.000Z',
             updated_at: '2026-03-21T10:03:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'listing-claim-existing-different-key',
+            voucher_id: 'rf_voucher_listing_1',
+            created_at: '2026-03-21T10:03:01.000Z',
           },
         ],
       });

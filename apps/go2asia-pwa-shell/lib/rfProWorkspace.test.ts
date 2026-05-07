@@ -179,7 +179,11 @@ describe('RF PRO workspace helpers', () => {
     ]);
 
     expect(items.map((item) => item.voucherId)).toEqual(['voucher_same_b', 'voucher_new', 'voucher_old']);
-    expect(getProAttributedVoucherStatusLabel('claimed')).toBe('Claim recorded');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'available' }))).toBe('Claim recorded');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'locked' }))).toBe('Locked');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'unlocked' }))).toBe('Unlocked');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('Expired');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('Claim recorded');
     expect(getProAttributedVoucherScopeLabel('listing')).toBe('Listing context');
   });
 

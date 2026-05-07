@@ -4,6 +4,7 @@ import {
   getPartnerPresentation,
   getPartnerTrust,
 } from './rfFirstSliceContent';
+import { getRfVoucherEffectiveStatus } from './rfVoucherLifecycle';
 
 export type ProScopeResolution = {
   partners: RfPartnerDto[];
@@ -61,9 +62,15 @@ export function sortProAttributedVouchers(items: RfProAttributedVoucherDto[]): R
   });
 }
 
-export function getProAttributedVoucherStatusLabel(status: RfProAttributedVoucherDto['status']): string {
+export function getProAttributedVoucherStatusLabel(
+  voucher: Pick<RfProAttributedVoucherDto, 'status' | 'canonicalStatus'>
+): string {
+  const status = getRfVoucherEffectiveStatus(voucher);
   if (status === 'redeemed') return 'Redeemed';
   if (status === 'cancelled') return 'Cancelled';
+  if (status === 'expired') return 'Expired';
+  if (status === 'locked') return 'Locked';
+  if (status === 'unlocked') return 'Unlocked';
   return 'Claim recorded';
 }
 

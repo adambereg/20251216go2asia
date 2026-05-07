@@ -3397,10 +3397,26 @@ components:
         - attributionSource
         - claimSource
       type: object
+    RfClaimBlockReason:
+      description: Server-side reason why a claim returned an existing voucher instead of creating a new instance.
+      enum:
+        - existing_active_voucher
+        - once_per_scope_consumed
+      type: string
     RfClaimResponse:
       properties:
+        claimBlockReason:
+          anyOf:
+            - $ref: "#/components/schemas/RfClaimBlockReason"
+            - type: "null"
+          nullable: true
+        createdNewInstance:
+          description: True when this claim created a new voucher instance. False for idempotent replay or existing-voucher returns.
+          type: boolean
         idempotentReplay:
           type: boolean
+        repeatPolicy:
+          $ref: "#/components/schemas/RfRepeatPolicy"
         voucher:
           $ref: "#/components/schemas/RfVoucher"
       required:
@@ -3564,6 +3580,11 @@ components:
           type: string
         partnerId:
           type: string
+        repeatPolicy:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          description: |
+            Offer-level repeatability policy. Missing value must be treated by clients as once_per_scope for backwards compatibility.
         status:
           enum:
             - draft
@@ -3908,6 +3929,13 @@ components:
         - voucher
         - applied
       type: object
+    RfRepeatPolicy:
+      description: |
+        RF repeatability policy. `once_per_scope` preserves the current one-time behavior; `repeat_after_redeem` allows a new voucher instance after a redeemed voucher when no active instance exists.
+      enum:
+        - once_per_scope
+        - repeat_after_redeem
+      type: string
     RfRieltListingOffer:
       allOf:
         - $ref: "#/components/schemas/RfOffer"
@@ -4003,7 +4031,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
           description: |
-            Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.
+            Primary lifecycle field for RF voucher runtime semantics. New runtime writes set this field consistently; clients should still keep legacy `status` fallback for backwards compatibility during the transition window.
         claimScope:
           description: |
             Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
@@ -4029,6 +4057,10 @@ components:
           type: string
         id:
           type: string
+        issueSequence:
+          description: Monotonic voucher instance sequence within the normalized claim scope.
+          minimum: 1
+          type: integer
         issuedToUserId:
           type: string
         listingContext:
@@ -4095,6 +4127,10 @@ components:
           format: date-time
           nullable: true
           type: string
+        repeatPolicySnapshot:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          description: Repeat policy captured on this voucher instance at claim time.
         status:
           description: |
             Runtime status truth for RF voucher lifecycle. `claimed` is the runtime value and maps to product semantic "issued" in UX/docs; no separate runtime `issued` enum exists.
@@ -4289,6 +4325,10 @@ components:
           description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
           minimum: 0
           type: integer
+        expiredVouchers:
+          description: Count of expired vouchers using canonical lifecycle status.
+          minimum: 0
+          type: integer
         totalVouchers:
           minimum: 0
           type: integer
@@ -4301,6 +4341,7 @@ components:
         - activeVouchers
         - usedVouchers
         - cancelledVouchers
+        - expiredVouchers
       type: object
     RieltArchiveResponse:
       allOf:
@@ -7954,7 +7995,9 @@ paths:
           required: false
           schema:
             type: string
-        - in: query
+        - description: |
+            Legacy compatibility filter by runtime `status`. Lifecycle reads should prefer response `canonicalStatus`; `claimed` maps to canonical `available`.
+          in: query
           name: status
           required: false
           schema:

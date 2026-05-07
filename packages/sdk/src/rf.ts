@@ -32,6 +32,7 @@ export interface RfOfferDto {
   offerType: 'discount' | 'bundle' | 'gift' | 'access' | 'campaign' | 'event_related';
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: 'draft' | 'active' | 'archived';
+  repeatPolicy?: RfRepeatPolicy;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +71,8 @@ export interface RfRieltListingOfferContextResponse {
 }
 
 export type RfVoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
+export type RfRepeatPolicy = 'once_per_scope' | 'repeat_after_redeem';
+export type RfClaimBlockReason = 'existing_active_voucher' | 'once_per_scope_consumed';
 export type RfVoucherRedemptionResultStatus = 'succeeded' | 'failed' | 'duplicate';
 export type RfProLinkRoleScope = 'onboarding' | 'curation' | 'promotion' | 'moderation_support' | 'account_support';
 export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
@@ -93,6 +96,8 @@ export interface RfVoucherDto {
   claimedAt: string;
   redeemedAt: string | null;
   contractVersion?: number;
+  repeatPolicySnapshot?: RfRepeatPolicy;
+  issueSequence?: number;
   expiresAt?: string | null;
   cancelledAt?: string | null;
   statusChangedAt?: string | null;
@@ -188,6 +193,9 @@ export interface RfProAttributedVouchersQuery {
 export interface RfClaimResponse {
   voucher: RfVoucherDto;
   idempotentReplay: boolean;
+  createdNewInstance?: boolean;
+  claimBlockReason?: RfClaimBlockReason | null;
+  repeatPolicy?: RfRepeatPolicy;
 }
 
 export interface RfVoucherRedemptionDto {

@@ -315,6 +315,9 @@ export async function handleRfRoute(
       {
         voucher: result.voucher,
         idempotentReplay: result.idempotentReplay,
+        createdNewInstance: result.createdNewInstance ?? !result.idempotentReplay,
+        claimBlockReason: result.claimBlockReason ?? null,
+        repeatPolicy: result.repeatPolicy ?? result.voucher.repeatPolicySnapshot ?? 'once_per_scope',
       },
       result.idempotentReplay ? 200 : 201
     );
@@ -348,6 +351,9 @@ export async function handleRfRoute(
       {
         voucher: result.voucher,
         idempotentReplay: result.idempotentReplay,
+        createdNewInstance: result.createdNewInstance ?? !result.idempotentReplay,
+        claimBlockReason: result.claimBlockReason ?? null,
+        repeatPolicy: result.repeatPolicy ?? result.voucher.repeatPolicySnapshot ?? 'once_per_scope',
       },
       result.idempotentReplay ? 200 : 201
     );

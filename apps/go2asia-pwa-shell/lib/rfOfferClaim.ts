@@ -1,4 +1,5 @@
-import type { RfClaimResponse, RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfClaimResponse, RfRepeatPolicy, RfVoucherDto } from '@go2asia/sdk/rf';
+import { isRfVoucherClaimBarrier } from './rfVoucherLifecycle';
 
 export const rfOfferClaimCopy = {
   buttonIdle: 'Получить ваучер',
@@ -17,7 +18,8 @@ export const rfOfferClaimCopy = {
   signInLink: 'Перейти ко входу',
 } as const;
 
-export function getRfOfferClaimSuccessMessage(result: Pick<RfClaimResponse, 'idempotentReplay'>): string {
+export function getRfOfferClaimSuccessMessage(result: Pick<RfClaimResponse, 'idempotentReplay' | 'createdNewInstance'>): string {
+  if (result.createdNewInstance === false) return rfOfferClaimCopy.alreadyClaimed;
   return result.idempotentReplay ? rfOfferClaimCopy.alreadyClaimed : rfOfferClaimCopy.success;
 }
 
@@ -44,8 +46,7 @@ export function getRfOfferClaimErrorMessage(error: unknown): string {
   return rfOfferClaimCopy.genericError;
 }
 
-export function isPartnerVoucherForOffer(voucher: RfVoucherDto, offerId: string): boolean {
-  const isActive = voucher.status === 'claimed' || voucher.status === 'redeemed';
+export function isPartnerVoucherForOffer(voucher: RfVoucherDto, offerId: string, repeatPolicy: RfRepeatPolicy = 'once_per_scope'): boolean {
   const isPartnerScope = voucher.claimScope === 'partner' || (!voucher.claimScope && !voucher.listingContext);
-  return isActive && isPartnerScope && voucher.offerId === offerId;
+  return isRfVoucherClaimBarrier(voucher, repeatPolicy) && isPartnerScope && voucher.offerId === offerId;
 }
