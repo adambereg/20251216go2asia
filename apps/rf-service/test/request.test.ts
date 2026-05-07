@@ -90,6 +90,7 @@ function offerRow(overrides: Record<string, unknown> = {}) {
     offer_type: 'discount',
     visibility: 'public',
     status: 'draft',
+    points_cost: 0,
     created_by_user_id: 'partner_owner_1',
     created_at: '2026-03-21T10:01:00.000Z',
     updated_at: '2026-03-21T10:01:00.000Z',
@@ -848,6 +849,7 @@ describe('rf-service request', () => {
             status: 'active',
             visibility: 'public',
             repeat_policy: 'repeat_after_redeem',
+            points_cost: 150,
           }),
         ],
       })
@@ -865,6 +867,9 @@ describe('rf-service request', () => {
             canonical_status: 'available',
             repeat_policy_snapshot: 'repeat_after_redeem',
             issue_sequence: 2,
+            points_cost_snapshot: 150,
+            points_debit_external_id: null,
+            economy_status: 'pending',
             claim_scope: 'partner',
             rielt_listing_id: null,
             rielt_listing_title_snapshot: null,
@@ -901,7 +906,15 @@ describe('rf-service request', () => {
     const body = await readJson<{
       createdNewInstance: boolean;
       repeatPolicy: string;
-      voucher: { id: string; repeatPolicySnapshot: string; issueSequence: number; canonicalStatus: string };
+      voucher: {
+        id: string;
+        repeatPolicySnapshot: string;
+        issueSequence: number;
+        canonicalStatus: string;
+        pointsCostSnapshot: number;
+        pointsDebitExternalId: string | null;
+        economyStatus: string;
+      };
     }>(response);
 
     expect(response.status).toBe(201);
@@ -913,9 +926,92 @@ describe('rf-service request', () => {
         canonicalStatus: 'available',
         repeatPolicySnapshot: 'repeat_after_redeem',
         issueSequence: 2,
+        pointsCostSnapshot: 150,
+        pointsDebitExternalId: null,
+        economyStatus: 'pending',
       })
     );
     expect(executedSqlText()).toContain('MAX(issue_sequence)');
+  });
+
+  it('snapshots free offer economy fields on partner claim', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          offerRow({
+            id: 'rf_offer_free',
+            status: 'active',
+            visibility: 'public',
+            repeat_policy: 'once_per_scope',
+            points_cost: 0,
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_free_1',
+            offer_id: 'rf_offer_free',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'available',
+            repeat_policy_snapshot: 'once_per_scope',
+            issue_sequence: 1,
+            points_cost_snapshot: 0,
+            points_debit_external_id: null,
+            economy_status: 'not_required',
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-FREE001',
+            claimed_at: '2026-03-21T10:04:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:04:00.000Z',
+            updated_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'free-claim-1',
+            voucher_id: 'rf_voucher_free_1',
+            created_at: '2026-03-21T10:04:01.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_free/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'free-claim-1',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { pointsCostSnapshot: number; pointsDebitExternalId: string | null; economyStatus: string } }>(
+      response
+    );
+
+    expect(response.status).toBe(201);
+    expect(body.voucher).toEqual(
+      expect.objectContaining({
+        pointsCostSnapshot: 0,
+        pointsDebitExternalId: null,
+        economyStatus: 'not_required',
+      })
+    );
   });
 
   it('rejects partner claim replay when idempotency key context differs', async () => {
@@ -3751,6 +3847,9 @@ describe('rf-service request', () => {
               contract_version: 1,
               repeat_policy_snapshot: 'once_per_scope',
               issue_sequence: 1,
+              points_cost_snapshot: 0,
+              points_debit_external_id: null,
+              economy_status: 'not_required',
               expires_at: null,
               cancelled_at: null,
               status_changed_at: '2026-04-01T10:00:00.000Z',
@@ -3802,7 +3901,13 @@ describe('rf-service request', () => {
         env
       );
       const body = await readJson<{
-        voucher: { codeMasked: string | null; code?: string };
+        voucher: {
+          codeMasked: string | null;
+          code?: string;
+          pointsCostSnapshot: number;
+          pointsDebitExternalId: string | null;
+          economyStatus: string;
+        };
         attribution: { metadataKeys: string[] };
         idempotency: { claimBindings: Array<{ idempotencyKeyFingerprint: string; idempotencyKey?: string }> };
         anomalies: Array<{ code: string }>;
@@ -3810,6 +3915,9 @@ describe('rf-service request', () => {
       expect(response.status).toBe(200);
       expect(body.voucher.code).toBeUndefined();
       expect(body.voucher.codeMasked).toMatch(/^\*\*\*/);
+      expect(body.voucher.pointsCostSnapshot).toBe(0);
+      expect(body.voucher.pointsDebitExternalId).toBeNull();
+      expect(body.voucher.economyStatus).toBe('not_required');
       expect(body.attribution.metadataKeys).toContain('rejectionReason');
       expect(body.idempotency.claimBindings[0]?.idempotencyKey).toBeUndefined();
       expect(body.idempotency.claimBindings[0]?.idempotencyKeyFingerprint).not.toContain('claim-secret-key');

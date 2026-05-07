@@ -33,6 +33,7 @@ export interface RfOfferDto {
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: 'draft' | 'active' | 'archived';
   repeatPolicy?: RfRepeatPolicy;
+  pointsCost?: number;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -73,6 +74,7 @@ export interface RfRieltListingOfferContextResponse {
 export type RfVoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type RfRepeatPolicy = 'once_per_scope' | 'repeat_after_redeem';
 export type RfClaimBlockReason = 'existing_active_voucher' | 'once_per_scope_consumed';
+export type RfVoucherEconomyStatus = 'not_required' | 'pending' | 'debited' | 'debit_failed';
 export type RfVoucherRedemptionResultStatus = 'succeeded' | 'failed' | 'duplicate';
 export type RfProLinkRoleScope = 'onboarding' | 'curation' | 'promotion' | 'moderation_support' | 'account_support';
 export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
@@ -98,6 +100,9 @@ export interface RfVoucherDto {
   contractVersion?: number;
   repeatPolicySnapshot?: RfRepeatPolicy;
   issueSequence?: number;
+  pointsCostSnapshot?: number;
+  pointsDebitExternalId?: string | null;
+  economyStatus?: RfVoucherEconomyStatus;
   expiresAt?: string | null;
   cancelledAt?: string | null;
   statusChangedAt?: string | null;

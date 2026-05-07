@@ -1073,6 +1073,11 @@ components:
           description: >
             Offer-level repeatability policy. Missing value must be treated by clients
             as once_per_scope for backwards compatibility.
+        pointsCost:
+          type: integer
+          minimum: 0
+          description: >
+            Optional RF economy cost in Points for this offer. `0` means free acquisition.
         createdByUserId:
           type: string
         createdAt:
@@ -1189,6 +1194,12 @@ components:
       type: string
       enum: [existing_active_voucher, once_per_scope_consumed]
       description: Server-side reason why a claim returned an existing voucher instead of creating a new instance.
+
+    RfVoucherEconomyStatus:
+      type: string
+      enum: [not_required, pending, debited, debit_failed]
+      description: >
+        Voucher economy processing snapshot state. Slice 4.1 prepares this field without enabling spend runtime.
 
     RfAttributionStatus:
       type: string
@@ -1407,6 +1418,16 @@ components:
           type: integer
           minimum: 1
           description: Monotonic voucher instance sequence within the normalized claim scope.
+        pointsCostSnapshot:
+          type: integer
+          minimum: 0
+          description: Claim-time snapshot of offer Points cost.
+        pointsDebitExternalId:
+          type: string
+          nullable: true
+          description: Deterministic external id for future Points debit idempotency.
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
         expiresAt:
           type: string
           format: date-time
@@ -1512,6 +1533,9 @@ components:
           contractVersion,
           repeatPolicySnapshot,
           issueSequence,
+          pointsCostSnapshot,
+          pointsDebitExternalId,
+          economyStatus,
           claimedAt,
           redeemedAt,
           cancelledAt,
@@ -1552,6 +1576,14 @@ components:
         issueSequence:
           type: integer
           minimum: 1
+        pointsCostSnapshot:
+          type: integer
+          minimum: 0
+        pointsDebitExternalId:
+          type: string
+          nullable: true
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
         claimedAt:
           type: string
           format: date-time

@@ -369,6 +369,7 @@ export * from "./rfVoucherAttributionMetadata";
 export * from "./rfVoucherAttributionStrategy";
 export * from "./rfVoucherCanonicalStatus";
 export * from "./rfVoucherClaimScope";
+export * from "./rfVoucherEconomyStatus";
 export * from "./rfVoucherListResponse";
 export * from "./rfVoucherListingContext";
 export * from "./rfVoucherListingContextAnyOf";

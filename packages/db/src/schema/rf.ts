@@ -9,6 +9,7 @@ export const rfOfferStatusEnum = pgEnum('rf_offer_status', ['draft', 'active', '
 export const rfOfferTypeEnum = pgEnum('rf_offer_type', ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related']);
 export const rfOfferVisibilityEnum = pgEnum('rf_offer_visibility', ['public', 'pro_only', 'invite_only']);
 export const rfRepeatPolicyEnum = pgEnum('rf_repeat_policy', ['once_per_scope', 'repeat_after_redeem']);
+export const rfVoucherEconomyStatusEnum = pgEnum('rf_voucher_economy_status', ['not_required', 'pending', 'debited', 'debit_failed']);
 export const rfVoucherStatusEnum = pgEnum('rf_voucher_status', ['claimed', 'redeemed', 'cancelled']);
 export const rfVoucherCanonicalStatusEnum = pgEnum('rf_voucher_canonical_status', [
   'available',
@@ -125,6 +126,7 @@ export const rfOffers = pgTable(
     visibility: rfOfferVisibilityEnum('visibility').notNull(),
     status: rfOfferStatusEnum('status').notNull().default('draft'),
     repeatPolicy: rfRepeatPolicyEnum('repeat_policy').notNull().default('once_per_scope'),
+    pointsCost: integer('points_cost').notNull().default(0),
     createdByUserId: varchar('created_by_user_id', { length: 128 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -132,6 +134,7 @@ export const rfOffers = pgTable(
   (table) => ({
     titleNotBlank: check('rf_offer_title_not_blank_check', sql`(length(trim(${table.title})) > 0)`),
     createdByNotBlank: check('rf_offer_created_by_user_id_not_blank_check', sql`(length(trim(${table.createdByUserId})) > 0)`),
+    pointsCostNonNegative: check('rf_offer_points_cost_non_negative_check', sql`${table.pointsCost} >= 0`),
     idxPartnerStatusVisibilityUpdatedAt: index('idx_rf_offer_partner_status_visibility_updated_at').on(
       table.partnerId,
       table.status,
@@ -222,6 +225,9 @@ export const rfVouchers = pgTable(
     contractVersion: integer('contract_version').notNull().default(1),
     repeatPolicySnapshot: rfRepeatPolicyEnum('repeat_policy_snapshot').notNull().default('once_per_scope'),
     issueSequence: integer('issue_sequence').notNull().default(1),
+    pointsCostSnapshot: integer('points_cost_snapshot').notNull().default(0),
+    pointsDebitExternalId: text('points_debit_external_id'),
+    economyStatus: rfVoucherEconomyStatusEnum('economy_status').notNull().default('not_required'),
     claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull().default('partner'),
     rieltListingId: text('rielt_listing_id'),
     rieltListingTitleSnapshot: text('rielt_listing_title_snapshot'),
@@ -252,7 +258,11 @@ export const rfVouchers = pgTable(
     codeNotBlank: check('rf_voucher_code_not_blank_check', sql`(length(trim(${table.code})) > 0)`),
     attributionVersionPositive: check('rf_voucher_attribution_version_positive_check', sql`${table.attributionVersion} >= 1`),
     issueSequencePositive: check('rf_voucher_issue_sequence_positive_check', sql`${table.issueSequence} >= 1`),
+    pointsCostSnapshotNonNegative: check('rf_voucher_points_cost_snapshot_non_negative_check', sql`${table.pointsCostSnapshot} >= 0`),
     uniqueCode: unique('rf_voucher_code_unique').on(table.code),
+    uniquePointsDebitExternalId: uniqueIndex('rf_voucher_points_debit_external_id_unique')
+      .on(table.pointsDebitExternalId)
+      .where(sql`${table.pointsDebitExternalId} IS NOT NULL`),
     uniquePartnerOfferUserActiveVoucher: uniqueIndex('rf_voucher_offer_user_partner_unique')
       .on(table.offerId, table.issuedToUserId)
       .where(

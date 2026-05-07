@@ -13,6 +13,7 @@ export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'rede
 export type VoucherClaimScope = 'partner' | 'listing';
 export type RfRepeatPolicy = 'once_per_scope' | 'repeat_after_redeem';
 export type RfClaimBlockReason = 'existing_active_voucher' | 'once_per_scope_consumed';
+export type RfVoucherEconomyStatus = 'not_required' | 'pending' | 'debited' | 'debit_failed';
 export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
 export type RfAttributionSource = 'pro_link' | 'direct_offer' | 'internal_navigation' | 'unknown';
 export type RfClaimSource = 'public_rf_catalog' | 'public_offer_detail' | 'rielt_offer_detail' | 'pro_shared_link' | 'unknown';
@@ -43,6 +44,7 @@ export interface Offer {
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: OfferStatus;
   repeatPolicy?: RfRepeatPolicy;
+  pointsCost?: number;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -115,6 +117,9 @@ export interface Voucher {
   contractVersion?: number;
   repeatPolicySnapshot?: RfRepeatPolicy;
   issueSequence?: number;
+  pointsCostSnapshot?: number;
+  pointsDebitExternalId?: string | null;
+  economyStatus?: RfVoucherEconomyStatus;
   expiresAt?: string | null;
   cancelledAt?: string | null;
   statusChangedAt?: string | null;
@@ -236,7 +241,8 @@ export interface RfVoucherDiagnosticsAnomaly {
     | 'repeat_sequence_gap'
     | 'active_duplicate_possible'
     | 'attribution_pro_link_partner_mismatch'
-    | 'listing_mapping_missing_or_inactive';
+    | 'listing_mapping_missing_or_inactive'
+    | 'debited_without_external_id';
   severity: RfDiagnosticsSeverity;
   message: string;
   evidence: Record<string, string | number | boolean | null>;
@@ -256,6 +262,9 @@ export interface RfVoucherDiagnostics {
     contractVersion: number;
     repeatPolicySnapshot: RfRepeatPolicy;
     issueSequence: number;
+    pointsCostSnapshot: number;
+    pointsDebitExternalId: string | null;
+    economyStatus: RfVoucherEconomyStatus;
     claimedAt: string;
     redeemedAt: string | null;
     cancelledAt: string | null;
@@ -394,6 +403,7 @@ type OfferRow = {
   visibility: Offer['visibility'];
   status: OfferStatus;
   repeat_policy?: RfRepeatPolicy | null;
+  points_cost?: number | null;
   created_by_user_id: string;
   created_at: string | Date;
   updated_at: string | Date;
@@ -445,6 +455,9 @@ type VoucherRow = {
   contract_version?: number | null;
   repeat_policy_snapshot?: RfRepeatPolicy | null;
   issue_sequence?: number | null;
+  points_cost_snapshot?: number | null;
+  points_debit_external_id?: string | null;
+  economy_status?: RfVoucherEconomyStatus | null;
   expires_at?: string | Date | null;
   cancelled_at?: string | Date | null;
   status_changed_at?: string | Date | null;
@@ -511,6 +524,7 @@ type ListingClaimContextRow = {
   offer_status: OfferStatus;
   offer_visibility: Offer['visibility'];
   offer_repeat_policy?: RfRepeatPolicy | null;
+  offer_points_cost?: number | null;
   partner_status: PartnerStatus;
 };
 
@@ -646,6 +660,16 @@ function getVoucherRepeatPolicySnapshot(voucher: Pick<VoucherRow, 'repeat_policy
   return voucher.repeat_policy_snapshot ?? 'once_per_scope';
 }
 
+function getVoucherPointsCostSnapshot(voucher: Pick<VoucherRow, 'points_cost_snapshot'>): number {
+  const cost = Number(voucher.points_cost_snapshot ?? 0);
+  return Number.isFinite(cost) && cost >= 0 ? cost : 0;
+}
+
+function getVoucherEconomyStatus(voucher: Pick<VoucherRow, 'economy_status' | 'points_cost_snapshot'>): RfVoucherEconomyStatus {
+  if (voucher.economy_status) return voucher.economy_status;
+  return getVoucherPointsCostSnapshot(voucher) > 0 ? 'pending' : 'not_required';
+}
+
 function toAttributionMetadata(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as Record<string, unknown>;
@@ -677,6 +701,7 @@ function toOffer(row: OfferRow): Offer {
     visibility: row.visibility,
     status: row.status,
     repeatPolicy: row.repeat_policy ?? 'once_per_scope',
+    pointsCost: Number(row.points_cost ?? 0),
     createdByUserId: row.created_by_user_id,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
@@ -739,6 +764,9 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     contractVersion: row.contract_version ?? undefined,
     repeatPolicySnapshot: row.repeat_policy_snapshot ?? 'once_per_scope',
     issueSequence: row.issue_sequence ?? 1,
+    pointsCostSnapshot: getVoucherPointsCostSnapshot(row),
+    pointsDebitExternalId: row.points_debit_external_id ?? null,
+    economyStatus: getVoucherEconomyStatus(row),
     expiresAt: row.expires_at === undefined ? undefined : asIso(row.expires_at),
     cancelledAt: row.cancelled_at === undefined ? undefined : asIso(row.cancelled_at),
     statusChangedAt: row.status_changed_at === undefined ? undefined : asIso(row.status_changed_at),
@@ -1118,7 +1146,7 @@ export async function validatePartnerGeoLinks(
 
 async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
     LIMIT 1
@@ -1159,6 +1187,9 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1203,6 +1234,9 @@ async function getVoucherById(db: DbExecutor, voucherId: string): Promise<Vouche
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1338,6 +1372,9 @@ async function getVoucherFromRedemptionIdempotency(
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1383,6 +1420,9 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1426,7 +1466,7 @@ async function getClaimBarrierVoucherByOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1454,7 +1494,7 @@ async function getLatestRedeemedVoucherByOfferAndUser(db: DbExecutor, offerId: s
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1484,7 +1524,7 @@ async function getClaimBarrierVoucherByListingOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1518,7 +1558,7 @@ async function getLatestRedeemedVoucherByListingOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1570,6 +1610,7 @@ async function getListingClaimContext(db: DbExecutor, listingId: string, offerId
       o.status AS offer_status,
       o.visibility AS offer_visibility,
       o.repeat_policy AS offer_repeat_policy,
+      o.points_cost AS offer_points_cost,
       p.status AS partner_status
     FROM rielt_listing l
     INNER JOIN rielt_listing_rf_offer m
@@ -1778,6 +1819,15 @@ function buildVoucherDiagnosticsAnomalies(input: {
     });
   }
 
+  if ((voucher.economy_status ?? 'not_required') === 'debited' && !voucher.points_debit_external_id) {
+    anomalies.push({
+      code: 'debited_without_external_id',
+      severity: 'warning',
+      message: 'Voucher is marked as debited but points debit external id is missing.',
+      evidence: { voucherId: voucher.id, economyStatus: voucher.economy_status ?? 'not_required' },
+    });
+  }
+
   return anomalies;
 }
 
@@ -1839,6 +1889,9 @@ export async function getVoucherDiagnostics(
       contractVersion: voucher.contract_version ?? 1,
       repeatPolicySnapshot: voucher.repeat_policy_snapshot ?? 'once_per_scope',
       issueSequence: voucher.issue_sequence ?? 1,
+      pointsCostSnapshot: getVoucherPointsCostSnapshot(voucher),
+      pointsDebitExternalId: voucher.points_debit_external_id ?? null,
+      economyStatus: getVoucherEconomyStatus(voucher),
       claimedAt: asIso(voucher.claimed_at) ?? new Date(0).toISOString(),
       redeemedAt: asIso(voucher.redeemed_at),
       cancelledAt: asIso(voucher.cancelled_at ?? null),
@@ -1975,7 +2028,7 @@ export async function getPublicPartnerById(db: DbExecutor, partnerId: string): P
 
 export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE status = 'active'
       AND visibility = 'public'
@@ -1986,7 +2039,7 @@ export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
 
 export async function getPublicOfferById(db: DbExecutor, offerId: string): Promise<Offer | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
       AND status = 'active'
@@ -2296,7 +2349,7 @@ export async function createOffer(
       now(),
       now()
     )
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
   `);
   const row = rowsOf<OfferRow>(result)[0];
   if (!row) throw new Error('Failed to persist RF offer');
@@ -2324,7 +2377,7 @@ export async function activateOffer(
     WHERE id = ${input.offerId}
       AND partner_id = ${input.partnerId}
       AND status = 'draft'
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
   `);
   const updated = rowsOf<OfferRow>(result)[0];
   if (updated) return toOffer(updated);
@@ -2407,6 +2460,9 @@ export async function claimVoucher(
           claimScope: 'partner',
         })
       : 1;
+  const pointsCost = Number(offer.points_cost ?? 0);
+  const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
+  const economyStatus: RfVoucherEconomyStatus = pointsCostSnapshot > 0 ? 'pending' : 'not_required';
 
   // This legacy endpoint remains partner-scoped. Listing-scoped claims must use
   // a dedicated endpoint that validates listing mapping and claim context.
@@ -2422,6 +2478,9 @@ export async function claimVoucher(
       canonical_status,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -2454,6 +2513,9 @@ export async function claimVoucher(
       'available',
       ${repeatPolicy},
       ${issueSequence},
+      ${pointsCostSnapshot},
+      NULL,
+      ${economyStatus},
       'partner',
       NULL,
       NULL,
@@ -2489,6 +2551,9 @@ export async function claimVoucher(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2666,6 +2731,9 @@ export async function claimVoucherForListing(
           listingId: input.listingId,
         })
       : 1;
+  const pointsCost = Number(context.offer_points_cost ?? 0);
+  const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
+  const economyStatus: RfVoucherEconomyStatus = pointsCostSnapshot > 0 ? 'pending' : 'not_required';
 
   const voucherId = nextId('rf_voucher');
   const voucherCode = toVoucherCode(voucherId);
@@ -2680,6 +2748,9 @@ export async function claimVoucherForListing(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2715,6 +2786,9 @@ export async function claimVoucherForListing(
       1,
       ${repeatPolicy},
       ${issueSequence},
+      ${pointsCostSnapshot},
+      NULL,
+      ${economyStatus},
       NULL,
       NULL,
       now(),
@@ -2752,6 +2826,9 @@ export async function claimVoucherForListing(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2838,6 +2915,9 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -3061,6 +3141,9 @@ export async function redeemVoucher(
         contract_version,
         repeat_policy_snapshot,
         issue_sequence,
+        points_cost_snapshot,
+        points_debit_external_id,
+        economy_status,
         expires_at,
         cancelled_at,
         status_changed_at,
@@ -3167,6 +3250,9 @@ export async function redeemVoucher(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,

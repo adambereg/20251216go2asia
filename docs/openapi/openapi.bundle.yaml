@@ -3922,6 +3922,8 @@ components:
         contractVersion:
           minimum: 1
           type: integer
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
         expiresAt:
           format: date-time
           nullable: true
@@ -3940,6 +3942,12 @@ components:
         offerId:
           type: string
         partnerId:
+          type: string
+        pointsCostSnapshot:
+          minimum: 0
+          type: integer
+        pointsDebitExternalId:
+          nullable: true
           type: string
         redeemedAt:
           format: date-time
@@ -3978,6 +3986,9 @@ components:
         - contractVersion
         - repeatPolicySnapshot
         - issueSequence
+        - pointsCostSnapshot
+        - pointsDebitExternalId
+        - economyStatus
         - claimedAt
         - redeemedAt
         - cancelledAt
@@ -4010,6 +4021,11 @@ components:
           type: string
         partnerId:
           type: string
+        pointsCost:
+          description: |
+            Optional RF economy cost in Points for this offer. `0` means free acquisition.
+          minimum: 0
+          type: integer
         repeatPolicy:
           allOf:
             - $ref: "#/components/schemas/RfRepeatPolicy"
@@ -4481,6 +4497,8 @@ components:
         createdAt:
           format: date-time
           type: string
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
         expiresAt:
           format: date-time
           nullable: true
@@ -4552,6 +4570,14 @@ components:
             - displayName
           type: object
         partnerId:
+          type: string
+        pointsCostSnapshot:
+          description: Claim-time snapshot of offer Points cost.
+          minimum: 0
+          type: integer
+        pointsDebitExternalId:
+          description: Deterministic external id for future Points debit idempotency.
+          nullable: true
           type: string
         redeemedAt:
           format: date-time
@@ -4671,6 +4697,15 @@ components:
         - redeemed
         - expired
         - cancelled
+      type: string
+    RfVoucherEconomyStatus:
+      description: |
+        Voucher economy processing snapshot state. Slice 4.1 prepares this field without enabling spend runtime.
+      enum:
+        - not_required
+        - pending
+        - debited
+        - debit_failed
       type: string
     RfVoucherListResponse:
       properties:

@@ -9,6 +9,7 @@
 import type { RfVoucherAttribution } from "./rfVoucherAttribution";
 import type { RfVoucherCanonicalStatus } from "./rfVoucherCanonicalStatus";
 import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
+import type { RfVoucherEconomyStatus } from "./rfVoucherEconomyStatus";
 import type { RfVoucherListingContext } from "./rfVoucherListingContext";
 import type { RfVoucherOffer } from "./rfVoucherOffer";
 import type { RfVoucherPartner } from "./rfVoucherPartner";
@@ -34,6 +35,7 @@ export interface RfVoucher {
    */
   contractVersion?: number;
   createdAt: string;
+  economyStatus?: RfVoucherEconomyStatus;
   /** @nullable */
   expiresAt?: string | null;
   id: string;
@@ -51,6 +53,16 @@ export interface RfVoucher {
   /** Optional wallet read enrichment for human-readable partner display. */
   partner?: RfVoucherPartner;
   partnerId: string;
+  /**
+   * Claim-time snapshot of offer Points cost.
+   * @minimum 0
+   */
+  pointsCostSnapshot?: number;
+  /**
+   * Deterministic external id for future Points debit idempotency.
+   * @nullable
+   */
+  pointsDebitExternalId?: string | null;
   /** @nullable */
   redeemedAt?: string | null;
   /** Repeat policy captured on this voucher instance at claim time. */
