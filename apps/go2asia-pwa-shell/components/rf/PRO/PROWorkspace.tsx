@@ -102,6 +102,10 @@ export function PROWorkspace() {
   const focus = useMemo(() => buildProFocusItems(scope.partners, offers), [scope.partners, offers]);
   const partnersById = useMemo(() => new Map(partners.map((partner) => [partner.id, partner])), [partners]);
   const activeLinkedPartnerIds = useMemo(() => getActiveLinkedPartnerIds(proLinks), [proLinks]);
+  const activeLinkByPartnerId = useMemo(
+    () => new Map(proLinks.filter((link) => link.status === 'active').map((link) => [link.partnerId, link])),
+    [proLinks]
+  );
   const linkedOffers = useMemo(() => getLinkedPartnerOffers(offers, activeLinkedPartnerIds), [offers, activeLinkedPartnerIds]);
   const nextSteps = useMemo(
     () => buildProNextSteps(scope.partners, offers, scope.isDerivedScope),
@@ -385,7 +389,11 @@ export function PROWorkspace() {
                       Публичная карточка
                     </Link>
                     <Link
-                      href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+                      href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}${
+                        activeLinkByPartnerId.get(partner.id)?.shareCode
+                          ? `&shareCode=${encodeURIComponent(activeLinkByPartnerId.get(partner.id)?.shareCode ?? '')}`
+                          : ''
+                      }`}
                       className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
                     >
                       Офферы партнёра
@@ -448,6 +456,7 @@ export function PROWorkspace() {
               const badge = getOfferBadge(offer);
               const vis = getVisibilityBadge(offer.visibility);
               const partner = partnersById.get(offer.partnerId);
+              const shareCode = activeLinkByPartnerId.get(offer.partnerId)?.shareCode;
               const itemContextLine = getProItemContextLine(offer);
               return (
                 <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -476,7 +485,7 @@ export function PROWorkspace() {
                     </div>
                   </div>
                   <Link
-                    href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
+                    href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}${shareCode ? `&shareCode=${encodeURIComponent(shareCode)}` : ''}`}
                     className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
                   >
                     Открыть в каталоге
@@ -533,8 +542,17 @@ export function PROWorkspace() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {activeLinkByPartnerId.get(offer.partnerId)?.shareCode ? (
+                      <span className="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800">
+                        PRO attribution включена для этой ссылки
+                      </span>
+                    ) : null}
                     <Link
-                      href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}`}
+                      href={`/rf/vouchers?partner=${encodeURIComponent(offer.partnerId)}${
+                        activeLinkByPartnerId.get(offer.partnerId)?.shareCode
+                          ? `&shareCode=${encodeURIComponent(activeLinkByPartnerId.get(offer.partnerId)?.shareCode ?? '')}`
+                          : ''
+                      }`}
                       className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
                     >
                       В public каталоге

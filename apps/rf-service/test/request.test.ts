@@ -822,6 +822,290 @@ describe('rf-service request', () => {
     expect(claim2Body.voucher.status).toBe('claimed');
   });
 
+  it('persists valid PRO attribution on first successful claim', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          title: 'Welcome Coffee',
+          offer_type: 'discount',
+          visibility: 'public',
+          status: 'active',
+          created_by_user_id: 'partner_owner_1',
+          created_at: '2026-03-21T10:01:00.000Z',
+          updated_at: '2026-03-21T10:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_pro_link_1',
+          partner_id: 'rf_partner_1',
+          pro_user_id: 'pro_user_1',
+          share_code: 'rfp_valid',
+          status: 'active',
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_voucher_1',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          canonical_status: 'available',
+          attribution_version: 1,
+          attribution_strategy: 'rf_pro_last_touch_before_claim',
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'public_rf_catalog',
+          attribution_share_code: 'rfp_valid',
+          pro_attributed_user_id: 'pro_user_1',
+          pro_link_id: 'rf_pro_link_1',
+          attribution_captured_at: '2026-05-07T00:00:00.000Z',
+          attribution_confirmed_at: '2026-05-07T00:01:00.000Z',
+          attribution_metadata: { restoredFromSession: true },
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000001',
+          claimed_at: '2026-05-07T00:01:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-05-07T00:01:00.000Z',
+          updated_at: '2026-05-07T00:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          operation: 'voucher_claim',
+          actor_user_id: 'user_1',
+          idempotency_key: 'claim-attributed',
+          voucher_id: 'rf_voucher_1',
+          created_at: '2026-05-07T00:01:00.000Z',
+        }],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-attributed',
+        },
+        body: JSON.stringify({
+          attribution: {
+            version: 1,
+            shareCode: 'rfp_valid',
+            attributionSource: 'pro_link',
+            claimSource: 'public_rf_catalog',
+            capturedAt: '2026-05-07T00:00:00.000Z',
+            metadata: { restoredFromSession: true },
+          },
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { attribution: { status: string; proUserId: string | null; shareCode: string | null } } }>(response);
+    expect(response.status).toBe(201);
+    expect(body.voucher.attribution.status).toBe('confirmed');
+    expect(body.voucher.attribution.proUserId).toBe('pro_user_1');
+    expect(body.voucher.attribution.shareCode).toBe('rfp_valid');
+    expect(executedSqlText()).toContain('share_code');
+    expect(executedSqlText()).toContain('attribution_status');
+  });
+
+  it('keeps voucher claim successful but rejects expired PRO attribution', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          title: 'Welcome Coffee',
+          offer_type: 'discount',
+          visibility: 'public',
+          status: 'active',
+          created_by_user_id: 'partner_owner_1',
+          created_at: '2026-03-21T10:01:00.000Z',
+          updated_at: '2026-03-21T10:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_voucher_rejected',
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          attribution_status: 'rejected',
+          attribution_source: 'pro_link',
+          claim_source: 'public_rf_catalog',
+          attribution_share_code: 'rfp_expired',
+          attribution_metadata: { rejectionReason: 'expired_attribution_session' },
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000002',
+          claimed_at: '2026-05-07T00:01:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-05-07T00:01:00.000Z',
+          updated_at: '2026-05-07T00:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          operation: 'voucher_claim',
+          actor_user_id: 'user_1',
+          idempotency_key: 'claim-expired-attribution',
+          voucher_id: 'rf_voucher_rejected',
+          created_at: '2026-05-07T00:01:00.000Z',
+        }],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-expired-attribution',
+        },
+        body: JSON.stringify({
+          attribution: {
+            version: 1,
+            shareCode: 'rfp_expired',
+            attributionSource: 'pro_link',
+            claimSource: 'public_rf_catalog',
+            capturedAt: '2020-01-01T00:00:00.000Z',
+          },
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { attribution: { status: string; metadata: { rejectionReason?: string } } } }>(response);
+    expect(response.status).toBe(201);
+    expect(body.voucher.attribution.status).toBe('rejected');
+    expect(body.voucher.attribution.metadata.rejectionReason).toBe('expired_attribution_session');
+  });
+
+  it.each([
+    {
+      name: 'inactive PRO link',
+      proLink: {
+        id: 'rf_pro_link_inactive',
+        partner_id: 'rf_partner_1',
+        pro_user_id: 'pro_user_1',
+        share_code: 'rfp_inactive',
+        status: 'ended',
+      },
+      shareCode: 'rfp_inactive',
+      rejectionReason: 'pro_link_inactive',
+    },
+    {
+      name: 'wrong partner',
+      proLink: {
+        id: 'rf_pro_link_wrong_partner',
+        partner_id: 'rf_partner_2',
+        pro_user_id: 'pro_user_2',
+        share_code: 'rfp_wrong_partner',
+        status: 'active',
+      },
+      shareCode: 'rfp_wrong_partner',
+      rejectionReason: 'partner_mismatch',
+    },
+  ])('keeps claim successful but rejects attribution for $name', async ({ proLink, shareCode, rejectionReason }) => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const idempotencyKey = `claim-${rejectionReason}`;
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          title: 'Welcome Coffee',
+          offer_type: 'discount',
+          visibility: 'public',
+          status: 'active',
+          created_by_user_id: 'partner_owner_1',
+          created_at: '2026-03-21T10:01:00.000Z',
+          updated_at: '2026-03-21T10:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [proLink] })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: `rf_voucher_${rejectionReason}`,
+          offer_id: 'rf_offer_1',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          attribution_status: 'rejected',
+          attribution_source: 'pro_link',
+          claim_source: 'public_rf_catalog',
+          attribution_share_code: shareCode,
+          attribution_metadata: { rejectionReason },
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000003',
+          claimed_at: '2026-05-07T00:01:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-05-07T00:01:00.000Z',
+          updated_at: '2026-05-07T00:01:00.000Z',
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          operation: 'voucher_claim',
+          actor_user_id: 'user_1',
+          idempotency_key: idempotencyKey,
+          voucher_id: `rf_voucher_${rejectionReason}`,
+          created_at: '2026-05-07T00:01:00.000Z',
+        }],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify({
+          attribution: {
+            version: 1,
+            shareCode,
+            attributionSource: 'pro_link',
+            claimSource: 'public_rf_catalog',
+            capturedAt: new Date().toISOString(),
+          },
+        }),
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { attribution: { status: string; metadata: { rejectionReason?: string } } } }>(response);
+    expect(response.status).toBe(201);
+    expect(body.voucher.attribution.status).toBe('rejected');
+    expect(body.voucher.attribution.metadata.rejectionReason).toBe(rejectionReason);
+  });
+
   it('validates redeem ownership and invalid voucher status', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const wrongOwnerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_2' });

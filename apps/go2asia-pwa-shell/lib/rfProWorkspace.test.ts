@@ -52,6 +52,7 @@ function proLink(overrides: Partial<RfProLinkDto>): RfProLinkDto {
     id: 'link_1',
     partnerId: 'partner_1',
     proUserId: 'pro_1',
+    shareCode: null,
     status: 'active',
     roleScope: 'curation',
     createdAt: '2026-05-05T00:00:00.000Z',

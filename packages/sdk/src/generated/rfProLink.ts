@@ -15,6 +15,11 @@ export interface RfProLink {
   partnerId: string;
   proUserId: string;
   roleScope: RfProLinkRoleScope;
+  /**
+   * Public RF share code used for PRO attribution links. It is not an auth-provider user id.
+   * @nullable
+   */
+  shareCode: string | null;
   status: RfProLinkStatus;
   updatedAt: string;
 }

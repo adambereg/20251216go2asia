@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, Search } from 'lucide-react';
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
@@ -27,6 +28,7 @@ import {
 } from '@/lib/rfFirstSliceContent';
 import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 import { rfOfferClaimCopy } from '@/lib/rfOfferClaim';
+import { captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
 
 type SortKey = 'featured' | 'title' | 'partner';
 type ViewMode = 'grid' | 'list';
@@ -65,7 +67,13 @@ export function RfOffersCatalog({
   initialQuery = '',
   initialPartnerId,
 }: RfOffersCatalogProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const partnerById = useMemo(() => new Map(partners.map((p) => [p.id, p])), [partners]);
+
+  useEffect(() => {
+    captureRfProAttributionFromUrl(searchParams, pathname);
+  }, [pathname, searchParams]);
 
   const countryOptions = useMemo(() => [...new Set(partners.map((p) => p.countryId))].sort(), [partners]);
   const cityOptions = useMemo(() => [...new Set(partners.map((p) => p.cityId))].sort(), [partners]);

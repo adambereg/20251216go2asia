@@ -72,6 +72,9 @@ export interface RfRieltListingOfferContextResponse {
 export type RfVoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type RfVoucherRedemptionResultStatus = 'succeeded' | 'failed' | 'duplicate';
 export type RfProLinkRoleScope = 'onboarding' | 'curation' | 'promotion' | 'moderation_support' | 'account_support';
+export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
+export type RfAttributionSource = 'pro_link' | 'direct_offer' | 'internal_navigation' | 'unknown';
+export type RfClaimSource = 'public_rf_catalog' | 'public_offer_detail' | 'rielt_offer_detail' | 'pro_shared_link' | 'unknown';
 
 export interface RfVoucherDto {
   id: string;
@@ -115,6 +118,19 @@ export interface RfVoucherDto {
     instruction: string;
     contactHint: string;
     redeemStatus: string;
+  };
+  attribution?: {
+    version: number;
+    strategy: 'rf_pro_last_touch_before_claim';
+    status: RfAttributionStatus;
+    source: RfAttributionSource;
+    claimSource: RfClaimSource;
+    shareCode: string | null;
+    proUserId: string | null;
+    proLinkId: string | null;
+    capturedAt: string | null;
+    confirmedAt: string | null;
+    metadata: Record<string, unknown>;
   };
 }
 
@@ -207,6 +223,7 @@ export interface RfProLinkDto {
   id: string;
   partnerId: string;
   proUserId: string;
+  shareCode: string | null;
   status: 'pending' | 'active' | 'ended';
   roleScope: RfProLinkRoleScope;
   createdAt: string;
@@ -229,6 +246,20 @@ export interface RfAcceptProLinkResponse {
 }
 
 export type RfProLinkLifecycleResponse = RfAcceptProLinkResponse;
+
+export interface RfClaimAttributionPayload {
+  version: 1;
+  shareCode?: string;
+  attributionSource: RfAttributionSource;
+  claimSource: RfClaimSource;
+  capturedAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RfClaimOptions {
+  idempotencyKey?: string;
+  attribution?: RfClaimAttributionPayload | null;
+}
 
 export async function fetchRfPartners(): Promise<RfPartnerListResponse | null> {
   try {
@@ -279,14 +310,17 @@ function createRfClaimIdempotencyKey(): string {
 
 export async function claimRfOffer(
   offerId: string,
-  idempotencyKey = createRfClaimIdempotencyKey()
+  idempotencyKeyOrOptions: string | RfClaimOptions = createRfClaimIdempotencyKey()
 ): Promise<RfClaimResponse> {
+  const options = typeof idempotencyKeyOrOptions === 'string' ? { idempotencyKey: idempotencyKeyOrOptions } : idempotencyKeyOrOptions;
+  const idempotencyKey = options.idempotencyKey ?? createRfClaimIdempotencyKey();
   return customInstance<RfClaimResponse>(
     {
       method: 'POST',
       headers: {
         'Idempotency-Key': idempotencyKey,
       },
+      ...(options.attribution ? { body: JSON.stringify({ attribution: options.attribution }) } : {}),
     },
     `/v1/rf/offers/${encodeURIComponent(offerId)}/claim`
   );
@@ -295,14 +329,17 @@ export async function claimRfOffer(
 export async function claimRfListingOffer(
   listingId: string,
   offerId: string,
-  idempotencyKey = createRfClaimIdempotencyKey()
+  idempotencyKeyOrOptions: string | RfClaimOptions = createRfClaimIdempotencyKey()
 ): Promise<RfClaimResponse> {
+  const options = typeof idempotencyKeyOrOptions === 'string' ? { idempotencyKey: idempotencyKeyOrOptions } : idempotencyKeyOrOptions;
+  const idempotencyKey = options.idempotencyKey ?? createRfClaimIdempotencyKey();
   return customInstance<RfClaimResponse>(
     {
       method: 'POST',
       headers: {
         'Idempotency-Key': idempotencyKey,
       },
+      ...(options.attribution ? { body: JSON.stringify({ attribution: options.attribution }) } : {}),
     },
     `/v1/rf/rielt/listings/${encodeURIComponent(listingId)}/offers/${encodeURIComponent(offerId)}/claim`
   );

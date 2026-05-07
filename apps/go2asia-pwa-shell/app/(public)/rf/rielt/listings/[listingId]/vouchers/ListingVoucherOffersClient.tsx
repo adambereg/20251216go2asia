@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { claimRfRieltListingOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfRieltListingOfferDto, RfVoucherDto } from '@go2asia/sdk/rf';
+import { buildRfClaimAttributionPayload, captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
 
 type ClaimState =
   | { status: 'idle'; message: string | null; voucher: null }
@@ -112,7 +114,13 @@ export function ListingVoucherOffersClient({
   partnerHref,
 }: ListingVoucherOffersClientProps) {
   const { isLoaded, isSignedIn } = useAuth();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [claimStates, setClaimStates] = useState<ClaimStateByOffer>({});
+
+  useEffect(() => {
+    captureRfProAttributionFromUrl(searchParams, pathname);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -174,7 +182,9 @@ export function ListingVoucherOffersClient({
         return;
       }
 
-      const result = await claimRfRieltListingOffer(listingId, offer.id);
+      const result = await claimRfRieltListingOffer(listingId, offer.id, {
+        attribution: buildRfClaimAttributionPayload('rielt_offer_detail'),
+      });
       setOfferState(offer.id, {
         status: 'success',
         message: result.idempotentReplay ? 'Ваучер уже получен.' : 'Ваучер получен.',

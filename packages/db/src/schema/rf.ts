@@ -18,6 +18,15 @@ export const rfVoucherCanonicalStatusEnum = pgEnum('rf_voucher_canonical_status'
   'cancelled',
 ]);
 export const rfVoucherClaimScopeEnum = pgEnum('rf_voucher_claim_scope', ['partner', 'listing']);
+export const rfAttributionStatusEnum = pgEnum('rf_attribution_status', ['none', 'confirmed', 'rejected']);
+export const rfAttributionSourceEnum = pgEnum('rf_attribution_source', ['pro_link', 'direct_offer', 'internal_navigation', 'unknown']);
+export const rfClaimSourceEnum = pgEnum('rf_claim_source', [
+  'public_rf_catalog',
+  'public_offer_detail',
+  'rielt_offer_detail',
+  'pro_shared_link',
+  'unknown',
+]);
 export const rfProLinkStatusEnum = pgEnum('rf_pro_link_status', ['pending', 'active', 'ended']);
 export const rfProLinkRoleScopeEnum = pgEnum('rf_pro_link_role_scope', [
   'onboarding',
@@ -167,6 +176,34 @@ export const rfRieltListingOffers = pgTable(
   })
 );
 
+export const rfProLinks = pgTable(
+  'rf_pro_link',
+  {
+    id: varchar('id', { length: 80 }).primaryKey(),
+    partnerId: varchar('partner_id', { length: 80 })
+      .notNull()
+      .references(() => rfPartners.id, { onDelete: 'cascade' }),
+    proUserId: varchar('pro_user_id', { length: 128 }).notNull(),
+    shareCode: varchar('share_code', { length: 80 }),
+    status: rfProLinkStatusEnum('status').notNull().default('pending'),
+    roleScope: rfProLinkRoleScopeEnum('role_scope').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    proUserNotBlank: check('rf_pro_link_pro_user_id_not_blank_check', sql`(length(trim(${table.proUserId})) > 0)`),
+    shareCodeNotBlank: check('rf_pro_link_share_code_not_blank_check', sql`${table.shareCode} IS NULL OR length(trim(${table.shareCode})) > 0`),
+    uniqueShareCode: uniqueIndex('rf_pro_link_share_code_unique')
+      .on(table.shareCode)
+      .where(sql`${table.shareCode} IS NOT NULL`),
+    uniqueLiveLink: uniqueIndex('rf_pro_link_partner_pro_live_unique')
+      .on(table.partnerId, table.proUserId)
+      .where(sql`${table.status} <> 'ended'`),
+    idxProUserStatusUpdatedAt: index('idx_rf_pro_link_pro_user_status_updated_at').on(table.proUserId, table.status, table.updatedAt),
+    idxPartnerStatusUpdatedAt: index('idx_rf_pro_link_partner_status_updated_at').on(table.partnerId, table.status, table.updatedAt),
+  })
+);
+
 export const rfVouchers = pgTable(
   'rf_voucher',
   {
@@ -192,12 +229,24 @@ export const rfVouchers = pgTable(
     statusChangedAt: timestamp('status_changed_at').defaultNow(),
     statusReason: text('status_reason'),
     statusActorUserId: varchar('status_actor_user_id', { length: 128 }),
+    attributionVersion: integer('attribution_version').notNull().default(1),
+    attributionStrategy: varchar('attribution_strategy', { length: 80 }).notNull().default('rf_pro_last_touch_before_claim'),
+    attributionStatus: rfAttributionStatusEnum('attribution_status').notNull().default('none'),
+    attributionSource: rfAttributionSourceEnum('attribution_source').notNull().default('unknown'),
+    claimSource: rfClaimSourceEnum('claim_source').notNull().default('unknown'),
+    attributionShareCode: varchar('attribution_share_code', { length: 80 }),
+    proAttributedUserId: varchar('pro_attributed_user_id', { length: 128 }),
+    proLinkId: varchar('pro_link_id', { length: 80 }).references(() => rfProLinks.id, { onDelete: 'set null' }),
+    attributionCapturedAt: timestamp('attribution_captured_at'),
+    attributionConfirmedAt: timestamp('attribution_confirmed_at'),
+    attributionMetadata: jsonb('attribution_metadata').notNull().default(sql`'{}'::jsonb`),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => ({
     issuedToNotBlank: check('rf_voucher_issued_to_user_id_not_blank_check', sql`(length(trim(${table.issuedToUserId})) > 0)`),
     codeNotBlank: check('rf_voucher_code_not_blank_check', sql`(length(trim(${table.code})) > 0)`),
+    attributionVersionPositive: check('rf_voucher_attribution_version_positive_check', sql`${table.attributionVersion} >= 1`),
     uniqueCode: unique('rf_voucher_code_unique').on(table.code),
     uniquePartnerOfferUserActiveVoucher: uniqueIndex('rf_voucher_offer_user_partner_unique')
       .on(table.offerId, table.issuedToUserId)
@@ -227,29 +276,9 @@ export const rfVouchers = pgTable(
       table.canonicalStatus,
       table.claimedAt
     ),
-  })
-);
-
-export const rfProLinks = pgTable(
-  'rf_pro_link',
-  {
-    id: varchar('id', { length: 80 }).primaryKey(),
-    partnerId: varchar('partner_id', { length: 80 })
-      .notNull()
-      .references(() => rfPartners.id, { onDelete: 'cascade' }),
-    proUserId: varchar('pro_user_id', { length: 128 }).notNull(),
-    status: rfProLinkStatusEnum('status').notNull().default('pending'),
-    roleScope: rfProLinkRoleScopeEnum('role_scope').notNull(),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  },
-  (table) => ({
-    proUserNotBlank: check('rf_pro_link_pro_user_id_not_blank_check', sql`(length(trim(${table.proUserId})) > 0)`),
-    uniqueLiveLink: uniqueIndex('rf_pro_link_partner_pro_live_unique')
-      .on(table.partnerId, table.proUserId)
-      .where(sql`${table.status} <> 'ended'`),
-    idxProUserStatusUpdatedAt: index('idx_rf_pro_link_pro_user_status_updated_at').on(table.proUserId, table.status, table.updatedAt),
-    idxPartnerStatusUpdatedAt: index('idx_rf_pro_link_partner_status_updated_at').on(table.partnerId, table.status, table.updatedAt),
+    idxProAttributionClaimedAt: index('idx_rf_voucher_pro_attribution_claimed_at')
+      .on(table.proAttributedUserId, table.claimedAt)
+      .where(sql`${table.proAttributedUserId} IS NOT NULL AND ${table.attributionStatus} = 'confirmed'`),
   })
 );
 

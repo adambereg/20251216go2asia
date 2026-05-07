@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { claimRfOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
@@ -11,6 +11,7 @@ import {
   isPartnerVoucherForOffer,
   rfOfferClaimCopy,
 } from '@/lib/rfOfferClaim';
+import { buildRfClaimAttributionPayload, hasActiveRfProAttribution } from '@/lib/rfProAttribution';
 
 type ClaimState =
   | { status: 'idle'; message: string | null; voucher: null }
@@ -25,8 +26,13 @@ function initialClaimState(): ClaimState {
 export function ClaimRfOfferButton({ offerId }: { offerId: string }) {
   const { isLoaded, isSignedIn } = useAuth();
   const [state, setState] = useState<ClaimState>(initialClaimState);
+  const [hasProAttribution, setHasProAttribution] = useState(false);
   const isLoading = state.status === 'loading';
   const isSuccess = state.status === 'success';
+
+  useEffect(() => {
+    setHasProAttribution(hasActiveRfProAttribution());
+  }, []);
 
   async function handleClaim() {
     if (!isLoaded || isLoading || isSuccess) return;
@@ -45,7 +51,9 @@ export function ClaimRfOfferButton({ offerId }: { offerId: string }) {
         return;
       }
 
-      const result = await claimRfOffer(offerId);
+      const result = await claimRfOffer(offerId, {
+        attribution: buildRfClaimAttributionPayload('public_rf_catalog'),
+      });
       setState({ status: 'success', message: getRfOfferClaimSuccessMessage(result), voucher: result.voucher });
     } catch (error) {
       setState({ status: 'error', message: getRfOfferClaimErrorMessage(error), voucher: null });
@@ -85,6 +93,10 @@ export function ClaimRfOfferButton({ offerId }: { offerId: string }) {
             </Link>
           ) : null}
         </div>
+      ) : null}
+
+      {hasProAttribution && !state.message ? (
+        <p className="text-xs text-slate-500">Оффер открыт по PRO-ссылке. Атрибуция фиксируется только после получения ваучера.</p>
       ) : null}
     </div>
   );

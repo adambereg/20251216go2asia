@@ -11,6 +11,9 @@ export type OfferStatus = 'draft' | 'active' | 'archived';
 export type VoucherStatus = 'claimed' | 'redeemed' | 'cancelled';
 export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'redeemed' | 'expired' | 'cancelled';
 export type VoucherClaimScope = 'partner' | 'listing';
+export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
+export type RfAttributionSource = 'pro_link' | 'direct_offer' | 'internal_navigation' | 'unknown';
+export type RfClaimSource = 'public_rf_catalog' | 'public_offer_detail' | 'rielt_offer_detail' | 'pro_shared_link' | 'unknown';
 export type ProLinkStatus = 'pending' | 'active' | 'ended';
 export type RieltListingOfferStatus = 'active' | 'hidden';
 export type RieltListingOfferKind = 'basic' | 'premium';
@@ -133,6 +136,19 @@ export interface Voucher {
     contactHint: string;
     redeemStatus: string;
   };
+  attribution?: {
+    version: number;
+    strategy: 'rf_pro_last_touch_before_claim';
+    status: RfAttributionStatus;
+    source: RfAttributionSource;
+    claimSource: RfClaimSource;
+    shareCode: string | null;
+    proUserId: string | null;
+    proLinkId: string | null;
+    capturedAt: string | null;
+    confirmedAt: string | null;
+    metadata: Record<string, unknown>;
+  };
 }
 
 export interface VoucherSummary {
@@ -146,10 +162,20 @@ export interface ProLink {
   id: string;
   partnerId: string;
   proUserId: string;
+  shareCode: string | null;
   status: ProLinkStatus;
   roleScope: 'onboarding' | 'curation' | 'promotion' | 'moderation_support' | 'account_support';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RfClaimAttributionInput {
+  version?: number;
+  shareCode?: string;
+  attributionSource?: RfAttributionSource;
+  claimSource?: RfClaimSource;
+  capturedAt?: string;
+  metadata?: Record<string, unknown>;
 }
 
 type ClaimResult =
@@ -248,6 +274,17 @@ type VoucherRow = {
   status_changed_at?: string | Date | null;
   status_reason?: string | null;
   status_actor_user_id?: string | null;
+  attribution_version?: number | null;
+  attribution_strategy?: 'rf_pro_last_touch_before_claim' | null;
+  attribution_status?: RfAttributionStatus | null;
+  attribution_source?: RfAttributionSource | null;
+  claim_source?: RfClaimSource | null;
+  attribution_share_code?: string | null;
+  pro_attributed_user_id?: string | null;
+  pro_link_id?: string | null;
+  attribution_captured_at?: string | Date | null;
+  attribution_confirmed_at?: string | Date | null;
+  attribution_metadata?: Record<string, unknown> | null;
   claim_scope?: VoucherClaimScope | null;
   rielt_listing_id?: string | null;
   rielt_listing_title_snapshot?: string | null;
@@ -283,10 +320,27 @@ type ProLinkRow = {
   id: string;
   partner_id: string;
   pro_user_id: string;
+  share_code?: string | null;
   status: ProLinkStatus;
   role_scope: ProLink['roleScope'];
   created_at: string | Date;
   updated_at: string | Date;
+};
+
+type AttributionProLinkRow = Pick<ProLinkRow, 'id' | 'partner_id' | 'pro_user_id' | 'share_code' | 'status'>;
+
+type ResolvedClaimAttribution = {
+  version: 1;
+  strategy: 'rf_pro_last_touch_before_claim';
+  status: RfAttributionStatus;
+  source: RfAttributionSource;
+  claimSource: RfClaimSource;
+  shareCode: string | null;
+  proUserId: string | null;
+  proLinkId: string | null;
+  capturedAt: Date | null;
+  confirmedAt: Date | null;
+  metadata: Record<string, unknown>;
 };
 
 type IdempotencyRow = {
@@ -313,6 +367,11 @@ function getCanonicalStatus(voucher: Pick<VoucherRow, 'status' | 'canonical_stat
   if (voucher.status === 'claimed') return 'available';
   if (voucher.status === 'redeemed') return 'redeemed';
   return 'cancelled';
+}
+
+function toAttributionMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
 }
 
 function toPartner(row: PartnerRow): Partner {
@@ -405,6 +464,19 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     statusChangedAt: row.status_changed_at === undefined ? undefined : asIso(row.status_changed_at),
     statusReason: row.status_reason ?? undefined,
     statusActorUserId: row.status_actor_user_id ?? undefined,
+    attribution: {
+      version: row.attribution_version ?? 1,
+      strategy: row.attribution_strategy ?? 'rf_pro_last_touch_before_claim',
+      status: row.attribution_status ?? 'none',
+      source: row.attribution_source ?? 'unknown',
+      claimSource: row.claim_source ?? 'unknown',
+      shareCode: row.attribution_share_code ?? null,
+      proUserId: row.pro_attributed_user_id ?? null,
+      proLinkId: row.pro_link_id ?? null,
+      capturedAt: asIso(row.attribution_captured_at ?? null),
+      confirmedAt: asIso(row.attribution_confirmed_at ?? null),
+      metadata: toAttributionMetadata(row.attribution_metadata),
+    },
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
   };
@@ -445,6 +517,7 @@ function toProLink(row: ProLinkRow): ProLink {
     id: row.id,
     partnerId: row.partner_id,
     proUserId: row.pro_user_id,
+    shareCode: row.share_code ?? null,
     status: row.status,
     roleScope: row.role_scope,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
@@ -469,6 +542,112 @@ function toSlug(input: string): string {
 function toVoucherCode(voucherId: string): string {
   const compact = voucherId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   return `RF-${compact.slice(-6).padStart(6, '0')}`;
+}
+
+function toShareCode(): string {
+  const raw = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `rfp_${raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)}`;
+}
+
+function isAttributionSource(value: unknown): value is RfAttributionSource {
+  return value === 'pro_link' || value === 'direct_offer' || value === 'internal_navigation' || value === 'unknown';
+}
+
+function isClaimSource(value: unknown): value is RfClaimSource {
+  return (
+    value === 'public_rf_catalog' ||
+    value === 'public_offer_detail' ||
+    value === 'rielt_offer_detail' ||
+    value === 'pro_shared_link' ||
+    value === 'unknown'
+  );
+}
+
+function sanitizeAttributionMetadata(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+  const output: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>).slice(0, 12)) {
+    if (!/^[a-zA-Z0-9_.-]{1,48}$/.test(key)) continue;
+    if (typeof value === 'string') output[key] = value.slice(0, 160);
+    else if (typeof value === 'number' && Number.isFinite(value)) output[key] = value;
+    else if (typeof value === 'boolean') output[key] = value;
+    else if (value === null) output[key] = null;
+  }
+  return output;
+}
+
+function parseCapturedAt(value: unknown): Date | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function getProLinkByShareCode(db: DbExecutor, shareCode: string): Promise<AttributionProLinkRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, partner_id, pro_user_id, share_code, status
+    FROM rf_pro_link
+    WHERE share_code = ${shareCode}
+    LIMIT 1
+  `);
+  return rowsOf<AttributionProLinkRow>(result)[0] ?? null;
+}
+
+async function resolveClaimAttribution(
+  db: DbExecutor,
+  partnerId: string,
+  input?: RfClaimAttributionInput | null
+): Promise<ResolvedClaimAttribution> {
+  const source = isAttributionSource(input?.attributionSource) ? input.attributionSource : input?.shareCode ? 'pro_link' : 'unknown';
+  const claimSource = isClaimSource(input?.claimSource) ? input.claimSource : 'unknown';
+  const shareCode = typeof input?.shareCode === 'string' && input.shareCode.trim().length > 0 ? input.shareCode.trim() : null;
+  const capturedAt = parseCapturedAt(input?.capturedAt);
+  const metadata = sanitizeAttributionMetadata(input?.metadata);
+  const base: ResolvedClaimAttribution = {
+    version: 1,
+    strategy: 'rf_pro_last_touch_before_claim',
+    status: 'none',
+    source,
+    claimSource,
+    shareCode,
+    proUserId: null,
+    proLinkId: null,
+    capturedAt,
+    confirmedAt: null,
+    metadata,
+  };
+
+  if (!shareCode) return base;
+
+  if (input?.version !== undefined && input.version !== 1) {
+    return { ...base, status: 'rejected', confirmedAt: new Date(), metadata: { ...metadata, rejectionReason: 'unsupported_version' } };
+  }
+
+  if (capturedAt && Date.now() - capturedAt.getTime() > 24 * 60 * 60 * 1000) {
+    return { ...base, status: 'rejected', confirmedAt: new Date(), metadata: { ...metadata, rejectionReason: 'expired_attribution_session' } };
+  }
+
+  const link = await getProLinkByShareCode(db, shareCode);
+  if (!link) {
+    return { ...base, status: 'rejected', confirmedAt: new Date(), metadata: { ...metadata, rejectionReason: 'share_code_not_found' } };
+  }
+  if (link.status !== 'active') {
+    return { ...base, status: 'rejected', confirmedAt: new Date(), metadata: { ...metadata, rejectionReason: 'pro_link_inactive' } };
+  }
+  if (link.partner_id !== partnerId) {
+    return { ...base, status: 'rejected', confirmedAt: new Date(), metadata: { ...metadata, rejectionReason: 'partner_mismatch' } };
+  }
+
+  return {
+    ...base,
+    status: 'confirmed',
+    source: 'pro_link',
+    shareCode: link.share_code ?? shareCode,
+    proUserId: link.pro_user_id,
+    proLinkId: link.id,
+    confirmedAt: new Date(),
+  };
 }
 
 async function getOwnedActivePartner(db: DbExecutor, partnerId: string, ownerUserId: string): Promise<PartnerRow | null> {
@@ -693,6 +872,17 @@ async function getVoucherFromRedemptionIdempotency(
       v.status_changed_at,
       v.status_reason,
       v.status_actor_user_id,
+      v.attribution_version,
+      v.attribution_strategy,
+      v.attribution_status,
+      v.attribution_source,
+      v.claim_source,
+      v.attribution_share_code,
+      v.pro_attributed_user_id,
+      v.pro_link_id,
+      v.attribution_captured_at,
+      v.attribution_confirmed_at,
+      v.attribution_metadata,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -725,6 +915,17 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.status_changed_at,
       v.status_reason,
       v.status_actor_user_id,
+      v.attribution_version,
+      v.attribution_strategy,
+      v.attribution_status,
+      v.attribution_source,
+      v.claim_source,
+      v.attribution_share_code,
+      v.pro_attributed_user_id,
+      v.pro_link_id,
+      v.attribution_captured_at,
+      v.attribution_confirmed_at,
+      v.attribution_metadata,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -752,6 +953,12 @@ async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string
       issued_to_user_id,
       status,
       canonical_status,
+      contract_version,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1279,7 +1486,7 @@ export async function activateOffer(
 export async function claimVoucher(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { offerId: string; idempotencyKey: string }
+  input: { offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
@@ -1303,6 +1510,8 @@ export async function claimVoucher(
     return { ok: true, voucher: toVoucher(existing), idempotentReplay: false };
   }
 
+  const attribution = await resolveClaimAttribution(db, offer.partner_id, input.attribution);
+
   // This legacy endpoint remains partner-scoped. Listing-scoped claims must use
   // a dedicated endpoint that validates listing mapping and claim context.
   const voucherId = nextId('rf_voucher');
@@ -1323,6 +1532,17 @@ export async function claimVoucher(
       redeemed_at,
       status_changed_at,
       status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       created_at,
       updated_at
     )
@@ -1341,6 +1561,17 @@ export async function claimVoucher(
       NULL,
       now(),
       ${principal.userId},
+      ${attribution.version},
+      ${attribution.strategy},
+      ${attribution.status},
+      ${attribution.source},
+      ${attribution.claimSource},
+      ${attribution.shareCode},
+      ${attribution.proUserId},
+      ${attribution.proLinkId},
+      ${attribution.capturedAt},
+      ${attribution.confirmedAt},
+      ${JSON.stringify(attribution.metadata)}::jsonb,
       now(),
       now()
     )
@@ -1400,7 +1631,7 @@ function isListingClaimVoucher(row: VoucherRow, listingId: string, offerId: stri
 export async function claimVoucherForListing(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { listingId: string; offerId: string; idempotencyKey: string }
+  input: { listingId: string; offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) {
@@ -1460,6 +1691,8 @@ export async function claimVoucherForListing(
     return { ok: true, voucher: toVoucher(existingListingVoucher), idempotentReplay: false };
   }
 
+  const attribution = await resolveClaimAttribution(db, context.mapping_partner_id, input.attribution);
+
   const voucherId = nextId('rf_voucher');
   const voucherCode = toVoucherCode(voucherId);
   const insertResult = await db.execute(sql`
@@ -1482,6 +1715,17 @@ export async function claimVoucherForListing(
       code,
       claimed_at,
       redeemed_at,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       created_at,
       updated_at
     )
@@ -1504,6 +1748,17 @@ export async function claimVoucherForListing(
       ${voucherCode},
       now(),
       NULL,
+      ${attribution.version},
+      ${attribution.strategy},
+      ${attribution.status},
+      ${attribution.source},
+      ${attribution.claimSource},
+      ${attribution.shareCode},
+      ${attribution.proUserId},
+      ${attribution.proLinkId},
+      ${attribution.capturedAt},
+      ${attribution.confirmedAt},
+      ${JSON.stringify(attribution.metadata)}::jsonb,
       now(),
       now()
     )
@@ -1522,6 +1777,17 @@ export async function claimVoucherForListing(
       status_changed_at,
       status_reason,
       status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1579,6 +1845,17 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.status_changed_at,
       v.status_reason,
       v.status_actor_user_id,
+      v.attribution_version,
+      v.attribution_strategy,
+      v.attribution_status,
+      v.attribution_source,
+      v.claim_source,
+      v.attribution_share_code,
+      v.pro_attributed_user_id,
+      v.pro_link_id,
+      v.attribution_captured_at,
+      v.attribution_confirmed_at,
+      v.attribution_metadata,
       v.claim_scope,
       v.rielt_listing_id,
       v.rielt_listing_title_snapshot,
@@ -1723,6 +2000,17 @@ export async function redeemVoucher(
         status_changed_at,
         status_reason,
         status_actor_user_id,
+        attribution_version,
+        attribution_strategy,
+        attribution_status,
+        attribution_source,
+        claim_source,
+        attribution_share_code,
+        pro_attributed_user_id,
+        pro_link_id,
+        attribution_captured_at,
+        attribution_confirmed_at,
+        attribution_metadata,
         claim_scope,
         rielt_listing_id,
         rielt_listing_title_snapshot,
@@ -1782,6 +2070,17 @@ export async function redeemVoucher(
       status_changed_at,
       status_reason,
       status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1808,7 +2107,7 @@ export async function redeemVoucher(
 
 export async function listProLinks(db: DbExecutor, principal: GatewayPrincipal): Promise<ProLink[]> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE pro_user_id = ${principal.userId}
     ORDER BY created_at DESC, id DESC
@@ -1836,7 +2135,7 @@ export async function listPartnerProLinks(
   }
 
   const result = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE partner_id = ${input.partnerId}
     ORDER BY
@@ -1871,6 +2170,7 @@ export async function createProLink(
       id,
       partner_id,
       pro_user_id,
+      share_code,
       status,
       role_scope,
       created_at,
@@ -1880,19 +2180,20 @@ export async function createProLink(
       ${nextId('rf_pro_link')},
       ${input.partnerId},
       ${principal.userId},
+      ${toShareCode()},
       'pending',
       ${input.roleScope},
       now(),
       now()
     )
     ON CONFLICT DO NOTHING
-    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    RETURNING id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
   `);
   const inserted = rowsOf<ProLinkRow>(insertResult)[0];
   if (inserted) return toProLink(inserted);
 
   const existingResult = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE partner_id = ${input.partnerId}
       AND pro_user_id = ${principal.userId}
@@ -1911,7 +2212,7 @@ export async function acceptProLink(
   input: { proLinkId: string }
 ): Promise<ProLinkAcceptResult> {
   const result = await db.execute(sql`
-    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    SELECT p.id, p.partner_id, p.pro_user_id, p.share_code, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
     FROM rf_pro_link p
     INNER JOIN rf_partner rp ON rp.id = p.partner_id
     WHERE p.id = ${input.proLinkId}
@@ -1935,13 +2236,13 @@ export async function acceptProLink(
       updated_at = now()
     WHERE id = ${input.proLinkId}
       AND status = 'pending'
-    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    RETURNING id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
   `);
   const updated = rowsOf<ProLinkRow>(updatedResult)[0];
   if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
 
   const latestResult = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE id = ${input.proLinkId}
     LIMIT 1
@@ -1961,7 +2262,7 @@ export async function rejectProLink(
   input: { proLinkId: string }
 ): Promise<ProLinkLifecycleResult> {
   const result = await db.execute(sql`
-    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    SELECT p.id, p.partner_id, p.pro_user_id, p.share_code, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
     FROM rf_pro_link p
     INNER JOIN rf_partner rp ON rp.id = p.partner_id
     WHERE p.id = ${input.proLinkId}
@@ -1985,13 +2286,13 @@ export async function rejectProLink(
       updated_at = now()
     WHERE id = ${input.proLinkId}
       AND status = 'pending'
-    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    RETURNING id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
   `);
   const updated = rowsOf<ProLinkRow>(updatedResult)[0];
   if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
 
   const latestResult = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE id = ${input.proLinkId}
     LIMIT 1
@@ -2008,7 +2309,7 @@ export async function endProLink(
   input: { proLinkId: string }
 ): Promise<ProLinkLifecycleResult> {
   const result = await db.execute(sql`
-    SELECT p.id, p.partner_id, p.pro_user_id, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
+    SELECT p.id, p.partner_id, p.pro_user_id, p.share_code, p.status, p.role_scope, p.created_at, p.updated_at, rp.owner_user_id
     FROM rf_pro_link p
     INNER JOIN rf_partner rp ON rp.id = p.partner_id
     WHERE p.id = ${input.proLinkId}
@@ -2032,13 +2333,13 @@ export async function endProLink(
       updated_at = now()
     WHERE id = ${input.proLinkId}
       AND status = 'active'
-    RETURNING id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    RETURNING id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
   `);
   const updated = rowsOf<ProLinkRow>(updatedResult)[0];
   if (updated) return { ok: true, proLink: toProLink(updated), applied: true };
 
   const latestResult = await db.execute(sql`
-    SELECT id, partner_id, pro_user_id, status, role_scope, created_at, updated_at
+    SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
     FROM rf_pro_link
     WHERE id = ${input.proLinkId}
     LIMIT 1

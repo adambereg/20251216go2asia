@@ -6,6 +6,7 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { RfVoucherAttribution } from "./rfVoucherAttribution";
 import type { RfVoucherCanonicalStatus } from "./rfVoucherCanonicalStatus";
 import type { RfVoucherClaimScope } from "./rfVoucherClaimScope";
 import type { RfVoucherListingContext } from "./rfVoucherListingContext";
@@ -15,6 +16,7 @@ import type { RfVoucherStatus } from "./rfVoucherStatus";
 import type { RfVoucherUsage } from "./rfVoucherUsage";
 
 export interface RfVoucher {
+  attribution?: RfVoucherAttribution;
   /** @nullable */
   cancelledAt?: string | null;
   /** Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.

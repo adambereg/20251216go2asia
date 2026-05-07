@@ -28,6 +28,7 @@ import {
   shouldThrottleWrite,
   updatePartnerItem,
   validatePartnerGeoLinks,
+  type RfClaimAttributionInput,
 } from '../store';
 
 type RfRouteEnv = {
@@ -77,6 +78,27 @@ function optionalPriceFrom(body: Record<string, unknown>): number | null | undef
   const value = body.priceFrom;
   if (value === null) return null;
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function optionalAttributionMetadata(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function parseClaimAttribution(body: Record<string, unknown> | null): RfClaimAttributionInput | null {
+  const raw = body?.attribution;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const attribution = raw as Record<string, unknown>;
+  return {
+    version: typeof attribution.version === 'number' ? attribution.version : undefined,
+    shareCode: typeof attribution.shareCode === 'string' ? attribution.shareCode : undefined,
+    attributionSource: typeof attribution.attributionSource === 'string'
+      ? (attribution.attributionSource as RfClaimAttributionInput['attributionSource'])
+      : undefined,
+    claimSource: typeof attribution.claimSource === 'string' ? (attribution.claimSource as RfClaimAttributionInput['claimSource']) : undefined,
+    capturedAt: typeof attribution.capturedAt === 'string' ? attribution.capturedAt : undefined,
+    metadata: optionalAttributionMetadata(attribution.metadata),
+  };
 }
 
 export async function handleRfRoute(
@@ -267,9 +289,11 @@ export async function handleRfRoute(
       return errorResponse('RATE_LIMITED', 'Too many voucher claim requests. Please retry later.', requestId, 429);
     }
 
+    const body = await readJsonObject(request);
     const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
       idempotencyKey,
+      attribution: parseClaimAttribution(body),
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(
@@ -297,10 +321,12 @@ export async function handleRfRoute(
 
     const listingId = decodeURIComponent(listingClaimMatch[1] ?? '');
     const offerIdValue = decodeURIComponent(listingClaimMatch[2] ?? '');
+    const body = await readJsonObject(request);
     const result = await claimVoucherForListing(db, principal, {
       listingId,
       offerId: offerIdValue,
       idempotencyKey,
+      attribution: parseClaimAttribution(body),
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(

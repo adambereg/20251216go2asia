@@ -121,6 +121,7 @@ import type {
   ReviewSubmissionRequest,
   RfAcceptProLinkResponse,
   RfClaimResponse,
+  RfClaimVoucherRequest,
   RfConflictResponse,
   RfCreateOfferRequest,
   RfCreatePartnerItemRequest,
@@ -4701,11 +4702,14 @@ export const getRfClaimVoucherUrl = (offerId: string) => {
 
 export const rfClaimVoucher = async (
   offerId: string,
+  rfClaimVoucherRequest?: RfClaimVoucherRequest,
   options?: RequestInit
 ): Promise<rfClaimVoucherResponse> => {
   return customInstance<rfClaimVoucherResponse>(getRfClaimVoucherUrl(offerId), {
     ...options,
     method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rfClaimVoucherRequest),
   });
 };
 
@@ -5145,6 +5149,7 @@ export const getRfClaimRieltListingVoucherUrl = (listingId: string, offerId: str
 export const rfClaimRieltListingVoucher = async (
   listingId: string,
   offerId: string,
+  rfClaimVoucherRequest?: RfClaimVoucherRequest,
   options?: RequestInit
 ): Promise<rfClaimRieltListingVoucherResponse> => {
   return customInstance<rfClaimRieltListingVoucherResponse>(
@@ -5152,6 +5157,8 @@ export const rfClaimRieltListingVoucher = async (
     {
       ...options,
       method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(rfClaimVoucherRequest),
     }
   );
 };

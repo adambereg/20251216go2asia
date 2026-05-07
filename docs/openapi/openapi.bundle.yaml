@@ -3355,6 +3355,48 @@ components:
         - proLink
         - applied
       type: object
+    RfAttributionSource:
+      enum:
+        - pro_link
+        - direct_offer
+        - internal_navigation
+        - unknown
+      type: string
+    RfAttributionStatus:
+      enum:
+        - none
+        - confirmed
+        - rejected
+      type: string
+    RfClaimAttribution:
+      description: |
+        Optional transient attribution payload. RF validates it server-side and writes immutable voucher attribution only on the first successful claim.
+      properties:
+        attributionSource:
+          $ref: "#/components/schemas/RfAttributionSource"
+        capturedAt:
+          format: date-time
+          nullable: true
+          type: string
+        claimSource:
+          $ref: "#/components/schemas/RfClaimSource"
+        metadata:
+          additionalProperties: true
+          description: Small, bounded, non-PII audit metadata.
+          type: object
+        shareCode:
+          description: Public RF share code. Never expose auth-provider user IDs in public URLs.
+          nullable: true
+          type: string
+        version:
+          enum:
+            - 1
+          type: integer
+      required:
+        - version
+        - attributionSource
+        - claimSource
+      type: object
     RfClaimResponse:
       properties:
         idempotentReplay:
@@ -3364,6 +3406,22 @@ components:
       required:
         - voucher
         - idempotentReplay
+      type: object
+    RfClaimSource:
+      enum:
+        - public_rf_catalog
+        - public_offer_detail
+        - rielt_offer_detail
+        - pro_shared_link
+        - unknown
+      type: string
+    RfClaimVoucherRequest:
+      properties:
+        attribution:
+          anyOf:
+            - $ref: "#/components/schemas/RfClaimAttribution"
+            - type: "null"
+          nullable: true
       type: object
     RfCreateOfferRequest:
       properties:
@@ -3681,6 +3739,10 @@ components:
             - moderation_support
             - account_support
           type: string
+        shareCode:
+          description: Public RF share code used for PRO attribution links. It is not an auth-provider user id.
+          nullable: true
+          type: string
         status:
           enum:
             - pending
@@ -3694,6 +3756,7 @@ components:
         - id
         - partnerId
         - proUserId
+        - shareCode
         - status
         - roleScope
         - createdAt
@@ -3836,6 +3899,8 @@ components:
       type: object
     RfVoucher:
       properties:
+        attribution:
+          $ref: "#/components/schemas/RfVoucherAttribution"
         cancelledAt:
           format: date-time
           nullable: true
@@ -3986,6 +4051,55 @@ components:
         - claimedAt
         - createdAt
         - updatedAt
+      type: object
+    RfVoucherAttribution:
+      properties:
+        capturedAt:
+          format: date-time
+          nullable: true
+          type: string
+        claimSource:
+          $ref: "#/components/schemas/RfClaimSource"
+        confirmedAt:
+          format: date-time
+          nullable: true
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        proLinkId:
+          nullable: true
+          type: string
+        proUserId:
+          description: Internal resolved PRO user id. Public URLs use shareCode instead.
+          nullable: true
+          type: string
+        shareCode:
+          nullable: true
+          type: string
+        source:
+          $ref: "#/components/schemas/RfAttributionSource"
+        status:
+          $ref: "#/components/schemas/RfAttributionStatus"
+        strategy:
+          enum:
+            - rf_pro_last_touch_before_claim
+          type: string
+        version:
+          minimum: 1
+          type: integer
+      required:
+        - version
+        - strategy
+        - status
+        - source
+        - claimSource
+        - shareCode
+        - proUserId
+        - proLinkId
+        - capturedAt
+        - confirmedAt
+        - metadata
       type: object
     RfVoucherCanonicalStatus:
       description: |
@@ -7658,6 +7772,12 @@ paths:
         - $ref: "#/components/parameters/RfXGatewayAuth"
         - $ref: "#/components/parameters/RfOfferId"
         - $ref: "#/components/parameters/RfIdempotencyKey"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfClaimVoucherRequest"
+        required: false
       responses:
         "200":
           content:
@@ -7878,6 +7998,12 @@ paths:
         - $ref: "#/components/parameters/RfRieltListingId"
         - $ref: "#/components/parameters/RfOfferId"
         - $ref: "#/components/parameters/RfIdempotencyKey"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RfClaimVoucherRequest"
+        required: false
       responses:
         "200":
           content:

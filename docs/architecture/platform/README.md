@@ -10,8 +10,10 @@ This directory contains the current platform-level SSOT (single source of truth)
   Backend services architecture: ownership boundaries, runtime reality, and future target.
 - `go2asia_interface_architecture_v2.md`  
   Interface architecture: public modules, cabinets, consoles, Connect UI, Missions UI, and no classic chat model.
+- `go2asia_attribution_architecture_map_v1.md`
+  Platform attribution map: factual attribution surfaces, bounded contexts, economy-facing read boundaries, and future AI/creator/campaign attribution directions.
 
-These three documents are the active Go2Asia platform canon v2 and must be treated as the primary platform-level source of truth.
+These documents are the active Go2Asia platform canon set and must be treated as the primary platform-level source of truth.
 
 ## Historical Baseline Policy
 
