@@ -1,4 +1,5 @@
 import type { RfClaimResponse, RfVoucherDto } from '@go2asia/sdk/rf';
+import { isRfVoucherClaimBarrier } from './rfVoucherLifecycle';
 
 export const rfOfferClaimCopy = {
   buttonIdle: 'Получить ваучер',
@@ -45,7 +46,6 @@ export function getRfOfferClaimErrorMessage(error: unknown): string {
 }
 
 export function isPartnerVoucherForOffer(voucher: RfVoucherDto, offerId: string): boolean {
-  const isActive = voucher.status === 'claimed' || voucher.status === 'redeemed';
   const isPartnerScope = voucher.claimScope === 'partner' || (!voucher.claimScope && !voucher.listingContext);
-  return isActive && isPartnerScope && voucher.offerId === offerId;
+  return isRfVoucherClaimBarrier(voucher) && isPartnerScope && voucher.offerId === offerId;
 }

@@ -156,6 +156,7 @@ export interface VoucherSummary {
   activeVouchers: number;
   usedVouchers: number;
   cancelledVouchers: number;
+  expiredVouchers: number;
 }
 
 export interface RfProAttributedVoucher {
@@ -418,11 +419,19 @@ function asIso(value: string | Date | null): string | null {
   return new Date(value).toISOString();
 }
 
+function mapLegacyStatusToCanonical(status: VoucherStatus): VoucherCanonicalStatus {
+  if (status === 'claimed') return 'available';
+  if (status === 'redeemed') return 'redeemed';
+  return 'cancelled';
+}
+
 function getCanonicalStatus(voucher: Pick<VoucherRow, 'status' | 'canonical_status'>): VoucherCanonicalStatus {
   if (voucher.canonical_status) return voucher.canonical_status;
-  if (voucher.status === 'claimed') return 'available';
-  if (voucher.status === 'redeemed') return 'redeemed';
-  return 'cancelled';
+  return mapLegacyStatusToCanonical(voucher.status);
+}
+
+function isRedeemableCanonicalStatus(status: VoucherCanonicalStatus): boolean {
+  return status === 'available' || status === 'unlocked';
 }
 
 function toAttributionMetadata(value: unknown): Record<string, unknown> {
@@ -1072,7 +1081,10 @@ async function getClaimableVoucherByOfferAndUser(db: DbExecutor, offerId: string
     WHERE offer_id = ${offerId}
       AND issued_to_user_id = ${userId}
       AND claim_scope = 'partner'
-      AND status IN ('claimed', 'redeemed')
+      AND (
+        canonical_status IN ('available', 'locked', 'unlocked', 'redeemed')
+        OR (canonical_status IS NULL AND status IN ('claimed', 'redeemed'))
+      )
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   `);
@@ -1112,7 +1124,10 @@ async function getClaimableVoucherByListingOfferAndUser(
       AND offer_id = ${offerId}
       AND issued_to_user_id = ${userId}
       AND claim_scope = 'listing'
-      AND status IN ('claimed', 'redeemed')
+      AND (
+        canonical_status IN ('available', 'locked', 'unlocked', 'redeemed')
+        OR (canonical_status IS NULL AND status IN ('claimed', 'redeemed'))
+      )
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   `);
@@ -1590,7 +1605,18 @@ export async function claimVoucher(
   input: { offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
-  if (replayVoucher) return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
+  if (replayVoucher) {
+    const replayScope = replayVoucher.claim_scope ?? 'partner';
+    if (replayVoucher.offer_id !== input.offerId || replayScope !== 'partner') {
+      return {
+        ok: false,
+        code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+        message: 'Idempotency-Key was already used for a different voucher claim context',
+        status: 409,
+      };
+    }
+    return { ok: true, voucher: toVoucher(replayVoucher), idempotentReplay: true };
+  }
 
   const offer = await getOfferById(db, input.offerId);
   if (!offer) return { ok: false, code: 'RF_OFFER_NOT_FOUND', message: 'RF offer not found', status: 404 };
@@ -1644,6 +1670,7 @@ export async function claimVoucher(
       attribution_captured_at,
       attribution_confirmed_at,
       attribution_metadata,
+      contract_version,
       created_at,
       updated_at
     )
@@ -1673,10 +1700,11 @@ export async function claimVoucher(
       ${attribution.capturedAt},
       ${attribution.confirmedAt},
       ${JSON.stringify(attribution.metadata)}::jsonb,
+      1,
       now(),
       now()
     )
-    ON CONFLICT (offer_id, issued_to_user_id) WHERE claim_scope = 'partner' AND status IN ('claimed', 'redeemed')
+    ON CONFLICT (offer_id, issued_to_user_id) WHERE claim_scope = 'partner' AND canonical_status IN ('available', 'locked', 'unlocked', 'redeemed')
     DO NOTHING
     RETURNING
       id,
@@ -1719,7 +1747,16 @@ export async function claimVoucher(
   }
   if (idempotency.voucher_id !== voucherRow.id) {
     const stableReplay = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
-    if (stableReplay) return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+    const stableReplayScope = stableReplay?.claim_scope ?? 'partner';
+    if (stableReplay && stableReplay.offer_id === input.offerId && stableReplayScope === 'partner') {
+      return { ok: true, voucher: toVoucher(stableReplay), idempotentReplay: true };
+    }
+    return {
+      ok: false,
+      code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
+      message: 'Idempotency-Key was already used for a different voucher claim context',
+      status: 409,
+    };
   }
 
   return { ok: true, voucher: toVoucher(voucherRow), idempotentReplay: false };
@@ -1863,7 +1900,7 @@ export async function claimVoucherForListing(
       now(),
       now()
     )
-    ON CONFLICT (rielt_listing_id, offer_id, issued_to_user_id) WHERE claim_scope = 'listing' AND status IN ('claimed', 'redeemed')
+    ON CONFLICT (rielt_listing_id, offer_id, issued_to_user_id) WHERE claim_scope = 'listing' AND canonical_status IN ('available', 'locked', 'unlocked', 'redeemed')
     DO NOTHING
     RETURNING
       id,
@@ -2061,7 +2098,8 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
       COUNT(*)::int AS total_vouchers,
       COUNT(*) FILTER (WHERE effective_status IN ('available', 'locked', 'unlocked'))::int AS active_vouchers,
       COUNT(*) FILTER (WHERE effective_status = 'redeemed')::int AS used_vouchers,
-      COUNT(*) FILTER (WHERE effective_status = 'cancelled')::int AS cancelled_vouchers
+      COUNT(*) FILTER (WHERE effective_status = 'cancelled')::int AS cancelled_vouchers,
+      COUNT(*) FILTER (WHERE effective_status = 'expired')::int AS expired_vouchers
     FROM voucher_states
   `);
   const row =
@@ -2070,6 +2108,7 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
       active_vouchers: number;
       used_vouchers: number;
       cancelled_vouchers: number;
+      expired_vouchers: number;
     }>(result)[0] ?? null;
 
   return {
@@ -2077,6 +2116,7 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
     activeVouchers: Number(row?.active_vouchers ?? 0),
     usedVouchers: Number(row?.used_vouchers ?? 0),
     cancelledVouchers: Number(row?.cancelled_vouchers ?? 0),
+    expiredVouchers: Number(row?.expired_vouchers ?? 0),
   };
 }
 
@@ -2109,13 +2149,17 @@ export async function redeemVoucher(
   if (!voucher) {
     return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
   }
-  if (voucher.status === 'cancelled') {
+  const canonicalStatus = getCanonicalStatus(voucher);
+  if (canonicalStatus === 'cancelled') {
     return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
   }
-  if (voucher.status === 'redeemed') {
+  if (canonicalStatus === 'redeemed') {
     return { ok: true, voucher: toVoucher(voucher), applied: false };
   }
-  if (voucher.status !== 'claimed') {
+  if (canonicalStatus === 'expired') {
+    return { ok: false, code: 'RF_VOUCHER_EXPIRED', message: 'RF voucher is expired', status: 409 };
+  }
+  if (!isRedeemableCanonicalStatus(canonicalStatus)) {
     return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
   }
 
@@ -2142,7 +2186,10 @@ export async function redeemVoucher(
         updated_at = now()
       WHERE id = ${input.voucherId}
         AND partner_id = ${input.partnerId}
-        AND status = 'claimed'
+        AND (
+          canonical_status IN ('available', 'unlocked')
+          OR (canonical_status IS NULL AND status = 'claimed')
+        )
       RETURNING
         id,
         offer_id,
@@ -2254,9 +2301,13 @@ export async function redeemVoucher(
   if (!latest) {
     return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
   }
-  if (latest.status === 'redeemed') return { ok: true, voucher: toVoucher(latest), applied: false };
-  if (latest.status === 'cancelled') {
+  const latestCanonicalStatus = getCanonicalStatus(latest);
+  if (latestCanonicalStatus === 'redeemed') return { ok: true, voucher: toVoucher(latest), applied: false };
+  if (latestCanonicalStatus === 'cancelled') {
     return { ok: false, code: 'RF_VOUCHER_CANCELLED', message: 'RF voucher is cancelled', status: 409 };
+  }
+  if (latestCanonicalStatus === 'expired') {
+    return { ok: false, code: 'RF_VOUCHER_EXPIRED', message: 'RF voucher is expired', status: 409 };
   }
   return { ok: false, code: 'RF_VOUCHER_NOT_CLAIMED', message: 'RF voucher is not claimable', status: 409 };
 }

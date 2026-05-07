@@ -692,6 +692,9 @@ paths:
         - name: status
           in: query
           required: false
+          description: >
+            Legacy compatibility filter by runtime `status`. Lifecycle reads should prefer
+            response `canonicalStatus`; `claimed` maps to canonical `available`.
           schema:
             type: string
             enum: [claimed, redeemed, cancelled]
@@ -1313,8 +1316,9 @@ components:
           allOf:
             - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
           description: >
-            Additive canonical lifecycle status. New runtime writes set this field; clients should
-            keep legacy `status` handling for compatibility during the transition window.
+            Primary lifecycle field for RF voucher runtime semantics. New runtime writes set this
+            field consistently; clients should still keep legacy `status` fallback for backwards
+            compatibility during the transition window.
         claimScope:
           type: string
           enum: [partner, listing]
@@ -1584,7 +1588,7 @@ components:
 
     RfVoucherSummary:
       type: object
-      required: [totalVouchers, activeVouchers, usedVouchers, cancelledVouchers]
+      required: [totalVouchers, activeVouchers, usedVouchers, cancelledVouchers, expiredVouchers]
       properties:
         totalVouchers:
           type: integer
@@ -1601,6 +1605,10 @@ components:
           type: integer
           minimum: 0
           description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
+        expiredVouchers:
+          type: integer
+          minimum: 0
+          description: Count of expired vouchers using canonical lifecycle status.
 
     RfProLinkListResponse:
       type: object

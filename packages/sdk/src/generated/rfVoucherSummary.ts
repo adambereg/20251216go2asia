@@ -18,6 +18,11 @@ export interface RfVoucherSummary {
    * @minimum 0
    */
   cancelledVouchers: number;
+  /**
+   * Count of expired vouchers using canonical lifecycle status.
+   * @minimum 0
+   */
+  expiredVouchers: number;
   /** @minimum 0 */
   totalVouchers: number;
   /**

@@ -19,7 +19,7 @@ export interface RfVoucher {
   attribution?: RfVoucherAttribution;
   /** @nullable */
   cancelledAt?: string | null;
-  /** Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.
+  /** Primary lifecycle field for RF voucher runtime semantics. New runtime writes set this field consistently; clients should still keep legacy `status` fallback for backwards compatibility during the transition window.
    */
   canonicalStatus?: RfVoucherCanonicalStatus;
   /** Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.

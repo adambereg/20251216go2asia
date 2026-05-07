@@ -16,6 +16,10 @@ export type RfListProAttributedVouchersParams = {
    */
   limit?: number;
   cursor?: string;
+  /**
+ * Legacy compatibility filter by runtime `status`. Lifecycle reads should prefer response `canonicalStatus`; `claimed` maps to canonical `available`.
+
+ */
   status?: RfListProAttributedVouchersStatus;
   partnerId?: string;
   claimScope?: RfListProAttributedVouchersClaimScope;

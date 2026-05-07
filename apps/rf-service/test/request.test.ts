@@ -822,6 +822,48 @@ describe('rf-service request', () => {
     expect(claim2Body.voucher.status).toBe('claimed');
   });
 
+  it('rejects partner claim replay when idempotency key context differs', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_1',
+          offer_id: 'rf_offer_other',
+          partner_id: 'rf_partner_1',
+          issued_to_user_id: 'user_1',
+          status: 'claimed',
+          canonical_status: 'available',
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          code: 'RF-000001',
+          claimed_at: '2026-03-21T10:03:00.000Z',
+          redeemed_at: null,
+          created_at: '2026-03-21T10:03:00.000Z',
+          updated_at: '2026-03-21T10:03:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_1/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'claim-key-ctx',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH');
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
   it('persists valid PRO attribution on first successful claim', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
@@ -1463,6 +1505,53 @@ describe('rf-service request', () => {
     );
   });
 
+  it('keeps redeemed attributed vouchers visible for PRO when attribution is confirmed', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+    const proToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'pro_user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'rf_voucher_redeemed_1',
+          offer_id: 'rf_offer_1',
+          offer_title: 'Welcome coffee',
+          partner_id: 'rf_partner_1',
+          partner_display_name: 'Phuket Partner',
+          status: 'redeemed',
+          canonical_status: 'redeemed',
+          claim_scope: 'partner',
+          rielt_listing_id: null,
+          rielt_listing_title_snapshot: null,
+          attribution_status: 'confirmed',
+          attribution_source: 'pro_link',
+          claim_source: 'pro_shared_link',
+          attribution_confirmed_at: '2026-05-07T10:01:00.000Z',
+          claimed_at: '2026-05-07T10:00:00.000Z',
+          redeemed_at: '2026-05-07T10:05:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/pro/attributed-vouchers', {
+        headers: { 'X-Gateway-Auth': proToken },
+      }),
+      env
+    );
+    const body = await readJson<{ items: Array<{ voucherId: string; status: string; canonicalStatus: string; redeemedAt: string | null }> }>(
+      response
+    );
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]).toMatchObject({
+      voucherId: 'rf_voucher_redeemed_1',
+      status: 'redeemed',
+      canonicalStatus: 'redeemed',
+    });
+    expect(body.items[0]?.redeemedAt).toBe('2026-05-07T10:05:00.000Z');
+  });
+
   it('requires auth for voucher summary', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
 
@@ -1485,6 +1574,7 @@ describe('rf-service request', () => {
           active_vouchers: 0,
           used_vouchers: 0,
           cancelled_vouchers: 0,
+          expired_vouchers: 0,
         },
       ],
     });
@@ -1502,6 +1592,7 @@ describe('rf-service request', () => {
       activeVouchers: number;
       usedVouchers: number;
       cancelledVouchers: number;
+      expiredVouchers: number;
     }>(response);
 
     expect(response.status).toBe(200);
@@ -1510,6 +1601,7 @@ describe('rf-service request', () => {
       activeVouchers: 0,
       usedVouchers: 0,
       cancelledVouchers: 0,
+      expiredVouchers: 0,
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
@@ -1522,10 +1614,11 @@ describe('rf-service request', () => {
     executeMock.mockResolvedValueOnce({
       rows: [
         {
-          total_vouchers: 4,
+          total_vouchers: 5,
           active_vouchers: 2,
           used_vouchers: 1,
           cancelled_vouchers: 1,
+          expired_vouchers: 1,
         },
       ],
     });
@@ -1543,18 +1636,21 @@ describe('rf-service request', () => {
       activeVouchers: number;
       usedVouchers: number;
       cancelledVouchers: number;
+      expiredVouchers: number;
     }>(response);
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      totalVouchers: 4,
+      totalVouchers: 5,
       activeVouchers: 2,
       usedVouchers: 1,
       cancelledVouchers: 1,
+      expiredVouchers: 1,
     });
     expect(executeMock).toHaveBeenCalledTimes(1);
     expect(executeMock.mock.calls[0]?.[0]?.values).toEqual(['user_1']);
     expect(executedSqlText()).toContain('canonical_status');
+    expect(executedSqlText()).toContain("effective_status = 'expired'");
   });
 
   it('claims a listing-scoped voucher and replays it idempotently', async () => {

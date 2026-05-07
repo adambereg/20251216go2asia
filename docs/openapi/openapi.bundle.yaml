@@ -4003,7 +4003,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/RfVoucherCanonicalStatus"
           description: |
-            Additive canonical lifecycle status. New runtime writes set this field; clients should keep legacy `status` handling for compatibility during the transition window.
+            Primary lifecycle field for RF voucher runtime semantics. New runtime writes set this field consistently; clients should still keep legacy `status` fallback for backwards compatibility during the transition window.
         claimScope:
           description: |
             Scope used for voucher uniqueness. Partner scope is unique by offer and user; listing scope is unique by Rielt listing, offer and user.
@@ -4289,6 +4289,10 @@ components:
           description: Count of cancelled vouchers. Runtime prefers canonical cancelled with legacy cancelled fallback.
           minimum: 0
           type: integer
+        expiredVouchers:
+          description: Count of expired vouchers using canonical lifecycle status.
+          minimum: 0
+          type: integer
         totalVouchers:
           minimum: 0
           type: integer
@@ -4301,6 +4305,7 @@ components:
         - activeVouchers
         - usedVouchers
         - cancelledVouchers
+        - expiredVouchers
       type: object
     RieltArchiveResponse:
       allOf:
@@ -7954,7 +7959,9 @@ paths:
           required: false
           schema:
             type: string
-        - in: query
+        - description: |
+            Legacy compatibility filter by runtime `status`. Lifecycle reads should prefer response `canonicalStatus`; `claimed` maps to canonical `available`.
+          in: query
           name: status
           required: false
           schema:

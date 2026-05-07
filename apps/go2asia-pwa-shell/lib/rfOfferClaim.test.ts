@@ -41,6 +41,7 @@ describe('rf offer claim helpers', () => {
   it('distinguishes partner-scope server vouchers from local or listing state', () => {
     expect(isPartnerVoucherForOffer(voucher(), 'offer_1')).toBe(true);
     expect(isPartnerVoucherForOffer(voucher({ status: 'cancelled' }), 'offer_1')).toBe(false);
+    expect(isPartnerVoucherForOffer(voucher({ status: 'claimed', canonicalStatus: 'expired' }), 'offer_1')).toBe(false);
     expect(isPartnerVoucherForOffer(voucher({ claimScope: 'listing', listingContext: { source: 'rielt', listingId: 'listing_1', listingTitle: null } }), 'offer_1')).toBe(false);
     expect(isPartnerVoucherForOffer(voucher({ offerId: 'offer_2' }), 'offer_1')).toBe(false);
   });

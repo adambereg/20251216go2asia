@@ -1,6 +1,7 @@
 import type { RfVoucherDto, RfVoucherSummary } from '@go2asia/sdk/rf';
+import { getRfVoucherEffectiveStatus as getRfVoucherLifecycleStatus } from './rfVoucherLifecycle';
 
-export type RfVoucherEffectiveStatus = NonNullable<RfVoucherDto['canonicalStatus']>;
+export type RfVoucherEffectiveStatus = ReturnType<typeof getRfVoucherLifecycleStatus>;
 
 export type RfEconomicMeaningState = 'empty' | 'active_only' | 'used' | 'inactive_only' | 'mixed';
 
@@ -27,13 +28,10 @@ export interface RfVoucherTimelineItem {
   occurredAt: string;
 }
 
-const ACTIVE_CANONICAL_STATUSES = new Set<RfVoucherDto['canonicalStatus']>(['available', 'locked', 'unlocked']);
+const ACTIVE_CANONICAL_STATUSES = new Set<RfVoucherEffectiveStatus>(['available', 'locked', 'unlocked']);
 
 export function getRfVoucherEffectiveStatus(voucher: RfVoucherDto): RfVoucherEffectiveStatus {
-  if (voucher.canonicalStatus) return voucher.canonicalStatus;
-  if (voucher.status === 'redeemed') return 'redeemed';
-  if (voucher.status === 'cancelled') return 'cancelled';
-  return 'available';
+  return getRfVoucherLifecycleStatus(voucher);
 }
 
 export function isActiveRfVoucher(voucher: RfVoucherDto): boolean {
