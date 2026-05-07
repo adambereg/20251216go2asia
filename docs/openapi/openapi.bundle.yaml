@@ -3557,6 +3557,436 @@ components:
         - status
         - version
       type: object
+    RfInternalDiagnosticsAnomaly:
+      properties:
+        code:
+          type: string
+        evidence:
+          additionalProperties: true
+          type: object
+        message:
+          type: string
+        severity:
+          $ref: "#/components/schemas/RfInternalDiagnosticsAnomalySeverity"
+      required:
+        - code
+        - severity
+        - message
+        - evidence
+      type: object
+    RfInternalDiagnosticsAnomalySeverity:
+      enum:
+        - info
+        - warning
+        - critical
+      type: string
+    RfInternalVoucherDiagnosticsAttribution:
+      properties:
+        attributionCapturedAt:
+          format: date-time
+          nullable: true
+          type: string
+        attributionConfirmedAt:
+          format: date-time
+          nullable: true
+          type: string
+        attributionRejectedReason:
+          nullable: true
+          type: string
+        attributionSource:
+          $ref: "#/components/schemas/RfAttributionSource"
+        attributionStatus:
+          $ref: "#/components/schemas/RfAttributionStatus"
+        attributionStrategy:
+          enum:
+            - rf_pro_last_touch_before_claim
+          type: string
+        attributionVersion:
+          minimum: 1
+          type: integer
+        claimSource:
+          $ref: "#/components/schemas/RfClaimSource"
+        metadataKeys:
+          items:
+            type: string
+          type: array
+        proAttributedUserId:
+          nullable: true
+          type: string
+        proLinkId:
+          nullable: true
+          type: string
+      required:
+        - attributionVersion
+        - attributionStrategy
+        - attributionStatus
+        - attributionSource
+        - claimSource
+        - proAttributedUserId
+        - proLinkId
+        - attributionConfirmedAt
+        - attributionCapturedAt
+        - attributionRejectedReason
+        - metadataKeys
+      type: object
+    RfInternalVoucherDiagnosticsConsumptionGuard:
+      properties:
+        claimScope:
+          enum:
+            - partner
+            - listing
+          nullable: true
+          type: string
+        consumedAt:
+          format: date-time
+          nullable: true
+          type: string
+        consumedVoucherId:
+          nullable: true
+          type: string
+        exists:
+          type: boolean
+        issuedToUserId:
+          nullable: true
+          type: string
+        offerId:
+          nullable: true
+          type: string
+        repeatPolicySnapshot:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          nullable: true
+        scopeRef:
+          nullable: true
+          type: string
+      required:
+        - exists
+        - offerId
+        - issuedToUserId
+        - claimScope
+        - scopeRef
+        - consumedVoucherId
+        - repeatPolicySnapshot
+        - consumedAt
+      type: object
+    RfInternalVoucherDiagnosticsIdempotency:
+      properties:
+        claimBindings:
+          items:
+            $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotencyBinding"
+          type: array
+      required:
+        - claimBindings
+      type: object
+    RfInternalVoucherDiagnosticsIdempotencyBinding:
+      properties:
+        actorUserId:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        idempotencyKeyFingerprint:
+          type: string
+        operation:
+          enum:
+            - voucher_claim
+          type: string
+        voucherId:
+          type: string
+      required:
+        - operation
+        - actorUserId
+        - voucherId
+        - createdAt
+        - idempotencyKeyFingerprint
+      type: object
+    RfInternalVoucherDiagnosticsListingMappingRelation:
+      properties:
+        listingId:
+          type: string
+        offerId:
+          type: string
+        offerKind:
+          enum:
+            - basic
+            - premium
+          type: string
+        partnerId:
+          type: string
+        priority:
+          type: integer
+        status:
+          enum:
+            - active
+            - hidden
+          type: string
+      required:
+        - listingId
+        - offerId
+        - partnerId
+        - status
+        - offerKind
+        - priority
+      type: object
+    RfInternalVoucherDiagnosticsOfferRelation:
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        repeatPolicy:
+          $ref: "#/components/schemas/RfRepeatPolicy"
+        status:
+          enum:
+            - draft
+            - active
+            - archived
+          type: string
+        visibility:
+          enum:
+            - public
+            - pro_only
+            - invite_only
+          type: string
+      required:
+        - id
+        - partnerId
+        - status
+        - visibility
+        - repeatPolicy
+      type: object
+    RfInternalVoucherDiagnosticsPartnerRelation:
+      properties:
+        id:
+          type: string
+        ownerUserId:
+          type: string
+        status:
+          enum:
+            - active
+            - archived
+          type: string
+      required:
+        - id
+        - status
+        - ownerUserId
+      type: object
+    RfInternalVoucherDiagnosticsProLinkRelation:
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        proUserId:
+          type: string
+        shareCodeMasked:
+          nullable: true
+          type: string
+        status:
+          enum:
+            - pending
+            - active
+            - ended
+          type: string
+      required:
+        - id
+        - partnerId
+        - proUserId
+        - status
+        - shareCodeMasked
+      type: object
+    RfInternalVoucherDiagnosticsRedemption:
+      properties:
+        hasSuccessfulRedemption:
+          type: boolean
+        items:
+          items:
+            $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRedemptionItem"
+          type: array
+        successfulRedemptionCount:
+          minimum: 0
+          type: integer
+        totalRedemptionAttempts:
+          minimum: 0
+          type: integer
+      required:
+        - items
+        - hasSuccessfulRedemption
+        - successfulRedemptionCount
+        - totalRedemptionAttempts
+      type: object
+    RfInternalVoucherDiagnosticsRedemptionItem:
+      properties:
+        actorUserId:
+          nullable: true
+          type: string
+        correlationIdMasked:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        idempotencyKeyFingerprint:
+          nullable: true
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        resultStatus:
+          $ref: "#/components/schemas/RfVoucherRedemptionResultStatus"
+        voucherId:
+          type: string
+      required:
+        - id
+        - voucherId
+        - resultStatus
+        - actorUserId
+        - redeemedAt
+        - createdAt
+        - idempotencyKeyFingerprint
+        - correlationIdMasked
+      type: object
+    RfInternalVoucherDiagnosticsRelations:
+      properties:
+        listingMapping:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsListingMappingRelation"
+            - type: "null"
+        offer:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsOfferRelation"
+            - type: "null"
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsPartnerRelation"
+            - type: "null"
+        proLink:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsProLinkRelation"
+            - type: "null"
+      required:
+        - offer
+        - partner
+        - listingMapping
+        - proLink
+      type: object
+    RfInternalVoucherDiagnosticsResponse:
+      properties:
+        anomalies:
+          items:
+            $ref: "#/components/schemas/RfInternalDiagnosticsAnomaly"
+          type: array
+        attribution:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsAttribution"
+        consumptionGuard:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsConsumptionGuard"
+        idempotency:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotency"
+        redemption:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRedemption"
+        relations:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRelations"
+        voucher:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsVoucher"
+      required:
+        - voucher
+        - relations
+        - redemption
+        - consumptionGuard
+        - attribution
+        - idempotency
+        - anomalies
+      type: object
+    RfInternalVoucherDiagnosticsVoucher:
+      properties:
+        cancelledAt:
+          format: date-time
+          nullable: true
+          type: string
+        canonicalStatus:
+          $ref: "#/components/schemas/RfVoucherCanonicalStatus"
+        claimScope:
+          enum:
+            - partner
+            - listing
+          type: string
+        claimedAt:
+          format: date-time
+          type: string
+        codeMasked:
+          nullable: true
+          type: string
+        contractVersion:
+          minimum: 1
+          type: integer
+        expiresAt:
+          format: date-time
+          nullable: true
+          type: string
+        issueSequence:
+          minimum: 1
+          type: integer
+        issuedToUserId:
+          type: string
+        listingId:
+          nullable: true
+          type: string
+        listingTitleSnapshot:
+          nullable: true
+          type: string
+        offerId:
+          type: string
+        partnerId:
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        repeatPolicySnapshot:
+          $ref: "#/components/schemas/RfRepeatPolicy"
+        status:
+          enum:
+            - claimed
+            - redeemed
+            - cancelled
+          type: string
+        statusActorUserId:
+          nullable: true
+          type: string
+        statusChangedAt:
+          format: date-time
+          nullable: true
+          type: string
+        statusReason:
+          nullable: true
+          type: string
+        voucherId:
+          type: string
+      required:
+        - voucherId
+        - offerId
+        - partnerId
+        - issuedToUserId
+        - claimScope
+        - listingId
+        - listingTitleSnapshot
+        - status
+        - canonicalStatus
+        - contractVersion
+        - repeatPolicySnapshot
+        - issueSequence
+        - claimedAt
+        - redeemedAt
+        - cancelledAt
+        - expiresAt
+        - statusChangedAt
+        - statusReason
+        - statusActorUserId
+        - codeMasked
+      type: object
     RfOffer:
       properties:
         createdAt:
@@ -7828,6 +8258,32 @@ paths:
       summary: Redeem voucher by partner owner
       tags:
         - rf
+  /v1/rf/internal/vouchers/{voucherId}/diagnostics:
+    get:
+      description: |
+        Internal/admin diagnostics endpoint for support and QA. Returns read-only voucher lifecycle, redemption, repeatability, attribution and idempotency state. Not for public, PRO or merchant product UI.
+      operationId: rfGetInternalVoucherDiagnostics
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfVoucherId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfInternalVoucherDiagnosticsResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Internal RF voucher diagnostics (admin-only, read-only)
+      tags:
+        - rf
   /v1/rf/me/vouchers:
     get:
       operationId: rfListMyVouchers
@@ -9091,7 +9547,6 @@ tags:
       consumerSeam:
         explicitlyOutOfScopeInThisSpec:
           - /v1/rf/branches
-          - /v1/rf/internal/*
           - moderation and verification workflow endpoints beyond current baseline
         normativeHttpPaths:
           - /v1/rf/partners

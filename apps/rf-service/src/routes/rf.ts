@@ -14,6 +14,7 @@ import {
   createProLink,
   endProLink,
   getMyVoucherSummary,
+  getVoucherDiagnostics,
   getPublicOfferById,
   getPublicPartnerById,
   getRieltListingOfferContext,
@@ -79,6 +80,11 @@ function parsePositiveLimit(value: string | null): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function isInternalAdminPrincipal(principal: GatewayPrincipal): boolean {
+  if (principal.platformRole === 'admin') return true;
+  return principal.roles.some((role) => role.trim().toLowerCase() === 'admin');
 }
 
 function optionalString(body: Record<string, unknown>, key: string): string | null | undefined {
@@ -367,6 +373,17 @@ export async function handleRfRoute(
   if (request.method === 'GET' && path === '/v1/rf/me/vouchers/summary') {
     if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
     return json(await getMyVoucherSummary(db, principal));
+  }
+
+  const internalVoucherDiagnosticsId = getPathParam(path, /^\/v1\/rf\/internal\/vouchers\/([^/]+)\/diagnostics$/);
+  if (request.method === 'GET' && internalVoucherDiagnosticsId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    if (!isInternalAdminPrincipal(principal)) {
+      return errorResponse('FORBIDDEN', 'Admin role is required for internal RF diagnostics', requestId, 403);
+    }
+    const result = await getVoucherDiagnostics(db, internalVoucherDiagnosticsId);
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(result.diagnostics);
   }
 
   const redeemMatch = path.match(/^\/v1\/rf\/business\/partners\/([^/]+)\/vouchers\/([^/]+)\/redeem$/);

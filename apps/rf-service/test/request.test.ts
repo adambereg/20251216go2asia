@@ -3694,4 +3694,348 @@ describe('rf-service request', () => {
     expect(response.status).toBe(201);
     expect(body.itemId).toBeNull();
   });
+
+  describe('internal voucher diagnostics endpoint', () => {
+    const diagnosticsPath = 'https://rf.example/v1/rf/internal/vouchers/rf_voucher_diag_1/diagnostics';
+
+    it('rejects unauthenticated internal diagnostics request', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const response = await worker.fetch(new Request(diagnosticsPath), env);
+      const body = await readJson<{ error: { code: string } }>(response);
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('rejects non-admin principal for internal diagnostics', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'pro' });
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ error: { code: string } }>(response);
+      expect(response.status).toBe(403);
+      expect(body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('returns 404 when diagnostics voucher is missing', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock.mockResolvedValueOnce({ rows: [] });
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ error: { code: string } }>(response);
+      expect(response.status).toBe(404);
+      expect(body.error.code).toBe('RF_VOUCHER_NOT_FOUND');
+    });
+
+    it('returns diagnostics with masking and rejected attribution anomaly', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_voucher_diag_1',
+              offer_id: 'rf_offer_1',
+              partner_id: 'rf_partner_1',
+              issued_to_user_id: 'user_1',
+              status: 'claimed',
+              canonical_status: 'available',
+              contract_version: 1,
+              repeat_policy_snapshot: 'once_per_scope',
+              issue_sequence: 1,
+              expires_at: null,
+              cancelled_at: null,
+              status_changed_at: '2026-04-01T10:00:00.000Z',
+              status_reason: null,
+              status_actor_user_id: 'user_1',
+              attribution_version: 1,
+              attribution_strategy: 'rf_pro_last_touch_before_claim',
+              attribution_status: 'rejected',
+              attribution_source: 'pro_link',
+              claim_source: 'pro_shared_link',
+              attribution_share_code: 'rfp_secret_share',
+              pro_attributed_user_id: null,
+              pro_link_id: null,
+              attribution_captured_at: '2026-04-01T09:59:00.000Z',
+              attribution_confirmed_at: '2026-04-01T10:00:00.000Z',
+              attribution_metadata: { rejectionReason: 'share_code_not_found', secret: 'value' },
+              claim_scope: 'partner',
+              rielt_listing_id: null,
+              rielt_listing_title_snapshot: null,
+              code: 'RF-ABC123456',
+              claimed_at: '2026-04-01T10:00:00.000Z',
+              redeemed_at: null,
+              created_at: '2026-04-01T10:00:00.000Z',
+              updated_at: '2026-04-01T10:00:00.000Z',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'once_per_scope' })] })
+        .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              operation: 'voucher_claim',
+              actor_user_id: 'user_1',
+              idempotency_key: 'claim-secret-key',
+              voucher_id: 'rf_voucher_diag_1',
+              created_at: '2026-04-01T10:00:10.000Z',
+              voucher_exists: 'rf_voucher_diag_1',
+            },
+          ],
+        });
+
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{
+        voucher: { codeMasked: string | null; code?: string };
+        attribution: { metadataKeys: string[] };
+        idempotency: { claimBindings: Array<{ idempotencyKeyFingerprint: string; idempotencyKey?: string }> };
+        anomalies: Array<{ code: string }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.voucher.code).toBeUndefined();
+      expect(body.voucher.codeMasked).toMatch(/^\*\*\*/);
+      expect(body.attribution.metadataKeys).toContain('rejectionReason');
+      expect(body.idempotency.claimBindings[0]?.idempotencyKey).toBeUndefined();
+      expect(body.idempotency.claimBindings[0]?.idempotencyKeyFingerprint).not.toContain('claim-secret-key');
+      expect(body.anomalies.map((item) => item.code)).toContain('rejected_attribution_present');
+    });
+
+    it('flags confirmed attribution without pro link and listing scope without listing id', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_voucher_diag_1',
+              offer_id: 'rf_offer_1',
+              partner_id: 'rf_partner_1',
+              issued_to_user_id: 'user_1',
+              status: 'claimed',
+              canonical_status: 'available',
+              contract_version: 1,
+              repeat_policy_snapshot: 'once_per_scope',
+              issue_sequence: 1,
+              expires_at: null,
+              cancelled_at: null,
+              status_changed_at: '2026-04-01T10:00:00.000Z',
+              status_reason: null,
+              status_actor_user_id: 'user_1',
+              attribution_version: 1,
+              attribution_strategy: 'rf_pro_last_touch_before_claim',
+              attribution_status: 'confirmed',
+              attribution_source: 'pro_link',
+              claim_source: 'pro_shared_link',
+              attribution_share_code: 'rfp_secret_share',
+              pro_attributed_user_id: 'pro_1',
+              pro_link_id: null,
+              attribution_captured_at: '2026-04-01T09:59:00.000Z',
+              attribution_confirmed_at: '2026-04-01T10:00:00.000Z',
+              attribution_metadata: {},
+              claim_scope: 'listing',
+              rielt_listing_id: null,
+              rielt_listing_title_snapshot: null,
+              code: 'RF-ABC123456',
+              claimed_at: '2026-04-01T10:00:00.000Z',
+              redeemed_at: null,
+              created_at: '2026-04-01T10:00:00.000Z',
+              updated_at: '2026-04-01T10:00:00.000Z',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'once_per_scope' })] })
+        .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ anomalies: Array<{ code: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.anomalies.map((item) => item.code)).toEqual(
+        expect.arrayContaining(['confirmed_attribution_without_pro_link', 'listing_scope_missing_listing_id'])
+      );
+    });
+
+    it('flags missing guard for once_per_scope redeemed voucher', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_voucher_diag_1',
+              offer_id: 'rf_offer_1',
+              partner_id: 'rf_partner_1',
+              issued_to_user_id: 'user_1',
+              status: 'redeemed',
+              canonical_status: 'redeemed',
+              contract_version: 1,
+              repeat_policy_snapshot: 'once_per_scope',
+              issue_sequence: 1,
+              expires_at: null,
+              cancelled_at: null,
+              status_changed_at: '2026-04-01T11:00:00.000Z',
+              status_reason: null,
+              status_actor_user_id: 'partner_owner_1',
+              attribution_version: 1,
+              attribution_strategy: 'rf_pro_last_touch_before_claim',
+              attribution_status: 'none',
+              attribution_source: 'unknown',
+              claim_source: 'unknown',
+              attribution_share_code: null,
+              pro_attributed_user_id: null,
+              pro_link_id: null,
+              attribution_captured_at: null,
+              attribution_confirmed_at: null,
+              attribution_metadata: {},
+              claim_scope: 'partner',
+              rielt_listing_id: null,
+              rielt_listing_title_snapshot: null,
+              code: 'RF-ABC123456',
+              claimed_at: '2026-04-01T10:00:00.000Z',
+              redeemed_at: '2026-04-01T11:00:00.000Z',
+              created_at: '2026-04-01T10:00:00.000Z',
+              updated_at: '2026-04-01T11:00:00.000Z',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'once_per_scope' })] })
+        .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_redeem_1',
+              voucher_id: 'rf_voucher_diag_1',
+              result_status: 'succeeded',
+              actor_user_id: 'partner_owner_1',
+              redeemed_at: '2026-04-01T11:00:00.000Z',
+              created_at: '2026-04-01T11:00:00.000Z',
+              idempotency_key: 'redeem-key-1',
+              correlation_id: 'req_1',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ anomalies: Array<{ code: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.anomalies.map((item) => item.code)).toContain('once_per_scope_redeemed_without_guard');
+    });
+
+    it('flags unexpected guard for repeat_after_redeem redeemed voucher', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_voucher_diag_1',
+              offer_id: 'rf_offer_1',
+              partner_id: 'rf_partner_1',
+              issued_to_user_id: 'user_1',
+              status: 'redeemed',
+              canonical_status: 'redeemed',
+              contract_version: 1,
+              repeat_policy_snapshot: 'repeat_after_redeem',
+              issue_sequence: 2,
+              expires_at: null,
+              cancelled_at: null,
+              status_changed_at: '2026-04-01T11:00:00.000Z',
+              status_reason: null,
+              status_actor_user_id: 'partner_owner_1',
+              attribution_version: 1,
+              attribution_strategy: 'rf_pro_last_touch_before_claim',
+              attribution_status: 'none',
+              attribution_source: 'unknown',
+              claim_source: 'unknown',
+              attribution_share_code: null,
+              pro_attributed_user_id: null,
+              pro_link_id: null,
+              attribution_captured_at: null,
+              attribution_confirmed_at: null,
+              attribution_metadata: {},
+              claim_scope: 'partner',
+              rielt_listing_id: null,
+              rielt_listing_title_snapshot: null,
+              code: 'RF-ABC123456',
+              claimed_at: '2026-04-01T10:00:00.000Z',
+              redeemed_at: '2026-04-01T11:00:00.000Z',
+              created_at: '2026-04-01T10:00:00.000Z',
+              updated_at: '2026-04-01T11:00:00.000Z',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'repeat_after_redeem' })] })
+        .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_redeem_1',
+              voucher_id: 'rf_voucher_diag_1',
+              result_status: 'succeeded',
+              actor_user_id: 'partner_owner_1',
+              redeemed_at: '2026-04-01T11:00:00.000Z',
+              created_at: '2026-04-01T11:00:00.000Z',
+              idempotency_key: 'redeem-key-1',
+              correlation_id: 'req_1',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'rf_guard_1',
+              offer_id: 'rf_offer_1',
+              issued_to_user_id: 'user_1',
+              claim_scope: 'partner',
+              scope_ref: '__partner__',
+              consumed_voucher_id: 'rf_voucher_diag_1',
+              repeat_policy_snapshot: 'once_per_scope',
+              consumed_at: '2026-04-01T11:00:00.000Z',
+              consumed_voucher_exists: 'rf_voucher_diag_1',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ anomalies: Array<{ code: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.anomalies.map((item) => item.code)).toContain('unexpected_repeat_after_redeem_guard');
+    });
+  });
 });

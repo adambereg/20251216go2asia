@@ -219,6 +219,131 @@ export interface RfClaimAttributionInput {
   metadata?: Record<string, unknown>;
 }
 
+export type RfDiagnosticsSeverity = 'info' | 'warning' | 'critical';
+
+export interface RfVoucherDiagnosticsAnomaly {
+  code:
+    | 'voucher_redeemed_without_redemption_row'
+    | 'redemption_row_without_redeemed_status'
+    | 'once_per_scope_redeemed_without_guard'
+    | 'unexpected_repeat_after_redeem_guard'
+    | 'legacy_status_canonical_status_mismatch'
+    | 'listing_scope_missing_listing_id'
+    | 'guard_points_to_missing_voucher'
+    | 'idempotency_points_to_missing_voucher'
+    | 'confirmed_attribution_without_pro_link'
+    | 'rejected_attribution_present'
+    | 'repeat_sequence_gap'
+    | 'active_duplicate_possible'
+    | 'attribution_pro_link_partner_mismatch'
+    | 'listing_mapping_missing_or_inactive';
+  severity: RfDiagnosticsSeverity;
+  message: string;
+  evidence: Record<string, string | number | boolean | null>;
+}
+
+export interface RfVoucherDiagnostics {
+  voucher: {
+    voucherId: string;
+    offerId: string;
+    partnerId: string;
+    issuedToUserId: string;
+    claimScope: VoucherClaimScope;
+    listingId: string | null;
+    listingTitleSnapshot: string | null;
+    status: VoucherStatus;
+    canonicalStatus: VoucherCanonicalStatus;
+    contractVersion: number;
+    repeatPolicySnapshot: RfRepeatPolicy;
+    issueSequence: number;
+    claimedAt: string;
+    redeemedAt: string | null;
+    cancelledAt: string | null;
+    expiresAt: string | null;
+    statusChangedAt: string | null;
+    statusReason: string | null;
+    statusActorUserId: string | null;
+    codeMasked: string | null;
+  };
+  relations: {
+    offer: {
+      id: string;
+      partnerId: string;
+      status: OfferStatus;
+      visibility: Offer['visibility'];
+      repeatPolicy: RfRepeatPolicy;
+    } | null;
+    partner: {
+      id: string;
+      status: PartnerStatus;
+      ownerUserId: string;
+    } | null;
+    listingMapping: {
+      listingId: string;
+      offerId: string;
+      partnerId: string;
+      status: RieltListingOfferStatus;
+      offerKind: RieltListingOfferKind;
+      priority: number;
+    } | null;
+    proLink: {
+      id: string;
+      partnerId: string;
+      proUserId: string;
+      status: ProLinkStatus;
+      shareCodeMasked: string | null;
+    } | null;
+  };
+  redemption: {
+    items: Array<{
+      id: string;
+      voucherId: string;
+      resultStatus: 'succeeded' | 'failed' | 'duplicate';
+      actorUserId: string | null;
+      redeemedAt: string | null;
+      createdAt: string;
+      idempotencyKeyFingerprint: string | null;
+      correlationIdMasked: string | null;
+    }>;
+    hasSuccessfulRedemption: boolean;
+    successfulRedemptionCount: number;
+    totalRedemptionAttempts: number;
+  };
+  consumptionGuard: {
+    exists: boolean;
+    offerId: string | null;
+    issuedToUserId: string | null;
+    claimScope: VoucherClaimScope | null;
+    scopeRef: string | null;
+    consumedVoucherId: string | null;
+    repeatPolicySnapshot: RfRepeatPolicy | null;
+    consumedAt: string | null;
+  };
+  attribution: {
+    attributionVersion: number;
+    attributionStrategy: 'rf_pro_last_touch_before_claim';
+    attributionStatus: RfAttributionStatus;
+    attributionSource: RfAttributionSource;
+    claimSource: RfClaimSource;
+    proAttributedUserId: string | null;
+    proLinkId: string | null;
+    attributionConfirmedAt: string | null;
+    attributionCapturedAt: string | null;
+    attributionRejectedReason: string | null;
+    metadataKeys: string[];
+  };
+  idempotency: {
+    claimBindings: Array<{
+      operation: 'voucher_claim';
+      actorUserId: string;
+      voucherId: string;
+      createdAt: string;
+      idempotencyKeyFingerprint: string;
+    }>;
+  };
+  anomalies: RfVoucherDiagnosticsAnomaly[];
+}
+
 type ClaimResult =
   | {
       ok: true;
@@ -402,6 +527,40 @@ type ProLinkRow = {
 
 type AttributionProLinkRow = Pick<ProLinkRow, 'id' | 'partner_id' | 'pro_user_id' | 'share_code' | 'status'>;
 
+type VoucherDiagnosticsListingMappingRow = {
+  listing_id: string;
+  rf_offer_id: string;
+  rf_partner_id: string;
+  status: RieltListingOfferStatus;
+  offer_kind: RieltListingOfferKind;
+  priority: number;
+};
+
+type VoucherDiagnosticsPartnerRow = Pick<PartnerRow, 'id' | 'status' | 'owner_user_id'>;
+
+type VoucherDiagnosticsRedemptionRow = {
+  id: string;
+  voucher_id: string;
+  result_status: 'succeeded' | 'failed' | 'duplicate';
+  actor_user_id: string | null;
+  redeemed_at: string | Date | null;
+  created_at: string | Date;
+  idempotency_key: string | null;
+  correlation_id: string | null;
+};
+
+type VoucherDiagnosticsGuardRow = {
+  id: string;
+  offer_id: string;
+  issued_to_user_id: string;
+  claim_scope: VoucherClaimScope;
+  scope_ref: string;
+  consumed_voucher_id: string;
+  repeat_policy_snapshot: RfRepeatPolicy;
+  consumed_at: string | Date;
+  consumed_voucher_exists: string | null;
+};
+
 type ResolvedClaimAttribution = {
   version: 1;
   strategy: 'rf_pro_last_touch_before_claim';
@@ -424,6 +583,10 @@ type IdempotencyRow = {
   created_at: string | Date;
 };
 
+type VoucherDiagnosticsIdempotencyRow = IdempotencyRow & {
+  voucher_exists: string | null;
+};
+
 const writeTimestampsByActorAndOp = new Map<string, number[]>();
 
 function rowsOf<T>(result: unknown): T[] {
@@ -433,6 +596,31 @@ function rowsOf<T>(result: unknown): T[] {
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
   return new Date(value).toISOString();
+}
+
+function maskTail(value: string | null | undefined, visible = 4): string | null {
+  if (!value) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (normalized.length <= visible) return `***${normalized}`;
+  return `***${normalized.slice(-visible)}`;
+}
+
+function toFingerprint(value: string | null | undefined): string | null {
+  if (!value) return null;
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `fnv1a_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+function getAttributionRejectedReason(metadata: Record<string, unknown>): string | null {
+  const value = metadata.rejectionReason;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function mapLegacyStatusToCanonical(status: VoucherStatus): VoucherCanonicalStatus {
@@ -1003,6 +1191,137 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
+async function getVoucherById(db: DbExecutor, voucherId: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      canonical_status,
+      contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+    FROM rf_voucher
+    WHERE id = ${voucherId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getPartnerById(db: DbExecutor, partnerId: string): Promise<VoucherDiagnosticsPartnerRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, status, owner_user_id
+    FROM rf_partner
+    WHERE id = ${partnerId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherDiagnosticsPartnerRow>(result)[0] ?? null;
+}
+
+async function getListingOfferMapping(
+  db: DbExecutor,
+  listingId: string,
+  offerId: string
+): Promise<VoucherDiagnosticsListingMappingRow | null> {
+  const result = await db.execute(sql`
+    SELECT listing_id, rf_offer_id, rf_partner_id, status, offer_kind, priority
+    FROM rielt_listing_rf_offer
+    WHERE listing_id = ${listingId}
+      AND rf_offer_id = ${offerId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherDiagnosticsListingMappingRow>(result)[0] ?? null;
+}
+
+async function listVoucherRedemptionRows(db: DbExecutor, voucherId: string): Promise<VoucherDiagnosticsRedemptionRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      voucher_id,
+      result_status,
+      actor_user_id,
+      redeemed_at,
+      created_at,
+      idempotency_key,
+      correlation_id
+    FROM rf_voucher_redemption
+    WHERE voucher_id = ${voucherId}
+    ORDER BY created_at DESC, id DESC
+    LIMIT 50
+  `);
+  return rowsOf<VoucherDiagnosticsRedemptionRow>(result);
+}
+
+async function listVoucherConsumptionGuards(db: DbExecutor, voucher: VoucherRow): Promise<VoucherDiagnosticsGuardRow[]> {
+  const claimScope = voucher.claim_scope ?? 'partner';
+  const scopeRef = claimScope === 'partner' ? '__partner__' : voucher.rielt_listing_id ?? '';
+  const result = await db.execute(sql`
+    SELECT
+      g.id,
+      g.offer_id,
+      g.issued_to_user_id,
+      g.claim_scope,
+      g.scope_ref,
+      g.consumed_voucher_id,
+      g.repeat_policy_snapshot,
+      g.consumed_at,
+      v.id AS consumed_voucher_exists
+    FROM rf_voucher_scope_consumption_guard g
+    LEFT JOIN rf_voucher v ON v.id = g.consumed_voucher_id
+    WHERE g.offer_id = ${voucher.offer_id}
+      AND g.issued_to_user_id = ${voucher.issued_to_user_id}
+      AND g.claim_scope = ${claimScope}
+      AND g.scope_ref = ${scopeRef}
+    ORDER BY g.created_at DESC, g.id DESC
+    LIMIT 10
+  `);
+  return rowsOf<VoucherDiagnosticsGuardRow>(result);
+}
+
+async function listClaimIdempotencyBindings(db: DbExecutor, voucherId: string): Promise<VoucherDiagnosticsIdempotencyRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      ci.operation,
+      ci.actor_user_id,
+      ci.idempotency_key,
+      ci.voucher_id,
+      ci.created_at,
+      v.id AS voucher_exists
+    FROM rf_claim_idempotency ci
+    LEFT JOIN rf_voucher v ON v.id = ci.voucher_id
+    WHERE ci.voucher_id = ${voucherId}
+    ORDER BY ci.created_at DESC, ci.actor_user_id DESC
+    LIMIT 50
+  `);
+  return rowsOf<VoucherDiagnosticsIdempotencyRow>(result);
+}
+
 async function getVoucherFromRedemptionIdempotency(
   db: DbExecutor,
   actorUserId: string,
@@ -1306,6 +1625,317 @@ async function insertClaimIdempotency(
     LIMIT 1
   `);
   return rowsOf<IdempotencyRow>(result)[0] ?? null;
+}
+
+function buildVoucherDiagnosticsAnomalies(input: {
+  voucher: VoucherRow;
+  offer: OfferRow | null;
+  listingMapping: VoucherDiagnosticsListingMappingRow | null;
+  proLink: ProLinkRow | null;
+  redemptionRows: VoucherDiagnosticsRedemptionRow[];
+  guards: VoucherDiagnosticsGuardRow[];
+  claimBindings: VoucherDiagnosticsIdempotencyRow[];
+}): RfVoucherDiagnosticsAnomaly[] {
+  const anomalies: RfVoucherDiagnosticsAnomaly[] = [];
+  const voucher = input.voucher;
+  const canonicalStatus = getCanonicalStatus(voucher);
+  const repeatPolicy = voucher.repeat_policy_snapshot ?? 'once_per_scope';
+  const successfulRedemptionCount = input.redemptionRows.filter((row) => row.result_status === 'succeeded').length;
+  const guardForVoucher = input.guards.find((row) => row.consumed_voucher_id === voucher.id) ?? null;
+
+  if (canonicalStatus === 'redeemed' && successfulRedemptionCount === 0) {
+    anomalies.push({
+      code: 'voucher_redeemed_without_redemption_row',
+      severity: 'critical',
+      message: 'Voucher is redeemed but no succeeded redemption row was found.',
+      evidence: { voucherId: voucher.id, canonicalStatus },
+    });
+  }
+
+  if (canonicalStatus !== 'redeemed' && successfulRedemptionCount > 0) {
+    anomalies.push({
+      code: 'redemption_row_without_redeemed_status',
+      severity: 'critical',
+      message: 'Succeeded redemption row exists while voucher canonical status is not redeemed.',
+      evidence: { voucherId: voucher.id, canonicalStatus, successfulRedemptionCount },
+    });
+  }
+
+  if (canonicalStatus === 'redeemed' && repeatPolicy === 'once_per_scope' && !guardForVoucher) {
+    anomalies.push({
+      code: 'once_per_scope_redeemed_without_guard',
+      severity: 'critical',
+      message: 'Once-per-scope redeemed voucher has no consumption guard.',
+      evidence: { voucherId: voucher.id, repeatPolicy },
+    });
+  }
+
+  if (canonicalStatus === 'redeemed' && repeatPolicy === 'repeat_after_redeem' && !!guardForVoucher) {
+    anomalies.push({
+      code: 'unexpected_repeat_after_redeem_guard',
+      severity: 'warning',
+      message: 'Repeat-after-redeem voucher unexpectedly has a consumption guard.',
+      evidence: { voucherId: voucher.id, guardId: guardForVoucher.id },
+    });
+  }
+
+  if (mapLegacyStatusToCanonical(voucher.status) !== canonicalStatus) {
+    anomalies.push({
+      code: 'legacy_status_canonical_status_mismatch',
+      severity: 'warning',
+      message: 'Legacy status and canonical status diverge.',
+      evidence: { voucherId: voucher.id, status: voucher.status, canonicalStatus },
+    });
+  }
+
+  if ((voucher.claim_scope ?? 'partner') === 'listing' && !voucher.rielt_listing_id) {
+    anomalies.push({
+      code: 'listing_scope_missing_listing_id',
+      severity: 'critical',
+      message: 'Listing-scoped voucher has no listing id.',
+      evidence: { voucherId: voucher.id, claimScope: voucher.claim_scope ?? 'partner' },
+    });
+  }
+
+  if (input.guards.some((guard) => guard.consumed_voucher_exists === null)) {
+    anomalies.push({
+      code: 'guard_points_to_missing_voucher',
+      severity: 'critical',
+      message: 'Consumption guard points to a missing voucher.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if (input.claimBindings.some((binding) => binding.voucher_exists === null)) {
+    anomalies.push({
+      code: 'idempotency_points_to_missing_voucher',
+      severity: 'critical',
+      message: 'Claim idempotency row points to a missing voucher.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.attribution_status ?? 'none') === 'confirmed' && !voucher.pro_link_id) {
+    anomalies.push({
+      code: 'confirmed_attribution_without_pro_link',
+      severity: 'warning',
+      message: 'Confirmed attribution is present without pro link id.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.attribution_status ?? 'none') === 'rejected') {
+    anomalies.push({
+      code: 'rejected_attribution_present',
+      severity: 'info',
+      message: 'Voucher attribution is rejected.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.claim_scope ?? 'partner') === 'listing' && voucher.rielt_listing_id && (!input.listingMapping || input.listingMapping.status !== 'active')) {
+    anomalies.push({
+      code: 'listing_mapping_missing_or_inactive',
+      severity: 'warning',
+      message: 'Listing-scoped voucher mapping is missing or inactive.',
+      evidence: {
+        voucherId: voucher.id,
+        listingId: voucher.rielt_listing_id,
+        mappingStatus: input.listingMapping?.status ?? null,
+      },
+    });
+  }
+
+  if (input.proLink && input.proLink.partner_id !== voucher.partner_id) {
+    anomalies.push({
+      code: 'attribution_pro_link_partner_mismatch',
+      severity: 'warning',
+      message: 'Voucher attribution pro link belongs to a different partner.',
+      evidence: {
+        voucherId: voucher.id,
+        voucherPartnerId: voucher.partner_id,
+        proLinkPartnerId: input.proLink.partner_id,
+      },
+    });
+  }
+
+  if ((voucher.issue_sequence ?? 1) > 1 && !input.offer) {
+    anomalies.push({
+      code: 'repeat_sequence_gap',
+      severity: 'info',
+      message: 'Issue sequence suggests repeatability history but offer relation is missing.',
+      evidence: { voucherId: voucher.id, issueSequence: voucher.issue_sequence ?? 1 },
+    });
+  }
+
+  const isActiveCanonical = canonicalStatus === 'available' || canonicalStatus === 'locked' || canonicalStatus === 'unlocked';
+  if (isActiveCanonical && input.guards.length > 0) {
+    anomalies.push({
+      code: 'active_duplicate_possible',
+      severity: 'info',
+      message: 'Active voucher has existing guards in same scope; verify historical consistency.',
+      evidence: { voucherId: voucher.id, guardCount: input.guards.length },
+    });
+  }
+
+  return anomalies;
+}
+
+export async function getVoucherDiagnostics(
+  db: DbExecutor,
+  voucherId: string
+): Promise<{ ok: true; diagnostics: RfVoucherDiagnostics } | { ok: false; code: string; message: string; status: number }> {
+  const voucher = await getVoucherById(db, voucherId);
+  if (!voucher) {
+    return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
+  }
+
+  const offer = await getOfferById(db, voucher.offer_id);
+  const partner = await getPartnerById(db, voucher.partner_id);
+  const claimScope = voucher.claim_scope ?? 'partner';
+  const listingMapping =
+    claimScope === 'listing' && voucher.rielt_listing_id
+      ? await getListingOfferMapping(db, voucher.rielt_listing_id, voucher.offer_id)
+      : null;
+  const redemptionRows = await listVoucherRedemptionRows(db, voucher.id);
+  const guards = await listVoucherConsumptionGuards(db, voucher);
+  const guardForVoucher = guards.find((row) => row.consumed_voucher_id === voucher.id) ?? null;
+  const claimBindings = await listClaimIdempotencyBindings(db, voucher.id);
+  const proLink =
+    typeof voucher.pro_link_id === 'string' && voucher.pro_link_id.trim().length > 0
+      ? await (async () => {
+          const result = await db.execute(sql`
+            SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
+            FROM rf_pro_link
+            WHERE id = ${voucher.pro_link_id}
+            LIMIT 1
+          `);
+          return rowsOf<ProLinkRow>(result)[0] ?? null;
+        })()
+      : null;
+
+  const attributionMetadata = toAttributionMetadata(voucher.attribution_metadata);
+  const anomalies = buildVoucherDiagnosticsAnomalies({
+    voucher,
+    offer,
+    listingMapping,
+    proLink,
+    redemptionRows,
+    guards,
+    claimBindings,
+  });
+
+  const diagnostics: RfVoucherDiagnostics = {
+    voucher: {
+      voucherId: voucher.id,
+      offerId: voucher.offer_id,
+      partnerId: voucher.partner_id,
+      issuedToUserId: voucher.issued_to_user_id,
+      claimScope,
+      listingId: voucher.rielt_listing_id ?? null,
+      listingTitleSnapshot: voucher.rielt_listing_title_snapshot ?? null,
+      status: voucher.status,
+      canonicalStatus: getCanonicalStatus(voucher),
+      contractVersion: voucher.contract_version ?? 1,
+      repeatPolicySnapshot: voucher.repeat_policy_snapshot ?? 'once_per_scope',
+      issueSequence: voucher.issue_sequence ?? 1,
+      claimedAt: asIso(voucher.claimed_at) ?? new Date(0).toISOString(),
+      redeemedAt: asIso(voucher.redeemed_at),
+      cancelledAt: asIso(voucher.cancelled_at ?? null),
+      expiresAt: asIso(voucher.expires_at ?? null),
+      statusChangedAt: asIso(voucher.status_changed_at ?? null),
+      statusReason: voucher.status_reason ?? null,
+      statusActorUserId: voucher.status_actor_user_id ?? null,
+      codeMasked: maskTail(voucher.code),
+    },
+    relations: {
+      offer: offer
+        ? {
+            id: offer.id,
+            partnerId: offer.partner_id,
+            status: offer.status,
+            visibility: offer.visibility,
+            repeatPolicy: offer.repeat_policy ?? 'once_per_scope',
+          }
+        : null,
+      partner: partner
+        ? {
+            id: partner.id,
+            status: partner.status,
+            ownerUserId: partner.owner_user_id,
+          }
+        : null,
+      listingMapping: listingMapping
+        ? {
+            listingId: listingMapping.listing_id,
+            offerId: listingMapping.rf_offer_id,
+            partnerId: listingMapping.rf_partner_id,
+            status: listingMapping.status,
+            offerKind: listingMapping.offer_kind,
+            priority: Number(listingMapping.priority ?? 0),
+          }
+        : null,
+      proLink: proLink
+        ? {
+            id: proLink.id,
+            partnerId: proLink.partner_id,
+            proUserId: proLink.pro_user_id,
+            status: proLink.status,
+            shareCodeMasked: maskTail(proLink.share_code ?? null),
+          }
+        : null,
+    },
+    redemption: {
+      items: redemptionRows.map((row) => ({
+        id: row.id,
+        voucherId: row.voucher_id,
+        resultStatus: row.result_status,
+        actorUserId: row.actor_user_id ?? null,
+        redeemedAt: asIso(row.redeemed_at ?? null),
+        createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+        idempotencyKeyFingerprint: toFingerprint(row.idempotency_key),
+        correlationIdMasked: maskTail(row.correlation_id ?? null),
+      })),
+      hasSuccessfulRedemption: redemptionRows.some((row) => row.result_status === 'succeeded'),
+      successfulRedemptionCount: redemptionRows.filter((row) => row.result_status === 'succeeded').length,
+      totalRedemptionAttempts: redemptionRows.length,
+    },
+    consumptionGuard: {
+      exists: !!guardForVoucher,
+      offerId: guardForVoucher?.offer_id ?? null,
+      issuedToUserId: guardForVoucher?.issued_to_user_id ?? null,
+      claimScope: guardForVoucher?.claim_scope ?? null,
+      scopeRef: guardForVoucher?.scope_ref ?? null,
+      consumedVoucherId: guardForVoucher?.consumed_voucher_id ?? null,
+      repeatPolicySnapshot: guardForVoucher?.repeat_policy_snapshot ?? null,
+      consumedAt: asIso(guardForVoucher?.consumed_at ?? null),
+    },
+    attribution: {
+      attributionVersion: voucher.attribution_version ?? 1,
+      attributionStrategy: voucher.attribution_strategy ?? 'rf_pro_last_touch_before_claim',
+      attributionStatus: voucher.attribution_status ?? 'none',
+      attributionSource: voucher.attribution_source ?? 'unknown',
+      claimSource: voucher.claim_source ?? 'unknown',
+      proAttributedUserId: voucher.pro_attributed_user_id ?? null,
+      proLinkId: voucher.pro_link_id ?? null,
+      attributionConfirmedAt: asIso(voucher.attribution_confirmed_at ?? null),
+      attributionCapturedAt: asIso(voucher.attribution_captured_at ?? null),
+      attributionRejectedReason: getAttributionRejectedReason(attributionMetadata),
+      metadataKeys: Object.keys(attributionMetadata).slice(0, 12),
+    },
+    idempotency: {
+      claimBindings: claimBindings.map((row) => ({
+        operation: row.operation,
+        actorUserId: row.actor_user_id,
+        voucherId: row.voucher_id,
+        createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+        idempotencyKeyFingerprint: toFingerprint(row.idempotency_key) ?? 'fnv1a_00000000',
+      })),
+    },
+    anomalies,
+  };
+
+  return { ok: true, diagnostics };
 }
 
 export function shouldThrottleWrite(actorUserId: string, operation: 'claim' | 'redeem'): boolean {

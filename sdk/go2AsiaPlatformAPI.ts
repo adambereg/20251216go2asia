@@ -130,6 +130,7 @@ import type {
   RfErrorResponse,
   RfForbiddenResponse,
   RfInternalErrorResponse,
+  RfInternalVoucherDiagnosticsResponse,
   RfListProAttributedVouchersParams,
   RfNotFoundResponse,
   RfOffer,
@@ -4490,6 +4491,64 @@ export const rfRedeemVoucher = async (
     ...options,
     method: "POST",
   });
+};
+
+/**
+ * Internal/admin diagnostics endpoint for support and QA. Returns read-only voucher lifecycle, redemption, repeatability, attribution and idempotency state. Not for public, PRO or merchant product UI.
+
+ * @summary Internal RF voucher diagnostics (admin-only, read-only)
+ */
+export type rfGetInternalVoucherDiagnosticsResponse200 = {
+  data: RfInternalVoucherDiagnosticsResponse;
+  status: 200;
+};
+
+export type rfGetInternalVoucherDiagnosticsResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfGetInternalVoucherDiagnosticsResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfGetInternalVoucherDiagnosticsResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfGetInternalVoucherDiagnosticsResponseSuccess =
+  rfGetInternalVoucherDiagnosticsResponse200 & {
+    headers: Headers;
+  };
+export type rfGetInternalVoucherDiagnosticsResponseError = (
+  | rfGetInternalVoucherDiagnosticsResponse401
+  | rfGetInternalVoucherDiagnosticsResponse403
+  | rfGetInternalVoucherDiagnosticsResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfGetInternalVoucherDiagnosticsResponse =
+  | rfGetInternalVoucherDiagnosticsResponseSuccess
+  | rfGetInternalVoucherDiagnosticsResponseError;
+
+export const getRfGetInternalVoucherDiagnosticsUrl = (voucherId: string) => {
+  return `/v1/rf/internal/vouchers/${voucherId}/diagnostics`;
+};
+
+export const rfGetInternalVoucherDiagnostics = async (
+  voucherId: string,
+  options?: RequestInit
+): Promise<rfGetInternalVoucherDiagnosticsResponse> => {
+  return customInstance<rfGetInternalVoucherDiagnosticsResponse>(
+    getRfGetInternalVoucherDiagnosticsUrl(voucherId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
 };
 
 /**
