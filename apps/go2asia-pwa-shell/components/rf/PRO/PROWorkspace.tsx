@@ -36,6 +36,7 @@ import {
   getRfCityLabel,
   getVisibilityBadge,
 } from '@/lib/rfFirstSliceContent';
+import { getProItemContextLine, proItemContextBoundaryCopy } from '@/lib/rfMerchantItems';
 import { Check, ChevronRight, ExternalLink, Minus } from 'lucide-react';
 
 const roleScopeOptions: RfProLinkRoleScope[] = [
@@ -411,6 +412,7 @@ export function PROWorkspace() {
             <p className="mt-1 text-sm text-slate-600">
               Здесь отображаются офферы партнёров, с которыми у вас есть активная связь. Это read-only видимость.
             </p>
+            <p className="mt-2 max-w-3xl text-xs text-slate-500">{proItemContextBoundaryCopy}</p>
           </div>
           <Link href="/rf/vouchers">
             <Button variant="secondary" size="sm" className="gap-1">
@@ -446,10 +448,12 @@ export function PROWorkspace() {
               const badge = getOfferBadge(offer);
               const vis = getVisibilityBadge(offer.visibility);
               const partner = partnersById.get(offer.partnerId);
+              const itemContextLine = getProItemContextLine(offer);
               return (
                 <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="font-medium text-slate-900">{offer.title}</p>
+                    {itemContextLine ? <p className="mt-1 text-xs text-slate-600">{itemContextLine}</p> : null}
                     <p className="text-xs text-slate-500">{getOfferSummaryLine(offer)}</p>
                     <p className="mt-1 text-xs text-slate-600">
                       Партнёр:{' '}
@@ -506,10 +510,12 @@ export function PROWorkspace() {
               const badge = getOfferBadge(offer);
               const vis = getVisibilityBadge(offer.visibility);
               const partner = scope.partners.find((p) => p.id === offer.partnerId);
+              const itemContextLine = getProItemContextLine(offer);
               return (
                 <li key={offer.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="font-medium text-slate-900">{offer.title}</p>
+                    {itemContextLine ? <p className="mt-1 text-xs text-slate-600">{itemContextLine}</p> : null}
                     <p className="text-xs text-slate-500">{getOfferSummaryLine(offer)}</p>
                     <p className="mt-1 text-xs text-slate-600">
                       Партнёр:{' '}

@@ -533,9 +533,37 @@ Boundaries:
 
 ### Stage 1.5 - PRO Visibility Alignment
 
-- show item context read-only in PRO linked partner offers;
-- ensure PRO cannot create, edit or archive items;
-- keep PRO visibility derived from active partner links.
+Status: implemented as a bounded frontend-only PRO display pass.
+
+Added PRO visibility:
+
+- PRO linked partner offers now show item context read-only when an offer has itemId.
+- The canonical linked-offers list remains derived from active rf_pro_link visibility.
+- The legacy/support-scope offer list uses the same safe item context line for consistency.
+- If item details are available in context, the UI can show item title, category and priceFrom/currency through shared helpers.
+- If only itemId is available, the UI shows Товар/услуга: недоступна.
+- Offers without itemId keep the previous offer-only display and do not show noisy fallback.
+
+PRO boundary:
+
+- PRO item context is for orientation only.
+- Catalog ownership remains with the business owner.
+- PRO cannot create, edit or archive catalog items through this stage.
+- Stage 1.5 does not add PRO economy, attribution, rewards, commissions or payouts.
+
+Data boundary:
+
+- The PRO UI receives offer.itemId through the existing RF offer DTO.
+- The PRO UI does not call listPartnerItems(partnerId).
+- listPartnerItems(partnerId) remains a business/owner-gated endpoint.
+
+Boundaries:
+
+- No backend, schema, migration, OpenAPI or SDK generation changes.
+- No Merchant item CRUD changes.
+- No offer creation changes.
+- No claim/redeem or voucher behavior changes.
+- No public RF or Connect changes.
 
 ## 19. Final Recommendation
 

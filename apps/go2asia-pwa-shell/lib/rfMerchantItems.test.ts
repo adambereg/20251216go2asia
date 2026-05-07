@@ -8,9 +8,11 @@ import {
   getItemLabelForOffer,
   getMerchantItemStatusLabel,
   getOfferItemDisplayLabel,
+  getProItemContextLine,
   merchantItemOfferBindingCopy,
   merchantItemCatalogBoundaryCopy,
   normalizeOfferItemId,
+  proItemContextBoundaryCopy,
   safeItemFallback,
   validateMerchantItemForm,
 } from './rfMerchantItems';
@@ -136,11 +138,18 @@ describe('rf merchant item helpers', () => {
     expect(getItemLabelForOffer(offer({ itemId: null }), null)).toBeNull();
   });
 
+  it('formats PRO read-only item context without noisy fallback', () => {
+    expect(getProItemContextLine(offer({ itemId: 'item_1' }), item())).toBe('Товар/услуга: Завтрак · Категория: food · От 250 THB');
+    expect(getProItemContextLine(offer({ itemId: 'missing_item' }), null)).toBe('Товар/услуга: недоступна');
+    expect(getProItemContextLine(offer({ itemId: null }), null)).toBeNull();
+  });
+
   it('does not introduce economy or management-right confusion copy', () => {
-    const copy = `${merchantItemCatalogBoundaryCopy} ${merchantItemOfferBindingCopy} ${safeItemFallback}`.toLowerCase();
-    expect(copy).not.toMatch(/купить|оплата|reward|commission|payout|earnings|income|доход|комисси|выплат|начислен/);
+    const copy = `${merchantItemCatalogBoundaryCopy} ${merchantItemOfferBindingCopy} ${proItemContextBoundaryCopy} ${safeItemFallback}`.toLowerCase();
+    expect(copy).not.toMatch(/купить|оплатить|оплата|корзина|reward|payout|commission|earnings|income|доход|комисси|выплат|начислен/);
     expect(copy).toContain('read-only');
     expect(copy).toContain('уровне оффера');
+    expect(copy).toContain('только для ориентира');
   });
 });
 

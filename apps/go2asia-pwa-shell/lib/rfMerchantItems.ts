@@ -9,6 +9,9 @@ export const merchantItemOfferBindingNextStageCopy =
 export const merchantItemOfferBindingCopy =
   'Привязка помогает понять, к какому товару или услуге относится оффер. Ваучер по-прежнему создаётся и погашается на уровне оффера.';
 
+export const proItemContextBoundaryCopy =
+  'PRO видит контекст товаров и услуг только для ориентира. Каталог остаётся в зоне ответственности владельца бизнеса.';
+
 export function getMerchantItemStatusLabel(status: RfPartnerItemDto['status']): string {
   return status === 'active' ? 'Активен' : 'В архиве';
 }
@@ -61,6 +64,12 @@ export function getItemLabelForOffer(offer: Pick<RfOfferDto, 'itemId'>, item?: R
   if (!offer.itemId) return null;
   const subtitle = formatItemSubtitle(item);
   return subtitle ?? safeItemFallback;
+}
+
+export function getProItemContextLine(offer: Pick<RfOfferDto, 'itemId'>, item?: RfPartnerItemDto | null): string | null {
+  const label = getItemLabelForOffer(offer, item);
+  if (!label) return null;
+  return label === safeItemFallback ? 'Товар/услуга: недоступна' : `Товар/услуга: ${label}`;
 }
 
 export type MerchantItemFormInput = {
