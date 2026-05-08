@@ -407,6 +407,13 @@
       "when": 1778160000000,
       "tag": "0055_rf_economy_schema_foundation_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1778205600000,
+      "tag": "0056_rf_claim_spend_recovery_v1",
+      "breakpoints": true
     }
   ]
 }

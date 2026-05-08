@@ -9,6 +9,7 @@
 import type { RfVoucherCanonicalStatus } from "./rfVoucherCanonicalStatus";
 import type { RfInternalVoucherDiagnosticsVoucherClaimScope } from "./rfInternalVoucherDiagnosticsVoucherClaimScope";
 import type { RfVoucherEconomyStatus } from "./rfVoucherEconomyStatus";
+import type { RfInternalVoucherDiagnosticsVoucherEconomyTransitionTimestamps } from "./rfInternalVoucherDiagnosticsVoucherEconomyTransitionTimestamps";
 import type { RfRepeatPolicy } from "./rfRepeatPolicy";
 import type { RfInternalVoucherDiagnosticsVoucherStatus } from "./rfInternalVoucherDiagnosticsVoucherStatus";
 
@@ -23,6 +24,7 @@ export interface RfInternalVoucherDiagnosticsVoucher {
   /** @minimum 1 */
   contractVersion: number;
   economyStatus: RfVoucherEconomyStatus;
+  economyTransitionTimestamps: RfInternalVoucherDiagnosticsVoucherEconomyTransitionTimestamps;
   /** @nullable */
   expiresAt: string | null;
   /** @minimum 1 */
@@ -34,6 +36,8 @@ export interface RfInternalVoucherDiagnosticsVoucher {
   listingTitleSnapshot: string | null;
   offerId: string;
   partnerId: string;
+  /** @nullable */
+  pointsCompensationExternalId: string | null;
   /** @minimum 0 */
   pointsCostSnapshot: number;
   /** @nullable */

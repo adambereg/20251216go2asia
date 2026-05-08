@@ -46,6 +46,15 @@ function getErrorMessage(error: unknown) {
   if (code === 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH') {
     return 'Этот запрос уже использовался для другого ваучера. Обновите страницу и попробуйте снова.';
   }
+  if (code === 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER') {
+    return 'Этот ваучер доступен только для VIP.';
+  }
+  if (code === 'RF_INSUFFICIENT_POINTS_BALANCE') {
+    return 'Недостаточно Points для получения этого ваучера.';
+  }
+  if (code === 'RF_SPEND_TEMPORARILY_UNAVAILABLE' || code === 'RF_ECONOMY_RECOVERY_PENDING') {
+    return 'Сервис списания Points временно недоступен. Попробуйте позже.';
+  }
   if (code === 'RF_OFFER_NOT_FOUND' || code === 'RF_OFFER_INACTIVE' || code === 'RF_OFFER_NOT_CLAIMABLE' || code === 'RF_PARTNER_INACTIVE') {
     return 'Этот оффер сейчас недоступен.';
   }

@@ -9,6 +9,7 @@
 import type { RfInternalDiagnosticsAnomaly } from "./rfInternalDiagnosticsAnomaly";
 import type { RfInternalVoucherDiagnosticsAttribution } from "./rfInternalVoucherDiagnosticsAttribution";
 import type { RfInternalVoucherDiagnosticsConsumptionGuard } from "./rfInternalVoucherDiagnosticsConsumptionGuard";
+import type { RfInternalVoucherDiagnosticsEconomyRecovery } from "./rfInternalVoucherDiagnosticsEconomyRecovery";
 import type { RfInternalVoucherDiagnosticsIdempotency } from "./rfInternalVoucherDiagnosticsIdempotency";
 import type { RfInternalVoucherDiagnosticsRedemption } from "./rfInternalVoucherDiagnosticsRedemption";
 import type { RfInternalVoucherDiagnosticsRelations } from "./rfInternalVoucherDiagnosticsRelations";
@@ -18,6 +19,7 @@ export interface RfInternalVoucherDiagnosticsResponse {
   anomalies: RfInternalDiagnosticsAnomaly[];
   attribution: RfInternalVoucherDiagnosticsAttribution;
   consumptionGuard: RfInternalVoucherDiagnosticsConsumptionGuard;
+  economyRecovery: RfInternalVoucherDiagnosticsEconomyRecovery;
   idempotency: RfInternalVoucherDiagnosticsIdempotency;
   redemption: RfInternalVoucherDiagnosticsRedemption;
   relations: RfInternalVoucherDiagnosticsRelations;

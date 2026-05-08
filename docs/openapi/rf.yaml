@@ -391,7 +391,9 @@ paths:
           $ref: "#/components/responses/RfNotFound"
         "409":
           description: >
-            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH,
+            RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE,
+            RF_SPEND_IDEMPOTENCY_CONFLICT and RF_ECONOMY_RECOVERY_PENDING.
           content:
             application/json:
               schema:
@@ -935,7 +937,10 @@ components:
           schema:
             $ref: "#/components/schemas/RfErrorResponse"
     RfConflict:
-      description: Conflict
+      description: >
+        Conflict (for claim endpoints may include RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH,
+        RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE,
+        RF_SPEND_IDEMPOTENCY_CONFLICT, RF_ECONOMY_RECOVERY_PENDING)
       content:
         application/json:
           schema:
@@ -1535,7 +1540,9 @@ components:
           issueSequence,
           pointsCostSnapshot,
           pointsDebitExternalId,
+          pointsCompensationExternalId,
           economyStatus,
+          economyTransitionTimestamps,
           claimedAt,
           redeemedAt,
           cancelledAt,
@@ -1582,8 +1589,27 @@ components:
         pointsDebitExternalId:
           type: string
           nullable: true
+        pointsCompensationExternalId:
+          type: string
+          nullable: true
         economyStatus:
           $ref: "#/components/schemas/RfVoucherEconomyStatus"
+        economyTransitionTimestamps:
+          type: object
+          required: [spendAttemptedAt, compensationAttemptedAt, compensationResolvedAt]
+          properties:
+            spendAttemptedAt:
+              type: string
+              format: date-time
+              nullable: true
+            compensationAttemptedAt:
+              type: string
+              format: date-time
+              nullable: true
+            compensationResolvedAt:
+              type: string
+              format: date-time
+              nullable: true
         claimedAt:
           type: string
           format: date-time
@@ -1851,9 +1877,44 @@ components:
           items:
             $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotencyBinding"
 
+    RfInternalVoucherDiagnosticsEconomyRecovery:
+      type: object
+      required: [exists, state, spendExternalId, compensationExternalId, correlationIdMasked, lastErrorMasked, createdAt, updatedAt, resolvedAt]
+      properties:
+        exists:
+          type: boolean
+        state:
+          type: string
+          enum: [pending, resolved]
+          nullable: true
+        spendExternalId:
+          type: string
+          nullable: true
+        compensationExternalId:
+          type: string
+          nullable: true
+        correlationIdMasked:
+          type: string
+          nullable: true
+        lastErrorMasked:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
     RfInternalVoucherDiagnosticsResponse:
       type: object
-      required: [voucher, relations, redemption, consumptionGuard, attribution, idempotency, anomalies]
+      required: [voucher, relations, redemption, consumptionGuard, attribution, idempotency, economyRecovery, anomalies]
       properties:
         voucher:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsVoucher"
@@ -1867,6 +1928,8 @@ components:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsAttribution"
         idempotency:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotency"
+        economyRecovery:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsEconomyRecovery"
         anomalies:
           type: array
           items:

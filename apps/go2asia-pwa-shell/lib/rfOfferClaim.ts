@@ -13,6 +13,9 @@ export const rfOfferClaimCopy = {
   unavailable: 'Этот оффер сейчас недоступен.',
   idempotencyError: 'Этот запрос уже использовался для другого ваучера. Обновите страницу и попробуйте снова.',
   rateLimited: 'Слишком много попыток. Попробуйте позже.',
+  vipRequired: 'Этот ваучер доступен только для VIP.',
+  insufficientBalance: 'Недостаточно Points для получения этого ваучера.',
+  spendTemporarilyUnavailable: 'Сервис списания Points временно недоступен. Попробуйте позже.',
   localSaveNote: 'Сохранение оффера — это локальная заметка, не ваучер.',
   myVouchersLink: 'Открыть Мои ваучеры',
   signInLink: 'Перейти ко входу',
@@ -31,6 +34,11 @@ export function getRfOfferClaimErrorMessage(error: unknown): string {
   if (status === 401 || code === 'UNAUTHORIZED') return rfOfferClaimCopy.authRequired;
   if (code === 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH') return rfOfferClaimCopy.idempotencyError;
   if (code === 'RATE_LIMITED') return rfOfferClaimCopy.rateLimited;
+  if (code === 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER') return rfOfferClaimCopy.vipRequired;
+  if (code === 'RF_INSUFFICIENT_POINTS_BALANCE') return rfOfferClaimCopy.insufficientBalance;
+  if (code === 'RF_SPEND_TEMPORARILY_UNAVAILABLE' || code === 'RF_ECONOMY_RECOVERY_PENDING') {
+    return rfOfferClaimCopy.spendTemporarilyUnavailable;
+  }
   if (
     code === 'RF_OFFER_NOT_FOUND' ||
     code === 'RF_OFFER_INACTIVE' ||

@@ -654,7 +654,8 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RfErrorResponse"
-      description: Conflict
+      description: |
+        Conflict (for claim endpoints may include RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH, RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE, RF_SPEND_IDEMPOTENCY_CONFLICT, RF_ECONOMY_RECOVERY_PENDING)
     RfForbidden:
       content:
         application/json:
@@ -3671,6 +3672,51 @@ components:
         - repeatPolicySnapshot
         - consumedAt
       type: object
+    RfInternalVoucherDiagnosticsEconomyRecovery:
+      properties:
+        compensationExternalId:
+          nullable: true
+          type: string
+        correlationIdMasked:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          nullable: true
+          type: string
+        exists:
+          type: boolean
+        lastErrorMasked:
+          nullable: true
+          type: string
+        resolvedAt:
+          format: date-time
+          nullable: true
+          type: string
+        spendExternalId:
+          nullable: true
+          type: string
+        state:
+          enum:
+            - pending
+            - resolved
+          nullable: true
+          type: string
+        updatedAt:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+        - exists
+        - state
+        - spendExternalId
+        - compensationExternalId
+        - correlationIdMasked
+        - lastErrorMasked
+        - createdAt
+        - updatedAt
+        - resolvedAt
+      type: object
     RfInternalVoucherDiagnosticsIdempotency:
       properties:
         claimBindings:
@@ -3885,6 +3931,8 @@ components:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsAttribution"
         consumptionGuard:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsConsumptionGuard"
+        economyRecovery:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsEconomyRecovery"
         idempotency:
           $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotency"
         redemption:
@@ -3900,6 +3948,7 @@ components:
         - consumptionGuard
         - attribution
         - idempotency
+        - economyRecovery
         - anomalies
       type: object
     RfInternalVoucherDiagnosticsVoucher:
@@ -3926,6 +3975,25 @@ components:
           type: integer
         economyStatus:
           $ref: "#/components/schemas/RfVoucherEconomyStatus"
+        economyTransitionTimestamps:
+          properties:
+            compensationAttemptedAt:
+              format: date-time
+              nullable: true
+              type: string
+            compensationResolvedAt:
+              format: date-time
+              nullable: true
+              type: string
+            spendAttemptedAt:
+              format: date-time
+              nullable: true
+              type: string
+          required:
+            - spendAttemptedAt
+            - compensationAttemptedAt
+            - compensationResolvedAt
+          type: object
         expiresAt:
           format: date-time
           nullable: true
@@ -3944,6 +4012,9 @@ components:
         offerId:
           type: string
         partnerId:
+          type: string
+        pointsCompensationExternalId:
+          nullable: true
           type: string
         pointsCostSnapshot:
           minimum: 0
@@ -3990,7 +4061,9 @@ components:
         - issueSequence
         - pointsCostSnapshot
         - pointsDebitExternalId
+        - pointsCompensationExternalId
         - economyStatus
+        - economyTransitionTimestamps
         - claimedAt
         - redeemedAt
         - cancelledAt
@@ -8801,7 +8874,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/RfErrorResponse"
           description: |
-            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH, RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE, RF_SPEND_IDEMPOTENCY_CONFLICT and RF_ECONOMY_RECOVERY_PENDING.
         "429":
           $ref: "#/components/responses/RfRateLimited"
         "500":

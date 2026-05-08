@@ -30,11 +30,15 @@ import {
   shouldThrottleWrite,
   updatePartnerItem,
   validatePartnerGeoLinks,
+  type RfClaimEconomyRuntime,
   type RfClaimAttributionInput,
 } from '../store';
 
 type RfRouteEnv = {
   DATABASE_URL?: string;
+  SERVICE_JWT_SECRET?: string;
+  POINTS_SERVICE_URL?: string;
+  RF_ENABLE_PAID_VOUCHER_SPEND?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -80,6 +84,165 @@ function parsePositiveLimit(value: string | null): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function isFlagEnabled(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function signServiceJwt(secret: string, payload: Record<string, unknown>): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const headerB64 = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(header)));
+  const payloadB64 = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sigRaw = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${headerB64}.${payloadB64}`));
+  const signatureB64 = bytesToBase64Url(new Uint8Array(sigRaw));
+  return `${headerB64}.${payloadB64}.${signatureB64}`;
+}
+
+function pointsSpendUnavailable(message = 'Points spend is temporarily unavailable'): {
+  ok: false;
+  code: 'RF_SPEND_TEMPORARILY_UNAVAILABLE';
+  message: string;
+  status: number;
+} {
+  return { ok: false, code: 'RF_SPEND_TEMPORARILY_UNAVAILABLE', message, status: 503 };
+}
+
+function createClaimEconomyRuntime(env: RfRouteEnv): RfClaimEconomyRuntime | null {
+  if (!isFlagEnabled(env.RF_ENABLE_PAID_VOUCHER_SPEND)) return null;
+  const pointsBaseUrl = env.POINTS_SERVICE_URL?.trim();
+  const secret = env.SERVICE_JWT_SECRET?.trim();
+  if (!pointsBaseUrl || !secret) {
+    return {
+      enabled: true,
+      async spendPoints() {
+        return pointsSpendUnavailable('Points spend runtime is misconfigured');
+      },
+      async compensatePoints() {
+        return { ok: false, message: 'Points compensation runtime is misconfigured' };
+      },
+    };
+  }
+
+  return {
+    enabled: true,
+    async spendPoints(input) {
+      try {
+        const token = await signServiceJwt(secret, {
+          iss: 'go2asia-service-auth',
+          aud: 'points-service',
+          sub: 'rf-service',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 60,
+        });
+        const res = await fetch(`${pointsBaseUrl}/internal/points/spend`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: input.userId,
+            amount: input.amount,
+            action: 'rf_voucher_claim_spend',
+            externalId: `rf:voucher-claim-spend:${input.voucherId}`,
+            correlationId: input.correlationId,
+            metadata: {
+              claimScope: input.claimScope,
+              scopeRef: input.scopeRef ?? null,
+            },
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          message?: string;
+          transactionId?: string;
+          idempotentReplay?: boolean;
+          balanceAfter?: number;
+        };
+        if (!res.ok) {
+          if (res.status === 409 && body.error === 'INSUFFICIENT_POINTS_BALANCE') {
+            return {
+              ok: false,
+              code: 'RF_INSUFFICIENT_POINTS_BALANCE' as const,
+              message: 'Insufficient points balance for paid voucher claim',
+              status: 409,
+            };
+          }
+          if (res.status === 409 && body.error === 'REPLAY_PAYLOAD_MISMATCH') {
+            return {
+              ok: false,
+              code: 'RF_SPEND_IDEMPOTENCY_CONFLICT' as const,
+              message: 'Spend idempotency conflict for voucher claim',
+              status: 409,
+            };
+          }
+          return pointsSpendUnavailable(body.message ?? 'Points spend request failed');
+        }
+        return {
+          ok: true as const,
+          externalId: `rf:voucher-claim-spend:${input.voucherId}`,
+          idempotentReplay: Boolean(body.idempotentReplay),
+          balanceAfter: typeof body.balanceAfter === 'number' ? body.balanceAfter : null,
+        };
+      } catch {
+        return pointsSpendUnavailable();
+      }
+    },
+    async compensatePoints(input) {
+      try {
+        const token = await signServiceJwt(secret, {
+          iss: 'go2asia-service-auth',
+          aud: 'points-service',
+          sub: 'rf-service',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 60,
+        });
+        const compensationExternalId = `rf:voucher-claim-spend-compensation:${input.voucherId}`;
+        const res = await fetch(`${pointsBaseUrl}/internal/points/add`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: input.userId,
+            amount: input.amount,
+            action: 'rf_voucher_claim_spend_compensation',
+            externalId: compensationExternalId,
+            correlationId: input.correlationId,
+            metadata: {
+              originalSpendExternalId: input.spendExternalId,
+              claimScope: input.claimScope,
+              scopeRef: input.scopeRef ?? null,
+            },
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        if (!res.ok) {
+          return { ok: false as const, message: body.message ?? 'Points compensation request failed' };
+        }
+        return { ok: true as const, externalId: compensationExternalId };
+      } catch {
+        return { ok: false as const, message: 'Points compensation request failed' };
+      }
+    },
+  };
 }
 
 function isInternalAdminPrincipal(principal: GatewayPrincipal): boolean {
@@ -311,10 +474,13 @@ export async function handleRfRoute(
     }
 
     const body = await readJsonObject(request);
+    const economy = createClaimEconomyRuntime(env);
     const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
       idempotencyKey,
       attribution: parseClaimAttribution(body),
+      correlationId: requestId,
+      economy,
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(
@@ -346,11 +512,14 @@ export async function handleRfRoute(
     const listingId = decodeURIComponent(listingClaimMatch[1] ?? '');
     const offerIdValue = decodeURIComponent(listingClaimMatch[2] ?? '');
     const body = await readJsonObject(request);
+    const economy = createClaimEconomyRuntime(env);
     const result = await claimVoucherForListing(db, principal, {
       listingId,
       offerId: offerIdValue,
       idempotencyKey,
       attribution: parseClaimAttribution(body),
+      correlationId: requestId,
+      economy,
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(

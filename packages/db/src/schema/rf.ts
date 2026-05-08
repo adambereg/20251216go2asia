@@ -45,6 +45,7 @@ export const rfVoucherRedemptionResultStatusEnum = pgEnum('rf_voucher_redemption
   'failed',
   'duplicate',
 ]);
+export const rfVoucherEconomyRecoveryStateEnum = pgEnum('rf_voucher_economy_recovery_state', ['pending', 'resolved']);
 
 export const rfPartners = pgTable(
   'rf_partner',
@@ -361,6 +362,51 @@ export const rfClaimIdempotency = pgTable(
       table.idempotencyKey
     ),
     idxVoucherId: index('idx_rf_claim_idempotency_voucher_id').on(table.voucherId),
+  })
+);
+
+export const rfVoucherEconomyRecovery = pgTable(
+  'rf_voucher_economy_recovery',
+  {
+    id: text('id').primaryKey(),
+    voucherId: varchar('voucher_id', { length: 80 }).notNull(),
+    offerId: varchar('offer_id', { length: 80 })
+      .notNull()
+      .references(() => rfOffers.id, { onDelete: 'cascade' }),
+    actorUserId: varchar('actor_user_id', { length: 128 }).notNull(),
+    claimScope: rfVoucherClaimScopeEnum('claim_scope').notNull(),
+    scopeRef: text('scope_ref'),
+    spendExternalId: text('spend_external_id').notNull(),
+    compensationExternalId: text('compensation_external_id').notNull(),
+    correlationId: text('correlation_id'),
+    state: rfVoucherEconomyRecoveryStateEnum('state').notNull().default('pending'),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    resolvedAt: timestamp('resolved_at'),
+  },
+  (table) => ({
+    actorUserNotBlank: check(
+      'rf_voucher_economy_recovery_actor_user_id_not_blank_check',
+      sql`(length(trim(${table.actorUserId})) > 0)`
+    ),
+    spendExternalIdNotBlank: check(
+      'rf_voucher_economy_recovery_spend_external_id_not_blank_check',
+      sql`(length(trim(${table.spendExternalId})) > 0)`
+    ),
+    compensationExternalIdNotBlank: check(
+      'rf_voucher_economy_recovery_compensation_external_id_not_blank_check',
+      sql`(length(trim(${table.compensationExternalId})) > 0)`
+    ),
+    uniqueSpendExternalId: unique('rf_voucher_economy_recovery_spend_external_id_unique').on(table.spendExternalId),
+    uniqueCompensationExternalId: unique('rf_voucher_economy_recovery_compensation_external_id_unique').on(
+      table.compensationExternalId
+    ),
+    idxVoucherStateCreatedAt: index('idx_rf_voucher_economy_recovery_voucher_state_created_at').on(
+      table.voucherId,
+      table.state,
+      table.createdAt
+    ),
   })
 );
 

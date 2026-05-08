@@ -9,6 +9,8 @@ export interface Env {
   VERSION?: string;
   SERVICE_JWT_SECRET?: string;
   DATABASE_URL?: string;
+  POINTS_SERVICE_URL?: string;
+  RF_ENABLE_PAID_VOUCHER_SPEND?: string;
 }
 
 function handleHealth(env: Env): Response {
