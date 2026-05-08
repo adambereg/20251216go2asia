@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import {
+  getRfVoucherActivationLabel,
+  getRfVoucherAttributionLabel,
   getRfVoucherEffectiveStatus,
+  getRfVoucherRepeatabilityLabel,
   getRfVoucherStatusBadgeClass,
+  getRfVoucherStatusCaption,
   getRfVoucherStatusLabel,
   isRfVoucherClaimBarrier,
 } from './rfVoucherLifecycle';
 
-type VoucherLike = Pick<RfVoucherDto, 'status' | 'canonicalStatus'>;
+type VoucherLike = Pick<RfVoucherDto, 'status' | 'canonicalStatus' | 'repeatPolicySnapshot' | 'attribution' | 'economyStatus'>;
 
 function voucher(overrides: Partial<VoucherLike> = {}): VoucherLike {
   return {
@@ -34,9 +38,45 @@ describe('rf voucher lifecycle helper', () => {
   });
 
   it('formats canonical-first labels and badges', () => {
-    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }))).toBe('Заблокирован');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'available' }))).toBe('Активен');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }))).toBe('Ожидает активации');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Повторно доступен');
     expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }))).toBe('Истёк');
-    expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'locked' }))).toContain('violet');
+    expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'locked' }))).toContain('amber');
+    expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'unlocked' }))).toContain('blue');
     expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'expired' }))).toContain('amber');
+  });
+
+  it('keeps user-facing visibility labels non-technical', () => {
+    expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'available' }))).toBe('Готов к использованию у партнёра.');
+    expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'locked' }))).toBe('Ваучер получен, но пока ожидает активации.');
+    expect(getRfVoucherRepeatabilityLabel(voucher({ canonicalStatus: 'redeemed', repeatPolicySnapshot: 'repeat_after_redeem' }))).toBe(
+      'Можно получить снова',
+    );
+    expect(getRfVoucherRepeatabilityLabel(voucher({ repeatPolicySnapshot: 'once_per_scope' }))).toBeNull();
+    expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Ожидает активации');
+    expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'debited' }))).toBeNull();
+  });
+
+  it('shows confirmed PRO attribution without exposing raw attribution fields', () => {
+    expect(
+      getRfVoucherAttributionLabel(
+        voucher({
+          attribution: {
+            capturedAt: '2026-05-05T00:00:00.000Z',
+            claimSource: 'public_rf_catalog',
+            confirmedAt: '2026-05-05T00:01:00.000Z',
+            metadata: {},
+            proLinkId: 'link_1',
+            proUserId: null,
+            shareCode: null,
+            source: 'pro_link',
+            status: 'confirmed',
+            strategy: 'rf_pro_last_touch_before_claim',
+            version: 1,
+          },
+        }),
+      ),
+    ).toBe('Получен через PRO');
   });
 });

@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
-import { useRfVoucherSummary } from '@go2asia/sdk/rf';
+import { fetchMyVouchers, useRfVoucherSummary, type RfVoucherDto } from '@go2asia/sdk/rf';
+import { buildConnectRfProjection } from '@/lib/connectRfProjection';
 
 function VoucherMetric({ label, value }: { label: string; value: number }) {
   return (
@@ -16,8 +18,22 @@ function VoucherMetric({ label, value }: { label: string; value: number }) {
 
 export function VoucherSummaryCard() {
   const { data: summary, isError, isLoading, refetch } = useRfVoucherSummary();
+  const {
+    data: vouchers = [],
+    isLoading: vouchersLoading,
+    isError: vouchersError,
+  } = useQuery<RfVoucherDto[]>({
+    queryKey: ['rf', 'me', 'vouchers', 'connect-summary'],
+    queryFn: async () => {
+      const response = await fetchMyVouchers();
+      if (!response) throw new Error('RF vouchers unavailable');
+      return response.items;
+    },
+    staleTime: 30_000,
+    retry: 1,
+  });
 
-  if (isLoading) {
+  if (isLoading || vouchersLoading) {
     return (
       <Card className="p-5">
         <div className="flex items-start gap-3 mb-5">
@@ -38,7 +54,7 @@ export function VoucherSummaryCard() {
     );
   }
 
-  if (isError || !summary) {
+  if (isError || vouchersError || !summary) {
     return (
       <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
@@ -57,7 +73,8 @@ export function VoucherSummaryCard() {
     );
   }
 
-  const hasVouchers = summary.totalVouchers > 0;
+  const projection = buildConnectRfProjection(vouchers, summary);
+  const hasVouchers = projection.summary.total > 0;
 
   return (
     <Card className="p-5">
@@ -70,7 +87,7 @@ export function VoucherSummaryCard() {
             <h3 className="text-lg font-semibold text-slate-900">RF-ваучеры</h3>
             <p className="text-sm text-slate-600">
               {hasVouchers
-                ? 'Короткая сводка по вашим RF-ваучерам.'
+                ? 'Короткая read-only сводка по вашей RF-активности в Connect.'
                 : 'У вас пока нет RF-ваучеров. Сначала найдите предложение в Russian Friendly.'}
             </p>
           </div>
@@ -84,10 +101,18 @@ export function VoucherSummaryCard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <VoucherMetric label="Всего" value={summary.totalVouchers} />
-        <VoucherMetric label="Активные" value={summary.activeVouchers} />
-        <VoucherMetric label="Использованные" value={summary.usedVouchers} />
-        <VoucherMetric label="Отменённые" value={summary.cancelledVouchers} />
+        <VoucherMetric label="Всего ваучеров" value={projection.summary.total} />
+        <VoucherMetric label="Активные возможности" value={projection.summary.active} />
+        <VoucherMetric label="Использованные преимущества" value={projection.summary.used} />
+        <VoucherMetric label="Получено через PRO" value={projection.summary.receivedViaPro} />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          Ожидает активации: <span className="font-semibold text-slate-900">{projection.summary.pendingActivation}</span>
+        </p>
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          Можно получить снова: <span className="font-semibold text-slate-900">{projection.summary.repeatableAvailable}</span>
+        </p>
       </div>
     </Card>
   );

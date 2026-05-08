@@ -4,6 +4,8 @@ import {
   formatOfferVisibilityLabel,
   getActiveLinkedPartnerIds,
   getLinkedPartnerOffers,
+  getProAttributedVoucherAttributionLabel,
+  getProAttributedVoucherClaimSourceLabel,
   getProAttributedVoucherScopeLabel,
   getProAttributedVoucherStatusLabel,
   proAttributedVouchersBoundaryCopy,
@@ -179,12 +181,15 @@ describe('RF PRO workspace helpers', () => {
     ]);
 
     expect(items.map((item) => item.voucherId)).toEqual(['voucher_same_b', 'voucher_new', 'voucher_old']);
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'available' }))).toBe('Claim recorded');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'locked' }))).toBe('Locked');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'unlocked' }))).toBe('Unlocked');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('Expired');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('Claim recorded');
-    expect(getProAttributedVoucherScopeLabel('listing')).toBe('Listing context');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'available' }))).toBe('Активен');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'locked' }))).toBe('Ожидает активации');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'unlocked' }))).toBe('Повторно доступен');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('Истёк');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('Активен');
+    expect(getProAttributedVoucherScopeLabel('listing')).toBe('Для объекта');
+    expect(getProAttributedVoucherAttributionLabel('confirmed')).toBe('PRO отметка подтверждена');
+    expect(getProAttributedVoucherClaimSourceLabel('pro_shared_link')).toBe('PRO-ссылка');
+    expect(getProAttributedVoucherClaimSourceLabel('public_offer_detail')).toBe('Карточка оффера');
   });
 
   it('keeps attributed voucher copy factual and non-financial', () => {
@@ -194,7 +199,7 @@ describe('RF PRO workspace helpers', () => {
       proAttributedVouchersEmptyState,
     ].join(' ');
 
-    expect(stage50cCopy).toContain('Read-only visibility');
+    expect(stage50cCopy).toContain('Read-only видимость');
     expect(stage50cCopy).not.toMatch(
       /earned|commission|reward|payout|income|balance|accrued|доход|комисси|вознагражден|начислен|выплат/i,
     );

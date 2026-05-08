@@ -10,7 +10,14 @@ import { RfLocalStorageNotice } from '@/components/rf/Shared/RfLocalStorageNotic
 import { removeMyLocalVoucher } from '@/lib/rfLocalUserState';
 import { rfMyVouchersPageContent } from '@/lib/rfFirstSliceContent';
 import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
-import { getRfVoucherStatusBadgeClass, getRfVoucherStatusLabel } from '@/lib/rfVoucherLifecycle';
+import {
+  getRfVoucherActivationLabel,
+  getRfVoucherAttributionLabel,
+  getRfVoucherRepeatabilityLabel,
+  getRfVoucherStatusBadgeClass,
+  getRfVoucherStatusCaption,
+  getRfVoucherStatusLabel,
+} from '@/lib/rfVoucherLifecycle';
 
 function isListingVoucher(voucher: RfVoucherDto) {
   return voucher.claimScope === 'listing' && Boolean(voucher.listingContext);
@@ -131,7 +138,7 @@ export function RfMyVouchersView() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры (сервер)</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Это реальные RF-ваучеры из backend, выданные через claim-flow.
+          Это ваучеры, полученные в RF-каталоге. Здесь показаны только статус, условия и подсказки для использования.
         </p>
 
         {!isLoaded ? (
@@ -162,6 +169,11 @@ export function RfMyVouchersView() {
                   <ul className="space-y-3">
                     {group.items.map((voucher) => {
                       const itemLabel = getVoucherItemLabel(voucher);
+                      const visibilityLabels = [
+                        getRfVoucherAttributionLabel(voucher),
+                        getRfVoucherRepeatabilityLabel(voucher),
+                        getRfVoucherActivationLabel(voucher),
+                      ].filter((label): label is string => Boolean(label));
                       return (
                         <li
                           key={voucher.id}
@@ -182,6 +194,9 @@ export function RfMyVouchersView() {
                               <p className="mt-2 text-base font-semibold text-slate-950">
                                 {getVoucherOfferTitle(voucher)}
                               </p>
+                              <p className="mt-1 text-xs text-slate-600">
+                                {getRfVoucherStatusCaption(voucher)}
+                              </p>
                               {itemLabel ? (
                                 <p className="mt-1 text-sm text-slate-700">
                                   <span className="font-medium text-slate-800">Товар или услуга: </span>
@@ -195,6 +210,15 @@ export function RfMyVouchersView() {
                                 <p className="mt-1 truncate text-sm text-slate-600">
                                   Объект: {voucher.listingContext.listingTitle || voucher.listingContext.listingId}
                                 </p>
+                              ) : null}
+                              {visibilityLabels.length > 0 ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {visibilityLabels.map((label) => (
+                                    <span key={label} className="rounded-full bg-white/80 px-2 py-1 text-xs font-medium text-slate-700">
+                                      {label}
+                                    </span>
+                                  ))}
+                                </div>
                               ) : null}
                               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
                                 <span className="rounded-full bg-white/80 px-2 py-1">
@@ -227,60 +251,56 @@ export function RfMyVouchersView() {
                           </div>
 
                           <details className="group/details mt-3 border-t border-emerald-100 pt-2 text-sm text-slate-700">
-                          <summary className="cursor-pointer list-none font-medium text-emerald-900 transition hover:text-emerald-700">
-                            <span className="inline-flex items-center gap-1">
-                              Условия и использование
-                              <span className="transition-transform duration-200 group-open/details:rotate-180">
-                                ▾
+                            <summary className="cursor-pointer list-none font-medium text-emerald-900 transition hover:text-emerald-700">
+                              <span className="inline-flex items-center gap-1">
+                                Условия и использование
+                                <span className="transition-transform duration-200 group-open/details:rotate-180">
+                                  ▾
+                                </span>
                               </span>
-                            </span>
-                          </summary>
-                          <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-200 ease-out group-open/details:grid-rows-[1fr]">
-                            <div className="overflow-hidden">
-                              <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-                                <div>
-                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                    Выгода
-                                  </dt>
-                                  <dd className="mt-1">{getVoucherBenefit(voucher)}</dd>
+                            </summary>
+                            <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-200 ease-out group-open/details:grid-rows-[1fr]">
+                              <div className="overflow-hidden">
+                                <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                      Выгода
+                                    </dt>
+                                    <dd className="mt-1">{getVoucherBenefit(voucher)}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                      Условия
+                                    </dt>
+                                    <dd className="mt-1">{getVoucherTerms(voucher)}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                      Срок действия
+                                    </dt>
+                                    <dd className="mt-1">{getVoucherValidityLabel(voucher)}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                      Код
+                                    </dt>
+                                    <dd className="mt-1 font-mono text-slate-900">{voucher.code}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                      Получен
+                                    </dt>
+                                    <dd className="mt-1">{new Date(voucher.claimedAt).toLocaleString('ru-RU')}</dd>
+                                  </div>
+                                </dl>
+                                <div className="mt-3 rounded-lg border border-emerald-100 bg-white/70 p-3">
+                                  <p>{getVoucherUsageInstruction(voucher)}</p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {getVoucherUsageContactHint(voucher)}
+                                  </p>
                                 </div>
-                                <div>
-                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                    Условия
-                                  </dt>
-                                  <dd className="mt-1">{getVoucherTerms(voucher)}</dd>
-                                </div>
-                                <div>
-                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                    Срок действия
-                                  </dt>
-                                  <dd className="mt-1">{getVoucherValidityLabel(voucher)}</dd>
-                                </div>
-                                <div>
-                                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                    Код
-                                  </dt>
-                                  <dd className="mt-1 font-mono text-slate-900">{voucher.code}</dd>
-                                </div>
-                              </dl>
-                              <div className="mt-3 rounded-lg border border-emerald-100 bg-white/70 p-3">
-                                <p>{getVoucherUsageInstruction(voucher)}</p>
-                                <p className="mt-1 text-xs text-slate-500">
-                                  {getVoucherUsageContactHint(voucher)}
-                                </p>
                               </div>
-                              <details className="mt-3 text-xs text-slate-500">
-                                <summary className="cursor-pointer font-medium text-slate-600">
-                                  Технические детали
-                                </summary>
-                                <div className="mt-2 space-y-1">
-                                  <p>voucherId: {voucher.id}</p>
-                                  <p>offerId: {voucher.offerId}</p>
-                                  <p>partnerId: {voucher.partnerId}</p>
-                                </div>
-                              </details>
                             </div>
-                          </div>
                           </details>
                         </li>
                       );

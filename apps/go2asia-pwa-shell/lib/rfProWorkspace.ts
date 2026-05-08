@@ -28,10 +28,10 @@ export type ProNextStep = {
   actionLabel?: string;
 };
 
-export const proAttributedVouchersLabel = 'Attributed vouchers';
+export const proAttributedVouchersLabel = 'Ваучеры с PRO-отметкой';
 export const proAttributedVouchersBoundaryCopy =
-  'Read-only visibility по подтверждённым RF attribution facts. Блок не меняет attribution и не добавляет экономическую интерпретацию.';
-export const proAttributedVouchersEmptyState = 'Пока нет ваучеров с подтверждённой PRO attribution.';
+  'Read-only видимость по подтверждённым RF-отметкам. Блок не меняет выдачу ваучеров и не показывает финансовую механику.';
+export const proAttributedVouchersEmptyState = 'Пока нет ваучеров с подтверждённой PRO-отметкой.';
 
 export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
   return Array.from(new Set(proLinks.filter((link) => link.status === 'active').map((link) => link.partnerId)));
@@ -66,16 +66,30 @@ export function getProAttributedVoucherStatusLabel(
   voucher: Pick<RfProAttributedVoucherDto, 'status' | 'canonicalStatus'>
 ): string {
   const status = getRfVoucherEffectiveStatus(voucher);
-  if (status === 'redeemed') return 'Redeemed';
-  if (status === 'cancelled') return 'Cancelled';
-  if (status === 'expired') return 'Expired';
-  if (status === 'locked') return 'Locked';
-  if (status === 'unlocked') return 'Unlocked';
-  return 'Claim recorded';
+  if (status === 'redeemed') return 'Использован';
+  if (status === 'cancelled') return 'Недоступен';
+  if (status === 'expired') return 'Истёк';
+  if (status === 'locked') return 'Ожидает активации';
+  if (status === 'unlocked') return 'Повторно доступен';
+  return 'Активен';
 }
 
 export function getProAttributedVoucherScopeLabel(claimScope: RfProAttributedVoucherDto['claimScope']): string {
-  return claimScope === 'listing' ? 'Listing context' : 'Partner offer';
+  return claimScope === 'listing' ? 'Для объекта' : 'Оффер партнёра';
+}
+
+export function getProAttributedVoucherAttributionLabel(
+  status: RfProAttributedVoucherDto['attributionStatus']
+): string {
+  return status === 'confirmed' ? 'PRO отметка подтверждена' : 'PRO отметка уточняется';
+}
+
+export function getProAttributedVoucherClaimSourceLabel(source: RfProAttributedVoucherDto['claimSource']): string {
+  if (source === 'pro_shared_link') return 'PRO-ссылка';
+  if (source === 'rielt_offer_detail') return 'Страница объекта';
+  if (source === 'public_offer_detail') return 'Карточка оффера';
+  if (source === 'public_rf_catalog') return 'RF-каталог';
+  return 'RF';
 }
 
 /**
@@ -222,7 +236,7 @@ export function buildProNextSteps(
       id: 'clarify_scope',
       title: 'Уточнить фактический PRO scope',
       detail:
-        'Сейчас список партнёров вычисляется как support-layer fallback. Нужна явная assignment-модель в backend.',
+        'Сейчас список партнёров вычисляется как поддерживающий fallback. Нужна явная модель связи PRO и партнёра.',
     });
   }
 

@@ -26,7 +26,7 @@ interface ListingVoucherOffersClientProps {
 }
 
 function getOfferTypeLabel(type: RfRieltListingOfferDto['type']) {
-  return type === 'premium' ? 'Premium-ваучер' : 'Базовый ваучер';
+  return type === 'premium' ? 'Специальный ваучер' : 'Базовый ваучер';
 }
 
 function getOfferBenefit(offer: RfRieltListingOfferDto) {
@@ -50,10 +50,10 @@ function getErrorMessage(error: unknown) {
     return 'Этот ваучер доступен только для VIP.';
   }
   if (code === 'RF_INSUFFICIENT_POINTS_BALANCE') {
-    return 'Недостаточно Points для получения этого ваучера.';
+    return 'Сейчас этот ваучер недоступен для получения.';
   }
   if (code === 'RF_SPEND_TEMPORARILY_UNAVAILABLE' || code === 'RF_ECONOMY_RECOVERY_PENDING') {
-    return 'Сервис списания Points временно недоступен. Попробуйте позже.';
+    return 'Ваучер временно недоступен для получения. Попробуйте позже.';
   }
   if (code === 'RF_OFFER_NOT_FOUND' || code === 'RF_OFFER_INACTIVE' || code === 'RF_OFFER_NOT_CLAIMABLE' || code === 'RF_PARTNER_INACTIVE') {
     return 'Этот оффер сейчас недоступен.';

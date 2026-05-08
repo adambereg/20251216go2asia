@@ -13,7 +13,6 @@ import {
   MapPin,
   Store,
   UserPlus,
-  Award,
 } from 'lucide-react';
 
 interface PRONavProps {
@@ -34,7 +33,6 @@ const operations = [
   { href: '/rf/pro/partners', label: 'Партнёры', icon: BarChart3, prefix: '/rf/pro/partners', badge: 'legacy' },
   { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare, prefix: '/rf/pro/verifications', badge: 'demo' },
   { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus, prefix: '/rf/pro/onboarding', badge: 'soon' },
-  { href: '/rf/pro/rewards', label: 'Экономика PRO', icon: Award, prefix: '/rf/pro/rewards', badge: 'later' },
 ];
 
 export function PRONav({ variant = 'vertical' }: PRONavProps) {

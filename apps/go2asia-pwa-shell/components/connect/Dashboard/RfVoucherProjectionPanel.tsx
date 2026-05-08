@@ -6,26 +6,17 @@ import { AlertCircle, ArrowRight, Clock3, History, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
 import { fetchMyVouchers, type RfVoucherDto } from '@go2asia/sdk/rf';
 import {
-  buildRfVoucherTimelineItems,
+  buildConnectRfProjection,
   formatRfVoucherLabel,
   formatRfVoucherPartnerName,
-  getRfVoucherEffectiveStatus,
+  getProjectionVoucherStatusLabel,
   getRfVoucherListingSourceLabel,
-  splitRfVouchersByProjectionStatus,
   type RfVoucherTimelineItem,
 } from '@/lib/connectRfProjection';
 
 function formatDate(value: string | null | undefined) {
   if (!value) return 'дата уточняется';
   return new Date(value).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function getStatusLabel(voucher: RfVoucherDto) {
-  const status = getRfVoucherEffectiveStatus(voucher);
-  if (status === 'redeemed') return 'Использован';
-  if (status === 'cancelled') return 'Отменён';
-  if (status === 'expired') return 'Истёк';
-  return 'Активен';
 }
 
 function VoucherProjectionRow({
@@ -46,7 +37,7 @@ function VoucherProjectionRow({
           {listingSource ? <p className="mt-2 text-xs text-slate-500">{listingSource}</p> : null}
         </div>
         <span className="w-fit shrink-0 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800">
-          {getStatusLabel(voucher)}
+          {getProjectionVoucherStatusLabel(voucher)}
         </span>
       </div>
       <p className="mt-3 flex items-center gap-1 text-xs text-slate-500">
@@ -125,7 +116,7 @@ export function RfVoucherProjectionPanel() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Мои RF-ваучеры в Connect</h2>
-            <p className="text-sm text-slate-600">Загружаем lifecycle-состояние RF-ваучеров…</p>
+            <p className="text-sm text-slate-600">Загружаем read-only историю RF-активности…</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -155,10 +146,10 @@ export function RfVoucherProjectionPanel() {
     );
   }
 
-  const split = splitRfVouchersByProjectionStatus(vouchers);
-  const active = split.active.slice(0, 5);
-  const used = split.used.slice(0, 5);
-  const timeline = buildRfVoucherTimelineItems(vouchers, 5);
+  const projection = buildConnectRfProjection(vouchers);
+  const active = projection.groups.active.slice(0, 5);
+  const used = projection.groups.used.slice(0, 5);
+  const timeline = projection.recent.activity.slice(0, 5);
   const hasVouchers = vouchers.length > 0;
 
   return (
@@ -171,7 +162,7 @@ export function RfVoucherProjectionPanel() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
             <p className="text-sm text-slate-600">
-              Активные, использованные и последние lifecycle-события.
+              Активные, использованные и последние события RF-активности.
             </p>
           </div>
         </div>
@@ -211,8 +202,9 @@ export function RfVoucherProjectionPanel() {
           </div>
 
           <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            Прочие статусы: отменённые — {split.cancelled.length.toLocaleString('ru-RU')}, истёкшие/другие —{' '}
-            {split.other.length.toLocaleString('ru-RU')}. Полный список остаётся в RF.
+            Недоступные статусы: {projection.groups.unavailable.length.toLocaleString('ru-RU')}. Ожидает активации:{' '}
+            {projection.groups.pendingActivation.length.toLocaleString('ru-RU')}. Можно получить снова:{' '}
+            {projection.groups.repeatableAgain.length.toLocaleString('ru-RU')}. Полный список остаётся в RF.
           </div>
 
           <section className="mt-5">
