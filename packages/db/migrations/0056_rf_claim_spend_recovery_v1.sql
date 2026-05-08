@@ -28,41 +28,11 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-DO $$ BEGIN
- IF NOT EXISTS (
-   SELECT 1
-   FROM pg_constraint
-   WHERE conname = 'rf_voucher_economy_recovery_actor_user_id_not_blank_check'
- ) THEN
-  ALTER TABLE "rf_voucher_economy_recovery"
-   ADD CONSTRAINT "rf_voucher_economy_recovery_actor_user_id_not_blank_check"
-   CHECK ((length(trim("rf_voucher_economy_recovery"."actor_user_id")) > 0));
- END IF;
-END $$;
+ALTER TABLE "rf_voucher_economy_recovery" ADD CONSTRAINT "rf_voucher_economy_recovery_actor_user_id_not_blank_check" CHECK ((length(trim("rf_voucher_economy_recovery"."actor_user_id")) > 0));
 --> statement-breakpoint
-DO $$ BEGIN
- IF NOT EXISTS (
-   SELECT 1
-   FROM pg_constraint
-   WHERE conname = 'rf_voucher_economy_recovery_spend_external_id_not_blank_check'
- ) THEN
-  ALTER TABLE "rf_voucher_economy_recovery"
-   ADD CONSTRAINT "rf_voucher_economy_recovery_spend_external_id_not_blank_check"
-   CHECK ((length(trim("rf_voucher_economy_recovery"."spend_external_id")) > 0));
- END IF;
-END $$;
+ALTER TABLE "rf_voucher_economy_recovery" ADD CONSTRAINT "rf_voucher_economy_recovery_spend_external_id_not_blank_check" CHECK ((length(trim("rf_voucher_economy_recovery"."spend_external_id")) > 0));
 --> statement-breakpoint
-DO $$ BEGIN
- IF NOT EXISTS (
-   SELECT 1
-   FROM pg_constraint
-   WHERE conname = 'rf_voucher_economy_recovery_compensation_external_id_not_blank_check'
- ) THEN
-  ALTER TABLE "rf_voucher_economy_recovery"
-   ADD CONSTRAINT "rf_voucher_economy_recovery_compensation_external_id_not_blank_check"
-   CHECK ((length(trim("rf_voucher_economy_recovery"."compensation_external_id")) > 0));
- END IF;
-END $$;
+ALTER TABLE "rf_voucher_economy_recovery" ADD CONSTRAINT "rf_voucher_economy_recovery_compensation_external_id_not_blank_check" CHECK ((length(trim("rf_voucher_economy_recovery"."compensation_external_id")) > 0));
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "rf_voucher_economy_recovery_spend_external_id_unique" ON "rf_voucher_economy_recovery" USING btree ("spend_external_id");
 --> statement-breakpoint
