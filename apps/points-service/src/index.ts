@@ -147,7 +147,15 @@ const ACTIONS_PHASE2 = new Set([
   'rf_partner_verified',
   'rf_voucher_claimed',
   'rf_voucher_redeemed',
+  'rf_voucher_claim_spend',
+  'rf_voucher_claim_spend_compensation',
 ]);
+
+const ACTIONS_INTERNAL_ADD = new Set(
+  [...ACTIONS_PHASE2].filter((action) => action !== 'rf_voucher_claim_spend')
+);
+
+const ACTIONS_INTERNAL_SPEND = new Set(['rf_voucher_claim_spend']);
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -1239,7 +1247,7 @@ export default {
           return res;
         }
 
-        if (typeof action !== 'string' || !ACTIONS_PHASE2.has(action)) {
+        if (typeof action !== 'string' || !ACTIONS_INTERNAL_ADD.has(action)) {
           const res = errorResponse('BadRequest', 'Invalid action', requestId, 400);
           res.headers.set('X-Request-Id', requestId);
           return res;
@@ -1454,6 +1462,262 @@ export default {
             transactionId: row.transaction_id,
             applied: true,
             balance: Number(row.balance ?? 0),
+          },
+          200
+        );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'POST' && path === '/internal/points/spend') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const userId = typeof body?.userId === 'string' ? body.userId.trim() : '';
+        const amount = body?.amount;
+        const action = body?.action;
+        const externalId = typeof body?.externalId === 'string' ? body.externalId.trim() : '';
+        const sourceEventId = parseOptionalString(body?.sourceEventId);
+        const metadata = parseJsonMetadata(body?.metadata);
+        const correlationId = parseOptionalString(body?.correlationId);
+
+        if (userId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing userId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (typeof amount !== 'number' || !Number.isInteger(amount) || !Number.isFinite(amount) || amount < 1) {
+          const res = errorResponse('BadRequest', 'Invalid amount', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (typeof action !== 'string' || !ACTIONS_INTERNAL_SPEND.has(action)) {
+          const res = errorResponse('BadRequest', 'Invalid action', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (externalId.length === 0) {
+          const res = errorResponse('BadRequest', 'Missing externalId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (body?.sourceEventId !== undefined && sourceEventId === undefined) {
+          const res = errorResponse('BadRequest', 'Invalid sourceEventId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (body?.correlationId !== undefined && correlationId === undefined) {
+          const res = errorResponse('BadRequest', 'Invalid correlationId', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (body?.metadata !== undefined && (metadata === undefined || metadata === null)) {
+          const res = errorResponse('BadRequest', 'Invalid metadata', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const callerService = auth.principal.service;
+        const spendAmount = amount;
+        const ledgerAmount = -spendAmount;
+        const normalizedSourceEventId = typeof sourceEventId === 'string' ? sourceEventId.trim() : null;
+        const normalizedMetadata = {
+          ...(metadata ?? {}),
+          ...(correlationId ? { correlationId } : {}),
+        };
+
+        const existing = await getTransactionByExternalId(db, externalId);
+        if (existing) {
+          const decision = decideExternalIdIdempotency(
+            {
+              transactionId: existing.id,
+              userId: existing.user_id,
+              amount: existing.amount,
+              action: existing.reason,
+              sourceService: existing.source_service,
+              sourceEventId: existing.source_event_id,
+              metadata: existing.metadata,
+            },
+            {
+              userId,
+              amount: ledgerAmount,
+              action,
+              sourceService: callerService,
+              sourceEventId: normalizedSourceEventId,
+              metadata: normalizedMetadata,
+            }
+          );
+
+          if (decision.kind === 'conflict') {
+            logger.error('Spend idempotency conflict (integration error)', {
+              externalId,
+              existing: {
+                userId: existing.user_id,
+                amount: existing.amount,
+                action: existing.reason,
+                sourceService: existing.source_service,
+                sourceEventId: existing.source_event_id,
+                metadata: existing.metadata ?? {},
+              },
+              incoming: {
+                userId,
+                amount: ledgerAmount,
+                action,
+                sourceService: callerService,
+                sourceEventId: normalizedSourceEventId,
+                metadata: normalizedMetadata,
+              },
+            });
+            const res = errorResponse(
+              'REPLAY_PAYLOAD_MISMATCH',
+              'externalId already exists with different payload',
+              requestId,
+              409
+            );
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+
+          const { balance } = await getUserBalance(db, userId);
+          const res = json(
+            {
+              transactionId: existing.id,
+              applied: false,
+              idempotentReplay: true,
+              balanceAfter: balance,
+            },
+            200
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const txId = crypto.randomUUID();
+        const applyRes = await db.execute(sql`
+          WITH ins AS (
+            INSERT INTO points_transactions (
+              id,
+              user_id,
+              amount,
+              reason,
+              source_service,
+              source_event_id,
+              external_id,
+              metadata
+            )
+            SELECT
+              ${txId},
+              ${userId},
+              ${ledgerAmount},
+              ${action},
+              ${callerService},
+              ${normalizedSourceEventId},
+              ${externalId},
+              ${JSON.stringify(normalizedMetadata)}::jsonb
+            WHERE EXISTS (
+              SELECT 1
+              FROM user_balances ub
+              WHERE ub.user_id = ${userId}
+                AND ub.balance >= ${spendAmount}
+              FOR UPDATE
+            )
+            ON CONFLICT (external_id) DO NOTHING
+            RETURNING id
+          ),
+          up AS (
+            UPDATE user_balances ub
+            SET balance = ub.balance - ${spendAmount},
+                updated_at = now()
+            WHERE ub.user_id = ${userId}
+              AND EXISTS (SELECT 1 FROM ins)
+            RETURNING ub.balance
+          )
+          SELECT
+            (SELECT id FROM ins) AS transaction_id,
+            (SELECT balance FROM up) AS balance_after;
+        `);
+
+        const row = getRows<{ transaction_id: string | null; balance_after: number | null }>(applyRes)[0];
+        if (!row?.transaction_id) {
+          const existingAfterConflict = await getTransactionByExternalId(db, externalId);
+          if (existingAfterConflict) {
+            const decision = decideExternalIdIdempotency(
+              {
+                transactionId: existingAfterConflict.id,
+                userId: existingAfterConflict.user_id,
+                amount: existingAfterConflict.amount,
+                action: existingAfterConflict.reason,
+                sourceService: existingAfterConflict.source_service,
+                sourceEventId: existingAfterConflict.source_event_id,
+                metadata: existingAfterConflict.metadata,
+              },
+              {
+                userId,
+                amount: ledgerAmount,
+                action,
+                sourceService: callerService,
+                sourceEventId: normalizedSourceEventId,
+                metadata: normalizedMetadata,
+              }
+            );
+
+            if (decision.kind === 'conflict') {
+              const res = errorResponse(
+                'REPLAY_PAYLOAD_MISMATCH',
+                'externalId already exists with different payload',
+                requestId,
+                409
+              );
+              res.headers.set('X-Request-Id', requestId);
+              return res;
+            }
+
+            const { balance } = await getUserBalance(db, userId);
+            const res = json(
+              {
+                transactionId: existingAfterConflict.id,
+                applied: false,
+                idempotentReplay: true,
+                balanceAfter: balance,
+              },
+              200
+            );
+            res.headers.set('X-Request-Id', requestId);
+            return res;
+          }
+
+          const res = errorResponse(
+            'INSUFFICIENT_POINTS_BALANCE',
+            'Insufficient available points balance for spend operation',
+            requestId,
+            409
+          );
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const res = json(
+          {
+            transactionId: row.transaction_id,
+            applied: true,
+            idempotentReplay: false,
+            balanceAfter: Number(row.balance_after ?? 0),
           },
           200
         );

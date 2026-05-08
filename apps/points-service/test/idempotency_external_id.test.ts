@@ -83,6 +83,29 @@ describe('points-service idempotency (external_id / externalId)', () => {
     );
     expect(d).toEqual({ kind: 'conflict' });
   });
+
+  it('supports spend replay comparison with negative stored amount', () => {
+    const d = decideExternalIdIdempotency(
+      {
+        transactionId: 'tx_spend_1',
+        userId: 'u_spend',
+        amount: -150,
+        action: 'rf_voucher_claim_spend',
+        sourceService: 'rf-service',
+        sourceEventId: 'rf:voucher:v_1',
+        metadata: { voucherId: 'v_1' },
+      },
+      {
+        userId: 'u_spend',
+        amount: -150,
+        action: 'rf_voucher_claim_spend',
+        sourceService: 'rf-service',
+        sourceEventId: 'rf:voucher:v_1',
+        metadata: { voucherId: 'v_1' },
+      }
+    );
+    expect(d).toEqual({ kind: 'duplicate', transactionId: 'tx_spend_1' });
+  });
 });
 
 

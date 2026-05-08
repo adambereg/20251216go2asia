@@ -34,9 +34,10 @@ describe('points-service request hardening', () => {
         { amount: 100, reason: 'network_accrual_level_1' },
         { amount: 20, reason: 'network_accrual_level_2' },
         { amount: -200, reason: 'rf_voucher_claimed' },
+        { amount: -30, reason: 'rf_voucher_claim_spend' },
       ])
     ).toEqual({
-      availablePoints: 820,
+      availablePoints: 790,
       lockedPoints: 5000,
       networkPoints: 120,
     });
@@ -679,6 +680,346 @@ describe('points-service request hardening', () => {
     expect(response.status).toBe(409);
     expect(body.error).toBe('Conflict');
     expect(body.message).toContain('externalId already exists');
+  });
+
+  it('rejects unauthenticated internal spend requests', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error).toBe('UNAUTHORIZED');
+  });
+
+  it('validates spend payload fields', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const invalidAmountResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 12.5,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+        }),
+      }),
+      env
+    );
+    expect(invalidAmountResponse.status).toBe(400);
+
+    const invalidActionResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 10,
+          action: 'rf_voucher_claimed',
+          externalId: 'rf:voucher-claim-spend:voucher_2',
+        }),
+      }),
+      env
+    );
+    expect(invalidActionResponse.status).toBe(400);
+
+    const missingExternalIdResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 10,
+          action: 'rf_voucher_claim_spend',
+        }),
+      }),
+      env
+    );
+    expect(missingExternalIdResponse.status).toBe(400);
+  });
+
+  it('applies spend with negative ledger row and reduced balance', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_1', balance_after: 80 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 20,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+          sourceEventId: 'rf:voucher:voucher_1',
+          correlationId: 'corr_1',
+          metadata: { voucherId: 'voucher_1' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      transactionId: string;
+      applied: boolean;
+      idempotentReplay: boolean;
+      balanceAfter: number;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      transactionId: 'tx_spend_1',
+      applied: true,
+      idempotentReplay: false,
+      balanceAfter: 80,
+    });
+
+    const spendQuery = executeMock.mock.calls[1]?.[0] as { values?: unknown[]; strings: string[] };
+    expect(spendQuery.values).toEqual(
+      expect.arrayContaining([
+        'user_1',
+        -20,
+        'rf_voucher_claim_spend',
+        'rf-service',
+        'rf:voucher:voucher_1',
+        'rf:voucher-claim-spend:voucher_1',
+      ])
+    );
+    expect(spendQuery.strings.join(' ')).toContain('ub.balance >=');
+  });
+
+  it('returns idempotent replay for same spend externalId/payload', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'tx_spend_existing',
+            user_id: 'user_1',
+            amount: -100,
+            reason: 'rf_voucher_claim_spend',
+            source_service: 'rf-service',
+            source_event_id: 'rf:voucher:voucher_1',
+            external_id: 'rf:voucher-claim-spend:voucher_1',
+            metadata: { voucherId: 'voucher_1' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ balance: 250, updated_at: new Date('2026-05-01T00:00:00.000Z') }],
+      });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+          sourceEventId: 'rf:voucher:voucher_1',
+          metadata: { voucherId: 'voucher_1' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      transactionId: string;
+      applied: boolean;
+      idempotentReplay: boolean;
+      balanceAfter: number;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      transactionId: 'tx_spend_existing',
+      applied: false,
+      idempotentReplay: true,
+      balanceAfter: 250,
+    });
+  });
+
+  it('returns deterministic mismatch conflict for spend replay payload mismatch', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'tx_spend_existing',
+          user_id: 'user_1',
+          amount: -100,
+          reason: 'rf_voucher_claim_spend',
+          source_service: 'rf-service',
+          source_event_id: 'rf:voucher:voucher_1',
+          external_id: 'rf:voucher-claim-spend:voucher_1',
+          metadata: { voucherId: 'voucher_1' },
+        },
+      ],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 120,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+          sourceEventId: 'rf:voucher:voucher_1',
+          metadata: { voucherId: 'voucher_1' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error).toBe('REPLAY_PAYLOAD_MISMATCH');
+  });
+
+  it('returns insufficient balance without ledger mutation on spend', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: null, balance_after: null }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 500,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_insufficient',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error).toBe('INSUFFICIENT_POINTS_BALANCE');
+    expect(executeMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('shows negative spend transaction in ledger list response', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'tx_spend_visible',
+          user_id: 'user_from_token',
+          amount: -70,
+          reason: 'rf_voucher_claim_spend',
+          source_service: 'rf-service',
+          source_event_id: 'rf:voucher:voucher_visible',
+          external_id: 'rf:voucher-claim-spend:voucher_visible',
+          metadata: { voucherId: 'voucher_visible' },
+          created_at: new Date('2026-05-08T00:00:00.000Z'),
+        },
+      ],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_from_token' });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/v1/points/transactions', {
+        headers: {
+          'X-Gateway-Auth': token,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: Array<{ amount: number; action: string }> }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items[0]).toMatchObject({
+      amount: -70,
+      action: 'rf_voucher_claim_spend',
+    });
   });
 
   it('returns active badge catalog entries only', async () => {

@@ -186,6 +186,8 @@ import type {
   SpaceRateLimitedResponse,
   SpaceServiceAuthNotConfiguredResponse,
   SpaceValidationErrorResponse,
+  SpendPointsRequest,
+  SpendPointsResponse,
   SubmitQuestStepRequest,
   TransactionsPage,
   UnauthorizedResponse,
@@ -342,6 +344,73 @@ export const awardBadge = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(awardBadgeRequest),
+  });
+};
+
+/**
+ * Internal spend endpoint for service-to-service usage. Idempotency policy: - `externalId` is required and MUST be globally unique for Points Service. - Replaying the same `externalId` with the same payload returns `applied=false` and `idempotentReplay=true`. - Reusing `externalId` with a different payload returns 409 with deterministic `REPLAY_PAYLOAD_MISMATCH`.
+Balance policy: - `amount` in request is positive spend quantity (`>=1`). - Ledger stores spend as negative amount. - Spend is applied only from available `user_balances.balance`. - If balance is insufficient, endpoint returns 409 `INSUFFICIENT_POINTS_BALANCE` and does not mutate ledger/balance.
+
+ * @summary Spend points from user available balance (idempotent)
+ */
+export type spendPointsResponse200 = {
+  data: SpendPointsResponse;
+  status: 200;
+};
+
+export type spendPointsResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type spendPointsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type spendPointsResponse409 = {
+  data: ConflictResponse;
+  status: 409;
+};
+
+export type spendPointsResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type spendPointsResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type spendPointsResponseSuccess = spendPointsResponse200 & {
+  headers: Headers;
+};
+export type spendPointsResponseError = (
+  | spendPointsResponse400
+  | spendPointsResponse401
+  | spendPointsResponse409
+  | spendPointsResponse500
+  | spendPointsResponse503
+) & {
+  headers: Headers;
+};
+
+export type spendPointsResponse = spendPointsResponseSuccess | spendPointsResponseError;
+
+export const getSpendPointsUrl = () => {
+  return `/internal/points/spend`;
+};
+
+export const spendPoints = async (
+  spendPointsRequest: SpendPointsRequest,
+  options?: RequestInit
+): Promise<spendPointsResponse> => {
+  return customInstance<spendPointsResponse>(getSpendPointsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(spendPointsRequest),
   });
 };
 
