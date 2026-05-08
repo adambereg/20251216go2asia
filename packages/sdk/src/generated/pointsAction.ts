@@ -32,4 +32,6 @@ export const PointsAction = {
   rf_partner_verified: "rf_partner_verified",
   rf_voucher_claimed: "rf_voucher_claimed",
   rf_voucher_redeemed: "rf_voucher_redeemed",
+  rf_voucher_claim_spend: "rf_voucher_claim_spend",
+  rf_voucher_claim_spend_compensation: "rf_voucher_claim_spend_compensation",
 } as const;

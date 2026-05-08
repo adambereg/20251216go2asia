@@ -9,6 +9,7 @@
 import type { RfErrorResponse } from "./rfErrorResponse";
 
 /**
- * Conflict
+ * Conflict (for claim endpoints may include RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH, RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE, RF_SPEND_IDEMPOTENCY_CONFLICT, RF_ECONOMY_RECOVERY_PENDING)
+
  */
 export type RfConflictResponse = RfErrorResponse;

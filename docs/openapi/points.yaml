@@ -300,6 +300,51 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /internal/points/spend:
+    post:
+      tags: [internal]
+      operationId: spendPoints
+      summary: Spend points from user available balance (idempotent)
+      description: >
+        Internal spend endpoint for service-to-service usage.
+        Idempotency policy:
+        - `externalId` is required and MUST be globally unique for Points Service.
+        - Replaying the same `externalId` with the same payload returns `applied=false` and `idempotentReplay=true`.
+        - Reusing `externalId` with a different payload returns 409 with deterministic `REPLAY_PAYLOAD_MISMATCH`.
+
+        Balance policy:
+        - `amount` in request is positive spend quantity (`>=1`).
+        - Ledger stores spend as negative amount.
+        - Spend is applied only from available `user_balances.balance`.
+        - If balance is insufficient, endpoint returns 409 `INSUFFICIENT_POINTS_BALANCE` and does not mutate ledger/balance.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpendPointsRequest"
+      responses:
+        "200":
+          description: OK (applied or idempotent replay)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendPointsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/points/badges/award:
     post:
       tags: [internal]
@@ -469,6 +514,8 @@ components:
         - rf_partner_verified
         - rf_voucher_claimed
         - rf_voucher_redeemed
+        - rf_voucher_claim_spend
+        - rf_voucher_claim_spend_compensation
 
     PointsTransaction:
       type: object
@@ -688,6 +735,48 @@ components:
           type: boolean
           description: True if a new transaction was created, false if duplicate
         balance:
+          type: integer
+
+    SpendPointsRequest:
+      type: object
+      required: [userId, amount, action, externalId]
+      properties:
+        userId:
+          type: string
+        amount:
+          type: integer
+          description: Positive points quantity to spend
+          minimum: 1
+        action:
+          type: string
+          enum:
+            - rf_voucher_claim_spend
+        externalId:
+          type: string
+          description: Global idempotency key (SSOT)
+        sourceEventId:
+          type: string
+          description: Optional caller-supplied audit pointer to the originating domain event or record.
+        correlationId:
+          type: string
+          description: Optional correlation id for tracing across services.
+        metadata:
+          type: object
+          additionalProperties: true
+
+    SpendPointsResponse:
+      type: object
+      required: [transactionId, applied, idempotentReplay, balanceAfter]
+      properties:
+        transactionId:
+          type: string
+        applied:
+          type: boolean
+          description: True if a new spend transaction was created.
+        idempotentReplay:
+          type: boolean
+          description: True when the same externalId/payload is replayed.
+        balanceAfter:
           type: integer
 
     BadgeCatalogItem:

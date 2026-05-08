@@ -654,7 +654,8 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RfErrorResponse"
-      description: Conflict
+      description: |
+        Conflict (for claim endpoints may include RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH, RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE, RF_SPEND_IDEMPOTENCY_CONFLICT, RF_ECONOMY_RECOVERY_PENDING)
     RfForbidden:
       content:
         application/json:
@@ -2468,6 +2469,8 @@ components:
         - rf_partner_verified
         - rf_voucher_claimed
         - rf_voucher_redeemed
+        - rf_voucher_claim_spend
+        - rf_voucher_claim_spend_compensation
       type: string
     PointsTransaction:
       properties:
@@ -3557,6 +3560,519 @@ components:
         - status
         - version
       type: object
+    RfInternalDiagnosticsAnomaly:
+      properties:
+        code:
+          type: string
+        evidence:
+          additionalProperties: true
+          type: object
+        message:
+          type: string
+        severity:
+          $ref: "#/components/schemas/RfInternalDiagnosticsAnomalySeverity"
+      required:
+        - code
+        - severity
+        - message
+        - evidence
+      type: object
+    RfInternalDiagnosticsAnomalySeverity:
+      enum:
+        - info
+        - warning
+        - critical
+      type: string
+    RfInternalVoucherDiagnosticsAttribution:
+      properties:
+        attributionCapturedAt:
+          format: date-time
+          nullable: true
+          type: string
+        attributionConfirmedAt:
+          format: date-time
+          nullable: true
+          type: string
+        attributionRejectedReason:
+          nullable: true
+          type: string
+        attributionSource:
+          $ref: "#/components/schemas/RfAttributionSource"
+        attributionStatus:
+          $ref: "#/components/schemas/RfAttributionStatus"
+        attributionStrategy:
+          enum:
+            - rf_pro_last_touch_before_claim
+          type: string
+        attributionVersion:
+          minimum: 1
+          type: integer
+        claimSource:
+          $ref: "#/components/schemas/RfClaimSource"
+        metadataKeys:
+          items:
+            type: string
+          type: array
+        proAttributedUserId:
+          nullable: true
+          type: string
+        proLinkId:
+          nullable: true
+          type: string
+      required:
+        - attributionVersion
+        - attributionStrategy
+        - attributionStatus
+        - attributionSource
+        - claimSource
+        - proAttributedUserId
+        - proLinkId
+        - attributionConfirmedAt
+        - attributionCapturedAt
+        - attributionRejectedReason
+        - metadataKeys
+      type: object
+    RfInternalVoucherDiagnosticsConsumptionGuard:
+      properties:
+        claimScope:
+          enum:
+            - partner
+            - listing
+          nullable: true
+          type: string
+        consumedAt:
+          format: date-time
+          nullable: true
+          type: string
+        consumedVoucherId:
+          nullable: true
+          type: string
+        exists:
+          type: boolean
+        issuedToUserId:
+          nullable: true
+          type: string
+        offerId:
+          nullable: true
+          type: string
+        repeatPolicySnapshot:
+          allOf:
+            - $ref: "#/components/schemas/RfRepeatPolicy"
+          nullable: true
+        scopeRef:
+          nullable: true
+          type: string
+      required:
+        - exists
+        - offerId
+        - issuedToUserId
+        - claimScope
+        - scopeRef
+        - consumedVoucherId
+        - repeatPolicySnapshot
+        - consumedAt
+      type: object
+    RfInternalVoucherDiagnosticsEconomyRecovery:
+      properties:
+        compensationExternalId:
+          nullable: true
+          type: string
+        correlationIdMasked:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          nullable: true
+          type: string
+        exists:
+          type: boolean
+        lastErrorMasked:
+          nullable: true
+          type: string
+        resolvedAt:
+          format: date-time
+          nullable: true
+          type: string
+        spendExternalId:
+          nullable: true
+          type: string
+        state:
+          enum:
+            - pending
+            - resolved
+          nullable: true
+          type: string
+        updatedAt:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+        - exists
+        - state
+        - spendExternalId
+        - compensationExternalId
+        - correlationIdMasked
+        - lastErrorMasked
+        - createdAt
+        - updatedAt
+        - resolvedAt
+      type: object
+    RfInternalVoucherDiagnosticsIdempotency:
+      properties:
+        claimBindings:
+          items:
+            $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotencyBinding"
+          type: array
+      required:
+        - claimBindings
+      type: object
+    RfInternalVoucherDiagnosticsIdempotencyBinding:
+      properties:
+        actorUserId:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        idempotencyKeyFingerprint:
+          type: string
+        operation:
+          enum:
+            - voucher_claim
+          type: string
+        voucherId:
+          type: string
+      required:
+        - operation
+        - actorUserId
+        - voucherId
+        - createdAt
+        - idempotencyKeyFingerprint
+      type: object
+    RfInternalVoucherDiagnosticsListingMappingRelation:
+      properties:
+        listingId:
+          type: string
+        offerId:
+          type: string
+        offerKind:
+          enum:
+            - basic
+            - premium
+          type: string
+        partnerId:
+          type: string
+        priority:
+          type: integer
+        status:
+          enum:
+            - active
+            - hidden
+          type: string
+      required:
+        - listingId
+        - offerId
+        - partnerId
+        - status
+        - offerKind
+        - priority
+      type: object
+    RfInternalVoucherDiagnosticsOfferRelation:
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        repeatPolicy:
+          $ref: "#/components/schemas/RfRepeatPolicy"
+        status:
+          enum:
+            - draft
+            - active
+            - archived
+          type: string
+        visibility:
+          enum:
+            - public
+            - pro_only
+            - invite_only
+          type: string
+      required:
+        - id
+        - partnerId
+        - status
+        - visibility
+        - repeatPolicy
+      type: object
+    RfInternalVoucherDiagnosticsPartnerRelation:
+      properties:
+        id:
+          type: string
+        ownerUserId:
+          type: string
+        status:
+          enum:
+            - active
+            - archived
+          type: string
+      required:
+        - id
+        - status
+        - ownerUserId
+      type: object
+    RfInternalVoucherDiagnosticsProLinkRelation:
+      properties:
+        id:
+          type: string
+        partnerId:
+          type: string
+        proUserId:
+          type: string
+        shareCodeMasked:
+          nullable: true
+          type: string
+        status:
+          enum:
+            - pending
+            - active
+            - ended
+          type: string
+      required:
+        - id
+        - partnerId
+        - proUserId
+        - status
+        - shareCodeMasked
+      type: object
+    RfInternalVoucherDiagnosticsRedemption:
+      properties:
+        hasSuccessfulRedemption:
+          type: boolean
+        items:
+          items:
+            $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRedemptionItem"
+          type: array
+        successfulRedemptionCount:
+          minimum: 0
+          type: integer
+        totalRedemptionAttempts:
+          minimum: 0
+          type: integer
+      required:
+        - items
+        - hasSuccessfulRedemption
+        - successfulRedemptionCount
+        - totalRedemptionAttempts
+      type: object
+    RfInternalVoucherDiagnosticsRedemptionItem:
+      properties:
+        actorUserId:
+          nullable: true
+          type: string
+        correlationIdMasked:
+          nullable: true
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        idempotencyKeyFingerprint:
+          nullable: true
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        resultStatus:
+          $ref: "#/components/schemas/RfVoucherRedemptionResultStatus"
+        voucherId:
+          type: string
+      required:
+        - id
+        - voucherId
+        - resultStatus
+        - actorUserId
+        - redeemedAt
+        - createdAt
+        - idempotencyKeyFingerprint
+        - correlationIdMasked
+      type: object
+    RfInternalVoucherDiagnosticsRelations:
+      properties:
+        listingMapping:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsListingMappingRelation"
+            - type: "null"
+        offer:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsOfferRelation"
+            - type: "null"
+        partner:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsPartnerRelation"
+            - type: "null"
+        proLink:
+          anyOf:
+            - $ref: "#/components/schemas/RfInternalVoucherDiagnosticsProLinkRelation"
+            - type: "null"
+      required:
+        - offer
+        - partner
+        - listingMapping
+        - proLink
+      type: object
+    RfInternalVoucherDiagnosticsResponse:
+      properties:
+        anomalies:
+          items:
+            $ref: "#/components/schemas/RfInternalDiagnosticsAnomaly"
+          type: array
+        attribution:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsAttribution"
+        consumptionGuard:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsConsumptionGuard"
+        economyRecovery:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsEconomyRecovery"
+        idempotency:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsIdempotency"
+        redemption:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRedemption"
+        relations:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsRelations"
+        voucher:
+          $ref: "#/components/schemas/RfInternalVoucherDiagnosticsVoucher"
+      required:
+        - voucher
+        - relations
+        - redemption
+        - consumptionGuard
+        - attribution
+        - idempotency
+        - economyRecovery
+        - anomalies
+      type: object
+    RfInternalVoucherDiagnosticsVoucher:
+      properties:
+        cancelledAt:
+          format: date-time
+          nullable: true
+          type: string
+        canonicalStatus:
+          $ref: "#/components/schemas/RfVoucherCanonicalStatus"
+        claimScope:
+          enum:
+            - partner
+            - listing
+          type: string
+        claimedAt:
+          format: date-time
+          type: string
+        codeMasked:
+          nullable: true
+          type: string
+        contractVersion:
+          minimum: 1
+          type: integer
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
+        economyTransitionTimestamps:
+          properties:
+            compensationAttemptedAt:
+              format: date-time
+              nullable: true
+              type: string
+            compensationResolvedAt:
+              format: date-time
+              nullable: true
+              type: string
+            spendAttemptedAt:
+              format: date-time
+              nullable: true
+              type: string
+          required:
+            - spendAttemptedAt
+            - compensationAttemptedAt
+            - compensationResolvedAt
+          type: object
+        expiresAt:
+          format: date-time
+          nullable: true
+          type: string
+        issueSequence:
+          minimum: 1
+          type: integer
+        issuedToUserId:
+          type: string
+        listingId:
+          nullable: true
+          type: string
+        listingTitleSnapshot:
+          nullable: true
+          type: string
+        offerId:
+          type: string
+        partnerId:
+          type: string
+        pointsCompensationExternalId:
+          nullable: true
+          type: string
+        pointsCostSnapshot:
+          minimum: 0
+          type: integer
+        pointsDebitExternalId:
+          nullable: true
+          type: string
+        redeemedAt:
+          format: date-time
+          nullable: true
+          type: string
+        repeatPolicySnapshot:
+          $ref: "#/components/schemas/RfRepeatPolicy"
+        status:
+          enum:
+            - claimed
+            - redeemed
+            - cancelled
+          type: string
+        statusActorUserId:
+          nullable: true
+          type: string
+        statusChangedAt:
+          format: date-time
+          nullable: true
+          type: string
+        statusReason:
+          nullable: true
+          type: string
+        voucherId:
+          type: string
+      required:
+        - voucherId
+        - offerId
+        - partnerId
+        - issuedToUserId
+        - claimScope
+        - listingId
+        - listingTitleSnapshot
+        - status
+        - canonicalStatus
+        - contractVersion
+        - repeatPolicySnapshot
+        - issueSequence
+        - pointsCostSnapshot
+        - pointsDebitExternalId
+        - pointsCompensationExternalId
+        - economyStatus
+        - economyTransitionTimestamps
+        - claimedAt
+        - redeemedAt
+        - cancelledAt
+        - expiresAt
+        - statusChangedAt
+        - statusReason
+        - statusActorUserId
+        - codeMasked
+      type: object
     RfOffer:
       properties:
         createdAt:
@@ -3580,6 +4096,11 @@ components:
           type: string
         partnerId:
           type: string
+        pointsCost:
+          description: |
+            Optional RF economy cost in Points for this offer. `0` means free acquisition.
+          minimum: 0
+          type: integer
         repeatPolicy:
           allOf:
             - $ref: "#/components/schemas/RfRepeatPolicy"
@@ -4051,6 +4572,8 @@ components:
         createdAt:
           format: date-time
           type: string
+        economyStatus:
+          $ref: "#/components/schemas/RfVoucherEconomyStatus"
         expiresAt:
           format: date-time
           nullable: true
@@ -4122,6 +4645,14 @@ components:
             - displayName
           type: object
         partnerId:
+          type: string
+        pointsCostSnapshot:
+          description: Claim-time snapshot of offer Points cost.
+          minimum: 0
+          type: integer
+        pointsDebitExternalId:
+          description: Deterministic external id for future Points debit idempotency.
+          nullable: true
           type: string
         redeemedAt:
           format: date-time
@@ -4241,6 +4772,15 @@ components:
         - redeemed
         - expired
         - cancelled
+      type: string
+    RfVoucherEconomyStatus:
+      description: |
+        Voucher economy processing snapshot state. Slice 4.1 prepares this field without enabling spend runtime.
+      enum:
+        - not_required
+        - pending
+        - debited
+        - debit_failed
       type: string
     RfVoucherListResponse:
       properties:
@@ -5406,6 +5946,54 @@ components:
         - group
         - private
       type: string
+    SpendPointsRequest:
+      properties:
+        action:
+          enum:
+            - rf_voucher_claim_spend
+          type: string
+        amount:
+          description: Positive points quantity to spend
+          minimum: 1
+          type: integer
+        correlationId:
+          description: Optional correlation id for tracing across services.
+          type: string
+        externalId:
+          description: Global idempotency key (SSOT)
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        sourceEventId:
+          description: Optional caller-supplied audit pointer to the originating domain event or record.
+          type: string
+        userId:
+          type: string
+      required:
+        - userId
+        - amount
+        - action
+        - externalId
+      type: object
+    SpendPointsResponse:
+      properties:
+        applied:
+          description: True if a new spend transaction was created.
+          type: boolean
+        balanceAfter:
+          type: integer
+        idempotentReplay:
+          description: True when the same externalId/payload is replayed.
+          type: boolean
+        transactionId:
+          type: string
+      required:
+        - transactionId
+        - applied
+        - idempotentReplay
+        - balanceAfter
+      type: object
     SubmitQuestStepRequest:
       properties:
         proofData:
@@ -5719,6 +6307,42 @@ paths:
       security:
         - ServiceAuth: []
       summary: Award an off-chain badge to a user (idempotent)
+      tags:
+        - internal
+  /internal/points/spend:
+    post:
+      description: |
+        Internal spend endpoint for service-to-service usage. Idempotency policy: - `externalId` is required and MUST be globally unique for Points Service. - Replaying the same `externalId` with the same payload returns `applied=false` and `idempotentReplay=true`. - Reusing `externalId` with a different payload returns 409 with deterministic `REPLAY_PAYLOAD_MISMATCH`.
+        Balance policy: - `amount` in request is positive spend quantity (`>=1`). - Ledger stores spend as negative amount. - Spend is applied only from available `user_balances.balance`. - If balance is insufficient, endpoint returns 409 `INSUFFICIENT_POINTS_BALANCE` and does not mutate ledger/balance.
+      operationId: spendPoints
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpendPointsRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendPointsResponse"
+          description: OK (applied or idempotent replay)
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - ServiceAuth: []
+      summary: Spend points from user available balance (idempotent)
       tags:
         - internal
   /internal/referral/generate-code:
@@ -7828,6 +8452,32 @@ paths:
       summary: Redeem voucher by partner owner
       tags:
         - rf
+  /v1/rf/internal/vouchers/{voucherId}/diagnostics:
+    get:
+      description: |
+        Internal/admin diagnostics endpoint for support and QA. Returns read-only voucher lifecycle, redemption, repeatability, attribution and idempotency state. Not for public, PRO or merchant product UI.
+      operationId: rfGetInternalVoucherDiagnostics
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfVoucherId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfInternalVoucherDiagnosticsResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Internal RF voucher diagnostics (admin-only, read-only)
+      tags:
+        - rf
   /v1/rf/me/vouchers:
     get:
       operationId: rfListMyVouchers
@@ -8224,7 +8874,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/RfErrorResponse"
           description: |
-            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH.
+            Conflict, including RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH, RF_VIP_REQUIRED_FOR_PAID_VOUCHER, RF_INSUFFICIENT_POINTS_BALANCE, RF_SPEND_IDEMPOTENCY_CONFLICT and RF_ECONOMY_RECOVERY_PENDING.
         "429":
           $ref: "#/components/responses/RfRateLimited"
         "500":
@@ -9091,7 +9741,6 @@ tags:
       consumerSeam:
         explicitlyOutOfScopeInThisSpec:
           - /v1/rf/branches
-          - /v1/rf/internal/*
           - moderation and verification workflow endpoints beyond current baseline
         normativeHttpPaths:
           - /v1/rf/partners

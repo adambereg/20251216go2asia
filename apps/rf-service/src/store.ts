@@ -13,6 +13,7 @@ export type VoucherCanonicalStatus = 'available' | 'locked' | 'unlocked' | 'rede
 export type VoucherClaimScope = 'partner' | 'listing';
 export type RfRepeatPolicy = 'once_per_scope' | 'repeat_after_redeem';
 export type RfClaimBlockReason = 'existing_active_voucher' | 'once_per_scope_consumed';
+export type RfVoucherEconomyStatus = 'not_required' | 'pending' | 'debited' | 'debit_failed';
 export type RfAttributionStatus = 'none' | 'confirmed' | 'rejected';
 export type RfAttributionSource = 'pro_link' | 'direct_offer' | 'internal_navigation' | 'unknown';
 export type RfClaimSource = 'public_rf_catalog' | 'public_offer_detail' | 'rielt_offer_detail' | 'pro_shared_link' | 'unknown';
@@ -43,6 +44,7 @@ export interface Offer {
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: OfferStatus;
   repeatPolicy?: RfRepeatPolicy;
+  pointsCost?: number;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -115,6 +117,9 @@ export interface Voucher {
   contractVersion?: number;
   repeatPolicySnapshot?: RfRepeatPolicy;
   issueSequence?: number;
+  pointsCostSnapshot?: number;
+  pointsDebitExternalId?: string | null;
+  economyStatus?: RfVoucherEconomyStatus;
   expiresAt?: string | null;
   cancelledAt?: string | null;
   statusChangedAt?: string | null;
@@ -219,6 +224,155 @@ export interface RfClaimAttributionInput {
   metadata?: Record<string, unknown>;
 }
 
+export type RfDiagnosticsSeverity = 'info' | 'warning' | 'critical';
+
+export interface RfVoucherDiagnosticsAnomaly {
+  code:
+    | 'voucher_redeemed_without_redemption_row'
+    | 'redemption_row_without_redeemed_status'
+    | 'once_per_scope_redeemed_without_guard'
+    | 'unexpected_repeat_after_redeem_guard'
+    | 'legacy_status_canonical_status_mismatch'
+    | 'listing_scope_missing_listing_id'
+    | 'guard_points_to_missing_voucher'
+    | 'idempotency_points_to_missing_voucher'
+    | 'confirmed_attribution_without_pro_link'
+    | 'rejected_attribution_present'
+    | 'repeat_sequence_gap'
+    | 'active_duplicate_possible'
+    | 'attribution_pro_link_partner_mismatch'
+    | 'listing_mapping_missing_or_inactive'
+    | 'debited_without_external_id'
+    | 'spend_succeeded_claim_failed'
+    | 'compensation_pending_too_long'
+    | 'debit_failed_visible_voucher';
+  severity: RfDiagnosticsSeverity;
+  message: string;
+  evidence: Record<string, string | number | boolean | null>;
+}
+
+export interface RfVoucherDiagnostics {
+  voucher: {
+    voucherId: string;
+    offerId: string;
+    partnerId: string;
+    issuedToUserId: string;
+    claimScope: VoucherClaimScope;
+    listingId: string | null;
+    listingTitleSnapshot: string | null;
+    status: VoucherStatus;
+    canonicalStatus: VoucherCanonicalStatus;
+    contractVersion: number;
+    repeatPolicySnapshot: RfRepeatPolicy;
+    issueSequence: number;
+    pointsCostSnapshot: number;
+    pointsDebitExternalId: string | null;
+    pointsCompensationExternalId: string | null;
+    economyStatus: RfVoucherEconomyStatus;
+    economyTransitionTimestamps: {
+      spendAttemptedAt: string | null;
+      compensationAttemptedAt: string | null;
+      compensationResolvedAt: string | null;
+    };
+    claimedAt: string;
+    redeemedAt: string | null;
+    cancelledAt: string | null;
+    expiresAt: string | null;
+    statusChangedAt: string | null;
+    statusReason: string | null;
+    statusActorUserId: string | null;
+    codeMasked: string | null;
+  };
+  relations: {
+    offer: {
+      id: string;
+      partnerId: string;
+      status: OfferStatus;
+      visibility: Offer['visibility'];
+      repeatPolicy: RfRepeatPolicy;
+    } | null;
+    partner: {
+      id: string;
+      status: PartnerStatus;
+      ownerUserId: string;
+    } | null;
+    listingMapping: {
+      listingId: string;
+      offerId: string;
+      partnerId: string;
+      status: RieltListingOfferStatus;
+      offerKind: RieltListingOfferKind;
+      priority: number;
+    } | null;
+    proLink: {
+      id: string;
+      partnerId: string;
+      proUserId: string;
+      status: ProLinkStatus;
+      shareCodeMasked: string | null;
+    } | null;
+  };
+  redemption: {
+    items: Array<{
+      id: string;
+      voucherId: string;
+      resultStatus: 'succeeded' | 'failed' | 'duplicate';
+      actorUserId: string | null;
+      redeemedAt: string | null;
+      createdAt: string;
+      idempotencyKeyFingerprint: string | null;
+      correlationIdMasked: string | null;
+    }>;
+    hasSuccessfulRedemption: boolean;
+    successfulRedemptionCount: number;
+    totalRedemptionAttempts: number;
+  };
+  consumptionGuard: {
+    exists: boolean;
+    offerId: string | null;
+    issuedToUserId: string | null;
+    claimScope: VoucherClaimScope | null;
+    scopeRef: string | null;
+    consumedVoucherId: string | null;
+    repeatPolicySnapshot: RfRepeatPolicy | null;
+    consumedAt: string | null;
+  };
+  attribution: {
+    attributionVersion: number;
+    attributionStrategy: 'rf_pro_last_touch_before_claim';
+    attributionStatus: RfAttributionStatus;
+    attributionSource: RfAttributionSource;
+    claimSource: RfClaimSource;
+    proAttributedUserId: string | null;
+    proLinkId: string | null;
+    attributionConfirmedAt: string | null;
+    attributionCapturedAt: string | null;
+    attributionRejectedReason: string | null;
+    metadataKeys: string[];
+  };
+  idempotency: {
+    claimBindings: Array<{
+      operation: 'voucher_claim';
+      actorUserId: string;
+      voucherId: string;
+      createdAt: string;
+      idempotencyKeyFingerprint: string;
+    }>;
+  };
+  economyRecovery: {
+    exists: boolean;
+    state: 'pending' | 'resolved' | null;
+    spendExternalId: string | null;
+    compensationExternalId: string | null;
+    correlationIdMasked: string | null;
+    lastErrorMasked: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+    resolvedAt: string | null;
+  };
+  anomalies: RfVoucherDiagnosticsAnomaly[];
+}
+
 type ClaimResult =
   | {
       ok: true;
@@ -229,6 +383,48 @@ type ClaimResult =
       repeatPolicy?: RfRepeatPolicy;
     }
   | { ok: false; code: string; message: string; status: number };
+
+export type RfClaimSpendResult =
+  | { ok: true; externalId: string; idempotentReplay: boolean; balanceAfter: number | null }
+  | { ok: false; code: 'RF_INSUFFICIENT_POINTS_BALANCE' | 'RF_SPEND_IDEMPOTENCY_CONFLICT' | 'RF_SPEND_TEMPORARILY_UNAVAILABLE'; message: string; status: number };
+
+export type RfClaimCompensationResult =
+  | { ok: true; externalId: string }
+  | { ok: false; message: string };
+
+export interface RfClaimEconomyRecoveryMarkerInput {
+  voucherId: string;
+  offerId: string;
+  actorUserId: string;
+  claimScope: VoucherClaimScope;
+  scopeRef: string | null;
+  spendExternalId: string;
+  compensationExternalId: string;
+  correlationId: string | null;
+  state: 'pending' | 'resolved';
+  lastError: string | null;
+}
+
+export interface RfClaimEconomyRuntime {
+  enabled: boolean;
+  spendPoints(input: {
+    userId: string;
+    amount: number;
+    voucherId: string;
+    correlationId: string | null;
+    claimScope: VoucherClaimScope;
+    scopeRef: string | null;
+  }): Promise<RfClaimSpendResult>;
+  compensatePoints(input: {
+    userId: string;
+    amount: number;
+    voucherId: string;
+    spendExternalId: string;
+    correlationId: string | null;
+    claimScope: VoucherClaimScope;
+    scopeRef: string | null;
+  }): Promise<RfClaimCompensationResult>;
+}
 type RedeemResult =
   | { ok: true; voucher: Voucher; applied: boolean }
   | { ok: false; code: string; message: string; status: number };
@@ -269,6 +465,7 @@ type OfferRow = {
   visibility: Offer['visibility'];
   status: OfferStatus;
   repeat_policy?: RfRepeatPolicy | null;
+  points_cost?: number | null;
   created_by_user_id: string;
   created_at: string | Date;
   updated_at: string | Date;
@@ -320,6 +517,9 @@ type VoucherRow = {
   contract_version?: number | null;
   repeat_policy_snapshot?: RfRepeatPolicy | null;
   issue_sequence?: number | null;
+  points_cost_snapshot?: number | null;
+  points_debit_external_id?: string | null;
+  economy_status?: RfVoucherEconomyStatus | null;
   expires_at?: string | Date | null;
   cancelled_at?: string | Date | null;
   status_changed_at?: string | Date | null;
@@ -386,6 +586,7 @@ type ListingClaimContextRow = {
   offer_status: OfferStatus;
   offer_visibility: Offer['visibility'];
   offer_repeat_policy?: RfRepeatPolicy | null;
+  offer_points_cost?: number | null;
   partner_status: PartnerStatus;
 };
 
@@ -401,6 +602,40 @@ type ProLinkRow = {
 };
 
 type AttributionProLinkRow = Pick<ProLinkRow, 'id' | 'partner_id' | 'pro_user_id' | 'share_code' | 'status'>;
+
+type VoucherDiagnosticsListingMappingRow = {
+  listing_id: string;
+  rf_offer_id: string;
+  rf_partner_id: string;
+  status: RieltListingOfferStatus;
+  offer_kind: RieltListingOfferKind;
+  priority: number;
+};
+
+type VoucherDiagnosticsPartnerRow = Pick<PartnerRow, 'id' | 'status' | 'owner_user_id'>;
+
+type VoucherDiagnosticsRedemptionRow = {
+  id: string;
+  voucher_id: string;
+  result_status: 'succeeded' | 'failed' | 'duplicate';
+  actor_user_id: string | null;
+  redeemed_at: string | Date | null;
+  created_at: string | Date;
+  idempotency_key: string | null;
+  correlation_id: string | null;
+};
+
+type VoucherDiagnosticsGuardRow = {
+  id: string;
+  offer_id: string;
+  issued_to_user_id: string;
+  claim_scope: VoucherClaimScope;
+  scope_ref: string;
+  consumed_voucher_id: string;
+  repeat_policy_snapshot: RfRepeatPolicy;
+  consumed_at: string | Date;
+  consumed_voucher_exists: string | null;
+};
 
 type ResolvedClaimAttribution = {
   version: 1;
@@ -424,6 +659,27 @@ type IdempotencyRow = {
   created_at: string | Date;
 };
 
+type VoucherDiagnosticsIdempotencyRow = IdempotencyRow & {
+  voucher_exists: string | null;
+};
+
+type VoucherDiagnosticsRecoveryRow = {
+  id: string;
+  voucher_id: string;
+  offer_id: string;
+  actor_user_id: string;
+  claim_scope: VoucherClaimScope;
+  scope_ref: string | null;
+  spend_external_id: string;
+  compensation_external_id: string;
+  correlation_id: string | null;
+  state: 'pending' | 'resolved';
+  last_error: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+  resolved_at: string | Date | null;
+};
+
 const writeTimestampsByActorAndOp = new Map<string, number[]>();
 
 function rowsOf<T>(result: unknown): T[] {
@@ -433,6 +689,31 @@ function rowsOf<T>(result: unknown): T[] {
 function asIso(value: string | Date | null): string | null {
   if (!value) return null;
   return new Date(value).toISOString();
+}
+
+function maskTail(value: string | null | undefined, visible = 4): string | null {
+  if (!value) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (normalized.length <= visible) return `***${normalized}`;
+  return `***${normalized.slice(-visible)}`;
+}
+
+function toFingerprint(value: string | null | undefined): string | null {
+  if (!value) return null;
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `fnv1a_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+function getAttributionRejectedReason(metadata: Record<string, unknown>): string | null {
+  const value = metadata.rejectionReason;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function mapLegacyStatusToCanonical(status: VoucherStatus): VoucherCanonicalStatus {
@@ -456,6 +737,16 @@ function getEffectiveRepeatPolicy(offer: Pick<OfferRow, 'repeat_policy'>): RfRep
 
 function getVoucherRepeatPolicySnapshot(voucher: Pick<VoucherRow, 'repeat_policy_snapshot'>): RfRepeatPolicy {
   return voucher.repeat_policy_snapshot ?? 'once_per_scope';
+}
+
+function getVoucherPointsCostSnapshot(voucher: Pick<VoucherRow, 'points_cost_snapshot'>): number {
+  const cost = Number(voucher.points_cost_snapshot ?? 0);
+  return Number.isFinite(cost) && cost >= 0 ? cost : 0;
+}
+
+function getVoucherEconomyStatus(voucher: Pick<VoucherRow, 'economy_status' | 'points_cost_snapshot'>): RfVoucherEconomyStatus {
+  if (voucher.economy_status) return voucher.economy_status;
+  return getVoucherPointsCostSnapshot(voucher) > 0 ? 'pending' : 'not_required';
 }
 
 function toAttributionMetadata(value: unknown): Record<string, unknown> {
@@ -489,6 +780,7 @@ function toOffer(row: OfferRow): Offer {
     visibility: row.visibility,
     status: row.status,
     repeatPolicy: row.repeat_policy ?? 'once_per_scope',
+    pointsCost: Number(row.points_cost ?? 0),
     createdByUserId: row.created_by_user_id,
     createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: asIso(row.updated_at) ?? new Date(0).toISOString(),
@@ -551,6 +843,9 @@ function toVoucher(row: VoucherRow, options?: { includeWalletEnrichment?: boolea
     contractVersion: row.contract_version ?? undefined,
     repeatPolicySnapshot: row.repeat_policy_snapshot ?? 'once_per_scope',
     issueSequence: row.issue_sequence ?? 1,
+    pointsCostSnapshot: getVoucherPointsCostSnapshot(row),
+    pointsDebitExternalId: row.points_debit_external_id ?? null,
+    economyStatus: getVoucherEconomyStatus(row),
     expiresAt: row.expires_at === undefined ? undefined : asIso(row.expires_at),
     cancelledAt: row.cancelled_at === undefined ? undefined : asIso(row.cancelled_at),
     statusChangedAt: row.status_changed_at === undefined ? undefined : asIso(row.status_changed_at),
@@ -648,6 +943,89 @@ function toProLink(row: ProLinkRow): ProLink {
 
 function nextId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
+}
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function buildDeterministicVoucherId(input: {
+  actorUserId: string;
+  offerId: string;
+  idempotencyKey: string;
+  claimScope: VoucherClaimScope;
+  listingId?: string | null;
+}): Promise<string> {
+  const normalized = [
+    'rf-voucher-claim-v1',
+    input.claimScope,
+    input.actorUserId.trim(),
+    input.offerId.trim(),
+    input.listingId?.trim() ?? '',
+    input.idempotencyKey.trim(),
+  ].join(':');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized));
+  return `rf_voucher_${toHex(new Uint8Array(digest)).slice(0, 24)}`;
+}
+
+function isVipSpacerPrincipal(principal: GatewayPrincipal): boolean {
+  if (principal.platformRole === 'vip_spacer') return true;
+  return principal.roles.some((role) => role.trim().toLowerCase() === 'vip_spacer');
+}
+
+function buildSpendExternalId(voucherId: string): string {
+  return `rf:voucher-claim-spend:${voucherId}`;
+}
+
+function buildCompensationExternalId(voucherId: string): string {
+  return `rf:voucher-claim-spend-compensation:${voucherId}`;
+}
+
+async function upsertEconomyRecoveryMarker(db: DbExecutor, input: RfClaimEconomyRecoveryMarkerInput): Promise<void> {
+  await db.execute(sql`
+    INSERT INTO rf_voucher_economy_recovery (
+      id,
+      voucher_id,
+      offer_id,
+      actor_user_id,
+      claim_scope,
+      scope_ref,
+      spend_external_id,
+      compensation_external_id,
+      correlation_id,
+      state,
+      last_error,
+      created_at,
+      updated_at,
+      resolved_at
+    )
+    VALUES (
+      ${nextId('rf_economy_recovery')},
+      ${input.voucherId},
+      ${input.offerId},
+      ${input.actorUserId},
+      ${input.claimScope},
+      ${input.scopeRef},
+      ${input.spendExternalId},
+      ${input.compensationExternalId},
+      ${input.correlationId},
+      ${input.state},
+      ${input.lastError},
+      now(),
+      now(),
+      CASE WHEN ${input.state} = 'resolved' THEN now() ELSE NULL END
+    )
+    ON CONFLICT (spend_external_id)
+    DO UPDATE SET
+      compensation_external_id = EXCLUDED.compensation_external_id,
+      correlation_id = EXCLUDED.correlation_id,
+      state = EXCLUDED.state,
+      last_error = EXCLUDED.last_error,
+      updated_at = now(),
+      resolved_at = CASE WHEN EXCLUDED.state = 'resolved' THEN now() ELSE NULL END
+  `);
 }
 
 function toSlug(input: string): string {
@@ -930,7 +1308,7 @@ export async function validatePartnerGeoLinks(
 
 async function getOfferById(db: DbExecutor, offerId: string): Promise<OfferRow | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
     LIMIT 1
@@ -971,6 +1349,9 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1003,6 +1384,165 @@ async function getVoucherByIdAndPartner(db: DbExecutor, voucherId: string, partn
   return rowsOf<VoucherRow>(result)[0] ?? null;
 }
 
+async function getVoucherById(db: DbExecutor, voucherId: string): Promise<VoucherRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      offer_id,
+      partner_id,
+      issued_to_user_id,
+      status,
+      canonical_status,
+      contract_version,
+      repeat_policy_snapshot,
+      issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
+      expires_at,
+      cancelled_at,
+      status_changed_at,
+      status_reason,
+      status_actor_user_id,
+      attribution_version,
+      attribution_strategy,
+      attribution_status,
+      attribution_source,
+      claim_source,
+      attribution_share_code,
+      pro_attributed_user_id,
+      pro_link_id,
+      attribution_captured_at,
+      attribution_confirmed_at,
+      attribution_metadata,
+      claim_scope,
+      rielt_listing_id,
+      rielt_listing_title_snapshot,
+      code,
+      claimed_at,
+      redeemed_at,
+      created_at,
+      updated_at
+    FROM rf_voucher
+    WHERE id = ${voucherId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherRow>(result)[0] ?? null;
+}
+
+async function getPartnerById(db: DbExecutor, partnerId: string): Promise<VoucherDiagnosticsPartnerRow | null> {
+  const result = await db.execute(sql`
+    SELECT id, status, owner_user_id
+    FROM rf_partner
+    WHERE id = ${partnerId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherDiagnosticsPartnerRow>(result)[0] ?? null;
+}
+
+async function getListingOfferMapping(
+  db: DbExecutor,
+  listingId: string,
+  offerId: string
+): Promise<VoucherDiagnosticsListingMappingRow | null> {
+  const result = await db.execute(sql`
+    SELECT listing_id, rf_offer_id, rf_partner_id, status, offer_kind, priority
+    FROM rielt_listing_rf_offer
+    WHERE listing_id = ${listingId}
+      AND rf_offer_id = ${offerId}
+    LIMIT 1
+  `);
+  return rowsOf<VoucherDiagnosticsListingMappingRow>(result)[0] ?? null;
+}
+
+async function listVoucherRedemptionRows(db: DbExecutor, voucherId: string): Promise<VoucherDiagnosticsRedemptionRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      voucher_id,
+      result_status,
+      actor_user_id,
+      redeemed_at,
+      created_at,
+      idempotency_key,
+      correlation_id
+    FROM rf_voucher_redemption
+    WHERE voucher_id = ${voucherId}
+    ORDER BY created_at DESC, id DESC
+    LIMIT 50
+  `);
+  return rowsOf<VoucherDiagnosticsRedemptionRow>(result);
+}
+
+async function listVoucherConsumptionGuards(db: DbExecutor, voucher: VoucherRow): Promise<VoucherDiagnosticsGuardRow[]> {
+  const claimScope = voucher.claim_scope ?? 'partner';
+  const scopeRef = claimScope === 'partner' ? '__partner__' : voucher.rielt_listing_id ?? '';
+  const result = await db.execute(sql`
+    SELECT
+      g.id,
+      g.offer_id,
+      g.issued_to_user_id,
+      g.claim_scope,
+      g.scope_ref,
+      g.consumed_voucher_id,
+      g.repeat_policy_snapshot,
+      g.consumed_at,
+      v.id AS consumed_voucher_exists
+    FROM rf_voucher_scope_consumption_guard g
+    LEFT JOIN rf_voucher v ON v.id = g.consumed_voucher_id
+    WHERE g.offer_id = ${voucher.offer_id}
+      AND g.issued_to_user_id = ${voucher.issued_to_user_id}
+      AND g.claim_scope = ${claimScope}
+      AND g.scope_ref = ${scopeRef}
+    ORDER BY g.created_at DESC, g.id DESC
+    LIMIT 10
+  `);
+  return rowsOf<VoucherDiagnosticsGuardRow>(result);
+}
+
+async function listClaimIdempotencyBindings(db: DbExecutor, voucherId: string): Promise<VoucherDiagnosticsIdempotencyRow[]> {
+  const result = await db.execute(sql`
+    SELECT
+      ci.operation,
+      ci.actor_user_id,
+      ci.idempotency_key,
+      ci.voucher_id,
+      ci.created_at,
+      v.id AS voucher_exists
+    FROM rf_claim_idempotency ci
+    LEFT JOIN rf_voucher v ON v.id = ci.voucher_id
+    WHERE ci.voucher_id = ${voucherId}
+    ORDER BY ci.created_at DESC, ci.actor_user_id DESC
+    LIMIT 50
+  `);
+  return rowsOf<VoucherDiagnosticsIdempotencyRow>(result);
+}
+
+async function getVoucherEconomyRecoveryMarker(db: DbExecutor, voucherId: string): Promise<VoucherDiagnosticsRecoveryRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      id,
+      voucher_id,
+      offer_id,
+      actor_user_id,
+      claim_scope,
+      scope_ref,
+      spend_external_id,
+      compensation_external_id,
+      correlation_id,
+      state,
+      last_error,
+      created_at,
+      updated_at,
+      resolved_at
+    FROM rf_voucher_economy_recovery
+    WHERE voucher_id = ${voucherId}
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  `);
+  return rowsOf<VoucherDiagnosticsRecoveryRow>(result)[0] ?? null;
+}
+
 async function getVoucherFromRedemptionIdempotency(
   db: DbExecutor,
   actorUserId: string,
@@ -1019,6 +1559,9 @@ async function getVoucherFromRedemptionIdempotency(
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1064,6 +1607,9 @@ async function getVoucherFromClaimIdempotency(db: DbExecutor, actorUserId: strin
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -1107,7 +1653,7 @@ async function getClaimBarrierVoucherByOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1135,7 +1681,7 @@ async function getLatestRedeemedVoucherByOfferAndUser(db: DbExecutor, offerId: s
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1165,7 +1711,7 @@ async function getClaimBarrierVoucherByListingOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1199,7 +1745,7 @@ async function getLatestRedeemedVoucherByListingOfferAndUser(
   const result = await db.execute(sql`
     SELECT
       id, offer_id, partner_id, issued_to_user_id, status, canonical_status, contract_version,
-      repeat_policy_snapshot, issue_sequence, expires_at, cancelled_at, status_changed_at,
+      repeat_policy_snapshot, issue_sequence, points_cost_snapshot, points_debit_external_id, economy_status, expires_at, cancelled_at, status_changed_at,
       status_reason, status_actor_user_id, attribution_version, attribution_strategy,
       attribution_status, attribution_source, claim_source, attribution_share_code,
       pro_attributed_user_id, pro_link_id, attribution_captured_at, attribution_confirmed_at,
@@ -1251,6 +1797,7 @@ async function getListingClaimContext(db: DbExecutor, listingId: string, offerId
       o.status AS offer_status,
       o.visibility AS offer_visibility,
       o.repeat_policy AS offer_repeat_policy,
+      o.points_cost AS offer_points_cost,
       p.status AS partner_status
     FROM rielt_listing l
     INNER JOIN rielt_listing_rf_offer m
@@ -1308,6 +1855,385 @@ async function insertClaimIdempotency(
   return rowsOf<IdempotencyRow>(result)[0] ?? null;
 }
 
+function buildVoucherDiagnosticsAnomalies(input: {
+  voucher: VoucherRow;
+  offer: OfferRow | null;
+  listingMapping: VoucherDiagnosticsListingMappingRow | null;
+  proLink: ProLinkRow | null;
+  redemptionRows: VoucherDiagnosticsRedemptionRow[];
+  guards: VoucherDiagnosticsGuardRow[];
+  claimBindings: VoucherDiagnosticsIdempotencyRow[];
+  recoveryMarker: VoucherDiagnosticsRecoveryRow | null;
+}): RfVoucherDiagnosticsAnomaly[] {
+  const anomalies: RfVoucherDiagnosticsAnomaly[] = [];
+  const voucher = input.voucher;
+  const canonicalStatus = getCanonicalStatus(voucher);
+  const repeatPolicy = voucher.repeat_policy_snapshot ?? 'once_per_scope';
+  const successfulRedemptionCount = input.redemptionRows.filter((row) => row.result_status === 'succeeded').length;
+  const guardForVoucher = input.guards.find((row) => row.consumed_voucher_id === voucher.id) ?? null;
+
+  if (canonicalStatus === 'redeemed' && successfulRedemptionCount === 0) {
+    anomalies.push({
+      code: 'voucher_redeemed_without_redemption_row',
+      severity: 'critical',
+      message: 'Voucher is redeemed but no succeeded redemption row was found.',
+      evidence: { voucherId: voucher.id, canonicalStatus },
+    });
+  }
+
+  if (canonicalStatus !== 'redeemed' && successfulRedemptionCount > 0) {
+    anomalies.push({
+      code: 'redemption_row_without_redeemed_status',
+      severity: 'critical',
+      message: 'Succeeded redemption row exists while voucher canonical status is not redeemed.',
+      evidence: { voucherId: voucher.id, canonicalStatus, successfulRedemptionCount },
+    });
+  }
+
+  if (canonicalStatus === 'redeemed' && repeatPolicy === 'once_per_scope' && !guardForVoucher) {
+    anomalies.push({
+      code: 'once_per_scope_redeemed_without_guard',
+      severity: 'critical',
+      message: 'Once-per-scope redeemed voucher has no consumption guard.',
+      evidence: { voucherId: voucher.id, repeatPolicy },
+    });
+  }
+
+  if (canonicalStatus === 'redeemed' && repeatPolicy === 'repeat_after_redeem' && !!guardForVoucher) {
+    anomalies.push({
+      code: 'unexpected_repeat_after_redeem_guard',
+      severity: 'warning',
+      message: 'Repeat-after-redeem voucher unexpectedly has a consumption guard.',
+      evidence: { voucherId: voucher.id, guardId: guardForVoucher.id },
+    });
+  }
+
+  if (mapLegacyStatusToCanonical(voucher.status) !== canonicalStatus) {
+    anomalies.push({
+      code: 'legacy_status_canonical_status_mismatch',
+      severity: 'warning',
+      message: 'Legacy status and canonical status diverge.',
+      evidence: { voucherId: voucher.id, status: voucher.status, canonicalStatus },
+    });
+  }
+
+  if ((voucher.claim_scope ?? 'partner') === 'listing' && !voucher.rielt_listing_id) {
+    anomalies.push({
+      code: 'listing_scope_missing_listing_id',
+      severity: 'critical',
+      message: 'Listing-scoped voucher has no listing id.',
+      evidence: { voucherId: voucher.id, claimScope: voucher.claim_scope ?? 'partner' },
+    });
+  }
+
+  if (input.guards.some((guard) => guard.consumed_voucher_exists === null)) {
+    anomalies.push({
+      code: 'guard_points_to_missing_voucher',
+      severity: 'critical',
+      message: 'Consumption guard points to a missing voucher.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if (input.claimBindings.some((binding) => binding.voucher_exists === null)) {
+    anomalies.push({
+      code: 'idempotency_points_to_missing_voucher',
+      severity: 'critical',
+      message: 'Claim idempotency row points to a missing voucher.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.attribution_status ?? 'none') === 'confirmed' && !voucher.pro_link_id) {
+    anomalies.push({
+      code: 'confirmed_attribution_without_pro_link',
+      severity: 'warning',
+      message: 'Confirmed attribution is present without pro link id.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.attribution_status ?? 'none') === 'rejected') {
+    anomalies.push({
+      code: 'rejected_attribution_present',
+      severity: 'info',
+      message: 'Voucher attribution is rejected.',
+      evidence: { voucherId: voucher.id },
+    });
+  }
+
+  if ((voucher.claim_scope ?? 'partner') === 'listing' && voucher.rielt_listing_id && (!input.listingMapping || input.listingMapping.status !== 'active')) {
+    anomalies.push({
+      code: 'listing_mapping_missing_or_inactive',
+      severity: 'warning',
+      message: 'Listing-scoped voucher mapping is missing or inactive.',
+      evidence: {
+        voucherId: voucher.id,
+        listingId: voucher.rielt_listing_id,
+        mappingStatus: input.listingMapping?.status ?? null,
+      },
+    });
+  }
+
+  if (input.proLink && input.proLink.partner_id !== voucher.partner_id) {
+    anomalies.push({
+      code: 'attribution_pro_link_partner_mismatch',
+      severity: 'warning',
+      message: 'Voucher attribution pro link belongs to a different partner.',
+      evidence: {
+        voucherId: voucher.id,
+        voucherPartnerId: voucher.partner_id,
+        proLinkPartnerId: input.proLink.partner_id,
+      },
+    });
+  }
+
+  if ((voucher.issue_sequence ?? 1) > 1 && !input.offer) {
+    anomalies.push({
+      code: 'repeat_sequence_gap',
+      severity: 'info',
+      message: 'Issue sequence suggests repeatability history but offer relation is missing.',
+      evidence: { voucherId: voucher.id, issueSequence: voucher.issue_sequence ?? 1 },
+    });
+  }
+
+  const isActiveCanonical = canonicalStatus === 'available' || canonicalStatus === 'locked' || canonicalStatus === 'unlocked';
+  if (isActiveCanonical && input.guards.length > 0) {
+    anomalies.push({
+      code: 'active_duplicate_possible',
+      severity: 'info',
+      message: 'Active voucher has existing guards in same scope; verify historical consistency.',
+      evidence: { voucherId: voucher.id, guardCount: input.guards.length },
+    });
+  }
+
+  if ((voucher.economy_status ?? 'not_required') === 'debited' && !voucher.points_debit_external_id) {
+    anomalies.push({
+      code: 'debited_without_external_id',
+      severity: 'warning',
+      message: 'Voucher is marked as debited but points debit external id is missing.',
+      evidence: { voucherId: voucher.id, economyStatus: voucher.economy_status ?? 'not_required' },
+    });
+  }
+
+  if (input.recoveryMarker) {
+    anomalies.push({
+      code: 'spend_succeeded_claim_failed',
+      severity: input.recoveryMarker.state === 'pending' ? 'critical' : 'warning',
+      message: 'Spend completed but claim finalization required compensation handling.',
+      evidence: {
+        voucherId: voucher.id,
+        recoveryState: input.recoveryMarker.state,
+      },
+    });
+  }
+
+  if (input.recoveryMarker?.state === 'pending') {
+    const createdAtMs = new Date(input.recoveryMarker.created_at).getTime();
+    if (Number.isFinite(createdAtMs) && Date.now() - createdAtMs > 15 * 60 * 1000) {
+      anomalies.push({
+        code: 'compensation_pending_too_long',
+        severity: 'critical',
+        message: 'Compensation recovery marker is pending for too long.',
+        evidence: {
+          voucherId: voucher.id,
+          pendingSince: asIso(input.recoveryMarker.created_at),
+        },
+      });
+    }
+  }
+
+  if ((voucher.economy_status ?? 'not_required') === 'debit_failed' && isActiveCanonical) {
+    anomalies.push({
+      code: 'debit_failed_visible_voucher',
+      severity: 'critical',
+      message: 'Voucher is visible in active lifecycle while economy status is debit_failed.',
+      evidence: { voucherId: voucher.id, canonicalStatus },
+    });
+  }
+
+  return anomalies;
+}
+
+export async function getVoucherDiagnostics(
+  db: DbExecutor,
+  voucherId: string
+): Promise<{ ok: true; diagnostics: RfVoucherDiagnostics } | { ok: false; code: string; message: string; status: number }> {
+  const voucher = await getVoucherById(db, voucherId);
+  if (!voucher) {
+    return { ok: false, code: 'RF_VOUCHER_NOT_FOUND', message: 'RF voucher not found', status: 404 };
+  }
+
+  const offer = await getOfferById(db, voucher.offer_id);
+  const partner = await getPartnerById(db, voucher.partner_id);
+  const claimScope = voucher.claim_scope ?? 'partner';
+  const listingMapping =
+    claimScope === 'listing' && voucher.rielt_listing_id
+      ? await getListingOfferMapping(db, voucher.rielt_listing_id, voucher.offer_id)
+      : null;
+  const redemptionRows = await listVoucherRedemptionRows(db, voucher.id);
+  const guards = await listVoucherConsumptionGuards(db, voucher);
+  const guardForVoucher = guards.find((row) => row.consumed_voucher_id === voucher.id) ?? null;
+  const claimBindings = await listClaimIdempotencyBindings(db, voucher.id);
+  const recoveryMarker = await getVoucherEconomyRecoveryMarker(db, voucher.id);
+  const proLink =
+    typeof voucher.pro_link_id === 'string' && voucher.pro_link_id.trim().length > 0
+      ? await (async () => {
+          const result = await db.execute(sql`
+            SELECT id, partner_id, pro_user_id, share_code, status, role_scope, created_at, updated_at
+            FROM rf_pro_link
+            WHERE id = ${voucher.pro_link_id}
+            LIMIT 1
+          `);
+          return rowsOf<ProLinkRow>(result)[0] ?? null;
+        })()
+      : null;
+
+  const attributionMetadata = toAttributionMetadata(voucher.attribution_metadata);
+  const anomalies = buildVoucherDiagnosticsAnomalies({
+    voucher,
+    offer,
+    listingMapping,
+    proLink,
+    redemptionRows,
+    guards,
+    claimBindings,
+    recoveryMarker,
+  });
+
+  const diagnostics: RfVoucherDiagnostics = {
+    voucher: {
+      voucherId: voucher.id,
+      offerId: voucher.offer_id,
+      partnerId: voucher.partner_id,
+      issuedToUserId: voucher.issued_to_user_id,
+      claimScope,
+      listingId: voucher.rielt_listing_id ?? null,
+      listingTitleSnapshot: voucher.rielt_listing_title_snapshot ?? null,
+      status: voucher.status,
+      canonicalStatus: getCanonicalStatus(voucher),
+      contractVersion: voucher.contract_version ?? 1,
+      repeatPolicySnapshot: voucher.repeat_policy_snapshot ?? 'once_per_scope',
+      issueSequence: voucher.issue_sequence ?? 1,
+      pointsCostSnapshot: getVoucherPointsCostSnapshot(voucher),
+      pointsDebitExternalId: voucher.points_debit_external_id ?? null,
+      pointsCompensationExternalId: recoveryMarker?.compensation_external_id ?? null,
+      economyStatus: getVoucherEconomyStatus(voucher),
+      economyTransitionTimestamps: {
+        spendAttemptedAt: asIso(voucher.claimed_at),
+        compensationAttemptedAt: asIso(recoveryMarker?.created_at ?? null),
+        compensationResolvedAt: asIso(recoveryMarker?.resolved_at ?? null),
+      },
+      claimedAt: asIso(voucher.claimed_at) ?? new Date(0).toISOString(),
+      redeemedAt: asIso(voucher.redeemed_at),
+      cancelledAt: asIso(voucher.cancelled_at ?? null),
+      expiresAt: asIso(voucher.expires_at ?? null),
+      statusChangedAt: asIso(voucher.status_changed_at ?? null),
+      statusReason: voucher.status_reason ?? null,
+      statusActorUserId: voucher.status_actor_user_id ?? null,
+      codeMasked: maskTail(voucher.code),
+    },
+    relations: {
+      offer: offer
+        ? {
+            id: offer.id,
+            partnerId: offer.partner_id,
+            status: offer.status,
+            visibility: offer.visibility,
+            repeatPolicy: offer.repeat_policy ?? 'once_per_scope',
+          }
+        : null,
+      partner: partner
+        ? {
+            id: partner.id,
+            status: partner.status,
+            ownerUserId: partner.owner_user_id,
+          }
+        : null,
+      listingMapping: listingMapping
+        ? {
+            listingId: listingMapping.listing_id,
+            offerId: listingMapping.rf_offer_id,
+            partnerId: listingMapping.rf_partner_id,
+            status: listingMapping.status,
+            offerKind: listingMapping.offer_kind,
+            priority: Number(listingMapping.priority ?? 0),
+          }
+        : null,
+      proLink: proLink
+        ? {
+            id: proLink.id,
+            partnerId: proLink.partner_id,
+            proUserId: proLink.pro_user_id,
+            status: proLink.status,
+            shareCodeMasked: maskTail(proLink.share_code ?? null),
+          }
+        : null,
+    },
+    redemption: {
+      items: redemptionRows.map((row) => ({
+        id: row.id,
+        voucherId: row.voucher_id,
+        resultStatus: row.result_status,
+        actorUserId: row.actor_user_id ?? null,
+        redeemedAt: asIso(row.redeemed_at ?? null),
+        createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+        idempotencyKeyFingerprint: toFingerprint(row.idempotency_key),
+        correlationIdMasked: maskTail(row.correlation_id ?? null),
+      })),
+      hasSuccessfulRedemption: redemptionRows.some((row) => row.result_status === 'succeeded'),
+      successfulRedemptionCount: redemptionRows.filter((row) => row.result_status === 'succeeded').length,
+      totalRedemptionAttempts: redemptionRows.length,
+    },
+    consumptionGuard: {
+      exists: !!guardForVoucher,
+      offerId: guardForVoucher?.offer_id ?? null,
+      issuedToUserId: guardForVoucher?.issued_to_user_id ?? null,
+      claimScope: guardForVoucher?.claim_scope ?? null,
+      scopeRef: guardForVoucher?.scope_ref ?? null,
+      consumedVoucherId: guardForVoucher?.consumed_voucher_id ?? null,
+      repeatPolicySnapshot: guardForVoucher?.repeat_policy_snapshot ?? null,
+      consumedAt: asIso(guardForVoucher?.consumed_at ?? null),
+    },
+    attribution: {
+      attributionVersion: voucher.attribution_version ?? 1,
+      attributionStrategy: voucher.attribution_strategy ?? 'rf_pro_last_touch_before_claim',
+      attributionStatus: voucher.attribution_status ?? 'none',
+      attributionSource: voucher.attribution_source ?? 'unknown',
+      claimSource: voucher.claim_source ?? 'unknown',
+      proAttributedUserId: voucher.pro_attributed_user_id ?? null,
+      proLinkId: voucher.pro_link_id ?? null,
+      attributionConfirmedAt: asIso(voucher.attribution_confirmed_at ?? null),
+      attributionCapturedAt: asIso(voucher.attribution_captured_at ?? null),
+      attributionRejectedReason: getAttributionRejectedReason(attributionMetadata),
+      metadataKeys: Object.keys(attributionMetadata).slice(0, 12),
+    },
+    idempotency: {
+      claimBindings: claimBindings.map((row) => ({
+        operation: row.operation,
+        actorUserId: row.actor_user_id,
+        voucherId: row.voucher_id,
+        createdAt: asIso(row.created_at) ?? new Date(0).toISOString(),
+        idempotencyKeyFingerprint: toFingerprint(row.idempotency_key) ?? 'fnv1a_00000000',
+      })),
+    },
+    economyRecovery: {
+      exists: !!recoveryMarker,
+      state: recoveryMarker?.state ?? null,
+      spendExternalId: recoveryMarker?.spend_external_id ?? null,
+      compensationExternalId: recoveryMarker?.compensation_external_id ?? null,
+      correlationIdMasked: maskTail(recoveryMarker?.correlation_id ?? null),
+      lastErrorMasked: maskTail(recoveryMarker?.last_error ?? null),
+      createdAt: asIso(recoveryMarker?.created_at ?? null),
+      updatedAt: asIso(recoveryMarker?.updated_at ?? null),
+      resolvedAt: asIso(recoveryMarker?.resolved_at ?? null),
+    },
+    anomalies,
+  };
+
+  return { ok: true, diagnostics };
+}
+
 export function shouldThrottleWrite(actorUserId: string, operation: 'claim' | 'redeem'): boolean {
   const now = Date.now();
   const key = `${actorUserId}:${operation}`;
@@ -1345,7 +2271,7 @@ export async function getPublicPartnerById(db: DbExecutor, partnerId: string): P
 
 export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE status = 'active'
       AND visibility = 'public'
@@ -1356,7 +2282,7 @@ export async function listPublicOffers(db: DbExecutor): Promise<Offer[]> {
 
 export async function getPublicOfferById(db: DbExecutor, offerId: string): Promise<Offer | null> {
   const result = await db.execute(sql`
-    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    SELECT id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
     FROM rf_offer
     WHERE id = ${offerId}
       AND status = 'active'
@@ -1666,7 +2592,7 @@ export async function createOffer(
       now(),
       now()
     )
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
   `);
   const row = rowsOf<OfferRow>(result)[0];
   if (!row) throw new Error('Failed to persist RF offer');
@@ -1694,7 +2620,7 @@ export async function activateOffer(
     WHERE id = ${input.offerId}
       AND partner_id = ${input.partnerId}
       AND status = 'draft'
-    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, created_by_user_id, created_at, updated_at
+    RETURNING id, partner_id, item_id, title, offer_type, visibility, status, repeat_policy, points_cost, created_by_user_id, created_at, updated_at
   `);
   const updated = rowsOf<OfferRow>(result)[0];
   if (updated) return toOffer(updated);
@@ -1709,7 +2635,13 @@ export async function activateOffer(
 export async function claimVoucher(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
+  input: {
+    offerId: string;
+    idempotencyKey: string;
+    attribution?: RfClaimAttributionInput | null;
+    correlationId?: string | null;
+    economy?: RfClaimEconomyRuntime | null;
+  }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) {
@@ -1777,11 +2709,54 @@ export async function claimVoucher(
           claimScope: 'partner',
         })
       : 1;
+  const pointsCost = Number(offer.points_cost ?? 0);
+  const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
+  const spendEnabled = pointsCostSnapshot > 0 && input.economy?.enabled === true;
+  if (pointsCostSnapshot > 0 && spendEnabled && !isVipSpacerPrincipal(principal)) {
+    return {
+      ok: false,
+      code: 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER',
+      message: 'VIP role is required for paid voucher claims',
+      status: 409,
+    };
+  }
+  const economyStatus: RfVoucherEconomyStatus = spendEnabled
+    ? 'debited'
+    : pointsCostSnapshot > 0
+      ? 'pending'
+      : 'not_required';
 
   // This legacy endpoint remains partner-scoped. Listing-scoped claims must use
   // a dedicated endpoint that validates listing mapping and claim context.
-  const voucherId = nextId('rf_voucher');
+  const voucherId = await buildDeterministicVoucherId({
+    actorUserId: principal.userId,
+    offerId: offer.id,
+    idempotencyKey: input.idempotencyKey,
+    claimScope: 'partner',
+  });
   const voucherCode = toVoucherCode(voucherId);
+  const spendExternalId = spendEnabled ? buildSpendExternalId(voucherId) : null;
+  let compensationExternalId: string | null = null;
+
+  if (spendEnabled && spendExternalId && input.economy) {
+    const spendResult = await input.economy.spendPoints({
+      userId: principal.userId,
+      amount: pointsCostSnapshot,
+      voucherId,
+      correlationId: input.correlationId ?? null,
+      claimScope: 'partner',
+      scopeRef: null,
+    });
+    if (!spendResult.ok) {
+      return {
+        ok: false,
+        code: spendResult.code,
+        message: spendResult.message,
+        status: spendResult.status,
+      };
+    }
+  }
+
   const insertResult = await db.execute(sql`
     INSERT INTO rf_voucher (
       id,
@@ -1792,6 +2767,9 @@ export async function claimVoucher(
       canonical_status,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       claim_scope,
       rielt_listing_id,
       rielt_listing_title_snapshot,
@@ -1824,6 +2802,9 @@ export async function claimVoucher(
       'available',
       ${repeatPolicy},
       ${issueSequence},
+      ${pointsCostSnapshot},
+      ${spendExternalId},
+      ${economyStatus},
       'partner',
       NULL,
       NULL,
@@ -1859,6 +2840,9 @@ export async function claimVoucher(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -1887,6 +2871,38 @@ export async function claimVoucher(
   let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
 
   if (!voucherRow) {
+    if (spendEnabled && spendExternalId && input.economy) {
+      compensationExternalId = buildCompensationExternalId(voucherId);
+      const compensation = await input.economy.compensatePoints({
+        userId: principal.userId,
+        amount: pointsCostSnapshot,
+        voucherId,
+        spendExternalId,
+        correlationId: input.correlationId ?? null,
+        claimScope: 'partner',
+        scopeRef: null,
+      });
+      await upsertEconomyRecoveryMarker(db, {
+        voucherId,
+        offerId: offer.id,
+        actorUserId: principal.userId,
+        claimScope: 'partner',
+        scopeRef: null,
+        spendExternalId,
+        compensationExternalId,
+        correlationId: input.correlationId ?? null,
+        state: compensation.ok ? 'resolved' : 'pending',
+        lastError: compensation.ok ? null : compensation.message,
+      });
+      if (!compensation.ok) {
+        return {
+          ok: false,
+          code: 'RF_ECONOMY_RECOVERY_PENDING',
+          message: 'Voucher claim economy recovery is pending manual reconciliation',
+          status: 503,
+        };
+      }
+    }
     voucherRow = repeatPolicy === 'once_per_scope'
       ? await getLatestRedeemedVoucherByOfferAndUser(db, offer.id, principal.userId)
       : await getClaimBarrierVoucherByOfferAndUser(db, offer.id, principal.userId, repeatPolicy);
@@ -1901,6 +2917,38 @@ export async function claimVoucher(
     voucherId: voucherRow.id,
   });
   if (!idempotency) {
+    if (spendEnabled && spendExternalId && input.economy) {
+      compensationExternalId = compensationExternalId ?? buildCompensationExternalId(voucherId);
+      const compensation = await input.economy.compensatePoints({
+        userId: principal.userId,
+        amount: pointsCostSnapshot,
+        voucherId,
+        spendExternalId,
+        correlationId: input.correlationId ?? null,
+        claimScope: 'partner',
+        scopeRef: null,
+      });
+      await upsertEconomyRecoveryMarker(db, {
+        voucherId,
+        offerId: offer.id,
+        actorUserId: principal.userId,
+        claimScope: 'partner',
+        scopeRef: null,
+        spendExternalId,
+        compensationExternalId,
+        correlationId: input.correlationId ?? null,
+        state: compensation.ok ? 'resolved' : 'pending',
+        lastError: compensation.ok ? null : compensation.message,
+      });
+      if (!compensation.ok) {
+        return {
+          ok: false,
+          code: 'RF_ECONOMY_RECOVERY_PENDING',
+          message: 'Voucher claim economy recovery is pending manual reconciliation',
+          status: 503,
+        };
+      }
+    }
     return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
   }
   if (idempotency.voucher_id !== voucherRow.id) {
@@ -1941,7 +2989,14 @@ function isListingClaimVoucher(row: VoucherRow, listingId: string, offerId: stri
 export async function claimVoucherForListing(
   db: DbExecutor,
   principal: GatewayPrincipal,
-  input: { listingId: string; offerId: string; idempotencyKey: string; attribution?: RfClaimAttributionInput | null }
+  input: {
+    listingId: string;
+    offerId: string;
+    idempotencyKey: string;
+    attribution?: RfClaimAttributionInput | null;
+    correlationId?: string | null;
+    economy?: RfClaimEconomyRuntime | null;
+  }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) {
@@ -2036,9 +3091,54 @@ export async function claimVoucherForListing(
           listingId: input.listingId,
         })
       : 1;
+  const pointsCost = Number(context.offer_points_cost ?? 0);
+  const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
+  const spendEnabled = pointsCostSnapshot > 0 && input.economy?.enabled === true;
+  if (pointsCostSnapshot > 0 && spendEnabled && !isVipSpacerPrincipal(principal)) {
+    return {
+      ok: false,
+      code: 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER',
+      message: 'VIP role is required for paid voucher claims',
+      status: 409,
+    };
+  }
+  const economyStatus: RfVoucherEconomyStatus = spendEnabled
+    ? 'debited'
+    : pointsCostSnapshot > 0
+      ? 'pending'
+      : 'not_required';
 
-  const voucherId = nextId('rf_voucher');
+  const voucherId = await buildDeterministicVoucherId({
+    actorUserId: principal.userId,
+    offerId: input.offerId,
+    idempotencyKey: input.idempotencyKey,
+    claimScope: 'listing',
+    listingId: input.listingId,
+  });
   const voucherCode = toVoucherCode(voucherId);
+  const scopeRef = input.listingId;
+  const spendExternalId = spendEnabled ? buildSpendExternalId(voucherId) : null;
+  let compensationExternalId: string | null = null;
+
+  if (spendEnabled && spendExternalId && input.economy) {
+    const spendResult = await input.economy.spendPoints({
+      userId: principal.userId,
+      amount: pointsCostSnapshot,
+      voucherId,
+      correlationId: input.correlationId ?? null,
+      claimScope: 'listing',
+      scopeRef,
+    });
+    if (!spendResult.ok) {
+      return {
+        ok: false,
+        code: spendResult.code,
+        message: spendResult.message,
+        status: spendResult.status,
+      };
+    }
+  }
+
   const insertResult = await db.execute(sql`
     INSERT INTO rf_voucher (
       id,
@@ -2050,6 +3150,9 @@ export async function claimVoucherForListing(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2085,6 +3188,9 @@ export async function claimVoucherForListing(
       1,
       ${repeatPolicy},
       ${issueSequence},
+      ${pointsCostSnapshot},
+      ${spendExternalId},
+      ${economyStatus},
       NULL,
       NULL,
       now(),
@@ -2122,6 +3228,9 @@ export async function claimVoucherForListing(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,
@@ -2150,6 +3259,38 @@ export async function claimVoucherForListing(
   let voucherRow: VoucherRow | null = rowsOf<VoucherRow>(insertResult)[0] ?? null;
 
   if (!voucherRow) {
+    if (spendEnabled && spendExternalId && input.economy) {
+      compensationExternalId = buildCompensationExternalId(voucherId);
+      const compensation = await input.economy.compensatePoints({
+        userId: principal.userId,
+        amount: pointsCostSnapshot,
+        voucherId,
+        spendExternalId,
+        correlationId: input.correlationId ?? null,
+        claimScope: 'listing',
+        scopeRef,
+      });
+      await upsertEconomyRecoveryMarker(db, {
+        voucherId,
+        offerId: input.offerId,
+        actorUserId: principal.userId,
+        claimScope: 'listing',
+        scopeRef,
+        spendExternalId,
+        compensationExternalId,
+        correlationId: input.correlationId ?? null,
+        state: compensation.ok ? 'resolved' : 'pending',
+        lastError: compensation.ok ? null : compensation.message,
+      });
+      if (!compensation.ok) {
+        return {
+          ok: false,
+          code: 'RF_ECONOMY_RECOVERY_PENDING',
+          message: 'Voucher claim economy recovery is pending manual reconciliation',
+          status: 503,
+        };
+      }
+    }
     voucherRow = repeatPolicy === 'once_per_scope'
       ? await getLatestRedeemedVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId)
       : await getClaimBarrierVoucherByListingOfferAndUser(db, input.listingId, input.offerId, principal.userId, repeatPolicy);
@@ -2164,6 +3305,38 @@ export async function claimVoucherForListing(
     voucherId: voucherRow.id,
   });
   if (!idempotency) {
+    if (spendEnabled && spendExternalId && input.economy) {
+      compensationExternalId = compensationExternalId ?? buildCompensationExternalId(voucherId);
+      const compensation = await input.economy.compensatePoints({
+        userId: principal.userId,
+        amount: pointsCostSnapshot,
+        voucherId,
+        spendExternalId,
+        correlationId: input.correlationId ?? null,
+        claimScope: 'listing',
+        scopeRef,
+      });
+      await upsertEconomyRecoveryMarker(db, {
+        voucherId,
+        offerId: input.offerId,
+        actorUserId: principal.userId,
+        claimScope: 'listing',
+        scopeRef,
+        spendExternalId,
+        compensationExternalId,
+        correlationId: input.correlationId ?? null,
+        state: compensation.ok ? 'resolved' : 'pending',
+        lastError: compensation.ok ? null : compensation.message,
+      });
+      if (!compensation.ok) {
+        return {
+          ok: false,
+          code: 'RF_ECONOMY_RECOVERY_PENDING',
+          message: 'Voucher claim economy recovery is pending manual reconciliation',
+          status: 503,
+        };
+      }
+    }
     return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
   }
   if (idempotency.voucher_id !== voucherRow.id) {
@@ -2208,6 +3381,9 @@ export async function listMyVouchers(db: DbExecutor, principal: GatewayPrincipal
       v.contract_version,
       v.repeat_policy_snapshot,
       v.issue_sequence,
+      v.points_cost_snapshot,
+      v.points_debit_external_id,
+      v.economy_status,
       v.expires_at,
       v.cancelled_at,
       v.status_changed_at,
@@ -2431,6 +3607,9 @@ export async function redeemVoucher(
         contract_version,
         repeat_policy_snapshot,
         issue_sequence,
+        points_cost_snapshot,
+        points_debit_external_id,
+        economy_status,
         expires_at,
         cancelled_at,
         status_changed_at,
@@ -2537,6 +3716,9 @@ export async function redeemVoucher(
       contract_version,
       repeat_policy_snapshot,
       issue_sequence,
+      points_cost_snapshot,
+      points_debit_external_id,
+      economy_status,
       expires_at,
       cancelled_at,
       status_changed_at,

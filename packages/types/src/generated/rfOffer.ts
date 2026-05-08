@@ -19,6 +19,12 @@ export interface RfOffer {
   itemId: string | null;
   offerType: RfOfferOfferType;
   partnerId: string;
+  /**
+   * Optional RF economy cost in Points for this offer. `0` means free acquisition.
+
+   * @minimum 0
+   */
+  pointsCost?: number;
   /** Offer-level repeatability policy. Missing value must be treated by clients as once_per_scope for backwards compatibility.
    */
   repeatPolicy?: RfRepeatPolicy;
