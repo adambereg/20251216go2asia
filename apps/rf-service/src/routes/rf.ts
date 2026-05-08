@@ -1,6 +1,7 @@
 import { createDb } from '@go2asia/db';
 
 import type { GatewayPrincipal } from '../middleware/auth';
+import { evaluateMockEntitlementReadRequest, parseEntitlementMockReadRequest } from '../entitlementMock';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
   acceptProLink,
@@ -39,6 +40,7 @@ type RfRouteEnv = {
   SERVICE_JWT_SECRET?: string;
   POINTS_SERVICE_URL?: string;
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
+  RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -294,6 +296,22 @@ export async function handleRfRoute(
   const url = new URL(request.url);
   const path = url.pathname;
   if (!path.startsWith('/v1/rf/')) return null;
+
+  if (request.method === 'POST' && path === '/v1/rf/internal/entitlement/check') {
+    if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_MOCK_READ_API)) {
+      return errorResponse('RF_ENTITLEMENT_MOCK_READ_API_DISABLED', 'RF entitlement mock read API is disabled', requestId, 404);
+    }
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    if (!isInternalAdminPrincipal(principal)) {
+      return errorResponse('FORBIDDEN', 'Admin role is required for internal RF entitlement preview', requestId, 403);
+    }
+    const body = await readJsonObject(request);
+    const entitlementRequest = parseEntitlementMockReadRequest(body);
+    if (!entitlementRequest) {
+      return errorResponse('INVALID_REQUEST', 'Expected valid entitlement read request body', requestId, 400);
+    }
+    return json(evaluateMockEntitlementReadRequest(entitlementRequest));
+  }
 
   if (!env.DATABASE_URL) {
     return errorResponse('SERVICE_NOT_CONFIGURED', 'DATABASE_URL is missing', requestId, 503);

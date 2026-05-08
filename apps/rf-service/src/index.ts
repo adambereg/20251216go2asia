@@ -11,6 +11,7 @@ export interface Env {
   DATABASE_URL?: string;
   POINTS_SERVICE_URL?: string;
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
+  RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
 }
 
 function handleHealth(env: Env): Response {
