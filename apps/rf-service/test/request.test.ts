@@ -98,6 +98,48 @@ function offerRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function voucherRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'rf_voucher_1',
+    offer_id: 'rf_offer_1',
+    partner_id: 'rf_partner_1',
+    issued_to_user_id: 'user_1',
+    status: 'claimed',
+    canonical_status: 'available',
+    contract_version: 1,
+    repeat_policy_snapshot: 'once_per_scope',
+    issue_sequence: 1,
+    points_cost_snapshot: 0,
+    points_debit_external_id: null,
+    economy_status: 'not_required',
+    expires_at: null,
+    cancelled_at: null,
+    status_changed_at: '2026-04-01T10:00:00.000Z',
+    status_reason: null,
+    status_actor_user_id: 'user_1',
+    attribution_version: 1,
+    attribution_strategy: 'rf_pro_last_touch_before_claim',
+    attribution_status: 'none',
+    attribution_source: 'unknown',
+    claim_source: 'unknown',
+    attribution_share_code: null,
+    pro_attributed_user_id: null,
+    pro_link_id: null,
+    attribution_captured_at: null,
+    attribution_confirmed_at: null,
+    attribution_metadata: {},
+    claim_scope: 'partner',
+    rielt_listing_id: null,
+    rielt_listing_title_snapshot: null,
+    code: 'RF-ABC123456',
+    claimed_at: '2026-04-01T10:00:00.000Z',
+    redeemed_at: null,
+    created_at: '2026-04-01T10:00:00.000Z',
+    updated_at: '2026-04-01T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('rf-service request', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -934,6 +976,125 @@ describe('rf-service request', () => {
     expect(executedSqlText()).toContain('MAX(issue_sequence)');
   });
 
+  it('creates distinct paid spend external ids for repeat_after_redeem voucher instances', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ transactionId: 'tx_spend', applied: true, idempotentReplay: false, balanceAfter: 850 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    const repeatPaidOffer = offerRow({
+      id: 'rf_offer_repeat_paid',
+      status: 'active',
+      visibility: 'public',
+      repeat_policy: 'repeat_after_redeem',
+      points_cost: 150,
+    });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [repeatPaidOffer] })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ max_issue_sequence: 0 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          voucherRow({
+            id: 'rf_voucher_repeat_paid_1',
+            offer_id: 'rf_offer_repeat_paid',
+            repeat_policy_snapshot: 'repeat_after_redeem',
+            issue_sequence: 1,
+            points_cost_snapshot: 150,
+            points_debit_external_id: 'rf:voucher-claim-spend:rf_voucher_repeat_paid_1',
+            economy_status: 'debited',
+            code: 'RF-RPTP01',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'repeat-paid-claim-1',
+            voucher_id: 'rf_voucher_repeat_paid_1',
+            created_at: '2026-03-21T10:04:01.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [repeatPaidOffer] })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ max_issue_sequence: 1 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          voucherRow({
+            id: 'rf_voucher_repeat_paid_2',
+            offer_id: 'rf_offer_repeat_paid',
+            repeat_policy_snapshot: 'repeat_after_redeem',
+            issue_sequence: 2,
+            points_cost_snapshot: 150,
+            points_debit_external_id: 'rf:voucher-claim-spend:rf_voucher_repeat_paid_2',
+            economy_status: 'debited',
+            code: 'RF-RPTP02',
+            claimed_at: '2026-03-21T11:04:00.000Z',
+            created_at: '2026-03-21T11:04:00.000Z',
+            updated_at: '2026-03-21T11:04:00.000Z',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'repeat-paid-claim-2',
+            voucher_id: 'rf_voucher_repeat_paid_2',
+            created_at: '2026-03-21T11:04:01.000Z',
+          },
+        ],
+      });
+
+    const first = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_repeat_paid/claim', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': vipToken, 'Idempotency-Key': 'repeat-paid-claim-1' },
+      }),
+      env
+    );
+    const second = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_repeat_paid/claim', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': vipToken, 'Idempotency-Key': 'repeat-paid-claim-2' },
+      }),
+      env
+    );
+    const firstBody = await readJson<{ voucher: { id: string; issueSequence: number; economyStatus: string } }>(first);
+    const secondBody = await readJson<{ voucher: { id: string; issueSequence: number; economyStatus: string } }>(second);
+    const spendBodies = fetchSpy.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}')) as { externalId: string });
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect(firstBody.voucher.id).not.toBe(secondBody.voucher.id);
+    expect(firstBody.voucher.issueSequence).toBe(1);
+    expect(secondBody.voucher.issueSequence).toBe(2);
+    expect(firstBody.voucher.economyStatus).toBe('debited');
+    expect(secondBody.voucher.economyStatus).toBe('debited');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(spendBodies[0]?.externalId).toMatch(/^rf:voucher-claim-spend:rf_voucher_/);
+    expect(spendBodies[1]?.externalId).toMatch(/^rf:voucher-claim-spend:rf_voucher_/);
+    expect(spendBodies[0]?.externalId).not.toBe(spendBodies[1]?.externalId);
+    expect(executedSqlText()).toContain('MAX(issue_sequence)');
+  });
+
   it('snapshots free offer economy fields on partner claim', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
@@ -1507,6 +1668,151 @@ describe('rf-service request', () => {
     expect(fetchSpy.mock.calls[0]?.[0]).toContain('/internal/points/spend');
     expect(fetchSpy.mock.calls[1]?.[0]).toContain('/internal/points/add');
     expect(executedSqlText()).toContain('INSERT INTO rf_voucher_economy_recovery');
+  });
+
+  it('resolves recovery marker when compensation succeeds after voucher insert failure', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ transactionId: 'tx_spend_1', applied: true, idempotentReplay: false, balanceAfter: 850 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ transactionId: 'tx_comp_1', applied: true, idempotentReplay: false, balanceAfter: 1000 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-claim-compensation-success',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_VOUCHER_CLAIM_FAILED');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy.mock.calls[0]?.[0]).toContain('/internal/points/spend');
+    expect(fetchSpy.mock.calls[1]?.[0]).toContain('/internal/points/add');
+    expect(executedSqlText()).toContain('INSERT INTO rf_voucher_economy_recovery');
+    expect(executedSqlText()).toContain("'resolved'");
+    expect(executedSqlText()).not.toContain("'pending'");
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
+  });
+
+  it('keeps recovery retry deterministic with the same spend external id and recovery upsert', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ transactionId: 'tx_spend_1', applied: true, idempotentReplay: false, balanceAfter: 850 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'compensation failed' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ transactionId: 'tx_spend_1', applied: true, idempotentReplay: true, balanceAfter: 850 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'compensation failed' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const first = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': vipToken, 'Idempotency-Key': 'paid-claim-recovery-retry' },
+      }),
+      env
+    );
+    const second = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: { 'X-Gateway-Auth': vipToken, 'Idempotency-Key': 'paid-claim-recovery-retry' },
+      }),
+      env
+    );
+    const firstBody = await readJson<{ error: { code: string } }>(first);
+    const secondBody = await readJson<{ error: { code: string } }>(second);
+    const spendBodies = [fetchSpy.mock.calls[0], fetchSpy.mock.calls[2]].map(
+      ([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}')) as { externalId: string }
+    );
+    const compensationBodies = [fetchSpy.mock.calls[1], fetchSpy.mock.calls[3]].map(
+      ([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}')) as { action: string; externalId: string }
+    );
+
+    expect(first.status).toBe(503);
+    expect(second.status).toBe(503);
+    expect(firstBody.error.code).toBe('RF_ECONOMY_RECOVERY_PENDING');
+    expect(secondBody.error.code).toBe('RF_ECONOMY_RECOVERY_PENDING');
+    expect(fetchSpy).toHaveBeenCalledTimes(4);
+    expect(spendBodies[0]?.externalId).toBe(spendBodies[1]?.externalId);
+    expect(compensationBodies[0]?.externalId).toBe(compensationBodies[1]?.externalId);
+    expect(compensationBodies[0]?.action).toBe('rf_voucher_claim_spend_compensation');
+    expect(executedSqlText()).toContain('ON CONFLICT (spend_external_id)');
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
   });
 
   it('rejects partner claim replay when idempotency key context differs', async () => {
@@ -4640,6 +4946,110 @@ describe('rf-service request', () => {
       const body = await readJson<{ anomalies: Array<{ code: string }> }>(response);
       expect(response.status).toBe(200);
       expect(body.anomalies.map((item) => item.code)).toContain('unexpected_repeat_after_redeem_guard');
+    });
+
+    it('flags recovery-backed spend success claim failure diagnostics anomalies', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-04-01T10:30:00.000Z'));
+      try {
+        const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+        const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+        executeMock
+          .mockResolvedValueOnce({
+            rows: [
+              voucherRow({
+                id: 'rf_voucher_diag_1',
+                points_cost_snapshot: 150,
+                points_debit_external_id: null,
+                economy_status: 'debited',
+              }),
+            ],
+          })
+          .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'once_per_scope', points_cost: 150 })] })
+          .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+          .mockResolvedValueOnce({ rows: [] })
+          .mockResolvedValueOnce({ rows: [] })
+          .mockResolvedValueOnce({ rows: [] })
+          .mockResolvedValueOnce({
+            rows: [
+              {
+                id: 'rf_recovery_1',
+                voucher_id: 'rf_voucher_diag_1',
+                offer_id: 'rf_offer_1',
+                actor_user_id: 'user_1',
+                claim_scope: 'partner',
+                scope_ref: null,
+                spend_external_id: 'rf:voucher-claim-spend:rf_voucher_diag_1',
+                compensation_external_id: 'rf:voucher-claim-spend-compensation:rf_voucher_diag_1',
+                correlation_id: 'req_1',
+                state: 'pending',
+                last_error: 'compensation unavailable',
+                created_at: '2026-04-01T10:00:00.000Z',
+                updated_at: '2026-04-01T10:00:00.000Z',
+                resolved_at: null,
+              },
+            ],
+          });
+
+        const response = await worker.fetch(
+          new Request(diagnosticsPath, {
+            headers: { 'X-Gateway-Auth': token },
+          }),
+          env
+        );
+        const body = await readJson<{
+          voucher: { pointsCompensationExternalId: string | null };
+          economyRecovery: { state: string | null; spendExternalId: string | null };
+          anomalies: Array<{ code: string }>;
+        }>(response);
+        const anomalyCodes = body.anomalies.map((item) => item.code);
+
+        expect(response.status).toBe(200);
+        expect(body.voucher.pointsCompensationExternalId).toBe('rf:voucher-claim-spend-compensation:rf_voucher_diag_1');
+        expect(body.economyRecovery).toEqual(
+          expect.objectContaining({
+            state: 'pending',
+            spendExternalId: 'rf:voucher-claim-spend:rf_voucher_diag_1',
+          })
+        );
+        expect(anomalyCodes).toEqual(
+          expect.arrayContaining(['spend_succeeded_claim_failed', 'compensation_pending_too_long', 'debited_without_external_id'])
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('flags visible active voucher with failed debit economy state', async () => {
+      const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
+      const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin' });
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            voucherRow({
+              id: 'rf_voucher_diag_1',
+              points_cost_snapshot: 150,
+              economy_status: 'debit_failed',
+            }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [offerRow({ status: 'active', visibility: 'public', repeat_policy: 'once_per_scope', points_cost: 150 })] })
+        .mockResolvedValueOnce({ rows: [partnerOwnerRow()] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request(diagnosticsPath, {
+          headers: { 'X-Gateway-Auth': token },
+        }),
+        env
+      );
+      const body = await readJson<{ anomalies: Array<{ code: string }> }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body.anomalies.map((item) => item.code)).toContain('debit_failed_visible_voucher');
     });
   });
 });
