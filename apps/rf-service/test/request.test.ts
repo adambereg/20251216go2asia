@@ -1297,6 +1297,165 @@ describe('rf-service request', () => {
     expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
   });
 
+  it('maps spend idempotency mismatch to deterministic RF conflict', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: 'REPLAY_PAYLOAD_MISMATCH',
+          message: 'externalId already exists with different payload',
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-claim-spend-mismatch',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_SPEND_IDEMPOTENCY_CONFLICT');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
+  });
+
+  it('maps temporary spend failures to RF_SPEND_TEMPORARILY_UNAVAILABLE', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'InternalError', message: 'upstream unavailable' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-claim-spend-temp-unavailable',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(503);
+    expect(body.error.code).toBe('RF_SPEND_TEMPORARILY_UNAVAILABLE');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
+  });
+
+  it('preserves pre-coupling paid behavior when feature flag is disabled', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'false',
+      POINTS_SERVICE_URL: 'https://points.example',
+    };
+    const nonVipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'rf_voucher_paid_flag_off',
+            offer_id: 'rf_offer_paid',
+            partner_id: 'rf_partner_1',
+            issued_to_user_id: 'user_1',
+            status: 'claimed',
+            canonical_status: 'available',
+            repeat_policy_snapshot: 'once_per_scope',
+            issue_sequence: 1,
+            points_cost_snapshot: 150,
+            points_debit_external_id: null,
+            economy_status: 'pending',
+            claim_scope: 'partner',
+            rielt_listing_id: null,
+            rielt_listing_title_snapshot: null,
+            code: 'RF-PAIDOFF',
+            claimed_at: '2026-03-21T10:04:00.000Z',
+            redeemed_at: null,
+            created_at: '2026-03-21T10:04:00.000Z',
+            updated_at: '2026-03-21T10:04:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'paid-claim-flag-off',
+            voucher_id: 'rf_voucher_paid_flag_off',
+            created_at: '2026-03-21T10:04:01.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': nonVipToken,
+          'Idempotency-Key': 'paid-claim-flag-off',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { economyStatus: string; pointsDebitExternalId: string | null } }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.voucher.economyStatus).toBe('pending');
+    expect(body.voucher.pointsDebitExternalId).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('persists recovery marker when spend succeeded but compensation fails after voucher insert failure', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
