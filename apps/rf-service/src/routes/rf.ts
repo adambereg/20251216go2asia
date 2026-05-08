@@ -1,7 +1,12 @@
 import { createDb } from '@go2asia/db';
 
 import type { GatewayPrincipal } from '../middleware/auth';
-import { evaluateMockEntitlementReadRequest, parseEntitlementMockReadRequest } from '../entitlementMock';
+import {
+  evaluateEntitlementPreviewProxyRequest,
+  evaluateMockEntitlementReadRequest,
+  parseEntitlementMockReadRequest,
+  parseEntitlementPreviewProxyRequest,
+} from '../entitlementMock';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
   acceptProLink,
@@ -41,6 +46,7 @@ type RfRouteEnv = {
   POINTS_SERVICE_URL?: string;
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
   RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
+  RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -311,6 +317,19 @@ export async function handleRfRoute(
       return errorResponse('INVALID_REQUEST', 'Expected valid entitlement read request body', requestId, 400);
     }
     return json(evaluateMockEntitlementReadRequest(entitlementRequest));
+  }
+
+  if (request.method === 'POST' && path === '/v1/rf/entitlement/preview') {
+    if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY)) {
+      return errorResponse('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED', 'RF entitlement preview proxy is disabled', requestId, 404);
+    }
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const body = await readJsonObject(request);
+    const previewRequest = parseEntitlementPreviewProxyRequest(body);
+    if (!previewRequest) {
+      return errorResponse('INVALID_REQUEST', 'Expected valid entitlement preview request body', requestId, 400);
+    }
+    return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal));
   }
 
   if (!env.DATABASE_URL) {

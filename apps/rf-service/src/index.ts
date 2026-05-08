@@ -12,6 +12,7 @@ export interface Env {
   POINTS_SERVICE_URL?: string;
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
   RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
+  RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -50,6 +51,7 @@ function isProtectedRoute(method: string, path: string): boolean {
   if (path.startsWith('/v1/rf/business/')) return true;
   if (path.startsWith('/v1/rf/pro/')) return true;
   if (path.startsWith('/v1/rf/me/')) return true;
+  if (method === 'POST' && path === '/v1/rf/entitlement/preview') return true;
   if (method === 'POST' && /^\/v1\/rf\/offers\/[^/]+\/claim$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/rf\/rielt\/listings\/[^/]+\/offers\/[^/]+\/claim$/.test(path)) return true;
   if (path.startsWith('/v1/rf/internal/')) return true;

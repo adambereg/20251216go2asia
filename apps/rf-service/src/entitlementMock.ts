@@ -40,6 +40,7 @@ export type EntitlementMockScenario =
   | 'stale_cache'
   | 'manual_grant'
   | 'source_unavailable'
+  | 'policy_not_configured'
   | 'ordinary_resource_no_gate';
 
 type EntitlementReadWarningCode =
@@ -49,6 +50,14 @@ type EntitlementReadWarningCode =
   | 'source_unavailable'
   | 'requested_source_not_configured'
   | 'adapter_health_degraded';
+
+type EntitlementPreviewState =
+  | 'available'
+  | 'requires_condition'
+  | 'checking_or_temporarily_unavailable'
+  | 'ordinary_no_preview'
+  | 'unavailable'
+  | 'not_enabled';
 
 type EntitlementSubject = {
   userId: string;
@@ -169,6 +178,25 @@ export type EntitlementMockReadResponse = {
   auditTraceId?: string;
 };
 
+export type EntitlementPreviewProxyRequest = {
+  requestId: string;
+  resource: EntitlementResource;
+  context?: EntitlementReadContext;
+  requestedSources?: EntitlementSource[];
+};
+
+export type EntitlementPreviewProxyResponse = {
+  state: EntitlementPreviewState;
+  label: string;
+  caption: string;
+  informationalOnly: true;
+  claimBehaviorUnchanged: true;
+  missingRequirementLabels: string[];
+  isTemporary: boolean;
+  isPremiumPreview: boolean;
+  updatedAt: string;
+};
+
 const DEFAULT_SOURCES: EntitlementSource[] = ['role', 'pro_invite', 'connect_milestone', 'manual_grant'];
 const FUTURE_ONLY_SOURCES = new Set<EntitlementSource>(['nft_totem', 'badge_bridge', 'g2a_threshold']);
 
@@ -268,6 +296,22 @@ export function parseEntitlementMockReadRequest(body: Record<string, unknown> | 
   };
 }
 
+export function parseEntitlementPreviewProxyRequest(body: Record<string, unknown> | null): EntitlementPreviewProxyRequest | null {
+  if (!body) return null;
+  const requestId = asString(body.requestId);
+  const resource = isRecord(body.resource) ? body.resource : null;
+  if (!requestId || !resource || !isResourceKind(resource.kind)) return null;
+
+  const parsedSources = Array.isArray(body.requestedSources) ? body.requestedSources.filter(isEntitlementSource) : undefined;
+
+  return {
+    requestId,
+    resource: resource as EntitlementResource,
+    context: parseContext(body.context),
+    requestedSources: parsedSources && parsedSources.length > 0 ? parsedSources : undefined,
+  };
+}
+
 function getMockScenario(request: EntitlementMockReadRequest): EntitlementMockScenario {
   if (request.context?.rf?.voucherClass === 'ordinary') return 'ordinary_resource_no_gate';
   return request.context?.mockScenario ?? 'granted';
@@ -305,6 +349,10 @@ function createAdapterResult(
 
   if (scenario === 'source_unavailable') {
     return { adapterId, source, rawFacts, decisionHint: 'unknown', reasonCodeHint: 'source_unavailable', healthStatus: 'unavailable', stale: false, cacheHit: false, evaluatedAt: nowIso };
+  }
+
+  if (scenario === 'policy_not_configured') {
+    return { adapterId, source, rawFacts, decisionHint: 'unknown', reasonCodeHint: 'policy_not_configured', healthStatus: 'healthy', stale: false, cacheHit: false, evaluatedAt: nowIso };
   }
 
   if (scenario === 'stale_cache') {
@@ -463,5 +511,107 @@ export function evaluateMockEntitlementReadRequest(
     evaluatedAt: nowIso,
     auditTraceId: request.includeAuditTrace ? stableId('ent_trace', `${request.requestId}:${requestWindowId}`) : undefined,
   };
+}
+
+function mapPreviewState(response: EntitlementMockReadResponse): EntitlementPreviewState {
+  if (response.decision === 'not_applicable' || response.reasonCode === 'ordinary_resource_no_gate') return 'ordinary_no_preview';
+  if (response.decision === 'granted' && response.degradedMode === 'none' && !response.stale) return 'available';
+  if (
+    response.reasonCode === 'invite_required' ||
+    response.reasonCode === 'nft_required' ||
+    response.reasonCode === 'milestone_required' ||
+    response.reasonCode === 'requirement_missing'
+  ) {
+    return 'requires_condition';
+  }
+  if (
+    response.decision === 'pending' ||
+    response.degradedMode === 'timeout_fallback' ||
+    response.degradedMode === 'stale_cache' ||
+    response.degradedMode === 'partial_sources' ||
+    response.degradedMode === 'source_unavailable' ||
+    response.reasonCode === 'source_timeout' ||
+    response.reasonCode === 'source_unavailable' ||
+    response.reasonCode === 'temporarily_unavailable'
+  ) {
+    return 'checking_or_temporarily_unavailable';
+  }
+  return 'unavailable';
+}
+
+function getPreviewCopy(state: EntitlementPreviewState): { label: string; caption: string } {
+  if (state === 'available') {
+    return {
+      label: 'Премиум-доступ доступен',
+      caption: 'Это информационный preview. Получение ваучера работает как раньше.',
+    };
+  }
+  if (state === 'requires_condition') {
+    return {
+      label: 'Требуется условие',
+      caption: 'Preview показывает условие доступа. Claim-поведение в этом срезе не меняется.',
+    };
+  }
+  if (state === 'checking_or_temporarily_unavailable') {
+    return {
+      label: 'Проверка доступа выполняется',
+      caption: 'Доступ временно уточняется. Это не блокирует текущий сценарий получения ваучера.',
+    };
+  }
+  if (state === 'ordinary_no_preview') {
+    return {
+      label: 'Обычный ваучер доступен без премиум-проверки',
+      caption: 'Для обычного ваучера entitlement preview не применяется.',
+    };
+  }
+  if (state === 'not_enabled') {
+    return {
+      label: 'Премиум-проверка не включена',
+      caption: 'Preview выключен. Получение ваучера работает как раньше.',
+    };
+  }
+  return {
+    label: 'Премиум-доступ недоступен',
+    caption: 'Preview не подтвердил доступ. Это не является runtime enforcement.',
+  };
+}
+
+export function toSafeEntitlementPreviewProxyResponse(response: EntitlementMockReadResponse): EntitlementPreviewProxyResponse {
+  const state = mapPreviewState(response);
+  const copy = getPreviewCopy(state);
+  return {
+    state,
+    label: copy.label,
+    caption: copy.caption,
+    informationalOnly: true,
+    claimBehaviorUnchanged: true,
+    missingRequirementLabels: response.missingRequirements.map((requirement) => requirement.safeLabel ?? getPreviewCopy('requires_condition').label),
+    isTemporary: state === 'checking_or_temporarily_unavailable',
+    isPremiumPreview: state !== 'ordinary_no_preview',
+    updatedAt: response.evaluatedAt,
+  };
+}
+
+export function evaluateEntitlementPreviewProxyRequest(
+  request: EntitlementPreviewProxyRequest,
+  principal: { userId: string; platformRole: string; roles: string[] },
+  now = new Date(),
+): EntitlementPreviewProxyResponse {
+  const readRequest: EntitlementMockReadRequest = {
+    requestId: request.requestId,
+    subject: {
+      userId: principal.userId,
+      roleHints: [principal.platformRole, ...principal.roles].filter(Boolean),
+    },
+    resource: request.resource,
+    action: 'claim',
+    evaluationMode: 'claim_preview',
+    context: request.context,
+    requestedSources: request.requestedSources,
+    includeAuditTrace: false,
+    includeSafeLabels: true,
+  };
+
+  return toSafeEntitlementPreviewProxyResponse(evaluateMockEntitlementReadRequest(readRequest, now));
 }
 

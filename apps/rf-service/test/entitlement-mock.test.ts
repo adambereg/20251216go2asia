@@ -17,6 +17,7 @@ import {
   evaluateMockEntitlementReadRequest,
   type EntitlementMockReadRequest,
   type EntitlementMockReadResponse,
+  type EntitlementPreviewProxyResponse,
 } from '../src/entitlementMock';
 import worker, { type Env } from '../src/index';
 
@@ -62,6 +63,45 @@ async function postEntitlementCheck(env: Env, body: EntitlementMockReadRequest):
         'Content-Type': 'application/json',
         'X-Gateway-Auth': token,
       },
+      body: JSON.stringify(body),
+    }),
+    env,
+  );
+}
+
+function previewBody(overrides: Record<string, unknown> = {}) {
+  return {
+    requestId: 'preview_req_1',
+    resource: {
+      kind: 'rf_premium_voucher',
+      offerId: 'rf_offer_1',
+      partnerId: 'rf_partner_1',
+    },
+    context: {
+      rf: {
+        offerId: 'rf_offer_1',
+        partnerId: 'rf_partner_1',
+        voucherClass: 'premium',
+      },
+      mockScenario: 'granted',
+    },
+    requestedSources: ['role', 'pro_invite'],
+    ...overrides,
+  };
+}
+
+async function postEntitlementPreview(env: Env, body: Record<string, unknown>, tokenOverrides: Record<string, unknown> | null = { sub: 'user_1' }): Promise<Response> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (tokenOverrides) {
+    headers['X-Gateway-Auth'] = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, tokenOverrides);
+  }
+
+  return worker.fetch(
+    new Request('https://rf.example/v1/rf/entitlement/preview', {
+      method: 'POST',
+      headers,
       body: JSON.stringify(body),
     }),
     env,
@@ -204,6 +244,107 @@ describe('RF entitlement mock read endpoint', () => {
     const body = await readJson<EntitlementMockReadResponse>(response);
 
     expect(body.auditTraceId).toBeUndefined();
+  });
+});
+
+describe('RF entitlement preview proxy endpoint', () => {
+  it('is disabled by default and does not require DB initialization', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret' };
+    const response = await postEntitlementPreview(env, previewBody());
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED');
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthenticated preview requests when route is protected', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreview(env, previewBody(), null);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('allows authenticated user and returns filtered safe DTO', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreview(env, previewBody());
+    const body = await readJson<EntitlementPreviewProxyResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      state: 'available',
+      label: 'Премиум-доступ доступен',
+      caption: 'Это информационный preview. Получение ваучера работает как раньше.',
+      informationalOnly: true,
+      claimBehaviorUnchanged: true,
+      missingRequirementLabels: [],
+      isTemporary: false,
+      isPremiumPreview: true,
+      updatedAt: expect.any(String),
+    });
+    expect(JSON.stringify(body)).not.toMatch(/auditTraceId|requestWindowId|evaluatedSources|partialResults|rawFacts|adapterId|healthStatus|wallet|chain|balance|payout/i);
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
+  it('maps invite_required to requires_condition', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: '1' };
+    const response = await postEntitlementPreview(
+      env,
+      previewBody({
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'invite_required' },
+        requestedSources: ['pro_invite'],
+      }),
+    );
+    const body = await readJson<EntitlementPreviewProxyResponse>(response);
+
+    expect(body.state).toBe('requires_condition');
+    expect(body.label).toBe('Требуется условие');
+    expect(body.missingRequirementLabels).toEqual(['Требуется условие']);
+  });
+
+  it('maps timeout stale and partial previews to temporary state', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'yes' };
+
+    for (const mockScenario of ['source_timeout', 'stale_cache', 'partial_sources']) {
+      const response = await postEntitlementPreview(
+        env,
+        previewBody({
+          context: { rf: { voucherClass: 'premium' }, mockScenario },
+          requestedSources: ['role', 'pro_invite'],
+        }),
+      );
+      const body = await readJson<EntitlementPreviewProxyResponse>(response);
+
+      expect(body.state).toBe('checking_or_temporarily_unavailable');
+      expect(body.isTemporary).toBe(true);
+    }
+  });
+
+  it('maps ordinary resources and unknown decisions safely', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'on' };
+    const ordinaryResponse = await postEntitlementPreview(
+      env,
+      previewBody({
+        context: { rf: { voucherClass: 'ordinary' }, mockScenario: 'ordinary_resource_no_gate' },
+      }),
+    );
+    const ordinaryBody = await readJson<EntitlementPreviewProxyResponse>(ordinaryResponse);
+
+    expect(ordinaryBody.state).toBe('ordinary_no_preview');
+    expect(ordinaryBody.isPremiumPreview).toBe(false);
+
+    const unknownResponse = await postEntitlementPreview(
+      env,
+      previewBody({
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'policy_not_configured' },
+        requestedSources: ['role'],
+      }),
+    );
+    const unknownBody = await readJson<EntitlementPreviewProxyResponse>(unknownResponse);
+
+    expect(unknownBody.state).toBe('unavailable');
   });
 });
 

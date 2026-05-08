@@ -77,6 +77,7 @@ export interface EntitlementReadContext {
     milestoneIds?: string[];
     receivedViaProCount?: number;
   };
+  mockScenario?: string;
   clientCapabilities?: EntitlementReadClientCapabilities;
   environment?: EntitlementReadEnvironment;
   featureFlags?: Record<string, boolean>;
