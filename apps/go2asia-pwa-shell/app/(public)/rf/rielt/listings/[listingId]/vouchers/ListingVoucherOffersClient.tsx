@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { claimRfRieltListingOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfRieltListingOfferDto, RfVoucherDto } from '@go2asia/sdk/rf';
+import { RfEntitlementPreviewBadge } from '@/components/rf/Shared/RfEntitlementPreviewBadge';
 import { buildRfClaimAttributionPayload, captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
 import { isRfVoucherClaimBarrier } from '@/lib/rfVoucherLifecycle';
 
@@ -217,6 +218,16 @@ export function ListingVoucherOffersClient({
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{typeLabel}</p>
                   <h2 className="mt-1 text-lg font-semibold text-slate-900">{offer.title}</h2>
+                  {offer.type === 'premium' ? (
+                    <div className="mt-2">
+                      <RfEntitlementPreviewBadge
+                        offerId={offer.id}
+                        partnerId={offer.partnerId}
+                        listingId={listingId}
+                        offerType={offer.type}
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                   {isSuccess ? 'Получен' : 'Доступен'}

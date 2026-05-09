@@ -9,6 +9,7 @@ import { Button } from '@go2asia/ui';
 import { AddToMyVouchersButton } from '@/components/rf/Shared/AddToMyVouchersButton';
 import { ClaimRfOfferButton } from '@/components/rf/Shared/ClaimRfOfferButton';
 import { FavoriteOfferButton } from '@/components/rf/Shared/FavoriteOfferButton';
+import { RfEntitlementPreviewBadge } from '@/components/rf/Shared/RfEntitlementPreviewBadge';
 import {
   getCatalogCategoryFilterOptions,
   getOfferBadge,
@@ -538,6 +539,14 @@ function OfferCard({
         <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
           {getOfferSummaryLine(offer)}
         </span>
+        {offer.visibility === 'pro_only' ? (
+          <RfEntitlementPreviewBadge
+            offerId={offer.id}
+            partnerId={offer.partnerId}
+            offerVisibility={offer.visibility}
+            voucherClass="premium"
+          />
+        ) : null}
       </div>
       <p className="text-[11px] text-slate-500">{getOfferGuardText(offer)}</p>
       <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] text-slate-600">

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   assertNoUnsafeVocabularyInEntitlementPreviewCopy,
   buildClaimPayloadWithoutEntitlementPreview,
@@ -66,6 +66,7 @@ const offerInput: RfEntitlementPreviewOfferInput = {
 
 describe('RF entitlement preview helper', () => {
   it('returns no preview when feature flag is disabled', async () => {
+    const executor = vi.fn();
     const state = await fetchRfEntitlementPreview(buildRfOfferEntitlementPreviewRequest(offerInput), { enabled: false });
 
     expect(state).toEqual({
@@ -75,6 +76,16 @@ describe('RF entitlement preview helper', () => {
       informationalOnly: true,
       claimBehaviorUnchanged: true,
     });
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it('does not call proxy when request is absent even if preview is enabled', async () => {
+    const executor = vi.fn();
+    const state = await fetchRfEntitlementPreview(null, { enabled: true, executor });
+
+    expect(state.state).toBe('not_enabled');
+    expect(state.enabled).toBe(false);
+    expect(executor).not.toHaveBeenCalled();
   });
 
   it('builds claim-preview request for RF offer without enforcement semantics', () => {
