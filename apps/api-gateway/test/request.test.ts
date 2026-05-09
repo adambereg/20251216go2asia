@@ -10,6 +10,7 @@ import {
   classifyRoute,
   deriveEnforcementKeys,
   default as worker,
+  resetGatewayIdentityShadowAggregateForTests,
   type Env,
 } from '../src/index';
 import { decodeJwtPayload, readJson } from '../../../tests/helpers/worker-test';
@@ -29,6 +30,7 @@ function makeUnsignedJwt(payload: Record<string, unknown>): string {
 
 describe('api-gateway request hardening', () => {
   afterEach(() => {
+    resetGatewayIdentityShadowAggregateForTests();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -1082,6 +1084,121 @@ describe('api-gateway request hardening', () => {
     );
 
     expect(response.status).toBe(404);
+  });
+
+  it('keeps identity shadow diagnostics endpoint disabled by default', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/identity-shadow/aggregate'),
+      {}
+    );
+    expect(response.status).toBe(404);
+  });
+
+  it('requires diagnostics token when identity shadow diagnostics endpoint is enabled', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/identity-shadow/aggregate'),
+      {
+        ENVIRONMENT: 'staging',
+        GATEWAY_ENABLE_IDENTITY_CORE_DIAGNOSTICS: 'true',
+      }
+    );
+    expect(response.status).toBe(404);
+  });
+
+  it('never exposes identity shadow diagnostics endpoint in production', async () => {
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/identity-shadow/aggregate', {
+        headers: {
+          'x-go2asia-debug-token': 'debug-token',
+        },
+      }),
+      {
+        ENVIRONMENT: 'production',
+        GATEWAY_ENABLE_IDENTITY_CORE_DIAGNOSTICS: 'true',
+        GATEWAY_IDENTITY_CORE_DIAGNOSTICS_TOKEN: 'debug-token',
+      }
+    );
+    expect(response.status).toBe(404);
+  });
+
+  it('returns aggregate-only sanitized identity shadow diagnostics snapshot', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'diag_user',
+      role: 'vip_spacer',
+      roles: ['vip_spacer'],
+    } as never);
+
+    const env: Env = {
+      ENVIRONMENT: 'staging',
+      VERSION: 'diag-v1',
+      POINTS_SERVICE_URL: 'https://points.example',
+      CLERK_SECRET_KEY: 'sk_test_123',
+      SERVICE_JWT_SECRET: 'service-secret',
+      GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE: 'true',
+      GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION: 'true',
+      GATEWAY_ENABLE_IDENTITY_CORE_DIAGNOSTICS: 'true',
+      GATEWAY_IDENTITY_CORE_DIAGNOSTICS_TOKEN: 'debug-token',
+    };
+
+    const proxied = await worker.fetch(
+      new Request('https://gateway.example/v1/points/balance', {
+        headers: {
+          Authorization: 'Bearer diag-user-token',
+        },
+      }),
+      env
+    );
+    expect(proxied.status).toBe(200);
+
+    const diagnostics = await worker.fetch(
+      new Request('https://gateway.example/v1/_debug/identity-shadow/aggregate', {
+        headers: {
+          'x-go2asia-debug-token': 'debug-token',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{
+      schemaVersion: number;
+      env: string;
+      version: string;
+      scope: string;
+      flags: { shadowCompareEnabled: boolean; evidenceEnabled: boolean; aggregationEnabled: boolean };
+      counters: { total: number; aligned: number; migration_blocker: number; unexpected_divergence: number; helper_failed: number };
+      reasonCodeCounts: Record<string, number>;
+      helperSourceCounts: Record<string, number>;
+    }>(diagnostics);
+
+    expect(diagnostics.status).toBe(200);
+    expect(body.schemaVersion).toBe(1);
+    expect(body.env).toBe('staging');
+    expect(body.version).toBe('diag-v1');
+    expect(body.scope).toBe('process_local_isolate');
+    expect(body.flags).toEqual({
+      shadowCompareEnabled: true,
+      evidenceEnabled: false,
+      aggregationEnabled: true,
+    });
+    expect(body.counters).toEqual({
+      total: 1,
+      aligned: 1,
+      migration_blocker: 0,
+      unexpected_divergence: 0,
+      helper_failed: 0,
+    });
+    expect(body.reasonCodeCounts).toEqual({
+      aligned: 1,
+      unknown_scalar_fallback_policy: 0,
+      unexpected_role_mismatch: 0,
+      helper_failed: 0,
+    });
+    expect(Object.keys(body.helperSourceCounts).every((key) => ['role', 'roles', 'go2_role', 'public_metadata.role', 'publicMetadata.role', 'none', 'other'].includes(key))).toBe(
+      true
+    );
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toMatch(/jwt|authorization|clerk|email|diag_user|legacyRole|helperRole|raw|payload/i);
   });
 
   it('lists quest submissions prefix in debug routes when enabled', async () => {
