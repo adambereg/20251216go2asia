@@ -38,6 +38,9 @@ importers:
       '@clerk/backend':
         specifier: ^3.0.2
         version: 3.0.2
+      '@go2asia/identity-core':
+        specifier: workspace:*
+        version: link:../../packages/identity-core
       '@go2asia/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -51,9 +54,6 @@ importers:
       '@go2asia/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@go2asia/identity-core':
-        specifier: workspace:*
-        version: link:../../packages/identity-core
       '@vitest/coverage-v8':
         specifier: ^1.6.1
         version: 1.6.1(vitest@1.6.1)

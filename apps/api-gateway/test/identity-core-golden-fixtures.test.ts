@@ -1,8 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const identityCoreMockState = vi.hoisted(() => ({
+  failNormalizeRolePayload: false,
+}));
+
 vi.mock('@clerk/backend', () => ({
   verifyToken: vi.fn(),
 }));
+
+vi.mock('@go2asia/identity-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@go2asia/identity-core')>();
+  return {
+    ...actual,
+    normalizeRolePayload: (input: Parameters<typeof actual.normalizeRolePayload>[0]) => {
+      if (identityCoreMockState.failNormalizeRolePayload) throw new Error('shadow helper failure');
+      return actual.normalizeRolePayload(input);
+    },
+  };
+});
 
 import { verifyToken } from '@clerk/backend';
 import {
@@ -24,6 +39,7 @@ type GatewayComparison = {
   status: GatewayComparisonStatus;
   reasons: string[];
   gatewayClaims: Record<string, unknown>;
+  shadowEvidence?: Record<string, unknown> | null;
 };
 
 type SurfaceCounts = Record<GatewayComparisonStatus, number>;
@@ -69,6 +85,11 @@ const gatewayEnv: Env = {
   POINTS_SERVICE_URL: 'https://points.example',
   CLERK_SECRET_KEY: 'sk_test_123',
   SERVICE_JWT_SECRET: 'service-secret',
+};
+
+type ReplayOptions = {
+  env?: Partial<Env>;
+  expectShadowEvidence?: boolean;
 };
 
 function hasCapabilitiesOnlyFixture(fixture: IdentityGoldenFixture): boolean {
@@ -211,14 +232,22 @@ function buildGatewayHelperParitySummary(comparisons: readonly GatewayHelperPari
   };
 }
 
-async function replayGatewayFixture(fixture: IdentityGoldenFixture): Promise<GatewayComparison> {
+async function replayGatewayFixture(fixture: IdentityGoldenFixture, options: ReplayOptions = {}): Promise<GatewayComparison> {
   let gatewayClaims: Record<string, unknown> | null = null;
+  let shadowEvidence: Record<string, unknown> | null = null;
   const fetchMock = vi.fn(async (request: Request) => {
     expect(request.url).toBe('https://points.example/v1/points/balance');
     expect(request.headers.get('X-User-ID')).toBe(`fixture_${fixture.id}`);
     const token = request.headers.get('X-Gateway-Auth');
     expect(token).toBeTruthy();
     gatewayClaims = decodeJwtPayload<Record<string, unknown>>(token!);
+    const shadowHeader = request.headers.get('X-Gateway-Identity-Shadow');
+    if (options.expectShadowEvidence) {
+      expect(shadowHeader, fixture.id).toBeTruthy();
+      shadowEvidence = JSON.parse(shadowHeader!);
+    } else {
+      expect(shadowHeader, fixture.id).toBeNull();
+    }
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -236,7 +265,7 @@ async function replayGatewayFixture(fixture: IdentityGoldenFixture): Promise<Gat
         Authorization: `Bearer fixture-token-${fixture.id}`,
       },
     }),
-    gatewayEnv
+    { ...gatewayEnv, ...options.env }
   );
   const body = await readJson<{ ok: boolean }>(response);
 
@@ -254,11 +283,15 @@ async function replayGatewayFixture(fixture: IdentityGoldenFixture): Promise<Gat
   }
   expect(gatewayClaims?.roles, fixture.id).toEqual(expect.any(Array));
 
-  return classifyGatewayComparison(fixture, gatewayClaims!);
+  return {
+    ...classifyGatewayComparison(fixture, gatewayClaims!),
+    shadowEvidence,
+  };
 }
 
 describe('api-gateway identity-core golden fixture compare-only coverage', () => {
   afterEach(() => {
+    identityCoreMockState.failNormalizeRolePayload = false;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -268,7 +301,7 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
     expect(identityGoldenFixtures.every((fixture) => fixture.schemaVersion === IDENTITY_SCHEMA_VERSION)).toBe(true);
   });
 
-  it('replays current gateway extraction against identity-core golden fixtures without runtime imports', async () => {
+  it('replays current gateway extraction against identity-core golden fixtures with legacy output authoritative', async () => {
     const comparisons: Array<{ id: string } & GatewayComparison> = [];
 
     for (const fixture of identityGoldenFixtures) {
@@ -323,5 +356,91 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
       },
     ]);
     expect(JSON.stringify(summary)).not.toMatch(/email|wallet|nft|g2a|secret|session|bearer|authorization|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/i);
+  });
+
+  it('keeps shadow compare fully silent when gateway shadow flags are disabled', async () => {
+    const fixture = identityGoldenFixtures.find((item) => item.id === 'alias-role-vip')!;
+    const comparison = await replayGatewayFixture(fixture);
+
+    expect(comparison.gatewayClaims.role).toBe('vip_spacer');
+    expect(comparison.shadowEvidence).toBeNull();
+  });
+
+  it('runs shadow compare for aligned fixtures without changing minted gateway claims', async () => {
+    const fixture = identityGoldenFixtures.find((item) => item.id === 'alias-role-vip')!;
+    const comparison = await replayGatewayFixture(fixture, {
+      env: {
+        GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE: 'true',
+        GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE: 'true',
+      },
+      expectShadowEvidence: true,
+    });
+
+    expect(comparison.gatewayClaims.role).toBe('vip_spacer');
+    expect(comparison.shadowEvidence).toMatchObject({
+      schemaVersion: IDENTITY_SCHEMA_VERSION,
+      shadowCompareEnabled: true,
+      evidenceEnabled: true,
+      classification: 'aligned',
+      reasonCode: 'aligned',
+      legacyRole: 'vip_spacer',
+      helperRole: 'vip_spacer',
+      helperSource: 'role',
+    });
+    expect(JSON.stringify(comparison.shadowEvidence)).not.toMatch(/email|wallet|nft|g2a|secret|session|bearer|authorization|fixture_|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/i);
+  });
+
+  it('keeps evidence hidden when shadow compare is enabled but evidence flag is disabled', async () => {
+    const fixture = identityGoldenFixtures.find((item) => item.id === 'alias-role-vip')!;
+    const comparison = await replayGatewayFixture(fixture, {
+      env: {
+        GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE: 'true',
+        GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE: 'false',
+      },
+    });
+
+    expect(comparison.gatewayClaims.role).toBe('vip_spacer');
+    expect(comparison.shadowEvidence).toBeNull();
+  });
+
+  it('classifies unknown scalar fallback as a migration blocker while legacy JWT stays authoritative', async () => {
+    const fixture = identityGoldenFixtures.find((item) => item.id === 'unknown-role-falls-through-go2-role')!;
+    const comparison = await replayGatewayFixture(fixture, {
+      env: {
+        GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE: 'true',
+        GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE: 'true',
+      },
+      expectShadowEvidence: true,
+    });
+
+    expect(comparison.gatewayClaims.role).toBe('spacer');
+    expect(comparison.shadowEvidence).toMatchObject({
+      classification: 'migration_blocker',
+      reasonCode: 'unknown_scalar_fallback_policy',
+      legacyRole: 'spacer',
+      helperRole: 'vip_spacer',
+      helperSource: 'go2_role',
+    });
+  });
+
+  it('keeps helper failures non-fatal and preserves legacy minted claims', async () => {
+    identityCoreMockState.failNormalizeRolePayload = true;
+    const fixture = identityGoldenFixtures.find((item) => item.id === 'alias-role-vip')!;
+    const comparison = await replayGatewayFixture(fixture, {
+      env: {
+        GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE: 'true',
+        GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE: 'true',
+      },
+      expectShadowEvidence: true,
+    });
+
+    expect(comparison.gatewayClaims.role).toBe('vip_spacer');
+    expect(comparison.shadowEvidence).toMatchObject({
+      classification: 'helper_failed',
+      reasonCode: 'helper_failed',
+      legacyRole: 'vip_spacer',
+      helperRole: null,
+      helperSource: null,
+    });
   });
 });

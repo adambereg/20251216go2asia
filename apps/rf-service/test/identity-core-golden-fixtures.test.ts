@@ -49,7 +49,7 @@ type FixtureEvidenceSummary = {
 
 type CompareOnlyEvidenceSummary = {
   schemaVersion: 1;
-  generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests';
+  generatedBy: 'rf-slice-6.27-gateway-shadow-boundary-tests';
   fixtureVersion: 1;
   fixtureCount: number;
   comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'];
@@ -69,15 +69,16 @@ type CompareOnlyEvidenceSummary = {
     note: string;
   }>;
   runtimeImportBoundary: {
-    gatewayRuntimeImportsIdentityCore: false;
+    gatewayShadowRuntimeImportsIdentityCore: true;
     rfRuntimeImportsIdentityCore: false;
     pwaRuntimeImportsIdentityCore: false;
-    compareOnlyImportsLimitedToTests: true;
+    gatewayImportLimitedToShadowCompare: true;
   };
 };
 
-const runtimeFiles = [
-  'apps/api-gateway/src/index.ts',
+const gatewayShadowRuntimeFiles = ['apps/api-gateway/src/index.ts'] as const;
+
+const forbiddenIdentityCoreRuntimeFiles = [
   'apps/rf-service/src/index.ts',
   'apps/rf-service/src/middleware/auth.ts',
   'apps/rf-service/src/store.ts',
@@ -319,7 +320,7 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
 
   return {
     schemaVersion: IDENTITY_SCHEMA_VERSION,
-    generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests',
+    generatedBy: 'rf-slice-6.27-gateway-shadow-boundary-tests',
     fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
     fixtureCount: identityGoldenFixtures.length,
     comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
@@ -353,10 +354,10 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
     })),
     knownDivergences,
     runtimeImportBoundary: {
-      gatewayRuntimeImportsIdentityCore: false,
+      gatewayShadowRuntimeImportsIdentityCore: true,
       rfRuntimeImportsIdentityCore: false,
       pwaRuntimeImportsIdentityCore: false,
-      compareOnlyImportsLimitedToTests: true,
+      gatewayImportLimitedToShadowCompare: true,
     },
   };
 }
@@ -432,8 +433,13 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     ]);
   });
 
-  it('keeps identity-core out of selected runtime entrypoints', () => {
-    for (const file of runtimeFiles) {
+  it('keeps identity-core import boundary limited to gateway shadow compare runtime', () => {
+    for (const file of gatewayShadowRuntimeFiles) {
+      const content = readRuntimeFile(file);
+      expect(content, file).toContain('@go2asia/identity-core');
+    }
+
+    for (const file of forbiddenIdentityCoreRuntimeFiles) {
       const content = readRuntimeFile(file);
       expect(content, file).not.toContain('@go2asia/identity-core');
     }
@@ -445,15 +451,15 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
 
     expect(summary).toMatchObject({
       schemaVersion: IDENTITY_SCHEMA_VERSION,
-      generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests',
+      generatedBy: 'rf-slice-6.27-gateway-shadow-boundary-tests',
       fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
       fixtureCount: identityGoldenFixtures.length,
       comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
       runtimeImportBoundary: {
-        gatewayRuntimeImportsIdentityCore: false,
+        gatewayShadowRuntimeImportsIdentityCore: true,
         rfRuntimeImportsIdentityCore: false,
         pwaRuntimeImportsIdentityCore: false,
-        compareOnlyImportsLimitedToTests: true,
+        gatewayImportLimitedToShadowCompare: true,
       },
     });
     expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual(fixtureIds);
