@@ -13,6 +13,7 @@ export interface Env {
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
   RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
   RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY?: string;
+  RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY?: string;
 }
 
 function handleHealth(env: Env): Response {

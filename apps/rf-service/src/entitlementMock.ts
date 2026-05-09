@@ -59,6 +59,10 @@ type EntitlementPreviewState =
   | 'unavailable'
   | 'not_enabled';
 
+export type EntitlementPreviewBucket = EntitlementPreviewState;
+export type EntitlementPreviewSurface = 'catalog' | 'listing' | 'other';
+export type EntitlementPreviewDegradedCategory = EntitlementDegradedMode;
+
 type EntitlementSubject = {
   userId: string;
   roleHints?: string[];
@@ -210,6 +214,14 @@ export type EntitlementPreviewProxyBatchResponse = {
     clientKey: string;
     preview: EntitlementPreviewProxyResponse;
   }>;
+};
+
+export type EntitlementPreviewObservation = {
+  bucket: EntitlementPreviewBucket;
+  degradedMode: EntitlementPreviewDegradedCategory;
+  surface: EntitlementPreviewSurface;
+  isTemporary: boolean;
+  isPremiumPreview: boolean;
 };
 
 export const ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS = 25;
@@ -623,11 +635,28 @@ export function toSafeEntitlementPreviewProxyResponse(response: EntitlementMockR
   };
 }
 
-export function evaluateEntitlementPreviewProxyRequest(
+function getPreviewSurface(resource: EntitlementResource): EntitlementPreviewSurface {
+  if (resource.kind === 'rf_listing_offer') return 'listing';
+  if (resource.kind === 'rf_premium_voucher' || resource.kind === 'rf_offer') return 'catalog';
+  return 'other';
+}
+
+function toEntitlementPreviewObservation(response: EntitlementMockReadResponse, resource: EntitlementResource): EntitlementPreviewObservation {
+  const bucket = mapPreviewState(response);
+  return {
+    bucket,
+    degradedMode: response.degradedMode,
+    surface: getPreviewSurface(resource),
+    isTemporary: bucket === 'checking_or_temporarily_unavailable',
+    isPremiumPreview: bucket !== 'ordinary_no_preview',
+  };
+}
+
+export function evaluateEntitlementPreviewProxyRequestWithObservation(
   request: EntitlementPreviewProxyRequest,
   principal: { userId: string; platformRole: string; roles: string[] },
   now = new Date(),
-): EntitlementPreviewProxyResponse {
+): { preview: EntitlementPreviewProxyResponse; observation: EntitlementPreviewObservation } {
   const readRequest: EntitlementMockReadRequest = {
     requestId: request.requestId,
     subject: {
@@ -642,8 +671,20 @@ export function evaluateEntitlementPreviewProxyRequest(
     includeAuditTrace: false,
     includeSafeLabels: true,
   };
+  const readResponse = evaluateMockEntitlementReadRequest(readRequest, now);
 
-  return toSafeEntitlementPreviewProxyResponse(evaluateMockEntitlementReadRequest(readRequest, now));
+  return {
+    preview: toSafeEntitlementPreviewProxyResponse(readResponse),
+    observation: toEntitlementPreviewObservation(readResponse, request.resource),
+  };
+}
+
+export function evaluateEntitlementPreviewProxyRequest(
+  request: EntitlementPreviewProxyRequest,
+  principal: { userId: string; platformRole: string; roles: string[] },
+  now = new Date(),
+): EntitlementPreviewProxyResponse {
+  return evaluateEntitlementPreviewProxyRequestWithObservation(request, principal, now).preview;
 }
 
 export function evaluateEntitlementPreviewProxyBatchRequest(
@@ -656,6 +697,27 @@ export function evaluateEntitlementPreviewProxyBatchRequest(
       clientKey: item.clientKey,
       preview: evaluateEntitlementPreviewProxyRequest(item, principal, now),
     })),
+  };
+}
+
+export function evaluateEntitlementPreviewProxyBatchRequestWithObservation(
+  request: EntitlementPreviewProxyBatchRequest,
+  principal: { userId: string; platformRole: string; roles: string[] },
+  now = new Date(),
+): { response: EntitlementPreviewProxyBatchResponse; observations: EntitlementPreviewObservation[] } {
+  const evaluatedItems = request.items.map((item) => ({
+    clientKey: item.clientKey,
+    ...evaluateEntitlementPreviewProxyRequestWithObservation(item, principal, now),
+  }));
+
+  return {
+    response: {
+      items: evaluatedItems.map((item) => ({
+        clientKey: item.clientKey,
+        preview: item.preview,
+      })),
+    },
+    observations: evaluatedItems.map((item) => item.observation),
   };
 }
 

@@ -15,12 +15,20 @@ vi.mock('@go2asia/db', () => ({
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import {
   evaluateMockEntitlementReadRequest,
+  evaluateEntitlementPreviewProxyRequestWithObservation,
   ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
   type EntitlementMockReadRequest,
   type EntitlementMockReadResponse,
   type EntitlementPreviewProxyBatchResponse,
   type EntitlementPreviewProxyResponse,
 } from '../src/entitlementMock';
+import {
+  assertNoUnsafeEntitlementPreviewObservabilityFields,
+  getEntitlementPreviewObservabilitySnapshot,
+  recordEntitlementPreviewObservations,
+  resetEntitlementPreviewObservability,
+  type EntitlementPreviewObservabilitySnapshot,
+} from '../src/entitlementPreviewObservability';
 import worker, { type Env } from '../src/index';
 
 function baseRequest(overrides: Partial<EntitlementMockReadRequest> = {}): EntitlementMockReadRequest {
@@ -123,6 +131,21 @@ async function postEntitlementPreviewBatch(env: Env, body: Record<string, unknow
       method: 'POST',
       headers,
       body: JSON.stringify(body),
+    }),
+    env,
+  );
+}
+
+async function getEntitlementPreviewObservability(env: Env, tokenOverrides: Record<string, unknown> | null = { sub: 'admin_1', role: 'admin', roles: ['admin'] }): Promise<Response> {
+  const headers: Record<string, string> = {};
+  if (tokenOverrides) {
+    headers['X-Gateway-Auth'] = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, tokenOverrides);
+  }
+
+  return worker.fetch(
+    new Request('https://rf.example/v1/rf/internal/entitlement/preview-observability', {
+      method: 'GET',
+      headers,
     }),
     env,
   );
@@ -463,6 +486,106 @@ describe('RF entitlement preview batch proxy endpoint', () => {
         claimBehaviorUnchanged: true,
       },
     });
+  });
+});
+
+describe('RF entitlement preview observability', () => {
+  it('maps preview and degraded buckets without exposing unsafe fields', () => {
+    const granted = evaluateEntitlementPreviewProxyRequestWithObservation(previewBody() as never, { userId: 'user_1', platformRole: 'user', roles: [] });
+    const degraded = evaluateEntitlementPreviewProxyRequestWithObservation(
+      previewBody({
+        requestId: 'preview_req_degraded',
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'source_timeout' },
+        requestedSources: ['role'],
+      }) as never,
+      { userId: 'user_1', platformRole: 'user', roles: [] },
+    );
+    const ordinary = evaluateEntitlementPreviewProxyRequestWithObservation(
+      previewBody({
+        requestId: 'preview_req_ordinary',
+        context: { rf: { voucherClass: 'ordinary' }, mockScenario: 'ordinary_resource_no_gate' },
+      }) as never,
+      { userId: 'user_1', platformRole: 'user', roles: [] },
+    );
+
+    expect(granted.observation).toMatchObject({ bucket: 'available', degradedMode: 'none', surface: 'catalog' });
+    expect(degraded.observation).toMatchObject({ bucket: 'checking_or_temporarily_unavailable', degradedMode: 'timeout_fallback', isTemporary: true });
+    expect(ordinary.observation).toMatchObject({ bucket: 'ordinary_no_preview', isPremiumPreview: false });
+    expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify([granted.observation, degraded.observation, ordinary.observation]))).toBe(true);
+  });
+
+  it('aggregates single and batch counters safely', () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const available = evaluateEntitlementPreviewProxyRequestWithObservation(previewBody() as never, { userId: 'user_1', platformRole: 'user', roles: [] });
+    const temporary = evaluateEntitlementPreviewProxyRequestWithObservation(
+      previewBody({
+        requestId: 'preview_req_temporary',
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'stale_cache' },
+        requestedSources: ['manual_grant'],
+      }) as never,
+      { userId: 'user_1', platformRole: 'user', roles: [] },
+    );
+
+    recordEntitlementPreviewObservations({ kind: 'single', observations: [available.observation], now: new Date('2026-05-09T00:00:01.000Z') });
+    recordEntitlementPreviewObservations({ kind: 'batch', observations: [available.observation, temporary.observation], now: new Date('2026-05-09T00:00:02.000Z') });
+
+    const snapshot = getEntitlementPreviewObservabilitySnapshot();
+    expect(snapshot.previewRequestsTotal).toBe(1);
+    expect(snapshot.previewBatchRequestsTotal).toBe(1);
+    expect(snapshot.previewItemsTotal).toBe(3);
+    expect(snapshot.bucketTotals.available).toBe(2);
+    expect(snapshot.bucketTotals.checking_or_temporarily_unavailable).toBe(1);
+    expect(snapshot.degradedTotals.stale_cache).toBe(1);
+    expect(snapshot.batchSizeTotals.small).toBe(1);
+    expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(snapshot))).toBe(true);
+  });
+
+  it('does not count disabled preview proxy path incorrectly', async () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY: 'true',
+    };
+    const response = await postEntitlementPreview(env, previewBody());
+    const snapshot = getEntitlementPreviewObservabilitySnapshot();
+
+    expect(response.status).toBe(404);
+    expect(snapshot.previewRequestsTotal).toBe(0);
+    expect(snapshot.previewItemsTotal).toBe(0);
+  });
+
+  it('exposes admin-only snapshot when observability flag is enabled', async () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY: 'true',
+    };
+
+    await postEntitlementPreview(env, previewBody());
+
+    const unauthenticated = await getEntitlementPreviewObservability(env, null);
+    expect(unauthenticated.status).toBe(401);
+
+    const forbidden = await getEntitlementPreviewObservability(env, { sub: 'user_1' });
+    expect(forbidden.status).toBe(403);
+
+    const response = await getEntitlementPreviewObservability(env);
+    const body = await readJson<EntitlementPreviewObservabilitySnapshot>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.previewRequestsTotal).toBe(1);
+    expect(body.bucketTotals.available).toBe(1);
+    expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(body))).toBe(true);
+  });
+
+  it('keeps internal debug snapshot disabled by default', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret' };
+    const response = await getEntitlementPreviewObservability(env);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_ENTITLEMENT_PREVIEW_OBSERVABILITY_DISABLED');
   });
 });
 

@@ -4,12 +4,18 @@ import type { GatewayPrincipal } from '../middleware/auth';
 import {
   ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
   evaluateEntitlementPreviewProxyBatchRequest,
+  evaluateEntitlementPreviewProxyBatchRequestWithObservation,
   evaluateEntitlementPreviewProxyRequest,
+  evaluateEntitlementPreviewProxyRequestWithObservation,
   evaluateMockEntitlementReadRequest,
   parseEntitlementMockReadRequest,
   parseEntitlementPreviewProxyBatchRequest,
   parseEntitlementPreviewProxyRequest,
 } from '../entitlementMock';
+import {
+  getEntitlementPreviewObservabilitySnapshot,
+  recordEntitlementPreviewObservations,
+} from '../entitlementPreviewObservability';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
   acceptProLink,
@@ -50,6 +56,7 @@ type RfRouteEnv = {
   RF_ENABLE_PAID_VOUCHER_SPEND?: string;
   RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
   RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY?: string;
+  RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -261,6 +268,10 @@ function isInternalAdminPrincipal(principal: GatewayPrincipal): boolean {
   return principal.roles.some((role) => role.trim().toLowerCase() === 'admin');
 }
 
+function isPreviewObservabilityEnabled(env: RfRouteEnv): boolean {
+  return isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY);
+}
+
 function optionalString(body: Record<string, unknown>, key: string): string | null | undefined {
   if (!Object.prototype.hasOwnProperty.call(body, key)) return undefined;
   const value = body[key];
@@ -322,6 +333,17 @@ export async function handleRfRoute(
     return json(evaluateMockEntitlementReadRequest(entitlementRequest));
   }
 
+  if (request.method === 'GET' && path === '/v1/rf/internal/entitlement/preview-observability') {
+    if (!isPreviewObservabilityEnabled(env)) {
+      return errorResponse('RF_ENTITLEMENT_PREVIEW_OBSERVABILITY_DISABLED', 'RF entitlement preview observability is disabled', requestId, 404);
+    }
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    if (!isInternalAdminPrincipal(principal)) {
+      return errorResponse('FORBIDDEN', 'Admin role is required for RF entitlement preview observability', requestId, 403);
+    }
+    return json(getEntitlementPreviewObservabilitySnapshot());
+  }
+
   if (request.method === 'POST' && path === '/v1/rf/entitlement/preview') {
     if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY)) {
       return errorResponse('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED', 'RF entitlement preview proxy is disabled', requestId, 404);
@@ -332,7 +354,12 @@ export async function handleRfRoute(
     if (!previewRequest) {
       return errorResponse('INVALID_REQUEST', 'Expected valid entitlement preview request body', requestId, 400);
     }
-    return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal));
+    if (!isPreviewObservabilityEnabled(env)) {
+      return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal));
+    }
+    const result = evaluateEntitlementPreviewProxyRequestWithObservation(previewRequest, principal);
+    recordEntitlementPreviewObservations({ kind: 'single', observations: [result.observation] });
+    return json(result.preview);
   }
 
   if (request.method === 'POST' && path === '/v1/rf/entitlement/preview/batch') {
@@ -345,7 +372,12 @@ export async function handleRfRoute(
     if (!previewRequest) {
       return errorResponse('INVALID_REQUEST', `Expected 1-${ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS} valid entitlement preview batch items`, requestId, 400);
     }
-    return json(evaluateEntitlementPreviewProxyBatchRequest(previewRequest, principal));
+    if (!isPreviewObservabilityEnabled(env)) {
+      return json(evaluateEntitlementPreviewProxyBatchRequest(previewRequest, principal));
+    }
+    const result = evaluateEntitlementPreviewProxyBatchRequestWithObservation(previewRequest, principal);
+    recordEntitlementPreviewObservations({ kind: 'batch', observations: result.observations });
+    return json(result.response);
   }
 
   if (!env.DATABASE_URL) {
