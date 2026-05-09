@@ -8,6 +8,8 @@ import {
   IDENTITY_GOLDEN_FIXTURE_VERSION,
   IDENTITY_SCHEMA_VERSION,
   identityGoldenFixtures,
+  isVipCapability,
+  normalizeRolePayload,
   validateIdentityGoldenFixtures,
   type CanonicalPlatformRole,
   type IdentityGoldenFixture,
@@ -38,20 +40,26 @@ type FixtureEvidenceSummary = {
   gatewayStatus: ComparisonStatus;
   rfEvidenceStatus: ComparisonStatus;
   rfProjectionStatus: ComparisonStatus;
+  rfEvidenceHelperStatus: ComparisonStatus;
+  rfProjectionHelperStatus: ComparisonStatus;
+  claimCapabilityStatus: ComparisonStatus;
   divergenceClass: string;
   notes: string[];
 };
 
 type CompareOnlyEvidenceSummary = {
   schemaVersion: 1;
-  generatedBy: 'rf-slice-6.21-compare-only-tests';
+  generatedBy: 'rf-slice-6.24-rf-helper-parity-tests';
   fixtureVersion: 1;
   fixtureCount: number;
-  comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'];
+  comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'];
   counts: {
     gateway: SurfaceCounts;
     rfEvidence: SurfaceCounts;
     rfProjection: SurfaceCounts;
+    rfEvidenceHelperParity: SurfaceCounts;
+    rfProjectionHelperParity: SurfaceCounts;
+    claimVsCapability: SurfaceCounts;
   };
   fixtureSummaries: FixtureEvidenceSummary[];
   knownDivergences: Array<{
@@ -149,6 +157,56 @@ function classifyRfPrincipalComparison(fixture: IdentityGoldenFixture): RfCompar
   };
 }
 
+function classifyRfEvidenceHelperParity(fixture: IdentityGoldenFixture): RfComparison {
+  const snapshot = createRoleNormalizationEvidenceSnapshot(toEvidenceInput(fixture));
+  const helper = normalizeRolePayload(fixture.rawInputPayload);
+  const reasons: string[] = [];
+
+  if (snapshot.gateway.platformRole !== helper.platformRole.platformRole) reasons.push('RF evidence gateway role did not match helper platform role');
+  if (snapshot.gateway.roleSource !== helper.platformRole.source) reasons.push('RF evidence gateway source did not match helper platform source');
+  if (snapshot.claimGate.isVipSpacer !== fixture.expected.claimVipBehavior.currentClaimAllowsVip) reasons.push('RF evidence claim VIP did not match fixture expectation');
+  if (snapshot.previewAdapter.isVip !== helper.capabilities.capabilities.includes('vip_spacer')) reasons.push('RF preview VIP did not match helper VIP capability');
+  if (snapshot.divergence.alignment !== helper.evidence.alignment) reasons.push('RF evidence divergence did not match helper evidence alignment');
+  if (helper.metadata.containsRawJwt !== false || helper.metadata.containsPii !== false) reasons.push('helper metadata exposed unsafe identity material');
+
+  return {
+    fixtureId: fixture.id,
+    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    reasons,
+  };
+}
+
+function classifyRfProjectionHelperParity(fixture: IdentityGoldenFixture): RfComparison {
+  const projection = projectCurrentRfPrincipalFromGatewayFixture(fixture);
+  const helper = normalizeRolePayload(fixture.rawInputPayload);
+  const reasons: string[] = [];
+
+  if (projection.platformRole !== helper.platformRole.platformRole) reasons.push(`RF projection role ${projection.platformRole} did not match helper platform role ${helper.platformRole.platformRole}`);
+  if (projection.claimVip !== fixture.expected.claimVipBehavior.currentClaimAllowsVip) reasons.push('RF projection claim VIP did not match fixture expectation');
+
+  return {
+    fixtureId: fixture.id,
+    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    reasons,
+  };
+}
+
+function classifyClaimCapabilityParity(fixture: IdentityGoldenFixture): RfComparison {
+  const projection = projectCurrentRfPrincipalFromGatewayFixture(fixture);
+  const helperVip = isVipCapability(fixture.rawInputPayload);
+  const reasons: string[] = [];
+
+  if (projection.claimVip !== helperVip) {
+    reasons.push('current paid claim VIP behavior differs from helper VIP capability; helper must not be used as claim gate');
+  }
+
+  return {
+    fixtureId: fixture.id,
+    status: reasons.length === 0 ? 'aligned' : fixture.expected.divergence.alignment === 'preview_grants_claim_rejects' ? 'intentionally_different' : 'unexpected_divergence',
+    reasons,
+  };
+}
+
 function classifyGatewaySummary(fixture: IdentityGoldenFixture): RfComparison {
   if (fixture.id === 'future-capability-placeholder') {
     return {
@@ -179,8 +237,16 @@ function countStatuses(comparisons: readonly RfComparison[]): SurfaceCounts {
   return counts;
 }
 
-function notesForFixture(fixture: IdentityGoldenFixture, gateway: RfComparison, rfEvidence: RfComparison, rfProjection: RfComparison): string[] {
-  const notes = [...gateway.reasons, ...rfEvidence.reasons, ...rfProjection.reasons];
+function notesForFixture(
+  fixture: IdentityGoldenFixture,
+  gateway: RfComparison,
+  rfEvidence: RfComparison,
+  rfProjection: RfComparison,
+  rfEvidenceHelper: RfComparison,
+  rfProjectionHelper: RfComparison,
+  claimCapability: RfComparison
+): string[] {
+  const notes = [...gateway.reasons, ...rfEvidence.reasons, ...rfProjection.reasons, ...rfEvidenceHelper.reasons, ...rfProjectionHelper.reasons, ...claimCapability.reasons];
   if (fixture.expected.divergence.alignment !== 'aligned') {
     notes.push(`known preview/claim divergence: ${fixture.expected.divergence.alignment}`);
   }
@@ -194,6 +260,9 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
   const gatewayComparisons = identityGoldenFixtures.map(classifyGatewaySummary);
   const rfEvidenceComparisons = identityGoldenFixtures.map(classifyEvidenceComparison);
   const rfProjectionComparisons = identityGoldenFixtures.map(classifyRfPrincipalComparison);
+  const rfEvidenceHelperComparisons = identityGoldenFixtures.map(classifyRfEvidenceHelperParity);
+  const rfProjectionHelperComparisons = identityGoldenFixtures.map(classifyRfProjectionHelperParity);
+  const claimCapabilityComparisons = identityGoldenFixtures.map(classifyClaimCapabilityParity);
   const knownDivergences = identityGoldenFixtures
     .filter((fixture) => fixture.expected.divergence.alignment !== 'aligned')
     .map((fixture) => ({
@@ -201,18 +270,29 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
       divergenceClass: fixture.expected.divergence.alignment,
       status: 'documented' as const,
       note: 'Preview recognizes VIP alias in roles[] while current paid claim behavior does not.',
-    }));
+    }))
+    .concat([
+      {
+        fixtureId: 'future-capability-placeholder',
+        divergenceClass: 'future_capability_metadata_only',
+        status: 'documented' as const,
+        note: 'capabilities[] remains a fixture placeholder and is not consumed by gateway or RF runtime.',
+      },
+    ]);
 
   return {
     schemaVersion: IDENTITY_SCHEMA_VERSION,
-    generatedBy: 'rf-slice-6.21-compare-only-tests',
+    generatedBy: 'rf-slice-6.24-rf-helper-parity-tests',
     fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
     fixtureCount: identityGoldenFixtures.length,
-    comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'],
+    comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
     counts: {
       gateway: countStatuses(gatewayComparisons),
       rfEvidence: countStatuses(rfEvidenceComparisons),
       rfProjection: countStatuses(rfProjectionComparisons),
+      rfEvidenceHelperParity: countStatuses(rfEvidenceHelperComparisons),
+      rfProjectionHelperParity: countStatuses(rfProjectionHelperComparisons),
+      claimVsCapability: countStatuses(claimCapabilityComparisons),
     },
     fixtureSummaries: identityGoldenFixtures.map((fixture, index) => ({
       fixtureId: fixture.id,
@@ -220,8 +300,19 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
       gatewayStatus: gatewayComparisons[index]!.status,
       rfEvidenceStatus: rfEvidenceComparisons[index]!.status,
       rfProjectionStatus: rfProjectionComparisons[index]!.status,
+      rfEvidenceHelperStatus: rfEvidenceHelperComparisons[index]!.status,
+      rfProjectionHelperStatus: rfProjectionHelperComparisons[index]!.status,
+      claimCapabilityStatus: claimCapabilityComparisons[index]!.status,
       divergenceClass: fixture.expected.divergence.alignment,
-      notes: notesForFixture(fixture, gatewayComparisons[index]!, rfEvidenceComparisons[index]!, rfProjectionComparisons[index]!),
+      notes: notesForFixture(
+        fixture,
+        gatewayComparisons[index]!,
+        rfEvidenceComparisons[index]!,
+        rfProjectionComparisons[index]!,
+        rfEvidenceHelperComparisons[index]!,
+        rfProjectionHelperComparisons[index]!,
+        claimCapabilityComparisons[index]!
+      ),
     })),
     knownDivergences,
     runtimeImportBoundary: {
@@ -274,6 +365,29 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     expect(fixture!.expected.previewBehavior.claimBehaviorUnchanged).toBe(true);
   });
 
+  it('compares RF evidence snapshots with identity-core helper outputs without changing runtime semantics', () => {
+    const comparisons = identityGoldenFixtures.map(classifyRfEvidenceHelperParity);
+
+    expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
+    expect(comparisons.map((comparison) => comparison.status)).toEqual(identityGoldenFixtures.map(() => 'aligned'));
+  });
+
+  it('compares RF internal JWT projection with identity-core helper output where the gateway has already resolved roles', () => {
+    const comparisons = identityGoldenFixtures.map(classifyRfProjectionHelperParity);
+
+    expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
+    expect(comparisons.map((comparison) => comparison.status)).toEqual(identityGoldenFixtures.map(() => 'aligned'));
+  });
+
+  it('keeps current paid claim VIP behavior distinct from helper VIP capability semantics', () => {
+    const comparisons = identityGoldenFixtures.map(classifyClaimCapabilityParity);
+
+    expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
+    expect(comparisons.filter((comparison) => comparison.status === 'intentionally_different').map((comparison) => comparison.fixtureId)).toEqual([
+      'conflict-role-spacer-roles-vip',
+    ]);
+  });
+
   it('keeps identity-core out of selected runtime entrypoints', () => {
     for (const file of runtimeFiles) {
       const content = readRuntimeFile(file);
@@ -287,10 +401,10 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
 
     expect(summary).toMatchObject({
       schemaVersion: IDENTITY_SCHEMA_VERSION,
-      generatedBy: 'rf-slice-6.21-compare-only-tests',
+      generatedBy: 'rf-slice-6.24-rf-helper-parity-tests',
       fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
       fixtureCount: identityGoldenFixtures.length,
-      comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'],
+      comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
       runtimeImportBoundary: {
         gatewayRuntimeImportsIdentityCore: false,
         rfRuntimeImportsIdentityCore: false,
@@ -304,15 +418,27 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     expect(summary.counts.gateway.aligned + summary.counts.gateway.intentionally_different + summary.counts.gateway.unexpected_divergence).toBe(summary.fixtureCount);
     expect(summary.counts.rfEvidence.aligned + summary.counts.rfEvidence.intentionally_different + summary.counts.rfEvidence.unexpected_divergence).toBe(summary.fixtureCount);
     expect(summary.counts.rfProjection.aligned + summary.counts.rfProjection.intentionally_different + summary.counts.rfProjection.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.rfEvidenceHelperParity.aligned + summary.counts.rfEvidenceHelperParity.intentionally_different + summary.counts.rfEvidenceHelperParity.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.rfProjectionHelperParity.aligned + summary.counts.rfProjectionHelperParity.intentionally_different + summary.counts.rfProjectionHelperParity.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.claimVsCapability.aligned + summary.counts.claimVsCapability.intentionally_different + summary.counts.claimVsCapability.unexpected_divergence).toBe(summary.fixtureCount);
     expect(summary.counts.gateway).toEqual({ aligned: 10, intentionally_different: 1, unexpected_divergence: 0 });
     expect(summary.counts.rfEvidence).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
     expect(summary.counts.rfProjection).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.rfEvidenceHelperParity).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.rfProjectionHelperParity).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.claimVsCapability).toEqual({ aligned: 10, intentionally_different: 1, unexpected_divergence: 0 });
     expect(summary.knownDivergences).toEqual([
       {
         fixtureId: 'conflict-role-spacer-roles-vip',
         divergenceClass: 'preview_grants_claim_rejects',
         status: 'documented',
         note: 'Preview recognizes VIP alias in roles[] while current paid claim behavior does not.',
+      },
+      {
+        fixtureId: 'future-capability-placeholder',
+        divergenceClass: 'future_capability_metadata_only',
+        status: 'documented',
+        note: 'capabilities[] remains a fixture placeholder and is not consumed by gateway or RF runtime.',
       },
     ]);
     expectNoUnsafeSummaryFields(summary);
