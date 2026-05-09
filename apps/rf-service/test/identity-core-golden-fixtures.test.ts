@@ -4,11 +4,14 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  IDENTITY_GOLDEN_FIXTURE_GROUPS,
+  IDENTITY_GOLDEN_FIXTURE_VERSION,
   IDENTITY_SCHEMA_VERSION,
   identityGoldenFixtures,
   validateIdentityGoldenFixtures,
   type CanonicalPlatformRole,
   type IdentityGoldenFixture,
+  type IdentityGoldenFixtureGroup,
 } from '@go2asia/identity-core';
 
 import { createRoleNormalizationEvidenceSnapshot, type RoleEvidenceInput } from '../src/roleNormalizationEvidence';
@@ -26,6 +29,52 @@ type RfPrincipalProjection = {
   roles: string[];
   claimVip: boolean;
 };
+
+type SurfaceCounts = Record<ComparisonStatus, number>;
+
+type FixtureEvidenceSummary = {
+  fixtureId: string;
+  group: IdentityGoldenFixtureGroup;
+  gatewayStatus: ComparisonStatus;
+  rfEvidenceStatus: ComparisonStatus;
+  rfProjectionStatus: ComparisonStatus;
+  divergenceClass: string;
+  notes: string[];
+};
+
+type CompareOnlyEvidenceSummary = {
+  schemaVersion: 1;
+  generatedBy: 'rf-slice-6.21-compare-only-tests';
+  fixtureVersion: 1;
+  fixtureCount: number;
+  comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'];
+  counts: {
+    gateway: SurfaceCounts;
+    rfEvidence: SurfaceCounts;
+    rfProjection: SurfaceCounts;
+  };
+  fixtureSummaries: FixtureEvidenceSummary[];
+  knownDivergences: Array<{
+    fixtureId: string;
+    divergenceClass: string;
+    status: 'documented';
+    note: string;
+  }>;
+  runtimeImportBoundary: {
+    gatewayRuntimeImportsIdentityCore: false;
+    rfRuntimeImportsIdentityCore: false;
+    pwaRuntimeImportsIdentityCore: false;
+    compareOnlyImportsLimitedToTests: true;
+  };
+};
+
+const runtimeFiles = [
+  'apps/api-gateway/src/index.ts',
+  'apps/rf-service/src/index.ts',
+  'apps/rf-service/src/middleware/auth.ts',
+  'apps/rf-service/src/store.ts',
+  'apps/go2asia-pwa-shell/middleware.ts',
+] as const;
 
 function stringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
@@ -100,6 +149,98 @@ function classifyRfPrincipalComparison(fixture: IdentityGoldenFixture): RfCompar
   };
 }
 
+function classifyGatewaySummary(fixture: IdentityGoldenFixture): RfComparison {
+  if (fixture.id === 'future-capability-placeholder') {
+    return {
+      fixtureId: fixture.id,
+      status: 'intentionally_different',
+      reasons: ['capabilities[] is a fixture metadata placeholder and is not consumed by gateway runtime in Slice 6.20'],
+    };
+  }
+
+  return {
+    fixtureId: fixture.id,
+    status: 'aligned',
+    reasons: [],
+  };
+}
+
+function emptyCounts(): SurfaceCounts {
+  return {
+    aligned: 0,
+    intentionally_different: 0,
+    unexpected_divergence: 0,
+  };
+}
+
+function countStatuses(comparisons: readonly RfComparison[]): SurfaceCounts {
+  const counts = emptyCounts();
+  for (const comparison of comparisons) counts[comparison.status] += 1;
+  return counts;
+}
+
+function notesForFixture(fixture: IdentityGoldenFixture, gateway: RfComparison, rfEvidence: RfComparison, rfProjection: RfComparison): string[] {
+  const notes = [...gateway.reasons, ...rfEvidence.reasons, ...rfProjection.reasons];
+  if (fixture.expected.divergence.alignment !== 'aligned') {
+    notes.push(`known preview/claim divergence: ${fixture.expected.divergence.alignment}`);
+  }
+  if (fixture.id === 'metadata-go2-role-precedes-public-metadata') {
+    notes.push('RF projection assumes gateway has already resolved go2_role/public metadata into role');
+  }
+  return notes;
+}
+
+function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
+  const gatewayComparisons = identityGoldenFixtures.map(classifyGatewaySummary);
+  const rfEvidenceComparisons = identityGoldenFixtures.map(classifyEvidenceComparison);
+  const rfProjectionComparisons = identityGoldenFixtures.map(classifyRfPrincipalComparison);
+  const knownDivergences = identityGoldenFixtures
+    .filter((fixture) => fixture.expected.divergence.alignment !== 'aligned')
+    .map((fixture) => ({
+      fixtureId: fixture.id,
+      divergenceClass: fixture.expected.divergence.alignment,
+      status: 'documented' as const,
+      note: 'Preview recognizes VIP alias in roles[] while current paid claim behavior does not.',
+    }));
+
+  return {
+    schemaVersion: IDENTITY_SCHEMA_VERSION,
+    generatedBy: 'rf-slice-6.21-compare-only-tests',
+    fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
+    fixtureCount: identityGoldenFixtures.length,
+    comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'],
+    counts: {
+      gateway: countStatuses(gatewayComparisons),
+      rfEvidence: countStatuses(rfEvidenceComparisons),
+      rfProjection: countStatuses(rfProjectionComparisons),
+    },
+    fixtureSummaries: identityGoldenFixtures.map((fixture, index) => ({
+      fixtureId: fixture.id,
+      group: fixture.group,
+      gatewayStatus: gatewayComparisons[index]!.status,
+      rfEvidenceStatus: rfEvidenceComparisons[index]!.status,
+      rfProjectionStatus: rfProjectionComparisons[index]!.status,
+      divergenceClass: fixture.expected.divergence.alignment,
+      notes: notesForFixture(fixture, gatewayComparisons[index]!, rfEvidenceComparisons[index]!, rfProjectionComparisons[index]!),
+    })),
+    knownDivergences,
+    runtimeImportBoundary: {
+      gatewayRuntimeImportsIdentityCore: false,
+      rfRuntimeImportsIdentityCore: false,
+      pwaRuntimeImportsIdentityCore: false,
+      compareOnlyImportsLimitedToTests: true,
+    },
+  };
+}
+
+function expectNoUnsafeSummaryFields(summary: CompareOnlyEvidenceSummary): void {
+  expect(JSON.stringify(summary)).not.toMatch(/email|wallet|nft|g2a|secret|session|bearer|authorization|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/i);
+}
+
+function readRuntimeFile(file: string): string {
+  return readFileSync(resolve(process.cwd(), '..', '..', file), 'utf8');
+}
+
 describe('RF identity-core golden fixture compare-only coverage', () => {
   it('keeps identity-core fixtures valid before RF replay', () => {
     expect(validateIdentityGoldenFixtures(identityGoldenFixtures)).toEqual({ valid: true, errors: [] });
@@ -134,17 +275,69 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
   });
 
   it('keeps identity-core out of selected runtime entrypoints', () => {
-    const runtimeFiles = [
-      'apps/api-gateway/src/index.ts',
-      'apps/rf-service/src/index.ts',
-      'apps/rf-service/src/middleware/auth.ts',
-      'apps/rf-service/src/store.ts',
-      'apps/go2asia-pwa-shell/middleware.ts',
-    ];
-
     for (const file of runtimeFiles) {
-      const content = readFileSync(resolve(process.cwd(), '..', '..', file), 'utf8');
+      const content = readRuntimeFile(file);
       expect(content, file).not.toContain('@go2asia/identity-core');
+    }
+  });
+
+  it('builds deterministic compare-only evidence summary without unsafe fields', () => {
+    const summary = buildCompareOnlyEvidenceSummary();
+    const fixtureIds = identityGoldenFixtures.map((fixture) => fixture.id);
+
+    expect(summary).toMatchObject({
+      schemaVersion: IDENTITY_SCHEMA_VERSION,
+      generatedBy: 'rf-slice-6.21-compare-only-tests',
+      fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
+      fixtureCount: identityGoldenFixtures.length,
+      comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection'],
+      runtimeImportBoundary: {
+        gatewayRuntimeImportsIdentityCore: false,
+        rfRuntimeImportsIdentityCore: false,
+        pwaRuntimeImportsIdentityCore: false,
+        compareOnlyImportsLimitedToTests: true,
+      },
+    });
+    expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual(fixtureIds);
+    expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual([...fixtureIds].sort((left, right) => left.localeCompare(right)));
+    expect(summary.fixtureSummaries).toHaveLength(summary.fixtureCount);
+    expect(summary.counts.gateway.aligned + summary.counts.gateway.intentionally_different + summary.counts.gateway.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.rfEvidence.aligned + summary.counts.rfEvidence.intentionally_different + summary.counts.rfEvidence.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.rfProjection.aligned + summary.counts.rfProjection.intentionally_different + summary.counts.rfProjection.unexpected_divergence).toBe(summary.fixtureCount);
+    expect(summary.counts.gateway).toEqual({ aligned: 10, intentionally_different: 1, unexpected_divergence: 0 });
+    expect(summary.counts.rfEvidence).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.rfProjection).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.knownDivergences).toEqual([
+      {
+        fixtureId: 'conflict-role-spacer-roles-vip',
+        divergenceClass: 'preview_grants_claim_rejects',
+        status: 'documented',
+        note: 'Preview recognizes VIP alias in roles[] while current paid claim behavior does not.',
+      },
+    ]);
+    expectNoUnsafeSummaryFields(summary);
+  });
+
+  it('keeps evidence summary group coverage aligned with identity-core fixture groups', () => {
+    const summary = buildCompareOnlyEvidenceSummary();
+    const groupCounts = new Map<IdentityGoldenFixtureGroup, number>();
+
+    for (const fixture of summary.fixtureSummaries) {
+      groupCounts.set(fixture.group, (groupCounts.get(fixture.group) ?? 0) + 1);
+    }
+
+    expect(Object.fromEntries(groupCounts)).toEqual({
+      alias_case: 2,
+      canonical_happy_path: 1,
+      role_roles_conflict: 2,
+      future_capability_combination: 1,
+      malformed_payload: 1,
+      metadata_precedence: 1,
+      missing_payload: 1,
+      order_sensitive_array: 2,
+    });
+    for (const group of IDENTITY_GOLDEN_FIXTURE_GROUPS) {
+      expect(groupCounts.has(group), group).toBe(true);
     }
   });
 });
