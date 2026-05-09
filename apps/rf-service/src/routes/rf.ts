@@ -1,6 +1,5 @@
 import { createDb } from '@go2asia/db';
 
-import type { GatewayPrincipal } from '../middleware/auth';
 import {
   ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
   evaluateEntitlementPreviewProxyBatchRequest,
@@ -11,11 +10,13 @@ import {
   parseEntitlementMockReadRequest,
   parseEntitlementPreviewProxyBatchRequest,
   parseEntitlementPreviewProxyRequest,
+  type EntitlementPreviewAdapterOptions,
 } from '../entitlementMock';
 import {
   getEntitlementPreviewObservabilitySnapshot,
   recordEntitlementPreviewObservations,
 } from '../entitlementPreviewObservability';
+import type { GatewayPrincipal } from '../middleware/auth';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
 import {
   acceptProLink,
@@ -57,6 +58,9 @@ type RfRouteEnv = {
   RF_ENABLE_ENTITLEMENT_MOCK_READ_API?: string;
   RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY?: string;
   RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY?: string;
+  RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS?: string;
+  RF_ENABLE_ENTITLEMENT_ROLE_ADAPTER?: string;
+  RF_ENABLE_ENTITLEMENT_VIP_ADAPTER?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -272,6 +276,14 @@ function isPreviewObservabilityEnabled(env: RfRouteEnv): boolean {
   return isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY);
 }
 
+function getEntitlementPreviewAdapterOptions(env: RfRouteEnv): EntitlementPreviewAdapterOptions {
+  return {
+    enableRealAdapters: isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS),
+    enableRoleAdapter: isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_ROLE_ADAPTER),
+    enableVipAdapter: isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_VIP_ADAPTER),
+  };
+}
+
 function optionalString(body: Record<string, unknown>, key: string): string | null | undefined {
   if (!Object.prototype.hasOwnProperty.call(body, key)) return undefined;
   const value = body[key];
@@ -354,10 +366,11 @@ export async function handleRfRoute(
     if (!previewRequest) {
       return errorResponse('INVALID_REQUEST', 'Expected valid entitlement preview request body', requestId, 400);
     }
+    const adapterOptions = getEntitlementPreviewAdapterOptions(env);
     if (!isPreviewObservabilityEnabled(env)) {
-      return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal));
+      return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal, undefined, adapterOptions));
     }
-    const result = evaluateEntitlementPreviewProxyRequestWithObservation(previewRequest, principal);
+    const result = evaluateEntitlementPreviewProxyRequestWithObservation(previewRequest, principal, undefined, adapterOptions);
     recordEntitlementPreviewObservations({ kind: 'single', observations: [result.observation] });
     return json(result.preview);
   }
@@ -372,10 +385,11 @@ export async function handleRfRoute(
     if (!previewRequest) {
       return errorResponse('INVALID_REQUEST', `Expected 1-${ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS} valid entitlement preview batch items`, requestId, 400);
     }
+    const adapterOptions = getEntitlementPreviewAdapterOptions(env);
     if (!isPreviewObservabilityEnabled(env)) {
-      return json(evaluateEntitlementPreviewProxyBatchRequest(previewRequest, principal));
+      return json(evaluateEntitlementPreviewProxyBatchRequest(previewRequest, principal, undefined, adapterOptions));
     }
-    const result = evaluateEntitlementPreviewProxyBatchRequestWithObservation(previewRequest, principal);
+    const result = evaluateEntitlementPreviewProxyBatchRequestWithObservation(previewRequest, principal, undefined, adapterOptions);
     recordEntitlementPreviewObservations({ kind: 'batch', observations: result.observations });
     return json(result.response);
   }

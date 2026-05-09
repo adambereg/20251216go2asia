@@ -1,3 +1,6 @@
+import { roleVipPreviewAdapter } from './roleVipAdapter';
+import type { RoleVipAdapter, RoleVipAdapterExecutionResult } from './roleVipAdapterInterface';
+
 type EntitlementDecision = 'granted' | 'denied' | 'pending' | 'unknown' | 'not_applicable';
 type EntitlementReasonCode =
   | 'entitlement_granted'
@@ -135,6 +138,13 @@ type MockAdapterResult = {
   cacheHit: boolean;
   evaluatedAt: string;
   expiresAt?: string | null;
+};
+
+export type EntitlementPreviewAdapterOptions = {
+  enableRealAdapters?: boolean;
+  enableRoleAdapter?: boolean;
+  enableVipAdapter?: boolean;
+  roleVipAdapter?: RoleVipAdapter;
 };
 
 type EntitlementSourceEvaluation = {
@@ -438,6 +448,56 @@ function createAdapterResult(
   };
 }
 
+function shouldUseRoleVipAdapter(source: EntitlementSource, options?: EntitlementPreviewAdapterOptions): source is 'role' | 'vip_status' {
+  if (!options?.enableRealAdapters) return false;
+  if (source === 'role') return Boolean(options.enableRoleAdapter);
+  if (source === 'vip_status') return Boolean(options.enableVipAdapter);
+  return false;
+}
+
+function toAdapterHealthStatus(execution: RoleVipAdapterExecutionResult): EntitlementAdapterHealthStatus {
+  if (execution.output.health === 'timeout') return 'timeout';
+  if (execution.output.health === 'unavailable') return 'unavailable';
+  if (execution.output.health === 'degraded') return 'degraded';
+  return 'healthy';
+}
+
+function createRoleVipAdapterResult(
+  source: 'role' | 'vip_status',
+  nowIso: string,
+  scenario: EntitlementMockScenario,
+  principal: { userId: string; platformRole: string; roles: string[] },
+  options: EntitlementPreviewAdapterOptions,
+): MockAdapterResult {
+  const adapter = options.roleVipAdapter ?? roleVipPreviewAdapter;
+  const execution = adapter.execute({
+    source,
+    principal,
+    timeout: scenario === 'source_timeout',
+    sourceUnavailable: scenario === 'source_unavailable',
+    context: {
+      requestId: `role-vip-preview:${principal.userId}:${source}`,
+      evaluationMode: 'claim_preview',
+      trustSource: 'gateway_principal',
+    },
+  });
+  if (execution instanceof Promise) {
+    throw new Error('ASYNC_ROLE_VIP_ADAPTER_NOT_SUPPORTED_IN_PREVIEW_HARNESS');
+  }
+
+  return {
+    adapterId: adapter.id,
+    source,
+    rawFacts: [{ source, factKey: 'roleVipAdapterMode', value: 'preview_only', observedAt: nowIso }],
+    decisionHint: execution.output.decision,
+    reasonCodeHint: execution.output.reasonCode,
+    healthStatus: toAdapterHealthStatus(execution),
+    stale: execution.output.normalization.stale,
+    cacheHit: false,
+    evaluatedAt: nowIso,
+  };
+}
+
 function toDegradedMode(result: MockAdapterResult): EntitlementDegradedMode {
   if (result.healthStatus === 'timeout') return 'timeout_fallback';
   if (result.healthStatus === 'stale_cache_only' || result.stale) return 'stale_cache';
@@ -459,7 +519,7 @@ function getSafeLabel(decision: EntitlementDecision, reasonCode: EntitlementReas
   if (decision === 'granted') return 'Доступ открыт';
   if (decision === 'pending') return 'Проверка выполняется';
   if (degradedMode !== 'none') return 'Доступ временно ограничен';
-  if (reasonCode === 'invite_required' || reasonCode === 'nft_required' || reasonCode === 'milestone_required') return 'Требуется условие';
+  if (reasonCode === 'invite_required' || reasonCode === 'nft_required' || reasonCode === 'milestone_required' || reasonCode === 'insufficient_status') return 'Требуется условие';
   return 'Премиум-доступ недоступен';
 }
 
@@ -495,11 +555,16 @@ function aggregateDecision(
 export function evaluateMockEntitlementReadRequest(
   request: EntitlementMockReadRequest,
   now = new Date(),
+  adapterOptions?: EntitlementPreviewAdapterOptions & { principal?: { userId: string; platformRole: string; roles: string[] } },
 ): EntitlementMockReadResponse {
   const nowIso = now.toISOString();
   const scenario = getMockScenario(request);
   const sources = scenario === 'ordinary_resource_no_gate' ? [] : getSources(request);
-  const adapterResults = sources.map((source) => createAdapterResult(source, nowIso, scenario));
+  const adapterResults = sources.map((source) =>
+    adapterOptions?.principal && shouldUseRoleVipAdapter(source, adapterOptions)
+      ? createRoleVipAdapterResult(source, nowIso, scenario, adapterOptions.principal, adapterOptions)
+      : createAdapterResult(source, nowIso, scenario),
+  );
   const aggregate = aggregateDecision(request, adapterResults);
   const partialResults = adapterResults
     .filter((result) => ['timeout_fallback', 'source_unavailable'].includes(toDegradedMode(result)) || result.reasonCodeHint === 'unknown_source')
@@ -563,7 +628,8 @@ function mapPreviewState(response: EntitlementMockReadResponse): EntitlementPrev
     response.reasonCode === 'invite_required' ||
     response.reasonCode === 'nft_required' ||
     response.reasonCode === 'milestone_required' ||
-    response.reasonCode === 'requirement_missing'
+    response.reasonCode === 'requirement_missing' ||
+    response.reasonCode === 'insufficient_status'
   ) {
     return 'requires_condition';
   }
@@ -656,6 +722,7 @@ export function evaluateEntitlementPreviewProxyRequestWithObservation(
   request: EntitlementPreviewProxyRequest,
   principal: { userId: string; platformRole: string; roles: string[] },
   now = new Date(),
+  adapterOptions?: EntitlementPreviewAdapterOptions,
 ): { preview: EntitlementPreviewProxyResponse; observation: EntitlementPreviewObservation } {
   const readRequest: EntitlementMockReadRequest = {
     requestId: request.requestId,
@@ -671,7 +738,10 @@ export function evaluateEntitlementPreviewProxyRequestWithObservation(
     includeAuditTrace: false,
     includeSafeLabels: true,
   };
-  const readResponse = evaluateMockEntitlementReadRequest(readRequest, now);
+  const readResponse = evaluateMockEntitlementReadRequest(readRequest, now, {
+    ...adapterOptions,
+    principal,
+  });
 
   return {
     preview: toSafeEntitlementPreviewProxyResponse(readResponse),
@@ -683,19 +753,21 @@ export function evaluateEntitlementPreviewProxyRequest(
   request: EntitlementPreviewProxyRequest,
   principal: { userId: string; platformRole: string; roles: string[] },
   now = new Date(),
+  adapterOptions?: EntitlementPreviewAdapterOptions,
 ): EntitlementPreviewProxyResponse {
-  return evaluateEntitlementPreviewProxyRequestWithObservation(request, principal, now).preview;
+  return evaluateEntitlementPreviewProxyRequestWithObservation(request, principal, now, adapterOptions).preview;
 }
 
 export function evaluateEntitlementPreviewProxyBatchRequest(
   request: EntitlementPreviewProxyBatchRequest,
   principal: { userId: string; platformRole: string; roles: string[] },
   now = new Date(),
+  adapterOptions?: EntitlementPreviewAdapterOptions,
 ): EntitlementPreviewProxyBatchResponse {
   return {
     items: request.items.map((item) => ({
       clientKey: item.clientKey,
-      preview: evaluateEntitlementPreviewProxyRequest(item, principal, now),
+      preview: evaluateEntitlementPreviewProxyRequest(item, principal, now, adapterOptions),
     })),
   };
 }
@@ -704,10 +776,11 @@ export function evaluateEntitlementPreviewProxyBatchRequestWithObservation(
   request: EntitlementPreviewProxyBatchRequest,
   principal: { userId: string; platformRole: string; roles: string[] },
   now = new Date(),
+  adapterOptions?: EntitlementPreviewAdapterOptions,
 ): { response: EntitlementPreviewProxyBatchResponse; observations: EntitlementPreviewObservation[] } {
   const evaluatedItems = request.items.map((item) => ({
     clientKey: item.clientKey,
-    ...evaluateEntitlementPreviewProxyRequestWithObservation(item, principal, now),
+    ...evaluateEntitlementPreviewProxyRequestWithObservation(item, principal, now, adapterOptions),
   }));
 
   return {

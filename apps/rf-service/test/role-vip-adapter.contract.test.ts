@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getEntitlementPreviewObservabilitySnapshot, resetEntitlementPreviewObservability } from '../src/entitlementPreviewObservability';
 import {
   ROLE_VIP_CANONICAL_ROLES,

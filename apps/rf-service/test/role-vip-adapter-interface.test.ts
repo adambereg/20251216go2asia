@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { evaluateEntitlementPreviewProxyRequestWithObservation, type EntitlementPreviewProxyRequest } from '../src/entitlementMock';
+import { roleVipPreviewAdapter } from '../src/roleVipAdapter';
 import { roleVipFixtureMatrix, type RoleVipFixture } from '../src/roleVipAdapterContracts';
 import {
   assertRoleVipAdapterOutputCompatibility,
@@ -55,6 +57,17 @@ describe('Role/VIP adapter interface skeleton', () => {
       expect(assertRoleVipAdapterOutputCompatibility(replay.execution.output)).toBe(true);
       expect(replay.execution.informationalOnly).toBe(true);
       expect(replay.execution.claimBehaviorUnchanged).toBe(true);
+    }
+  });
+
+  it('replays every fixture through the runtime preview adapter implementation', async () => {
+    for (const fixture of roleVipFixtureMatrix) {
+      const replay = await runRoleVipFixtureThroughAdapter(roleVipPreviewAdapter, fixture);
+
+      expect(replay.adapterId).toBe('role-vip-preview-adapter');
+      expect(replay.matchesFixture, replay.differences.join(', ')).toBe(true);
+      expect(replay.execution.output.health, fixture.id).not.toBe('fixture_only');
+      expect(assertRoleVipAdapterOutputCompatibility(replay.execution.output), fixture.id).toBe(true);
     }
   });
 

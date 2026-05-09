@@ -440,6 +440,117 @@ describe('RF entitlement preview proxy endpoint', () => {
     expect(body.isTemporary).toBe(true);
     expect(JSON.stringify(body)).not.toMatch(/source_unavailable|adapter|rawFacts|evaluatedSources|partialResults|auditTrace|subject|roleHints/i);
   });
+
+  it('keeps Role/VIP adapter disabled unless umbrella and source flags are enabled', async () => {
+    const body = previewBody({
+      requestedSources: ['vip_status'],
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+    });
+    const baseEnv: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const perSourceOnly = await postEntitlementPreview(
+      { ...baseEnv, RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true' },
+      body,
+      { sub: 'user_regular', role: 'spacer', roles: ['spacer'] },
+    );
+    const umbrellaOnly = await postEntitlementPreview(
+      { ...baseEnv, RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true' },
+      body,
+      { sub: 'user_regular', role: 'spacer', roles: ['spacer'] },
+    );
+    const perSourceOnlyBody = await readJson<EntitlementPreviewProxyResponse>(perSourceOnly);
+    const umbrellaOnlyBody = await readJson<EntitlementPreviewProxyResponse>(umbrellaOnly);
+
+    expect(perSourceOnlyBody.state).toBe('available');
+    expect(umbrellaOnlyBody.state).toBe('available');
+  });
+
+  it('uses VIP adapter semantics for preview only when flags are enabled', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+    };
+    const body = previewBody({
+      requestedSources: ['vip_status'],
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+    });
+
+    const regular = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview(env, body, { sub: 'user_regular', role: 'spacer', roles: ['spacer'] }),
+    );
+    const admin = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview(env, body, { sub: 'user_admin', role: 'admin', roles: ['admin'] }),
+    );
+    const pro = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview(env, body, { sub: 'user_pro', role: 'pro', roles: ['pro'] }),
+    );
+    const vip = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview(env, body, { sub: 'user_vip', role: 'vip_spacer', roles: ['vip_spacer'] }),
+    );
+
+    expect(regular.state).toBe('requires_condition');
+    expect(admin.state).toBe('requires_condition');
+    expect(pro.state).toBe('requires_condition');
+    expect(vip.state).toBe('available');
+    expect(JSON.stringify([regular, admin, pro, vip])).not.toMatch(/roleHints|subject|adapterId|rawFacts|evaluatedSources|partialResults|wallet|chain|g2a/i);
+  });
+
+  it('keeps Role adapter source independently gated from VIP adapter source', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_ROLE_ADAPTER: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'false',
+    };
+    const roleResponse = await postEntitlementPreview(
+      env,
+      previewBody({
+        requestedSources: ['role'],
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+      }),
+      { sub: 'user_regular', role: 'spacer', roles: ['spacer'] },
+    );
+    const vipResponse = await postEntitlementPreview(
+      env,
+      previewBody({
+        requestedSources: ['vip_status'],
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+      }),
+      { sub: 'user_regular', role: 'spacer', roles: ['spacer'] },
+    );
+    const roleBody = await readJson<EntitlementPreviewProxyResponse>(roleResponse);
+    const vipBody = await readJson<EntitlementPreviewProxyResponse>(vipResponse);
+
+    expect(roleBody.state).toBe('available');
+    expect(vipBody.state).toBe('available');
+  });
+
+  it('maps Role/VIP adapter unavailable and timeout scenarios to temporary preview state', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+    };
+
+    for (const mockScenario of ['source_unavailable', 'source_timeout']) {
+      const body = await readJson<EntitlementPreviewProxyResponse>(
+        await postEntitlementPreview(
+          env,
+          previewBody({
+            requestedSources: ['vip_status'],
+            context: { rf: { voucherClass: 'premium' }, mockScenario },
+          }),
+          { sub: 'user_vip', role: 'vip_spacer', roles: ['vip_spacer'] },
+        ),
+      );
+
+      expect(body.state).toBe('checking_or_temporarily_unavailable');
+      expect(body.isTemporary).toBe(true);
+    }
+  });
 });
 
 describe('RF entitlement preview batch proxy endpoint', () => {
@@ -568,6 +679,27 @@ describe('RF entitlement preview batch proxy endpoint', () => {
     expect(batch.items[0]?.preview.informationalOnly).toBe(true);
     expect(batch.items[0]?.preview.claimBehaviorUnchanged).toBe(true);
   });
+
+  it('keeps Role/VIP adapter single and batch preview states consistent', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+    };
+    const body = previewBody({
+      requestedSources: ['vip_status'],
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+    });
+    const token = { sub: 'user_regular', role: 'spacer', roles: ['spacer'] };
+    const single = await readJson<EntitlementPreviewProxyResponse>(await postEntitlementPreview(env, body, token));
+    const batch = await readJson<EntitlementPreviewProxyBatchResponse>(await postEntitlementPreviewBatch(env, { items: [{ clientKey: 'same_offer', ...body }] }, token));
+
+    expect(single.state).toBe('requires_condition');
+    expect(batch.items[0]?.preview.state).toBe(single.state);
+    expect(batch.items[0]?.preview.informationalOnly).toBe(true);
+    expect(batch.items[0]?.preview.claimBehaviorUnchanged).toBe(true);
+  });
 });
 
 describe('RF entitlement preview observability', () => {
@@ -674,6 +806,32 @@ describe('RF entitlement preview observability', () => {
     expect(body.previewRequestsTotal).toBe(1);
     expect(body.bucketTotals.available).toBe(1);
     expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(body))).toBe(true);
+  });
+
+  it('counts Role/VIP adapter-backed preview output in existing safe buckets', async () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+    };
+
+    await postEntitlementPreview(
+      env,
+      previewBody({
+        requestedSources: ['vip_status'],
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+      }),
+      { sub: 'user_regular', role: 'spacer', roles: ['spacer'] },
+    );
+
+    const snapshot = getEntitlementPreviewObservabilitySnapshot();
+    expect(snapshot.previewRequestsTotal).toBe(1);
+    expect(snapshot.bucketTotals.requires_condition).toBe(1);
+    expect(snapshot.degradedTotals.none).toBe(1);
+    expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(snapshot))).toBe(true);
   });
 
   it('keeps internal debug snapshot disabled by default', async () => {
