@@ -42,6 +42,7 @@ export interface Env {
   DEBUG_ROUTES_ENABLED?: string;
   GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE?: string;
   GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE?: string;
+  GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION?: string;
 }
 
 type GatewayUserContext = {
@@ -69,6 +70,14 @@ type GatewayIdentityShadowComparison = {
   legacyRole: CanonicalPlatformRole;
   helperRole: CanonicalPlatformRole | null;
   helperSource: string | null;
+};
+
+type GatewayIdentityShadowAggregate = {
+  schemaVersion: 1;
+  total: number;
+  byClassification: Record<GatewayIdentityShadowClassification, number>;
+  byReasonCode: Record<GatewayIdentityShadowReason, number>;
+  byHelperSource: Record<string, number>;
 };
 
 export type RouteGroup =
@@ -658,6 +667,53 @@ function extractGatewayUserContext(payload: Record<string, unknown>): GatewayUse
   return { userId, platformRole, roles: normalizedRoles };
 }
 
+function emptyGatewayIdentityShadowAggregate(): GatewayIdentityShadowAggregate {
+  return {
+    schemaVersion: 1,
+    total: 0,
+    byClassification: {
+      aligned: 0,
+      migration_blocker: 0,
+      unexpected_divergence: 0,
+      helper_failed: 0,
+    },
+    byReasonCode: {
+      aligned: 0,
+      unknown_scalar_fallback_policy: 0,
+      unexpected_role_mismatch: 0,
+      helper_failed: 0,
+    },
+    byHelperSource: {},
+  };
+}
+
+const gatewayIdentityShadowAggregate = emptyGatewayIdentityShadowAggregate();
+
+function recordGatewayIdentityShadowComparison(comparison: GatewayIdentityShadowComparison): void {
+  gatewayIdentityShadowAggregate.total += 1;
+  gatewayIdentityShadowAggregate.byClassification[comparison.classification] += 1;
+  gatewayIdentityShadowAggregate.byReasonCode[comparison.reasonCode] += 1;
+  const helperSource = comparison.helperSource ?? 'none';
+  gatewayIdentityShadowAggregate.byHelperSource[helperSource] = (gatewayIdentityShadowAggregate.byHelperSource[helperSource] ?? 0) + 1;
+}
+
+export function getGatewayIdentityShadowAggregateSnapshot(): GatewayIdentityShadowAggregate {
+  return {
+    ...gatewayIdentityShadowAggregate,
+    byClassification: { ...gatewayIdentityShadowAggregate.byClassification },
+    byReasonCode: { ...gatewayIdentityShadowAggregate.byReasonCode },
+    byHelperSource: { ...gatewayIdentityShadowAggregate.byHelperSource },
+  };
+}
+
+export function resetGatewayIdentityShadowAggregateForTests(): void {
+  const next = emptyGatewayIdentityShadowAggregate();
+  gatewayIdentityShadowAggregate.total = next.total;
+  gatewayIdentityShadowAggregate.byClassification = next.byClassification;
+  gatewayIdentityShadowAggregate.byReasonCode = next.byReasonCode;
+  gatewayIdentityShadowAggregate.byHelperSource = next.byHelperSource;
+}
+
 function isFlagEnabled(value?: string): boolean {
   return value?.trim().toLowerCase() === 'true';
 }
@@ -741,7 +797,11 @@ function maybeCompareIdentityCoreShadow(
 ): GatewayIdentityShadowComparison | null {
   const shadowCompareEnabled = isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE);
   if (!shadowCompareEnabled) return null;
-  return classifyGatewayIdentityShadow(payload, legacyUser, shadowCompareEnabled, isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE));
+  const comparison = classifyGatewayIdentityShadow(payload, legacyUser, shadowCompareEnabled, isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE));
+  if (isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION)) {
+    recordGatewayIdentityShadowComparison(comparison);
+  }
+  return comparison;
 }
 
 function encodeGatewayIdentityShadowEvidence(comparison: GatewayIdentityShadowComparison): string {
