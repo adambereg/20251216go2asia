@@ -30,6 +30,7 @@ import {
   type EntitlementPreviewObservabilitySnapshot,
 } from '../src/entitlementPreviewObservability';
 import worker, { type Env } from '../src/index';
+import type { RoleVipAdapter } from '../src/roleVipAdapterInterface';
 
 function baseRequest(overrides: Partial<EntitlementMockReadRequest> = {}): EntitlementMockReadRequest {
   return {
@@ -551,6 +552,121 @@ describe('RF entitlement preview proxy endpoint', () => {
       expect(body.isTemporary).toBe(true);
     }
   });
+
+  it('lets preview proxy off override all adapter flags after authentication', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_ROLE_ADAPTER: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_OBSERVABILITY: 'true',
+    };
+    const response = await postEntitlementPreview(
+      env,
+      previewBody({ requestedSources: ['vip_status'] }),
+      { sub: 'user_vip', role: 'vip_spacer', roles: ['vip_spacer'] },
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED');
+    expect(JSON.stringify(body)).not.toMatch(/adapter|roleHints|subject|vip_status/i);
+  });
+
+  it('ignores client-provided context feature flags and uses server flags only', async () => {
+    const request = previewBody({
+      requestedSources: ['vip_status'],
+      context: {
+        rf: { voucherClass: 'premium' },
+        mockScenario: 'granted',
+        featureFlags: {
+          RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: true,
+          RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: true,
+        },
+      },
+    });
+    const token = { sub: 'user_regular', role: 'spacer', roles: ['spacer'] };
+    const clientOnlyFlags = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview({ SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' }, request, token),
+    );
+    const serverFlags = await readJson<EntitlementPreviewProxyResponse>(
+      await postEntitlementPreview(
+        {
+          SERVICE_JWT_SECRET: 'service-secret',
+          RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+          RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+          RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+        },
+        request,
+        token,
+      ),
+    );
+
+    expect(clientOnlyFlags.state).toBe('available');
+    expect(serverFlags.state).toBe('requires_condition');
+  });
+
+  it('supports rollback by returning to mock behavior when adapter flags are disabled', async () => {
+    const request = previewBody({
+      requestedSources: ['vip_status'],
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+    });
+    const token = { sub: 'user_regular', role: 'spacer', roles: ['spacer'] };
+    const enabledEnv: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+      RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS: 'true',
+      RF_ENABLE_ENTITLEMENT_VIP_ADAPTER: 'true',
+    };
+    const disabledEnv: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+    };
+
+    const enabled = await readJson<EntitlementPreviewProxyResponse>(await postEntitlementPreview(enabledEnv, request, token));
+    const rolledBack = await readJson<EntitlementPreviewProxyResponse>(await postEntitlementPreview(disabledEnv, request, token));
+    const reEnabled = await readJson<EntitlementPreviewProxyResponse>(await postEntitlementPreview(enabledEnv, request, token));
+
+    expect(enabled.state).toBe('requires_condition');
+    expect(rolledBack.state).toBe('available');
+    expect(reEnabled.state).toBe('requires_condition');
+    expect([enabled, rolledBack, reEnabled].every((item) => item.informationalOnly && item.claimBehaviorUnchanged)).toBe(true);
+  });
+
+  it('fails closed to temporary preview when adapter execution errors', () => {
+    const throwingAdapter: RoleVipAdapter = {
+      id: 'throwing-role-vip-adapter',
+      execute() {
+        throw new Error('staging validation injected failure');
+      },
+    };
+    const result = evaluateEntitlementPreviewProxyRequestWithObservation(
+      previewBody({
+        requestedSources: ['vip_status'],
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+      }) as never,
+      { userId: 'user_vip', platformRole: 'vip_spacer', roles: ['vip_spacer'] },
+      new Date('2026-05-09T00:00:00.000Z'),
+      {
+        enableRealAdapters: true,
+        enableVipAdapter: true,
+        roleVipAdapter: throwingAdapter,
+      },
+    );
+
+    expect(result.preview).toMatchObject({
+      state: 'checking_or_temporarily_unavailable',
+      informationalOnly: true,
+      claimBehaviorUnchanged: true,
+      isTemporary: true,
+    });
+    expect(result.observation).toMatchObject({
+      bucket: 'checking_or_temporarily_unavailable',
+      degradedMode: 'source_unavailable',
+      isTemporary: true,
+    });
+    expect(JSON.stringify(result)).not.toMatch(/throwing-role-vip-adapter|injected failure|adapterId|rawFacts|evaluatedSources|roleHints|subject/i);
+  });
 });
 
 describe('RF entitlement preview batch proxy endpoint', () => {
@@ -831,6 +947,43 @@ describe('RF entitlement preview observability', () => {
     expect(snapshot.previewRequestsTotal).toBe(1);
     expect(snapshot.bucketTotals.requires_condition).toBe(1);
     expect(snapshot.degradedTotals.none).toBe(1);
+    expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(snapshot))).toBe(true);
+  });
+
+  it('keeps adapter-backed single and batch observability parity without new buckets', () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const request = previewBody({
+      requestedSources: ['vip_status'],
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'granted' },
+    }) as never;
+    const principal = { userId: 'user_regular', platformRole: 'spacer', roles: ['spacer'] };
+    const adapterOptions = {
+      enableRealAdapters: true,
+      enableVipAdapter: true,
+    };
+    const single = evaluateEntitlementPreviewProxyRequestWithObservation(request, principal, new Date('2026-05-09T00:00:00.000Z'), adapterOptions);
+    const batchEquivalent = evaluateEntitlementPreviewProxyRequestWithObservation(request, principal, new Date('2026-05-09T00:00:00.000Z'), adapterOptions);
+
+    recordEntitlementPreviewObservations({ kind: 'single', observations: [single.observation], now: new Date('2026-05-09T00:00:01.000Z') });
+    recordEntitlementPreviewObservations({ kind: 'batch', observations: [batchEquivalent.observation], now: new Date('2026-05-09T00:00:02.000Z') });
+
+    const snapshot = getEntitlementPreviewObservabilitySnapshot();
+    expect(single.preview.state).toBe('requires_condition');
+    expect(batchEquivalent.observation).toEqual(single.observation);
+    expect(Object.keys(snapshot.bucketTotals).sort()).toEqual([
+      'available',
+      'checking_or_temporarily_unavailable',
+      'not_enabled',
+      'ordinary_no_preview',
+      'requires_condition',
+      'unavailable',
+    ]);
+    expect(snapshot.previewRequestsTotal).toBe(1);
+    expect(snapshot.previewBatchRequestsTotal).toBe(1);
+    expect(snapshot.previewItemsTotal).toBe(2);
+    expect(snapshot.bucketTotals.requires_condition).toBe(2);
+    expect(snapshot.degradedTotals.none).toBe(2);
+    expect(snapshot.batchSizeTotals.single).toBe(2);
     expect(assertNoUnsafeEntitlementPreviewObservabilityFields(JSON.stringify(snapshot))).toBe(true);
   });
 

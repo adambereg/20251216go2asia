@@ -470,19 +470,35 @@ function createRoleVipAdapterResult(
   options: EntitlementPreviewAdapterOptions,
 ): MockAdapterResult {
   const adapter = options.roleVipAdapter ?? roleVipPreviewAdapter;
-  const execution = adapter.execute({
-    source,
-    principal,
-    timeout: scenario === 'source_timeout',
-    sourceUnavailable: scenario === 'source_unavailable',
-    context: {
-      requestId: `role-vip-preview:${principal.userId}:${source}`,
-      evaluationMode: 'claim_preview',
-      trustSource: 'gateway_principal',
-    },
-  });
-  if (execution instanceof Promise) {
-    throw new Error('ASYNC_ROLE_VIP_ADAPTER_NOT_SUPPORTED_IN_PREVIEW_HARNESS');
+  let execution: RoleVipAdapterExecutionResult;
+  try {
+    const adapterExecution = adapter.execute({
+      source,
+      principal,
+      timeout: scenario === 'source_timeout',
+      sourceUnavailable: scenario === 'source_unavailable',
+      context: {
+        requestId: `role-vip-preview:${principal.userId}:${source}`,
+        evaluationMode: 'claim_preview',
+        trustSource: 'gateway_principal',
+      },
+    });
+    if (adapterExecution instanceof Promise) {
+      throw new Error('ASYNC_ROLE_VIP_ADAPTER_NOT_SUPPORTED_IN_PREVIEW_HARNESS');
+    }
+    execution = adapterExecution;
+  } catch {
+    return {
+      adapterId: adapter.id,
+      source,
+      rawFacts: [{ source, factKey: 'roleVipAdapterMode', value: 'preview_only_error_fallback', observedAt: nowIso }],
+      decisionHint: 'pending',
+      reasonCodeHint: 'source_unavailable',
+      healthStatus: 'unavailable',
+      stale: false,
+      cacheHit: false,
+      evaluatedAt: nowIso,
+    };
   }
 
   return {

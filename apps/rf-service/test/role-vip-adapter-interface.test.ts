@@ -43,6 +43,57 @@ function toMockPreview(fixture: RoleVipFixture) {
   );
 }
 
+function toAdapterPreview(fixture: RoleVipFixture) {
+  const request: EntitlementPreviewProxyRequest = {
+    requestId: `adapter-vs-mock:${fixture.id}`,
+    resource: {
+      kind: 'rf_premium_voucher',
+      offerId: 'offer_role_vip_contract',
+      partnerId: 'partner_role_vip_contract',
+    },
+    context: {
+      rf: {
+        voucherClass: 'premium',
+      },
+      mockScenario: fixture.group === 'source_unavailable' ? 'source_unavailable' : fixture.group === 'timeout' ? 'source_timeout' : 'granted',
+    },
+    requestedSources: [fixture.source],
+  };
+
+  return evaluateEntitlementPreviewProxyRequestWithObservation(
+    request,
+    {
+      userId: fixture.principal.userId,
+      platformRole: fixture.principal.platformRole ?? 'spacer',
+      roles: Array.isArray(fixture.principal.roles) ? fixture.principal.roles.filter((role): role is string => typeof role === 'string') : [],
+    },
+    new Date('2026-05-09T00:00:00.000Z'),
+    {
+      enableRealAdapters: true,
+      enableRoleAdapter: fixture.source === 'role',
+      enableVipAdapter: fixture.source === 'vip_status',
+    },
+  );
+}
+
+type ComparisonClassification = 'aligned' | 'intentionally_different' | 'unexpected_divergence';
+
+function classifyMockAdapterComparison(fixture: RoleVipFixture): ComparisonClassification {
+  if (fixture.group === 'source_unavailable' || fixture.group === 'timeout') return 'aligned';
+  if (
+    [
+      'regular_spacer_requires_condition',
+      'admin_does_not_auto_grant_vip',
+      'pro_does_not_auto_grant_vip',
+      'mixed_roles_without_vip_requires_condition',
+      'missing_role_unavailable',
+    ].includes(fixture.id)
+  ) {
+    return 'intentionally_different';
+  }
+  return 'aligned';
+}
+
 describe('Role/VIP adapter interface skeleton', () => {
   it('replays every fixture through fixture-backed adapter', async () => {
     const adapter = createFixtureBackedRoleVipAdapter();
@@ -111,6 +162,32 @@ describe('Role/VIP adapter interface skeleton', () => {
 
       expect(Object.keys(replay.execution.output.safePublicPayload).sort(), fixture.id).toEqual(allowedPublicFields);
       expect(assertRoleVipAdapterOutputCompatibility(replay.execution.output), fixture.id).toBe(true);
+    }
+  });
+
+  it('keeps drift and malformed backend simulations degraded without exposing conflicts', async () => {
+    const driftFixtures = roleVipFixtureMatrix.filter((fixture) => fixture.group === 'drift_gateway_vs_backend' || fixture.group === 'malformed_role');
+
+    expect(driftFixtures.map((fixture) => fixture.id)).toEqual([
+      'drift_gateway_vip_backend_regular_temporary',
+      'drift_gateway_regular_backend_vip_temporary',
+      'malformed_backend_temporary',
+    ]);
+
+    for (const fixture of driftFixtures) {
+      const replay = await runRoleVipFixtureThroughAdapter(roleVipPreviewAdapter, fixture);
+      const publicPayload = JSON.stringify({
+        preview: replay.execution.output.preview,
+        observability: replay.execution.output.observability,
+        safePublicPayload: replay.execution.output.safePublicPayload,
+      });
+
+      expect(replay.matchesFixture, replay.differences.join(', ')).toBe(true);
+      expect(replay.execution.output.health, fixture.id).toBe('degraded');
+      expect(replay.execution.output.error, fixture.id).toBe(fixture.group === 'malformed_role' ? 'malformed_source' : 'drift_detected');
+      expect(replay.execution.output.preview.state, fixture.id).toBe('checking_or_temporarily_unavailable');
+      expect(replay.execution.output.observability.isTemporary, fixture.id).toBe(true);
+      expect(publicPayload, fixture.id).not.toMatch(/drift|conflict|backend|rawRoles|principal|subject|adapterId/i);
     }
   });
 });
@@ -192,6 +269,101 @@ describe('Role/VIP contract vs current entitlement mock', () => {
         futureAdapterResponsibility: true,
       },
     ]);
+  });
+
+  it('classifies adapter-vs-mock comparison results as aligned or intentionally different', () => {
+    const compared = roleVipFixtureMatrix
+      .filter((fixture) => fixture.backendSnapshot === undefined)
+      .map((fixture) => {
+        const mock = toMockPreview(fixture);
+        const adapter = toAdapterPreview(fixture);
+        const expectedClassification = classifyMockAdapterComparison(fixture);
+        const actualClassification: ComparisonClassification =
+          mock.preview.state === adapter.preview.state ? 'aligned' : expectedClassification === 'intentionally_different' ? 'intentionally_different' : 'unexpected_divergence';
+
+        return {
+          fixtureId: fixture.id,
+          source: fixture.source,
+          mockState: mock.preview.state,
+          adapterState: adapter.preview.state,
+          classification: actualClassification,
+        };
+      });
+
+    expect(compared).toEqual([
+      {
+        fixtureId: 'role_source_regular_available',
+        source: 'role',
+        mockState: 'available',
+        adapterState: 'available',
+        classification: 'aligned',
+      },
+      {
+        fixtureId: 'regular_spacer_requires_condition',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'requires_condition',
+        classification: 'intentionally_different',
+      },
+      {
+        fixtureId: 'vip_platform_role_available',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'available',
+        classification: 'aligned',
+      },
+      {
+        fixtureId: 'vip_roles_array_available',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'available',
+        classification: 'aligned',
+      },
+      {
+        fixtureId: 'admin_does_not_auto_grant_vip',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'requires_condition',
+        classification: 'intentionally_different',
+      },
+      {
+        fixtureId: 'pro_does_not_auto_grant_vip',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'requires_condition',
+        classification: 'intentionally_different',
+      },
+      {
+        fixtureId: 'mixed_roles_vip_present_available',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'available',
+        classification: 'aligned',
+      },
+      {
+        fixtureId: 'mixed_roles_without_vip_requires_condition',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'requires_condition',
+        classification: 'intentionally_different',
+      },
+      {
+        fixtureId: 'missing_role_unavailable',
+        source: 'vip_status',
+        mockState: 'available',
+        adapterState: 'requires_condition',
+        classification: 'intentionally_different',
+      },
+      {
+        fixtureId: 'timeout_temporary',
+        source: 'vip_status',
+        mockState: 'checking_or_temporarily_unavailable',
+        adapterState: 'checking_or_temporarily_unavailable',
+        classification: 'aligned',
+      },
+    ]);
+
+    expect(compared.filter((item) => item.classification === 'unexpected_divergence')).toEqual([]);
   });
 });
 
