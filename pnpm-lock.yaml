@@ -608,6 +608,18 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/identity-core:
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^1.6.1
+        version: 1.6.1(vitest@1.6.1)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.27)
+
   packages/logger:
     devDependencies:
       '@cloudflare/workers-types':
