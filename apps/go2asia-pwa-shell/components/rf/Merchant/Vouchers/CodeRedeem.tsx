@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { redeemRfVoucher } from '@go2asia/sdk/rf';
+import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import { Card, CardContent, Button } from '@go2asia/ui';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { getRfVoucherStatusLabel } from '@/lib/rfVoucherLifecycle';
 
 type LiveRedeemResult = {
   applied: boolean;
   voucherId: string;
   partnerId: string;
   offerId: string;
-  status: string;
-  canonicalStatus: string | null;
+  status: RfVoucherDto['status'];
+  canonicalStatus?: RfVoucherDto['canonicalStatus'];
   redeemedAt: string | null;
   statusChangedAt: string | null;
 };
@@ -29,17 +31,25 @@ function toLiveRedeemError(error: unknown): LiveRedeemError {
     message?: string;
   };
 
+  const code = value?.error?.code || 'RF_REDEEM_FAILED';
+  const messageByCode: Record<string, string> = {
+    RF_REDEEM_INPUT_REQUIRED: 'Заполните партнёра и код ваучера.',
+    RF_VOUCHER_NOT_FOUND: 'Ваучер не найден или больше недоступен.',
+    RF_VOUCHER_ALREADY_REDEEMED: 'Ваучер уже был использован.',
+    RF_VOUCHER_REDEEM_FORBIDDEN: 'Этот ваучер нельзя применить для выбранного партнёра.',
+    RF_VOUCHER_NOT_ACTIVE: 'Ваучер сейчас недоступен для использования.',
+  };
+
   return {
     status: typeof value?.status === 'number' ? value.status : null,
-    code: value?.error?.code || 'RF_REDEEM_FAILED',
-    message: value?.error?.message || value?.message || 'Не удалось погасить ваучер.',
+    code,
+    message: messageByCode[code] ?? 'Не удалось погасить ваучер. Проверьте данные и попробуйте позже.',
   };
 }
 
 export function CodeRedeem() {
   const [partnerId, setPartnerId] = useState('');
   const [voucherId, setVoucherId] = useState('');
-  const [idempotencyKey, setIdempotencyKey] = useState('');
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveResult, setLiveResult] = useState<LiveRedeemResult | null>(null);
   const [liveError, setLiveError] = useState<LiveRedeemError | null>(null);
@@ -54,7 +64,7 @@ export function CodeRedeem() {
       setLiveError({
         status: null,
         code: 'RF_REDEEM_INPUT_REQUIRED',
-        message: 'partnerId и код ваучера/voucherId обязательны для погашения.',
+        message: 'Заполните партнёра и код ваучера.',
       });
       return;
     }
@@ -67,7 +77,6 @@ export function CodeRedeem() {
       const response = await redeemRfVoucher({
         partnerId: normalizedPartnerId,
         voucherId: normalizedVoucherId,
-        idempotencyKey: idempotencyKey.trim() || undefined,
       });
       setLiveResult({
         applied: response.applied,
@@ -75,7 +84,7 @@ export function CodeRedeem() {
         partnerId: response.voucher.partnerId,
         offerId: response.voucher.offerId,
         status: response.voucher.status,
-        canonicalStatus: response.voucher.canonicalStatus ?? null,
+        canonicalStatus: response.voucher.canonicalStatus,
         redeemedAt: response.voucher.redeemedAt,
         statusChangedAt: response.voucher.statusChangedAt ?? null,
       });
@@ -93,7 +102,7 @@ export function CodeRedeem() {
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-slate-900">Погашение ваучера</h3>
             <p className="mt-1 text-sm text-slate-600">
-              Проверяет ваучер через RF backend и фиксирует погашение для выбранного партнёра.
+              Проверяет ваучер и отмечает его как использованный для выбранного партнёра.
             </p>
           </div>
 
@@ -119,21 +128,7 @@ export function CodeRedeem() {
                 className="w-full rounded-lg border border-slate-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-slate-500">
-                Используйте идентификатор ваучера из RF. Человекочитаемый поиск по коду появится в следующих версиях.
-              </p>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Idempotency-Key (опционально)</label>
-              <input
-                type="text"
-                value={idempotencyKey}
-                onChange={(e) => setIdempotencyKey(e.target.value)}
-                placeholder="redeem-..."
-                className="w-full rounded-lg border border-slate-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Если оставить пустым, backend всё равно защищает от второго successful redeem по voucherId.
+                Используйте код из карточки ваучера. Повторное применение того же ваучера не создаёт новый результат.
               </p>
             </div>
 
@@ -154,15 +149,14 @@ export function CodeRedeem() {
                   <CheckCircle2 size={18} />
                   {liveResult.applied ? 'Ваучер погашен' : 'Ваучер уже был погашен'}
                 </div>
-                <div className="mt-2 space-y-1 font-mono text-xs">
+                <div className="mt-2 space-y-1 text-xs">
                   <p>voucherId: {liveResult.voucherId}</p>
                   <p>partnerId: {liveResult.partnerId}</p>
                   <p>offerId: {liveResult.offerId}</p>
-                  <p>status: {liveResult.status}</p>
-                  {liveResult.canonicalStatus ? <p>canonicalStatus: {liveResult.canonicalStatus}</p> : null}
-                  {liveResult.redeemedAt ? <p>redeemedAt: {new Date(liveResult.redeemedAt).toLocaleString('ru-RU')}</p> : null}
+                  <p>Статус: {getRfVoucherStatusLabel(liveResult)}</p>
+                  {liveResult.redeemedAt ? <p>Использован: {new Date(liveResult.redeemedAt).toLocaleString('ru-RU')}</p> : null}
                   {liveResult.statusChangedAt ? (
-                    <p>statusChangedAt: {new Date(liveResult.statusChangedAt).toLocaleString('ru-RU')}</p>
+                    <p>Обновлён: {new Date(liveResult.statusChangedAt).toLocaleString('ru-RU')}</p>
                   ) : null}
                 </div>
               </div>
@@ -172,7 +166,7 @@ export function CodeRedeem() {
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
                 <div className="flex items-center gap-2 font-medium">
                   <XCircle size={18} />
-                  {liveError.code}
+                  Не удалось применить ваучер
                 </div>
                 <p className="mt-1">{liveError.message}</p>
                 {liveError.status !== null ? <p className="mt-1 text-xs">HTTP {liveError.status}</p> : null}

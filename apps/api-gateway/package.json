@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@clerk/backend": "^3.0.2",
+    "@go2asia/identity-core": "workspace:*",
     "@go2asia/logger": "workspace:*",
     "@go2asia/schemas": "workspace:*"
   },

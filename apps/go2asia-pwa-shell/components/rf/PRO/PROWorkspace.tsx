@@ -21,6 +21,8 @@ import {
   getProAttributedVoucherStatusLabel,
   getActiveLinkedPartnerIds,
   getLinkedPartnerOffers,
+  getProAttributedVoucherAttributionLabel,
+  getProAttributedVoucherClaimSourceLabel,
   getPartnerProHealth,
   proAttributedVouchersBoundaryCopy,
   proAttributedVouchersEmptyState,
@@ -546,11 +548,11 @@ export function PROWorkspace() {
           </button>
         </div>
 
-        {attributedVouchersLoading ? <p className="mt-4 text-sm text-slate-600">Загрузка attributed vouchers…</p> : null}
+        {attributedVouchersLoading ? <p className="mt-4 text-sm text-slate-600">Загрузка ваучеров с PRO-отметкой…</p> : null}
 
         {attributedVouchersError && !attributedVouchersLoading ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Не удалось загрузить read-only attribution visibility. Попробуйте обновить блок позже.
+            Не удалось загрузить read-only видимость PRO-отметок. Попробуйте обновить блок позже.
           </div>
         ) : null}
 
@@ -570,12 +572,12 @@ export function PROWorkspace() {
                     <p className="mt-1 text-xs text-slate-600">Партнёр: {voucher.partnerName}</p>
                     {voucher.listingContext ? (
                       <p className="mt-1 text-xs text-slate-600">
-                        Listing: {voucher.listingContext.listingTitle ?? 'context recorded'}
+                        Объект: {voucher.listingContext.listingTitle ?? 'уточняется'}
                       </p>
                     ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                        {voucher.attributionStatus}
+                        {getProAttributedVoucherAttributionLabel(voucher.attributionStatus)}
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                         {getProAttributedVoucherStatusLabel(voucher)}
@@ -587,15 +589,15 @@ export function PROWorkspace() {
                   </div>
                   <dl className="grid min-w-[240px] gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
                     <div>
-                      <dt className="font-medium text-slate-500">claim source</dt>
-                      <dd className="text-slate-800">{voucher.claimSource}</dd>
+                      <dt className="font-medium text-slate-500">Источник получения</dt>
+                      <dd className="text-slate-800">{getProAttributedVoucherClaimSourceLabel(voucher.claimSource)}</dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-slate-500">confirmed at</dt>
+                      <dt className="font-medium text-slate-500">PRO отметка</dt>
                       <dd className="text-slate-800">{formatProLinkDate(voucher.attributionConfirmedAt)}</dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-slate-500">claim recorded</dt>
+                      <dt className="font-medium text-slate-500">Получен</dt>
                       <dd className="text-slate-800">{formatProLinkDate(voucher.claimedAt)}</dd>
                     </div>
                   </dl>

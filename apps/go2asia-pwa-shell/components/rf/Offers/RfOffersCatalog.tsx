@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { LayoutGrid, List, Search } from 'lucide-react';
 import type { RfOfferDto, RfPartnerDto } from '@go2asia/sdk/rf';
 import { Button } from '@go2asia/ui';
 import { AddToMyVouchersButton } from '@/components/rf/Shared/AddToMyVouchersButton';
 import { ClaimRfOfferButton } from '@/components/rf/Shared/ClaimRfOfferButton';
 import { FavoriteOfferButton } from '@/components/rf/Shared/FavoriteOfferButton';
+import { RfEntitlementPreviewBadge } from '@/components/rf/Shared/RfEntitlementPreviewBadge';
 import {
   getCatalogCategoryFilterOptions,
   getOfferBadge,
@@ -29,6 +32,12 @@ import {
 import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 import { rfOfferClaimCopy } from '@/lib/rfOfferClaim';
 import { captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
+import {
+  buildRfOfferEntitlementPreviewRequest,
+  fetchRfEntitlementPreviewBatch,
+  rfEntitlementPreviewFlags,
+  type RfEntitlementPreviewUiState,
+} from '@/lib/rfEntitlementPreview';
 
 type SortKey = 'featured' | 'title' | 'partner';
 type ViewMode = 'grid' | 'list';
@@ -67,6 +76,7 @@ export function RfOffersCatalog({
   initialQuery = '',
   initialPartnerId,
 }: RfOffersCatalogProps) {
+  const { userId } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const partnerById = useMemo(() => new Map(partners.map((p) => [p.id, p])), [partners]);
@@ -193,6 +203,33 @@ export function RfOffersCatalog({
   const offerTypeEntries = (
     ['discount', 'bundle', 'gift', 'access', 'campaign', 'event_related'] as RfOfferDto['offerType'][]
   ).map((t) => ({ t, ...getOfferTypePresentation(t) }));
+
+  const entitlementPreviewItems = useMemo(() => {
+    if (!userId) return [];
+    return filtered
+      .filter((offer) => offer.visibility === 'pro_only')
+      .map((offer) => ({
+        clientKey: offer.id,
+        request: buildRfOfferEntitlementPreviewRequest({
+          subject: { userId },
+          offer,
+          voucherClass: 'premium',
+        }),
+      }));
+  }, [filtered, userId]);
+
+  const entitlementPreviewCollectionKey = useMemo(
+    () => entitlementPreviewItems.map((item) => item.clientKey).sort().join('|'),
+    [entitlementPreviewItems],
+  );
+
+  const { data: entitlementPreviewByOfferId = {} } = useQuery<Record<string, RfEntitlementPreviewUiState>>({
+    queryKey: ['rf', 'entitlement-preview', 'catalog-batch', userId ?? null, entitlementPreviewCollectionKey],
+    enabled: rfEntitlementPreviewFlags.enableClientPreview && Boolean(userId) && entitlementPreviewItems.length > 0,
+    staleTime: 30_000,
+    retry: 0,
+    queryFn: () => fetchRfEntitlementPreviewBatch(entitlementPreviewItems, { enabled: true }),
+  });
 
   const resetAll = () => {
     setQ('');
@@ -474,14 +511,25 @@ export function RfOffersCatalog({
       ) : view === 'grid' ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} partner={partnerById.get(offer.partnerId)!} layout="grid" />
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              partner={partnerById.get(offer.partnerId)!}
+              layout="grid"
+              entitlementPreview={entitlementPreviewByOfferId[offer.id] ?? null}
+            />
           ))}
         </div>
       ) : (
         <ul className="space-y-3">
           {filtered.map((offer) => (
             <li key={offer.id}>
-              <OfferCard offer={offer} partner={partnerById.get(offer.partnerId)!} layout="list" />
+              <OfferCard
+                offer={offer}
+                partner={partnerById.get(offer.partnerId)!}
+                layout="list"
+                entitlementPreview={entitlementPreviewByOfferId[offer.id] ?? null}
+              />
             </li>
           ))}
         </ul>
@@ -494,10 +542,12 @@ function OfferCard({
   offer,
   partner,
   layout,
+  entitlementPreview,
 }: {
   offer: RfOfferDto;
   partner: RfPartnerDto;
   layout: 'grid' | 'list';
+  entitlementPreview?: RfEntitlementPreviewUiState | null;
 }) {
   const offerBadge = getOfferBadge(offer);
   const vis = getVisibilityBadge(offer.visibility);
@@ -538,6 +588,16 @@ function OfferCard({
         <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
           {getOfferSummaryLine(offer)}
         </span>
+        {offer.visibility === 'pro_only' ? (
+          <RfEntitlementPreviewBadge
+            offerId={offer.id}
+            partnerId={offer.partnerId}
+            offerVisibility={offer.visibility}
+            voucherClass="premium"
+            previewState={entitlementPreview}
+            allowFallbackFetch={false}
+          />
+        ) : null}
       </div>
       <p className="text-[11px] text-slate-500">{getOfferGuardText(offer)}</p>
       <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] text-slate-600">

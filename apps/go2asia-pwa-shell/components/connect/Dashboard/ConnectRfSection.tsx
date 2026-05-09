@@ -13,17 +13,17 @@ export function ConnectRfSection() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Russian Friendly в Connect</h2>
             <p className="mt-1 text-sm text-slate-700">
-              Сводка, смысл и детали RF-ваучеров собраны в одном read-only блоке.
+              Connect показывает производную read-only проекцию RF-активности как часть профиля и прогресса.
             </p>
           </div>
           <div className="grid gap-2 text-sm text-sky-950 lg:max-w-xl">
             <div className="flex items-start gap-2">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
-              <p>Connect показывает состояние RF-ваучеров, но не изменяет их и не считает их балансом кошелька Points.</p>
+              <p>RF остаётся owner domain: Connect только читает факты по ваучерам, использованию и PRO-отметкам.</p>
             </div>
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
-              <p>Rewards, Points-связь и PRO attribution будут отдельным будущим этапом.</p>
+              <p>В этом блоке нет финансовых показателей: только narrative summary, активность и milestones.</p>
             </div>
           </div>
         </div>

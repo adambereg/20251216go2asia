@@ -3,22 +3,6 @@ import { getRfVoucherEffectiveStatus as getRfVoucherLifecycleStatus } from './rf
 
 export type RfVoucherEffectiveStatus = ReturnType<typeof getRfVoucherLifecycleStatus>;
 
-export type RfEconomicMeaningState = 'empty' | 'active_only' | 'used' | 'inactive_only' | 'mixed';
-
-export interface RfEconomicMeaningCta {
-  label: string;
-  href: '/rf/vouchers' | '/rf/my-vouchers';
-}
-
-export interface RfEconomicMeaning {
-  state: RfEconomicMeaningState;
-  title: string;
-  summary: string;
-  bullets: string[];
-  ctas: RfEconomicMeaningCta[];
-  futureNotes: string[];
-}
-
 export interface RfVoucherTimelineItem {
   id: string;
   voucherId: string;
@@ -28,22 +12,52 @@ export interface RfVoucherTimelineItem {
   occurredAt: string;
 }
 
+export interface ConnectRfProjectionSummary {
+  total: number;
+  active: number;
+  used: number;
+  unavailable: number;
+  pendingActivation: number;
+  repeatableAvailable: number;
+  receivedViaPro: number;
+}
+
+export interface ConnectRfProjectionRecent {
+  lastClaimed: RfVoucherDto | null;
+  lastRedeemed: RfVoucherDto | null;
+  activity: RfVoucherTimelineItem[];
+}
+
+export interface ConnectRfProjectionMilestone {
+  id: 'first_claim' | 'first_used' | 'first_pro' | 'multi_partner_used' | 'repeat_used_again';
+  label: string;
+  reached: boolean;
+}
+
+export interface ConnectRfProjectionNarrative {
+  title: string;
+  summary: string;
+  bullets: string[];
+}
+
+export interface ConnectRfProjection {
+  summary: ConnectRfProjectionSummary;
+  groups: {
+    active: RfVoucherDto[];
+    used: RfVoucherDto[];
+    unavailable: RfVoucherDto[];
+    pendingActivation: RfVoucherDto[];
+    repeatableAgain: RfVoucherDto[];
+  };
+  recent: ConnectRfProjectionRecent;
+  milestones: ConnectRfProjectionMilestone[];
+  narrative: ConnectRfProjectionNarrative;
+}
+
 const ACTIVE_CANONICAL_STATUSES = new Set<RfVoucherEffectiveStatus>(['available', 'locked', 'unlocked']);
 
 export function getRfVoucherEffectiveStatus(voucher: RfVoucherDto): RfVoucherEffectiveStatus {
   return getRfVoucherLifecycleStatus(voucher);
-}
-
-export function isActiveRfVoucher(voucher: RfVoucherDto): boolean {
-  return ACTIVE_CANONICAL_STATUSES.has(getRfVoucherEffectiveStatus(voucher));
-}
-
-export function isUsedRfVoucher(voucher: RfVoucherDto): boolean {
-  return getRfVoucherEffectiveStatus(voucher) === 'redeemed';
-}
-
-export function isCancelledRfVoucher(voucher: RfVoucherDto): boolean {
-  return getRfVoucherEffectiveStatus(voucher) === 'cancelled';
 }
 
 export function formatRfVoucherLabel(voucher: RfVoucherDto): string {
@@ -61,45 +75,126 @@ export function getRfVoucherListingSourceLabel(voucher: RfVoucherDto): string | 
     : `Источник: объект Rielt ${voucher.listingContext.listingId}`;
 }
 
+export function getProjectionVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): string {
+  const status = getRfVoucherLifecycleStatus(voucher);
+  if (status === 'redeemed') return 'Использован';
+  if (status === 'cancelled' || status === 'expired') return 'Недоступен';
+  if (status === 'locked') return 'Ожидает активации';
+  if (status === 'unlocked') return 'Можно получить снова';
+  return 'Активен';
+}
+
 function sortByDateDesc(left: RfVoucherDto, right: RfVoucherDto): number {
   const leftDate = new Date(left.statusChangedAt ?? left.redeemedAt ?? left.claimedAt).getTime();
   const rightDate = new Date(right.statusChangedAt ?? right.redeemedAt ?? right.claimedAt).getTime();
   return rightDate - leftDate;
 }
 
-export function selectRfVoucherProjection(vouchers: RfVoucherDto[], limit = 3) {
-  const split = splitRfVouchersByProjectionStatus(vouchers);
-
-  return {
-    active: split.active.slice(0, limit),
-    used: split.used.slice(0, limit),
-  };
+function toTimestamp(value: string): number {
+  return new Date(value).getTime();
 }
 
-export function splitRfVouchersByProjectionStatus(vouchers: RfVoucherDto[]) {
-  const active: RfVoucherDto[] = [];
-  const used: RfVoucherDto[] = [];
-  const cancelled: RfVoucherDto[] = [];
-  const other: RfVoucherDto[] = [];
+function isProAttributedVoucher(voucher: RfVoucherDto): boolean {
+  return voucher.attribution?.status === 'confirmed' && voucher.attribution?.source === 'pro_link';
+}
 
-  for (const voucher of vouchers) {
-    const status = getRfVoucherEffectiveStatus(voucher);
-    if (ACTIVE_CANONICAL_STATUSES.has(status)) active.push(voucher);
-    else if (status === 'redeemed') used.push(voucher);
-    else if (status === 'cancelled') cancelled.push(voucher);
-    else other.push(voucher);
+function isRepeatableOpportunity(voucher: RfVoucherDto): boolean {
+  if (voucher.repeatPolicySnapshot !== 'repeat_after_redeem') return false;
+  const status = getRfVoucherEffectiveStatus(voucher);
+  return status === 'unlocked' || status === 'available';
+}
+
+function getMostRecentVoucher(vouchers: RfVoucherDto[], dateField: 'claimedAt' | 'redeemedAt'): RfVoucherDto | null {
+  return vouchers
+    .filter((voucher) => Boolean(voucher[dateField]))
+    .sort((left, right) => toTimestamp(String(right[dateField])) - toTimestamp(String(left[dateField])))[0] ?? null;
+}
+
+function buildNarrative(summary: ConnectRfProjectionSummary): ConnectRfProjectionNarrative {
+  if (summary.total === 0) {
+    return {
+      title: 'RF-активность пока не началась',
+      summary: 'Connect покажет здесь развитие RF-активности после первого ваучера.',
+      bullets: [
+        'Активные возможности',
+        'Использованные преимущества',
+        'История RF-активности',
+        'RF помогает связывать предложения партнёров с действиями пользователя',
+      ],
+    };
+  }
+
+  if (summary.active > 0 && summary.used > 0) {
+    return {
+      title: 'Как RF отражается в Connect',
+      summary: 'У вас есть и активные, и уже использованные RF-ваучеры.',
+      bullets: [
+        'Активные возможности',
+        'Использованные преимущества',
+        'RF помогает связывать предложения партнёров с действиями пользователя',
+      ],
+    };
+  }
+
+  if (summary.active > 0) {
+    return {
+      title: 'Активные возможности',
+      summary: 'Сейчас в Connect видны доступные RF-ваучеры для использования.',
+      bullets: [
+        'Активные возможности',
+        'История RF-активности',
+        'Как RF отражается в Connect',
+        'RF помогает связывать предложения партнёров с действиями пользователя',
+      ],
+    };
   }
 
   return {
-    active: active.sort(sortByDateDesc),
-    used: used.sort(sortByDateDesc),
-    cancelled: cancelled.sort(sortByDateDesc),
-    other: other.sort(sortByDateDesc),
+    title: 'История RF-активности',
+    summary: 'Активных ваучеров сейчас нет, но история взаимодействия уже зафиксирована.',
+    bullets: [
+      'Использованные преимущества',
+      'История RF-активности',
+      'RF помогает связывать предложения партнёров с действиями пользователя',
+    ],
   };
 }
 
-function toTimestamp(value: string): number {
-  return new Date(value).getTime();
+function buildMilestones(vouchers: RfVoucherDto[], proAttributedCount: number): ConnectRfProjectionMilestone[] {
+  const redeemed = vouchers.filter((voucher) => getRfVoucherEffectiveStatus(voucher) === 'redeemed');
+  const redeemedPartners = new Set(redeemed.map((voucher) => voucher.partnerId));
+  const redeemedByOffer = new Map<string, number>();
+  for (const voucher of redeemed) {
+    redeemedByOffer.set(voucher.offerId, (redeemedByOffer.get(voucher.offerId) ?? 0) + 1);
+  }
+
+  return [
+    {
+      id: 'first_claim',
+      label: 'Первый ваучер получен',
+      reached: vouchers.length > 0,
+    },
+    {
+      id: 'first_used',
+      label: 'Первый ваучер использован',
+      reached: redeemed.length > 0,
+    },
+    {
+      id: 'first_pro',
+      label: 'Получено через PRO',
+      reached: proAttributedCount > 0,
+    },
+    {
+      id: 'multi_partner_used',
+      label: 'Использованы ваучеры у нескольких партнёров',
+      reached: redeemedPartners.size >= 2,
+    },
+    {
+      id: 'repeat_used_again',
+      label: 'Повторный ваучер использован снова',
+      reached: [...redeemedByOffer.values()].some((count) => count >= 2),
+    },
+  ];
 }
 
 export function buildRfVoucherTimelineItems(vouchers: RfVoucherDto[], limit = 5): RfVoucherTimelineItem[] {
@@ -148,101 +243,52 @@ export function buildRfVoucherTimelineItems(vouchers: RfVoucherDto[], limit = 5)
     .slice(0, limit);
 }
 
-export function buildRfEconomicMeaning(
-  vouchers: RfVoucherDto[],
-  summary?: RfVoucherSummary | null,
-): RfEconomicMeaning {
-  const split = splitRfVouchersByProjectionStatus(vouchers);
-  const total = summary?.totalVouchers ?? vouchers.length;
-  const activeCount = summary?.activeVouchers ?? split.active.length;
-  const usedCount = summary?.usedVouchers ?? split.used.length;
-  const cancelledCount = summary?.cancelledVouchers ?? split.cancelled.length;
-  const inactiveCount = cancelledCount + split.other.length;
-  const futureNotes = [
-    'Rewards за RF-активность появятся позже.',
-    'Points-связь будет включена отдельным этапом.',
-    'PRO attribution и выплаты не входят в текущую версию.',
-  ];
+export function buildConnectRfProjection(vouchers: RfVoucherDto[], summary?: RfVoucherSummary | null): ConnectRfProjection {
+  const active = vouchers.filter((voucher) => ACTIVE_CANONICAL_STATUSES.has(getRfVoucherEffectiveStatus(voucher))).sort(sortByDateDesc);
+  const used = vouchers.filter((voucher) => getRfVoucherEffectiveStatus(voucher) === 'redeemed').sort(sortByDateDesc);
+  const unavailable = vouchers
+    .filter((voucher) => ['cancelled', 'expired'].includes(getRfVoucherEffectiveStatus(voucher)))
+    .sort(sortByDateDesc);
+  const pendingActivation = vouchers.filter((voucher) => getRfVoucherEffectiveStatus(voucher) === 'locked').sort(sortByDateDesc);
+  const repeatableAgain = vouchers.filter(isRepeatableOpportunity).sort(sortByDateDesc);
+  const proAttributedCount = vouchers.filter(isProAttributedVoucher).length;
 
-  if (total === 0) {
-    return {
-      state: 'empty',
-      title: 'У вас пока нет RF-ваучеров',
-      summary: 'Вы ещё не начали пользоваться RF-предложениями.',
-      bullets: [
-        'Начните с сохранения или получения первого предложения.',
-        'Connect покажет здесь ваш RF-прогресс.',
-        'Сейчас это только объяснение состояния, без действий с ваучерами.',
-      ],
-      ctas: [{ label: 'Найти предложения', href: '/rf/vouchers' }],
-      futureNotes,
-    };
-  }
-
-  if (activeCount > 0 && usedCount > 0) {
-    return {
-      state: 'mixed',
-      title: 'Вы уже используете RF и у вас ещё есть активные возможности',
-      summary: 'Вы уже начали использовать RF-предложения.',
-      bullets: [
-        'У вас есть активные ваучеры, которые можно использовать у партнёров Russian Friendly.',
-        'История использования остаётся в RF и отображается в Connect только для понимания прогресса.',
-        'Подробности по ваучерам остаются в RF-разделе.',
-      ],
-      ctas: [
-        { label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' },
-        { label: 'Найти предложения', href: '/rf/vouchers' },
-      ],
-      futureNotes,
-    };
-  }
-
-  if (activeCount > 0) {
-    return {
-      state: 'active_only',
-      title: 'У вас есть активные RF-возможности',
-      summary: 'Используйте ваучер у партнёра Russian Friendly.',
-      bullets: [
-        'Активные ваучеры можно открыть в RF-разделе.',
-        'Connect показывает состояние, но не изменяет ваучеры.',
-        'Условия использования зависят от конкретного предложения.',
-      ],
-      ctas: [{ label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' }],
-      futureNotes,
-    };
-  }
-
-  if (usedCount > 0) {
-    return {
-      state: 'used',
-      title: 'Вы уже начали использовать RF-предложения',
-      summary: 'Connect показывает историю использования как часть RF-прогресса.',
-      bullets: [
-        'Использованные ваучеры остаются частью RF-истории.',
-        'Новые активные возможности можно найти в каталоге Russian Friendly.',
-        'Текущая версия показывает только состояние RF-ваучеров.',
-      ],
-      ctas: [
-        { label: 'Открыть мои RF-ваучеры', href: '/rf/my-vouchers' },
-        { label: 'Найти предложения', href: '/rf/vouchers' },
-      ],
-      futureNotes,
-    };
-  }
+  const projectionSummary: ConnectRfProjectionSummary = {
+    total: summary?.totalVouchers ?? vouchers.length,
+    active: summary?.activeVouchers ?? active.length,
+    used: summary?.usedVouchers ?? used.length,
+    unavailable: (summary?.cancelledVouchers ?? unavailable.length) + (summary?.expiredVouchers ?? 0),
+    pendingActivation: pendingActivation.length,
+    repeatableAvailable: repeatableAgain.length,
+    receivedViaPro: proAttributedCount,
+  };
 
   return {
-    state: 'inactive_only',
-    title: 'Сейчас нет активных RF-возможностей',
-    summary:
-      inactiveCount > 0
-        ? 'У вас есть только отменённые, истёкшие или другие неактивные RF-статусы.'
-        : 'Активные RF-возможности сейчас не найдены.',
-    bullets: [
-      'Найдите новые предложения в Russian Friendly.',
-      'Connect не восстанавливает и не меняет статусы ваучеров.',
-      'Будущая экономическая связка будет отдельным этапом.',
-    ],
-    ctas: [{ label: 'Найти предложения', href: '/rf/vouchers' }],
-    futureNotes,
+    summary: projectionSummary,
+    groups: {
+      active,
+      used,
+      unavailable,
+      pendingActivation,
+      repeatableAgain,
+    },
+    recent: {
+      lastClaimed: getMostRecentVoucher(vouchers, 'claimedAt'),
+      lastRedeemed: getMostRecentVoucher(vouchers, 'redeemedAt'),
+      activity: buildRfVoucherTimelineItems(vouchers),
+    },
+    milestones: buildMilestones(vouchers, proAttributedCount),
+    narrative: buildNarrative(projectionSummary),
   };
+}
+
+export function projectionCopyGuardText(): string {
+  return [
+    'Активные возможности',
+    'Использованные преимущества',
+    'Получено через PRO',
+    'Можно получить снова',
+    'История RF-активности',
+    'RF помогает связывать предложения партнёров с действиями пользователя',
+  ].join(' | ');
 }

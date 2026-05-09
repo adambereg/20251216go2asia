@@ -6,6 +6,7 @@
  */
 
 import { verifyToken } from '@clerk/backend';
+import { normalizeRolePayload } from '@go2asia/identity-core';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 export interface Env {
@@ -39,6 +40,9 @@ export interface Env {
    * - Enable by setting DEBUG_ROUTES_ENABLED="true".
    */
   DEBUG_ROUTES_ENABLED?: string;
+  GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE?: string;
+  GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE?: string;
+  GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION?: string;
 }
 
 type GatewayUserContext = {
@@ -48,6 +52,33 @@ type GatewayUserContext = {
 };
 
 type CanonicalPlatformRole = 'spacer' | 'vip_spacer' | 'pro' | 'admin';
+
+type GatewayIdentityShadowClassification = 'aligned' | 'migration_blocker' | 'unexpected_divergence' | 'helper_failed';
+
+type GatewayIdentityShadowReason =
+  | 'aligned'
+  | 'unknown_scalar_fallback_policy'
+  | 'unexpected_role_mismatch'
+  | 'helper_failed';
+
+type GatewayIdentityShadowComparison = {
+  schemaVersion: 1;
+  shadowCompareEnabled: boolean;
+  evidenceEnabled: boolean;
+  classification: GatewayIdentityShadowClassification;
+  reasonCode: GatewayIdentityShadowReason;
+  legacyRole: CanonicalPlatformRole;
+  helperRole: CanonicalPlatformRole | null;
+  helperSource: string | null;
+};
+
+type GatewayIdentityShadowAggregate = {
+  schemaVersion: 1;
+  total: number;
+  byClassification: Record<GatewayIdentityShadowClassification, number>;
+  byReasonCode: Record<GatewayIdentityShadowReason, number>;
+  byHelperSource: Record<string, number>;
+};
 
 export type RouteGroup =
   | 'platform'
@@ -636,6 +667,147 @@ function extractGatewayUserContext(payload: Record<string, unknown>): GatewayUse
   return { userId, platformRole, roles: normalizedRoles };
 }
 
+function emptyGatewayIdentityShadowAggregate(): GatewayIdentityShadowAggregate {
+  return {
+    schemaVersion: 1,
+    total: 0,
+    byClassification: {
+      aligned: 0,
+      migration_blocker: 0,
+      unexpected_divergence: 0,
+      helper_failed: 0,
+    },
+    byReasonCode: {
+      aligned: 0,
+      unknown_scalar_fallback_policy: 0,
+      unexpected_role_mismatch: 0,
+      helper_failed: 0,
+    },
+    byHelperSource: {},
+  };
+}
+
+const gatewayIdentityShadowAggregate = emptyGatewayIdentityShadowAggregate();
+
+function recordGatewayIdentityShadowComparison(comparison: GatewayIdentityShadowComparison): void {
+  gatewayIdentityShadowAggregate.total += 1;
+  gatewayIdentityShadowAggregate.byClassification[comparison.classification] += 1;
+  gatewayIdentityShadowAggregate.byReasonCode[comparison.reasonCode] += 1;
+  const helperSource = comparison.helperSource ?? 'none';
+  gatewayIdentityShadowAggregate.byHelperSource[helperSource] = (gatewayIdentityShadowAggregate.byHelperSource[helperSource] ?? 0) + 1;
+}
+
+export function getGatewayIdentityShadowAggregateSnapshot(): GatewayIdentityShadowAggregate {
+  return {
+    ...gatewayIdentityShadowAggregate,
+    byClassification: { ...gatewayIdentityShadowAggregate.byClassification },
+    byReasonCode: { ...gatewayIdentityShadowAggregate.byReasonCode },
+    byHelperSource: { ...gatewayIdentityShadowAggregate.byHelperSource },
+  };
+}
+
+export function resetGatewayIdentityShadowAggregateForTests(): void {
+  const next = emptyGatewayIdentityShadowAggregate();
+  gatewayIdentityShadowAggregate.total = next.total;
+  gatewayIdentityShadowAggregate.byClassification = next.byClassification;
+  gatewayIdentityShadowAggregate.byReasonCode = next.byReasonCode;
+  gatewayIdentityShadowAggregate.byHelperSource = next.byHelperSource;
+}
+
+function isFlagEnabled(value?: string): boolean {
+  return value?.trim().toLowerCase() === 'true';
+}
+
+function hasUnknownTopLevelRole(payload: Record<string, unknown>): boolean {
+  const role = getStringClaim(payload, 'role');
+  return Boolean(role && !normalizeCanonicalPlatformRole(role));
+}
+
+function classifyGatewayIdentityShadow(
+  payload: Record<string, unknown>,
+  legacyUser: GatewayUserContext,
+  shadowCompareEnabled: boolean,
+  evidenceEnabled: boolean
+): GatewayIdentityShadowComparison {
+  const legacyRole = legacyUser.platformRole ?? 'spacer';
+
+  try {
+    const helper = normalizeRolePayload(payload);
+    const helperRole = helper.platformRole.platformRole;
+    const helperSource = helper.platformRole.source;
+
+    if (helperRole === legacyRole) {
+      return {
+        schemaVersion: 1,
+        shadowCompareEnabled,
+        evidenceEnabled,
+        classification: 'aligned',
+        reasonCode: 'aligned',
+        legacyRole,
+        helperRole,
+        helperSource,
+      };
+    }
+
+    if (
+      legacyRole === 'spacer' &&
+      hasUnknownTopLevelRole(payload) &&
+      (helperSource === 'go2_role' || helperSource === 'public_metadata.role' || helperSource === 'publicMetadata.role')
+    ) {
+      return {
+        schemaVersion: 1,
+        shadowCompareEnabled,
+        evidenceEnabled,
+        classification: 'migration_blocker',
+        reasonCode: 'unknown_scalar_fallback_policy',
+        legacyRole,
+        helperRole,
+        helperSource,
+      };
+    }
+
+    return {
+      schemaVersion: 1,
+      shadowCompareEnabled,
+      evidenceEnabled,
+      classification: 'unexpected_divergence',
+      reasonCode: 'unexpected_role_mismatch',
+      legacyRole,
+      helperRole,
+      helperSource,
+    };
+  } catch {
+    return {
+      schemaVersion: 1,
+      shadowCompareEnabled,
+      evidenceEnabled,
+      classification: 'helper_failed',
+      reasonCode: 'helper_failed',
+      legacyRole,
+      helperRole: null,
+      helperSource: null,
+    };
+  }
+}
+
+function maybeCompareIdentityCoreShadow(
+  env: Env,
+  payload: Record<string, unknown>,
+  legacyUser: GatewayUserContext
+): GatewayIdentityShadowComparison | null {
+  const shadowCompareEnabled = isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE);
+  if (!shadowCompareEnabled) return null;
+  const comparison = classifyGatewayIdentityShadow(payload, legacyUser, shadowCompareEnabled, isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE));
+  if (isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION)) {
+    recordGatewayIdentityShadowComparison(comparison);
+  }
+  return comparison;
+}
+
+function encodeGatewayIdentityShadowEvidence(comparison: GatewayIdentityShadowComparison): string {
+  return JSON.stringify(comparison);
+}
+
 async function mintInternalGatewayToken(
   env: Env,
   requestId: string,
@@ -911,6 +1083,7 @@ async function routeRequest(
   let serviceUrl: string | undefined;
   let missingVar: string | null = null;
   let verifiedUser: GatewayUserContext | null = null;
+  let identityShadowComparison: GatewayIdentityShadowComparison | null = null;
   const reservedVar = getReservedPhase2ServiceVar(path);
   
   if (path.startsWith('/v1/auth/')) {
@@ -1074,6 +1247,9 @@ async function routeRequest(
         verifiedUser = null;
       } else {
         verifiedUser = extractGatewayUserContext(verified.payload);
+        if (verifiedUser) {
+          identityShadowComparison = maybeCompareIdentityCoreShadow(env, verified.payload, verifiedUser);
+        }
       }
     } else if (token) {
       logger.error('CLERK_SECRET_KEY not set; refusing to trust user token');
@@ -1136,6 +1312,9 @@ async function routeRequest(
     headers.set('X-Gateway-Auth', gatewayToken);
     // Temporary derived/debug header for compatibility during migration.
     headers.set('X-User-ID', verifiedUser.userId);
+    if (identityShadowComparison && identityShadowComparison.evidenceEnabled) {
+      headers.set('X-Gateway-Identity-Shadow', encodeGatewayIdentityShadowEvidence(identityShadowComparison));
+    }
   }
 
   // Reserved for future rate-limit / abuse / AI quota hooks.

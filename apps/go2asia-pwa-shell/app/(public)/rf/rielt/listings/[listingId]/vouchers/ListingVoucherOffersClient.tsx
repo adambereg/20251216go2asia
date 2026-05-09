@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { claimRfRieltListingOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfRieltListingOfferDto, RfVoucherDto } from '@go2asia/sdk/rf';
+import { RfEntitlementPreviewBadge } from '@/components/rf/Shared/RfEntitlementPreviewBadge';
+import {
+  buildRfListingOfferEntitlementPreviewRequest,
+  fetchRfEntitlementPreviewBatch,
+  rfEntitlementPreviewFlags,
+  type RfEntitlementPreviewUiState,
+} from '@/lib/rfEntitlementPreview';
 import { buildRfClaimAttributionPayload, captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
 import { isRfVoucherClaimBarrier } from '@/lib/rfVoucherLifecycle';
 
@@ -26,7 +34,7 @@ interface ListingVoucherOffersClientProps {
 }
 
 function getOfferTypeLabel(type: RfRieltListingOfferDto['type']) {
-  return type === 'premium' ? 'Premium-ваучер' : 'Базовый ваучер';
+  return type === 'premium' ? 'Специальный ваучер' : 'Базовый ваучер';
 }
 
 function getOfferBenefit(offer: RfRieltListingOfferDto) {
@@ -50,10 +58,10 @@ function getErrorMessage(error: unknown) {
     return 'Этот ваучер доступен только для VIP.';
   }
   if (code === 'RF_INSUFFICIENT_POINTS_BALANCE') {
-    return 'Недостаточно Points для получения этого ваучера.';
+    return 'Сейчас этот ваучер недоступен для получения.';
   }
   if (code === 'RF_SPEND_TEMPORARILY_UNAVAILABLE' || code === 'RF_ECONOMY_RECOVERY_PENDING') {
-    return 'Сервис списания Points временно недоступен. Попробуйте позже.';
+    return 'Ваучер временно недоступен для получения. Попробуйте позже.';
   }
   if (code === 'RF_OFFER_NOT_FOUND' || code === 'RF_OFFER_INACTIVE' || code === 'RF_OFFER_NOT_CLAIMABLE' || code === 'RF_PARTNER_INACTIVE') {
     return 'Этот оффер сейчас недоступен.';
@@ -119,10 +127,37 @@ export function ListingVoucherOffersClient({
   returnHref,
   partnerHref,
 }: ListingVoucherOffersClientProps) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [claimStates, setClaimStates] = useState<ClaimStateByOffer>({});
+
+  const entitlementPreviewItems = useMemo(() => {
+    if (!userId) return [];
+    return offers
+      .filter((offer) => offer.type === 'premium')
+      .map((offer) => ({
+        clientKey: offer.id,
+        request: buildRfListingOfferEntitlementPreviewRequest({
+          subject: { userId },
+          listingId,
+          offer,
+        }),
+      }));
+  }, [listingId, offers, userId]);
+
+  const entitlementPreviewCollectionKey = useMemo(
+    () => entitlementPreviewItems.map((item) => item.clientKey).sort().join('|'),
+    [entitlementPreviewItems],
+  );
+
+  const { data: entitlementPreviewByOfferId = {} } = useQuery<Record<string, RfEntitlementPreviewUiState>>({
+    queryKey: ['rf', 'entitlement-preview', 'listing-batch', listingId, userId ?? null, entitlementPreviewCollectionKey],
+    enabled: rfEntitlementPreviewFlags.enableClientPreview && Boolean(userId) && entitlementPreviewItems.length > 0,
+    staleTime: 30_000,
+    retry: 0,
+    queryFn: () => fetchRfEntitlementPreviewBatch(entitlementPreviewItems, { enabled: true }),
+  });
 
   useEffect(() => {
     captureRfProAttributionFromUrl(searchParams, pathname);
@@ -217,6 +252,18 @@ export function ListingVoucherOffersClient({
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{typeLabel}</p>
                   <h2 className="mt-1 text-lg font-semibold text-slate-900">{offer.title}</h2>
+                  {offer.type === 'premium' ? (
+                    <div className="mt-2">
+                      <RfEntitlementPreviewBadge
+                        offerId={offer.id}
+                        partnerId={offer.partnerId}
+                        listingId={listingId}
+                        offerType={offer.type}
+                        previewState={entitlementPreviewByOfferId[offer.id] ?? null}
+                        allowFallbackFetch={false}
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                   {isSuccess ? 'Получен' : 'Доступен'}

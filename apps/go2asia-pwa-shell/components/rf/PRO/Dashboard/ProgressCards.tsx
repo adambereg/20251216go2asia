@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@go2asia/ui';
-import { Store, CheckSquare, Award, TrendingUp } from 'lucide-react';
+import { ClipboardCheck, Eye, Store, CheckSquare } from 'lucide-react';
 import type { PROCurator } from '../../types';
 
 interface ProgressCardsProps {
@@ -27,20 +27,20 @@ export function ProgressCards({ curator }: ProgressCardsProps) {
       bgColor: 'bg-indigo-50',
     },
     {
-      title: 'Заработано Points',
-      value: curator.stats.totalRewards.toLocaleString('ru-RU'),
-      change: '+500',
-      icon: Award,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
+      title: 'Партнёров в видимости',
+      value: curator.partners.length.toString(),
+      change: 'read-only',
+      icon: Eye,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
-      title: 'Баланс G2A',
-      value: curator.stats.g2aBalance.toLocaleString('ru-RU'),
-      change: '+200',
-      icon: TrendingUp,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      title: 'Финансовых блоков',
+      value: 'Нет',
+      change: 'scope',
+      icon: ClipboardCheck,
+      color: 'text-slate-600',
+      bgColor: 'bg-slate-50',
     },
   ];
 
@@ -55,8 +55,7 @@ export function ProgressCards({ curator }: ProgressCardsProps) {
                 <div className={`${card.bgColor} ${card.color} p-2 rounded-lg`}>
                   <Icon size={20} />
                 </div>
-                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <TrendingUp size={14} />
+                <div className="flex items-center gap-1 text-slate-500 text-sm font-medium">
                   {card.change}
                 </div>
               </div>
