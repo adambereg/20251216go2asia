@@ -6,6 +6,7 @@ import {
   buildRfOfferEntitlementPreviewRequest,
   fetchRfEntitlementPreviewBatch,
   fetchRfEntitlementPreview,
+  RF_ENTITLEMENT_PREVIEW_BATCH_MAX_ITEMS,
   RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH,
   mapEntitlementReadResponseToPreviewState,
   RF_ENTITLEMENT_PREVIEW_PROXY_PATH,
@@ -82,7 +83,7 @@ const offerInput: RfEntitlementPreviewOfferInput = {
 describe('RF entitlement preview helper', () => {
   it('returns no preview when feature flag is disabled', async () => {
     const executor = vi.fn();
-    const state = await fetchRfEntitlementPreview(buildRfOfferEntitlementPreviewRequest(offerInput), { enabled: false });
+    const state = await fetchRfEntitlementPreview(buildRfOfferEntitlementPreviewRequest(offerInput), { enabled: false, executor });
 
     expect(state).toEqual({
       enabled: false,
@@ -168,6 +169,12 @@ describe('RF entitlement preview helper', () => {
     );
     expect(mapEntitlementReadResponseToPreviewState(response({ decision: 'not_applicable', reasonCode: 'ordinary_resource_no_gate' }))).toBe('ordinary_no_preview');
     expect(mapEntitlementReadResponseToPreviewState(response({ decision: 'unknown', reasonCode: 'policy_not_configured' }))).toBe('unavailable');
+    expect(mapEntitlementReadResponseToPreviewState(response({ decision: 'pending', reasonCode: 'source_timeout', degradedMode: 'stale_cache', stale: true }))).toBe(
+      'checking_or_temporarily_unavailable',
+    );
+    expect(mapEntitlementReadResponseToPreviewState(response({ decision: 'pending', reasonCode: 'source_timeout', degradedMode: 'partial_sources' }))).toBe(
+      'checking_or_temporarily_unavailable',
+    );
   });
 
   it('does not expose raw adapter or audit fields in UI state', () => {
@@ -206,6 +213,20 @@ describe('RF entitlement preview helper', () => {
     expect(calls).toEqual([{ path: RF_ENTITLEMENT_PREVIEW_PROXY_PATH }]);
   });
 
+  it('maps single preview network errors to temporary state', async () => {
+    const state = await fetchRfEntitlementPreview(buildRfOfferEntitlementPreviewRequest(offerInput), {
+      enabled: true,
+      executor: async () => {
+        throw new Error('network');
+      },
+    });
+
+    expect(state.enabled).toBe(true);
+    expect(state.state).toBe('checking_or_temporarily_unavailable');
+    expect(state.informationalOnly).toBe(true);
+    expect(state.claimBehaviorUnchanged).toBe(true);
+  });
+
   it('does not call batch proxy when preview is disabled', async () => {
     const executor = vi.fn();
     const state = await fetchRfEntitlementPreviewBatch(
@@ -214,6 +235,23 @@ describe('RF entitlement preview helper', () => {
     );
 
     expect(state).toEqual({});
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it('does not call batch proxy for empty or oversized collections', async () => {
+    const executor = vi.fn();
+    const request = buildRfOfferEntitlementPreviewRequest(offerInput);
+    const empty = await fetchRfEntitlementPreviewBatch([], { enabled: true, executor });
+    const oversized = await fetchRfEntitlementPreviewBatch(
+      Array.from({ length: RF_ENTITLEMENT_PREVIEW_BATCH_MAX_ITEMS + 1 }, (_, index) => ({
+        clientKey: `offer_${index}`,
+        request: buildRfOfferEntitlementPreviewRequest({ ...offerInput, offer: { ...offerInput.offer, id: `offer_${index}` } }) ?? request,
+      })),
+      { enabled: true, executor },
+    );
+
+    expect(empty).toEqual({});
+    expect(Object.values(oversized).every((item) => item.state === 'checking_or_temporarily_unavailable')).toBe(true);
     expect(executor).not.toHaveBeenCalled();
   });
 
@@ -288,6 +326,19 @@ describe('RF entitlement preview helper', () => {
       claimBehaviorUnchanged: true,
     });
     expect(JSON.stringify(state)).not.toMatch(/auditTrace|requestWindow|adapter|rawFacts|wallet/i);
+  });
+
+  it('falls back to unavailable when proxy state is unexpected', () => {
+    const state = sanitizeEntitlementPreviewProxyForUi(
+      proxyResponse({
+        state: 'unexpected_state' as unknown as RfEntitlementPreviewProxyResponse['state'],
+        label: '',
+        caption: '',
+      }),
+    );
+
+    expect(state.state).toBe('unavailable');
+    expect(state.copy).toEqual(rfEntitlementPreviewCopyByState.unavailable);
   });
 
   it('keeps unsafe vocabulary out of preview copy', () => {

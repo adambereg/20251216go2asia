@@ -64,6 +64,7 @@ type PreviewBatchExecutor = (request: RfEntitlementPreviewBatchProxyRequest, pat
 
 export const RF_ENTITLEMENT_PREVIEW_PROXY_PATH = '/v1/rf/entitlement/preview';
 export const RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH = '/v1/rf/entitlement/preview/batch';
+export const RF_ENTITLEMENT_PREVIEW_BATCH_MAX_ITEMS = 25;
 
 export type RfEntitlementPreviewBatchProxyRequestItem = {
   clientKey: string;
@@ -275,6 +276,9 @@ export async function fetchRfEntitlementPreviewBatch(
 
   const batchItems = items.map(toPreviewBatchRequestItem).filter((item): item is RfEntitlementPreviewBatchProxyRequestItem => Boolean(item));
   if (batchItems.length === 0) return {};
+  if (batchItems.length > RF_ENTITLEMENT_PREVIEW_BATCH_MAX_ITEMS) {
+    return Object.fromEntries(batchItems.map((item) => [item.clientKey, createPreviewUiState('checking_or_temporarily_unavailable', true)]));
+  }
 
   try {
     const response = options.executor

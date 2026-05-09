@@ -162,6 +162,35 @@ describe('RF entitlement mock read endpoint', () => {
     expect(createDbMock).not.toHaveBeenCalled();
   });
 
+  it('rejects unauthenticated and non-admin internal mock requests when enabled', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_MOCK_READ_API: 'true' };
+    const unauthenticated = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(baseRequest()),
+      }),
+      env,
+    );
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+    const nonAdmin = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Gateway-Auth': userToken },
+        body: JSON.stringify(baseRequest()),
+      }),
+      env,
+    );
+    const unauthenticatedBody = await readJson<{ error: { code: string } }>(unauthenticated);
+    const nonAdminBody = await readJson<{ error: { code: string } }>(nonAdmin);
+
+    expect(unauthenticated.status).toBe(401);
+    expect(unauthenticatedBody.error.code).toBe('UNAUTHORIZED');
+    expect(nonAdmin.status).toBe(403);
+    expect(nonAdminBody.error.code).toBe('FORBIDDEN');
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
   it('returns a normalized granted response when enabled', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_MOCK_READ_API: 'true' };
     const response = await postEntitlementCheck(env, baseRequest({ includeAuditTrace: true }));
@@ -312,7 +341,10 @@ describe('RF entitlement preview proxy endpoint', () => {
 
   it('allows authenticated user and returns filtered safe DTO', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
-    const response = await postEntitlementPreview(env, previewBody());
+    const response = await postEntitlementPreview(env, {
+      ...previewBody(),
+      subject: { userId: 'spoofed_user', roleHints: ['admin'] },
+    });
     const body = await readJson<EntitlementPreviewProxyResponse>(response);
 
     expect(response.status).toBe(200);
@@ -327,7 +359,9 @@ describe('RF entitlement preview proxy endpoint', () => {
       isPremiumPreview: true,
       updatedAt: expect.any(String),
     });
-    expect(JSON.stringify(body)).not.toMatch(/auditTraceId|requestWindowId|evaluatedSources|partialResults|rawFacts|adapterId|healthStatus|wallet|chain|balance|payout/i);
+    expect(JSON.stringify(body)).not.toMatch(
+      /auditTraceId|requestWindowId|evaluatedSources|partialResults|rawFacts|adapterId|healthStatus|subject|roleHints|wallet|chain|balance|payout|nft|g2a/i,
+    );
     expect(createDbMock).not.toHaveBeenCalled();
   });
 
@@ -388,6 +422,23 @@ describe('RF entitlement preview proxy endpoint', () => {
     const unknownBody = await readJson<EntitlementPreviewProxyResponse>(unknownResponse);
 
     expect(unknownBody.state).toBe('unavailable');
+  });
+
+  it('maps source_unavailable to temporary state without leaking internals', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreview(
+      env,
+      previewBody({
+        context: { rf: { voucherClass: 'premium' }, mockScenario: 'source_unavailable' },
+        requestedSources: ['role'],
+      }),
+    );
+    const body = await readJson<EntitlementPreviewProxyResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.state).toBe('checking_or_temporarily_unavailable');
+    expect(body.isTemporary).toBe(true);
+    expect(JSON.stringify(body)).not.toMatch(/source_unavailable|adapter|rawFacts|evaluatedSources|partialResults|auditTrace|subject|roleHints/i);
   });
 });
 
@@ -459,6 +510,20 @@ describe('RF entitlement preview batch proxy endpoint', () => {
     expect(createDbMock).not.toHaveBeenCalled();
   });
 
+  it('rejects empty and fully invalid batch bodies', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const empty = await postEntitlementPreviewBatch(env, { items: [] });
+    const invalidOnly = await postEntitlementPreviewBatch(env, { items: [{ clientKey: '', resource: { kind: 'rf_premium_voucher' } }] });
+    const emptyBody = await readJson<{ error: { code: string } }>(empty);
+    const invalidBody = await readJson<{ error: { code: string } }>(invalidOnly);
+
+    expect(empty.status).toBe(400);
+    expect(emptyBody.error.code).toBe('INVALID_REQUEST');
+    expect(invalidOnly.status).toBe(400);
+    expect(invalidBody.error.code).toBe('INVALID_REQUEST');
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
   it('skips invalid batch items safely and maps degraded items', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
     const response = await postEntitlementPreviewBatch(env, {
@@ -486,6 +551,22 @@ describe('RF entitlement preview batch proxy endpoint', () => {
         claimBehaviorUnchanged: true,
       },
     });
+  });
+
+  it('keeps equivalent single and batch preview states consistent', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const body = previewBody({
+      context: { rf: { voucherClass: 'premium' }, mockScenario: 'invite_required' },
+      requestedSources: ['pro_invite'],
+    });
+    const singleResponse = await postEntitlementPreview(env, body);
+    const batchResponse = await postEntitlementPreviewBatch(env, { items: [{ clientKey: 'same_offer', ...body }] });
+    const single = await readJson<EntitlementPreviewProxyResponse>(singleResponse);
+    const batch = await readJson<EntitlementPreviewProxyBatchResponse>(batchResponse);
+
+    expect(batch.items[0]?.preview.state).toBe(single.state);
+    expect(batch.items[0]?.preview.informationalOnly).toBe(true);
+    expect(batch.items[0]?.preview.claimBehaviorUnchanged).toBe(true);
   });
 });
 
@@ -551,6 +632,22 @@ describe('RF entitlement preview observability', () => {
 
     expect(response.status).toBe(404);
     expect(snapshot.previewRequestsTotal).toBe(0);
+    expect(snapshot.previewItemsTotal).toBe(0);
+  });
+
+  it('does not count preview requests when observability flag is disabled', async () => {
+    resetEntitlementPreviewObservability(new Date('2026-05-09T00:00:00.000Z'));
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true',
+    };
+
+    await postEntitlementPreview(env, previewBody());
+    await postEntitlementPreviewBatch(env, { items: [{ clientKey: 'offer_1', ...previewBody() }] });
+
+    const snapshot = getEntitlementPreviewObservabilitySnapshot();
+    expect(snapshot.previewRequestsTotal).toBe(0);
+    expect(snapshot.previewBatchRequestsTotal).toBe(0);
     expect(snapshot.previewItemsTotal).toBe(0);
   });
 
