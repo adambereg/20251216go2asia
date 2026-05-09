@@ -27,6 +27,8 @@ const requiredFixtureIds = [
   'missing-role-defaults-spacer',
   'order-roles-admin-member',
   'order-roles-member-admin',
+  'unknown-role-falls-through-go2-role',
+  'unknown-role-falls-through-public-metadata-role',
 ] as const;
 
 describe('@go2asia/identity-core golden fixtures', () => {

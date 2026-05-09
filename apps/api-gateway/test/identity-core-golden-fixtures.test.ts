@@ -43,7 +43,7 @@ type GatewayHelperParity = {
 
 type GatewayHelperParitySummary = {
   schemaVersion: 1;
-  generatedBy: 'rf-slice-6.23-gateway-helper-parity-tests';
+  generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests';
   fixtureCount: number;
   counts: SurfaceCounts;
   fixtureSummaries: Array<{
@@ -75,6 +75,10 @@ function hasCapabilitiesOnlyFixture(fixture: IdentityGoldenFixture): boolean {
   return fixture.id === 'future-capability-placeholder';
 }
 
+function hasUnknownScalarFallbackFixture(fixture: IdentityGoldenFixture): boolean {
+  return fixture.id === 'unknown-role-falls-through-go2-role' || fixture.id === 'unknown-role-falls-through-public-metadata-role';
+}
+
 function classifyGatewayComparison(fixture: IdentityGoldenFixture, gatewayClaims: Record<string, unknown>): GatewayComparison {
   const reasons: string[] = [];
   const expected = fixture.expected.platformRole;
@@ -95,6 +99,17 @@ function classifyGatewayComparison(fixture: IdentityGoldenFixture, gatewayClaims
     };
   }
 
+  if (hasUnknownScalarFallbackFixture(fixture)) {
+    return {
+      status: reasons.length > 0 && gatewayClaims.role === 'spacer' ? 'intentionally_different' : 'unexpected_divergence',
+      reasons:
+        reasons.length > 0
+          ? [...reasons, 'current gateway stops at the first present scalar string; helper policy falls through unknown scalar sources']
+          : ['unknown scalar fallback fixture unexpectedly matched gateway current behavior'],
+      gatewayClaims,
+    };
+  }
+
   return {
     status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
     reasons,
@@ -107,29 +122,31 @@ function classifyGatewayHelperParity(fixture: IdentityGoldenFixture, gatewayClai
   const capabilities = extractRoleCapabilities(fixture.rawInputPayload);
   const evidence = classifyRoleEvidence(fixture.rawInputPayload);
   const reasons: string[] = [];
+  const helperExpectationReasons: string[] = [];
 
   if (gatewayClaims.role !== platformRole.platformRole) {
     reasons.push(`gateway role ${String(gatewayClaims.role)} did not match helper role ${platformRole.platformRole}`);
   }
   if (platformRole.platformRole !== fixture.expected.platformRole.value) {
-    reasons.push(`helper role ${platformRole.platformRole} did not match fixture role ${fixture.expected.platformRole.value}`);
+    helperExpectationReasons.push(`helper role ${platformRole.platformRole} did not match fixture role ${fixture.expected.platformRole.value}`);
   }
   if (platformRole.source !== fixture.expected.platformRole.source) {
-    reasons.push(`helper source ${platformRole.source} did not match fixture source ${fixture.expected.platformRole.source}`);
+    helperExpectationReasons.push(`helper source ${platformRole.source} did not match fixture source ${fixture.expected.platformRole.source}`);
   }
   if (platformRole.defaulted !== fixture.expected.platformRole.defaulted) {
-    reasons.push('helper defaulted flag did not match fixture expectation');
+    helperExpectationReasons.push('helper defaulted flag did not match fixture expectation');
   }
   if (JSON.stringify(capabilities.capabilities) !== JSON.stringify(fixture.expected.capabilities)) {
-    reasons.push('helper capabilities did not match fixture expectation');
+    helperExpectationReasons.push('helper capabilities did not match fixture expectation');
   }
   if (evidence.alignment !== fixture.expected.divergence.alignment) {
-    reasons.push(`helper evidence alignment ${evidence.alignment} did not match fixture ${fixture.expected.divergence.alignment}`);
+    helperExpectationReasons.push(`helper evidence alignment ${evidence.alignment} did not match fixture ${fixture.expected.divergence.alignment}`);
   }
+  reasons.push(...helperExpectationReasons);
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    status: reasons.length === 0 ? 'aligned' : helperExpectationReasons.length === 0 && hasUnknownScalarFallbackFixture(fixture) ? 'intentionally_different' : 'unexpected_divergence',
     reasons,
     gatewayRole: gatewayClaims.role,
     helperRole: platformRole.platformRole,
@@ -154,7 +171,7 @@ function countStatuses(comparisons: readonly GatewayHelperParity[]): SurfaceCoun
 function buildGatewayHelperParitySummary(comparisons: readonly GatewayHelperParity[]): GatewayHelperParitySummary {
   return {
     schemaVersion: IDENTITY_SCHEMA_VERSION,
-    generatedBy: 'rf-slice-6.23-gateway-helper-parity-tests',
+    generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests',
     fixtureCount: comparisons.length,
     counts: countStatuses(comparisons),
     fixtureSummaries: comparisons.map((comparison) => ({
@@ -170,6 +187,8 @@ function buildGatewayHelperParitySummary(comparisons: readonly GatewayHelperPari
       notes:
         comparison.fixtureId === 'future-capability-placeholder'
           ? ['Gateway role parity is aligned; capabilities[] remains intentionally out-of-runtime for gateway behavior.']
+          : comparison.fixtureId === 'unknown-role-falls-through-go2-role' || comparison.fixtureId === 'unknown-role-falls-through-public-metadata-role'
+            ? [...comparison.reasons, 'Migration blocker: gateway scalar fallback policy must be accepted or changed before runtime migration.']
           : comparison.reasons,
     })),
     knownDivergences: [
@@ -177,6 +196,16 @@ function buildGatewayHelperParitySummary(comparisons: readonly GatewayHelperPari
         fixtureId: 'future-capability-placeholder',
         status: 'documented',
         note: 'Gateway does not consume capabilities[]; helper also keeps future capability placeholders out of platform-role extraction.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-go2-role',
+        status: 'documented',
+        note: 'Current gateway defaults to spacer when top-level role is an unknown string; helper falls through to canonical go2_role.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-public-metadata-role',
+        status: 'documented',
+        note: 'Current gateway defaults to spacer when top-level role is an unknown string; helper falls through to canonical public_metadata.role.',
       },
     ],
   };
@@ -218,7 +247,11 @@ async function replayGatewayFixture(fixture: IdentityGoldenFixture): Promise<Gat
   expect(gatewayClaims?.iss, fixture.id).toBe('api-gateway');
   expect(gatewayClaims?.aud, fixture.id).toBe('internal');
   expect(gatewayClaims?.sub, fixture.id).toBe(`fixture_${fixture.id}`);
-  expect(gatewayClaims?.role, fixture.id).toBe(fixture.expected.platformRole.value);
+  if (hasUnknownScalarFallbackFixture(fixture)) {
+    expect(gatewayClaims?.role, fixture.id).toBe('spacer');
+  } else {
+    expect(gatewayClaims?.role, fixture.id).toBe(fixture.expected.platformRole.value);
+  }
   expect(gatewayClaims?.roles, fixture.id).toEqual(expect.any(Array));
 
   return classifyGatewayComparison(fixture, gatewayClaims!);
@@ -248,9 +281,11 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
     expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
     expect(comparisons.filter((comparison) => comparison.status === 'intentionally_different').map((comparison) => comparison.id)).toEqual([
       'future-capability-placeholder',
+      'unknown-role-falls-through-go2-role',
+      'unknown-role-falls-through-public-metadata-role',
     ]);
     expect(comparisons.filter((comparison) => comparison.status === 'aligned').map((comparison) => comparison.id)).toEqual(
-      identityGoldenFixtures.filter((fixture) => !hasCapabilitiesOnlyFixture(fixture)).map((fixture) => fixture.id)
+      identityGoldenFixtures.filter((fixture) => !hasCapabilitiesOnlyFixture(fixture) && !hasUnknownScalarFallbackFixture(fixture)).map((fixture) => fixture.id)
     );
   });
 
@@ -266,7 +301,7 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
     const fixtureIds = identityGoldenFixtures.map((fixture) => fixture.id);
 
     expect(parity.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
-    expect(summary.counts).toEqual({ aligned: identityGoldenFixtures.length, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts).toEqual({ aligned: identityGoldenFixtures.length - 2, intentionally_different: 2, unexpected_divergence: 0 });
     expect(summary.fixtureCount).toBe(identityGoldenFixtures.length);
     expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual(fixtureIds);
     expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual([...fixtureIds].sort((left, right) => left.localeCompare(right)));
@@ -275,6 +310,16 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
         fixtureId: 'future-capability-placeholder',
         status: 'documented',
         note: 'Gateway does not consume capabilities[]; helper also keeps future capability placeholders out of platform-role extraction.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-go2-role',
+        status: 'documented',
+        note: 'Current gateway defaults to spacer when top-level role is an unknown string; helper falls through to canonical go2_role.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-public-metadata-role',
+        status: 'documented',
+        note: 'Current gateway defaults to spacer when top-level role is an unknown string; helper falls through to canonical public_metadata.role.',
       },
     ]);
     expect(JSON.stringify(summary)).not.toMatch(/email|wallet|nft|g2a|secret|session|bearer|authorization|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/i);

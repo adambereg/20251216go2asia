@@ -377,6 +377,66 @@ export const identityGoldenFixtures: readonly IdentityGoldenFixture[] = [
       notes: ['Paired with order-roles-admin-member to lock deterministic ordering expectations.'],
     },
   }),
+  fixture({
+    fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
+    schemaVersion: IDENTITY_SCHEMA_VERSION,
+    id: 'unknown-role-falls-through-go2-role',
+    group: 'malformed_payload',
+    description: 'Unknown top-level role does not block a later canonical go2_role under schema v1 helper policy.',
+    rawInputPayload: { role: 'unknown_role', go2_role: 'vip_spacer' },
+    expected: {
+      platformRole: { value: 'vip_spacer', source: 'go2_role', defaulted: false },
+      capabilities: ['vip_spacer'],
+      claimVipBehavior: { currentClaimAllowsVip: true, source: 'platform_role' },
+      previewBehavior: {
+        currentPreviewVip: true,
+        expectedPreviewState: 'available',
+        informationalOnly: true,
+        claimBehaviorUnchanged: true,
+      },
+      divergence: {
+        alignment: 'aligned',
+        roleClaimConflictsWithRoles: false,
+        vipAliasOnlyInRoles: false,
+        rolesOrderSensitive: false,
+      },
+      normalizationMetadata: metadata(false, [tokenClass('role', 'unknown', 'unknown_role', null), tokenClass('go2_role', 'canonical', 'vip_spacer', 'vip_spacer')]),
+    },
+    compatibility: {
+      breakingIfChanged: true,
+      notes: ['Documents schema v1 Option A: unknown scalar sources do not block later canonical scalar sources.'],
+    },
+  }),
+  fixture({
+    fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
+    schemaVersion: IDENTITY_SCHEMA_VERSION,
+    id: 'unknown-role-falls-through-public-metadata-role',
+    group: 'malformed_payload',
+    description: 'Unknown top-level role does not block a later canonical public metadata role under schema v1 helper policy.',
+    rawInputPayload: { role: 'unknown_role', public_metadata: { role: 'pro' } },
+    expected: {
+      platformRole: { value: 'pro', source: 'public_metadata.role', defaulted: false },
+      capabilities: [],
+      claimVipBehavior: { currentClaimAllowsVip: false, source: 'none' },
+      previewBehavior: {
+        currentPreviewVip: false,
+        expectedPreviewState: 'requires_condition',
+        informationalOnly: true,
+        claimBehaviorUnchanged: true,
+      },
+      divergence: {
+        alignment: 'aligned',
+        roleClaimConflictsWithRoles: false,
+        vipAliasOnlyInRoles: false,
+        rolesOrderSensitive: false,
+      },
+      normalizationMetadata: metadata(false, [tokenClass('role', 'unknown', 'unknown_role', null), tokenClass('public_metadata.role', 'canonical', 'pro', 'pro')]),
+    },
+    compatibility: {
+      breakingIfChanged: true,
+      notes: ['Documents schema v1 Option A for metadata fallback after an unknown scalar role.'],
+    },
+  }),
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -64,6 +64,8 @@ describe('@go2asia/identity-core pure normalization helpers', () => {
   it('extracts platform roles with schema v1 source precedence', () => {
     expect(extractPlatformRole({ role: 'spacer', go2_role: 'admin' })).toMatchObject({ platformRole: 'spacer', source: 'role', defaulted: false });
     expect(extractPlatformRole({ role: 42, go2_role: 'pro', public_metadata: { role: 'vip_spacer' } })).toMatchObject({ platformRole: 'pro', source: 'go2_role', defaulted: false });
+    expect(extractPlatformRole({ role: 'unknown_role', go2_role: 'vip_spacer' })).toMatchObject({ platformRole: 'vip_spacer', source: 'go2_role', defaulted: false });
+    expect(extractPlatformRole({ role: 'unknown_role', public_metadata: { role: 'pro' } })).toMatchObject({ platformRole: 'pro', source: 'public_metadata.role', defaulted: false });
     expect(extractPlatformRole({ public_metadata: { role: 'vip-spacer' }, publicMetadata: { role: 'admin' } })).toMatchObject({ platformRole: 'vip_spacer', source: 'public_metadata.role', defaulted: false });
     expect(extractPlatformRole({ publicMetadata: { role: 'admin' }, roles: ['member'] })).toMatchObject({ platformRole: 'admin', source: 'publicMetadata.role', defaulted: false });
     expect(extractPlatformRole({ roles: ['not_real', 42, 'member', 'admin'] })).toMatchObject({ platformRole: 'spacer', source: 'roles[]', defaulted: false });

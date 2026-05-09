@@ -49,7 +49,7 @@ type FixtureEvidenceSummary = {
 
 type CompareOnlyEvidenceSummary = {
   schemaVersion: 1;
-  generatedBy: 'rf-slice-6.24-rf-helper-parity-tests';
+  generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests';
   fixtureVersion: 1;
   fixtureCount: number;
   comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'];
@@ -101,10 +101,19 @@ function normalizeCanonicalPlatformRole(value: unknown): CanonicalPlatformRole |
   return null;
 }
 
+function hasUnknownScalarFallbackFixture(fixture: IdentityGoldenFixture): boolean {
+  return fixture.id === 'unknown-role-falls-through-go2-role' || fixture.id === 'unknown-role-falls-through-public-metadata-role';
+}
+
+function gatewayResolvedPlatformRoleForFixture(fixture: IdentityGoldenFixture): CanonicalPlatformRole {
+  return hasUnknownScalarFallbackFixture(fixture) ? 'spacer' : fixture.expected.platformRole.value;
+}
+
 function projectCurrentRfPrincipalFromGatewayFixture(fixture: IdentityGoldenFixture): RfPrincipalProjection {
   const rawRoles = stringArray(fixture.rawInputPayload.roles);
-  const roles = rawRoles.length > 0 ? rawRoles : [fixture.expected.platformRole.value];
-  const fromRole = normalizeCanonicalPlatformRole(fixture.expected.platformRole.value);
+  const gatewayRole = gatewayResolvedPlatformRoleForFixture(fixture);
+  const roles = rawRoles.length > 0 ? rawRoles : [gatewayRole];
+  const fromRole = normalizeCanonicalPlatformRole(gatewayRole);
   const fromRoles = roles.map(normalizeCanonicalPlatformRole).find((role): role is CanonicalPlatformRole => Boolean(role));
   const platformRole = fromRole ?? fromRoles ?? 'spacer';
   const claimVip = platformRole === 'vip_spacer' || roles.some((role) => role.trim().toLowerCase() === 'vip_spacer');
@@ -138,7 +147,7 @@ function classifyEvidenceComparison(fixture: IdentityGoldenFixture): RfCompariso
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    status: reasons.length === 0 ? 'aligned' : hasUnknownScalarFallbackFixture(fixture) ? 'intentionally_different' : 'unexpected_divergence',
     reasons,
   };
 }
@@ -152,7 +161,7 @@ function classifyRfPrincipalComparison(fixture: IdentityGoldenFixture): RfCompar
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    status: reasons.length === 0 ? 'aligned' : hasUnknownScalarFallbackFixture(fixture) ? 'intentionally_different' : 'unexpected_divergence',
     reasons,
   };
 }
@@ -171,7 +180,7 @@ function classifyRfEvidenceHelperParity(fixture: IdentityGoldenFixture): RfCompa
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    status: reasons.length === 0 ? 'aligned' : hasUnknownScalarFallbackFixture(fixture) ? 'intentionally_different' : 'unexpected_divergence',
     reasons,
   };
 }
@@ -186,7 +195,7 @@ function classifyRfProjectionHelperParity(fixture: IdentityGoldenFixture): RfCom
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    status: reasons.length === 0 ? 'aligned' : hasUnknownScalarFallbackFixture(fixture) ? 'intentionally_different' : 'unexpected_divergence',
     reasons,
   };
 }
@@ -202,7 +211,12 @@ function classifyClaimCapabilityParity(fixture: IdentityGoldenFixture): RfCompar
 
   return {
     fixtureId: fixture.id,
-    status: reasons.length === 0 ? 'aligned' : fixture.expected.divergence.alignment === 'preview_grants_claim_rejects' ? 'intentionally_different' : 'unexpected_divergence',
+    status:
+      reasons.length === 0
+        ? 'aligned'
+        : fixture.expected.divergence.alignment === 'preview_grants_claim_rejects' || hasUnknownScalarFallbackFixture(fixture)
+          ? 'intentionally_different'
+          : 'unexpected_divergence',
     reasons,
   };
 }
@@ -213,6 +227,14 @@ function classifyGatewaySummary(fixture: IdentityGoldenFixture): RfComparison {
       fixtureId: fixture.id,
       status: 'intentionally_different',
       reasons: ['capabilities[] is a fixture metadata placeholder and is not consumed by gateway runtime in Slice 6.20'],
+    };
+  }
+
+  if (hasUnknownScalarFallbackFixture(fixture)) {
+    return {
+      fixtureId: fixture.id,
+      status: 'intentionally_different',
+      reasons: ['current gateway stops at the first present scalar string; identity-core helper policy falls through unknown scalar sources'],
     };
   }
 
@@ -253,6 +275,9 @@ function notesForFixture(
   if (fixture.id === 'metadata-go2-role-precedes-public-metadata') {
     notes.push('RF projection assumes gateway has already resolved go2_role/public metadata into role');
   }
+  if (hasUnknownScalarFallbackFixture(fixture)) {
+    notes.push('migration blocker: gateway scalar fallback policy must be accepted or changed before runtime migration');
+  }
   return notes;
 }
 
@@ -278,11 +303,23 @@ function buildCompareOnlyEvidenceSummary(): CompareOnlyEvidenceSummary {
         status: 'documented' as const,
         note: 'capabilities[] remains a fixture placeholder and is not consumed by gateway or RF runtime.',
       },
+      {
+        fixtureId: 'unknown-role-falls-through-go2-role',
+        divergenceClass: 'gateway_unknown_scalar_blocks_helper_fallback',
+        status: 'documented' as const,
+        note: 'Current gateway and RF internal JWT projection default to spacer; helper policy falls through to canonical go2_role.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-public-metadata-role',
+        divergenceClass: 'gateway_unknown_scalar_blocks_helper_fallback',
+        status: 'documented' as const,
+        note: 'Current gateway and RF internal JWT projection default to spacer; helper policy falls through to canonical public_metadata.role.',
+      },
     ]);
 
   return {
     schemaVersion: IDENTITY_SCHEMA_VERSION,
-    generatedBy: 'rf-slice-6.24-rf-helper-parity-tests',
+    generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests',
     fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
     fixtureCount: identityGoldenFixtures.length,
     comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
@@ -349,7 +386,10 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     const comparisons = identityGoldenFixtures.map(classifyRfPrincipalComparison);
 
     expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
-    expect(comparisons.map((comparison) => comparison.status)).toEqual(identityGoldenFixtures.map(() => 'aligned'));
+    expect(comparisons.filter((comparison) => comparison.status === 'intentionally_different').map((comparison) => comparison.fixtureId)).toEqual([
+      'unknown-role-falls-through-go2-role',
+      'unknown-role-falls-through-public-metadata-role',
+    ]);
   });
 
   it('documents the preview-vs-claim divergence fixture without treating it as a runtime failure', () => {
@@ -376,7 +416,10 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     const comparisons = identityGoldenFixtures.map(classifyRfProjectionHelperParity);
 
     expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
-    expect(comparisons.map((comparison) => comparison.status)).toEqual(identityGoldenFixtures.map(() => 'aligned'));
+    expect(comparisons.filter((comparison) => comparison.status === 'intentionally_different').map((comparison) => comparison.fixtureId)).toEqual([
+      'unknown-role-falls-through-go2-role',
+      'unknown-role-falls-through-public-metadata-role',
+    ]);
   });
 
   it('keeps current paid claim VIP behavior distinct from helper VIP capability semantics', () => {
@@ -385,6 +428,7 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     expect(comparisons.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
     expect(comparisons.filter((comparison) => comparison.status === 'intentionally_different').map((comparison) => comparison.fixtureId)).toEqual([
       'conflict-role-spacer-roles-vip',
+      'unknown-role-falls-through-go2-role',
     ]);
   });
 
@@ -401,7 +445,7 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
 
     expect(summary).toMatchObject({
       schemaVersion: IDENTITY_SCHEMA_VERSION,
-      generatedBy: 'rf-slice-6.24-rf-helper-parity-tests',
+      generatedBy: 'rf-slice-6.25-malformed-scalar-policy-tests',
       fixtureVersion: IDENTITY_GOLDEN_FIXTURE_VERSION,
       fixtureCount: identityGoldenFixtures.length,
       comparedSurfaces: ['gateway', 'rf_evidence', 'rf_internal_jwt_projection', 'rf_evidence_helper_parity', 'rf_projection_helper_parity', 'claim_vs_helper_capability'],
@@ -421,12 +465,12 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
     expect(summary.counts.rfEvidenceHelperParity.aligned + summary.counts.rfEvidenceHelperParity.intentionally_different + summary.counts.rfEvidenceHelperParity.unexpected_divergence).toBe(summary.fixtureCount);
     expect(summary.counts.rfProjectionHelperParity.aligned + summary.counts.rfProjectionHelperParity.intentionally_different + summary.counts.rfProjectionHelperParity.unexpected_divergence).toBe(summary.fixtureCount);
     expect(summary.counts.claimVsCapability.aligned + summary.counts.claimVsCapability.intentionally_different + summary.counts.claimVsCapability.unexpected_divergence).toBe(summary.fixtureCount);
-    expect(summary.counts.gateway).toEqual({ aligned: 10, intentionally_different: 1, unexpected_divergence: 0 });
-    expect(summary.counts.rfEvidence).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
-    expect(summary.counts.rfProjection).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
-    expect(summary.counts.rfEvidenceHelperParity).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
-    expect(summary.counts.rfProjectionHelperParity).toEqual({ aligned: 11, intentionally_different: 0, unexpected_divergence: 0 });
-    expect(summary.counts.claimVsCapability).toEqual({ aligned: 10, intentionally_different: 1, unexpected_divergence: 0 });
+    expect(summary.counts.gateway).toEqual({ aligned: 10, intentionally_different: 3, unexpected_divergence: 0 });
+    expect(summary.counts.rfEvidence).toEqual({ aligned: 13, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.rfProjection).toEqual({ aligned: 11, intentionally_different: 2, unexpected_divergence: 0 });
+    expect(summary.counts.rfEvidenceHelperParity).toEqual({ aligned: 13, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.counts.rfProjectionHelperParity).toEqual({ aligned: 11, intentionally_different: 2, unexpected_divergence: 0 });
+    expect(summary.counts.claimVsCapability).toEqual({ aligned: 11, intentionally_different: 2, unexpected_divergence: 0 });
     expect(summary.knownDivergences).toEqual([
       {
         fixtureId: 'conflict-role-spacer-roles-vip',
@@ -439,6 +483,18 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
         divergenceClass: 'future_capability_metadata_only',
         status: 'documented',
         note: 'capabilities[] remains a fixture placeholder and is not consumed by gateway or RF runtime.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-go2-role',
+        divergenceClass: 'gateway_unknown_scalar_blocks_helper_fallback',
+        status: 'documented',
+        note: 'Current gateway and RF internal JWT projection default to spacer; helper policy falls through to canonical go2_role.',
+      },
+      {
+        fixtureId: 'unknown-role-falls-through-public-metadata-role',
+        divergenceClass: 'gateway_unknown_scalar_blocks_helper_fallback',
+        status: 'documented',
+        note: 'Current gateway and RF internal JWT projection default to spacer; helper policy falls through to canonical public_metadata.role.',
       },
     ]);
     expectNoUnsafeSummaryFields(summary);
@@ -457,7 +513,7 @@ describe('RF identity-core golden fixture compare-only coverage', () => {
       canonical_happy_path: 1,
       role_roles_conflict: 2,
       future_capability_combination: 1,
-      malformed_payload: 1,
+      malformed_payload: 3,
       metadata_precedence: 1,
       missing_payload: 1,
       order_sensitive_array: 2,
