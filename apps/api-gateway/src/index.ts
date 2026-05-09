@@ -43,6 +43,8 @@ export interface Env {
   GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE?: string;
   GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE?: string;
   GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION?: string;
+  GATEWAY_ENABLE_IDENTITY_CORE_DIAGNOSTICS?: string;
+  GATEWAY_IDENTITY_CORE_DIAGNOSTICS_TOKEN?: string;
 }
 
 type GatewayUserContext = {
@@ -78,6 +80,28 @@ type GatewayIdentityShadowAggregate = {
   byClassification: Record<GatewayIdentityShadowClassification, number>;
   byReasonCode: Record<GatewayIdentityShadowReason, number>;
   byHelperSource: Record<string, number>;
+};
+
+type GatewayIdentityShadowDiagnosticsSnapshot = {
+  schemaVersion: 1;
+  generatedAt: string;
+  env: string;
+  version: string;
+  scope: 'process_local_isolate';
+  flags: {
+    shadowCompareEnabled: boolean;
+    evidenceEnabled: boolean;
+    aggregationEnabled: boolean;
+  };
+  counters: {
+    total: number;
+    aligned: number;
+    migration_blocker: number;
+    unexpected_divergence: number;
+    helper_failed: number;
+  };
+  reasonCodeCounts: Record<GatewayIdentityShadowReason, number>;
+  helperSourceCounts: Record<string, number>;
 };
 
 export type RouteGroup =
@@ -167,6 +191,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
 
   if (normalizedPath === '/v1/_debug/routes') {
     return { routeKey: `debug.routes.${normalizedMethod.toLowerCase()}`, routeGroup: 'debug' };
+  }
+  if (normalizedPath === '/v1/_debug/identity-shadow/aggregate') {
+    return { routeKey: `debug.identity-shadow.aggregate.${normalizedMethod.toLowerCase()}`, routeGroup: 'debug' };
   }
 
   if (normalizedPath.startsWith('/internal/')) {
@@ -688,6 +715,14 @@ function emptyGatewayIdentityShadowAggregate(): GatewayIdentityShadowAggregate {
 }
 
 const gatewayIdentityShadowAggregate = emptyGatewayIdentityShadowAggregate();
+const gatewayIdentityShadowHelperSourceAllowlist = new Set<string>([
+  'role',
+  'roles',
+  'go2_role',
+  'public_metadata.role',
+  'publicMetadata.role',
+  'none',
+]);
 
 function recordGatewayIdentityShadowComparison(comparison: GatewayIdentityShadowComparison): void {
   gatewayIdentityShadowAggregate.total += 1;
@@ -712,6 +747,70 @@ export function resetGatewayIdentityShadowAggregateForTests(): void {
   gatewayIdentityShadowAggregate.byClassification = next.byClassification;
   gatewayIdentityShadowAggregate.byReasonCode = next.byReasonCode;
   gatewayIdentityShadowAggregate.byHelperSource = next.byHelperSource;
+}
+
+function sanitizeHelperSourceCounts(
+  byHelperSource: Record<string, number>
+): Record<string, number> {
+  const sanitized: Record<string, number> = {};
+  let other = 0;
+  for (const [source, rawCount] of Object.entries(byHelperSource)) {
+    if (!Number.isFinite(rawCount) || rawCount <= 0) continue;
+    const count = Math.trunc(rawCount);
+    if (gatewayIdentityShadowHelperSourceAllowlist.has(source)) {
+      sanitized[source] = (sanitized[source] ?? 0) + count;
+      continue;
+    }
+    other += count;
+  }
+  if (other > 0) sanitized.other = other;
+  return sanitized;
+}
+
+function buildGatewayIdentityShadowDiagnosticsSnapshot(
+  env: Env,
+  snapshot: GatewayIdentityShadowAggregate
+): GatewayIdentityShadowDiagnosticsSnapshot {
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    env: env.ENVIRONMENT ?? 'staging',
+    version: env.VERSION ?? 'unknown',
+    scope: 'process_local_isolate',
+    flags: {
+      shadowCompareEnabled: isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_SHADOW_COMPARE),
+      evidenceEnabled: isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE),
+      aggregationEnabled: isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_EVIDENCE_AGGREGATION),
+    },
+    counters: {
+      total: snapshot.total,
+      aligned: snapshot.byClassification.aligned,
+      migration_blocker: snapshot.byClassification.migration_blocker,
+      unexpected_divergence: snapshot.byClassification.unexpected_divergence,
+      helper_failed: snapshot.byClassification.helper_failed,
+    },
+    reasonCodeCounts: {
+      aligned: snapshot.byReasonCode.aligned,
+      unknown_scalar_fallback_policy: snapshot.byReasonCode.unknown_scalar_fallback_policy,
+      unexpected_role_mismatch: snapshot.byReasonCode.unexpected_role_mismatch,
+      helper_failed: snapshot.byReasonCode.helper_failed,
+    },
+    helperSourceCounts: sanitizeHelperSourceCounts(snapshot.byHelperSource),
+  };
+}
+
+function diagnosticsConfigured(env: Env): boolean {
+  return (
+    isFlagEnabled(env.GATEWAY_ENABLE_IDENTITY_CORE_DIAGNOSTICS) &&
+    (env.ENVIRONMENT ?? '').toLowerCase() !== 'production'
+  );
+}
+
+function diagnosticsTokenAuthorized(request: Request, env: Env): boolean {
+  const expected = env.GATEWAY_IDENTITY_CORE_DIAGNOSTICS_TOKEN?.trim();
+  if (!expected) return false;
+  const provided = request.headers.get('x-go2asia-debug-token')?.trim() ?? '';
+  return provided.length > 0 && provided === expected;
 }
 
 function isFlagEnabled(value?: string): boolean {
@@ -1077,6 +1176,30 @@ async function routeRequest(
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+  if (path === '/v1/_debug/identity-shadow/aggregate' && request.method === 'GET') {
+    // Diagnostics are intentionally hidden by default and must never be exposed in production.
+    if (!diagnosticsConfigured(env) || !diagnosticsTokenAuthorized(request, env)) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'No route for path: /v1/_debug/identity-shadow/aggregate',
+          },
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    const body = buildGatewayIdentityShadowDiagnosticsSnapshot(env, getGatewayIdentityShadowAggregateSnapshot());
+    const res = new Response(JSON.stringify(body), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'X-Request-ID': requestId,
+      },
+    });
+    return applyCors(res, origin);
   }
 
   // Route to services based on path prefix
