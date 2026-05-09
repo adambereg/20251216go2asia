@@ -38,6 +38,14 @@ export type IdentityRolePayload = {
   capabilities?: unknown;
 };
 
+export type NormalizedRoleToken = {
+  schemaVersion: IdentitySchemaVersion;
+  rawTokenClass: IdentityRoleTokenClass;
+  normalizedToken: string | null;
+  canonicalRole: CanonicalPlatformRole | null;
+  matchedAlias: string | null;
+};
+
 export type IdentityTokenMetadata = {
   source: IdentityRoleSource;
   index?: number;

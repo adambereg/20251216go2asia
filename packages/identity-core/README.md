@@ -4,15 +4,24 @@ Shared identity semantics contracts and golden fixture assets for Go2Asia.
 
 ## Purpose
 
-This package is the RF Slice 6.19 skeleton for the future identity-core package. It provides:
+This package contains the shared identity semantics contract for Go2Asia. It provides:
 - schema v1 types and constants;
 - golden fixture assets;
 - fixture validation helpers;
+- pure deterministic normalization helpers;
 - package-level compatibility tests.
+
+Implemented helpers:
+- `normalizeRoleToken`;
+- `extractPlatformRole`;
+- `extractRoleCapabilities`;
+- `isVipCapability`;
+- `classifyRoleEvidence`;
+- `normalizeRolePayload`.
 
 ## Non-goals
 
-This package does not implement runtime normalization yet.
+These helpers are not adopted by application runtime yet.
 
 Do not use it as a runtime dependency from:
 - API Gateway;
@@ -22,7 +31,7 @@ Do not use it as a runtime dependency from:
 - paid VIP gate;
 - Role/VIP preview adapter.
 
-The package also does not include Clerk, DB, network, environment, logging, JWT signing, JWT verification, or enforcement behavior.
+The package also does not include Clerk, DB, network, environment, logging, JWT signing, JWT verification, or enforcement behavior. `isVipCapability` is not a claim gate.
 
 ## Fixture Governance
 
