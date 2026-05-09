@@ -2,9 +2,12 @@ import { createDb } from '@go2asia/db';
 
 import type { GatewayPrincipal } from '../middleware/auth';
 import {
+  ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
+  evaluateEntitlementPreviewProxyBatchRequest,
   evaluateEntitlementPreviewProxyRequest,
   evaluateMockEntitlementReadRequest,
   parseEntitlementMockReadRequest,
+  parseEntitlementPreviewProxyBatchRequest,
   parseEntitlementPreviewProxyRequest,
 } from '../entitlementMock';
 import { errorResponse, json, readJsonObject } from '../middleware/http';
@@ -330,6 +333,19 @@ export async function handleRfRoute(
       return errorResponse('INVALID_REQUEST', 'Expected valid entitlement preview request body', requestId, 400);
     }
     return json(evaluateEntitlementPreviewProxyRequest(previewRequest, principal));
+  }
+
+  if (request.method === 'POST' && path === '/v1/rf/entitlement/preview/batch') {
+    if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY)) {
+      return errorResponse('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED', 'RF entitlement preview proxy is disabled', requestId, 404);
+    }
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const body = await readJsonObject(request);
+    const previewRequest = parseEntitlementPreviewProxyBatchRequest(body);
+    if (!previewRequest) {
+      return errorResponse('INVALID_REQUEST', `Expected 1-${ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS} valid entitlement preview batch items`, requestId, 400);
+    }
+    return json(evaluateEntitlementPreviewProxyBatchRequest(previewRequest, principal));
   }
 
   if (!env.DATABASE_URL) {

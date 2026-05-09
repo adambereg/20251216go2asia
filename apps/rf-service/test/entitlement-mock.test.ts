@@ -15,8 +15,10 @@ vi.mock('@go2asia/db', () => ({
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import {
   evaluateMockEntitlementReadRequest,
+  ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
   type EntitlementMockReadRequest,
   type EntitlementMockReadResponse,
+  type EntitlementPreviewProxyBatchResponse,
   type EntitlementPreviewProxyResponse,
 } from '../src/entitlementMock';
 import worker, { type Env } from '../src/index';
@@ -100,6 +102,24 @@ async function postEntitlementPreview(env: Env, body: Record<string, unknown>, t
 
   return worker.fetch(
     new Request('https://rf.example/v1/rf/entitlement/preview', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }),
+    env,
+  );
+}
+
+async function postEntitlementPreviewBatch(env: Env, body: Record<string, unknown>, tokenOverrides: Record<string, unknown> | null = { sub: 'user_1' }): Promise<Response> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (tokenOverrides) {
+    headers['X-Gateway-Auth'] = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, tokenOverrides);
+  }
+
+  return worker.fetch(
+    new Request('https://rf.example/v1/rf/entitlement/preview/batch', {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -345,6 +365,104 @@ describe('RF entitlement preview proxy endpoint', () => {
     const unknownBody = await readJson<EntitlementPreviewProxyResponse>(unknownResponse);
 
     expect(unknownBody.state).toBe('unavailable');
+  });
+});
+
+describe('RF entitlement preview batch proxy endpoint', () => {
+  it('is disabled by default and does not require DB initialization', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret' };
+    const response = await postEntitlementPreviewBatch(env, { items: [{ clientKey: 'offer_1', ...previewBody() }] });
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe('RF_ENTITLEMENT_PREVIEW_PROXY_DISABLED');
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthenticated batch requests when route is protected', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreviewBatch(env, { items: [{ clientKey: 'offer_1', ...previewBody() }] }, null);
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('allows authenticated user and maps multiple safe preview items', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreviewBatch(env, {
+      items: [
+        { clientKey: 'available_offer', ...previewBody() },
+        {
+          clientKey: 'condition_offer',
+          ...previewBody({
+            requestId: 'preview_req_2',
+            context: { rf: { voucherClass: 'premium' }, mockScenario: 'invite_required' },
+            requestedSources: ['pro_invite'],
+          }),
+        },
+        {
+          clientKey: 'ordinary_offer',
+          ...previewBody({
+            requestId: 'preview_req_3',
+            context: { rf: { voucherClass: 'ordinary' }, mockScenario: 'ordinary_resource_no_gate' },
+          }),
+        },
+      ],
+    });
+    const body = await readJson<EntitlementPreviewProxyBatchResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(3);
+    expect(body.items.find((item) => item.clientKey === 'available_offer')?.preview.state).toBe('available');
+    expect(body.items.find((item) => item.clientKey === 'condition_offer')?.preview.state).toBe('requires_condition');
+    expect(body.items.find((item) => item.clientKey === 'ordinary_offer')?.preview.state).toBe('ordinary_no_preview');
+    expect(JSON.stringify(body)).not.toMatch(/auditTraceId|requestWindowId|evaluatedSources|partialResults|rawFacts|adapterId|healthStatus|wallet|chain|balance|payout/i);
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
+  it('enforces max batch size', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreviewBatch(env, {
+      items: Array.from({ length: ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS + 1 }, (_, index) => ({
+        clientKey: `offer_${index}`,
+        ...previewBody({ requestId: `preview_req_${index}` }),
+      })),
+    });
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('INVALID_REQUEST');
+    expect(createDbMock).not.toHaveBeenCalled();
+  });
+
+  it('skips invalid batch items safely and maps degraded items', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', RF_ENABLE_ENTITLEMENT_PREVIEW_PROXY: 'true' };
+    const response = await postEntitlementPreviewBatch(env, {
+      items: [
+        { clientKey: '', ...previewBody() },
+        {
+          clientKey: 'temporary_offer',
+          ...previewBody({
+            requestId: 'preview_req_temporary',
+            context: { rf: { voucherClass: 'premium' }, mockScenario: 'source_timeout' },
+            requestedSources: ['role'],
+          }),
+        },
+      ],
+    });
+    const body = await readJson<EntitlementPreviewProxyBatchResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]).toMatchObject({
+      clientKey: 'temporary_offer',
+      preview: {
+        state: 'checking_or_temporarily_unavailable',
+        informationalOnly: true,
+        claimBehaviorUnchanged: true,
+      },
+    });
   });
 });
 

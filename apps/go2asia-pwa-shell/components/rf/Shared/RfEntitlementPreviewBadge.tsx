@@ -25,6 +25,8 @@ export interface RfEntitlementPreviewBadgeProps {
   offerVisibility?: OfferVisibility;
   mockScenario?: string;
   className?: string;
+  previewState?: RfEntitlementPreviewUiState | null;
+  allowFallbackFetch?: boolean;
 }
 
 type BadgePresentation = {
@@ -89,6 +91,29 @@ function buildPreviewQueryState(state: RfEntitlementPreviewState): RfEntitlement
   };
 }
 
+function RfEntitlementPreviewBadgeContent({
+  uiState,
+  className,
+}: {
+  uiState: RfEntitlementPreviewUiState | null | undefined;
+  className?: string;
+}) {
+  if (!uiState || !uiState.enabled) return null;
+
+  const badge = getRfEntitlementBadgePresentation(uiState.state);
+  if (!badge) return null;
+
+  return (
+    <span
+      className={`${BADGE_BASE_CLASSNAME} ${badge.toneClassName}${className ? ` ${className}` : ''}`}
+      title="Информационный preview. Получение ваучера работает как раньше."
+      aria-label={`${badge.label}. Информационный preview, поведение кнопки получения не изменяется.`}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
 export function RfEntitlementPreviewBadge({
   offerId,
   partnerId,
@@ -98,12 +123,54 @@ export function RfEntitlementPreviewBadge({
   offerVisibility = 'public',
   mockScenario,
   className,
+  previewState,
+  allowFallbackFetch = true,
 }: RfEntitlementPreviewBadgeProps) {
-  const { userId } = useAuth();
   const resolvedVoucherClass = resolveVoucherClass({ voucherClass, offerType });
   const isPremiumLike = resolvedVoucherClass === 'premium' || offerType === 'premium';
   const isClientPreviewEnabled = rfEntitlementPreviewFlags.enableClientPreview;
-  const canRequestPreview = isClientPreviewEnabled && isPremiumLike && Boolean(userId);
+  const canRenderPreview = isClientPreviewEnabled && isPremiumLike;
+
+  if (!canRenderPreview) return null;
+  if (!allowFallbackFetch || previewState) {
+    return <RfEntitlementPreviewBadgeContent uiState={previewState} className={className} />;
+  }
+
+  return (
+    <RfEntitlementPreviewBadgeFallback
+      offerId={offerId}
+      partnerId={partnerId}
+      listingId={listingId}
+      offerType={offerType}
+      offerVisibility={offerVisibility}
+      resolvedVoucherClass={resolvedVoucherClass}
+      mockScenario={mockScenario}
+      className={className}
+    />
+  );
+}
+
+function RfEntitlementPreviewBadgeFallback({
+  offerId,
+  partnerId,
+  listingId,
+  offerType,
+  offerVisibility,
+  resolvedVoucherClass,
+  mockScenario,
+  className,
+}: {
+  offerId: string;
+  partnerId: string;
+  listingId?: string;
+  offerType?: ListingOfferType;
+  offerVisibility: OfferVisibility;
+  resolvedVoucherClass: VoucherClass;
+  mockScenario?: string;
+  className?: string;
+}) {
+  const { userId } = useAuth();
+  const canRequestPreview = Boolean(userId);
 
   const request = useMemo(() => {
     if (!canRequestPreview || !userId) return null;
@@ -141,21 +208,6 @@ export function RfEntitlementPreviewBadge({
     queryFn: async () => fetchRfEntitlementPreview(request, { enabled: true }),
   });
 
-  if (!canRequestPreview) return null;
-
   const uiState = data ?? (isFetching ? buildPreviewQueryState('checking_or_temporarily_unavailable') : null);
-  if (!uiState || !uiState.enabled) return null;
-
-  const badge = getRfEntitlementBadgePresentation(uiState.state);
-  if (!badge) return null;
-
-  return (
-    <span
-      className={`${BADGE_BASE_CLASSNAME} ${badge.toneClassName}${className ? ` ${className}` : ''}`}
-      title="Информационный preview. Получение ваучера работает как раньше."
-      aria-label={`${badge.label}. Информационный preview, поведение кнопки получения не изменяется.`}
-    >
-      {badge.label}
-    </span>
-  );
+  return <RfEntitlementPreviewBadgeContent uiState={uiState} className={className} />;
 }

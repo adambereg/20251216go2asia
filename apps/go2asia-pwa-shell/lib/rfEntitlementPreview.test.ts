@@ -4,12 +4,15 @@ import {
   buildClaimPayloadWithoutEntitlementPreview,
   buildRfListingOfferEntitlementPreviewRequest,
   buildRfOfferEntitlementPreviewRequest,
+  fetchRfEntitlementPreviewBatch,
   fetchRfEntitlementPreview,
+  RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH,
   mapEntitlementReadResponseToPreviewState,
   RF_ENTITLEMENT_PREVIEW_PROXY_PATH,
   rfEntitlementPreviewCopyByState,
   sanitizeEntitlementPreviewProxyForUi,
   sanitizeEntitlementPreviewForUi,
+  type RfEntitlementPreviewBatchProxyResponse,
   type RfEntitlementPreviewOfferInput,
   type RfEntitlementPreviewProxyResponse,
 } from './rfEntitlementPreview';
@@ -46,6 +49,18 @@ function proxyResponse(overrides: Partial<RfEntitlementPreviewProxyResponse> = {
     isTemporary: false,
     isPremiumPreview: true,
     updatedAt: '2026-05-08T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function batchResponse(overrides: Partial<RfEntitlementPreviewBatchProxyResponse> = {}): RfEntitlementPreviewBatchProxyResponse {
+  return {
+    items: [
+      {
+        clientKey: 'offer_1',
+        preview: proxyResponse(),
+      },
+    ],
     ...overrides,
   };
 }
@@ -189,6 +204,64 @@ describe('RF entitlement preview helper', () => {
     expect(state.informationalOnly).toBe(true);
     expect(state.claimBehaviorUnchanged).toBe(true);
     expect(calls).toEqual([{ path: RF_ENTITLEMENT_PREVIEW_PROXY_PATH }]);
+  });
+
+  it('does not call batch proxy when preview is disabled', async () => {
+    const executor = vi.fn();
+    const state = await fetchRfEntitlementPreviewBatch(
+      [{ clientKey: 'offer_1', request: buildRfOfferEntitlementPreviewRequest(offerInput) }],
+      { enabled: false, executor },
+    );
+
+    expect(state).toEqual({});
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it('filters absent batch requests and returns a map by clientKey', async () => {
+    const calls: Array<{ path: string; itemCount: number }> = [];
+    const state = await fetchRfEntitlementPreviewBatch(
+      [
+        { clientKey: 'offer_1', request: buildRfOfferEntitlementPreviewRequest(offerInput) },
+        { clientKey: 'ordinary_skipped', request: null },
+      ],
+      {
+        enabled: true,
+        executor: async (request, path) => {
+          calls.push({ path, itemCount: request.items.length });
+          return batchResponse();
+        },
+      },
+    );
+
+    expect(calls).toEqual([{ path: RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH, itemCount: 1 }]);
+    expect(state.offer_1?.state).toBe('available');
+    expect(state.ordinary_skipped).toBeUndefined();
+  });
+
+  it('handles partial batch responses and transport failures safely', async () => {
+    const request = buildRfOfferEntitlementPreviewRequest(offerInput);
+    const partial = await fetchRfEntitlementPreviewBatch(
+      [
+        { clientKey: 'offer_1', request },
+        { clientKey: 'offer_2', request: buildRfOfferEntitlementPreviewRequest({ ...offerInput, offer: { ...offerInput.offer, id: 'offer_2' } }) },
+      ],
+      {
+        enabled: true,
+        executor: async () => batchResponse(),
+      },
+    );
+
+    expect(partial.offer_1?.state).toBe('available');
+    expect(partial.offer_2?.state).toBe('checking_or_temporarily_unavailable');
+
+    const failed = await fetchRfEntitlementPreviewBatch([{ clientKey: 'offer_1', request }], {
+      enabled: true,
+      executor: async () => {
+        throw new Error('network');
+      },
+    });
+
+    expect(failed.offer_1?.state).toBe('checking_or_temporarily_unavailable');
   });
 
   it('ignores unsafe proxy fields if they are accidentally present', () => {

@@ -60,8 +60,34 @@ export type RfEntitlementPreviewListingOfferInput = {
 };
 
 type PreviewExecutor = (request: EntitlementReadRequest, path: string) => Promise<RfEntitlementPreviewProxyResponse>;
+type PreviewBatchExecutor = (request: RfEntitlementPreviewBatchProxyRequest, path: string) => Promise<RfEntitlementPreviewBatchProxyResponse>;
 
 export const RF_ENTITLEMENT_PREVIEW_PROXY_PATH = '/v1/rf/entitlement/preview';
+export const RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH = '/v1/rf/entitlement/preview/batch';
+
+export type RfEntitlementPreviewBatchProxyRequestItem = {
+  clientKey: string;
+  requestId: string;
+  resource: EntitlementReadRequest['resource'];
+  context?: EntitlementReadRequest['context'];
+  requestedSources?: EntitlementReadRequest['requestedSources'];
+};
+
+export type RfEntitlementPreviewBatchProxyRequest = {
+  items: RfEntitlementPreviewBatchProxyRequestItem[];
+};
+
+export type RfEntitlementPreviewBatchProxyResponse = {
+  items: Array<{
+    clientKey: string;
+    preview: RfEntitlementPreviewProxyResponse;
+  }>;
+};
+
+export type RfEntitlementPreviewBatchItemInput = {
+  clientKey: string;
+  request: EntitlementReadRequest | null;
+};
 
 export const rfEntitlementPreviewCopyByState: Record<RfEntitlementPreviewState, RfEntitlementPreviewCopy> = {
   not_enabled: {
@@ -227,6 +253,52 @@ export async function fetchRfEntitlementPreview(
     return sanitizeEntitlementPreviewProxyForUi(response);
   } catch {
     return createPreviewUiState('checking_or_temporarily_unavailable', true);
+  }
+}
+
+function toPreviewBatchRequestItem(item: RfEntitlementPreviewBatchItemInput): RfEntitlementPreviewBatchProxyRequestItem | null {
+  if (!item.request) return null;
+  return {
+    clientKey: item.clientKey,
+    requestId: item.request.requestId,
+    resource: item.request.resource,
+    context: item.request.context,
+    requestedSources: item.request.requestedSources,
+  };
+}
+
+export async function fetchRfEntitlementPreviewBatch(
+  items: RfEntitlementPreviewBatchItemInput[],
+  options: { enabled?: boolean; executor?: PreviewBatchExecutor } = {},
+): Promise<Record<string, RfEntitlementPreviewUiState>> {
+  if (!isPreviewEnabled(options.enabled)) return {};
+
+  const batchItems = items.map(toPreviewBatchRequestItem).filter((item): item is RfEntitlementPreviewBatchProxyRequestItem => Boolean(item));
+  if (batchItems.length === 0) return {};
+
+  try {
+    const response = options.executor
+      ? await options.executor({ items: batchItems }, RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH)
+      : await customInstance<RfEntitlementPreviewBatchProxyResponse>(
+          {
+            method: 'POST',
+            body: JSON.stringify({ items: batchItems }),
+            headers: { 'Content-Type': 'application/json' },
+          },
+          RF_ENTITLEMENT_PREVIEW_BATCH_PROXY_PATH,
+        );
+    const result: Record<string, RfEntitlementPreviewUiState> = {};
+    for (const item of response.items) {
+      result[item.clientKey] = sanitizeEntitlementPreviewProxyForUi(item.preview);
+    }
+    for (const item of batchItems) {
+      if (!result[item.clientKey]) {
+        result[item.clientKey] = createPreviewUiState('checking_or_temporarily_unavailable', true);
+      }
+    }
+    return result;
+  } catch {
+    return Object.fromEntries(batchItems.map((item) => [item.clientKey, createPreviewUiState('checking_or_temporarily_unavailable', true)]));
   }
 }
 

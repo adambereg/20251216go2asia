@@ -197,6 +197,23 @@ export type EntitlementPreviewProxyResponse = {
   updatedAt: string;
 };
 
+export type EntitlementPreviewProxyBatchItemRequest = EntitlementPreviewProxyRequest & {
+  clientKey: string;
+};
+
+export type EntitlementPreviewProxyBatchRequest = {
+  items: EntitlementPreviewProxyBatchItemRequest[];
+};
+
+export type EntitlementPreviewProxyBatchResponse = {
+  items: Array<{
+    clientKey: string;
+    preview: EntitlementPreviewProxyResponse;
+  }>;
+};
+
+export const ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS = 25;
+
 const DEFAULT_SOURCES: EntitlementSource[] = ['role', 'pro_invite', 'connect_milestone', 'manual_grant'];
 const FUTURE_ONLY_SOURCES = new Set<EntitlementSource>(['nft_totem', 'badge_bridge', 'g2a_threshold']);
 
@@ -310,6 +327,20 @@ export function parseEntitlementPreviewProxyRequest(body: Record<string, unknown
     context: parseContext(body.context),
     requestedSources: parsedSources && parsedSources.length > 0 ? parsedSources : undefined,
   };
+}
+
+export function parseEntitlementPreviewProxyBatchRequest(body: Record<string, unknown> | null): EntitlementPreviewProxyBatchRequest | null {
+  if (!body || !Array.isArray(body.items) || body.items.length === 0 || body.items.length > ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS) return null;
+
+  const items = body.items.flatMap<EntitlementPreviewProxyBatchItemRequest>((item) => {
+    if (!isRecord(item)) return [];
+    const clientKey = asString(item.clientKey);
+    const request = parseEntitlementPreviewProxyRequest(item);
+    if (!clientKey || !request) return [];
+    return [{ clientKey, ...request }];
+  });
+
+  return items.length > 0 ? { items } : null;
 }
 
 function getMockScenario(request: EntitlementMockReadRequest): EntitlementMockScenario {
@@ -613,5 +644,18 @@ export function evaluateEntitlementPreviewProxyRequest(
   };
 
   return toSafeEntitlementPreviewProxyResponse(evaluateMockEntitlementReadRequest(readRequest, now));
+}
+
+export function evaluateEntitlementPreviewProxyBatchRequest(
+  request: EntitlementPreviewProxyBatchRequest,
+  principal: { userId: string; platformRole: string; roles: string[] },
+  now = new Date(),
+): EntitlementPreviewProxyBatchResponse {
+  return {
+    items: request.items.map((item) => ({
+      clientKey: item.clientKey,
+      preview: evaluateEntitlementPreviewProxyRequest(item, principal, now),
+    })),
+  };
 }
 

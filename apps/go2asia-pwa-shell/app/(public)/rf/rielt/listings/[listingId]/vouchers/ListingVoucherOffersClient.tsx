@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { claimRfRieltListingOffer, fetchMyVouchers } from '@go2asia/sdk/rf';
 import type { RfRieltListingOfferDto, RfVoucherDto } from '@go2asia/sdk/rf';
 import { RfEntitlementPreviewBadge } from '@/components/rf/Shared/RfEntitlementPreviewBadge';
+import {
+  buildRfListingOfferEntitlementPreviewRequest,
+  fetchRfEntitlementPreviewBatch,
+  rfEntitlementPreviewFlags,
+  type RfEntitlementPreviewUiState,
+} from '@/lib/rfEntitlementPreview';
 import { buildRfClaimAttributionPayload, captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
 import { isRfVoucherClaimBarrier } from '@/lib/rfVoucherLifecycle';
 
@@ -120,10 +127,37 @@ export function ListingVoucherOffersClient({
   returnHref,
   partnerHref,
 }: ListingVoucherOffersClientProps) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [claimStates, setClaimStates] = useState<ClaimStateByOffer>({});
+
+  const entitlementPreviewItems = useMemo(() => {
+    if (!userId) return [];
+    return offers
+      .filter((offer) => offer.type === 'premium')
+      .map((offer) => ({
+        clientKey: offer.id,
+        request: buildRfListingOfferEntitlementPreviewRequest({
+          subject: { userId },
+          listingId,
+          offer,
+        }),
+      }));
+  }, [listingId, offers, userId]);
+
+  const entitlementPreviewCollectionKey = useMemo(
+    () => entitlementPreviewItems.map((item) => item.clientKey).sort().join('|'),
+    [entitlementPreviewItems],
+  );
+
+  const { data: entitlementPreviewByOfferId = {} } = useQuery<Record<string, RfEntitlementPreviewUiState>>({
+    queryKey: ['rf', 'entitlement-preview', 'listing-batch', listingId, userId ?? null, entitlementPreviewCollectionKey],
+    enabled: rfEntitlementPreviewFlags.enableClientPreview && Boolean(userId) && entitlementPreviewItems.length > 0,
+    staleTime: 30_000,
+    retry: 0,
+    queryFn: () => fetchRfEntitlementPreviewBatch(entitlementPreviewItems, { enabled: true }),
+  });
 
   useEffect(() => {
     captureRfProAttributionFromUrl(searchParams, pathname);
@@ -225,6 +259,8 @@ export function ListingVoucherOffersClient({
                         partnerId={offer.partnerId}
                         listingId={listingId}
                         offerType={offer.type}
+                        previewState={entitlementPreviewByOfferId[offer.id] ?? null}
+                        allowFallbackFetch={false}
                       />
                     </div>
                   ) : null}
