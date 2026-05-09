@@ -19,6 +19,7 @@ This is not runtime adoption and does not approve gateway extraction replacement
 | Pass/fail decision made | No |
 | Runtime adoption approved | No |
 | First execution attempt | Blocked pending staging access; see `docs/architecture/domain/rf_slice_6_31_first_real_staging_shadow_validation_window_v1.md`. |
+| Second execution attempt | Blocked pending staging access and evidence artifacts; see `docs/architecture/domain/rf_slice_6_32_first_actual_staging_validation_execution_evidence_capture_v1.md`. |
 
 All unfilled fields in this document are intentionally marked as `TBD` or `Not recorded yet`. This record must not be treated as staging pass evidence, fail evidence, or migration approval.
 
