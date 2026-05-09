@@ -7,6 +7,9 @@ vi.mock('@clerk/backend', () => ({
 import { verifyToken } from '@clerk/backend';
 import {
   IDENTITY_SCHEMA_VERSION,
+  classifyRoleEvidence,
+  extractPlatformRole,
+  extractRoleCapabilities,
   identityGoldenFixtures,
   validateIdentityGoldenFixtures,
   type IdentityGoldenFixture,
@@ -21,6 +24,45 @@ type GatewayComparison = {
   status: GatewayComparisonStatus;
   reasons: string[];
   gatewayClaims: Record<string, unknown>;
+};
+
+type SurfaceCounts = Record<GatewayComparisonStatus, number>;
+
+type GatewayHelperParity = {
+  fixtureId: string;
+  status: GatewayComparisonStatus;
+  reasons: string[];
+  gatewayRole: unknown;
+  helperRole: string;
+  fixtureRole: string;
+  helperSource: string;
+  helperDefaulted: boolean;
+  helperCapabilities: string[];
+  evidenceAlignment: string;
+};
+
+type GatewayHelperParitySummary = {
+  schemaVersion: 1;
+  generatedBy: 'rf-slice-6.23-gateway-helper-parity-tests';
+  fixtureCount: number;
+  counts: SurfaceCounts;
+  fixtureSummaries: Array<{
+    fixtureId: string;
+    status: GatewayComparisonStatus;
+    gatewayRole: unknown;
+    helperRole: string;
+    fixtureRole: string;
+    helperSource: string;
+    helperDefaulted: boolean;
+    helperCapabilities: string[];
+    evidenceAlignment: string;
+    notes: string[];
+  }>;
+  knownDivergences: Array<{
+    fixtureId: string;
+    status: 'documented';
+    note: string;
+  }>;
 };
 
 const gatewayEnv: Env = {
@@ -57,6 +99,86 @@ function classifyGatewayComparison(fixture: IdentityGoldenFixture, gatewayClaims
     status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
     reasons,
     gatewayClaims,
+  };
+}
+
+function classifyGatewayHelperParity(fixture: IdentityGoldenFixture, gatewayClaims: Record<string, unknown>): GatewayHelperParity {
+  const platformRole = extractPlatformRole(fixture.rawInputPayload);
+  const capabilities = extractRoleCapabilities(fixture.rawInputPayload);
+  const evidence = classifyRoleEvidence(fixture.rawInputPayload);
+  const reasons: string[] = [];
+
+  if (gatewayClaims.role !== platformRole.platformRole) {
+    reasons.push(`gateway role ${String(gatewayClaims.role)} did not match helper role ${platformRole.platformRole}`);
+  }
+  if (platformRole.platformRole !== fixture.expected.platformRole.value) {
+    reasons.push(`helper role ${platformRole.platformRole} did not match fixture role ${fixture.expected.platformRole.value}`);
+  }
+  if (platformRole.source !== fixture.expected.platformRole.source) {
+    reasons.push(`helper source ${platformRole.source} did not match fixture source ${fixture.expected.platformRole.source}`);
+  }
+  if (platformRole.defaulted !== fixture.expected.platformRole.defaulted) {
+    reasons.push('helper defaulted flag did not match fixture expectation');
+  }
+  if (JSON.stringify(capabilities.capabilities) !== JSON.stringify(fixture.expected.capabilities)) {
+    reasons.push('helper capabilities did not match fixture expectation');
+  }
+  if (evidence.alignment !== fixture.expected.divergence.alignment) {
+    reasons.push(`helper evidence alignment ${evidence.alignment} did not match fixture ${fixture.expected.divergence.alignment}`);
+  }
+
+  return {
+    fixtureId: fixture.id,
+    status: reasons.length === 0 ? 'aligned' : 'unexpected_divergence',
+    reasons,
+    gatewayRole: gatewayClaims.role,
+    helperRole: platformRole.platformRole,
+    fixtureRole: fixture.expected.platformRole.value,
+    helperSource: platformRole.source,
+    helperDefaulted: platformRole.defaulted,
+    helperCapabilities: capabilities.capabilities,
+    evidenceAlignment: evidence.alignment,
+  };
+}
+
+function countStatuses(comparisons: readonly GatewayHelperParity[]): SurfaceCounts {
+  return comparisons.reduce<SurfaceCounts>(
+    (counts, comparison) => {
+      counts[comparison.status] += 1;
+      return counts;
+    },
+    { aligned: 0, intentionally_different: 0, unexpected_divergence: 0 }
+  );
+}
+
+function buildGatewayHelperParitySummary(comparisons: readonly GatewayHelperParity[]): GatewayHelperParitySummary {
+  return {
+    schemaVersion: IDENTITY_SCHEMA_VERSION,
+    generatedBy: 'rf-slice-6.23-gateway-helper-parity-tests',
+    fixtureCount: comparisons.length,
+    counts: countStatuses(comparisons),
+    fixtureSummaries: comparisons.map((comparison) => ({
+      fixtureId: comparison.fixtureId,
+      status: comparison.status,
+      gatewayRole: comparison.gatewayRole,
+      helperRole: comparison.helperRole,
+      fixtureRole: comparison.fixtureRole,
+      helperSource: comparison.helperSource,
+      helperDefaulted: comparison.helperDefaulted,
+      helperCapabilities: comparison.helperCapabilities,
+      evidenceAlignment: comparison.evidenceAlignment,
+      notes:
+        comparison.fixtureId === 'future-capability-placeholder'
+          ? ['Gateway role parity is aligned; capabilities[] remains intentionally out-of-runtime for gateway behavior.']
+          : comparison.reasons,
+    })),
+    knownDivergences: [
+      {
+        fixtureId: 'future-capability-placeholder',
+        status: 'documented',
+        note: 'Gateway does not consume capabilities[]; helper also keeps future capability placeholders out of platform-role extraction.',
+      },
+    ],
   };
 }
 
@@ -130,5 +252,31 @@ describe('api-gateway identity-core golden fixture compare-only coverage', () =>
     expect(comparisons.filter((comparison) => comparison.status === 'aligned').map((comparison) => comparison.id)).toEqual(
       identityGoldenFixtures.filter((fixture) => !hasCapabilitiesOnlyFixture(fixture)).map((fixture) => fixture.id)
     );
+  });
+
+  it('compares current gateway extraction with implemented identity-core helper outputs', async () => {
+    const parity: GatewayHelperParity[] = [];
+
+    for (const fixture of identityGoldenFixtures) {
+      const comparison = await replayGatewayFixture(fixture);
+      parity.push(classifyGatewayHelperParity(fixture, comparison.gatewayClaims));
+    }
+
+    const summary = buildGatewayHelperParitySummary(parity);
+    const fixtureIds = identityGoldenFixtures.map((fixture) => fixture.id);
+
+    expect(parity.filter((comparison) => comparison.status === 'unexpected_divergence')).toEqual([]);
+    expect(summary.counts).toEqual({ aligned: identityGoldenFixtures.length, intentionally_different: 0, unexpected_divergence: 0 });
+    expect(summary.fixtureCount).toBe(identityGoldenFixtures.length);
+    expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual(fixtureIds);
+    expect(summary.fixtureSummaries.map((fixture) => fixture.fixtureId)).toEqual([...fixtureIds].sort((left, right) => left.localeCompare(right)));
+    expect(summary.knownDivergences).toEqual([
+      {
+        fixtureId: 'future-capability-placeholder',
+        status: 'documented',
+        note: 'Gateway does not consume capabilities[]; helper also keeps future capability placeholders out of platform-role extraction.',
+      },
+    ]);
+    expect(JSON.stringify(summary)).not.toMatch(/email|wallet|nft|g2a|secret|session|bearer|authorization|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/i);
   });
 });
