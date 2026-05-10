@@ -95,7 +95,7 @@ const modules = [
     href: '/connect',
     icon: Link2,
     title: 'Connect Asia',
-    description: 'Баланс и награды',
+    description: 'Points, приглашения и бейджи',
     color: 'orange',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-200',

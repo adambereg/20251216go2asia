@@ -5,6 +5,9 @@ import { User, Store, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Avatar } from '@go2asia/ui';
 import type { Referral } from '../types';
 
+/**
+ * @deprecated Legacy referrals card UI. Active Connect referrals use runtime-aligned ReferralsContent.
+ */
 interface ReferralCardProps {
   referral: Referral;
 }

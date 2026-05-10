@@ -43,7 +43,9 @@ describe('connect copy helpers', () => {
       .join(' ')
       .toLowerCase();
 
-    expect(text).not.toMatch(/payout|withdraw|topup|usd|bridge|token|nft|g2a|commission|settlement|cash/);
+    expect(text).not.toMatch(
+      /payout|withdraw|topup|usd|bridge|token|nft|g2a|commission|settlement|cash|выплат|вывод|пополн|токен|блокчейн|комисси|доход|заработ/
+    );
     expect(text).toContain('points');
   });
 });

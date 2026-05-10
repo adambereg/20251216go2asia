@@ -12,6 +12,10 @@ Go2Asia — Voucher-driven Engagement & VIP Activation Economy
 •	премиум-ваучеры требуют Points + NFT;
 •	внешний контур (G2A, on-chain NFT) подключается через триггеры из внутреннего.
 
+Status note: this document describes the target RF voucher economy. Current Points spend and wallet semantics are governed by `../points_policy_v1.md`; referral and network reward semantics are governed by `../referral_network_rewards_policy_v1.md`.
+
+RF voucher spend may be runtime-aligned where implemented, but G2A distribution, NFT/Totem gates, on-chain withdrawal, PRO reward/payout flows, partner settlement, VIP entitlement lifecycle, `referral_unlock`, and network accrual producers are future/target layers unless separately implemented. `referral_locked` exists today; unlock/accrual and hard `lockedPoints` enforcement should not be described as active current runtime.
+
 ---
 
 2. Ключевой принцип

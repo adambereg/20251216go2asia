@@ -7,6 +7,9 @@ import { TransactionList } from './TransactionList';
 import { BridgeModal } from './BridgeModal';
 import type { WalletData } from '../types';
 
+/**
+ * @deprecated Future-only legacy token wallet UI. Do not export from barrels or wire into active MVP routes.
+ */
 interface G2ATabProps {
   data: WalletData;
   onLoadMore?: () => void;

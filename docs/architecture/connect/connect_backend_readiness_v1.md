@@ -47,7 +47,7 @@ Status update:
   - Points balance и recent transactions;
   - referrals summary;
   - badges summary;
-  - без voucher user-visibility в connect-dashboard baseline.
+  - без vouchers в payload `connect-dashboard`; voucher visibility доступна как отдельная read-only RF composition в Connect UI.
 
 ---
 
@@ -136,12 +136,12 @@ Connect **может**:
 
 - в текущем Connect backend/read-model нет выделенного user-side voucher блока;
 - `GET /v1/points/connect-dashboard` не возвращает vouchers/status;
-- в Connect frontend нет подтверждённого live источника voucher list/status как части connect economy snapshot.
+- voucher list/status в Connect берутся из RF read endpoints как отдельная read-only projection composition (не как часть `connect-dashboard` JSON).
 
 Итог:
 
-- пользовательская видимость vouchers в Connect сейчас частичная/отсутствующая;
-- bridge между RF voucher read side и Connect user economy view не зафиксирован как runtime baseline.
+- в payload `connect-dashboard` vouchers отсутствуют;
+- пользовательская видимость vouchers в Connect реализуется отдельным RF read-only блоком и должна оставаться вне ownership Connect.
 
 ---
 
@@ -170,11 +170,11 @@ Connect **может**:
 | --- | --- | --- | --- |
 | points | Сильный runtime baseline (`balance`, `transactions`, `badges`, `connect-dashboard`) | High | Ledger owner и read surfaces уже в `points-service` |
 | referrals | Сильный runtime baseline (`code/stats/tree/earnings`) | High | Ownership чисто в `referral-service` |
-| vouchers (user-side) | Нет явного Connect read baseline | Low | Нужна read-only visibility интеграция от RF side |
+| vouchers (user-side) | RF read-only composition поверх dashboard | Medium | Важно держать раздельный ownership: RF facts, Connect projection |
 | connect dashboard | Реализован в `points-service` как bounded read model | Medium-High | Есть риск scope creep в hidden owner |
 | activity | Частично закрыто через points transactions/recentTransactions | Medium | Нет единого cross-domain activity stream |
-| rewards visibility | Points+badges+referrals видимы; vouchers не включены | Medium | Неполный user economy snapshot |
-| RF integration | RF готов как supply-side; Connect bridge минимальный | Low-Medium | Read-side связь с user vouchers не зафиксирована |
+| rewards visibility | Points+badges+referrals в payload; vouchers через RF composition | Medium | Нужна единая терминология snapshot vs payload |
+| RF integration | RF готов как supply-side; read-only bridge в Connect есть | Medium | Нужен vocabulary lock, чтобы не появлялся второй source of truth |
 | frontend surfaces | Dashboard/Wallet/Referrals ближе к live; остальное future/placeholder | Medium | Риск demo-vs-live и legacy copy drift |
 
 ---

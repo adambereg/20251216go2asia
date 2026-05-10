@@ -4,6 +4,9 @@ import { ConnectHero, ConnectNav } from '../Shared';
 import { Badge, Button, Card } from '@go2asia/ui';
 import { Activity, Award, BarChart, Users } from 'lucide-react';
 import Link from 'next/link';
+import { CONNECT_FUTURE_BADGE_TEXT } from '../copy';
+
+const ANALYTICS_FUTURE_TEXT = 'Аналитика активности планируется после появления backend-агрегатов.';
 
 const ctas = [
   {
@@ -26,7 +29,7 @@ const ctas = [
 export function AnalyticsView() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Аналитика активности появится позже, когда появятся backend-агрегаты." />
+      <ConnectHero subtitle={ANALYTICS_FUTURE_TEXT} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <ConnectNav />
@@ -35,7 +38,7 @@ export function AnalyticsView() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Статистика</h1>
-          <p className="text-slate-600 mt-1">Аналитика активности появится позже, когда появятся backend-агрегаты.</p>
+          <p className="text-slate-600 mt-1">{ANALYTICS_FUTURE_TEXT}</p>
         </div>
 
         <Card className="p-6 mb-6 bg-sky-50 border border-sky-200">
@@ -45,13 +48,13 @@ export function AnalyticsView() {
                 <BarChart className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-sky-900">Аналитика активности появится позже</h2>
+                <h2 className="text-xl font-semibold text-sky-900">Аналитика активности планируется</h2>
                 <p className="text-sm text-sky-900/80 mt-2">
                   Сейчас Connect показывает только проверенные backend-данные: Points, начисления, рефералы и бейджи. Расширенная статистика появится после отдельного слоя агрегатов.
                 </p>
               </div>
             </div>
-            <Badge className="bg-sky-100 text-sky-800">Появится позже</Badge>
+            <Badge className="bg-sky-100 text-sky-800">{CONNECT_FUTURE_BADGE_TEXT}</Badge>
           </div>
         </Card>
 

@@ -7,6 +7,10 @@ Go2Asia — контроль инфляции Points и поддержание �
 Главная задача:
 не дать Points превратиться в бесполезную бесконечную массу, а сделать их желанной внутренней ценностью, ради использования которой пользователь покупает VIP.
 
+Status note: this document describes the target Points sink model. Current Rewards / Points runtime alignment is governed by `../points_policy_v1.md`.
+
+Vouchers and current Points ledger behavior should be interpreted through the runtime-aligned policy. NFT/Totem sinks, on-chain NFT withdrawal, G2A flows, PRO rewards/payouts, VIP entitlement unlocks, `referral_unlock`, and network accrual are future/target layers unless separately implemented. `lockedPoints` is a policy target for hard spend enforcement, but current runtime may still depend on materialized balance checks.
+
 ---
 
 2. Главный принцип

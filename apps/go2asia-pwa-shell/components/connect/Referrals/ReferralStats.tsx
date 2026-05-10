@@ -4,6 +4,9 @@ import { Card } from '@go2asia/ui';
 import { Users, Store, Coins, Wallet } from 'lucide-react';
 import type { ReferralStats as ReferralStatsType } from '../types';
 
+/**
+ * @deprecated Legacy referrals summary UI. Active Connect referrals use runtime-aligned ReferralsContent.
+ */
 interface ReferralStatsProps {
   stats: ReferralStatsType;
 }

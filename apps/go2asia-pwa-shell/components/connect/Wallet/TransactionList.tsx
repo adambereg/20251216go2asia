@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Card, Chip, Button } from '@go2asia/ui';
 import type { Transaction } from '../types';
+import { getConnectLedgerActionLabel, getConnectLedgerSourceLabel } from '../copy';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -12,43 +13,18 @@ interface TransactionListProps {
 
 type CategoryFilter = 'all' | 'quest' | 'referrals' | 'events' | 'other';
 
-const ACTION_LABELS: Record<string, string> = {
-  registration: 'Регистрация',
-  first_login: 'Первый вход',
-  quest_completed: 'Квест завершён',
-  referral_bonus_referrer: 'Бонус за приглашённого пользователя',
-  referral_bonus_referee: 'Бонус за регистрацию по приглашению',
-  event_registration: 'Регистрация на событие',
-  space_post_created: 'Публикация в Space',
-  rf_voucher_redeemed: 'RF-ваучер использован',
-  rielt_listing_created: 'Объявление в Rielt',
-  badge_awarded: 'Бейдж получен',
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  'quest-service': 'Quest Asia',
-  'referral-service': 'Referral',
-  'points-service': 'Points',
-  'content-service': 'Go2Asia',
-  'pulse-service': 'Pulse Asia',
-  'space-service': 'Space Asia',
-  'rf-service': 'Russian Friendly',
-  'rielt-service': 'Rielt Market',
-};
-
 function getString(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
 function getActionLabel(transaction: Transaction) {
   const action = getString(transaction.metadata?.action);
-  return ACTION_LABELS[action] ?? 'Активность Go2Asia';
+  return getConnectLedgerActionLabel(action);
 }
 
 function getSourceLabel(transaction: Transaction) {
   const sourceService = getString(transaction.metadata?.sourceService);
-  if (!sourceService) return 'Go2Asia';
-  return SOURCE_LABELS[sourceService] ?? 'Go2Asia';
+  return getConnectLedgerSourceLabel(sourceService || null);
 }
 
 function getCategory(transaction: Transaction): Exclude<CategoryFilter, 'all'> {

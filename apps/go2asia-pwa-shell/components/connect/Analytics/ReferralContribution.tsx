@@ -3,6 +3,9 @@
 import { Card } from '@go2asia/ui';
 import { Users, Coins, Wallet } from 'lucide-react';
 
+/**
+ * @deprecated Future-only analytics aggregate UI. No current backend truth exists for G2A referral contribution.
+ */
 interface ReferralContributionProps {
   points: number;
   g2a: number;

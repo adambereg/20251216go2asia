@@ -4,11 +4,12 @@ import { ConnectHero, ConnectNav } from '../Shared';
 import { Badge, Card } from '@go2asia/ui';
 import { ArrowRight, Award, Compass, Users } from 'lucide-react';
 import Link from 'next/link';
+import { CONNECT_FUTURE_BADGE_TEXT } from '../copy';
 
 const guidanceItems = [
   {
-    title: 'Пройти квест',
-    description: 'Найдите доступные квесты в Quest Asia.',
+    title: 'Пройти задание в Quest Asia',
+    description: 'Найдите доступные задания в Quest Asia.',
     href: '/quest',
     icon: Compass,
   },
@@ -29,7 +30,7 @@ const guidanceItems = [
 export function MissionsView() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Персональные задания появятся позже. Пока начните с квестов, приглашений и бейджей." />
+      <ConnectHero subtitle="Персональные задания появятся позже. Пока начните с заданий в Quest Asia, приглашений и бейджей." />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <ConnectNav />
@@ -39,7 +40,7 @@ export function MissionsView() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Миссии</h1>
           <p className="text-slate-600 mt-1">
-            Персональные задания появятся позже. Пока начните с квестов, приглашений и бейджей.
+            Персональные задания появятся позже. Пока начните с заданий в Quest Asia, приглашений и бейджей.
           </p>
         </div>
 
@@ -48,10 +49,11 @@ export function MissionsView() {
             <div>
               <h2 className="text-xl font-semibold text-amber-900">Персональные задания появятся позже</h2>
               <p className="text-sm text-amber-900/80 mt-2">
-                Connect пока не ведёт отдельные миссии. Вы можете проходить квесты в Quest Asia, приглашать друзей и получать бейджи за реальные действия.
+                Connect пока не ведёт отдельные миссии. Вы можете проходить задания в Quest Asia, приглашать друзей и
+                получать бейджи за реальные действия.
               </p>
             </div>
-            <Badge className="bg-amber-100 text-amber-800">Появится позже</Badge>
+            <Badge className="bg-amber-100 text-amber-800">{CONNECT_FUTURE_BADGE_TEXT}</Badge>
           </div>
         </Card>
 

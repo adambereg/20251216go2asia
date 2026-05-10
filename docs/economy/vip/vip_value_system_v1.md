@@ -11,6 +11,10 @@ Go2Asia — Product & Psychological Model of VIP Activation
 •	как VIP конвертирует активность в ценность;
 •	как удерживать пользователя в цикле подписки.
 
+Status note: this document describes the target VIP value system and behavioral model. Current runtime alignment is governed by `../points_policy_v1.md` and `../referral_network_rewards_policy_v1.md`.
+
+VIP entitlement lifecycle, referral unlock, network accrual, NFT/Totem access, G2A/on-chain mechanics, and PRO reward/payout flows are target/future layers unless separately implemented. `referral_locked` exists today, but `referral_unlock`, network accrual producers, and hard `lockedPoints` spend enforcement are not confirmed as current runtime.
+
 ---
 
 2. Главный принцип

@@ -6,6 +6,7 @@ import { Badge, Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Award, RefreshCw } from 'lucide-react';
 import { useGetBadgeCatalog, useGetMyBadges, type BadgeCatalogItem, type UserBadgeItem } from '@go2asia/sdk/badges';
 import type { BadgeAchievement } from '../types';
+import { CONNECT_FUTURE_BADGE_TEXT } from '../copy';
 
 const BADGE_COPY: Record<string, { title: string; description: string; emptyHint: string; category: string }> = {
   first_quest_completed: {
@@ -157,7 +158,7 @@ export function LevelsView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Бейджи и достижения</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Бейджи</h1>
           <p className="text-slate-600 mt-1">Смотрите полученные и доступные бейджи Connect.</p>
         </div>
 
@@ -193,12 +194,12 @@ export function LevelsView() {
         <Card className="p-5 mt-6 bg-slate-50 border border-slate-200">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Уровни в разработке</p>
+              <p className="text-sm font-semibold text-slate-900">Прогресс уровней планируется</p>
               <p className="text-sm text-slate-600 mt-1">
                 Мы не показываем прогресс уровней без backend-данных. Пока отслеживайте Points и бейджи.
               </p>
             </div>
-            <Badge className="bg-slate-100 text-slate-600">Появится позже</Badge>
+            <Badge className="bg-slate-100 text-slate-600">{CONNECT_FUTURE_BADGE_TEXT}</Badge>
           </div>
         </Card>
       </div>
