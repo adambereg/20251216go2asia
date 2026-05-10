@@ -19,6 +19,11 @@ vi.mock('@go2asia/db', () => ({
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
 import worker, { type Env } from '../src/index';
 import { resetRfStoreForTests } from '../src/store';
+import {
+  assertNoUnsafeVipEntitlementShadowDiagnosticsFields,
+  getVipEntitlementShadowSnapshot,
+  resetVipEntitlementShadowForTests,
+} from '../src/vipEntitlementShadow';
 
 function executedSqlText(): string {
   return executeMock.mock.calls
@@ -145,6 +150,7 @@ describe('rf-service request', () => {
     createDbMock.mockClear();
     executeMock.mockReset();
     resetRfStoreForTests();
+    resetVipEntitlementShadowForTests();
   });
 
   afterEach(() => {
@@ -157,6 +163,44 @@ describe('rf-service request', () => {
     expect(response.status).toBe(503);
     expect(body.status).toBe('not_ready');
     expect(body.missing).toEqual(['databaseUrl', 'serviceJwtSecret']);
+  });
+
+  it('keeps VIP entitlement shadow diagnostics default-off and admin-only', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret' };
+    const adminToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin', roles: ['admin'] });
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+
+    const disabled = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/shadow-observability', {
+        headers: { 'X-Gateway-Auth': adminToken },
+      }),
+      env
+    );
+    const disabledBody = await readJson<{ error: { code: string } }>(disabled);
+
+    const nonAdmin = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/shadow-observability', {
+        headers: { 'X-Gateway-Auth': userToken },
+      }),
+      { ...env, RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true' }
+    );
+    const nonAdminBody = await readJson<{ error: { code: string } }>(nonAdmin);
+
+    const enabled = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/shadow-observability', {
+        headers: { 'X-Gateway-Auth': adminToken },
+      }),
+      { ...env, RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true' }
+    );
+    const enabledBody = await readJson<{ total: number }>(enabled);
+
+    expect(disabled.status).toBe(404);
+    expect(disabledBody.error.code).toBe('RF_ENTITLEMENT_SHADOW_DIAGNOSTICS_DISABLED');
+    expect(nonAdmin.status).toBe(403);
+    expect(nonAdminBody.error.code).toBe('FORBIDDEN');
+    expect(enabled.status).toBe(200);
+    expect(enabledBody.total).toBe(0);
+    expect(createDbMock).not.toHaveBeenCalled();
   });
 
   it('creates partner and exposes it via public partner list', async () => {
@@ -1209,6 +1253,50 @@ describe('rf-service request', () => {
     expect(body.error.code).toBe('RF_VIP_REQUIRED_FOR_PAID_VOUCHER');
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(getVipEntitlementShadowSnapshot().total).toBe(0);
+  });
+
+  it('keeps role-denied paid claim denied when shadow entitlement would grant', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+      RF_ENTITLEMENT_SHADOW_SCENARIO: 'grant',
+    };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'paid-shadow-grants',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    const diagnostics = getVipEntitlementShadowSnapshot();
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_VIP_REQUIRED_FOR_PAID_VOUCHER');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.byDriftClass.role_denied_entitlement_granted).toBe(1);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 
   it('runs spend-first coupling and persists debited economy fields for paid claim', async () => {
@@ -1292,6 +1380,77 @@ describe('rf-service request', () => {
     expect(body.voucher.pointsDebitExternalId).toContain('rf:voucher-claim-spend:');
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(fetchSpy.mock.calls[0]?.[0]).toContain('/internal/points/spend');
+  });
+
+  it('keeps role-allowed paid claim allowed when shadow entitlement denies', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+      RF_ENTITLEMENT_SHADOW_SCENARIO: 'deny',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ transactionId: 'tx_spend_1', applied: true, idempotentReplay: false, balanceAfter: 850 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          voucherRow({
+            id: 'rf_voucher_paid_shadow',
+            offer_id: 'rf_offer_paid',
+            points_cost_snapshot: 150,
+            points_debit_external_id: 'rf:voucher-claim-spend:rf_voucher_paid_shadow',
+            economy_status: 'debited',
+            code: 'RF-SHD001',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            operation: 'voucher_claim',
+            actor_user_id: 'user_1',
+            idempotency_key: 'paid-shadow-denies',
+            voucher_id: 'rf_voucher_paid_shadow',
+            created_at: '2026-03-21T10:04:01.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-shadow-denies',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ voucher: { economyStatus: string; pointsDebitExternalId: string | null } }>(response);
+    const diagnostics = getVipEntitlementShadowSnapshot();
+
+    expect(response.status).toBe(201);
+    expect(body.voucher.economyStatus).toBe('debited');
+    expect(body.voucher.pointsDebitExternalId).toContain('rf:voucher-claim-spend:');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.byDriftClass.role_granted_entitlement_denied).toBe(1);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 
   it('keeps paid claim replay spend-safe (no second debit for same idempotency key)', async () => {
