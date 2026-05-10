@@ -132,6 +132,7 @@ import type {
   RfInternalErrorResponse,
   RfInternalVoucherDiagnosticsResponse,
   RfListProAttributedVouchersParams,
+  RfMerchantVoucherActivitySummaryResponse,
   RfNotFoundResponse,
   RfOffer,
   RfOfferListResponse,
@@ -4489,6 +4490,64 @@ export const rfListPartnerProLinks = async (
     ...options,
     method: "GET",
   });
+};
+
+/**
+ * Owner-scoped read-only voucher activity summary for a partner. Returns aggregate lifecycle and attribution counts only; does not expose voucher codes, user identities, share codes, attribution metadata or financial settlement semantics.
+
+ * @summary Get partner voucher activity summary (owner-scoped, read-only)
+ */
+export type rfGetPartnerVoucherActivitySummaryResponse200 = {
+  data: RfMerchantVoucherActivitySummaryResponse;
+  status: 200;
+};
+
+export type rfGetPartnerVoucherActivitySummaryResponse401 = {
+  data: RfUnauthorizedResponse;
+  status: 401;
+};
+
+export type rfGetPartnerVoucherActivitySummaryResponse403 = {
+  data: RfForbiddenResponse;
+  status: 403;
+};
+
+export type rfGetPartnerVoucherActivitySummaryResponse404 = {
+  data: RfNotFoundResponse;
+  status: 404;
+};
+
+export type rfGetPartnerVoucherActivitySummaryResponseSuccess =
+  rfGetPartnerVoucherActivitySummaryResponse200 & {
+    headers: Headers;
+  };
+export type rfGetPartnerVoucherActivitySummaryResponseError = (
+  | rfGetPartnerVoucherActivitySummaryResponse401
+  | rfGetPartnerVoucherActivitySummaryResponse403
+  | rfGetPartnerVoucherActivitySummaryResponse404
+) & {
+  headers: Headers;
+};
+
+export type rfGetPartnerVoucherActivitySummaryResponse =
+  | rfGetPartnerVoucherActivitySummaryResponseSuccess
+  | rfGetPartnerVoucherActivitySummaryResponseError;
+
+export const getRfGetPartnerVoucherActivitySummaryUrl = (partnerId: string) => {
+  return `/v1/rf/business/partners/${partnerId}/voucher-activity/summary`;
+};
+
+export const rfGetPartnerVoucherActivitySummary = async (
+  partnerId: string,
+  options?: RequestInit
+): Promise<rfGetPartnerVoucherActivitySummaryResponse> => {
+  return customInstance<rfGetPartnerVoucherActivitySummaryResponse>(
+    getRfGetPartnerVoucherActivitySummaryUrl(partnerId),
+    {
+      ...options,
+      method: "GET",
+    }
+  );
 };
 
 /**

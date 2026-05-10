@@ -617,6 +617,34 @@ paths:
         "503":
           $ref: "#/components/responses/RfServiceUnavailable"
 
+  /v1/rf/business/partners/{partnerId}/voucher-activity/summary:
+    get:
+      tags: [rf]
+      operationId: rfGetPartnerVoucherActivitySummary
+      summary: Get partner voucher activity summary (owner-scoped, read-only)
+      description: >
+        Owner-scoped read-only voucher activity summary for a partner. Returns aggregate lifecycle and attribution
+        counts only; does not expose voucher codes, user identities, share codes, attribution metadata or financial
+        settlement semantics.
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfMerchantVoucherActivitySummaryResponse"
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+
   /v1/rf/business/partners/{partnerId}/pro-links:
     get:
       tags: [rf]
@@ -2120,6 +2148,51 @@ components:
           type: integer
           minimum: 0
           description: Count of expired vouchers using canonical lifecycle status.
+
+    RfMerchantVoucherActivitySummary:
+      type: object
+      required: [total, active, redeemed, expiredOrUnavailable, offersWithActivity, proAttributed, lastActivityAt]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        active:
+          type: integer
+          minimum: 0
+          description: Count of active/non-terminal vouchers using canonical available/locked/unlocked semantics.
+        redeemed:
+          type: integer
+          minimum: 0
+        expiredOrUnavailable:
+          type: integer
+          minimum: 0
+          description: Count of canonical expired or cancelled vouchers.
+        offersWithActivity:
+          type: integer
+          minimum: 0
+        proAttributed:
+          type: integer
+          minimum: 0
+          description: Count of vouchers with confirmed attribution marker.
+        lastActivityAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RfMerchantVoucherActivitySummaryResponse:
+      type: object
+      required: [partnerId, scope, generatedAt, summary]
+      properties:
+        partnerId:
+          type: string
+        scope:
+          type: string
+          enum: [partner_voucher_activity_summary]
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          $ref: "#/components/schemas/RfMerchantVoucherActivitySummary"
 
     RfProLinkListResponse:
       type: object

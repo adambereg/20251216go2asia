@@ -164,6 +164,23 @@ export interface RfVoucherListResponse {
   nextCursor: string | null;
 }
 
+export interface RfMerchantVoucherActivitySummary {
+  total: number;
+  active: number;
+  redeemed: number;
+  expiredOrUnavailable: number;
+  offersWithActivity: number;
+  proAttributed: number;
+  lastActivityAt: string | null;
+}
+
+export interface RfMerchantVoucherActivitySummaryResponse {
+  partnerId: string;
+  scope: 'partner_voucher_activity_summary';
+  generatedAt: string;
+  summary: RfMerchantVoucherActivitySummary;
+}
+
 export interface RfProAttributedVoucherDto {
   voucherId: string;
   offerId: string;
@@ -502,6 +519,15 @@ export async function listPartnerProLinks(partnerId: string): Promise<RfProLinkL
   );
 }
 
+export async function getPartnerVoucherActivitySummary(
+  partnerId: string
+): Promise<RfMerchantVoucherActivitySummaryResponse> {
+  return customInstance<RfMerchantVoucherActivitySummaryResponse>(
+    { method: 'GET' },
+    `/v1/rf/business/partners/${encodeURIComponent(partnerId)}/voucher-activity/summary`
+  );
+}
+
 export async function createProLink(input: RfCreateProLinkRequest): Promise<RfProLinkDto> {
   return customInstance<RfProLinkDto>(
     {
@@ -573,6 +599,16 @@ export function useRfOffers() {
     queryKey: ['rf', 'offers'],
     queryFn: fetchRfOffers,
     staleTime: 30_000,
+  });
+}
+
+export function useRfPartnerVoucherActivitySummary(partnerId: string | null | undefined) {
+  return useQuery<RfMerchantVoucherActivitySummaryResponse, Error>({
+    queryKey: ['rf', 'business', 'partners', partnerId, 'voucher-activity-summary'],
+    queryFn: () => getPartnerVoucherActivitySummary(String(partnerId)),
+    enabled: Boolean(partnerId),
+    staleTime: 30_000,
+    retry: 1,
   });
 }
 

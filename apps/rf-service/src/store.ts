@@ -169,6 +169,23 @@ export interface VoucherSummary {
   expiredVouchers: number;
 }
 
+export interface MerchantVoucherActivitySummary {
+  total: number;
+  active: number;
+  redeemed: number;
+  expiredOrUnavailable: number;
+  offersWithActivity: number;
+  proAttributed: number;
+  lastActivityAt: string | null;
+}
+
+export interface MerchantVoucherActivitySummaryResponse {
+  partnerId: string;
+  scope: 'partner_voucher_activity_summary';
+  generatedAt: string;
+  summary: MerchantVoucherActivitySummary;
+}
+
 export interface RfProAttributedVoucher {
   voucherId: string;
   offerId: string;
@@ -440,6 +457,9 @@ type PartnerItemsResult =
   | { ok: false; code: string; message: string; status: number };
 type PartnerItemResult =
   | { ok: true; item: RfPartnerItem }
+  | { ok: false; code: string; message: string; status: number };
+type MerchantVoucherActivitySummaryResult =
+  | { ok: true; data: MerchantVoucherActivitySummaryResponse }
   | { ok: false; code: string; message: string; status: number };
 
 type PartnerRow = {
@@ -3523,6 +3543,72 @@ export async function getMyVoucherSummary(db: DbExecutor, principal: GatewayPrin
     usedVouchers: Number(row?.used_vouchers ?? 0),
     cancelledVouchers: Number(row?.cancelled_vouchers ?? 0),
     expiredVouchers: Number(row?.expired_vouchers ?? 0),
+  };
+}
+
+export async function getMerchantVoucherActivitySummary(
+  db: DbExecutor,
+  principal: GatewayPrincipal,
+  partnerId: string
+): Promise<MerchantVoucherActivitySummaryResult> {
+  const access = await requireOwnedActivePartner(db, partnerId, principal.userId, 'read voucher activity summary');
+  if (!access.ok) return access;
+
+  const result = await db.execute(sql`
+    WITH voucher_states AS (
+      SELECT
+        v.offer_id,
+        v.attribution_status,
+        COALESCE(
+          v.canonical_status::text,
+          CASE v.status::text
+            WHEN 'claimed' THEN 'available'
+            WHEN 'redeemed' THEN 'redeemed'
+            WHEN 'cancelled' THEN 'cancelled'
+          END
+        ) AS effective_status,
+        COALESCE(v.status_changed_at, v.redeemed_at, v.claimed_at, v.updated_at, v.created_at) AS activity_at
+      FROM rf_voucher v
+      WHERE v.partner_id = ${partnerId}
+    )
+    SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE effective_status IN ('available', 'locked', 'unlocked'))::int AS active,
+      COUNT(*) FILTER (WHERE effective_status = 'redeemed')::int AS redeemed,
+      COUNT(*) FILTER (WHERE effective_status IN ('expired', 'cancelled'))::int AS expired_or_unavailable,
+      COUNT(DISTINCT offer_id)::int AS offers_with_activity,
+      COUNT(*) FILTER (WHERE attribution_status = 'confirmed')::int AS pro_attributed,
+      MAX(activity_at) AS last_activity_at
+    FROM voucher_states
+  `);
+
+  const row =
+    rowsOf<{
+      total: number;
+      active: number;
+      redeemed: number;
+      expired_or_unavailable: number;
+      offers_with_activity: number;
+      pro_attributed: number;
+      last_activity_at: string | Date | null;
+    }>(result)[0] ?? null;
+
+  return {
+    ok: true,
+    data: {
+      partnerId,
+      scope: 'partner_voucher_activity_summary',
+      generatedAt: new Date().toISOString(),
+      summary: {
+        total: Number(row?.total ?? 0),
+        active: Number(row?.active ?? 0),
+        redeemed: Number(row?.redeemed ?? 0),
+        expiredOrUnavailable: Number(row?.expired_or_unavailable ?? 0),
+        offersWithActivity: Number(row?.offers_with_activity ?? 0),
+        proAttributed: Number(row?.pro_attributed ?? 0),
+        lastActivityAt: asIso(row?.last_activity_at ?? null),
+      },
+    },
   };
 }
 

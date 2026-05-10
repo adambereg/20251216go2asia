@@ -4073,6 +4073,61 @@ components:
         - statusActorUserId
         - codeMasked
       type: object
+    RfMerchantVoucherActivitySummary:
+      properties:
+        active:
+          description: Count of active/non-terminal vouchers using canonical available/locked/unlocked semantics.
+          minimum: 0
+          type: integer
+        expiredOrUnavailable:
+          description: Count of canonical expired or cancelled vouchers.
+          minimum: 0
+          type: integer
+        lastActivityAt:
+          format: date-time
+          nullable: true
+          type: string
+        offersWithActivity:
+          minimum: 0
+          type: integer
+        proAttributed:
+          description: Count of vouchers with confirmed attribution marker.
+          minimum: 0
+          type: integer
+        redeemed:
+          minimum: 0
+          type: integer
+        total:
+          minimum: 0
+          type: integer
+      required:
+        - total
+        - active
+        - redeemed
+        - expiredOrUnavailable
+        - offersWithActivity
+        - proAttributed
+        - lastActivityAt
+      type: object
+    RfMerchantVoucherActivitySummaryResponse:
+      properties:
+        generatedAt:
+          format: date-time
+          type: string
+        partnerId:
+          type: string
+        scope:
+          enum:
+            - partner_voucher_activity_summary
+          type: string
+        summary:
+          $ref: "#/components/schemas/RfMerchantVoucherActivitySummary"
+      required:
+        - partnerId
+        - scope
+        - generatedAt
+        - summary
+      type: object
     RfOffer:
       properties:
         createdAt:
@@ -8416,6 +8471,32 @@ paths:
       security:
         - GatewayAuth: []
       summary: List PRO links for an owned partner
+      tags:
+        - rf
+  /v1/rf/business/partners/{partnerId}/voucher-activity/summary:
+    get:
+      description: |
+        Owner-scoped read-only voucher activity summary for a partner. Returns aggregate lifecycle and attribution counts only; does not expose voucher codes, user identities, share codes, attribution metadata or financial settlement semantics.
+      operationId: rfGetPartnerVoucherActivitySummary
+      parameters:
+        - $ref: "#/components/parameters/RfXGatewayAuth"
+        - $ref: "#/components/parameters/RfPartnerId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RfMerchantVoucherActivitySummaryResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/RfUnauthorized"
+        "403":
+          $ref: "#/components/responses/RfForbidden"
+        "404":
+          $ref: "#/components/responses/RfNotFound"
+      security:
+        - GatewayAuth: []
+      summary: Get partner voucher activity summary (owner-scoped, read-only)
       tags:
         - rf
   /v1/rf/business/partners/{partnerId}/vouchers/{voucherId}/redeem:

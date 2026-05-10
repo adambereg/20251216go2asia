@@ -30,7 +30,9 @@ export type ProNextStep = {
 
 export const proAttributedVouchersLabel = 'Ваучеры с PRO-отметкой';
 export const proAttributedVouchersBoundaryCopy =
-  'Read-only видимость по подтверждённым RF-отметкам. Блок не меняет выдачу ваучеров и не показывает финансовую механику.';
+  'Read-only tracking: блок показывает связь PRO ↔ ваучер и источник получения. Это не начисления и не денежный учёт.';
+export const proAttributedVouchersFutureCopy =
+  'Финансовый слой PRO будет подключаться отдельно в будущих slices.';
 export const proAttributedVouchersEmptyState = 'Пока нет ваучеров с подтверждённой PRO-отметкой.';
 
 export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
@@ -69,8 +71,8 @@ export function getProAttributedVoucherStatusLabel(
   if (status === 'redeemed') return 'Использован';
   if (status === 'cancelled') return 'Недоступен';
   if (status === 'expired') return 'Истёк';
-  if (status === 'locked') return 'Ожидает активации';
-  if (status === 'unlocked') return 'Повторно доступен';
+  if (status === 'locked') return 'Получен, но не активен';
+  if (status === 'unlocked') return 'Можно получить снова';
   return 'Активен';
 }
 
@@ -81,7 +83,7 @@ export function getProAttributedVoucherScopeLabel(claimScope: RfProAttributedVou
 export function getProAttributedVoucherAttributionLabel(
   status: RfProAttributedVoucherDto['attributionStatus']
 ): string {
-  return status === 'confirmed' ? 'PRO отметка подтверждена' : 'PRO отметка уточняется';
+  return status === 'confirmed' ? 'PRO-отметка подтверждена' : 'PRO-отметка уточняется';
 }
 
 export function getProAttributedVoucherClaimSourceLabel(source: RfProAttributedVoucherDto['claimSource']): string {

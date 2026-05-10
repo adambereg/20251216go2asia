@@ -10,6 +10,7 @@ import {
   getProAttributedVoucherStatusLabel,
   proAttributedVouchersBoundaryCopy,
   proAttributedVouchersEmptyState,
+  proAttributedVouchersFutureCopy,
   proAttributedVouchersLabel,
   sortProAttributedVouchers,
 } from './rfProWorkspace';
@@ -182,12 +183,16 @@ describe('RF PRO workspace helpers', () => {
 
     expect(items.map((item) => item.voucherId)).toEqual(['voucher_same_b', 'voucher_new', 'voucher_old']);
     expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'available' }))).toBe('Активен');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'locked' }))).toBe('Ожидает активации');
-    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'unlocked' }))).toBe('Повторно доступен');
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'locked' }))).toBe(
+      'Получен, но не активен',
+    );
+    expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'unlocked' }))).toBe(
+      'Можно получить снова',
+    );
     expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('Истёк');
     expect(getProAttributedVoucherStatusLabel(attributedVoucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('Активен');
     expect(getProAttributedVoucherScopeLabel('listing')).toBe('Для объекта');
-    expect(getProAttributedVoucherAttributionLabel('confirmed')).toBe('PRO отметка подтверждена');
+    expect(getProAttributedVoucherAttributionLabel('confirmed')).toBe('PRO-отметка подтверждена');
     expect(getProAttributedVoucherClaimSourceLabel('pro_shared_link')).toBe('PRO-ссылка');
     expect(getProAttributedVoucherClaimSourceLabel('public_offer_detail')).toBe('Карточка оффера');
   });
@@ -196,12 +201,14 @@ describe('RF PRO workspace helpers', () => {
     const stage50cCopy = [
       proAttributedVouchersLabel,
       proAttributedVouchersBoundaryCopy,
+      proAttributedVouchersFutureCopy,
       proAttributedVouchersEmptyState,
     ].join(' ');
 
-    expect(stage50cCopy).toContain('Read-only видимость');
+    expect(stage50cCopy).toContain('Read-only tracking');
+    expect(stage50cCopy).toContain('не начисления');
     expect(stage50cCopy).not.toMatch(
-      /earned|commission|reward|payout|income|balance|accrued|доход|комисси|вознагражден|начислен|выплат/i,
+      /earned|commission|reward earned|payout|income|balance|settlement|accrued|доход|комисси|выплат|баланс|взаиморасчет/i,
     );
   });
 

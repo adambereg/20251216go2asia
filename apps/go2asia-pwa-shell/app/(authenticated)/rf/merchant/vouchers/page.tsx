@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { CodeRedeem } from '@/components/rf/Merchant/Vouchers/CodeRedeem';
+import { VoucherActivitySummary } from '@/components/rf/Merchant/Vouchers/VoucherActivitySummary';
 
 export const metadata: Metadata = {
   title: 'Погашение ваучеров | Кабинет партнёра | Russian Friendly',
@@ -15,12 +16,7 @@ export default function MerchantVouchersPage() {
       <section className="max-w-2xl">
         <CodeRedeem />
       </section>
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Операции с ваучерами</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Список выданных и погашенных ваучеров будет доступен в следующих версиях.
-        </p>
-      </section>
+      <VoucherActivitySummary />
     </div>
   );
 }

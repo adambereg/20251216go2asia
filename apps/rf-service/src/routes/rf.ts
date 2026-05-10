@@ -29,6 +29,7 @@ import {
   createPartnerItem,
   createProLink,
   endProLink,
+  getMerchantVoucherActivitySummary,
   getMyVoucherSummary,
   getVoucherDiagnostics,
   getPublicOfferById,
@@ -672,6 +673,17 @@ export async function handleRfRoute(
       voucher: result.voucher,
       applied: result.applied,
     });
+  }
+
+  const partnerVoucherActivitySummaryPartnerId = getPathParam(
+    path,
+    /^\/v1\/rf\/business\/partners\/([^/]+)\/voucher-activity\/summary$/
+  );
+  if (request.method === 'GET' && partnerVoucherActivitySummaryPartnerId) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    const result = await getMerchantVoucherActivitySummary(db, principal, partnerVoucherActivitySummaryPartnerId);
+    if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
+    return json(result.data);
   }
 
   if (request.method === 'GET' && path === '/v1/rf/pro/links') {

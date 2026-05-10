@@ -24,8 +24,8 @@ export function getRfVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'status' | '
   if (status === 'redeemed') return 'Использован';
   if (status === 'cancelled') return 'Недоступен';
   if (status === 'expired') return 'Истёк';
-  if (status === 'locked') return 'Ожидает активации';
-  if (status === 'unlocked') return 'Повторно доступен';
+  if (status === 'locked') return 'Получен, но не активен';
+  if (status === 'unlocked') return 'Можно получить снова';
   return 'Активен';
 }
 
@@ -43,7 +43,7 @@ export function getRfVoucherStatusCaption(voucher: Pick<RfVoucherDto, 'status' |
   const status = getRfVoucherEffectiveStatus(voucher);
   if (status === 'redeemed') return 'Этот ваучер уже отмечен как использованный.';
   if (status === 'cancelled' || status === 'expired') return 'Сейчас ваучер нельзя использовать.';
-  if (status === 'locked') return 'Ваучер получен, но пока ожидает активации.';
+  if (status === 'locked') return 'Ваучер получен, но ещё не активирован.';
   if (status === 'unlocked') return 'Ваучер снова доступен по правилам оффера.';
   return 'Готов к использованию у партнёра.';
 }
@@ -51,8 +51,29 @@ export function getRfVoucherStatusCaption(voucher: Pick<RfVoucherDto, 'status' |
 export function getRfVoucherRepeatabilityLabel(
   voucher: Pick<RfVoucherDto, 'repeatPolicySnapshot' | 'status' | 'canonicalStatus'>
 ): string | null {
+  if (voucher.repeatPolicySnapshot !== 'repeat_after_redeem') return 'Разовый ваучер';
+  return getRfVoucherEffectiveStatus(voucher) === 'redeemed'
+    ? 'Повторяемый: можно получить снова'
+    : 'Повторяемый после использования';
+}
+
+export function getRfVoucherIssueSequenceLabel(
+  voucher: Pick<RfVoucherDto, 'issueSequence' | 'repeatPolicySnapshot'>
+): string | null {
   if (voucher.repeatPolicySnapshot !== 'repeat_after_redeem') return null;
-  return getRfVoucherEffectiveStatus(voucher) === 'redeemed' ? 'Можно получить снова' : 'Повторный оффер';
+  if (typeof voucher.issueSequence !== 'number' || voucher.issueSequence < 2) return null;
+  return `Цикл #${voucher.issueSequence}`;
+}
+
+export function getRfVoucherEconomyTypeLabel(
+  voucher: Pick<RfVoucherDto, 'economyStatus' | 'pointsCostSnapshot'>
+): string {
+  const isPointsEnabled =
+    typeof voucher.pointsCostSnapshot === 'number' ||
+    voucher.economyStatus === 'pending' ||
+    voucher.economyStatus === 'debited' ||
+    voucher.economyStatus === 'debit_failed';
+  return isPointsEnabled ? 'Тип: Points-enabled' : 'Тип: Standard voucher';
 }
 
 export function getRfVoucherAttributionLabel(voucher: Pick<RfVoucherDto, 'attribution'>): string | null {
@@ -62,7 +83,7 @@ export function getRfVoucherAttributionLabel(voucher: Pick<RfVoucherDto, 'attrib
 }
 
 export function getRfVoucherActivationLabel(voucher: Pick<RfVoucherDto, 'economyStatus'>): string | null {
-  if (voucher.economyStatus === 'pending') return 'Ожидает активации';
-  if (voucher.economyStatus === 'debit_failed') return 'Временно недоступен';
+  if (voucher.economyStatus === 'pending') return 'Points: активация ожидается';
+  if (voucher.economyStatus === 'debit_failed') return 'Points: временно недоступно';
   return null;
 }
