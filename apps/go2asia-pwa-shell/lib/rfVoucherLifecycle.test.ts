@@ -13,7 +13,16 @@ import {
   isRfVoucherClaimBarrier,
 } from './rfVoucherLifecycle';
 
-type VoucherLike = Pick<RfVoucherDto, 'status' | 'canonicalStatus' | 'repeatPolicySnapshot' | 'attribution' | 'economyStatus'>;
+type VoucherLike = Pick<
+  RfVoucherDto,
+  | 'status'
+  | 'canonicalStatus'
+  | 'repeatPolicySnapshot'
+  | 'issueSequence'
+  | 'pointsCostSnapshot'
+  | 'attribution'
+  | 'economyStatus'
+>;
 
 function voucher(overrides: Partial<VoucherLike> = {}): VoucherLike {
   return {
@@ -61,7 +70,7 @@ describe('rf voucher lifecycle helper', () => {
     );
     expect(getRfVoucherIssueSequenceLabel(voucher({ repeatPolicySnapshot: 'repeat_after_redeem', issueSequence: 1 }))).toBeNull();
     expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending' }))).toBe('Тип: Points-enabled');
-    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'none', pointsCostSnapshot: undefined }))).toBe(
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'not_required', pointsCostSnapshot: undefined }))).toBe(
       'Тип: Standard voucher',
     );
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Points: активация ожидается');
