@@ -83,6 +83,20 @@ Points → Pressure → VIP → Spend + Network → Growth
 
 ## 6. Структура документов
 
+### 6.0 Points Policy (runtime-aligned policy)
+
+📄 `points_policy_v1.md`
+
+Описывает:
+- VIP как главный unlock для траты Points
+- классы Points и модель доступности
+- runtime-aligned границы Points / RF / Referral / Connect
+- что является текущим runtime, target policy и future layer
+
+👉 Это **канонический policy-документ для Rewards / Points v1**
+
+---
+
 ### 6.1 Tokenomics (основной документ)
 
 📄 `tokenomics/go2asia_tokenomics_v1.md`
