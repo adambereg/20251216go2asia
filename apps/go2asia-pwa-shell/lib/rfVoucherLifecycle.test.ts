@@ -58,6 +58,13 @@ describe('rf voucher lifecycle helper', () => {
     expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'expired' }))).toContain('amber');
   });
 
+  it('supports connect projection label variant without changing lifecycle meaning', () => {
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }), 'connect_projection')).toBe('Ожидает активации');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }), 'connect_projection')).toBe('Недоступен');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'redeemed' }), 'connect_projection')).toBe('Использован');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'available' }), 'connect_projection')).toBe('Активен');
+  });
+
   it('keeps user-facing visibility labels non-technical', () => {
     expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'available' }))).toBe('Готов к использованию у партнёра.');
     expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'locked' }))).toBe('Ваучер получен, но ещё не активирован.');

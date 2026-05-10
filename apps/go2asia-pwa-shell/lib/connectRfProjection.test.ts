@@ -99,6 +99,7 @@ describe('connect RF projection helpers', () => {
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Можно получить снова');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }))).toBe('Использован');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'cancelled', status: 'cancelled' }))).toBe('Недоступен');
+    expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }))).toBe('Недоступен');
   });
 
   it('uses summary precedence for has-vouchers checks on dashboard', () => {

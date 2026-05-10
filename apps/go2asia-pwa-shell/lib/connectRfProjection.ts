@@ -1,5 +1,8 @@
 import type { RfVoucherDto, RfVoucherSummary } from '@go2asia/sdk/rf';
-import { getRfVoucherEffectiveStatus as getRfVoucherLifecycleStatus } from './rfVoucherLifecycle';
+import {
+  getRfVoucherEffectiveStatus as getRfVoucherLifecycleStatus,
+  getRfVoucherStatusLabel,
+} from './rfVoucherLifecycle';
 
 export type RfVoucherEffectiveStatus = ReturnType<typeof getRfVoucherLifecycleStatus>;
 
@@ -76,12 +79,9 @@ export function getRfVoucherListingSourceLabel(voucher: RfVoucherDto): string | 
 }
 
 export function getProjectionVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): string {
-  const status = getRfVoucherLifecycleStatus(voucher);
-  if (status === 'redeemed') return 'Использован';
-  if (status === 'cancelled' || status === 'expired') return 'Недоступен';
-  if (status === 'locked') return 'Ожидает активации';
-  if (status === 'unlocked') return 'Можно получить снова';
-  return 'Активен';
+  // Connect keeps a softer UI tone but must stay semantically aligned
+  // with RF lifecycle mapping and fallback precedence.
+  return getRfVoucherStatusLabel(voucher, 'connect_projection');
 }
 
 export function hasRfVouchersForConnectDashboard(
@@ -254,6 +254,8 @@ export function buildRfVoucherTimelineItems(vouchers: RfVoucherDto[], limit = 5)
 }
 
 export function buildConnectRfProjection(vouchers: RfVoucherDto[], summary?: RfVoucherSummary | null): ConnectRfProjection {
+  // Grouping rules below are projection-only UI slices.
+  // They must not be treated as lifecycle authority or eligibility logic.
   const active = vouchers.filter((voucher) => ACTIVE_CANONICAL_STATUSES.has(getRfVoucherEffectiveStatus(voucher))).sort(sortByDateDesc);
   const used = vouchers.filter((voucher) => getRfVoucherEffectiveStatus(voucher) === 'redeemed').sort(sortByDateDesc);
   const unavailable = vouchers
