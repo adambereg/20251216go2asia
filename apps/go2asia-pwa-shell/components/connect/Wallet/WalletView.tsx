@@ -11,6 +11,7 @@ import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transac
 import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
+import { CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
 
 type WalletSummary = {
   availablePoints: number;
@@ -118,7 +119,7 @@ function PointsSummary({
             <p className="text-4xl font-bold text-slate-900 mt-1">{formatPoints(points)} Points</p>
             <p className="text-sm text-slate-600 mt-3">
               {points > 0
-                ? 'Points начисляются за действия в Go2Asia: квесты, события, приглашения и другие подтверждённые активности.'
+                ? CONNECT_POINTS_ACTIVITY_DESCRIPTION
                 : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
             </p>
             {updatedAt && <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>}
@@ -142,27 +143,27 @@ function PointsSummary({
         <div className="mt-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
             <BucketStat
-              label="Available Points"
+              label={CONNECT_POINTS_BUCKET_LABELS.available}
               value={walletSummary.availablePoints}
-              description="Доступны сейчас для будущих трат Points."
+              description="Доступны сейчас."
               icon={<Coins className="w-5 h-5" />}
             />
             <BucketStat
-              label="Locked Points"
+              label={CONNECT_POINTS_BUCKET_LABELS.locked}
               value={walletSummary.lockedPoints}
-              description="Ожидают активации условий экономики."
+              description="Удерживаются до выполнения условий программы."
               icon={<LockKeyhole className="w-5 h-5" />}
             />
             <BucketStat
-              label="Network Points"
+              label={CONNECT_POINTS_BUCKET_LABELS.network}
               value={walletSummary.networkPoints}
-              description="Начисления от сети и реферальной экономики."
+              description="Points, связанные с активностью приглашённых."
               icon={<TrendingUp className="w-5 h-5" />}
             />
             <BucketStat
-              label="Estimated Unlockable"
+              label={CONNECT_POINTS_BUCKET_LABELS.unlockableEstimate}
               value={walletSummary.estimatedUnlockablePoints}
-              description="Оценка ценности, которая будет доступна после активации."
+              description="Оценка Points, которые станут доступны после выполнения условий."
               icon={<Sparkles className="w-5 h-5" />}
             />
           </div>
@@ -172,12 +173,12 @@ function PointsSummary({
               <div>
                 <p className="text-sm font-semibold text-amber-950">У вас есть заблокированные Points</p>
                 <p className="text-sm text-amber-800 mt-1">
-                  Активируйте VIP, чтобы в будущем разблокировать накопленную ценность и получить доступ к тратам Points.
-                  Механика разблокировки появится в следующем этапе.
+                  Часть Points удерживается до выполнения условий программы. Детальные правила будут добавлены в
+                  следующих этапах.
                 </p>
               </div>
               <Button variant="secondary" disabled>
-                Активировать VIP
+                Условия программы
               </Button>
             </div>
           )}
@@ -307,7 +308,7 @@ export function WalletView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Кошелёк</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Баланс и история Points</h1>
           <p className="text-slate-600 mt-1">История Points и начислений за вашу активность.</p>
         </div>
 
@@ -317,16 +318,6 @@ export function WalletView() {
           walletSummaryLoading={walletSummaryLoading}
           walletSummaryError={walletSummaryError}
         />
-
-        <Card className="p-6 mb-6">
-          <div className="flex items-center gap-2 mb-2 text-slate-900">
-            <Sparkles className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-semibold">Points — след вашей активности</h2>
-          </div>
-          <p className="text-sm text-slate-600">
-            Points начисляются за действия в Go2Asia: квесты, события, приглашения и другие подтверждённые активности.
-          </p>
-        </Card>
 
         <div className="mb-6">
           <h2 className="text-xl font-bold text-slate-900 mb-4">История начислений</h2>
@@ -340,7 +331,8 @@ export function WalletView() {
         <Card className="p-5 border-slate-200 bg-slate-50">
           <p className="text-sm font-semibold text-slate-900">Расширенные возможности появятся позже</p>
           <p className="text-sm text-slate-600 mt-1">
-            Токеномика и on-chain функции не входят в текущий MVP Connect. Сейчас здесь отображаются только Points и история начислений.
+            Дополнительные инструменты учёта не входят в текущий MVP Connect. Сейчас здесь отображаются только Points
+            и история начислений.
           </p>
         </Card>
       </div>

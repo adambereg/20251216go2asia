@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, ArrowRight, Clock3, History, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
@@ -106,6 +107,8 @@ export function RfVoucherProjectionPanel({
   isError,
   onRetry,
 }: RfVoucherProjectionPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (isLoading) {
     return (
       <Card className="p-5">
@@ -152,24 +155,15 @@ export function RfVoucherProjectionPanel({
 
   return (
     <Card className="p-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-sky-100 p-2">
-            <Ticket className="h-5 w-5 text-sky-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
-            <p className="text-sm text-slate-600">
-              Активные, использованные и последние события RF-активности.
-            </p>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-sky-100 p-2">
+          <Ticket className="h-5 w-5 text-sky-600" />
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link href="/rf/my-vouchers">
-            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-              Все RF-ваучеры
-            </Button>
-          </Link>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
+          <p className="text-sm text-slate-600">
+            Активные, использованные и последние события RF-активности.
+          </p>
         </div>
       </div>
 
@@ -191,8 +185,30 @@ export function RfVoucherProjectionPanel({
             <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
+      ) : !isExpanded ? (
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">Краткое превью RF-деталей</p>
+          <p className="mt-1">
+            Активные: {projection.groups.active.length.toLocaleString('ru-RU')}. Использованные:{' '}
+            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки остаются в RF.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <Button variant="secondary" size="sm" onClick={() => setIsExpanded(true)}>
+              Показать детали здесь
+            </Button>
+            <Link href="/rf/my-vouchers" className="inline-flex items-center text-sm font-medium text-sky-700 hover:underline">
+              Открыть все RF-ваучеры
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       ) : (
         <>
+          <div className="mt-4 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setIsExpanded(false)}>
+              Свернуть детали
+            </Button>
+          </div>
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <VoucherGroup
               title="Активные RF-ваучеры"

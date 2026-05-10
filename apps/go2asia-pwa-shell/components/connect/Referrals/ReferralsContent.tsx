@@ -5,6 +5,7 @@ import { Badge, Button, Card } from '@go2asia/ui';
 import { AlertCircle, CheckCircle, Clock, Copy, Gift, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { ReferralsData, Referral } from '../types';
+import { CONNECT_POINTS_EARNED_LABEL } from '../copy';
 
 interface ReferralsContentProps {
   data: ReferralsData;
@@ -54,11 +55,11 @@ function getStatusBadgeClass(status: Referral['status']) {
 function getStatusHelperText(referral: Referral) {
   if (referral.status_helper_text) return referral.status_helper_text;
   if (referral.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
-  if (referral.status === 'rewarded' || referral.status === 'completed_mission') return 'Реферальные Points начислены и могут быть заблокированы до выполнения условий.';
+  if (referral.status === 'rewarded' || referral.status === 'completed_mission') return 'Points по приглашению начислены и могут удерживаться до выполнения условий.';
   if (referral.status === 'activated' || referral.status === 'active') {
     return 'Пользователь стал активным, начисление может ещё обрабатываться.';
   }
-  return 'Пользователь приглашён. Реферальные Points ожидают условий разблокировки.';
+  return 'Пользователь приглашён. Points по приглашению ожидают выполнения условий.';
 }
 
 function formatDate(value: string) {
@@ -100,12 +101,12 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Рефералы</h1>
-          <p className="text-slate-600 mt-1">Приглашайте друзей и отслеживайте начисления Points.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Приглашения</h1>
+          <p className="text-slate-600 mt-1">Приглашайте друзей и отслеживайте статусы приглашённых.</p>
         </div>
-        <Button variant="primary" onClick={onInvite} disabled={!data.referral_link}>
+        <Button variant="primary" onClick={onInvite} disabled={!data.referral_link} className="w-full sm:w-auto">
           <Users size={16} className="mr-2" />
           Пригласить
         </Button>
@@ -148,7 +149,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
         <Card className="p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-slate-600">Заработано Points</p>
+              <p className="text-sm text-slate-600">{CONNECT_POINTS_EARNED_LABEL}</p>
               <p className="text-2xl font-bold text-slate-900 mt-1">{formatCompact(data.stats.earned_points)}</p>
             </div>
             <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
@@ -161,7 +162,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
       <Card className="p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Copy className="w-5 h-5 text-sky-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Ваша реферальная ссылка</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Ваша ссылка приглашения</h3>
         </div>
         {data.referral_code ? (
           <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_auto] gap-3 lg:items-end">
@@ -181,7 +182,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                 className="w-full px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-700"
               />
             </div>
-            <Button variant="primary" onClick={handleCopyLink}>
+            <Button variant="primary" onClick={handleCopyLink} className="w-full lg:w-auto">
               <Copy size={16} className="mr-2" />
               Скопировать ссылку
             </Button>
@@ -195,7 +196,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           </div>
         )}
         <p className="text-sm text-slate-600 mt-4">
-          Поделитесь ссылкой с другом. Реферальные Points могут быть заблокированы до выполнения условий активации.
+          Поделитесь ссылкой с другом. Points по программе приглашений могут удерживаться до выполнения условий.
         </p>
       </Card>
 
@@ -203,7 +204,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Ваши приглашения</h3>
-            <p className="text-sm text-slate-600">Статусы приглашённых пользователей и начисления Points.</p>
+            <p className="text-sm text-slate-600">Статусы приглашённых пользователей и связанные начисления Points.</p>
           </div>
           <Button variant="secondary" onClick={onInvite} disabled={!data.referral_link}>
             Пригласить ещё
@@ -238,12 +239,12 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                     </div>
                   </div>
                   <div className="text-left md:text-right">
-                    <p className="text-xs text-slate-500">Начисления</p>
+                    <p className="text-xs text-slate-500">За активность</p>
                     <p className="text-sm font-semibold text-emerald-700">
                       +{formatCompact(referral.earned_rewards.points)} Points
                     </p>
                     {referral.earned_rewards.points > 0 && (
-                      <p className="text-xs text-amber-700 mt-1">Заблокировано до активации условий</p>
+                      <p className="text-xs text-amber-700 mt-1">Может удерживаться до выполнения условий</p>
                     )}
                   </div>
                 </div>

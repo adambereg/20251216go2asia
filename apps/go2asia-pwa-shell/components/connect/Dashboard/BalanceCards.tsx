@@ -5,6 +5,7 @@ import { Coins, LockKeyhole } from 'lucide-react';
 import { Card, Button } from '@go2asia/ui';
 import type { ConnectDashboardBalance } from '@go2asia/sdk/connectDashboard';
 import { customInstance } from '@go2asia/sdk/mutator';
+import { CONNECT_POINTS_BUCKET_LABELS } from '../copy';
 
 interface BalanceCardsProps {
   balance: ConnectDashboardBalance;
@@ -48,7 +49,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
   const hasPoints = totalPoints > 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 mb-8">
+    <div className="grid grid-cols-1 gap-4">
       <Card className="p-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -60,7 +61,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               <p className="text-3xl font-bold text-slate-900">{formatPoints(totalPoints)} Points</p>
               <p className="text-sm text-slate-500 mt-2">
                 {hasPoints
-                  ? 'Total Points отражают доступные и заблокированные начисления в Connect Asia.'
+                  ? 'Итого Points включает доступные начисления и начисления с условиями.'
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
               {updatedAt && (
@@ -83,7 +84,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-slate-500">Available Points</p>
+                <p className="text-xs text-slate-500">{CONNECT_POINTS_BUCKET_LABELS.available}</p>
                 <p className="text-xl font-bold text-slate-900">{formatPoints(availablePoints)}</p>
               </div>
               <Coins className="w-4 h-4 text-emerald-600" />
@@ -93,12 +94,12 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-amber-800">Locked Points</p>
+                <p className="text-xs text-amber-800">{CONNECT_POINTS_BUCKET_LABELS.locked}</p>
                 <p className="text-xl font-bold text-amber-950">{formatPoints(lockedPoints)}</p>
               </div>
               <LockKeyhole className="w-4 h-4 text-amber-700" />
             </div>
-            <p className="text-xs text-amber-800 mt-2">Ожидают активации условий.</p>
+            <p className="text-xs text-amber-800 mt-2">Удерживаются до выполнения условий программы.</p>
           </div>
         </div>
       </Card>
