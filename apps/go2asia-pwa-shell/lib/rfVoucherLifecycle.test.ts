@@ -35,6 +35,9 @@ function voucher(overrides: Partial<VoucherLike> = {}): VoucherLike {
 describe('rf voucher lifecycle helper', () => {
   it('uses canonical status first with legacy fallback', () => {
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('available');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'redeemed' }))).toBe('redeemed');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('expired');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'cancelled' }))).toBe('cancelled');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'redeemed', canonicalStatus: undefined }))).toBe('redeemed');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'cancelled', canonicalStatus: undefined }))).toBe('cancelled');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: undefined }))).toBe('available');

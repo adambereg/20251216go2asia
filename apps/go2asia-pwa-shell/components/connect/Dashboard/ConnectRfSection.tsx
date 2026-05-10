@@ -8,8 +8,7 @@ import { buildConnectRfProjection, hasRfVouchersForConnectDashboard } from '@/li
 import { RfEconomicMeaningCard } from './RfEconomicMeaningCard';
 import { RfVoucherProjectionPanel } from './RfVoucherProjectionPanel';
 import { VoucherSummaryCard } from './VoucherSummaryCard';
-
-export const CONNECT_RF_DASHBOARD_VOUCHERS_QUERY_KEY = ['rf', 'me', 'vouchers', 'connect'] as const;
+import { CONNECT_RF_DASHBOARD_VOUCHERS_QUERY_KEY } from './connectRfQueryContract';
 
 export function ConnectRfSection() {
   const {
