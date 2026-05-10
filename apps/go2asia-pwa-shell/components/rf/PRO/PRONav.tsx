@@ -12,6 +12,7 @@ import {
   ListTodo,
   MapPin,
   Store,
+  Ticket,
   UserPlus,
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ const workspaceSections = [
   { href: '/rf/pro#pw-linked-partners', label: 'Связанные партнёры', icon: Handshake },
   { href: '/rf/pro#pw-partners', label: 'Support scope', icon: Store },
   { href: '/rf/pro#pw-offers', label: 'Офферы партнёров', icon: ListOrdered },
+  { href: '/rf/pro#pw-attributed-vouchers', label: 'PRO-отметка ваучеров', icon: Ticket },
   { href: '/rf/pro#pw-focus', label: 'Статус и фокус', icon: ClipboardCheck },
   { href: '/rf/pro#pw-public', label: 'Публичный RF view', icon: MapPin },
   { href: '/rf/pro#pw-next', label: 'Дальше', icon: ListTodo },

@@ -26,6 +26,7 @@ import {
   getPartnerProHealth,
   proAttributedVouchersBoundaryCopy,
   proAttributedVouchersEmptyState,
+  proAttributedVouchersFutureCopy,
   proAttributedVouchersLabel,
   resolveProScope,
   sortProAttributedVouchers,
@@ -538,6 +539,7 @@ export function PROWorkspace() {
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Stage 5.0C read-only</p>
             <h2 className="mt-1 text-lg font-semibold text-slate-900">{proAttributedVouchersLabel}</h2>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">{proAttributedVouchersBoundaryCopy}</p>
+            <p className="mt-1 max-w-3xl text-xs text-slate-500">{proAttributedVouchersFutureCopy}</p>
           </div>
           <button
             type="button"
@@ -599,6 +601,10 @@ export function PROWorkspace() {
                     <div>
                       <dt className="font-medium text-slate-500">Получен</dt>
                       <dd className="text-slate-800">{formatProLinkDate(voucher.claimedAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-slate-500">Использован</dt>
+                      <dd className="text-slate-800">{voucher.redeemedAt ? formatProLinkDate(voucher.redeemedAt) : 'ещё не использован'}</dd>
                     </div>
                   </dl>
                 </div>
