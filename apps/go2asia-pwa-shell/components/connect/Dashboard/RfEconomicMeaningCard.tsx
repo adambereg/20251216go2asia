@@ -1,34 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, ArrowRight, Compass } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
-import { fetchMyVouchers, useRfVoucherSummary, type RfVoucherDto } from '@go2asia/sdk/rf';
-import { buildConnectRfProjection } from '@/lib/connectRfProjection';
+import type { ConnectRfProjection } from '@/lib/connectRfProjection';
 
-export function RfEconomicMeaningCard() {
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    isError: summaryError,
-  } = useRfVoucherSummary();
-  const {
-    data: vouchers = [],
-    isLoading: vouchersLoading,
-    isError: vouchersError,
-  } = useQuery<RfVoucherDto[]>({
-    queryKey: ['rf', 'me', 'vouchers', 'connect-projection'],
-    queryFn: async () => {
-      const response = await fetchMyVouchers();
-      if (!response) throw new Error('RF vouchers unavailable');
-      return response.items;
-    },
-    staleTime: 30_000,
-    retry: 1,
-  });
+interface RfEconomicMeaningCardProps {
+  projection: ConnectRfProjection;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
 
-  if (summaryLoading || vouchersLoading) {
+export function RfEconomicMeaningCard({ projection, isLoading, isError, onRetry }: RfEconomicMeaningCardProps) {
+  if (isLoading) {
     return (
       <Card className="p-5">
         <div className="flex items-start gap-3">
@@ -45,23 +30,24 @@ export function RfEconomicMeaningCard() {
     );
   }
 
-  if (summaryError || vouchersError) {
+  if (isError) {
     return (
       <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
           <div>
-            <h2 className="text-lg font-semibold text-amber-900">RF activity summary временно недоступен</h2>
+            <h2 className="text-lg font-semibold text-amber-900">Сводка RF-активности временно недоступна</h2>
             <p className="mt-1 text-sm text-amber-900/80">
               Не удалось собрать RF-проекцию для Connect. Сводка и детали могут загрузиться отдельно.
             </p>
+            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
+              Повторить загрузку
+            </Button>
           </div>
         </div>
       </Card>
     );
   }
-
-  const projection = buildConnectRfProjection(vouchers, summary);
 
   return (
     <Card className="p-5 border border-emerald-100 bg-emerald-50/50">
@@ -102,7 +88,7 @@ export function RfEconomicMeaningCard() {
         </ul>
       </div>
       <div className="mt-4 rounded-xl border border-emerald-100 bg-white/70 p-3 text-xs text-slate-600">
-        Milestones: {projection.milestones.filter((item) => item.reached).length} из {projection.milestones.length}
+        Этапы: {projection.milestones.filter((item) => item.reached).length} из {projection.milestones.length}
       </div>
     </Card>
   );

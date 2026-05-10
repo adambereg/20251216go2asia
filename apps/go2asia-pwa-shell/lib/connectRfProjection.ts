@@ -84,6 +84,16 @@ export function getProjectionVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'sta
   return 'Активен';
 }
 
+export function hasRfVouchersForConnectDashboard(
+  summary: Pick<RfVoucherSummary, 'totalVouchers'> | null | undefined,
+  vouchers: RfVoucherDto[],
+): boolean {
+  // Precedence rule for Connect dashboard:
+  // RF summary is authoritative for counters and "has vouchers" checks.
+  // The vouchers list is a fallback only when summary is unavailable.
+  return (summary?.totalVouchers ?? vouchers.length) > 0;
+}
+
 function sortByDateDesc(left: RfVoucherDto, right: RfVoucherDto): number {
   const leftDate = new Date(left.statusChangedAt ?? left.redeemedAt ?? left.claimedAt).getTime();
   const rightDate = new Date(right.statusChangedAt ?? right.redeemedAt ?? right.claimedAt).getTime();
@@ -253,6 +263,9 @@ export function buildConnectRfProjection(vouchers: RfVoucherDto[], summary?: RfV
   const repeatableAgain = vouchers.filter(isRepeatableOpportunity).sort(sortByDateDesc);
   const proAttributedCount = vouchers.filter(isProAttributedVoucher).length;
 
+  // Precedence rule:
+  // - summary endpoint is authoritative for core counter fields when available;
+  // - list-derived counters are fallback for degraded states only.
   const projectionSummary: ConnectRfProjectionSummary = {
     total: summary?.totalVouchers ?? vouchers.length,
     active: summary?.activeVouchers ?? active.length,

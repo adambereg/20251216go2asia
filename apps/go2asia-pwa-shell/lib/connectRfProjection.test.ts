@@ -5,6 +5,7 @@ import {
   buildRfVoucherTimelineItems,
   formatRfVoucherLabel,
   formatRfVoucherPartnerName,
+  hasRfVouchersForConnectDashboard,
   getRfVoucherEffectiveStatus,
   getProjectionVoucherStatusLabel,
   projectionCopyGuardText,
@@ -98,6 +99,12 @@ describe('connect RF projection helpers', () => {
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Можно получить снова');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }))).toBe('Использован');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'cancelled', status: 'cancelled' }))).toBe('Недоступен');
+  });
+
+  it('uses summary precedence for has-vouchers checks on dashboard', () => {
+    expect(hasRfVouchersForConnectDashboard(summary({ totalVouchers: 2 }), [])).toBe(true);
+    expect(hasRfVouchersForConnectDashboard(summary({ totalVouchers: 0 }), [voucher({ id: 'v_1' })])).toBe(false);
+    expect(hasRfVouchersForConnectDashboard(undefined, [voucher({ id: 'v_2' })])).toBe(true);
   });
 
   it('keeps milestone logic in narrative/progress layer only', () => {
