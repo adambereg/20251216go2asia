@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import {
+  getRfVoucherEconomyTypeLabel,
   getRfVoucherActivationLabel,
   getRfVoucherAttributionLabel,
   getRfVoucherEffectiveStatus,
+  getRfVoucherIssueSequenceLabel,
   getRfVoucherRepeatabilityLabel,
   getRfVoucherStatusBadgeClass,
   getRfVoucherStatusCaption,
@@ -39,8 +41,8 @@ describe('rf voucher lifecycle helper', () => {
 
   it('formats canonical-first labels and badges', () => {
     expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'available' }))).toBe('Активен');
-    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }))).toBe('Ожидает активации');
-    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Повторно доступен');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }))).toBe('Получен, но не активен');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Можно получить снова');
     expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }))).toBe('Истёк');
     expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'locked' }))).toContain('amber');
     expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'unlocked' }))).toContain('blue');
@@ -49,12 +51,20 @@ describe('rf voucher lifecycle helper', () => {
 
   it('keeps user-facing visibility labels non-technical', () => {
     expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'available' }))).toBe('Готов к использованию у партнёра.');
-    expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'locked' }))).toBe('Ваучер получен, но пока ожидает активации.');
+    expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'locked' }))).toBe('Ваучер получен, но ещё не активирован.');
     expect(getRfVoucherRepeatabilityLabel(voucher({ canonicalStatus: 'redeemed', repeatPolicySnapshot: 'repeat_after_redeem' }))).toBe(
-      'Можно получить снова',
+      'Повторяемый: можно получить снова',
     );
-    expect(getRfVoucherRepeatabilityLabel(voucher({ repeatPolicySnapshot: 'once_per_scope' }))).toBeNull();
-    expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Ожидает активации');
+    expect(getRfVoucherRepeatabilityLabel(voucher({ repeatPolicySnapshot: 'once_per_scope' }))).toBe('Разовый ваучер');
+    expect(getRfVoucherIssueSequenceLabel(voucher({ repeatPolicySnapshot: 'repeat_after_redeem', issueSequence: 3 }))).toBe(
+      'Цикл #3',
+    );
+    expect(getRfVoucherIssueSequenceLabel(voucher({ repeatPolicySnapshot: 'repeat_after_redeem', issueSequence: 1 }))).toBeNull();
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending' }))).toBe('Тип: Points-enabled');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'none', pointsCostSnapshot: undefined }))).toBe(
+      'Тип: Standard voucher',
+    );
+    expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Points: активация ожидается');
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'debited' }))).toBeNull();
   });
 

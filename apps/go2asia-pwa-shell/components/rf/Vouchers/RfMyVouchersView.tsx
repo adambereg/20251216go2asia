@@ -13,6 +13,8 @@ import { getItemLabelForOffer } from '@/lib/rfMerchantItems';
 import {
   getRfVoucherActivationLabel,
   getRfVoucherAttributionLabel,
+  getRfVoucherEconomyTypeLabel,
+  getRfVoucherIssueSequenceLabel,
   getRfVoucherRepeatabilityLabel,
   getRfVoucherStatusBadgeClass,
   getRfVoucherStatusCaption,
@@ -52,8 +54,8 @@ function getVoucherValidityLabel(voucher: RfVoucherDto) {
   return voucher.validityLabel || 'Срок действия уточняется у партнёра';
 }
 
-function getVoucherShortValidityLabel() {
-  return 'Срок: уточняется';
+function getVoucherShortValidityLabel(voucher: RfVoucherDto) {
+  return voucher.validityLabel ? `Срок: ${voucher.validityLabel}` : 'Срок: уточняется';
 }
 
 function getVoucherShortUsageLabel(voucher: RfVoucherDto) {
@@ -138,8 +140,19 @@ export function RfMyVouchersView() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Полученные ваучеры (сервер)</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Это ваучеры, полученные в RF-каталоге. Здесь показаны только статус, условия и подсказки для использования.
+          Это read-only слой RF: здесь показаны статус, тип ваучера, повторяемость, источник получения и подсказки по использованию.
         </p>
+        <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-900">
+          <p className="font-semibold">{rfMyVouchersPageContent.meaningTitle}</p>
+          <p className="mt-1">{rfMyVouchersPageContent.meaningBody}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {rfMyVouchersPageContent.futureMarkers.map((marker) => (
+              <span key={marker} className="rounded-full border border-blue-200 bg-white/80 px-2 py-1">
+                {marker}
+              </span>
+            ))}
+          </div>
+        </div>
 
         {!isLoaded ? (
           <p className="mt-4 text-sm text-slate-600">Проверяем авторизацию...</p>
@@ -170,8 +183,10 @@ export function RfMyVouchersView() {
                     {group.items.map((voucher) => {
                       const itemLabel = getVoucherItemLabel(voucher);
                       const visibilityLabels = [
+                        getRfVoucherEconomyTypeLabel(voucher),
                         getRfVoucherAttributionLabel(voucher),
                         getRfVoucherRepeatabilityLabel(voucher),
+                        getRfVoucherIssueSequenceLabel(voucher),
                         getRfVoucherActivationLabel(voucher),
                       ].filter((label): label is string => Boolean(label));
                       return (
@@ -222,7 +237,7 @@ export function RfMyVouchersView() {
                               ) : null}
                               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
                                 <span className="rounded-full bg-white/80 px-2 py-1">
-                                  {getVoucherShortValidityLabel()}
+                                  {getVoucherShortValidityLabel(voucher)}
                                 </span>
                                 <span className="rounded-full bg-white/80 px-2 py-1">
                                   {getVoucherShortUsageLabel(voucher)}
