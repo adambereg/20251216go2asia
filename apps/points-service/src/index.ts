@@ -14,6 +14,7 @@ import { createLogger, generateRequestId, getRequestId, logRequestCompleted } fr
 
 import { decideExternalIdIdempotency } from './idempotency';
 import {
+  createSpendabilityShadowDedupeKey,
   evaluateSpendabilityShadow,
   getSpendabilityShadowDiagnosticsSnapshot,
   recordSpendabilityShadowObservation,
@@ -1640,6 +1641,12 @@ export default {
         }
 
         if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE)) {
+          const shadowDedupeKey = createSpendabilityShadowDedupeKey({
+            userId,
+            externalId,
+            action,
+            amount: spendAmount,
+          });
           try {
             const [{ balance: legacySpendable }, bucketRows] = await Promise.all([
               getUserBalance(db, userId),
@@ -1656,7 +1663,15 @@ export default {
               correlationId: correlationId ?? null,
             });
             if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
-              recordSpendabilityShadowObservation(toSpendabilityShadowObservation({ decision, action, amount: spendAmount }));
+              recordSpendabilityShadowObservation(
+                toSpendabilityShadowObservation({
+                  decision,
+                  action,
+                  amount: spendAmount,
+                  environment: getEnvName(env),
+                }),
+                { dedupeKey: shadowDedupeKey }
+              );
             }
           } catch {
             if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
@@ -1670,7 +1685,15 @@ export default {
                 correlationId: correlationId ?? null,
                 error: true,
               });
-              recordSpendabilityShadowObservation(toSpendabilityShadowObservation({ decision, action, amount: spendAmount }));
+              recordSpendabilityShadowObservation(
+                toSpendabilityShadowObservation({
+                  decision,
+                  action,
+                  amount: spendAmount,
+                  environment: getEnvName(env),
+                }),
+                { dedupeKey: shadowDedupeKey }
+              );
             }
           }
         }

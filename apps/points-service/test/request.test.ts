@@ -925,6 +925,25 @@ describe('points-service request hardening', () => {
     expect(diagnostics.total).toBe(1);
     expect(diagnostics.byDriftClass.legacy_allowed_target_denied).toBe(1);
     expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(diagnostics)).not.toThrow();
+
+    const diagnosticsResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/spendability-shadow/diagnostics', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      env
+    );
+    const diagnosticsBody = await readJson<typeof diagnostics>(diagnosticsResponse);
+
+    expect(diagnosticsResponse.status).toBe(200);
+    expect(diagnosticsBody).toMatchObject({
+      diagnosticsVersion: 'points_spendability_shadow_diagnostics_v1',
+      total: 1,
+      countedCompares: 1,
+      duplicateSuppressed: 0,
+    });
+    expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(diagnosticsBody)).not.toThrow();
   });
 
   it('records aligned allowed shadow diagnostics without changing spend response', async () => {
@@ -1038,6 +1057,74 @@ describe('points-service request hardening', () => {
       balanceAfter: 250,
     });
     expect(getSpendabilityShadowDiagnosticsSnapshot().total).toBe(0);
+  });
+
+  it('does not count idempotent spend replay as a new shadow compare', async () => {
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'tx_spend_existing',
+            user_id: 'user_1',
+            amount: -100,
+            reason: 'rf_voucher_claim_spend',
+            source_service: 'rf-service',
+            source_event_id: 'rf:voucher:voucher_1',
+            external_id: 'rf:voucher-claim-spend:voucher_1',
+            metadata: { voucherId: 'voucher_1' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ balance: 250, updated_at: new Date('2026-05-01T00:00:00.000Z') }],
+      });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_1',
+          sourceEventId: 'rf:voucher:voucher_1',
+          metadata: { voucherId: 'voucher_1' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      transactionId: string;
+      applied: boolean;
+      idempotentReplay: boolean;
+      balanceAfter: number;
+    }>(response);
+    const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      transactionId: 'tx_spend_existing',
+      applied: false,
+      idempotentReplay: true,
+      balanceAfter: 250,
+    });
+    expect(diagnostics.total).toBe(0);
+    expect(diagnostics.duplicateSuppressed).toBe(0);
   });
 
   it('returns deterministic mismatch conflict for spend replay payload mismatch', async () => {
