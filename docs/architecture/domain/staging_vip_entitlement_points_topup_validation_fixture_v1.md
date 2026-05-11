@@ -2,7 +2,7 @@
 
 ## Status
 
-Status: `validated_with_cloudflare_log_evidence_pending_manual_confirmation`
+Status: `validated_success`
 
 Date: 2026-05-11
 
@@ -169,35 +169,48 @@ Balance evidence after claim:
 
 ## Spendability Durable Export Evidence
 
-Cloudflare dashboard log validation is still pending manual confirmation.
+Cloudflare dashboard evidence was manually confirmed in staging for the same paid claim flow.
 
-Automated Cloudflare Observability access was not available in Cursor for this run:
+Observed log context:
 
-- Cloudflare Observability MCP returned `Unauthorized`;
-- browser automation subagent was unavailable in the current region;
-- no Cloudflare secrets or dashboard tokens were printed or requested.
+- worker: `go2asia-points-service-staging`;
+- endpoint: `POST /internal/points/spend`;
+- export message: `Points spendability durable export`;
+- export request id: `1778518630103-isgs0rl`;
+- worker request id: `9fa2b89da6f9c8cb`;
+- event id: `01KRBZH8DMAW2H7NT9E319RZHM`;
+- service version in log: `53b6dd2bd26b6c35724a9cfc9183e4b28b1d2ac2`.
 
-Expected operator confirmation:
+Validated durable export payload:
 
-1. Open Cloudflare Dashboard -> Workers & Pages -> `go2asia-rf-service-staging` -> Observability.
-2. Filter around `2026-05-11T16:57:11+07:00` or request id `1778518628370-0xlhnko`.
-3. Confirm RF claim request `POST /v1/rf/offers/rf_offer_staging_paid_100_points/claim` completed successfully.
-4. Open `go2asia-points-service-staging` -> Observability.
-5. Filter around the same timestamp and voucher/spend external id:
-   `rf:voucher-claim-spend:rf_voucher_8c2d945e99c8f53e0c341d82`.
-6. Confirm `POST /internal/points/spend`.
-7. Confirm `Points spendability durable export`.
-8. In the export payload, confirm these safe fields:
-   `schemaVersion`, `diagnosticsVersion`, `eventType`, `driftClass`, `reasonCode`, `action=rf_voucher_claim_spend`.
-9. Confirm no forbidden fields:
-   raw JWT, `Authorization`, service secrets, DB URLs, raw payment details, private profile payloads.
+- `schemaVersion=points_spendability_durable_export_v1`;
+- `diagnosticsVersion=points_spendability_shadow_diagnostics_v1`;
+- `eventType=points_spendability_shadow_compare`;
+- `driftClass=aligned_allowed`;
+- `reasonCode=legacy_and_target_allow`;
+- `action=rf_voucher_claim_spend`;
+- `amountRange=100_999`;
+- `legacyAllows=true`;
+- `targetAllows=true`;
+- `stale=false`;
+- `targetUnavailable=false`;
+- `compareFailure=false`;
+- `duplicateSuppressed=false`.
+
+Forbidden fields check:
+
+- no raw JWT;
+- no `Authorization` token;
+- no DB URL;
+- no payment details;
+- no raw private user profile payload.
 
 ## Known Limits
 
 - VIP entitlement canonical authority is not implemented yet.
 - Current RF paid gate remains legacy role compatibility (`vip_spacer`) with optional shadow comparison.
 - The staging fixture uses a staging-only transaction reason that is not added to Points Service runtime `/internal/points/add` taxonomy.
-- Durable export log evidence was not machine-confirmed during this run due to unavailable authenticated Cloudflare Observability access.
+- Cloudflare confirmation is operator-verified manual dashboard evidence.
 
 ## Rollback / Removal
 
