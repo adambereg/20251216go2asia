@@ -42,6 +42,7 @@
     "db:verify:blog-canon": "cross-env ENVIRONMENT=staging tsx src/verifyBlogCanon.ts",
     "db:seed:connect-demo": "cross-env ENVIRONMENT=staging tsx src/seedConnectDemo.ts",
     "db:verify:connect-demo": "cross-env ENVIRONMENT=staging tsx src/verifyConnectDemo.ts",
+    "db:seed:rf-paid-staging-offers": "cross-env ENVIRONMENT=staging tsx src/seedRfPaidStagingOffers.ts",
     "db:city-mapping:pilot:preview": "cross-env ENVIRONMENT=staging tsx src/prepareCityMappingPilot.ts",
     "typecheck": "tsc --noEmit"
   },
