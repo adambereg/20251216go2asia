@@ -6,6 +6,7 @@ import {
   isPartnerVoucherForOffer,
   rfOfferClaimCopy,
 } from './rfOfferClaim';
+import { getRfOfferClaimButtonLabel } from './rfSpendSemantics';
 
 function voucher(overrides: Partial<RfVoucherDto> = {}): RfVoucherDto {
   return {
@@ -56,5 +57,11 @@ describe('rf offer claim helpers', () => {
     expect(copy).toContain('локальная заметка');
     expect(copy).toContain('не ваучер');
     expect(copy).not.toMatch(/купить|оплатить|корзина|доход|комисси|выплат|reward|payout/);
+  });
+
+  it('shows paid spend requirement in claim CTA only for real paid offers', () => {
+    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить за 500 Points');
+    expect(getRfOfferClaimButtonLabel({ pointsCost: 0 })).toBe('Получить ваучер');
+    expect(getRfOfferClaimButtonLabel({ pointsCost: undefined })).toBe('Получить ваучер');
   });
 });

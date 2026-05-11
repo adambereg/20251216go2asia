@@ -79,9 +79,13 @@ describe('rf voucher lifecycle helper', () => {
       'Цикл #3',
     );
     expect(getRfVoucherIssueSequenceLabel(voucher({ repeatPolicySnapshot: 'repeat_after_redeem', issueSequence: 1 }))).toBeNull();
-    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending' }))).toBe('Тип: Points-enabled');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending', pointsCostSnapshot: 150 }))).toBe('Требуется: 150 Points');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'debited', pointsCostSnapshot: 150 }))).toBe('Списано: 150 Points');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'not_required', pointsCostSnapshot: 0 }))).toBe(
+      'Тип: Points-compatible free',
+    );
     expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'not_required', pointsCostSnapshot: undefined }))).toBe(
-      'Тип: Standard voucher',
+      'Тип: Points-compatible free',
     );
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Points: активация ожидается');
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'debited' }))).toBeNull();

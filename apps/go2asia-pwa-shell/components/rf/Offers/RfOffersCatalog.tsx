@@ -38,6 +38,7 @@ import {
   rfEntitlementPreviewFlags,
   type RfEntitlementPreviewUiState,
 } from '@/lib/rfEntitlementPreview';
+import { getRfOfferSpendSemantics } from '@/lib/rfSpendSemantics';
 
 type SortKey = 'featured' | 'title' | 'partner';
 type ViewMode = 'grid' | 'list';
@@ -554,6 +555,7 @@ function OfferCard({
   const profile = getPartnerPresentation(partner);
   const tags = profile.atmosphereTags.map((t) => rfAtmosphereTagLabels[t] ?? t);
   const itemLabel = getItemLabelForOffer(offer);
+  const spendSemantics = getRfOfferSpendSemantics(offer);
 
   const body = (
     <div className="min-w-0 flex-1 space-y-2">
@@ -588,6 +590,9 @@ function OfferCard({
         <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
           {getOfferSummaryLine(offer)}
         </span>
+        <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${spendSemantics.tone}`}>
+          {spendSemantics.label}
+        </span>
         {offer.visibility === 'pro_only' ? (
           <RfEntitlementPreviewBadge
             offerId={offer.id}
@@ -600,6 +605,7 @@ function OfferCard({
         ) : null}
       </div>
       <p className="text-[11px] text-slate-500">{getOfferGuardText(offer)}</p>
+      <p className="text-[11px] font-medium text-slate-600">{spendSemantics.caption}</p>
       <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] text-slate-600">
         <p className="font-medium text-slate-800">{rfOfferClaimCopy.successHint}</p>
         <p className="mt-0.5">{rfOfferClaimCopy.localSaveNote}</p>
@@ -609,7 +615,7 @@ function OfferCard({
 
   const actions = (
     <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-      <ClaimRfOfferButton offerId={offer.id} repeatPolicy={offer.repeatPolicy} />
+      <ClaimRfOfferButton offerId={offer.id} repeatPolicy={offer.repeatPolicy} pointsCost={offer.pointsCost} />
       <Link
         href={`/rf/${encodeURIComponent(partner.id)}`}
         className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white hover:bg-blue-700"

@@ -12,6 +12,7 @@ import {
   rfOfferClaimCopy,
 } from '@/lib/rfOfferClaim';
 import { buildRfClaimAttributionPayload, hasActiveRfProAttribution } from '@/lib/rfProAttribution';
+import { getRfOfferClaimButtonLabel } from '@/lib/rfSpendSemantics';
 
 type ClaimState =
   | { status: 'idle'; message: string | null; voucher: null }
@@ -23,7 +24,15 @@ function initialClaimState(): ClaimState {
   return { status: 'idle', message: null, voucher: null };
 }
 
-export function ClaimRfOfferButton({ offerId, repeatPolicy = 'once_per_scope' }: { offerId: string; repeatPolicy?: RfRepeatPolicy }) {
+export function ClaimRfOfferButton({
+  offerId,
+  repeatPolicy = 'once_per_scope',
+  pointsCost,
+}: {
+  offerId: string;
+  repeatPolicy?: RfRepeatPolicy;
+  pointsCost?: number;
+}) {
   const { isLoaded, isSignedIn } = useAuth();
   const [state, setState] = useState<ClaimState>(initialClaimState);
   const [hasProAttribution, setHasProAttribution] = useState(false);
@@ -68,7 +77,11 @@ export function ClaimRfOfferButton({ offerId, repeatPolicy = 'once_per_scope' }:
         onClick={() => void handleClaim()}
         className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400 sm:w-auto"
       >
-        {isLoading ? rfOfferClaimCopy.buttonLoading : isSuccess ? rfOfferClaimCopy.buttonSuccess : rfOfferClaimCopy.buttonIdle}
+        {isLoading
+          ? rfOfferClaimCopy.buttonLoading
+          : isSuccess
+            ? rfOfferClaimCopy.buttonSuccess
+            : getRfOfferClaimButtonLabel({ pointsCost })}
       </button>
 
       {state.message ? (

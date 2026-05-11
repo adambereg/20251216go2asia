@@ -1,5 +1,6 @@
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import type { RfRepeatPolicy } from '@go2asia/sdk/rf';
+import { getRfVoucherSpendSemantics } from './rfSpendSemantics';
 
 export type RfVoucherEffectiveStatus = NonNullable<RfVoucherDto['canonicalStatus']>;
 export type RfVoucherStatusLabelVariant = 'rf' | 'connect_projection';
@@ -74,12 +75,10 @@ export function getRfVoucherIssueSequenceLabel(
 export function getRfVoucherEconomyTypeLabel(
   voucher: Pick<RfVoucherDto, 'economyStatus' | 'pointsCostSnapshot'>
 ): string {
-  const isPointsEnabled =
-    typeof voucher.pointsCostSnapshot === 'number' ||
-    voucher.economyStatus === 'pending' ||
-    voucher.economyStatus === 'debited' ||
-    voucher.economyStatus === 'debit_failed';
-  return isPointsEnabled ? 'Тип: Points-enabled' : 'Тип: Standard voucher';
+  const semantics = getRfVoucherSpendSemantics(voucher);
+  if (semantics.kind === 'paid_spend_required') return semantics.label;
+  if (semantics.kind === 'economy_enabled_free') return 'Тип: Points-compatible free';
+  return 'Тип: Free voucher';
 }
 
 export function getRfVoucherAttributionLabel(voucher: Pick<RfVoucherDto, 'attribution'>): string | null {
