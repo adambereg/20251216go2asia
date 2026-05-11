@@ -946,6 +946,216 @@ describe('points-service request hardening', () => {
     expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(diagnosticsBody)).not.toThrow();
   });
 
+  it('does not emit durable export when export flag is off', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 5200, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { amount: 200, reason: 'first_login' },
+          { amount: 5000, reason: 'referral_locked' },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_export_off', balance_after: 200 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/spend', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: 'user_1',
+            amount: 5000,
+            action: 'rf_voucher_claim_spend',
+            externalId: 'rf:voucher-claim-spend:voucher_export_off',
+          }),
+        }),
+        env
+      );
+      const body = await readJson<{
+        transactionId: string;
+        applied: boolean;
+        idempotentReplay: boolean;
+        balanceAfter: number;
+      }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        transactionId: 'tx_spend_export_off',
+        applied: true,
+        idempotentReplay: false,
+        balanceAfter: 200,
+      });
+      expect(consoleLogSpy.mock.calls.some(([message]) => String(message).includes('Points spendability durable export'))).toBe(false);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
+  it('emits safe durable export event for critical spendability drift', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 5200, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { amount: 200, reason: 'first_login' },
+          { amount: 5000, reason: 'referral_locked' },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_export_on', balance_after: 200 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/spend', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: 'user_1',
+            amount: 5000,
+            action: 'rf_voucher_claim_spend',
+            externalId: 'rf:voucher-claim-spend:voucher_export_on',
+            sourceEventId: 'rf:voucher:voucher_export_on',
+            correlationId: 'corr_export_on',
+            metadata: { voucherId: 'voucher_export_on' },
+          }),
+        }),
+        env
+      );
+      const body = await readJson<{
+        transactionId: string;
+        applied: boolean;
+        idempotentReplay: boolean;
+        balanceAfter: number;
+      }>(response);
+      const exportLog = consoleLogSpy.mock.calls.find(([message]) => String(message).includes('Points spendability durable export'))?.[0];
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        transactionId: 'tx_spend_export_on',
+        applied: true,
+        idempotentReplay: false,
+        balanceAfter: 200,
+      });
+      expect(exportLog).toBeDefined();
+      const context = JSON.parse(String(exportLog).slice(String(exportLog).indexOf('{'))) as {
+        durableExport: unknown;
+      };
+      expect(context.durableExport).toMatchObject({
+        schemaVersion: 'points_spendability_durable_export_v1',
+        diagnosticsVersion: 'points_spendability_shadow_diagnostics_v1',
+        service: 'points-service',
+        environment: 'staging',
+        eventType: 'points_spendability_shadow_compare',
+        driftClass: 'legacy_allowed_target_denied',
+        reasonCode: 'locked_or_conditional_value_may_fund_spend',
+        action: 'rf_voucher_claim_spend',
+        amountRange: '5000_plus',
+        legacyAllows: true,
+        targetAllows: false,
+        duplicateSuppressed: false,
+      });
+      expect(JSON.stringify(context.durableExport)).not.toContain('user_1');
+      expect(JSON.stringify(context.durableExport)).not.toContain('voucher_export_on');
+      expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(context.durableExport)).not.toThrow();
+      expect(getSpendabilityShadowDiagnosticsSnapshot().exportedEvents).toBe(1);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
+  it('keeps spend response unchanged when durable export sink fails', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation((message?: unknown) => {
+      if (String(message).includes('Points spendability durable export')) {
+        throw new Error('export sink failed');
+      }
+    });
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 5200, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { amount: 200, reason: 'first_login' },
+          { amount: 5000, reason: 'referral_locked' },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_export_failure', balance_after: 200 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    try {
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/spend', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: 'user_1',
+            amount: 5000,
+            action: 'rf_voucher_claim_spend',
+            externalId: 'rf:voucher-claim-spend:voucher_export_failure',
+          }),
+        }),
+        env
+      );
+      const body = await readJson<{
+        transactionId: string;
+        applied: boolean;
+        idempotentReplay: boolean;
+        balanceAfter: number;
+      }>(response);
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        transactionId: 'tx_spend_export_failure',
+        applied: true,
+        idempotentReplay: false,
+        balanceAfter: 200,
+      });
+      expect(getSpendabilityShadowDiagnosticsSnapshot().exportFailures).toBe(1);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
   it('records aligned allowed shadow diagnostics without changing spend response', async () => {
     executeMock
       .mockResolvedValueOnce({ rows: [] })
@@ -1060,6 +1270,7 @@ describe('points-service request hardening', () => {
   });
 
   it('does not count idempotent spend replay as a new shadow compare', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     executeMock
       .mockResolvedValueOnce({
         rows: [
@@ -1084,47 +1295,54 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
     });
 
-    const response = await worker.fetch(
-      new Request('https://points.example/internal/points/spend', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 'user_1',
-          amount: 100,
-          action: 'rf_voucher_claim_spend',
-          externalId: 'rf:voucher-claim-spend:voucher_1',
-          sourceEventId: 'rf:voucher:voucher_1',
-          metadata: { voucherId: 'voucher_1' },
+    try {
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/spend', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: 'user_1',
+            amount: 100,
+            action: 'rf_voucher_claim_spend',
+            externalId: 'rf:voucher-claim-spend:voucher_1',
+            sourceEventId: 'rf:voucher:voucher_1',
+            metadata: { voucherId: 'voucher_1' },
+          }),
         }),
-      }),
-      env
-    );
+        env
+      );
 
-    const body = await readJson<{
-      transactionId: string;
-      applied: boolean;
-      idempotentReplay: boolean;
-      balanceAfter: number;
-    }>(response);
-    const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
+      const body = await readJson<{
+        transactionId: string;
+        applied: boolean;
+        idempotentReplay: boolean;
+        balanceAfter: number;
+      }>(response);
+      const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
 
-    expect(response.status).toBe(200);
-    expect(body).toEqual({
-      transactionId: 'tx_spend_existing',
-      applied: false,
-      idempotentReplay: true,
-      balanceAfter: 250,
-    });
-    expect(diagnostics.total).toBe(0);
-    expect(diagnostics.duplicateSuppressed).toBe(0);
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        transactionId: 'tx_spend_existing',
+        applied: false,
+        idempotentReplay: true,
+        balanceAfter: 250,
+      });
+      expect(diagnostics.total).toBe(0);
+      expect(diagnostics.duplicateSuppressed).toBe(0);
+      expect(diagnostics.exportedEvents).toBe(0);
+      expect(consoleLogSpy.mock.calls.some(([message]) => String(message).includes('Points spendability durable export'))).toBe(false);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
   });
 
   it('returns deterministic mismatch conflict for spend replay payload mismatch', async () => {

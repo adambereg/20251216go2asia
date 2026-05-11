@@ -17,6 +17,10 @@ export type SpendabilityShadowReasonCode =
   | 'target_error';
 
 export type SpendabilityShadowDiagnosticsVersion = 'points_spendability_shadow_diagnostics_v1';
+export type SpendabilityShadowDurableExportSchemaVersion = 'points_spendability_durable_export_v1';
+export type SpendabilityShadowDurableExportEventType =
+  | 'points_spendability_shadow_compare'
+  | 'points_spendability_shadow_duplicate_suppressed';
 
 export type SpendabilityShadowDecision = {
   decisionVersion: SpendabilityShadowDiagnosticsVersion;
@@ -54,6 +58,9 @@ export type SpendabilityShadowDiagnosticsSnapshot = {
   duplicateSuppressed: number;
   compareFailures: number;
   targetUnavailable: number;
+  exportedEvents: number;
+  exportDuplicateSuppressed: number;
+  exportFailures: number;
   stale: number;
   byDriftClass: Record<SpendabilityShadowDriftClass, number>;
   byReasonCode: Partial<Record<SpendabilityShadowReasonCode, number>>;
@@ -69,8 +76,37 @@ export type SpendabilityShadowRecordResult =
   | { recorded: true; reason: 'recorded' }
   | { recorded: false; reason: 'duplicate_suppressed' };
 
+export type SpendabilityShadowDurableExportEvent = {
+  schemaVersion: SpendabilityShadowDurableExportSchemaVersion;
+  diagnosticsVersion: SpendabilityShadowDiagnosticsVersion;
+  service: 'points-service';
+  environment: string;
+  eventType: SpendabilityShadowDurableExportEventType;
+  driftClass?: SpendabilityShadowDriftClass;
+  reasonCode?: SpendabilityShadowReasonCode;
+  action?: string;
+  amountRange?: SpendabilityShadowObservation['amountRange'];
+  legacyAllows?: boolean;
+  targetAllows?: boolean | null;
+  stale: boolean;
+  targetUnavailable: boolean;
+  compareFailure: boolean;
+  duplicateSuppressed: boolean;
+  evaluatedAt?: string;
+  exportTimestamp: string;
+  sampled: false;
+  sampleRate: 1;
+};
+
+export type SpendabilityShadowDurableExportResult =
+  | { exported: true; reason: 'exported'; event: SpendabilityShadowDurableExportEvent }
+  | { exported: false; reason: 'duplicate_suppressed'; event: SpendabilityShadowDurableExportEvent }
+  | { exported: false; reason: 'export_failed'; event: SpendabilityShadowDurableExportEvent };
+
 export const SPENDABILITY_SHADOW_DIAGNOSTICS_VERSION: SpendabilityShadowDiagnosticsVersion =
   'points_spendability_shadow_diagnostics_v1';
+export const SPENDABILITY_SHADOW_DURABLE_EXPORT_SCHEMA_VERSION: SpendabilityShadowDurableExportSchemaVersion =
+  'points_spendability_durable_export_v1';
 
 const DRIFT_CLASSES: SpendabilityShadowDriftClass[] = [
   'aligned_allowed',
@@ -84,6 +120,7 @@ const DRIFT_CLASSES: SpendabilityShadowDriftClass[] = [
 
 let snapshot: SpendabilityShadowDiagnosticsSnapshot = emptySnapshot();
 let countedCompareKeys = new Set<string>();
+let exportedCompareKeys = new Set<string>();
 
 function emptySnapshot(): SpendabilityShadowDiagnosticsSnapshot {
   const now = new Date().toISOString();
@@ -96,6 +133,9 @@ function emptySnapshot(): SpendabilityShadowDiagnosticsSnapshot {
     duplicateSuppressed: 0,
     compareFailures: 0,
     targetUnavailable: 0,
+    exportedEvents: 0,
+    exportDuplicateSuppressed: 0,
+    exportFailures: 0,
     stale: 0,
     byDriftClass: Object.fromEntries(DRIFT_CLASSES.map((item) => [item, 0])) as Record<SpendabilityShadowDriftClass, number>,
     byReasonCode: {},
@@ -105,6 +145,55 @@ function emptySnapshot(): SpendabilityShadowDiagnosticsSnapshot {
     byDiagnosticsVersion: {},
     lastEvaluatedAt: null,
     lastObservation: null,
+  };
+}
+
+function createCompareExportEvent(input: {
+  observation: SpendabilityShadowObservation;
+  exportTimestamp?: Date;
+}): SpendabilityShadowDurableExportEvent {
+  return {
+    schemaVersion: SPENDABILITY_SHADOW_DURABLE_EXPORT_SCHEMA_VERSION,
+    diagnosticsVersion: input.observation.diagnosticsVersion,
+    service: 'points-service',
+    environment: input.observation.environment,
+    eventType: 'points_spendability_shadow_compare',
+    driftClass: input.observation.driftClass,
+    reasonCode: input.observation.reasonCode,
+    action: input.observation.action,
+    amountRange: input.observation.amountRange,
+    legacyAllows: input.observation.legacyAllows,
+    targetAllows: input.observation.targetAllows,
+    stale: input.observation.stale,
+    targetUnavailable: input.observation.driftClass === 'target_unavailable',
+    compareFailure: input.observation.driftClass === 'target_error',
+    duplicateSuppressed: false,
+    evaluatedAt: input.observation.evaluatedAt,
+    exportTimestamp: (input.exportTimestamp ?? new Date()).toISOString(),
+    sampled: false,
+    sampleRate: 1,
+  };
+}
+
+function createDuplicateSuppressedExportEvent(input: {
+  observation: SpendabilityShadowObservation;
+  exportTimestamp?: Date;
+}): SpendabilityShadowDurableExportEvent {
+  return {
+    schemaVersion: SPENDABILITY_SHADOW_DURABLE_EXPORT_SCHEMA_VERSION,
+    diagnosticsVersion: input.observation.diagnosticsVersion,
+    service: 'points-service',
+    environment: input.observation.environment,
+    eventType: 'points_spendability_shadow_duplicate_suppressed',
+    action: input.observation.action,
+    amountRange: input.observation.amountRange,
+    stale: false,
+    targetUnavailable: false,
+    compareFailure: false,
+    duplicateSuppressed: true,
+    exportTimestamp: (input.exportTimestamp ?? new Date()).toISOString(),
+    sampled: false,
+    sampleRate: 1,
   };
 }
 
@@ -305,6 +394,48 @@ export function recordSpendabilityShadowObservation(
   return { recorded: true, reason: 'recorded' };
 }
 
+export function exportSpendabilityShadowObservation(input: {
+  observation: SpendabilityShadowObservation;
+  dedupeKey?: string;
+  emit: (event: SpendabilityShadowDurableExportEvent) => void;
+  exportTimestamp?: Date;
+}): SpendabilityShadowDurableExportResult {
+  let event = createCompareExportEvent({
+    observation: input.observation,
+    exportTimestamp: input.exportTimestamp,
+  });
+
+  if (input.dedupeKey && exportedCompareKeys.has(input.dedupeKey)) {
+    event = createDuplicateSuppressedExportEvent({
+      observation: input.observation,
+      exportTimestamp: input.exportTimestamp,
+    });
+    try {
+      input.emit(event);
+      snapshot.exportDuplicateSuppressed += 1;
+      snapshot.generatedAt = new Date().toISOString();
+      return { exported: false, reason: 'duplicate_suppressed', event };
+    } catch {
+      snapshot.exportFailures += 1;
+      snapshot.generatedAt = new Date().toISOString();
+      return { exported: false, reason: 'export_failed', event };
+    }
+  }
+
+  if (input.dedupeKey) exportedCompareKeys.add(input.dedupeKey);
+
+  try {
+    input.emit(event);
+    snapshot.exportedEvents += 1;
+    snapshot.generatedAt = new Date().toISOString();
+    return { exported: true, reason: 'exported', event };
+  } catch {
+    snapshot.exportFailures += 1;
+    snapshot.generatedAt = new Date().toISOString();
+    return { exported: false, reason: 'export_failed', event };
+  }
+}
+
 export function getSpendabilityShadowDiagnosticsSnapshot(): SpendabilityShadowDiagnosticsSnapshot {
   return {
     diagnosticsVersion: snapshot.diagnosticsVersion,
@@ -315,6 +446,9 @@ export function getSpendabilityShadowDiagnosticsSnapshot(): SpendabilityShadowDi
     duplicateSuppressed: snapshot.duplicateSuppressed,
     compareFailures: snapshot.compareFailures,
     targetUnavailable: snapshot.targetUnavailable,
+    exportedEvents: snapshot.exportedEvents,
+    exportDuplicateSuppressed: snapshot.exportDuplicateSuppressed,
+    exportFailures: snapshot.exportFailures,
     stale: snapshot.stale,
     byDriftClass: { ...snapshot.byDriftClass },
     byReasonCode: { ...snapshot.byReasonCode },
@@ -330,6 +464,7 @@ export function getSpendabilityShadowDiagnosticsSnapshot(): SpendabilityShadowDi
 export function resetSpendabilityShadowDiagnosticsForTests(): void {
   snapshot = emptySnapshot();
   countedCompareKeys = new Set<string>();
+  exportedCompareKeys = new Set<string>();
 }
 
 export function assertNoUnsafeSpendabilityShadowDiagnosticsFields(value: unknown): void {

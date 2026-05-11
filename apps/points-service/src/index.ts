@@ -16,6 +16,7 @@ import { decideExternalIdIdempotency } from './idempotency';
 import {
   createSpendabilityShadowDedupeKey,
   evaluateSpendabilityShadow,
+  exportSpendabilityShadowObservation,
   getSpendabilityShadowDiagnosticsSnapshot,
   recordSpendabilityShadowObservation,
   toSpendabilityShadowObservation,
@@ -37,6 +38,7 @@ export interface Env {
 
   POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE?: string;
   POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS?: string;
+  POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT?: string;
 }
 
 type GatewayPrincipal = {
@@ -1662,19 +1664,27 @@ export default {
               externalId,
               correlationId: correlationId ?? null,
             });
+            const observation = toSpendabilityShadowObservation({
+              decision,
+              action,
+              amount: spendAmount,
+              environment: getEnvName(env),
+            });
             if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
-              recordSpendabilityShadowObservation(
-                toSpendabilityShadowObservation({
-                  decision,
-                  action,
-                  amount: spendAmount,
-                  environment: getEnvName(env),
-                }),
-                { dedupeKey: shadowDedupeKey }
-              );
+              recordSpendabilityShadowObservation(observation, { dedupeKey: shadowDedupeKey });
+            }
+            if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT)) {
+              exportSpendabilityShadowObservation({
+                observation,
+                dedupeKey: shadowDedupeKey,
+                emit: (event) => logger.info('Points spendability durable export', { durableExport: event }),
+              });
             }
           } catch {
-            if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
+            if (
+              isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS) ||
+              isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT)
+            ) {
               const decision = evaluateSpendabilityShadow({
                 legacySpendable: 0,
                 targetAvailableSpendable: null,
@@ -1685,15 +1695,22 @@ export default {
                 correlationId: correlationId ?? null,
                 error: true,
               });
-              recordSpendabilityShadowObservation(
-                toSpendabilityShadowObservation({
-                  decision,
-                  action,
-                  amount: spendAmount,
-                  environment: getEnvName(env),
-                }),
-                { dedupeKey: shadowDedupeKey }
-              );
+              const observation = toSpendabilityShadowObservation({
+                decision,
+                action,
+                amount: spendAmount,
+                environment: getEnvName(env),
+              });
+              if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
+                recordSpendabilityShadowObservation(observation, { dedupeKey: shadowDedupeKey });
+              }
+              if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT)) {
+                exportSpendabilityShadowObservation({
+                  observation,
+                  dedupeKey: shadowDedupeKey,
+                  emit: (event) => logger.info('Points spendability durable export', { durableExport: event }),
+                });
+              }
             }
           }
         }

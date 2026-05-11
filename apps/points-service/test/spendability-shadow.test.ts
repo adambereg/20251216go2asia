@@ -4,6 +4,7 @@ import {
   assertNoUnsafeSpendabilityShadowDiagnosticsFields,
   createSpendabilityShadowDedupeKey,
   evaluateSpendabilityShadow,
+  exportSpendabilityShadowObservation,
   getSpendabilityShadowDiagnosticsSnapshot,
   recordSpendabilityShadowObservation,
   resetSpendabilityShadowDiagnosticsForTests,
@@ -170,5 +171,112 @@ describe('points spendability shadow model', () => {
     expect(snapshot.byDriftClass.legacy_allowed_target_denied).toBe(1);
     expect(serialized).not.toContain(dedupeKey);
     expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(snapshot)).not.toThrow();
+  });
+
+  it('exports safe durable compare and duplicate-suppressed events', () => {
+    resetSpendabilityShadowDiagnosticsForTests();
+    const exported: unknown[] = [];
+    const decision = evaluateSpendabilityShadow({
+      legacySpendable: 500,
+      targetAvailableSpendable: 50,
+      amount: 100,
+      action: 'rf_voucher_claim_spend',
+      userId: 'user_1',
+      externalId: 'rf:voucher-claim-spend:voucher_export',
+      correlationId: 'corr_export',
+      now: new Date('2026-05-11T00:00:00.000Z'),
+    });
+    const observation = toSpendabilityShadowObservation({
+      decision,
+      action: 'rf_voucher_claim_spend',
+      amount: 100,
+      environment: 'staging',
+    });
+    const dedupeKey = createSpendabilityShadowDedupeKey({
+      userId: 'user_1',
+      externalId: 'rf:voucher-claim-spend:voucher_export',
+      action: 'rf_voucher_claim_spend',
+      amount: 100,
+    });
+
+    const first = exportSpendabilityShadowObservation({
+      observation,
+      dedupeKey,
+      emit: (event) => exported.push(event),
+      exportTimestamp: new Date('2026-05-11T00:01:00.000Z'),
+    });
+    const second = exportSpendabilityShadowObservation({
+      observation,
+      dedupeKey,
+      emit: (event) => exported.push(event),
+      exportTimestamp: new Date('2026-05-11T00:02:00.000Z'),
+    });
+
+    expect(first).toMatchObject({ exported: true, reason: 'exported' });
+    expect(second).toMatchObject({ exported: false, reason: 'duplicate_suppressed' });
+    expect(exported).toHaveLength(2);
+    expect(exported[0]).toMatchObject({
+      schemaVersion: 'points_spendability_durable_export_v1',
+      diagnosticsVersion: 'points_spendability_shadow_diagnostics_v1',
+      service: 'points-service',
+      environment: 'staging',
+      eventType: 'points_spendability_shadow_compare',
+      driftClass: 'legacy_allowed_target_denied',
+      reasonCode: 'locked_or_conditional_value_may_fund_spend',
+      action: 'rf_voucher_claim_spend',
+      amountRange: '100_999',
+      legacyAllows: true,
+      targetAllows: false,
+      duplicateSuppressed: false,
+      sampled: false,
+      sampleRate: 1,
+    });
+    expect(exported[1]).toMatchObject({
+      eventType: 'points_spendability_shadow_duplicate_suppressed',
+      duplicateSuppressed: true,
+      action: 'rf_voucher_claim_spend',
+      amountRange: '100_999',
+    });
+    expect(JSON.stringify(exported)).not.toContain('user_1');
+    expect(JSON.stringify(exported)).not.toContain('voucher_export');
+    expect(JSON.stringify(exported)).not.toContain(dedupeKey);
+    expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(exported)).not.toThrow();
+
+    const snapshot = getSpendabilityShadowDiagnosticsSnapshot();
+    expect(snapshot.exportedEvents).toBe(1);
+    expect(snapshot.exportDuplicateSuppressed).toBe(1);
+    expect(snapshot.exportFailures).toBe(0);
+  });
+
+  it('captures durable export failures without throwing', () => {
+    resetSpendabilityShadowDiagnosticsForTests();
+    const decision = evaluateSpendabilityShadow({
+      legacySpendable: 500,
+      targetAvailableSpendable: 50,
+      amount: 100,
+      action: 'rf_voucher_claim_spend',
+      userId: 'user_1',
+      externalId: 'rf:voucher-claim-spend:voucher_export_failure',
+      correlationId: 'corr_export_failure',
+      now: new Date('2026-05-11T00:00:00.000Z'),
+    });
+    const observation = toSpendabilityShadowObservation({
+      decision,
+      action: 'rf_voucher_claim_spend',
+      amount: 100,
+      environment: 'staging',
+    });
+
+    const result = exportSpendabilityShadowObservation({
+      observation,
+      emit: () => {
+        throw new Error('export sink failed');
+      },
+      exportTimestamp: new Date('2026-05-11T00:01:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ exported: false, reason: 'export_failed' });
+    expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(result.event)).not.toThrow();
+    expect(getSpendabilityShadowDiagnosticsSnapshot().exportFailures).toBe(1);
   });
 });
