@@ -1704,6 +1704,42 @@ describe('rf-service request', () => {
     expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
   });
 
+  it('blocks paid claim when spend coupling is enabled but points runtime is misconfigured', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-claim-spend-misconfigured',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(503);
+    expect(body.error.code).toBe('RF_SPEND_TEMPORARILY_UNAVAILABLE');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_claim_idempotency');
+  });
+
   it('preserves pre-coupling paid behavior when feature flag is disabled', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

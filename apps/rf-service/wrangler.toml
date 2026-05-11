@@ -9,6 +9,12 @@ name = "go2asia-rf-service"
 [env.staging]
 name = "go2asia-rf-service-staging"
 
+[env.staging.vars]
+ENVIRONMENT = "staging"
+RF_ENABLE_PAID_VOUCHER_SPEND = "true"
+POINTS_SERVICE_URL = "https://go2asia-points-service-staging.fred89059599296.workers.dev"
+
 # Required vars/secrets:
+# - ENVIRONMENT, RF_ENABLE_PAID_VOUCHER_SPEND and POINTS_SERVICE_URL are pinned above for staging deploy stability.
 # - SERVICE_JWT_SECRET
 # - DATABASE_URL
