@@ -18,11 +18,17 @@ vi.mock('@go2asia/db', () => ({
 
 import worker, { computeWalletBuckets, type Env } from '../src/index';
 import { makeGatewayJwt, makeServiceJwt, readJson } from '../../../tests/helpers/worker-test';
+import {
+  assertNoUnsafeSpendabilityShadowDiagnosticsFields,
+  getSpendabilityShadowDiagnosticsSnapshot,
+  resetSpendabilityShadowDiagnosticsForTests,
+} from '../src/spendabilityShadow';
 
 describe('points-service request hardening', () => {
   beforeEach(() => {
     createDbMock.mockClear();
     executeMock.mockReset();
+    resetSpendabilityShadowDiagnosticsForTests();
   });
 
   it('computes wallet buckets from mixed ledger transactions', () => {
@@ -709,6 +715,30 @@ describe('points-service request hardening', () => {
     expect(body.error).toBe('UNAUTHORIZED');
   });
 
+  it('keeps spendability shadow diagnostics default-off', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spendability-shadow/diagnostics', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: string }>(response);
+
+    expect(response.status).toBe(404);
+    expect(body.error).toBe('SPENDABILITY_SHADOW_DIAGNOSTICS_DISABLED');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
   it('validates spend payload fields', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
@@ -832,6 +862,118 @@ describe('points-service request hardening', () => {
       ])
     );
     expect(spendQuery.strings.join(' ')).toContain('ub.balance >=');
+    expect(getSpendabilityShadowDiagnosticsSnapshot().total).toBe(0);
+  });
+
+  it('keeps legacy spend success when shadow available-only would deny', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 5200, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { amount: 200, reason: 'first_login' },
+          { amount: 5000, reason: 'referral_locked' },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_shadow_1', balance_after: 200 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 5000,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_shadow_1',
+          sourceEventId: 'rf:voucher:voucher_shadow_1',
+          correlationId: 'corr_shadow_1',
+          metadata: { voucherId: 'voucher_shadow_1' },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      transactionId: string;
+      applied: boolean;
+      idempotentReplay: boolean;
+      balanceAfter: number;
+    }>(response);
+    const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      transactionId: 'tx_spend_shadow_1',
+      applied: true,
+      idempotentReplay: false,
+      balanceAfter: 200,
+    });
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.byDriftClass.legacy_allowed_target_denied).toBe(1);
+    expect(() => assertNoUnsafeSpendabilityShadowDiagnosticsFields(diagnostics)).not.toThrow();
+  });
+
+  it('records aligned allowed shadow diagnostics without changing spend response', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 500, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({
+        rows: [{ amount: 500, reason: 'first_login' }],
+      })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: 'tx_spend_shadow_aligned', balance_after: 300 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 200,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_shadow_aligned',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ transactionId: string; applied: boolean; idempotentReplay: boolean; balanceAfter: number }>(response);
+    const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      transactionId: 'tx_spend_shadow_aligned',
+      applied: true,
+      idempotentReplay: false,
+      balanceAfter: 300,
+    });
+    expect(diagnostics.byDriftClass.aligned_allowed).toBe(1);
   });
 
   it('returns idempotent replay for same spend externalId/payload', async () => {
@@ -895,6 +1037,7 @@ describe('points-service request hardening', () => {
       idempotentReplay: true,
       balanceAfter: 250,
     });
+    expect(getSpendabilityShadowDiagnosticsSnapshot().total).toBe(0);
   });
 
   it('returns deterministic mismatch conflict for spend replay payload mismatch', async () => {
@@ -980,6 +1123,49 @@ describe('points-service request hardening', () => {
     expect(response.status).toBe(409);
     expect(body.error).toBe('INSUFFICIENT_POINTS_BALANCE');
     expect(executeMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('records aligned denied shadow diagnostics while preserving insufficient balance outcome', async () => {
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ balance: 50, updated_at: new Date('2026-05-01T00:00:00.000Z') }] })
+      .mockResolvedValueOnce({ rows: [{ amount: 50, reason: 'first_login' }] })
+      .mockResolvedValueOnce({ rows: [{ transaction_id: null, balance_after: null }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
+      POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rf-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/spend', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 500,
+          action: 'rf_voucher_claim_spend',
+          externalId: 'rf:voucher-claim-spend:voucher_shadow_denied',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string }>(response);
+    const diagnostics = getSpendabilityShadowDiagnosticsSnapshot();
+
+    expect(response.status).toBe(409);
+    expect(body.error).toBe('INSUFFICIENT_POINTS_BALANCE');
+    expect(diagnostics.byDriftClass.aligned_denied).toBe(1);
   });
 
   it('shows negative spend transaction in ledger list response', async () => {

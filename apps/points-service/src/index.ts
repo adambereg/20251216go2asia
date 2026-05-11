@@ -13,6 +13,12 @@ import { createDb, sql } from '@go2asia/db';
 import { createLogger, generateRequestId, getRequestId, logRequestCompleted } from '@go2asia/logger';
 
 import { decideExternalIdIdempotency } from './idempotency';
+import {
+  evaluateSpendabilityShadow,
+  getSpendabilityShadowDiagnosticsSnapshot,
+  recordSpendabilityShadowObservation,
+  toSpendabilityShadowObservation,
+} from './spendabilityShadow';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -27,6 +33,9 @@ export interface Env {
   // Limits (M3): simple configurable per-user cap
   POINTS_VELOCITY_CAP?: string; // integer points
   POINTS_VELOCITY_WINDOW_SECONDS?: string; // integer seconds
+
+  POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE?: string;
+  POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS?: string;
 }
 
 type GatewayPrincipal = {
@@ -203,6 +212,12 @@ function handleHealth(env: Env): Response {
 
 function getCheck(value?: string): 'ok' | 'missing' {
   return typeof value === 'string' && value.trim().length > 0 ? 'ok' : 'missing';
+}
+
+function isFlagEnabled(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
 }
 
 function handleReady(env: Env): Response {
@@ -1469,6 +1484,22 @@ export default {
         return res;
       }
 
+      if (request.method === 'GET' && path === '/internal/points/spendability-shadow/diagnostics') {
+        if (!isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
+          const res = errorResponse('SPENDABILITY_SHADOW_DIAGNOSTICS_DISABLED', 'Points spendability shadow diagnostics are disabled', requestId, 404);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+        const res = json(getSpendabilityShadowDiagnosticsSnapshot());
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
       if (request.method === 'POST' && path === '/internal/points/spend') {
         const auth = await requireServiceAuth(request, env, requestId, logger);
         if (!auth.ok) {
@@ -1606,6 +1637,42 @@ export default {
           );
           res.headers.set('X-Request-Id', requestId);
           return res;
+        }
+
+        if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE)) {
+          try {
+            const [{ balance: legacySpendable }, bucketRows] = await Promise.all([
+              getUserBalance(db, userId),
+              listWalletBucketTransactions(db, userId),
+            ]);
+            const targetBuckets = computeWalletBuckets(bucketRows);
+            const decision = evaluateSpendabilityShadow({
+              legacySpendable,
+              targetAvailableSpendable: targetBuckets.availablePoints,
+              amount: spendAmount,
+              action,
+              userId,
+              externalId,
+              correlationId: correlationId ?? null,
+            });
+            if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
+              recordSpendabilityShadowObservation(toSpendabilityShadowObservation({ decision, action, amount: spendAmount }));
+            }
+          } catch {
+            if (isFlagEnabled(env.POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS)) {
+              const decision = evaluateSpendabilityShadow({
+                legacySpendable: 0,
+                targetAvailableSpendable: null,
+                amount: spendAmount,
+                action,
+                userId,
+                externalId,
+                correlationId: correlationId ?? null,
+                error: true,
+              });
+              recordSpendabilityShadowObservation(toSpendabilityShadowObservation({ decision, action, amount: spendAmount }));
+            }
+          }
         }
 
         const txId = crypto.randomUUID();
