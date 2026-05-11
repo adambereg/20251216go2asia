@@ -23,6 +23,12 @@
 
 **Connect snapshot** = минимальный набор данных, который пользователь видит сразу при открытии Connect.
 
+Примечание по термину:
+
+- snapshot в этом документе означает dashboard-first composed view:
+  - `GET /v1/points/connect-dashboard` для Points/referrals/badges;
+  - отдельные read-only RF endpoints для voucher summary/list blocks.
+
 Формула:
 
 > Snapshot = dashboard-first read-only economy view с ограниченным payload и без глубоких списков/деревьев.
@@ -131,7 +137,7 @@ Lock:
 | transactions | points-service |
 | referrals | referral-service |
 | badges | points-service |
-| vouchers | RF/voucher layer (future read-only integration) |
+| vouchers | RF/voucher layer (read-only, composed in Connect UI; не часть payload `GET /v1/points/connect-dashboard`) |
 
 ---
 

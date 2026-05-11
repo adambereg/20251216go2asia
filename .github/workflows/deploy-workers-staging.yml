@@ -63,7 +63,10 @@ jobs:
           - service: points-service
             path: apps/points-service
             url: https://go2asia-points-service-staging.fred89059599296.workers.dev
-            extra_vars: ""
+            extra_vars: >-
+              --var POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE:true
+              --var POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS:true
+              --var POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT:true
           - service: referral-service
             path: apps/referral-service
             url: https://go2asia-referral-service-staging.fred89059599296.workers.dev
@@ -94,7 +97,9 @@ jobs:
           - service: rf-service
             path: apps/rf-service
             url: https://go2asia-rf-service-staging.fred89059599296.workers.dev
-            extra_vars: ""
+            extra_vars: >-
+              --var RF_ENABLE_PAID_VOUCHER_SPEND:true
+              --var POINTS_SERVICE_URL:https://go2asia-points-service-staging.fred89059599296.workers.dev
           - service: rielt-service
             path: apps/rielt-service
             url: https://go2asia-rielt-service-staging.fred89059599296.workers.dev

@@ -1,0 +1,237 @@
+# Staging VIP Entitlement & Points Top-up Validation Fixture v1
+
+## Status
+
+Status: `validated_success`
+
+Date: 2026-05-11
+
+Scope:
+
+- staging only;
+- one VIP seed user top-up;
+- one paid RF voucher claim;
+- no production mutation;
+- no Points spend contract change;
+- no RF voucher lifecycle change;
+- no migrations.
+
+## Agents / Roles Used
+
+- `docs/ai/roles/architect.md`
+- `docs/ai/roles/backend_dev.md`
+- `docs/ai/roles/security.md`
+- `docs/ai/roles/qa.md`
+- `docs/ai/roles/devops.md`
+- `docs/ai/roles/tech_writer.md`
+
+## Why This Fixture Was Needed
+
+The previous RF paid voucher enforcement alignment fixed staging config drift and restored the RF -> Points bridge.
+
+Observed before this fixture:
+
+- RF paid offers were visible in staging with `Будет списано: N Points`;
+- PRO user `oleg.tran.seed@example.com` was correctly blocked by the VIP gate;
+- VIP user `kirill.denisov.seed@example.com` reached `/internal/points/spend`;
+- Points returned `409` because the user had insufficient Points.
+
+Successful paid claim and spendability export validation required a VIP-compatible seed user with enough Points.
+
+## VIP Runtime Audit
+
+Current RF paid claim gate is still role-derived runtime behavior.
+
+Code evidence:
+
+- RF principal normalization accepts `vip`, `vip-spacer`, and `vip_spacer` as canonical `vip_spacer`;
+- RF paid claim enforcement uses `isVipSpacerPrincipal`;
+- VIP entitlement shadow compare is observational only and cannot allow or deny a paid claim;
+- current entitlement docs explicitly say canonical entitlement enforcement is target/future behavior, not current runtime.
+
+Runtime conclusion:
+
+- `kirill.denisov.seed@example.com` is VIP-compatible in current RF runtime because staging DB role is `vip_spacer`;
+- `svetlana.orlova.seed@example.com` is VIP-compatible in current RF runtime because staging DB role is `vip_spacer`;
+- this is based on legacy role compatibility, not canonical entitlement authority;
+- no temporary legacy role shortcut is needed for staging validation because the current runtime shortcut already exists.
+
+## Balance Audit
+
+Before top-up:
+
+- `kirill.denisov.seed@example.com`: available `0`, locked `0`, network `0`, total `0`, materialized `0`;
+- `svetlana.orlova.seed@example.com`: available `0`, locked `0`, network `0`, total `0`, materialized `0`.
+
+After top-up and before paid claim:
+
+- `kirill.denisov.seed@example.com`: available `1000`, locked `0`, network `0`, total `1000`, materialized `1000`;
+- `svetlana.orlova.seed@example.com`: unchanged at `0`.
+
+After successful `100 Points staging service perk` claim:
+
+- `kirill.denisov.seed@example.com`: available `900`, locked `0`, network `0`, total `900`, materialized `900`;
+- `svetlana.orlova.seed@example.com`: unchanged at `0`.
+
+## Top-up Method
+
+Chosen method: repo-local staging-only DB fixture script.
+
+Reason:
+
+- current `/internal/points/add` action taxonomy has no neutral staging/admin top-up action;
+- using production-like actions such as `quest_completed` or `rf_voucher_claimed` would misrepresent test/support semantics;
+- the script does not change Points Service runtime action taxonomy or spend contract;
+- the script creates one explicitly staging/test transaction reason.
+
+Script:
+
+- `packages/db/src/seedVipPaidVoucherValidationTopup.ts`
+- package command: `pnpm -C packages/db run db:seed:vip-paid-voucher-validation-topup`
+
+Fixture transaction:
+
+- target user: `kirill.denisov.seed@example.com`;
+- amount: `1000`;
+- reason: `staging_vip_paid_voucher_validation_topup`;
+- source service: `staging-fixture`;
+- external id: `staging:vip-paid-voucher-validation:kirill-denisov-seed:topup:1000:v1`;
+- metadata is minimal and fixture-scoped, with no raw JWTs, secrets, DB URLs, or payment details.
+
+Safety guards:
+
+- requires `ENVIRONMENT=staging`;
+- refuses `NODE_ENV=production`;
+- requires `STAGING_DATABASE_URL`;
+- refuses production-like DB URL hints;
+- `--apply` and `--verify-only` require `RF_POINTS_TOPUP_CONFIRM=staging`;
+- default mode is dry-run;
+- apply is idempotent by deterministic `external_id`;
+- rerun does not create duplicate transaction and returns `reused`;
+- `user_balances` is refreshed from `SUM(points_transactions.amount)` after apply.
+
+## Execution Evidence
+
+Dry-run:
+
+- resolved both VIP seed users;
+- confirmed both as `runtime_vip=true`;
+- showed Kirill projected available balance `1000`;
+- performed no writes.
+
+Apply:
+
+- inserted one top-up transaction;
+- Kirill balance became available `1000`, total `1000`, materialized `1000`.
+
+Verify-only:
+
+- confirmed exactly one matching top-up transaction;
+- confirmed Kirill available balance after top-up.
+
+Idempotency rerun:
+
+- repeat `--apply` returned `reused`;
+- balance remained `1000` before claim;
+- no duplicate transaction was created.
+
+## Paid Claim Validation
+
+Claim performed:
+
+- user: `kirill.denisov.seed@example.com`;
+- offer: `rf_offer_staging_paid_100_points`;
+- display title: `100 Points staging service perk`;
+- idempotency key: `staging-vip-topup-validation-kirill-100points-v1`;
+- RF request id: `1778518628370-0xlhnko`;
+- RF response status: `201`;
+- voucher id: `rf_voucher_8c2d945e99c8f53e0c341d82`.
+
+RF persisted voucher evidence:
+
+- status: `claimed`;
+- `points_cost_snapshot=100`;
+- `points_debit_external_id=rf:voucher-claim-spend:rf_voucher_8c2d945e99c8f53e0c341d82`;
+- `economy_status=debited`.
+
+Points persisted spend evidence:
+
+- amount: `-100`;
+- reason/action: `rf_voucher_claim_spend`;
+- source service: `rf-service`;
+- external id: `rf:voucher-claim-spend:rf_voucher_8c2d945e99c8f53e0c341d82`.
+
+Balance evidence after claim:
+
+- Kirill available balance decreased from `1000` to `900`;
+- locked and network balances remained `0`;
+- materialized balance is `900`.
+
+## Spendability Durable Export Evidence
+
+Cloudflare dashboard evidence was manually confirmed in staging for the same paid claim flow.
+
+Observed log context:
+
+- worker: `go2asia-points-service-staging`;
+- endpoint: `POST /internal/points/spend`;
+- export message: `Points spendability durable export`;
+- export request id: `1778518630103-isgs0rl`;
+- worker request id: `9fa2b89da6f9c8cb`;
+- event id: `01KRBZH8DMAW2H7NT9E319RZHM`;
+- service version in log: `53b6dd2bd26b6c35724a9cfc9183e4b28b1d2ac2`.
+
+Validated durable export payload:
+
+- `schemaVersion=points_spendability_durable_export_v1`;
+- `diagnosticsVersion=points_spendability_shadow_diagnostics_v1`;
+- `eventType=points_spendability_shadow_compare`;
+- `driftClass=aligned_allowed`;
+- `reasonCode=legacy_and_target_allow`;
+- `action=rf_voucher_claim_spend`;
+- `amountRange=100_999`;
+- `legacyAllows=true`;
+- `targetAllows=true`;
+- `stale=false`;
+- `targetUnavailable=false`;
+- `compareFailure=false`;
+- `duplicateSuppressed=false`.
+
+Forbidden fields check:
+
+- no raw JWT;
+- no `Authorization` token;
+- no DB URL;
+- no payment details;
+- no raw private user profile payload.
+
+## Known Limits
+
+- VIP entitlement canonical authority is not implemented yet.
+- Current RF paid gate remains legacy role compatibility (`vip_spacer`) with optional shadow comparison.
+- The staging fixture uses a staging-only transaction reason that is not added to Points Service runtime `/internal/points/add` taxonomy.
+- Cloudflare confirmation is operator-verified manual dashboard evidence.
+
+## Rollback / Removal
+
+If the staging fixture must be removed:
+
+1. Delete only the transaction with external id:
+   `staging:vip-paid-voucher-validation:kirill-denisov-seed:topup:1000:v1`.
+2. Recompute `user_balances.balance` for Kirill from `SUM(points_transactions.amount)`.
+3. Do not delete the successful RF paid claim spend transaction unless explicitly rolling back the validation claim and its RF voucher evidence.
+4. Keep production untouched.
+
+## Safety Confirmations
+
+- Staging only: yes.
+- Production mutation: no.
+- Secrets printed: no.
+- DB URL printed: no.
+- Points spend contract changed: no.
+- Wallet response shape changed: no.
+- RF voucher lifecycle changed: no.
+- Available-only enforcement added: no.
+- Migrations added: no.
+- Existing unrelated migration `packages/db/migrations/0052_rf_partner_item_catalog_v1.sql` not modified by this task.
+

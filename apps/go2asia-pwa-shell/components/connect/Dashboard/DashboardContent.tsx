@@ -7,6 +7,7 @@ import type { ConnectDashboardResponse } from '@go2asia/sdk/connectDashboard';
 import { BalanceCards } from './BalanceCards';
 import { ActivityFeed } from './ActivityFeed';
 import { ConnectRfSection } from './ConnectRfSection';
+import { CONNECT_POINTS_EARNED_LABEL } from '../copy';
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -14,7 +15,7 @@ interface DashboardContentProps {
 
 const nextSteps = [
   {
-    title: 'Завершите первый квест',
+    title: 'Завершите первое задание в Quest Asia',
     description: 'Получите первый бейдж и Points за участие.',
   },
   {
@@ -46,11 +47,8 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
 
       {/* Points */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3">
           <h2 className="text-lg font-semibold text-slate-900">Ваши Points</h2>
-          <Link href="/connect/wallet" className="text-sm text-sky-700 hover:underline underline-offset-2">
-            Смотреть историю →
-          </Link>
         </div>
         <BalanceCards balance={dashboard.balance} />
       </div>
@@ -68,7 +66,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Ваши приглашения</h3>
                 <p className="text-sm text-slate-600">
-                  {hasReferrals ? 'Реферальная история по текущему аккаунту.' : 'Пригласите друга, чтобы начать реферальную историю.'}
+                  {hasReferrals ? 'История приглашений по текущему аккаунту.' : 'Пригласите друга, чтобы начать историю приглашений.'}
                 </p>
               </div>
             </div>
@@ -88,14 +86,14 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
               <p className="text-xl font-bold text-slate-900">{dashboard.referrals.pendingReferrals}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs text-slate-500">Заработано Points</p>
+              <p className="text-xs text-slate-500">{CONNECT_POINTS_EARNED_LABEL}</p>
               <p className="text-xl font-bold text-slate-900">{dashboard.referrals.totalEarnedPoints}</p>
             </div>
           </div>
 
           <Link href="/connect/referrals">
             <Button variant="secondary" size="sm" className="w-full">
-              Перейти к рефералам
+              Все приглашения
               <ArrowRight size={16} className="ml-1" />
             </Button>
           </Link>
@@ -165,7 +163,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
       </Card>
 
       {/* Recent transactions */}
-      <ActivityFeed transactions={dashboard.recentTransactions} maxItems={8} />
+      <ActivityFeed transactions={dashboard.recentTransactions} maxItems={5} />
     </div>
   );
 }

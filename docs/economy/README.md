@@ -32,6 +32,16 @@
 - между экономикой и backend → backend должен быть изменён
 - между экономикой и старыми документами → старые документы устаревают
 
+### 2.1 Runtime Alignment Note
+
+`points_policy_v1.md` is the runtime-aligned policy document for Rewards / Points v1.
+
+`referral_network_rewards_policy_v1.md` is the runtime-aligned policy document for referral and network rewards.
+
+Older economy documents in this directory may describe target behavior or future layers. If they mention G2A, NFT/Totem, on-chain mechanics, PRO rewards, partner payouts, VIP entitlement unlocks, `referral_unlock`, network accrual, or hard `lockedPoints` enforcement, those statements must be read as target/future unless explicitly marked as current runtime by the runtime-aligned policy documents.
+
+Current runtime must not treat G2A, NFT/Totem gates, on-chain withdrawal, PRO payout mechanics, partner settlement, VIP entitlement lifecycle, `referral_unlock`, or network accrual producers as active unless a separate runtime contract and implementation exist.
+
 ---
 
 ## 3. Общая модель экономики
@@ -82,6 +92,34 @@ Points → Pressure → VIP → Spend + Network → Growth
 ---
 
 ## 6. Структура документов
+
+### 6.0 Points Policy (runtime-aligned policy)
+
+📄 `points_policy_v1.md`
+
+Описывает:
+- VIP как главный unlock для траты Points
+- классы Points и модель доступности
+- runtime-aligned границы Points / RF / Referral / Connect
+- что является текущим runtime, target policy и future layer
+
+👉 Это **канонический policy-документ для Rewards / Points v1**
+
+---
+
+### 6.0a Referral & Network Rewards Policy
+
+📄 `referral_network_rewards_policy_v1.md`
+
+Описывает:
+- direct и second-level referral Points
+- Conditional Points и VIP-зависимые unlock rules
+- network activity rewards как participation mechanics
+- current runtime, target policy и future implementation boundaries
+
+👉 Это **канонический policy-документ для referral / network rewards**
+
+---
 
 ### 6.1 Tokenomics (основной документ)
 

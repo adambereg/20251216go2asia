@@ -6,6 +6,9 @@ import { Award } from 'lucide-react';
 import type { NFTBadge, NFTRarity, ModuleType } from '../types';
 import { NFT_RARITY_LABELS } from '../types';
 
+/**
+ * @deprecated Future-only legacy NFT wallet UI. Current runtime uses off-chain badges, not NFT spend gates.
+ */
 interface NFTTabProps {
   nfts: NFTBadge[];
 }

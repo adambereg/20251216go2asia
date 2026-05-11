@@ -35,6 +35,9 @@ function voucher(overrides: Partial<VoucherLike> = {}): VoucherLike {
 describe('rf voucher lifecycle helper', () => {
   it('uses canonical status first with legacy fallback', () => {
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'cancelled', canonicalStatus: 'available' }))).toBe('available');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'redeemed' }))).toBe('redeemed');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'expired' }))).toBe('expired');
+    expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: 'cancelled' }))).toBe('cancelled');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'redeemed', canonicalStatus: undefined }))).toBe('redeemed');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'cancelled', canonicalStatus: undefined }))).toBe('cancelled');
     expect(getRfVoucherEffectiveStatus(voucher({ status: 'claimed', canonicalStatus: undefined }))).toBe('available');
@@ -58,6 +61,13 @@ describe('rf voucher lifecycle helper', () => {
     expect(getRfVoucherStatusBadgeClass(voucher({ canonicalStatus: 'expired' }))).toContain('amber');
   });
 
+  it('supports connect projection label variant without changing lifecycle meaning', () => {
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'locked' }), 'connect_projection')).toBe('Ожидает активации');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }), 'connect_projection')).toBe('Недоступен');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'redeemed' }), 'connect_projection')).toBe('Использован');
+    expect(getRfVoucherStatusLabel(voucher({ canonicalStatus: 'available' }), 'connect_projection')).toBe('Активен');
+  });
+
   it('keeps user-facing visibility labels non-technical', () => {
     expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'available' }))).toBe('Готов к использованию у партнёра.');
     expect(getRfVoucherStatusCaption(voucher({ canonicalStatus: 'locked' }))).toBe('Ваучер получен, но ещё не активирован.');
@@ -69,9 +79,13 @@ describe('rf voucher lifecycle helper', () => {
       'Цикл #3',
     );
     expect(getRfVoucherIssueSequenceLabel(voucher({ repeatPolicySnapshot: 'repeat_after_redeem', issueSequence: 1 }))).toBeNull();
-    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending' }))).toBe('Тип: Points-enabled');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'pending', pointsCostSnapshot: 150 }))).toBe('Требуется: 150 Points');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'debited', pointsCostSnapshot: 150 }))).toBe('Списано: 150 Points');
+    expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'not_required', pointsCostSnapshot: 0 }))).toBe(
+      'Тип: Points-compatible free',
+    );
     expect(getRfVoucherEconomyTypeLabel(voucher({ economyStatus: 'not_required', pointsCostSnapshot: undefined }))).toBe(
-      'Тип: Standard voucher',
+      'Тип: Points-compatible free',
     );
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'pending' }))).toBe('Points: активация ожидается');
     expect(getRfVoucherActivationLabel(voucher({ economyStatus: 'debited' }))).toBeNull();

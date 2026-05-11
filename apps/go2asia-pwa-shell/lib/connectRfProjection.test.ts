@@ -5,10 +5,12 @@ import {
   buildRfVoucherTimelineItems,
   formatRfVoucherLabel,
   formatRfVoucherPartnerName,
+  hasRfVouchersForConnectDashboard,
   getRfVoucherEffectiveStatus,
   getProjectionVoucherStatusLabel,
   projectionCopyGuardText,
 } from './connectRfProjection';
+import { getRfVoucherStatusLabel } from './rfVoucherLifecycle';
 
 function voucher(overrides: Partial<RfVoucherDto>): RfVoucherDto {
   return {
@@ -98,6 +100,76 @@ describe('connect RF projection helpers', () => {
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'unlocked' }))).toBe('Можно получить снова');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }))).toBe('Использован');
     expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'cancelled', status: 'cancelled' }))).toBe('Недоступен');
+    expect(getProjectionVoucherStatusLabel(voucher({ canonicalStatus: 'expired' }))).toBe('Недоступен');
+  });
+
+  it('uses summary precedence for has-vouchers checks on dashboard', () => {
+    expect(hasRfVouchersForConnectDashboard(summary({ totalVouchers: 2 }), [])).toBe(true);
+    expect(hasRfVouchersForConnectDashboard(summary({ totalVouchers: 0 }), [voucher({ id: 'v_1' })])).toBe(false);
+    expect(hasRfVouchersForConnectDashboard(undefined, [voucher({ id: 'v_2' })])).toBe(true);
+    expect(hasRfVouchersForConnectDashboard(undefined, [])).toBe(false);
+  });
+
+  it('keeps summary counters authoritative while list stays authoritative for rows and timeline', () => {
+    const projection = buildConnectRfProjection(
+      [],
+      summary({ totalVouchers: 9, activeVouchers: 4, usedVouchers: 3, cancelledVouchers: 1, expiredVouchers: 1 }),
+    );
+
+    expect(projection.summary).toMatchObject({
+      total: 9,
+      active: 4,
+      used: 3,
+      unavailable: 2,
+      pendingActivation: 0,
+      repeatableAvailable: 0,
+    });
+    expect(projection.groups.active).toHaveLength(0);
+    expect(projection.groups.used).toHaveLength(0);
+    expect(projection.groups.unavailable).toHaveLength(0);
+    expect(projection.recent.activity).toHaveLength(0);
+  });
+
+  it('falls back to list-derived counters and details when summary is unavailable', () => {
+    const projection = buildConnectRfProjection([
+      voucher({ id: 'locked_1', canonicalStatus: 'locked', statusChangedAt: '2026-05-05T04:00:00.000Z' }),
+      voucher({
+        id: 'redeemed_1',
+        canonicalStatus: 'redeemed',
+        status: 'redeemed',
+        claimedAt: '2026-05-05T01:00:00.000Z',
+        redeemedAt: '2026-05-05T02:00:00.000Z',
+      }),
+      voucher({ id: 'expired_1', canonicalStatus: 'expired', statusChangedAt: '2026-05-05T03:00:00.000Z' }),
+    ]);
+
+    expect(projection.summary).toMatchObject({
+      total: 3,
+      active: 1,
+      used: 1,
+      unavailable: 1,
+      pendingActivation: 1,
+      repeatableAvailable: 0,
+    });
+    expect(projection.groups.active.map((item) => item.id)).toEqual(['locked_1']);
+    expect(projection.groups.used.map((item) => item.id)).toEqual(['redeemed_1']);
+    expect(projection.groups.unavailable.map((item) => item.id)).toEqual(['expired_1']);
+    expect(projection.recent.activity.length).toBeGreaterThan(0);
+  });
+
+  it('keeps connect projection labels aligned with RF helper projection variant', () => {
+    const samples = [
+      voucher({ canonicalStatus: 'available' }),
+      voucher({ canonicalStatus: 'locked' }),
+      voucher({ canonicalStatus: 'unlocked' }),
+      voucher({ canonicalStatus: 'redeemed', status: 'redeemed' }),
+      voucher({ canonicalStatus: 'cancelled', status: 'cancelled' }),
+      voucher({ canonicalStatus: 'expired' }),
+    ];
+
+    for (const item of samples) {
+      expect(getProjectionVoucherStatusLabel(item)).toBe(getRfVoucherStatusLabel(item, 'connect_projection'));
+    }
   });
 
   it('keeps milestone logic in narrative/progress layer only', () => {

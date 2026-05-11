@@ -10,8 +10,8 @@ export function ConnectNav() {
 
   const navItems = [
     { href: '/connect', label: 'Главная', icon: Home },
-    { href: '/connect/wallet', label: 'Кошелёк', icon: Wallet },
-    { href: '/connect/levels', label: 'Уровни', icon: Award },
+    { href: '/connect/wallet', label: 'Активность', icon: Wallet },
+    { href: '/connect/levels', label: 'Бейджи', icon: Award },
     { href: '/connect/referrals', label: 'Рефералы', icon: Users },
     { href: '/connect/missions', label: 'Миссии', icon: Target },
     { href: '/connect/analytics', label: 'Статистика', icon: BarChart },

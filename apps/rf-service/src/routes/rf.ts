@@ -47,9 +47,17 @@ import {
   shouldThrottleWrite,
   updatePartnerItem,
   validatePartnerGeoLinks,
+  type RfClaimEntitlementShadowRuntime,
   type RfClaimEconomyRuntime,
   type RfClaimAttributionInput,
 } from '../store';
+import {
+  compareVipEntitlementShadow,
+  getVipEntitlementShadowSnapshot,
+  parseVipEntitlementShadowScenario,
+  recordVipEntitlementShadowObservation,
+  resolveVipEntitlementShadowDecision,
+} from '../vipEntitlementShadow';
 
 type RfRouteEnv = {
   DATABASE_URL?: string;
@@ -62,6 +70,9 @@ type RfRouteEnv = {
   RF_ENABLE_ENTITLEMENT_REAL_ADAPTERS?: string;
   RF_ENABLE_ENTITLEMENT_ROLE_ADAPTER?: string;
   RF_ENABLE_ENTITLEMENT_VIP_ADAPTER?: string;
+  RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE?: string;
+  RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS?: string;
+  RF_ENTITLEMENT_SHADOW_SCENARIO?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -268,6 +279,31 @@ function createClaimEconomyRuntime(env: RfRouteEnv): RfClaimEconomyRuntime | nul
   };
 }
 
+function createEntitlementShadowRuntime(env: RfRouteEnv): RfClaimEntitlementShadowRuntime | null {
+  if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE)) return null;
+  const scenario = parseVipEntitlementShadowScenario(env.RF_ENTITLEMENT_SHADOW_SCENARIO);
+  const diagnosticsEnabled = isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS);
+  return {
+    scenario,
+    recordPaidClaim(input) {
+      const decision = resolveVipEntitlementShadowDecision({
+        userId: input.userId,
+        currentRoleAllowed: input.currentRoleAllowed,
+        scenario,
+        correlationId: input.correlationId,
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: input.currentRoleAllowed,
+        decision,
+        claimScope: input.claimScope,
+      });
+      if (diagnosticsEnabled) {
+        recordVipEntitlementShadowObservation(observation);
+      }
+    },
+  };
+}
+
 function isInternalAdminPrincipal(principal: GatewayPrincipal): boolean {
   if (principal.platformRole === 'admin') return true;
   return principal.roles.some((role) => role.trim().toLowerCase() === 'admin');
@@ -355,6 +391,17 @@ export async function handleRfRoute(
       return errorResponse('FORBIDDEN', 'Admin role is required for RF entitlement preview observability', requestId, 403);
     }
     return json(getEntitlementPreviewObservabilitySnapshot());
+  }
+
+  if (request.method === 'GET' && path === '/v1/rf/internal/entitlement/shadow-observability') {
+    if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS)) {
+      return errorResponse('RF_ENTITLEMENT_SHADOW_DIAGNOSTICS_DISABLED', 'RF entitlement shadow diagnostics are disabled', requestId, 404);
+    }
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    if (!isInternalAdminPrincipal(principal)) {
+      return errorResponse('FORBIDDEN', 'Admin role is required for RF entitlement shadow diagnostics', requestId, 403);
+    }
+    return json(getVipEntitlementShadowSnapshot());
   }
 
   if (request.method === 'POST' && path === '/v1/rf/entitlement/preview') {
@@ -575,12 +622,14 @@ export async function handleRfRoute(
 
     const body = await readJsonObject(request);
     const economy = createClaimEconomyRuntime(env);
+    const entitlementShadow = createEntitlementShadowRuntime(env);
     const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
       idempotencyKey,
       attribution: parseClaimAttribution(body),
       correlationId: requestId,
       economy,
+      entitlementShadow,
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(
@@ -613,6 +662,7 @@ export async function handleRfRoute(
     const offerIdValue = decodeURIComponent(listingClaimMatch[2] ?? '');
     const body = await readJsonObject(request);
     const economy = createClaimEconomyRuntime(env);
+    const entitlementShadow = createEntitlementShadowRuntime(env);
     const result = await claimVoucherForListing(db, principal, {
       listingId,
       offerId: offerIdValue,
@@ -620,6 +670,7 @@ export async function handleRfRoute(
       attribution: parseClaimAttribution(body),
       correlationId: requestId,
       economy,
+      entitlementShadow,
     });
     if (!result.ok) return errorResponse(result.code, result.message, requestId, result.status);
     return json(

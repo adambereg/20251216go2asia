@@ -5,6 +5,9 @@ import { ArrowRight, Clock, Coins, Award, CheckCircle2 } from 'lucide-react';
 import { ModuleIcon } from '../Shared';
 import type { Mission } from '../types';
 
+/**
+ * @deprecated Future-only legacy missions card UI. Active Connect missions are currently explanatory placeholders.
+ */
 interface MissionCardProps {
   mission: Mission;
   onStart: () => void;

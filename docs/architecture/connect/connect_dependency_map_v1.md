@@ -83,6 +83,18 @@ Dependency type:
 
 - gateway-mediated API read/write via SDK helpers when available
 
+## 3.2a Connect UI -> RF Asia (read-only vouchers)
+
+Connect UI may read RF-owned endpoints for voucher projection blocks:
+
+- `GET /v1/rf/me/vouchers/summary`
+- `GET /v1/rf/me/vouchers`
+
+Dependency type:
+
+- gateway-mediated read-only composition in Connect UI;
+- RF remains lifecycle owner; Connect does not mutate claim/redeem/status.
+
 ## 3.3 Connect UI -> Quest Service indirectly
 
 Connect does not own quest execution.

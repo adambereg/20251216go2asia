@@ -8,9 +8,15 @@ name = "go2asia-points-service"
 [env.staging]
 name = "go2asia-points-service-staging"
 
-# Vars injected by CI/CD:
-# ENVIRONMENT (e.g. "staging")
-# VERSION (git sha)
+[env.staging.vars]
+ENVIRONMENT = "staging"
+POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE = "true"
+POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS = "true"
+POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT = "true"
+
+# Runtime vars:
+# - ENVIRONMENT and staging spendability flags are pinned above so dashboard-only edits do not drift on deploy.
+# - VERSION is injected by CI/CD as the git sha.
 #
 # Required vars/secrets/bindings for Milestone 3:
 # - DATABASE_URL (var/secret)

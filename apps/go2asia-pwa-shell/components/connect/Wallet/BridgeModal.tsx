@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@go2asia/ui';
 import { AlertCircle, Info, X } from 'lucide-react';
 
+/**
+ * @deprecated Future-only legacy bridge UI. G2A/top-up/withdraw flows are not current runtime.
+ */
 interface BridgeModalProps {
   isOpen: boolean;
   onClose: () => void;

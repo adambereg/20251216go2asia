@@ -116,20 +116,20 @@ It must not:
 
 ---
 
-## 6. Current User Economy Snapshot
+## 6. Points connect-dashboard payload (current)
 
-Current snapshot includes:
+`GET /v1/points/connect-dashboard` response includes:
 
 - Points balance
 - recent transactions
 - referral summary
 - badges summary
 
-Current snapshot does NOT include:
+This Points payload does NOT include:
 
-- vouchers
+- vouchers (RF voucher summary is composed separately in Connect UI as read-only projection)
 - RF offers
-- live voucher status
+- live voucher status from RF-owned endpoints
 - Missions progress
 - token/G2A/NFT state
 
@@ -137,11 +137,11 @@ Current snapshot does NOT include:
 
 ## 7. Voucher Visibility Lock
 
-Главный текущий gap:
+Исторический gap для базового Points payload:
 
-- voucher visibility отсутствует в current Connect snapshot.
+- voucher visibility отсутствует в `GET /v1/points/connect-dashboard`.
 
-Future rule (read-only only):
+Read-only rule:
 
 - Connect may display user vouchers read-only, but:
   - RF/voucher layer remains lifecycle owner;
@@ -151,9 +151,9 @@ Future rule (read-only only):
   - Connect must not infer status from local/demo state;
   - Connect reads from RF/voucher read endpoint or dedicated read-model only.
 
-Этот пункт относится к будущему slice:
+Этот пункт уже закрывается bounded projection-документом:
 
-- `Connect-003: Voucher Visibility Integration (read-only)`.
+- `docs/architecture/connect/connect_rf_dashboard_projection_v1.md`.
 
 ---
 
@@ -199,7 +199,7 @@ Lock decisions:
 | transactions | Yes | Points Service | Read display/list | Connect reads only |
 | badges | Yes (off-chain) | Points Service (current runtime placement) | Read display | No NFT/on-chain inference |
 | referrals | Yes | Referral Service | Read summary/drilldown routing | Connect does not own graph |
-| vouchers | No (in Connect snapshot) | RF/voucher layer | Future read-only display | Connect-003, no lifecycle ownership |
+| vouchers | No (in Points connect-dashboard payload) | RF/voucher layer | Read-only RF composition in Connect UI | No lifecycle ownership in Connect |
 | RF offers | No (in Connect snapshot) | RF Service | Optional future read composition | No RF ownership in Connect |
 | Missions | No (Connect runtime truth) | Future Missions layer | Placeholder only | No Mission runtime ownership |
 | Levels | No backend truth | N/A (future contract needed) | UI placeholder | Not treated as runtime truth |

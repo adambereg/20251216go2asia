@@ -4,43 +4,19 @@ import { Card, Button } from '@go2asia/ui';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ConnectDashboardTransactionItem } from '@go2asia/sdk/connectDashboard';
+import { getConnectLedgerActionLabel, getConnectLedgerSourceLabel } from '../copy';
 
 interface ActivityFeedProps {
   transactions: ConnectDashboardTransactionItem[];
   maxItems?: number;
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  registration: 'Регистрация',
-  first_login: 'Первый вход',
-  quest_completed: 'Квест завершён',
-  referral_bonus_referrer: 'Бонус за приглашённого пользователя',
-  referral_bonus_referee: 'Бонус за регистрацию по приглашению',
-  event_registration: 'Регистрация на событие',
-  space_post_created: 'Публикация в Space',
-  rf_voucher_redeemed: 'RF-ваучер использован',
-  rielt_listing_created: 'Объявление в Rielt',
-  badge_awarded: 'Бейдж получен',
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  'quest-service': 'Quest Asia',
-  'referral-service': 'Referral',
-  'points-service': 'Points',
-  'content-service': 'Go2Asia',
-  'pulse-service': 'Pulse Asia',
-  'space-service': 'Space Asia',
-  'rf-service': 'Russian Friendly',
-  'rielt-service': 'Rielt Market',
-};
-
 function getActionLabel(action: string) {
-  return ACTION_LABELS[action] ?? 'Активность Go2Asia';
+  return getConnectLedgerActionLabel(action);
 }
 
 function getSourceLabel(sourceService: string | null) {
-  if (!sourceService) return 'Go2Asia';
-  return SOURCE_LABELS[sourceService] ?? 'Go2Asia';
+  return getConnectLedgerSourceLabel(sourceService);
 }
 
 export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps) {
@@ -67,10 +43,10 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
 
   return (
     <Card className="p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-900">Последние начисления</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <h2 className="text-lg font-semibold text-slate-900">Последние действия с Points</h2>
         <Link href="/connect/wallet">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" className="w-full sm:w-auto">
             Показать все
             <ArrowRight size={16} className="ml-1" />
           </Button>

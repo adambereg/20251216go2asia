@@ -2,6 +2,7 @@ import type { Db } from '@go2asia/db';
 import { sql } from '@go2asia/db';
 
 import type { GatewayPrincipal } from './middleware/auth';
+import type { VipEntitlementShadowScenario } from './vipEntitlementShadow';
 
 type DbExecutor = Pick<Db, 'execute'>;
 
@@ -441,6 +442,18 @@ export interface RfClaimEconomyRuntime {
     claimScope: VoucherClaimScope;
     scopeRef: string | null;
   }): Promise<RfClaimCompensationResult>;
+}
+export interface RfClaimEntitlementShadowRuntime {
+  scenario: VipEntitlementShadowScenario;
+  recordPaidClaim(input: {
+    userId: string;
+    currentRoleAllowed: boolean;
+    offerId: string;
+    claimScope: VoucherClaimScope;
+    scopeRef: string | null;
+    pointsCost: number;
+    correlationId: string | null;
+  }): void;
 }
 type RedeemResult =
   | { ok: true; voucher: Voucher; applied: boolean }
@@ -993,6 +1006,31 @@ async function buildDeterministicVoucherId(input: {
 function isVipSpacerPrincipal(principal: GatewayPrincipal): boolean {
   if (principal.platformRole === 'vip_spacer') return true;
   return principal.roles.some((role) => role.trim().toLowerCase() === 'vip_spacer');
+}
+
+function recordPaidClaimEntitlementShadow(input: {
+  shadow: RfClaimEntitlementShadowRuntime | null | undefined;
+  principal: GatewayPrincipal;
+  currentRoleAllowed: boolean;
+  offerId: string;
+  claimScope: VoucherClaimScope;
+  scopeRef: string | null;
+  pointsCost: number;
+  correlationId: string | null;
+}): void {
+  try {
+    input.shadow?.recordPaidClaim({
+      userId: input.principal.userId,
+      currentRoleAllowed: input.currentRoleAllowed,
+      offerId: input.offerId,
+      claimScope: input.claimScope,
+      scopeRef: input.scopeRef,
+      pointsCost: input.pointsCost,
+      correlationId: input.correlationId,
+    });
+  } catch {
+    // Shadow comparison must never affect RF claim behavior.
+  }
 }
 
 function buildSpendExternalId(voucherId: string): string {
@@ -2661,6 +2699,7 @@ export async function claimVoucher(
     attribution?: RfClaimAttributionInput | null;
     correlationId?: string | null;
     economy?: RfClaimEconomyRuntime | null;
+    entitlementShadow?: RfClaimEntitlementShadowRuntime | null;
   }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
@@ -2732,7 +2771,20 @@ export async function claimVoucher(
   const pointsCost = Number(offer.points_cost ?? 0);
   const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
   const spendEnabled = pointsCostSnapshot > 0 && input.economy?.enabled === true;
-  if (pointsCostSnapshot > 0 && spendEnabled && !isVipSpacerPrincipal(principal)) {
+  const currentVipGateAllowed = isVipSpacerPrincipal(principal);
+  if (pointsCostSnapshot > 0 && spendEnabled) {
+    recordPaidClaimEntitlementShadow({
+      shadow: input.entitlementShadow,
+      principal,
+      currentRoleAllowed: currentVipGateAllowed,
+      offerId: offer.id,
+      claimScope: 'partner',
+      scopeRef: null,
+      pointsCost: pointsCostSnapshot,
+      correlationId: input.correlationId ?? null,
+    });
+  }
+  if (pointsCostSnapshot > 0 && spendEnabled && !currentVipGateAllowed) {
     return {
       ok: false,
       code: 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER',
@@ -3016,6 +3068,7 @@ export async function claimVoucherForListing(
     attribution?: RfClaimAttributionInput | null;
     correlationId?: string | null;
     economy?: RfClaimEconomyRuntime | null;
+    entitlementShadow?: RfClaimEntitlementShadowRuntime | null;
   }
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
@@ -3114,7 +3167,20 @@ export async function claimVoucherForListing(
   const pointsCost = Number(context.offer_points_cost ?? 0);
   const pointsCostSnapshot = Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 0;
   const spendEnabled = pointsCostSnapshot > 0 && input.economy?.enabled === true;
-  if (pointsCostSnapshot > 0 && spendEnabled && !isVipSpacerPrincipal(principal)) {
+  const currentVipGateAllowed = isVipSpacerPrincipal(principal);
+  if (pointsCostSnapshot > 0 && spendEnabled) {
+    recordPaidClaimEntitlementShadow({
+      shadow: input.entitlementShadow,
+      principal,
+      currentRoleAllowed: currentVipGateAllowed,
+      offerId: input.offerId,
+      claimScope: 'listing',
+      scopeRef: input.listingId,
+      pointsCost: pointsCostSnapshot,
+      correlationId: input.correlationId ?? null,
+    });
+  }
+  if (pointsCostSnapshot > 0 && spendEnabled && !currentVipGateAllowed) {
     return {
       ok: false,
       code: 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER',

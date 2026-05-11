@@ -1,11 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
-import { fetchMyVouchers, useRfVoucherSummary, type RfVoucherDto } from '@go2asia/sdk/rf';
-import { buildConnectRfProjection } from '@/lib/connectRfProjection';
+import type { ConnectRfProjection } from '@/lib/connectRfProjection';
 
 function VoucherMetric({ label, value }: { label: string; value: number }) {
   return (
@@ -16,24 +14,16 @@ function VoucherMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function VoucherSummaryCard() {
-  const { data: summary, isError, isLoading, refetch } = useRfVoucherSummary();
-  const {
-    data: vouchers = [],
-    isLoading: vouchersLoading,
-    isError: vouchersError,
-  } = useQuery<RfVoucherDto[]>({
-    queryKey: ['rf', 'me', 'vouchers', 'connect-summary'],
-    queryFn: async () => {
-      const response = await fetchMyVouchers();
-      if (!response) throw new Error('RF vouchers unavailable');
-      return response.items;
-    },
-    staleTime: 30_000,
-    retry: 1,
-  });
+interface VoucherSummaryCardProps {
+  projection: ConnectRfProjection;
+  hasVouchers: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
 
-  if (isLoading || vouchersLoading) {
+export function VoucherSummaryCard({ projection, hasVouchers, isLoading, isError, onRetry }: VoucherSummaryCardProps) {
+  if (isLoading) {
     return (
       <Card className="p-5">
         <div className="flex items-start gap-3 mb-5">
@@ -54,7 +44,7 @@ export function VoucherSummaryCard() {
     );
   }
 
-  if (isError || vouchersError || !summary) {
+  if (isError) {
     return (
       <Card className="p-5 border border-amber-200 bg-amber-50">
         <div className="flex items-start gap-3">
@@ -64,7 +54,7 @@ export function VoucherSummaryCard() {
             <p className="text-sm text-amber-900/80 mt-1">
               Не удалось загрузить RF-сводку. Остальной dashboard остаётся доступен.
             </p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => refetch()}>
+            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
               Повторить загрузку
             </Button>
           </div>
@@ -72,9 +62,6 @@ export function VoucherSummaryCard() {
       </Card>
     );
   }
-
-  const projection = buildConnectRfProjection(vouchers, summary);
-  const hasVouchers = projection.summary.total > 0;
 
   return (
     <Card className="p-5">

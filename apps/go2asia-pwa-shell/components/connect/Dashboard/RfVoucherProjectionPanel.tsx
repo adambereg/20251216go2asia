@@ -1,12 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, ArrowRight, Clock3, History, Ticket } from 'lucide-react';
 import { Button, Card } from '@go2asia/ui';
-import { fetchMyVouchers, type RfVoucherDto } from '@go2asia/sdk/rf';
+import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import {
-  buildConnectRfProjection,
+  type ConnectRfProjection,
   formatRfVoucherLabel,
   formatRfVoucherPartnerName,
   getProjectionVoucherStatusLabel,
@@ -90,22 +90,24 @@ function TimelineRow({ item }: { item: RfVoucherTimelineItem }) {
   );
 }
 
-export function RfVoucherProjectionPanel() {
-  const {
-    data: vouchers = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery<RfVoucherDto[]>({
-    queryKey: ['rf', 'me', 'vouchers', 'connect-projection'],
-    queryFn: async () => {
-      const response = await fetchMyVouchers();
-      if (!response) throw new Error('RF vouchers unavailable');
-      return response.items;
-    },
-    staleTime: 30_000,
-    retry: 1,
-  });
+interface RfVoucherProjectionPanelProps {
+  projection: ConnectRfProjection;
+  hasVouchers: boolean;
+  hasVoucherRows: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+export function RfVoucherProjectionPanel({
+  projection,
+  hasVouchers,
+  hasVoucherRows,
+  isLoading,
+  isError,
+  onRetry,
+}: RfVoucherProjectionPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (isLoading) {
     return (
@@ -135,9 +137,9 @@ export function RfVoucherProjectionPanel() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-amber-900">RF-ваучеры временно недоступны</h2>
             <p className="mt-1 text-sm text-amber-900/80">
-              Не удалось загрузить подробности RF-ваучеров. Остальной dashboard остаётся доступен.
+              Не удалось загрузить подробности RF-ваучеров. Остальные разделы Connect остаются доступны.
             </p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => refetch()}>
+            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
               Повторить загрузку
             </Button>
           </div>
@@ -146,32 +148,22 @@ export function RfVoucherProjectionPanel() {
     );
   }
 
-  const projection = buildConnectRfProjection(vouchers);
   const active = projection.groups.active.slice(0, 5);
   const used = projection.groups.used.slice(0, 5);
   const timeline = projection.recent.activity.slice(0, 5);
-  const hasVouchers = vouchers.length > 0;
+  const showRows = hasVouchers && hasVoucherRows;
 
   return (
     <Card className="p-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-sky-100 p-2">
-            <Ticket className="h-5 w-5 text-sky-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
-            <p className="text-sm text-slate-600">
-              Активные, использованные и последние события RF-активности.
-            </p>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-sky-100 p-2">
+          <Ticket className="h-5 w-5 text-sky-600" />
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link href="/rf/my-vouchers">
-            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-              Все RF-ваучеры
-            </Button>
-          </Link>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
+          <p className="text-sm text-slate-600">
+            Активные, использованные и последние события RF-активности.
+          </p>
         </div>
       </div>
 
@@ -184,8 +176,39 @@ export function RfVoucherProjectionPanel() {
             <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
+      ) : !showRows ? (
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">RF-сводка доступна, детали временно ограничены</p>
+          <p className="mt-1">Откройте полный список ваучеров в Russian Friendly.</p>
+          <Link href="/rf/my-vouchers" className="mt-3 inline-flex items-center text-sm font-medium text-sky-700 hover:underline">
+            Открыть мои RF-ваучеры
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </div>
+      ) : !isExpanded ? (
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">Краткое превью RF-деталей</p>
+          <p className="mt-1">
+            Активные: {projection.groups.active.length.toLocaleString('ru-RU')}. Использованные:{' '}
+            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки остаются в RF.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <Button variant="secondary" size="sm" onClick={() => setIsExpanded(true)}>
+              Показать детали здесь
+            </Button>
+            <Link href="/rf/my-vouchers" className="inline-flex items-center text-sm font-medium text-sky-700 hover:underline">
+              Открыть все RF-ваучеры
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       ) : (
         <>
+          <div className="mt-4 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setIsExpanded(false)}>
+              Свернуть детали
+            </Button>
+          </div>
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <VoucherGroup
               title="Активные RF-ваучеры"

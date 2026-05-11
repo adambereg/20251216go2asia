@@ -1,9 +1,13 @@
 import type { RfVoucherDto } from '@go2asia/sdk/rf';
 import type { RfRepeatPolicy } from '@go2asia/sdk/rf';
+import { getRfVoucherSpendSemantics } from './rfSpendSemantics';
 
 export type RfVoucherEffectiveStatus = NonNullable<RfVoucherDto['canonicalStatus']>;
+export type RfVoucherStatusLabelVariant = 'rf' | 'connect_projection';
 
 export function getRfVoucherEffectiveStatus(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): RfVoucherEffectiveStatus {
+  // Source precedence is fixed for all consumers:
+  // canonicalStatus from RF is authoritative; legacy status is fallback only.
   if (voucher.canonicalStatus) return voucher.canonicalStatus;
   if (voucher.status === 'redeemed') return 'redeemed';
   if (voucher.status === 'cancelled') return 'cancelled';
@@ -19,12 +23,15 @@ export function isRfVoucherClaimBarrier(
   return status === 'redeemed' && repeatPolicy === 'once_per_scope';
 }
 
-export function getRfVoucherStatusLabel(voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>): string {
+export function getRfVoucherStatusLabel(
+  voucher: Pick<RfVoucherDto, 'status' | 'canonicalStatus'>,
+  variant: RfVoucherStatusLabelVariant = 'rf',
+): string {
   const status = getRfVoucherEffectiveStatus(voucher);
   if (status === 'redeemed') return 'Использован';
   if (status === 'cancelled') return 'Недоступен';
-  if (status === 'expired') return 'Истёк';
-  if (status === 'locked') return 'Получен, но не активен';
+  if (status === 'expired') return variant === 'connect_projection' ? 'Недоступен' : 'Истёк';
+  if (status === 'locked') return variant === 'connect_projection' ? 'Ожидает активации' : 'Получен, но не активен';
   if (status === 'unlocked') return 'Можно получить снова';
   return 'Активен';
 }
@@ -68,12 +75,10 @@ export function getRfVoucherIssueSequenceLabel(
 export function getRfVoucherEconomyTypeLabel(
   voucher: Pick<RfVoucherDto, 'economyStatus' | 'pointsCostSnapshot'>
 ): string {
-  const isPointsEnabled =
-    typeof voucher.pointsCostSnapshot === 'number' ||
-    voucher.economyStatus === 'pending' ||
-    voucher.economyStatus === 'debited' ||
-    voucher.economyStatus === 'debit_failed';
-  return isPointsEnabled ? 'Тип: Points-enabled' : 'Тип: Standard voucher';
+  const semantics = getRfVoucherSpendSemantics(voucher);
+  if (semantics.kind === 'paid_spend_required') return semantics.label;
+  if (semantics.kind === 'economy_enabled_free') return 'Тип: Points-compatible free';
+  return 'Тип: Free voucher';
 }
 
 export function getRfVoucherAttributionLabel(voucher: Pick<RfVoucherDto, 'attribution'>): string | null {
