@@ -203,6 +203,156 @@ describe('rf-service request', () => {
     expect(createDbMock).not.toHaveBeenCalled();
   });
 
+  it('serves durable diagnostics snapshot as internal admin aggregate-only read path', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example', ENVIRONMENT: 'staging' };
+    const adminToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin', roles: ['admin'] });
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+    const path = 'https://rf.example/v1/rf/internal/entitlement/durable-diagnostics/window/slice_5b_3_window/snapshot';
+
+    const unauthenticated = await worker.fetch(new Request(path), env);
+    const unauthenticatedBody = await readJson<{ error: { code: string } }>(unauthenticated);
+
+    const nonAdmin = await worker.fetch(new Request(path, { headers: { 'X-Gateway-Auth': userToken } }), env);
+    const nonAdminBody = await readJson<{ error: { code: string } }>(nonAdmin);
+
+    const unsafe = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/durable-diagnostics/window/unsafe%2Fwindow/snapshot', {
+        headers: { 'X-Gateway-Auth': adminToken },
+      }),
+      env
+    );
+    const unsafeBody = await readJson<{ error: { code: string } }>(unsafe);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            window_id: 'slice_5b_3_window',
+            environment: 'staging',
+            service: 'rf-service',
+            build_sha: '6449eff',
+            status: 'collecting',
+            opened_at: '2026-05-13T10:00:00.000Z',
+            closed_at: null,
+            retention_until: '2026-06-12T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ total_observations: '7', first_seen_at: '2026-05-13T10:01:00.000Z', last_seen_at: '2026-05-13T10:07:00.000Z' }],
+      })
+      .mockResolvedValueOnce({ rows: [{ key: 'unavailable_entitlement', count: '2' }, { key: 'aligned_granted', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'degraded_shadow', count: '2' }, { key: 'aligned_granted', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'source_timeout', count: '2' }, { key: 'entitlement_granted', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'unknown', count: '2' }, { key: 'migration_role_shadow', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'timeout', count: '2' }, { key: 'ok', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'unknown', count: '2' }, { key: 'migration_role_shadow', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'none', count: '5' }, { key: 'unknown', count: '2' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'none', count: '5' }, { key: 'timeout', count: '2' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 1, count: '7' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'rf-slice2-shadow-read-v1', count: '2' }, { key: 'none', count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: true, count: '2' }, { key: false, count: '5' }] })
+      .mockResolvedValueOnce({ rows: [{ key: 'write_failed', count: '1' }] })
+      .mockResolvedValueOnce({ rows: [{ total_failures: '1' }] });
+
+    const admin = await worker.fetch(new Request(path, { headers: { 'X-Gateway-Auth': adminToken } }), env);
+    const body = await readJson<{
+      window: { windowId: string; environment: string; service: string; buildSha: string; status: string };
+      summary: {
+        totalObservations: number;
+        byCanonicalDriftClass: Record<string, number>;
+        byFailureBucket?: Record<string, number>;
+        failures: { byFailureBucket: Record<string, number>; totalFailures: number };
+      };
+      safety: { aggregateOnly: boolean; forbiddenFieldScanRequiredBeforeDocs: boolean };
+      lastObservation?: unknown;
+    }>(admin);
+
+    expect(unauthenticated.status).toBe(401);
+    expect(unauthenticatedBody.error.code).toBe('UNAUTHORIZED');
+    expect(nonAdmin.status).toBe(403);
+    expect(nonAdminBody.error.code).toBe('FORBIDDEN');
+    expect(unsafe.status).toBe(400);
+    expect(unsafeBody.error.code).toBe('DURABLE_DIAGNOSTICS_INVALID_WINDOW_ID');
+    expect(admin.status).toBe(200);
+    expect(body.window).toMatchObject({
+      windowId: 'slice_5b_3_window',
+      environment: 'staging',
+      service: 'rf-service',
+      buildSha: '6449eff',
+      status: 'collecting',
+    });
+    expect(body.summary.totalObservations).toBe(7);
+    expect(body.summary.byCanonicalDriftClass.unavailable_entitlement).toBe(2);
+    expect(body.summary.failures.byFailureBucket.write_failed).toBe(1);
+    expect(body.summary.failures.totalFailures).toBe(1);
+    expect(body.safety).toEqual({ aggregateOnly: true, forbiddenFieldScanRequiredBeforeDocs: true });
+    expect(body.lastObservation).toBeUndefined();
+    expect(JSON.stringify(body)).not.toMatch(/lastObservation|user_1|Authorization|X-Gateway-Auth|JWT|payment|voucher|transaction|correlation|dedupe|sourceRef|wallet|G2A|NFT|on-chain/i);
+  });
+
+  it('returns safe durable diagnostics snapshot errors and empty aggregate summaries', async () => {
+    const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example', ENVIRONMENT: 'staging' };
+    const adminToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'admin_1', role: 'admin', roles: ['admin'] });
+
+    executeMock.mockResolvedValueOnce({ rows: [] });
+    const missing = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/durable-diagnostics/window/missing_window/snapshot', {
+        headers: { 'X-Gateway-Auth': adminToken },
+      }),
+      env
+    );
+    const missingBody = await readJson<{ error: { code: string } }>(missing);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            window_id: 'empty_window',
+            environment: 'staging',
+            service: 'rf-service',
+            build_sha: '6449eff',
+            status: 'closed',
+            opened_at: '2026-05-13T10:00:00.000Z',
+            closed_at: '2026-05-13T11:00:00.000Z',
+            retention_until: '2026-06-12T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ total_observations: '0', first_seen_at: null, last_seen_at: null }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total_failures: '0' }] });
+
+    const empty = await worker.fetch(
+      new Request('https://rf.example/v1/rf/internal/entitlement/durable-diagnostics/window/empty_window/snapshot', {
+        headers: { 'X-Gateway-Auth': adminToken },
+      }),
+      env
+    );
+    const emptyBody = await readJson<{
+      summary: { totalObservations: number; firstSeenAt: string | null; lastSeenAt: string | null; failures: { totalFailures: number } };
+    }>(empty);
+
+    expect(missing.status).toBe(404);
+    expect(missingBody.error.code).toBe('DURABLE_DIAGNOSTICS_WINDOW_NOT_FOUND');
+    expect(empty.status).toBe(200);
+    expect(emptyBody.summary.totalObservations).toBe(0);
+    expect(emptyBody.summary.firstSeenAt).toBeNull();
+    expect(emptyBody.summary.lastSeenAt).toBeNull();
+    expect(emptyBody.summary.failures.totalFailures).toBe(0);
+  });
+
   it('creates partner and exposes it via public partner list', async () => {
     const env: Env = { SERVICE_JWT_SECRET: 'service-secret', DATABASE_URL: 'postgres://example' };
     const ownerToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'partner_owner_1' });
@@ -1254,6 +1404,74 @@ describe('rf-service request', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
     expect(getVipEntitlementShadowSnapshot().total).toBe(0);
+  });
+
+  it('keeps paid claim behavior unchanged when durable diagnostics write fails', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      ENVIRONMENT: 'staging',
+      VERSION: '6449eff',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+      RF_ENTITLEMENT_SHADOW_SCENARIO: 'grant',
+      RF_ENABLE_ENTITLEMENT_DURABLE_DIAGNOSTICS: 'true',
+      RF_ENTITLEMENT_DIAGNOSTICS_WINDOW_ID: 'slice_5b_2_window',
+      RF_ENTITLEMENT_DIAGNOSTICS_SINK_MODE: 'aggregate_db',
+      RF_ENTITLEMENT_DIAGNOSTICS_SAMPLE_MODE: 'scenario_only',
+    };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const waitUntilTasks: Promise<unknown>[] = [];
+    const ctx = {
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as ExecutionContext;
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            window_id: 'slice_5b_2_window',
+            environment: 'staging',
+            service: 'rf-service',
+            build_sha: '6449eff',
+            status: 'collecting',
+          },
+        ],
+      })
+      .mockRejectedValueOnce(new Error('diagnostics db unavailable'))
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'paid-durable-failure',
+        },
+      }),
+      env,
+      ctx
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    await Promise.all(waitUntilTasks);
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_VIP_REQUIRED_FOR_PAID_VOUCHER');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+    expect(executedSqlText()).toContain('INSERT INTO rf_entitlement_shadow_diagnostics_failures');
+    expect(executedStatements().some((statement) => statement.values.includes('write_failed'))).toBe(true);
   });
 
   it('keeps role-denied paid claim denied when shadow entitlement would grant', async () => {

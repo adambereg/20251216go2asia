@@ -1,5 +1,12 @@
-import { createDb } from '@go2asia/db';
+import { createDb, type Db } from '@go2asia/db';
 
+import {
+  buildVipEntitlementDurableDiagnosticsSnapshot,
+  isSafeVipEntitlementDiagnosticsWindowId,
+  parseVipEntitlementDurableDiagnosticsConfig,
+  resolveVipEntitlementDurableDiagnosticsScenario,
+  scheduleVipEntitlementDurableDiagnosticsObservation,
+} from '../durableDiagnostics/vipEntitlementDurableDiagnostics';
 import {
   ENTITLEMENT_PREVIEW_PROXY_BATCH_MAX_ITEMS,
   evaluateEntitlementPreviewProxyBatchRequest,
@@ -47,9 +54,9 @@ import {
   shouldThrottleWrite,
   updatePartnerItem,
   validatePartnerGeoLinks,
+  type RfClaimAttributionInput,
   type RfClaimEntitlementShadowRuntime,
   type RfClaimEconomyRuntime,
-  type RfClaimAttributionInput,
 } from '../store';
 import {
   compareVipEntitlementShadow,
@@ -80,6 +87,12 @@ type RfRouteEnv = {
   RF_ENTITLEMENT_SHADOW_SCENARIO?: string;
   RF_ENTITLEMENT_SOURCE_READ_MODE?: string;
   RF_ENTITLEMENT_SOURCE_READ_SCENARIO?: string;
+  RF_ENABLE_ENTITLEMENT_DURABLE_DIAGNOSTICS?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_WINDOW_ID?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_SINK_MODE?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_SAMPLE_MODE?: string;
+  ENVIRONMENT?: string;
+  VERSION?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -131,6 +144,10 @@ function isFlagEnabled(value: string | undefined): boolean {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function isProductionEnvironment(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === 'production';
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -286,18 +303,20 @@ function createClaimEconomyRuntime(env: RfRouteEnv): RfClaimEconomyRuntime | nul
   };
 }
 
-function createEntitlementShadowRuntime(env: RfRouteEnv): RfClaimEntitlementShadowRuntime | null {
+function createEntitlementShadowRuntime(env: RfRouteEnv, db?: Pick<Db, 'execute'>, ctx?: ExecutionContext): RfClaimEntitlementShadowRuntime | null {
   if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE)) return null;
   const scenario = parseVipEntitlementShadowScenario(env.RF_ENTITLEMENT_SHADOW_SCENARIO);
   const sourceReadMode = parseVipEntitlementSourceReadMode(env.RF_ENTITLEMENT_SOURCE_READ_MODE);
   const sourceReadScenario = parseVipEntitlementSourceReadScenario(env.RF_ENTITLEMENT_SOURCE_READ_SCENARIO);
   const diagnosticsEnabled = isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS);
+  const durableDiagnosticsConfig = parseVipEntitlementDurableDiagnosticsConfig(env);
   const sourceReadAdapter = createLocalVipEntitlementSourceReadAdapter();
   return {
     scenario,
     recordPaidClaim(input) {
+      const sourceReadEnabled = sourceReadMode === 'shadow_read_only';
       const sourceRead =
-        sourceReadMode === 'shadow_read_only'
+        sourceReadEnabled
           ? sourceReadAdapter.read({
               request: createVipEntitlementSourceReadRequest({
                 userId: input.userId,
@@ -328,6 +347,19 @@ function createEntitlementShadowRuntime(env: RfRouteEnv): RfClaimEntitlementShad
       });
       if (diagnosticsEnabled) {
         recordVipEntitlementShadowObservation(observation);
+      }
+      if (db) {
+        scheduleVipEntitlementDurableDiagnosticsObservation({
+          db,
+          config: durableDiagnosticsConfig,
+          scenario: resolveVipEntitlementDurableDiagnosticsScenario({
+            shadowScenario: scenario,
+            sourceReadScenario,
+            sourceReadEnabled,
+          }),
+          observation,
+          waitUntil: ctx ? (task) => ctx.waitUntil(task) : undefined,
+        });
       }
     },
   };
@@ -389,7 +421,8 @@ export async function handleRfRoute(
   request: Request,
   env: RfRouteEnv,
   requestId: string,
-  principal: GatewayPrincipal | null
+  principal: GatewayPrincipal | null,
+  ctx?: ExecutionContext
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -476,6 +509,30 @@ export async function handleRfRoute(
   }
 
   const db = createDb(env.DATABASE_URL);
+
+  const durableDiagnosticsSnapshotMatch = path.match(/^\/v1\/rf\/internal\/entitlement\/durable-diagnostics\/window\/([^/]+)\/snapshot$/);
+  if (request.method === 'GET' && durableDiagnosticsSnapshotMatch) {
+    if (!principal) return errorResponse('UNAUTHORIZED', 'Authentication required', requestId, 401);
+    if (!isInternalAdminPrincipal(principal)) {
+      return errorResponse('FORBIDDEN', 'Admin role is required for RF entitlement durable diagnostics', requestId, 403);
+    }
+    if (isProductionEnvironment(env.ENVIRONMENT)) {
+      return errorResponse('DURABLE_DIAGNOSTICS_DISABLED', 'RF entitlement durable diagnostics snapshot is disabled', requestId, 404);
+    }
+    const windowId = decodeURIComponent(durableDiagnosticsSnapshotMatch[1] ?? '');
+    if (!isSafeVipEntitlementDiagnosticsWindowId(windowId)) {
+      return errorResponse('DURABLE_DIAGNOSTICS_INVALID_WINDOW_ID', 'Durable diagnostics window id is invalid', requestId, 400);
+    }
+    try {
+      const snapshot = await buildVipEntitlementDurableDiagnosticsSnapshot(db, windowId);
+      if (!snapshot) {
+        return errorResponse('DURABLE_DIAGNOSTICS_WINDOW_NOT_FOUND', 'Durable diagnostics window was not found', requestId, 404);
+      }
+      return json(snapshot);
+    } catch {
+      return errorResponse('INTERNAL_ERROR', 'Unable to read durable diagnostics snapshot', requestId, 500);
+    }
+  }
 
   if (request.method === 'GET' && path === '/v1/rf/partners') {
     return json({ items: await listPublicPartners(db), nextCursor: null });
@@ -651,7 +708,7 @@ export async function handleRfRoute(
 
     const body = await readJsonObject(request);
     const economy = createClaimEconomyRuntime(env);
-    const entitlementShadow = createEntitlementShadowRuntime(env);
+    const entitlementShadow = createEntitlementShadowRuntime(env, db, ctx);
     const result = await claimVoucher(db, principal, {
       offerId: claimOfferId,
       idempotencyKey,
@@ -691,7 +748,7 @@ export async function handleRfRoute(
     const offerIdValue = decodeURIComponent(listingClaimMatch[2] ?? '');
     const body = await readJsonObject(request);
     const economy = createClaimEconomyRuntime(env);
-    const entitlementShadow = createEntitlementShadowRuntime(env);
+    const entitlementShadow = createEntitlementShadowRuntime(env, db, ctx);
     const result = await claimVoucherForListing(db, principal, {
       listingId,
       offerId: offerIdValue,

@@ -414,6 +414,13 @@
       "when": 1778205600000,
       "tag": "0056_rf_claim_spend_recovery_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "5",
+      "when": 1778682000000,
+      "tag": "0057_rf_entitlement_shadow_diagnostics_v1",
+      "breakpoints": true
     }
   ]
 }
