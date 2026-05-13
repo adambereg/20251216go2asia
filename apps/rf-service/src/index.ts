@@ -20,6 +20,8 @@ export interface Env {
   RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE?: string;
   RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS?: string;
   RF_ENTITLEMENT_SHADOW_SCENARIO?: string;
+  RF_ENTITLEMENT_SOURCE_READ_MODE?: string;
+  RF_ENTITLEMENT_SOURCE_READ_SCENARIO?: string;
 }
 
 function handleHealth(env: Env): Response {

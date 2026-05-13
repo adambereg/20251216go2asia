@@ -1265,6 +1265,8 @@ describe('rf-service request', () => {
       RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
       RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
       RF_ENTITLEMENT_SHADOW_SCENARIO: 'grant',
+      RF_ENTITLEMENT_SOURCE_READ_MODE: 'shadow_read_only',
+      RF_ENTITLEMENT_SOURCE_READ_SCENARIO: 'grant',
     };
     const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
@@ -1296,6 +1298,52 @@ describe('rf-service request', () => {
     expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
     expect(diagnostics.total).toBe(1);
     expect(diagnostics.byDriftClass.role_denied_entitlement_granted).toBe(1);
+    expect(diagnostics.byCanonicalDriftClass.role_denied_entitlement_granted).toBe(1);
+    expect(diagnostics.sourceRead.total).toBe(1);
+    expect(diagnostics.sourceRead.bySourceType.mock).toBe(1);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
+  });
+
+  it('keeps source read adapter disabled unless shadow_read_only mode is enabled', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+      RF_ENTITLEMENT_SOURCE_READ_SCENARIO: 'grant',
+    };
+    const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Idempotency-Key': 'paid-source-read-disabled',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    const diagnostics = getVipEntitlementShadowSnapshot();
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_VIP_REQUIRED_FOR_PAID_VOUCHER');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.byDriftClass.aligned_denied).toBe(1);
+    expect(diagnostics.sourceRead.total).toBe(0);
     expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 
@@ -1391,6 +1439,8 @@ describe('rf-service request', () => {
       RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
       RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
       RF_ENTITLEMENT_SHADOW_SCENARIO: 'deny',
+      RF_ENTITLEMENT_SOURCE_READ_MODE: 'shadow_read_only',
+      RF_ENTITLEMENT_SOURCE_READ_SCENARIO: 'deny',
     };
     const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -1450,6 +1500,9 @@ describe('rf-service request', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(diagnostics.total).toBe(1);
     expect(diagnostics.byDriftClass.role_granted_entitlement_denied).toBe(1);
+    expect(diagnostics.byCanonicalDriftClass.role_granted_entitlement_denied).toBe(1);
+    expect(diagnostics.sourceRead.total).toBe(1);
+    expect(diagnostics.sourceRead.bySourceType.mock).toBe(1);
     expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 

@@ -53,10 +53,15 @@ import {
 } from '../store';
 import {
   compareVipEntitlementShadow,
+  createLocalVipEntitlementSourceReadAdapter,
+  createVipEntitlementSourceReadRequest,
   getVipEntitlementShadowSnapshot,
   parseVipEntitlementShadowScenario,
+  parseVipEntitlementSourceReadMode,
+  parseVipEntitlementSourceReadScenario,
   recordVipEntitlementShadowObservation,
   resolveVipEntitlementShadowDecision,
+  toVipEntitlementShadowDecisionFromSourceRead,
 } from '../vipEntitlementShadow';
 
 type RfRouteEnv = {
@@ -73,6 +78,8 @@ type RfRouteEnv = {
   RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE?: string;
   RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS?: string;
   RF_ENTITLEMENT_SHADOW_SCENARIO?: string;
+  RF_ENTITLEMENT_SOURCE_READ_MODE?: string;
+  RF_ENTITLEMENT_SOURCE_READ_SCENARIO?: string;
 };
 
 function getPathParam(path: string, regex: RegExp): string | null {
@@ -282,20 +289,42 @@ function createClaimEconomyRuntime(env: RfRouteEnv): RfClaimEconomyRuntime | nul
 function createEntitlementShadowRuntime(env: RfRouteEnv): RfClaimEntitlementShadowRuntime | null {
   if (!isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE)) return null;
   const scenario = parseVipEntitlementShadowScenario(env.RF_ENTITLEMENT_SHADOW_SCENARIO);
+  const sourceReadMode = parseVipEntitlementSourceReadMode(env.RF_ENTITLEMENT_SOURCE_READ_MODE);
+  const sourceReadScenario = parseVipEntitlementSourceReadScenario(env.RF_ENTITLEMENT_SOURCE_READ_SCENARIO);
   const diagnosticsEnabled = isFlagEnabled(env.RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS);
+  const sourceReadAdapter = createLocalVipEntitlementSourceReadAdapter();
   return {
     scenario,
     recordPaidClaim(input) {
-      const decision = resolveVipEntitlementShadowDecision({
-        userId: input.userId,
-        currentRoleAllowed: input.currentRoleAllowed,
-        scenario,
-        correlationId: input.correlationId,
-      });
+      const sourceRead =
+        sourceReadMode === 'shadow_read_only'
+          ? sourceReadAdapter.read({
+              request: createVipEntitlementSourceReadRequest({
+                userId: input.userId,
+                offerId: input.offerId,
+                claimScope: input.claimScope,
+                scopeRef: input.scopeRef,
+                correlationId: input.correlationId,
+                diagnosticsEnabled,
+                environment: 'unknown',
+              }),
+              currentRoleAllowed: input.currentRoleAllowed,
+              scenario: sourceReadScenario,
+            })
+          : undefined;
+      const decision = sourceRead
+        ? toVipEntitlementShadowDecisionFromSourceRead(sourceRead)
+        : resolveVipEntitlementShadowDecision({
+            userId: input.userId,
+            currentRoleAllowed: input.currentRoleAllowed,
+            scenario,
+            correlationId: input.correlationId,
+          });
       const observation = compareVipEntitlementShadow({
         currentRoleAllowed: input.currentRoleAllowed,
         decision,
         claimScope: input.claimScope,
+        sourceRead,
       });
       if (diagnosticsEnabled) {
         recordVipEntitlementShadowObservation(observation);
