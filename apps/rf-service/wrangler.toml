@@ -13,8 +13,12 @@ name = "go2asia-rf-service-staging"
 ENVIRONMENT = "staging"
 RF_ENABLE_PAID_VOUCHER_SPEND = "true"
 POINTS_SERVICE_URL = "https://go2asia-points-service-staging.fred89059599296.workers.dev"
+RF_ENABLE_ENTITLEMENT_DURABLE_DIAGNOSTICS = "false"
+RF_ENTITLEMENT_DIAGNOSTICS_WINDOW_ID = ""
+RF_ENTITLEMENT_DIAGNOSTICS_SINK_MODE = "disabled"
+RF_ENTITLEMENT_DIAGNOSTICS_SAMPLE_MODE = "scenario_only"
 
 # Required vars/secrets:
-# - ENVIRONMENT, RF_ENABLE_PAID_VOUCHER_SPEND and POINTS_SERVICE_URL are pinned above for staging deploy stability.
+# - ENVIRONMENT, RF_ENABLE_PAID_VOUCHER_SPEND, POINTS_SERVICE_URL and disabled durable diagnostics flags are pinned above for staging deploy stability.
 # - SERVICE_JWT_SECRET
 # - DATABASE_URL

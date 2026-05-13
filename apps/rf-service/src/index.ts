@@ -20,6 +20,12 @@ export interface Env {
   RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE?: string;
   RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS?: string;
   RF_ENTITLEMENT_SHADOW_SCENARIO?: string;
+  RF_ENTITLEMENT_SOURCE_READ_MODE?: string;
+  RF_ENTITLEMENT_SOURCE_READ_SCENARIO?: string;
+  RF_ENABLE_ENTITLEMENT_DURABLE_DIAGNOSTICS?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_WINDOW_ID?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_SINK_MODE?: string;
+  RF_ENTITLEMENT_DIAGNOSTICS_SAMPLE_MODE?: string;
 }
 
 function handleHealth(env: Env): Response {
@@ -67,7 +73,7 @@ function isProtectedRoute(method: string, path: string): boolean {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const requestId = getRequestId(request) || generateRequestId();
     const logger = createLogger(requestId, 'rf-service', {
       env: env.ENVIRONMENT,
@@ -100,7 +106,7 @@ export default {
         }
       }
 
-      const rfResponse = await handleRfRoute(request, env, requestId, principal);
+      const rfResponse = await handleRfRoute(request, env, requestId, principal, ctx);
       if (rfResponse) {
         response = rfResponse;
       } else if (path.startsWith('/v1/rf/')) {

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 const wranglerToml = readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
@@ -15,6 +16,10 @@ describe('rf-service staging wrangler config', () => {
     expect(vars).toContain('ENVIRONMENT = "staging"');
     expect(vars).toContain('RF_ENABLE_PAID_VOUCHER_SPEND = "true"');
     expect(vars).toContain('POINTS_SERVICE_URL = "https://go2asia-points-service-staging.fred89059599296.workers.dev"');
+    expect(vars).toContain('RF_ENABLE_ENTITLEMENT_DURABLE_DIAGNOSTICS = "false"');
+    expect(vars).toContain('RF_ENTITLEMENT_DIAGNOSTICS_WINDOW_ID = ""');
+    expect(vars).toContain('RF_ENTITLEMENT_DIAGNOSTICS_SINK_MODE = "disabled"');
+    expect(vars).toContain('RF_ENTITLEMENT_DIAGNOSTICS_SAMPLE_MODE = "scenario_only"');
   });
 
   it('does not commit secret values in staging vars', () => {

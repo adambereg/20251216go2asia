@@ -1,28 +1,122 @@
 import type { VoucherClaimScope } from './store';
 
 export type VipEntitlementShadowScenario = 'role_mirror' | 'grant' | 'deny' | 'stale' | 'degraded' | 'unknown_source';
+export type VipEntitlementSourceReadMode = 'disabled' | 'shadow_read_only';
+export type VipEntitlementSourceReadScenario =
+  | 'role_mirror'
+  | 'grant'
+  | 'deny'
+  | 'stale'
+  | 'degraded'
+  | 'source_timeout'
+  | 'source_unavailable'
+  | 'unknown_source';
+export type VipEntitlementDecisionState = 'granted' | 'denied' | 'pending' | 'unknown' | 'not_applicable';
+export type VipEntitlementReasonCode =
+  | 'entitlement_granted'
+  | 'not_found'
+  | 'not_started'
+  | 'expired'
+  | 'revoked'
+  | 'refunded'
+  | 'cancelled'
+  | 'grace_not_enabled'
+  | 'source_unavailable'
+  | 'source_timeout'
+  | 'policy_not_configured'
+  | 'stale_cache'
+  | 'identity_untrusted'
+  | 'role_drift'
+  | 'unknown_source';
+export type VipEntitlementDecisionSource = 'canonical_entitlement' | 'approved_cache' | 'migration_role_shadow' | 'mock' | 'unknown';
+export type VipEntitlementSourceType =
+  | 'canonical_entitlement_store'
+  | 'approved_cache'
+  | 'billing_payment'
+  | 'billing_subscription'
+  | 'admin_grant'
+  | 'promo_campaign'
+  | 'migration_import'
+  | 'reconciliation'
+  | 'migration_role_shadow'
+  | 'mock'
+  | 'unknown';
+export type VipEntitlementAdapterStatus = 'disabled' | 'ok' | 'stale' | 'degraded' | 'timeout' | 'unavailable' | 'unknown_source';
+export type VipEntitlementCanonicalDriftClass =
+  | 'aligned_granted'
+  | 'aligned_denied'
+  | 'role_granted_entitlement_denied'
+  | 'role_denied_entitlement_granted'
+  | 'stale_entitlement'
+  | 'unavailable_entitlement'
+  | 'degraded_runtime'
+  | 'unknown';
 
-export type VipEntitlementShadowDecision = {
+export type VipEntitlementDecision = {
   allowed: boolean;
-  decision: 'granted' | 'denied' | 'pending' | 'unknown' | 'not_applicable';
-  reasonCode:
-    | 'entitlement_granted'
-    | 'not_found'
-    | 'expired'
-    | 'revoked'
-    | 'refunded'
-    | 'cancelled'
-    | 'source_unavailable'
-    | 'source_timeout'
-    | 'policy_not_configured'
-    | 'stale_cache'
-    | 'unknown_source';
+  decision: VipEntitlementDecisionState;
+  reasonCode: VipEntitlementReasonCode;
+  entitlementId: string | null;
+  status: string | null;
+  startsAt: string | null;
+  expiresAt: string | null;
   stale: boolean;
   degraded: boolean;
-  source: 'canonical_entitlement' | 'approved_cache' | 'migration_role_shadow' | 'mock' | 'unknown';
+  cacheHit: boolean;
   evaluatedAt: string;
+  decisionTtlSeconds: number;
+  source: VipEntitlementDecisionSource;
   decisionVersion: number;
   auditTraceId: string;
+};
+
+export type VipEntitlementShadowDecision = Pick<
+  VipEntitlementDecision,
+  'allowed' | 'decision' | 'reasonCode' | 'stale' | 'degraded' | 'source' | 'evaluatedAt' | 'decisionVersion' | 'auditTraceId'
+>;
+
+export type VipEntitlementSourceReadRequest = {
+  requestId: string;
+  subject: {
+    userId: string;
+    trustedIdentityContextPresent: boolean;
+  };
+  action: 'spend_points' | 'shadow_compare';
+  resource: {
+    type: 'rf_offer' | 'rf_listing_offer';
+    id: string | null;
+    scope: 'rf_paid_claim';
+  };
+  requestedEntitlementKind: 'vip_spend_access';
+  evaluationMode: 'shadow_read_only';
+  requestedAt: string;
+  environment: 'local' | 'test' | 'staging' | 'production' | 'unknown';
+  consumerId: 'rf-service';
+  featureFlagContext: {
+    adapterEnabled: boolean;
+    diagnosticsEnabled: boolean;
+    enforcementEnabled: false;
+  };
+  maxSourceLatencyMs: number | null;
+  correlationId: string | null;
+};
+
+export type VipEntitlementSourceReadResult = VipEntitlementDecision & {
+  sourceType: VipEntitlementSourceType;
+  adapterStatus: VipEntitlementAdapterStatus;
+  adapterVersion: string;
+  sourceFresh: boolean;
+  sourceAgeMs: number | null;
+  sourceLatencyMs: number | null;
+};
+
+export type VipEntitlementSourceReadAdapter = {
+  version: string;
+  read(input: {
+    request: VipEntitlementSourceReadRequest;
+    currentRoleAllowed: boolean;
+    scenario: VipEntitlementSourceReadScenario;
+  }): VipEntitlementSourceReadResult;
 };
 
 export type VipEntitlementShadowDriftClass =
@@ -36,6 +130,7 @@ export type VipEntitlementShadowDriftClass =
 
 export type VipEntitlementShadowObservation = {
   driftClass: VipEntitlementShadowDriftClass;
+  canonicalDriftClass: VipEntitlementCanonicalDriftClass;
   runtimeAllowed: boolean;
   entitlementAllowed: boolean;
   reasonCode: VipEntitlementShadowDecision['reasonCode'];
@@ -45,6 +140,16 @@ export type VipEntitlementShadowObservation = {
   claimScope: VoucherClaimScope;
   evaluatedAt: string;
   auditTraceId: string;
+  sourceRead?: {
+    sourceType: VipEntitlementSourceType;
+    adapterStatus: VipEntitlementAdapterStatus;
+    adapterVersion: string;
+    sourceFresh: boolean;
+    sourceAgeBucket: 'none' | 'fresh' | 'stale' | 'unknown';
+    sourceLatencyBucket: 'none' | 'fast' | 'slow' | 'timeout' | 'unknown';
+    decisionVersion: number;
+    auditTracePresent: boolean;
+  };
 };
 
 export type VipEntitlementShadowSnapshot = {
@@ -52,8 +157,18 @@ export type VipEntitlementShadowSnapshot = {
   stale: number;
   degraded: number;
   byDriftClass: Record<VipEntitlementShadowDriftClass, number>;
+  byCanonicalDriftClass: Record<VipEntitlementCanonicalDriftClass, number>;
   byReasonCode: Partial<Record<VipEntitlementShadowDecision['reasonCode'], number>>;
   bySource: Partial<Record<VipEntitlementShadowDecision['source'], number>>;
+  sourceRead: {
+    total: number;
+    byAdapterStatus: Partial<Record<VipEntitlementAdapterStatus, number>>;
+    bySourceType: Partial<Record<VipEntitlementSourceType, number>>;
+    byAdapterVersion: Partial<Record<string, number>>;
+    byDecisionVersion: Partial<Record<string, number>>;
+    auditTracePresent: number;
+    auditTraceMissing: number;
+  };
   lastObservation: Omit<VipEntitlementShadowObservation, 'runtimeAllowed' | 'entitlementAllowed'> | null;
 };
 
@@ -66,14 +181,34 @@ const DRIFT_CLASSES: VipEntitlementShadowDriftClass[] = [
   'degraded_shadow',
   'unknown_source',
 ];
+const CANONICAL_DRIFT_CLASSES: VipEntitlementCanonicalDriftClass[] = [
+  'aligned_granted',
+  'aligned_denied',
+  'role_granted_entitlement_denied',
+  'role_denied_entitlement_granted',
+  'stale_entitlement',
+  'unavailable_entitlement',
+  'degraded_runtime',
+  'unknown',
+];
 
 const snapshot: VipEntitlementShadowSnapshot = {
   total: 0,
   stale: 0,
   degraded: 0,
   byDriftClass: Object.fromEntries(DRIFT_CLASSES.map((item) => [item, 0])) as Record<VipEntitlementShadowDriftClass, number>,
+  byCanonicalDriftClass: Object.fromEntries(CANONICAL_DRIFT_CLASSES.map((item) => [item, 0])) as Record<VipEntitlementCanonicalDriftClass, number>,
   byReasonCode: {},
   bySource: {},
+  sourceRead: {
+    total: 0,
+    byAdapterStatus: {},
+    bySourceType: {},
+    byAdapterVersion: {},
+    byDecisionVersion: {},
+    auditTracePresent: 0,
+    auditTraceMissing: 0,
+  },
   lastObservation: null,
 };
 
@@ -102,6 +237,39 @@ export function parseVipEntitlementShadowScenario(value: string | undefined): Vi
     return normalized;
   }
   return 'role_mirror';
+}
+
+export function parseVipEntitlementSourceReadMode(value: string | undefined): VipEntitlementSourceReadMode {
+  return value?.trim().toLowerCase() === 'shadow_read_only' ? 'shadow_read_only' : 'disabled';
+}
+
+export function parseVipEntitlementSourceReadScenario(value: string | undefined): VipEntitlementSourceReadScenario {
+  const normalized = value?.trim().toLowerCase();
+  if (
+    normalized === 'grant' ||
+    normalized === 'deny' ||
+    normalized === 'stale' ||
+    normalized === 'degraded' ||
+    normalized === 'source_timeout' ||
+    normalized === 'source_unavailable' ||
+    normalized === 'unknown_source' ||
+    normalized === 'role_mirror'
+  ) {
+    return normalized;
+  }
+  return 'role_mirror';
+}
+
+function toFullDecision(decision: VipEntitlementShadowDecision): VipEntitlementDecision {
+  return {
+    ...decision,
+    entitlementId: null,
+    status: decision.allowed ? 'active' : null,
+    startsAt: null,
+    expiresAt: null,
+    cacheHit: decision.source === 'approved_cache',
+    decisionTtlSeconds: 0,
+  };
 }
 
 export function resolveVipEntitlementShadowDecision(input: {
@@ -198,10 +366,230 @@ export function resolveVipEntitlementShadowDecision(input: {
   };
 }
 
+export function createVipEntitlementSourceReadRequest(input: {
+  userId: string;
+  offerId: string;
+  claimScope: VoucherClaimScope;
+  scopeRef: string | null;
+  correlationId: string | null;
+  diagnosticsEnabled: boolean;
+  requestedAt?: Date;
+  environment?: VipEntitlementSourceReadRequest['environment'];
+}): VipEntitlementSourceReadRequest {
+  const requestedAt = nowIso(input.requestedAt);
+  return {
+    requestId: stableId('vip_source_read_req', `${input.userId}:${input.offerId}:${input.claimScope}:${input.scopeRef ?? ''}:${input.correlationId ?? ''}:${requestedAt}`),
+    subject: {
+      userId: input.userId,
+      trustedIdentityContextPresent: true,
+    },
+    action: 'shadow_compare',
+    resource: {
+      type: input.claimScope === 'listing' ? 'rf_listing_offer' : 'rf_offer',
+      id: input.offerId,
+      scope: 'rf_paid_claim',
+    },
+    requestedEntitlementKind: 'vip_spend_access',
+    evaluationMode: 'shadow_read_only',
+    requestedAt,
+    environment: input.environment ?? 'unknown',
+    consumerId: 'rf-service',
+    featureFlagContext: {
+      adapterEnabled: true,
+      diagnosticsEnabled: input.diagnosticsEnabled,
+      enforcementEnabled: false,
+    },
+    maxSourceLatencyMs: null,
+    correlationId: input.correlationId,
+  };
+}
+
+function toSourceReadResult(input: {
+  request: VipEntitlementSourceReadRequest;
+  decision: VipEntitlementShadowDecision;
+  sourceType: VipEntitlementSourceType;
+  adapterStatus: VipEntitlementAdapterStatus;
+  adapterVersion: string;
+  sourceFresh: boolean;
+  sourceAgeMs: number | null;
+  sourceLatencyMs: number | null;
+}): VipEntitlementSourceReadResult {
+  return {
+    ...toFullDecision(input.decision),
+    sourceType: input.sourceType,
+    adapterStatus: input.adapterStatus,
+    adapterVersion: input.adapterVersion,
+    sourceFresh: input.sourceFresh,
+    sourceAgeMs: input.sourceAgeMs,
+    sourceLatencyMs: input.sourceLatencyMs,
+  };
+}
+
+export function createLocalVipEntitlementSourceReadAdapter(version = 'rf-slice2-shadow-read-v1'): VipEntitlementSourceReadAdapter {
+  return {
+    version,
+    read(input) {
+      const evaluatedAt = input.request.requestedAt;
+      const auditTraceId = stableId('vip_source_trace', `${input.request.requestId}:${input.scenario}:${evaluatedAt}`);
+      const baseDecision = resolveVipEntitlementShadowDecision({
+        userId: input.request.subject.userId,
+        currentRoleAllowed: input.currentRoleAllowed,
+        scenario:
+          input.scenario === 'source_timeout' || input.scenario === 'source_unavailable'
+            ? 'degraded'
+            : input.scenario === 'unknown_source'
+              ? 'unknown_source'
+              : input.scenario,
+        correlationId: input.request.correlationId,
+        now: new Date(evaluatedAt),
+      });
+      const decision: VipEntitlementShadowDecision = {
+        ...baseDecision,
+        auditTraceId,
+        evaluatedAt,
+      };
+
+      if (input.scenario === 'source_timeout') {
+        return toSourceReadResult({
+          request: input.request,
+          decision: {
+            ...decision,
+            allowed: false,
+            decision: 'unknown',
+            reasonCode: 'source_timeout',
+            degraded: true,
+            source: 'unknown',
+          },
+          sourceType: 'unknown',
+          adapterStatus: 'timeout',
+          adapterVersion: this.version,
+          sourceFresh: false,
+          sourceAgeMs: null,
+          sourceLatencyMs: null,
+        });
+      }
+
+      if (input.scenario === 'source_unavailable') {
+        return toSourceReadResult({
+          request: input.request,
+          decision: {
+            ...decision,
+            allowed: false,
+            decision: 'unknown',
+            reasonCode: 'source_unavailable',
+            degraded: true,
+            source: 'unknown',
+          },
+          sourceType: 'unknown',
+          adapterStatus: 'unavailable',
+          adapterVersion: this.version,
+          sourceFresh: false,
+          sourceAgeMs: null,
+          sourceLatencyMs: null,
+        });
+      }
+
+      if (input.scenario === 'degraded') {
+        return toSourceReadResult({
+          request: input.request,
+          decision: {
+            ...decision,
+            allowed: false,
+            decision: 'unknown',
+            reasonCode: 'role_drift',
+            degraded: true,
+            source: 'unknown',
+          },
+          sourceType: 'unknown',
+          adapterStatus: 'degraded',
+          adapterVersion: this.version,
+          sourceFresh: false,
+          sourceAgeMs: null,
+          sourceLatencyMs: 0,
+        });
+      }
+
+      return toSourceReadResult({
+        request: input.request,
+        decision,
+        sourceType: decision.source === 'migration_role_shadow' ? 'migration_role_shadow' : decision.source === 'approved_cache' ? 'approved_cache' : decision.source === 'mock' ? 'mock' : 'unknown',
+        adapterStatus: decision.stale ? 'stale' : decision.degraded && decision.reasonCode === 'unknown_source' ? 'unknown_source' : decision.degraded ? 'degraded' : 'ok',
+        adapterVersion: this.version,
+        sourceFresh: !decision.stale && !decision.degraded,
+        sourceAgeMs: decision.stale ? 300_000 : 0,
+        sourceLatencyMs: 0,
+      });
+    },
+  };
+}
+
+export function toVipEntitlementShadowDecisionFromSourceRead(result: VipEntitlementSourceReadResult): VipEntitlementShadowDecision {
+  return {
+    allowed: result.allowed,
+    decision: result.decision,
+    reasonCode: result.reasonCode,
+    stale: result.stale,
+    degraded: result.degraded,
+    source: result.source,
+    evaluatedAt: result.evaluatedAt,
+    decisionVersion: result.decisionVersion,
+    auditTraceId: result.auditTraceId,
+  };
+}
+
+export function isVipEntitlementSourceReadEnforcementCapable(result: VipEntitlementSourceReadResult): boolean {
+  return (
+    result.allowed &&
+    result.decision === 'granted' &&
+    result.status === 'active' &&
+    !result.stale &&
+    !result.degraded &&
+    (result.sourceType === 'canonical_entitlement_store' || result.sourceType === 'approved_cache') &&
+    (result.source === 'canonical_entitlement' || result.source === 'approved_cache')
+  );
+}
+
+function getCanonicalDriftClass(input: {
+  currentRoleAllowed: boolean;
+  decision: VipEntitlementShadowDecision;
+  sourceRead?: VipEntitlementSourceReadResult;
+}): VipEntitlementCanonicalDriftClass {
+  if (input.decision.stale || input.sourceRead?.adapterStatus === 'stale') return 'stale_entitlement';
+  if (
+    input.decision.reasonCode === 'source_timeout' ||
+    input.decision.reasonCode === 'source_unavailable' ||
+    input.decision.reasonCode === 'policy_not_configured' ||
+    input.sourceRead?.adapterStatus === 'timeout' ||
+    input.sourceRead?.adapterStatus === 'unavailable'
+  ) {
+    return 'unavailable_entitlement';
+  }
+  if (input.decision.degraded && input.decision.reasonCode !== 'unknown_source') return 'degraded_runtime';
+  if (input.decision.reasonCode === 'unknown_source' || input.decision.source === 'unknown' || input.sourceRead?.adapterStatus === 'unknown_source') return 'unknown';
+  if (input.currentRoleAllowed && input.decision.allowed) return 'aligned_granted';
+  if (!input.currentRoleAllowed && !input.decision.allowed) return 'aligned_denied';
+  if (input.currentRoleAllowed && !input.decision.allowed) return 'role_granted_entitlement_denied';
+  return 'role_denied_entitlement_granted';
+}
+
+function getSourceAgeBucket(sourceAgeMs: number | null): 'none' | 'fresh' | 'stale' | 'unknown' {
+  if (sourceAgeMs === null) return 'none';
+  if (!Number.isFinite(sourceAgeMs)) return 'unknown';
+  return sourceAgeMs <= 60_000 ? 'fresh' : 'stale';
+}
+
+function getSourceLatencyBucket(sourceLatencyMs: number | null, adapterStatus: VipEntitlementAdapterStatus): 'none' | 'fast' | 'slow' | 'timeout' | 'unknown' {
+  if (adapterStatus === 'timeout') return 'timeout';
+  if (sourceLatencyMs === null) return 'none';
+  if (!Number.isFinite(sourceLatencyMs)) return 'unknown';
+  return sourceLatencyMs <= 250 ? 'fast' : 'slow';
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
   claimScope: VoucherClaimScope;
+  sourceRead?: VipEntitlementSourceReadResult;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
   if (input.decision.stale) driftClass = 'stale_shadow';
@@ -214,6 +602,7 @@ export function compareVipEntitlementShadow(input: {
 
   return {
     driftClass,
+    canonicalDriftClass: getCanonicalDriftClass(input),
     runtimeAllowed: input.currentRoleAllowed,
     entitlementAllowed: input.decision.allowed,
     reasonCode: input.decision.reasonCode,
@@ -223,6 +612,18 @@ export function compareVipEntitlementShadow(input: {
     claimScope: input.claimScope,
     evaluatedAt: input.decision.evaluatedAt,
     auditTraceId: input.decision.auditTraceId,
+    sourceRead: input.sourceRead
+      ? {
+          sourceType: input.sourceRead.sourceType,
+          adapterStatus: input.sourceRead.adapterStatus,
+          adapterVersion: input.sourceRead.adapterVersion,
+          sourceFresh: input.sourceRead.sourceFresh,
+          sourceAgeBucket: getSourceAgeBucket(input.sourceRead.sourceAgeMs),
+          sourceLatencyBucket: getSourceLatencyBucket(input.sourceRead.sourceLatencyMs, input.sourceRead.adapterStatus),
+          decisionVersion: input.sourceRead.decisionVersion,
+          auditTracePresent: input.sourceRead.auditTraceId.trim().length > 0,
+        }
+      : undefined,
   };
 }
 
@@ -231,8 +632,19 @@ export function recordVipEntitlementShadowObservation(observation: VipEntitlemen
   if (observation.stale) snapshot.stale += 1;
   if (observation.degraded) snapshot.degraded += 1;
   snapshot.byDriftClass[observation.driftClass] += 1;
+  snapshot.byCanonicalDriftClass[observation.canonicalDriftClass] += 1;
   snapshot.byReasonCode[observation.reasonCode] = (snapshot.byReasonCode[observation.reasonCode] ?? 0) + 1;
   snapshot.bySource[observation.source] = (snapshot.bySource[observation.source] ?? 0) + 1;
+  if (observation.sourceRead) {
+    snapshot.sourceRead.total += 1;
+    snapshot.sourceRead.byAdapterStatus[observation.sourceRead.adapterStatus] = (snapshot.sourceRead.byAdapterStatus[observation.sourceRead.adapterStatus] ?? 0) + 1;
+    snapshot.sourceRead.bySourceType[observation.sourceRead.sourceType] = (snapshot.sourceRead.bySourceType[observation.sourceRead.sourceType] ?? 0) + 1;
+    snapshot.sourceRead.byAdapterVersion[observation.sourceRead.adapterVersion] = (snapshot.sourceRead.byAdapterVersion[observation.sourceRead.adapterVersion] ?? 0) + 1;
+    const decisionVersion = String(observation.sourceRead.decisionVersion);
+    snapshot.sourceRead.byDecisionVersion[decisionVersion] = (snapshot.sourceRead.byDecisionVersion[decisionVersion] ?? 0) + 1;
+    if (observation.sourceRead.auditTracePresent) snapshot.sourceRead.auditTracePresent += 1;
+    else snapshot.sourceRead.auditTraceMissing += 1;
+  }
   const { runtimeAllowed: _runtimeAllowed, entitlementAllowed: _entitlementAllowed, ...safeObservation } = observation;
   snapshot.lastObservation = safeObservation;
 }
@@ -243,8 +655,18 @@ export function getVipEntitlementShadowSnapshot(): VipEntitlementShadowSnapshot 
     stale: snapshot.stale,
     degraded: snapshot.degraded,
     byDriftClass: { ...snapshot.byDriftClass },
+    byCanonicalDriftClass: { ...snapshot.byCanonicalDriftClass },
     byReasonCode: { ...snapshot.byReasonCode },
     bySource: { ...snapshot.bySource },
+    sourceRead: {
+      total: snapshot.sourceRead.total,
+      byAdapterStatus: { ...snapshot.sourceRead.byAdapterStatus },
+      bySourceType: { ...snapshot.sourceRead.bySourceType },
+      byAdapterVersion: { ...snapshot.sourceRead.byAdapterVersion },
+      byDecisionVersion: { ...snapshot.sourceRead.byDecisionVersion },
+      auditTracePresent: snapshot.sourceRead.auditTracePresent,
+      auditTraceMissing: snapshot.sourceRead.auditTraceMissing,
+    },
     lastObservation: snapshot.lastObservation ? { ...snapshot.lastObservation } : null,
   };
 }
@@ -254,14 +676,46 @@ export function resetVipEntitlementShadowForTests(): void {
   snapshot.stale = 0;
   snapshot.degraded = 0;
   snapshot.byDriftClass = Object.fromEntries(DRIFT_CLASSES.map((item) => [item, 0])) as Record<VipEntitlementShadowDriftClass, number>;
+  snapshot.byCanonicalDriftClass = Object.fromEntries(CANONICAL_DRIFT_CLASSES.map((item) => [item, 0])) as Record<VipEntitlementCanonicalDriftClass, number>;
   snapshot.byReasonCode = {};
   snapshot.bySource = {};
+  snapshot.sourceRead = {
+    total: 0,
+    byAdapterStatus: {},
+    bySourceType: {},
+    byAdapterVersion: {},
+    byDecisionVersion: {},
+    auditTracePresent: 0,
+    auditTraceMissing: 0,
+  };
   snapshot.lastObservation = null;
 }
 
 export function assertNoUnsafeVipEntitlementShadowDiagnosticsFields(value: unknown): void {
   const serialized = JSON.stringify(value).toLowerCase();
-  const forbidden = ['x-gateway-auth', 'authorization', 'bearer ', 'jwt', 'clerk', 'payment', 'receipt', 'sourceref', 'metadata', 'roles', 'userid'];
+  const forbidden = [
+    'x-gateway-auth',
+    'authorization',
+    'bearer ',
+    'jwt',
+    'clerk',
+    'payment',
+    'receipt',
+    'sourceref',
+    'source_ref',
+    'metadata',
+    'roles',
+    'userid',
+    'email',
+    'ledger',
+    'transaction',
+    'externalid',
+    'external_id',
+    'correlation',
+    'dedupe',
+    'settlement',
+    'on-chain',
+  ];
   for (const token of forbidden) {
     if (serialized.includes(token)) {
       throw new Error(`Unsafe VIP entitlement shadow diagnostics field leaked: ${token}`);
