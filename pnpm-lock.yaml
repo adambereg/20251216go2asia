@@ -446,6 +446,9 @@ importers:
       '@go2asia/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@go2asia/vip-entitlement-runtime-contracts':
+        specifier: workspace:*
+        version: link:../../packages/vip-entitlement-runtime-contracts
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20231218.0
@@ -691,6 +694,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.0
         version: 18.3.7(@types/react@18.3.27)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/vip-entitlement-runtime-contracts:
+    devDependencies:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3

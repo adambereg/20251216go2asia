@@ -1,3 +1,10 @@
+import {
+  classifyRuntimeFreshness,
+  type LifecyclePolicyReasonLabel,
+  type LifecycleStateLabel,
+  type RuntimeFreshnessClassification,
+} from '@go2asia/vip-entitlement-runtime-contracts';
+
 import type { VoucherClaimScope } from './store';
 
 export type VipEntitlementShadowScenario = 'role_mirror' | 'grant' | 'deny' | 'stale' | 'degraded' | 'unknown_source';
@@ -149,6 +156,7 @@ export type VipEntitlementShadowObservation = {
     sourceLatencyBucket: 'none' | 'fast' | 'slow' | 'timeout' | 'unknown';
     decisionVersion: number;
     auditTracePresent: boolean;
+    freshness: RuntimeFreshnessClassification;
   };
 };
 
@@ -585,6 +593,49 @@ function getSourceLatencyBucket(sourceLatencyMs: number | null, adapterStatus: V
   return sourceLatencyMs <= 250 ? 'fast' : 'slow';
 }
 
+function toLifecycleStateLabel(status: string | null): LifecycleStateLabel {
+  if (
+    status === 'scheduled' ||
+    status === 'pending' ||
+    status === 'active' ||
+    status === 'grace' ||
+    status === 'expired' ||
+    status === 'revoked' ||
+    status === 'refunded' ||
+    status === 'cancelled' ||
+    status === 'migrated'
+  ) {
+    return status;
+  }
+  return 'unknown';
+}
+
+function toFreshnessReasonLabel(result: VipEntitlementSourceReadResult): LifecyclePolicyReasonLabel {
+  if (result.reasonCode === 'stale_cache') return 'stale_cache';
+  if (result.reasonCode === 'source_timeout') return 'source_timeout';
+  if (result.reasonCode === 'source_unavailable') return 'source_unavailable';
+  if (result.reasonCode === 'policy_not_configured') return 'policy_version_unknown';
+  if (result.adapterStatus === 'degraded') return 'source_degraded';
+  if (result.adapterStatus === 'unavailable') return 'source_unavailable';
+  if (result.adapterStatus === 'timeout') return 'source_timeout';
+  if (result.adapterStatus === 'unknown_source') return 'unknown_freshness';
+  return result.sourceFresh ? 'active' : 'unknown_freshness';
+}
+
+export function classifyVipEntitlementSourceReadFreshness(result: VipEntitlementSourceReadResult): RuntimeFreshnessClassification {
+  return classifyRuntimeFreshness({
+    sourceFresh: result.sourceFresh,
+    sourceAgeMs: result.sourceAgeMs,
+    stale: result.stale,
+    degraded: result.degraded,
+    adapterStatus: result.adapterStatus,
+    reason: toFreshnessReasonLabel(result),
+    policyVersionLabel: result.reasonCode === 'policy_not_configured' ? 'policy_version_unknown' : 'policy_version_not_applicable',
+    lifecycleStateLabel: toLifecycleStateLabel(result.status),
+    diagnosticsAvailable: true,
+  });
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
@@ -622,6 +673,7 @@ export function compareVipEntitlementShadow(input: {
           sourceLatencyBucket: getSourceLatencyBucket(input.sourceRead.sourceLatencyMs, input.sourceRead.adapterStatus),
           decisionVersion: input.sourceRead.decisionVersion,
           auditTracePresent: input.sourceRead.auditTraceId.trim().length > 0,
+          freshness: classifyVipEntitlementSourceReadFreshness(input.sourceRead),
         }
       : undefined,
   };

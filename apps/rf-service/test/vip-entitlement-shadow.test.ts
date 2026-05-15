@@ -156,4 +156,49 @@ describe('VIP entitlement shadow decision model', () => {
     expect(JSON.stringify(snapshot)).not.toMatch(/user_1|listing_1|req_1|correlation|sourceRef|metadata|payment|transaction/i);
     expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(snapshot)).not.toThrow();
   });
+
+  it.each([
+    ['grant', 'fresh', 'active', true],
+    ['stale', 'stale', 'stale_cache', false],
+    ['degraded', 'degraded', 'source_degraded', false],
+    ['source_unavailable', 'source_unavailable', 'source_unavailable', false],
+    ['source_timeout', 'source_timeout', 'source_timeout', false],
+    ['unknown_source', 'unknown_freshness', 'unknown_freshness', false],
+  ] satisfies Array<[VipEntitlementSourceReadScenario, string, string, boolean]>)(
+    'adds non-authoritative freshness metadata for source read scenario %s',
+    (scenario, expectedFreshnessClassification, expectedFreshnessReason, expectedEntitlementAllowed) => {
+      const request = createVipEntitlementSourceReadRequest({
+        userId: 'user_1',
+        offerId: 'rf_offer_1',
+        claimScope: 'partner',
+        scopeRef: null,
+        correlationId: 'req_1',
+        diagnosticsEnabled: true,
+        requestedAt: new Date('2026-05-10T10:00:00.000Z'),
+      });
+      const sourceRead = createLocalVipEntitlementSourceReadAdapter().read({
+        request,
+        currentRoleAllowed: false,
+        scenario,
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: false,
+        decision: toVipEntitlementShadowDecisionFromSourceRead(sourceRead),
+        claimScope: 'partner',
+        sourceRead,
+      });
+
+      expect(observation.entitlementAllowed).toBe(expectedEntitlementAllowed);
+      expect(observation.sourceRead?.freshness).toMatchObject({
+        runtimeDomainLabel: 'ttl_cache_freshness',
+        freshnessClassification: expectedFreshnessClassification,
+        freshnessReason: expectedFreshnessReason,
+        authorityModeLabel: 'shadow_only_observation',
+        diagnosticsModeLabel: 'diagnostics_available_non_authoritative',
+        executionStatus: 'executed_observation_only',
+      });
+      expect(isVipEntitlementSourceReadEnforcementCapable(sourceRead)).toBe(false);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+    }
+  );
 });
