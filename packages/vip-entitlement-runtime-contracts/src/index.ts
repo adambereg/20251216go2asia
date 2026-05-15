@@ -547,6 +547,92 @@ export type RuntimeIdentitySubjectBindingClassification = {
   validationCaseFamily: Extract<ValidationCaseFamily, 'ID'>;
 };
 
+export const REPLAY_CLASSIFICATION_LABELS = [
+  'first_seen_operation',
+  'idempotent_retry',
+  'replay_detected',
+  'replay_ambiguity',
+  'stale_replay',
+  'replay_after_lifecycle_change',
+  'replay_after_source_change',
+  'replay_after_policy_change',
+  'replay_after_identity_downgrade',
+  'cross_subject_replay_ambiguity',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type ReplayClassificationLabel = (typeof REPLAY_CLASSIFICATION_LABELS)[number];
+
+export const REPLAY_IDEMPOTENCY_RELATION_LABELS = [
+  'replay_payload_match',
+  'replay_payload_mismatch',
+  'replay_subject_match',
+  'replay_subject_mismatch',
+  'replay_source_match',
+  'replay_source_mismatch',
+  'replay_lifecycle_match',
+  'replay_lifecycle_mismatch',
+  'replay_policy_match',
+  'replay_policy_mismatch',
+  'replay_identity_match',
+  'replay_identity_mismatch',
+  'not_applicable',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type ReplayIdempotencyRelationLabel = (typeof REPLAY_IDEMPOTENCY_RELATION_LABELS)[number];
+
+export const REPLAY_SOURCE_STATE_LABELS = [
+  'replay_source_current',
+  'replay_source_stale',
+  'replay_source_unknown',
+  'replay_source_inconsistent',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type ReplaySourceStateLabel = (typeof REPLAY_SOURCE_STATE_LABELS)[number];
+
+export const REPLAY_CLASSIFICATION_REASON_LABELS = [
+  ...REPLAY_CLASSIFICATION_LABELS,
+  'replay_payload_match',
+  'replay_payload_mismatch',
+  'replay_subject_match',
+  'replay_subject_mismatch',
+  'replay_source_match',
+  'replay_source_mismatch',
+  'replay_lifecycle_match',
+  'replay_lifecycle_mismatch',
+  'replay_policy_match',
+  'replay_policy_mismatch',
+  'replay_identity_match',
+  'replay_identity_mismatch',
+  'replay_source_current',
+  'replay_source_stale',
+  'replay_source_unknown',
+  'replay_source_inconsistent',
+] as const;
+
+export type ReplayClassificationReasonLabel = (typeof REPLAY_CLASSIFICATION_REASON_LABELS)[number];
+
+export type RuntimeReplayIdempotencyClassification = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'replay_idempotency'>;
+  replayClassification: ReplayClassificationLabel;
+  replayReason: ReplayClassificationReasonLabel;
+  replayIdempotencyRelation: readonly ReplayIdempotencyRelationLabel[];
+  replaySourceState: ReplaySourceStateLabel;
+  replayLifecycleState: LifecycleStateLabel;
+  replayPolicyVersionLabel: PolicyVersionLabel;
+  replayFreshnessClass: FreshnessClassificationLabel;
+  replayIdentityBindingClass: SubjectBindingLabel;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'shadow_only_observation'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation' | 'unsupported_until_runtime_exists'>;
+  actualResultClass: Extract<ActualResultClass, 'passed_for_observation_only' | 'inconclusive' | 'unsupported_without_runtime_change'>;
+  executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
+  evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary' | 'insufficient'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'RPL'>;
+};
+
 export const INPUT_CLASSIFICATION_LABELS = [
   'trusted_input',
   'untrusted_input',
@@ -1103,5 +1189,145 @@ export function classifyRuntimeIdentitySubjectBinding(input: {
     executionStatus: 'executed_observation_only',
     evidenceStatus: unsupported ? 'insufficient' : 'collected_safe_summary',
     validationCaseFamily: 'ID',
+  };
+}
+
+export function normalizeReplayClassificationReason(reason: unknown): ReplayClassificationReasonLabel {
+  const normalized = normalizeToken(reason);
+  if (includesLiteral(REPLAY_CLASSIFICATION_REASON_LABELS, normalized)) {
+    return normalized;
+  }
+  return 'first_seen_operation';
+}
+
+function normalizeReplaySourceState(state: unknown): ReplaySourceStateLabel {
+  const normalized = normalizeToken(state);
+  if (includesLiteral(REPLAY_SOURCE_STATE_LABELS, normalized)) {
+    return normalized;
+  }
+  return 'replay_source_unknown';
+}
+
+function appendRelation(relations: ReplayIdempotencyRelationLabel[], relation: ReplayIdempotencyRelationLabel): void {
+  if (!relations.includes(relation)) relations.push(relation);
+}
+
+export function classifyRuntimeReplayIdempotency(input: {
+  operationSeenBefore?: boolean | null;
+  idempotentRetry?: boolean | null;
+  payloadMatches?: boolean | null;
+  subjectMatches?: boolean | null;
+  sourceMatches?: boolean | null;
+  lifecycleChanged?: boolean | null;
+  sourceChanged?: boolean | null;
+  policyChanged?: boolean | null;
+  identityDowngradeSignal?: boolean | null;
+  crossSubjectSignal?: boolean | null;
+  staleReplaySignal?: boolean | null;
+  unsupportedRuntime?: boolean | null;
+  replaySourceState?: unknown;
+  replayReason?: unknown;
+  lifecycleStateLabel?: LifecycleStateLabel | null;
+  policyVersionLabel?: PolicyVersionLabel | null;
+  freshnessClassification?: FreshnessClassificationLabel | null;
+  identityBindingLabel?: SubjectBindingLabel | null;
+  diagnosticsAvailable?: boolean | null;
+}): RuntimeReplayIdempotencyClassification {
+  const normalizedReason = normalizeReplayClassificationReason(input.replayReason);
+  const replaySourceState = normalizeReplaySourceState(input.replaySourceState);
+  const replayLifecycleState = input.lifecycleStateLabel ?? 'unknown';
+  const replayPolicyVersionLabel = input.policyVersionLabel ?? 'policy_version_not_applicable';
+  const replayFreshnessClass = input.freshnessClassification ?? 'unknown_freshness';
+  const replayIdentityBindingClass = input.identityBindingLabel ?? 'subject_binding_unknown';
+  const relations: ReplayIdempotencyRelationLabel[] = [];
+
+  if (input.payloadMatches === true) appendRelation(relations, 'replay_payload_match');
+  if (input.payloadMatches === false) appendRelation(relations, 'replay_payload_mismatch');
+  if (input.subjectMatches === true) appendRelation(relations, 'replay_subject_match');
+  if (input.subjectMatches === false) appendRelation(relations, 'replay_subject_mismatch');
+  if (input.sourceMatches === true) appendRelation(relations, 'replay_source_match');
+  if (input.sourceMatches === false) appendRelation(relations, 'replay_source_mismatch');
+  if (input.lifecycleChanged === true) appendRelation(relations, 'replay_lifecycle_mismatch');
+  if (input.lifecycleChanged === false) appendRelation(relations, 'replay_lifecycle_match');
+  if (input.policyChanged === true) appendRelation(relations, 'replay_policy_mismatch');
+  if (input.policyChanged === false) appendRelation(relations, 'replay_policy_match');
+  if (input.identityDowngradeSignal === true || replayIdentityBindingClass === 'subject_binding_inconsistent') appendRelation(relations, 'replay_identity_mismatch');
+  if (input.identityDowngradeSignal === false && replayIdentityBindingClass === 'subject_binding_present') appendRelation(relations, 'replay_identity_match');
+  if (relations.length === 0) appendRelation(relations, 'not_applicable');
+
+  let replayClassification: ReplayClassificationLabel;
+  let replayReason: ReplayClassificationReasonLabel = normalizedReason;
+  let actualResultClass: RuntimeReplayIdempotencyClassification['actualResultClass'] = 'passed_for_observation_only';
+  let expectedResultClass: RuntimeReplayIdempotencyClassification['expectedResultClass'] = 'diagnostics_non_authoritative_observation';
+  let evidenceStatus: RuntimeReplayIdempotencyClassification['evidenceStatus'] = 'collected_safe_summary';
+  const replayObserved = input.operationSeenBefore === true || input.idempotentRetry === true;
+
+  if (input.unsupportedRuntime === true || normalizedReason === 'unsupported_without_runtime_change' || replaySourceState === 'unsupported_without_runtime_change') {
+    replayClassification = 'unsupported_without_runtime_change';
+    replayReason = 'unsupported_without_runtime_change';
+    actualResultClass = 'unsupported_without_runtime_change';
+    expectedResultClass = 'unsupported_until_runtime_exists';
+    evidenceStatus = 'insufficient';
+    appendRelation(relations, 'unsupported_without_runtime_change');
+  } else if (input.crossSubjectSignal === true || input.subjectMatches === false) {
+    replayClassification = 'cross_subject_replay_ambiguity';
+    replayReason = input.subjectMatches === false ? 'replay_subject_mismatch' : 'cross_subject_replay_ambiguity';
+    actualResultClass = 'inconclusive';
+  } else if (input.identityDowngradeSignal === true || replayIdentityBindingClass === 'subject_binding_inconsistent') {
+    replayClassification = 'replay_after_identity_downgrade';
+    replayReason = 'replay_after_identity_downgrade';
+    actualResultClass = 'inconclusive';
+  } else if (
+    input.staleReplaySignal === true ||
+    (replayObserved && (replaySourceState === 'replay_source_stale' || replayFreshnessClass === 'stale' || replayFreshnessClass === 'cache_read_failure'))
+  ) {
+    replayClassification = 'stale_replay';
+    replayReason = replaySourceState === 'replay_source_stale' ? 'replay_source_stale' : 'stale_replay';
+    actualResultClass = 'inconclusive';
+  } else if (input.lifecycleChanged === true || (replayObserved && isTerminalLifecycleState(replayLifecycleState))) {
+    replayClassification = 'replay_after_lifecycle_change';
+    replayReason = input.lifecycleChanged === true ? 'replay_lifecycle_mismatch' : 'replay_after_lifecycle_change';
+    actualResultClass = 'inconclusive';
+  } else if (input.sourceChanged === true || input.sourceMatches === false || replaySourceState === 'replay_source_inconsistent') {
+    replayClassification = 'replay_after_source_change';
+    replayReason = input.sourceMatches === false ? 'replay_source_mismatch' : 'replay_after_source_change';
+    actualResultClass = 'inconclusive';
+  } else if (input.policyChanged === true || replayPolicyVersionLabel === 'policy_version_changed' || replayPolicyVersionLabel === 'policy_version_unknown') {
+    replayClassification = 'replay_after_policy_change';
+    replayReason = input.policyChanged === true ? 'replay_policy_mismatch' : 'replay_after_policy_change';
+    actualResultClass = 'inconclusive';
+  } else if (input.payloadMatches === false) {
+    replayClassification = 'replay_ambiguity';
+    replayReason = 'replay_payload_mismatch';
+    actualResultClass = 'inconclusive';
+  } else if (input.idempotentRetry === true) {
+    replayClassification = 'idempotent_retry';
+    replayReason = input.payloadMatches === true ? 'replay_payload_match' : 'idempotent_retry';
+  } else if (input.operationSeenBefore === true) {
+    replayClassification = 'replay_detected';
+    replayReason = 'replay_detected';
+    actualResultClass = 'inconclusive';
+  } else {
+    replayClassification = 'first_seen_operation';
+    replayReason = normalizedReason === 'first_seen_operation' ? 'first_seen_operation' : normalizedReason;
+  }
+
+  return {
+    runtimeDomainLabel: 'replay_idempotency',
+    replayClassification,
+    replayReason,
+    replayIdempotencyRelation: relations,
+    replaySourceState,
+    replayLifecycleState,
+    replayPolicyVersionLabel,
+    replayFreshnessClass,
+    replayIdentityBindingClass,
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    authorityModeLabel: 'shadow_only_observation',
+    expectedResultClass,
+    actualResultClass,
+    executionStatus: 'executed_observation_only',
+    evidenceStatus,
+    validationCaseFamily: 'RPL',
   };
 }

@@ -1,12 +1,16 @@
 import {
   classifyRuntimeFreshness,
   classifyRuntimeIdentitySubjectBinding,
+  classifyRuntimeReplayIdempotency,
   classifyRuntimeSourceAuthenticityVersion,
+  type FreshnessClassificationLabel,
   type LifecyclePolicyReasonLabel,
   type LifecycleStateLabel,
   type RuntimeFreshnessClassification,
   type RuntimeIdentitySubjectBindingClassification,
+  type RuntimeReplayIdempotencyClassification,
   type RuntimeSourceAuthenticityVersionClassification,
+  type SubjectBindingLabel,
 } from '@go2asia/vip-entitlement-runtime-contracts';
 
 import type { VoucherClaimScope } from './store';
@@ -64,6 +68,19 @@ export type VipEntitlementShadowIdentityContext = {
   identityDowngradeSignal?: boolean;
   crossAccountSignal?: boolean;
   identitySourceState?: 'identity_source_current' | 'identity_source_unknown' | 'identity_source_inconsistent' | 'identity_source_degraded';
+};
+export type VipEntitlementShadowReplayContext = {
+  operationSeenBefore?: boolean;
+  idempotentRetry?: boolean;
+  payloadMatches?: boolean | null;
+  subjectMatches?: boolean | null;
+  sourceMatches?: boolean | null;
+  lifecycleChanged?: boolean;
+  sourceChanged?: boolean;
+  policyChanged?: boolean;
+  staleReplaySignal?: boolean;
+  unsupportedRuntime?: boolean;
+  replaySourceState?: 'replay_source_current' | 'replay_source_stale' | 'replay_source_unknown' | 'replay_source_inconsistent';
 };
 export type VipEntitlementCanonicalDriftClass =
   | 'aligned_granted'
@@ -165,6 +182,7 @@ export type VipEntitlementShadowObservation = {
   evaluatedAt: string;
   auditTraceId: string;
   subjectBinding: RuntimeIdentitySubjectBindingClassification;
+  replaySemantics: RuntimeReplayIdempotencyClassification;
   sourceRead?: {
     sourceType: VipEntitlementSourceType;
     adapterStatus: VipEntitlementAdapterStatus;
@@ -710,12 +728,51 @@ export function classifyVipEntitlementShadowSubjectBinding(input: {
   });
 }
 
+function toReplaySourceState(sourceRead?: VipEntitlementSourceReadResult): VipEntitlementShadowReplayContext['replaySourceState'] {
+  if (!sourceRead) return 'replay_source_unknown';
+  if (sourceRead.adapterStatus === 'stale' || sourceRead.stale) return 'replay_source_stale';
+  if (sourceRead.adapterStatus === 'unknown_source' || sourceRead.adapterStatus === 'degraded' || sourceRead.adapterStatus === 'timeout' || sourceRead.adapterStatus === 'unavailable') {
+    return 'replay_source_inconsistent';
+  }
+  return 'replay_source_current';
+}
+
+export function classifyVipEntitlementShadowReplaySemantics(input: {
+  replayContext?: VipEntitlementShadowReplayContext;
+  sourceRead?: VipEntitlementSourceReadResult;
+  subjectBinding: RuntimeIdentitySubjectBindingClassification;
+}): RuntimeReplayIdempotencyClassification {
+  const replaySourceState = input.replayContext?.replaySourceState ?? toReplaySourceState(input.sourceRead);
+  const freshness: RuntimeFreshnessClassification | undefined = input.sourceRead ? classifyVipEntitlementSourceReadFreshness(input.sourceRead) : undefined;
+  return classifyRuntimeReplayIdempotency({
+    operationSeenBefore: input.replayContext?.operationSeenBefore ?? false,
+    idempotentRetry: input.replayContext?.idempotentRetry ?? false,
+    payloadMatches: input.replayContext?.payloadMatches ?? null,
+    subjectMatches: input.replayContext?.subjectMatches ?? null,
+    sourceMatches: input.replayContext?.sourceMatches ?? null,
+    lifecycleChanged: input.replayContext?.lifecycleChanged ?? false,
+    sourceChanged: input.replayContext?.sourceChanged ?? false,
+    policyChanged: input.replayContext?.policyChanged ?? false,
+    staleReplaySignal: input.replayContext?.staleReplaySignal ?? false,
+    unsupportedRuntime: input.replayContext?.unsupportedRuntime ?? false,
+    replaySourceState,
+    lifecycleStateLabel: freshness?.lifecycleStateLabel ?? 'unknown',
+    policyVersionLabel: freshness?.policyVersionLabel ?? 'policy_version_not_applicable',
+    freshnessClassification: (freshness?.freshnessClassification ?? 'unknown_freshness') as FreshnessClassificationLabel,
+    identityBindingLabel: input.subjectBinding.subjectBindingLabel as SubjectBindingLabel,
+    identityDowngradeSignal: input.subjectBinding.subjectRelationClass === 'identity_downgrade_detected',
+    crossSubjectSignal: input.subjectBinding.subjectRelationClass === 'cross_account_ambiguity',
+    diagnosticsAvailable: true,
+  });
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
   claimScope: VoucherClaimScope;
   sourceRead?: VipEntitlementSourceReadResult;
   identityContext?: VipEntitlementShadowIdentityContext;
+  replayContext?: VipEntitlementShadowReplayContext;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
   if (input.decision.stale) driftClass = 'stale_shadow';
@@ -725,6 +782,11 @@ export function compareVipEntitlementShadow(input: {
   else if (!input.currentRoleAllowed && !input.decision.allowed) driftClass = 'aligned_denied';
   else if (input.currentRoleAllowed && !input.decision.allowed) driftClass = 'role_granted_entitlement_denied';
   else driftClass = 'role_denied_entitlement_granted';
+
+  const subjectBinding = classifyVipEntitlementShadowSubjectBinding({
+    identityContext: input.identityContext,
+    sourceRead: input.sourceRead,
+  });
 
   return {
     driftClass,
@@ -738,9 +800,11 @@ export function compareVipEntitlementShadow(input: {
     claimScope: input.claimScope,
     evaluatedAt: input.decision.evaluatedAt,
     auditTraceId: input.decision.auditTraceId,
-    subjectBinding: classifyVipEntitlementShadowSubjectBinding({
-      identityContext: input.identityContext,
+    subjectBinding,
+    replaySemantics: classifyVipEntitlementShadowReplaySemantics({
+      replayContext: input.replayContext,
       sourceRead: input.sourceRead,
+      subjectBinding,
     }),
     sourceRead: input.sourceRead
       ? {
