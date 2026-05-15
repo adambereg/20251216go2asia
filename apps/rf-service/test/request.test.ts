@@ -1565,6 +1565,112 @@ describe('rf-service request', () => {
     expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 
+  it('observes paid claim idempotent replay as a safe shadow bucket without changing replay behavior', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        voucherRow({
+          id: 'rf_voucher_paid_replay',
+          offer_id: 'rf_offer_paid',
+          points_cost_snapshot: 150,
+          points_debit_external_id: 'rf:voucher-claim-spend:rf_voucher_paid_replay',
+          economy_status: 'debited',
+        }),
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-replay-key',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ idempotentReplay: boolean; createdNewInstance: boolean }>(response);
+    const diagnostics = getVipEntitlementShadowSnapshot();
+
+    expect(response.status).toBe(200);
+    expect(body.idempotentReplay).toBe(true);
+    expect(body.createdNewInstance).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.lastObservation?.replayOutcome).toMatchObject({
+      replayOutcomeBucket: 'idempotent_retry_observed',
+      replayContextObserved: true,
+      replayConfidence: 'observed_from_rf_idempotency',
+    });
+    expect(diagnostics.lastObservation?.replaySemantics.replayClassification).toBe('idempotent_retry');
+    expect(diagnostics.lastObservation?.failClosedInputSummary.failClosedCandidateReadiness).toBe('not_ready_shadow_summary_only');
+    expect(diagnostics.lastObservation?.stagingEnvelope.envelopeActive).toBe(false);
+    expect(JSON.stringify(diagnostics)).not.toMatch(/paid-replay-key|user_1|correlationid|transaction/i);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
+  });
+
+  it('observes paid claim idempotency context mismatch as safe metadata without changing 409 behavior', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+      RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+      POINTS_SERVICE_URL: 'https://points.example',
+      RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+      RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+    };
+    const vipToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'vip_spacer' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        voucherRow({
+          id: 'rf_voucher_paid_replay',
+          offer_id: 'rf_offer_other',
+          points_cost_snapshot: 150,
+          points_debit_external_id: 'rf:voucher-claim-spend:rf_voucher_paid_replay',
+          economy_status: 'debited',
+        }),
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': vipToken,
+          'Idempotency-Key': 'paid-mismatch-key',
+        },
+      }),
+      env
+    );
+    const body = await readJson<{ error: { code: string } }>(response);
+    const diagnostics = getVipEntitlementShadowSnapshot();
+
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(diagnostics.total).toBe(1);
+    expect(diagnostics.lastObservation?.replayOutcome).toMatchObject({
+      replayOutcomeBucket: 'context_mismatch_observed',
+      replayContextObserved: true,
+      replayConfidence: 'observed_from_rf_idempotency',
+    });
+    expect(diagnostics.lastObservation?.replaySemantics.replayClassification).toBe('replay_after_source_change');
+    expect(diagnostics.lastObservation?.stagingEnvelope.envelopeActive).toBe(false);
+    expect(JSON.stringify(diagnostics)).not.toMatch(/paid-mismatch-key|user_1|correlationid|transaction/i);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
+  });
+
   it('runs spend-first coupling and persists debited economy fields for paid claim', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

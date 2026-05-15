@@ -84,6 +84,38 @@ export type VipEntitlementShadowReplayContext = {
   unsupportedRuntime?: boolean;
   replaySourceState?: 'replay_source_current' | 'replay_source_stale' | 'replay_source_unknown' | 'replay_source_inconsistent';
 };
+export type VipEntitlementReplayObservationScope =
+  | 'rf_paid_claim_shadow_observation'
+  | 'rf_paid_claim_idempotency_lookup'
+  | 'rf_paid_claim_repeat_policy_barrier'
+  | 'replay_context_not_observed'
+  | 'replay_context_unsupported';
+export type VipEntitlementReplayOutcomeBucket =
+  | 'first_seen_operation'
+  | 'idempotent_retry_observed'
+  | 'context_mismatch_observed'
+  | 'repeat_policy_barrier_observed'
+  | 'replay_context_not_observed'
+  | 'replay_context_unsupported';
+export type VipEntitlementReplayConfidenceBucket = 'observed_from_rf_idempotency' | 'observed_from_repeat_policy' | 'observed_from_shadow_entry' | 'not_observed' | 'unsupported';
+export type VipEntitlementReplayGovernanceGradeStatus = 'rf_idempotency_partial_not_governance_grade' | 'not_governance_grade_replay_runtime';
+export type VipEntitlementRfIdempotencyCoverageStatus =
+  | 'rf_idempotency_outcome_observed'
+  | 'rf_repeat_policy_barrier_observed'
+  | 'rf_idempotency_context_not_observed'
+  | 'rf_idempotency_unsupported_for_governance_grade_replay';
+export type VipEntitlementReplayOutcomeContext = {
+  replayOutcomeBucket: VipEntitlementReplayOutcomeBucket;
+  replayObservationScope?: VipEntitlementReplayObservationScope;
+};
+export type VipEntitlementReplayOutcomeSummary = {
+  replayObservationScope: VipEntitlementReplayObservationScope;
+  replayOutcomeBucket: VipEntitlementReplayOutcomeBucket;
+  replayContextObserved: boolean;
+  replayConfidence: VipEntitlementReplayConfidenceBucket;
+  replayGovernanceGradeStatus: VipEntitlementReplayGovernanceGradeStatus;
+  rfIdempotencyCoverageStatus: VipEntitlementRfIdempotencyCoverageStatus;
+};
 export type VipEntitlementStagingEnvelopeContext = {
   requestedEnvelopeEnabled?: boolean;
   requestedRuntimeEnabled?: boolean;
@@ -95,6 +127,19 @@ export type VipEntitlementStagingEnvelopeContext = {
   namedScopePresent?: boolean;
   safeActorsPresent?: boolean;
   safeWindowPresent?: boolean;
+};
+export type VipEntitlementFailClosedInputSummary = {
+  failClosedCandidateInputStatus: 'candidate_inputs_observed_partial' | 'candidate_inputs_missing_source_read' | 'candidate_inputs_unsupported_without_runtime';
+  failClosedInputCompleteness: 'partial_shadow_inputs_only' | 'missing_authoritative_inputs' | 'unsupported_without_runtime_change';
+  failClosedInputAuthorityStatus: 'shadow_only_not_authoritative';
+  failClosedDiagnosticsIndependenceStatus: 'diagnostics_non_authoritative_not_runtime_input';
+  failClosedCandidateReadiness: 'not_ready_shadow_summary_only';
+  freshnessInputStatus: 'freshness_observed' | 'freshness_missing' | 'freshness_inconclusive';
+  sourceInputStatus: 'source_observed' | 'source_missing' | 'source_inconclusive';
+  identityInputStatus: 'identity_observed' | 'identity_inconclusive';
+  replayInputStatus: 'replay_outcome_observed' | 'replay_context_not_observed' | 'replay_context_unsupported';
+  stagingEnvelopeStatus: 'disabled_not_activated';
+  diagnosticsInputStatus: 'diagnostics_available_non_authoritative';
 };
 export type VipEntitlementCanonicalDriftClass =
   | 'aligned_granted'
@@ -195,9 +240,11 @@ export type VipEntitlementShadowObservation = {
   claimScope: VoucherClaimScope;
   evaluatedAt: string;
   auditTraceId: string;
+  replayOutcome: VipEntitlementReplayOutcomeSummary;
   subjectBinding: RuntimeIdentitySubjectBindingClassification;
   replaySemantics: RuntimeReplayIdempotencyClassification;
   stagingEnvelope: RuntimeStagingEnvelopeSkeleton;
+  failClosedInputSummary: VipEntitlementFailClosedInputSummary;
   sourceRead?: {
     sourceType: VipEntitlementSourceType;
     adapterStatus: VipEntitlementAdapterStatus;
@@ -781,6 +828,97 @@ export function classifyVipEntitlementShadowReplaySemantics(input: {
   });
 }
 
+export function resolveVipEntitlementReplayOutcome(input: {
+  replayOutcomeContext?: VipEntitlementReplayOutcomeContext;
+  replayContext?: VipEntitlementShadowReplayContext;
+} = {}): VipEntitlementReplayOutcomeSummary {
+  const replayOutcomeBucket =
+    input.replayOutcomeContext?.replayOutcomeBucket ??
+    (input.replayContext?.idempotentRetry === true
+      ? 'idempotent_retry_observed'
+      : input.replayContext
+        ? 'first_seen_operation'
+        : 'replay_context_not_observed');
+  const replayObservationScope =
+    input.replayOutcomeContext?.replayObservationScope ??
+    (replayOutcomeBucket === 'idempotent_retry_observed' || replayOutcomeBucket === 'context_mismatch_observed'
+      ? 'rf_paid_claim_idempotency_lookup'
+      : replayOutcomeBucket === 'repeat_policy_barrier_observed'
+        ? 'rf_paid_claim_repeat_policy_barrier'
+        : replayOutcomeBucket === 'replay_context_unsupported'
+          ? 'replay_context_unsupported'
+          : replayOutcomeBucket === 'replay_context_not_observed'
+            ? 'replay_context_not_observed'
+            : 'rf_paid_claim_shadow_observation');
+  const replayContextObserved = replayOutcomeBucket !== 'replay_context_not_observed' && replayOutcomeBucket !== 'replay_context_unsupported';
+  const replayConfidence: VipEntitlementReplayConfidenceBucket =
+    replayOutcomeBucket === 'idempotent_retry_observed' || replayOutcomeBucket === 'context_mismatch_observed'
+      ? 'observed_from_rf_idempotency'
+      : replayOutcomeBucket === 'repeat_policy_barrier_observed'
+        ? 'observed_from_repeat_policy'
+        : replayOutcomeBucket === 'first_seen_operation'
+          ? 'observed_from_shadow_entry'
+          : replayOutcomeBucket === 'replay_context_unsupported'
+            ? 'unsupported'
+            : 'not_observed';
+  const rfIdempotencyCoverageStatus: VipEntitlementRfIdempotencyCoverageStatus =
+    replayOutcomeBucket === 'idempotent_retry_observed' || replayOutcomeBucket === 'context_mismatch_observed'
+      ? 'rf_idempotency_outcome_observed'
+      : replayOutcomeBucket === 'repeat_policy_barrier_observed'
+        ? 'rf_repeat_policy_barrier_observed'
+        : replayOutcomeBucket === 'replay_context_unsupported'
+          ? 'rf_idempotency_unsupported_for_governance_grade_replay'
+          : 'rf_idempotency_context_not_observed';
+
+  return {
+    replayObservationScope,
+    replayOutcomeBucket,
+    replayContextObserved,
+    replayConfidence,
+    replayGovernanceGradeStatus: 'rf_idempotency_partial_not_governance_grade',
+    rfIdempotencyCoverageStatus,
+  };
+}
+
+function replayContextFromOutcome(replayOutcome: VipEntitlementReplayOutcomeSummary): VipEntitlementShadowReplayContext | undefined {
+  if (replayOutcome.replayOutcomeBucket === 'idempotent_retry_observed') {
+    return {
+      operationSeenBefore: true,
+      idempotentRetry: true,
+      payloadMatches: true,
+      subjectMatches: true,
+      sourceMatches: true,
+      lifecycleChanged: false,
+      policyChanged: false,
+    };
+  }
+  if (replayOutcome.replayOutcomeBucket === 'context_mismatch_observed') {
+    return {
+      operationSeenBefore: true,
+      payloadMatches: false,
+      sourceMatches: false,
+    };
+  }
+  if (replayOutcome.replayOutcomeBucket === 'repeat_policy_barrier_observed') {
+    return {
+      operationSeenBefore: true,
+      idempotentRetry: false,
+    };
+  }
+  if (replayOutcome.replayOutcomeBucket === 'replay_context_unsupported') {
+    return {
+      unsupportedRuntime: true,
+    };
+  }
+  if (replayOutcome.replayOutcomeBucket === 'first_seen_operation') {
+    return {
+      operationSeenBefore: false,
+      idempotentRetry: false,
+    };
+  }
+  return undefined;
+}
+
 export function resolveVipEntitlementStagingEnvelopeSkeleton(input: {
   stagingEnvelopeContext?: VipEntitlementStagingEnvelopeContext;
 } = {}): RuntimeStagingEnvelopeSkeleton {
@@ -799,6 +937,44 @@ export function resolveVipEntitlementStagingEnvelopeSkeleton(input: {
   });
 }
 
+export function resolveVipEntitlementFailClosedInputSummary(input: {
+  sourceRead?: VipEntitlementSourceReadResult;
+  subjectBinding: RuntimeIdentitySubjectBindingClassification;
+  replayOutcome: VipEntitlementReplayOutcomeSummary;
+  stagingEnvelope: RuntimeStagingEnvelopeSkeleton;
+}): VipEntitlementFailClosedInputSummary {
+  const freshness = input.sourceRead ? classifyVipEntitlementSourceReadFreshness(input.sourceRead) : undefined;
+  const sourceClassification = input.sourceRead ? classifyVipEntitlementSourceReadSource(input.sourceRead) : undefined;
+  const unsupportedReplay = input.replayOutcome.replayOutcomeBucket === 'replay_context_unsupported';
+  const unsupportedSource =
+    freshness?.freshnessClassification === 'unsupported_without_runtime_change' ||
+    sourceClassification?.sourceConsistencyClass === 'unsupported_without_runtime_change' ||
+    sourceClassification?.sourceAuthenticityClass === 'unsupported_without_runtime_change';
+  const candidateInputsUnsupported = unsupportedReplay || unsupportedSource;
+
+  return {
+    failClosedCandidateInputStatus: candidateInputsUnsupported ? 'candidate_inputs_unsupported_without_runtime' : input.sourceRead ? 'candidate_inputs_observed_partial' : 'candidate_inputs_missing_source_read',
+    failClosedInputCompleteness: candidateInputsUnsupported ? 'unsupported_without_runtime_change' : input.sourceRead ? 'partial_shadow_inputs_only' : 'missing_authoritative_inputs',
+    failClosedInputAuthorityStatus: 'shadow_only_not_authoritative',
+    failClosedDiagnosticsIndependenceStatus: 'diagnostics_non_authoritative_not_runtime_input',
+    failClosedCandidateReadiness: 'not_ready_shadow_summary_only',
+    freshnessInputStatus: freshness
+      ? freshness.actualResultClass === 'passed_for_observation_only'
+        ? 'freshness_observed'
+        : 'freshness_inconclusive'
+      : 'freshness_missing',
+    sourceInputStatus: sourceClassification
+      ? sourceClassification.actualResultClass === 'passed_for_observation_only'
+        ? 'source_observed'
+        : 'source_inconclusive'
+      : 'source_missing',
+    identityInputStatus: input.subjectBinding.actualResultClass === 'passed_for_observation_only' ? 'identity_observed' : 'identity_inconclusive',
+    replayInputStatus: unsupportedReplay ? 'replay_context_unsupported' : input.replayOutcome.replayContextObserved ? 'replay_outcome_observed' : 'replay_context_not_observed',
+    stagingEnvelopeStatus: 'disabled_not_activated',
+    diagnosticsInputStatus: 'diagnostics_available_non_authoritative',
+  };
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
@@ -806,6 +982,7 @@ export function compareVipEntitlementShadow(input: {
   sourceRead?: VipEntitlementSourceReadResult;
   identityContext?: VipEntitlementShadowIdentityContext;
   replayContext?: VipEntitlementShadowReplayContext;
+  replayOutcomeContext?: VipEntitlementReplayOutcomeContext;
   stagingEnvelopeContext?: VipEntitlementStagingEnvelopeContext;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
@@ -821,6 +998,14 @@ export function compareVipEntitlementShadow(input: {
     identityContext: input.identityContext,
     sourceRead: input.sourceRead,
   });
+  const replayOutcome = resolveVipEntitlementReplayOutcome({
+    replayOutcomeContext: input.replayOutcomeContext,
+    replayContext: input.replayContext,
+  });
+  const replayContext = input.replayContext ?? replayContextFromOutcome(replayOutcome);
+  const stagingEnvelope = resolveVipEntitlementStagingEnvelopeSkeleton({
+    stagingEnvelopeContext: input.stagingEnvelopeContext,
+  });
 
   return {
     driftClass,
@@ -834,14 +1019,19 @@ export function compareVipEntitlementShadow(input: {
     claimScope: input.claimScope,
     evaluatedAt: input.decision.evaluatedAt,
     auditTraceId: input.decision.auditTraceId,
+    replayOutcome,
     subjectBinding,
     replaySemantics: classifyVipEntitlementShadowReplaySemantics({
-      replayContext: input.replayContext,
+      replayContext,
       sourceRead: input.sourceRead,
       subjectBinding,
     }),
-    stagingEnvelope: resolveVipEntitlementStagingEnvelopeSkeleton({
-      stagingEnvelopeContext: input.stagingEnvelopeContext,
+    stagingEnvelope,
+    failClosedInputSummary: resolveVipEntitlementFailClosedInputSummary({
+      sourceRead: input.sourceRead,
+      subjectBinding,
+      replayOutcome,
+      stagingEnvelope,
     }),
     sourceRead: input.sourceRead
       ? {

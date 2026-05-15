@@ -346,6 +346,7 @@ function createEntitlementShadowRuntime(env: RfRouteEnv, db?: Pick<Db, 'execute'
         claimScope: input.claimScope,
         sourceRead,
         identityContext: input.identityContext,
+        replayOutcomeContext: input.replayOutcomeContext,
       });
       if (diagnosticsEnabled) {
         recordVipEntitlementShadowObservation(observation);

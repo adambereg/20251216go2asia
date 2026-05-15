@@ -523,6 +523,91 @@ describe('VIP entitlement shadow decision model', () => {
   });
 
   it.each([
+    ['idempotent_retry_observed', 'idempotent_retry', true, 'observed_from_rf_idempotency'],
+    ['context_mismatch_observed', 'replay_after_source_change', true, 'observed_from_rf_idempotency'],
+    ['repeat_policy_barrier_observed', 'replay_detected', true, 'observed_from_repeat_policy'],
+    ['replay_context_not_observed', 'first_seen_operation', false, 'not_observed'],
+  ] as const)(
+    'maps safe replay outcome bucket %s to non-authoritative replay semantics',
+    (replayOutcomeBucket, expectedReplayClassification, expectedObserved, expectedConfidence) => {
+      const decision = resolveVipEntitlementShadowDecision({
+        userId: 'user_1',
+        currentRoleAllowed: true,
+        scenario: 'role_mirror',
+        correlationId: 'req_1',
+        now: new Date('2026-05-10T10:00:00.000Z'),
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: true,
+        decision,
+        claimScope: 'partner',
+        replayOutcomeContext: {
+          replayOutcomeBucket,
+        },
+      });
+
+      expect(observation.replayOutcome).toMatchObject({
+        replayOutcomeBucket,
+        replayContextObserved: expectedObserved,
+        replayConfidence: expectedConfidence,
+        replayGovernanceGradeStatus: 'rf_idempotency_partial_not_governance_grade',
+      });
+      expect(observation.replaySemantics).toMatchObject({
+        replayClassification: expectedReplayClassification,
+        authorityModeLabel: 'shadow_only_observation',
+        executionStatus: 'executed_observation_only',
+        validationCaseFamily: 'RPL',
+      });
+      expect(observation.runtimeAllowed).toBe(true);
+      expect(observation.entitlementAllowed).toBe(decision.allowed);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+    }
+  );
+
+  it('adds fail-closed input summary as non-authoritative shadow correlation only', () => {
+    const request = createVipEntitlementSourceReadRequest({
+      userId: 'user_1',
+      offerId: 'rf_offer_1',
+      claimScope: 'partner',
+      scopeRef: null,
+      correlationId: 'req_1',
+      diagnosticsEnabled: true,
+      requestedAt: new Date('2026-05-10T10:00:00.000Z'),
+    });
+    const sourceRead = createLocalVipEntitlementSourceReadAdapter().read({
+      request,
+      currentRoleAllowed: true,
+      scenario: 'source_timeout',
+    });
+    const observation = compareVipEntitlementShadow({
+      currentRoleAllowed: true,
+      decision: toVipEntitlementShadowDecisionFromSourceRead(sourceRead),
+      claimScope: 'partner',
+      sourceRead,
+      replayOutcomeContext: {
+        replayOutcomeBucket: 'idempotent_retry_observed',
+      },
+    });
+
+    expect(observation.failClosedInputSummary).toMatchObject({
+      failClosedCandidateInputStatus: 'candidate_inputs_observed_partial',
+      failClosedInputCompleteness: 'partial_shadow_inputs_only',
+      failClosedInputAuthorityStatus: 'shadow_only_not_authoritative',
+      failClosedDiagnosticsIndependenceStatus: 'diagnostics_non_authoritative_not_runtime_input',
+      failClosedCandidateReadiness: 'not_ready_shadow_summary_only',
+      freshnessInputStatus: 'freshness_inconclusive',
+      sourceInputStatus: 'source_inconclusive',
+      identityInputStatus: 'identity_inconclusive',
+      replayInputStatus: 'replay_outcome_observed',
+      stagingEnvelopeStatus: 'disabled_not_activated',
+      diagnosticsInputStatus: 'diagnostics_available_non_authoritative',
+    });
+    expect(observation.stagingEnvelope.envelopeActive).toBe(false);
+    expect(observation.runtimeAllowed).toBe(true);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+  });
+
+  it.each([
     [
       'identity_downgrade',
       {
