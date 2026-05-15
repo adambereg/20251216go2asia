@@ -440,6 +440,88 @@ describe('VIP entitlement shadow decision model', () => {
     }
   );
 
+  it('adds disabled-by-default staging envelope metadata without changing shadow decisions', () => {
+    const decision = resolveVipEntitlementShadowDecision({
+      userId: 'user_1',
+      currentRoleAllowed: true,
+      scenario: 'role_mirror',
+      correlationId: 'req_1',
+      now: new Date('2026-05-10T10:00:00.000Z'),
+    });
+    const observation = compareVipEntitlementShadow({
+      currentRoleAllowed: true,
+      decision,
+      claimScope: 'partner',
+    });
+
+    expect(observation.stagingEnvelope).toMatchObject({
+      runtimeDomainLabel: 'feature_gate_kill_switch',
+      stagingEnvelopeLabel: 'disabled_by_default',
+      stagingScopeLabel: 'staging_scope_not_defined',
+      envelopeActive: false,
+      envelopeRuntimeEnabled: false,
+      envelopeAuthorityEnabled: false,
+      envelopeProductionRoutingEnabled: false,
+      envelopeFailClosedEnabled: false,
+      envelopeReplayRejectionEnabled: false,
+      envelopeCacheInvalidationEnabled: false,
+      authorityModeLabel: 'authority_transition_not_started',
+      gateStateLabel: 'gate_disabled',
+      rollbackModeLabel: 'no_enforcement_baseline',
+      diagnosticsModeLabel: 'diagnostics_available_non_authoritative',
+      expectedResultClass: 'diagnostics_non_authoritative_observation',
+      actualResultClass: 'passed_for_observation_only',
+      executionStatus: 'executed_observation_only',
+      validationCaseFamily: 'GATE',
+    });
+    expect(observation.runtimeAllowed).toBe(true);
+    expect(observation.entitlementAllowed).toBe(decision.allowed);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+  });
+
+  it('keeps staging envelope inert even when activation-like fields are requested', () => {
+    const decision = resolveVipEntitlementShadowDecision({
+      userId: 'user_1',
+      currentRoleAllowed: false,
+      scenario: 'grant',
+      correlationId: 'req_1',
+      now: new Date('2026-05-10T10:00:00.000Z'),
+    });
+    const observation = compareVipEntitlementShadow({
+      currentRoleAllowed: false,
+      decision,
+      claimScope: 'partner',
+      stagingEnvelopeContext: {
+        requestedEnvelopeEnabled: true,
+        requestedRuntimeEnabled: true,
+        requestedAuthorityEnabled: true,
+        requestedProductionRoutingEnabled: true,
+        requestedFailClosedEnabled: true,
+        requestedReplayRejectionEnabled: true,
+        requestedCacheInvalidationEnabled: true,
+        namedScopePresent: true,
+        safeActorsPresent: true,
+        safeWindowPresent: true,
+      },
+    });
+
+    expect(observation.stagingEnvelope).toMatchObject({
+      stagingEnvelopeLabel: 'hidden_activation_blocked',
+      gateStateLabel: 'gate_disabled',
+      envelopeActive: false,
+      envelopeRuntimeEnabled: false,
+      envelopeAuthorityEnabled: false,
+      envelopeProductionRoutingEnabled: false,
+      envelopeFailClosedEnabled: false,
+      envelopeReplayRejectionEnabled: false,
+      envelopeCacheInvalidationEnabled: false,
+    });
+    expect(observation.driftClass).toBe('role_denied_entitlement_granted');
+    expect(observation.runtimeAllowed).toBe(false);
+    expect(observation.entitlementAllowed).toBe(true);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+  });
+
   it.each([
     [
       'identity_downgrade',

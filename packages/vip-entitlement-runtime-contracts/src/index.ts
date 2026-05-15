@@ -633,6 +633,61 @@ export type RuntimeReplayIdempotencyClassification = {
   validationCaseFamily: Extract<ValidationCaseFamily, 'RPL'>;
 };
 
+export const STAGING_ENVELOPE_LABELS = [
+  'disabled_by_default',
+  'staging_scope_not_defined',
+  'no_runtime_activation',
+  'no_authority_transition',
+  'no_production_routing',
+  'hidden_activation_blocked',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type StagingEnvelopeLabel = (typeof STAGING_ENVELOPE_LABELS)[number];
+
+export const STAGING_SCOPE_LABELS = [
+  'staging_scope_not_defined',
+  'named_staging_scope_required',
+  'named_safe_actors_required',
+  'named_safe_window_required',
+  'production_scope_blocked',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type StagingScopeLabel = (typeof STAGING_SCOPE_LABELS)[number];
+
+export const VIP_ENTITLEMENT_STAGING_ENVELOPE_DISABLED_DEFAULTS = {
+  envelopeActive: false,
+  envelopeRuntimeEnabled: false,
+  envelopeAuthorityEnabled: false,
+  envelopeProductionRoutingEnabled: false,
+  envelopeFailClosedEnabled: false,
+  envelopeReplayRejectionEnabled: false,
+  envelopeCacheInvalidationEnabled: false,
+} as const;
+
+export type RuntimeStagingEnvelopeSkeleton = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'feature_gate_kill_switch'>;
+  stagingEnvelopeLabel: StagingEnvelopeLabel;
+  stagingScopeLabel: StagingScopeLabel;
+  envelopeActive: false;
+  envelopeRuntimeEnabled: false;
+  envelopeAuthorityEnabled: false;
+  envelopeProductionRoutingEnabled: false;
+  envelopeFailClosedEnabled: false;
+  envelopeReplayRejectionEnabled: false;
+  envelopeCacheInvalidationEnabled: false;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'authority_transition_not_started'>;
+  gateStateLabel: Extract<GateStateLabel, 'gate_disabled'>;
+  rollbackModeLabel: Extract<RollbackModeLabel, 'no_enforcement_baseline'>;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation'>;
+  actualResultClass: Extract<ActualResultClass, 'passed_for_observation_only'>;
+  executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
+  evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'GATE'>;
+};
+
 export const INPUT_CLASSIFICATION_LABELS = [
   'trusted_input',
   'untrusted_input',
@@ -1329,5 +1384,54 @@ export function classifyRuntimeReplayIdempotency(input: {
     executionStatus: 'executed_observation_only',
     evidenceStatus,
     validationCaseFamily: 'RPL',
+  };
+}
+
+export function resolveRuntimeStagingEnvelopeSkeleton(input: {
+  requestedEnvelopeEnabled?: boolean | null;
+  requestedRuntimeEnabled?: boolean | null;
+  requestedAuthorityEnabled?: boolean | null;
+  requestedProductionRoutingEnabled?: boolean | null;
+  requestedFailClosedEnabled?: boolean | null;
+  requestedReplayRejectionEnabled?: boolean | null;
+  requestedCacheInvalidationEnabled?: boolean | null;
+  namedScopePresent?: boolean | null;
+  safeActorsPresent?: boolean | null;
+  safeWindowPresent?: boolean | null;
+  diagnosticsAvailable?: boolean | null;
+} = {}): RuntimeStagingEnvelopeSkeleton {
+  const hiddenActivationRequested =
+    input.requestedEnvelopeEnabled === true ||
+    input.requestedRuntimeEnabled === true ||
+    input.requestedAuthorityEnabled === true ||
+    input.requestedProductionRoutingEnabled === true ||
+    input.requestedFailClosedEnabled === true ||
+    input.requestedReplayRejectionEnabled === true ||
+    input.requestedCacheInvalidationEnabled === true;
+
+  const stagingEnvelopeLabel: StagingEnvelopeLabel = hiddenActivationRequested ? 'hidden_activation_blocked' : 'disabled_by_default';
+  const stagingScopeLabel: StagingScopeLabel =
+    input.namedScopePresent === true
+      ? input.safeActorsPresent === true
+        ? input.safeWindowPresent === true
+          ? 'staging_scope_not_defined'
+          : 'named_safe_window_required'
+        : 'named_safe_actors_required'
+      : 'staging_scope_not_defined';
+
+  return {
+    runtimeDomainLabel: 'feature_gate_kill_switch',
+    stagingEnvelopeLabel,
+    stagingScopeLabel,
+    ...VIP_ENTITLEMENT_STAGING_ENVELOPE_DISABLED_DEFAULTS,
+    authorityModeLabel: 'authority_transition_not_started',
+    gateStateLabel: 'gate_disabled',
+    rollbackModeLabel: 'no_enforcement_baseline',
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    expectedResultClass: 'diagnostics_non_authoritative_observation',
+    actualResultClass: 'passed_for_observation_only',
+    executionStatus: 'executed_observation_only',
+    evidenceStatus: 'collected_safe_summary',
+    validationCaseFamily: 'GATE',
   };
 }

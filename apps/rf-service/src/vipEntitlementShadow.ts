@@ -3,6 +3,7 @@ import {
   classifyRuntimeIdentitySubjectBinding,
   classifyRuntimeReplayIdempotency,
   classifyRuntimeSourceAuthenticityVersion,
+  resolveRuntimeStagingEnvelopeSkeleton,
   type FreshnessClassificationLabel,
   type LifecyclePolicyReasonLabel,
   type LifecycleStateLabel,
@@ -10,6 +11,7 @@ import {
   type RuntimeIdentitySubjectBindingClassification,
   type RuntimeReplayIdempotencyClassification,
   type RuntimeSourceAuthenticityVersionClassification,
+  type RuntimeStagingEnvelopeSkeleton,
   type SubjectBindingLabel,
 } from '@go2asia/vip-entitlement-runtime-contracts';
 
@@ -81,6 +83,18 @@ export type VipEntitlementShadowReplayContext = {
   staleReplaySignal?: boolean;
   unsupportedRuntime?: boolean;
   replaySourceState?: 'replay_source_current' | 'replay_source_stale' | 'replay_source_unknown' | 'replay_source_inconsistent';
+};
+export type VipEntitlementStagingEnvelopeContext = {
+  requestedEnvelopeEnabled?: boolean;
+  requestedRuntimeEnabled?: boolean;
+  requestedAuthorityEnabled?: boolean;
+  requestedProductionRoutingEnabled?: boolean;
+  requestedFailClosedEnabled?: boolean;
+  requestedReplayRejectionEnabled?: boolean;
+  requestedCacheInvalidationEnabled?: boolean;
+  namedScopePresent?: boolean;
+  safeActorsPresent?: boolean;
+  safeWindowPresent?: boolean;
 };
 export type VipEntitlementCanonicalDriftClass =
   | 'aligned_granted'
@@ -183,6 +197,7 @@ export type VipEntitlementShadowObservation = {
   auditTraceId: string;
   subjectBinding: RuntimeIdentitySubjectBindingClassification;
   replaySemantics: RuntimeReplayIdempotencyClassification;
+  stagingEnvelope: RuntimeStagingEnvelopeSkeleton;
   sourceRead?: {
     sourceType: VipEntitlementSourceType;
     adapterStatus: VipEntitlementAdapterStatus;
@@ -766,6 +781,24 @@ export function classifyVipEntitlementShadowReplaySemantics(input: {
   });
 }
 
+export function resolveVipEntitlementStagingEnvelopeSkeleton(input: {
+  stagingEnvelopeContext?: VipEntitlementStagingEnvelopeContext;
+} = {}): RuntimeStagingEnvelopeSkeleton {
+  return resolveRuntimeStagingEnvelopeSkeleton({
+    requestedEnvelopeEnabled: input.stagingEnvelopeContext?.requestedEnvelopeEnabled ?? false,
+    requestedRuntimeEnabled: input.stagingEnvelopeContext?.requestedRuntimeEnabled ?? false,
+    requestedAuthorityEnabled: input.stagingEnvelopeContext?.requestedAuthorityEnabled ?? false,
+    requestedProductionRoutingEnabled: input.stagingEnvelopeContext?.requestedProductionRoutingEnabled ?? false,
+    requestedFailClosedEnabled: input.stagingEnvelopeContext?.requestedFailClosedEnabled ?? false,
+    requestedReplayRejectionEnabled: input.stagingEnvelopeContext?.requestedReplayRejectionEnabled ?? false,
+    requestedCacheInvalidationEnabled: input.stagingEnvelopeContext?.requestedCacheInvalidationEnabled ?? false,
+    namedScopePresent: input.stagingEnvelopeContext?.namedScopePresent ?? false,
+    safeActorsPresent: input.stagingEnvelopeContext?.safeActorsPresent ?? false,
+    safeWindowPresent: input.stagingEnvelopeContext?.safeWindowPresent ?? false,
+    diagnosticsAvailable: true,
+  });
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
@@ -773,6 +806,7 @@ export function compareVipEntitlementShadow(input: {
   sourceRead?: VipEntitlementSourceReadResult;
   identityContext?: VipEntitlementShadowIdentityContext;
   replayContext?: VipEntitlementShadowReplayContext;
+  stagingEnvelopeContext?: VipEntitlementStagingEnvelopeContext;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
   if (input.decision.stale) driftClass = 'stale_shadow';
@@ -805,6 +839,9 @@ export function compareVipEntitlementShadow(input: {
       replayContext: input.replayContext,
       sourceRead: input.sourceRead,
       subjectBinding,
+    }),
+    stagingEnvelope: resolveVipEntitlementStagingEnvelopeSkeleton({
+      stagingEnvelopeContext: input.stagingEnvelopeContext,
     }),
     sourceRead: input.sourceRead
       ? {
