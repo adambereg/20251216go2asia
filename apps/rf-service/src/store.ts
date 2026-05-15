@@ -2,7 +2,7 @@ import type { Db } from '@go2asia/db';
 import { sql } from '@go2asia/db';
 
 import type { GatewayPrincipal } from './middleware/auth';
-import type { VipEntitlementShadowScenario } from './vipEntitlementShadow';
+import type { VipEntitlementShadowIdentityContext, VipEntitlementShadowScenario } from './vipEntitlementShadow';
 
 type DbExecutor = Pick<Db, 'execute'>;
 
@@ -448,6 +448,7 @@ export interface RfClaimEntitlementShadowRuntime {
   recordPaidClaim(input: {
     userId: string;
     currentRoleAllowed: boolean;
+    identityContext: VipEntitlementShadowIdentityContext;
     offerId: string;
     claimScope: VoucherClaimScope;
     scopeRef: string | null;
@@ -1022,6 +1023,15 @@ function recordPaidClaimEntitlementShadow(input: {
     input.shadow?.recordPaidClaim({
       userId: input.principal.userId,
       currentRoleAllowed: input.currentRoleAllowed,
+      identityContext: {
+        trustedSubjectPresent: true,
+        principalType: input.principal.platformRole,
+        vipRoleSignalPresent: input.currentRoleAllowed,
+        rfPrincipalMatchesShadowSubject: true,
+        entitlementSubjectPresent: false,
+        entitlementSubjectMatchesPrincipal: null,
+        identitySourceState: 'identity_source_current',
+      },
       offerId: input.offerId,
       claimScope: input.claimScope,
       scopeRef: input.scopeRef,

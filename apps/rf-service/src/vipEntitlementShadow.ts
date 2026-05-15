@@ -1,8 +1,12 @@
 import {
   classifyRuntimeFreshness,
+  classifyRuntimeIdentitySubjectBinding,
+  classifyRuntimeSourceAuthenticityVersion,
   type LifecyclePolicyReasonLabel,
   type LifecycleStateLabel,
   type RuntimeFreshnessClassification,
+  type RuntimeIdentitySubjectBindingClassification,
+  type RuntimeSourceAuthenticityVersionClassification,
 } from '@go2asia/vip-entitlement-runtime-contracts';
 
 import type { VoucherClaimScope } from './store';
@@ -49,6 +53,18 @@ export type VipEntitlementSourceType =
   | 'mock'
   | 'unknown';
 export type VipEntitlementAdapterStatus = 'disabled' | 'ok' | 'stale' | 'degraded' | 'timeout' | 'unavailable' | 'unknown_source';
+export type VipEntitlementShadowPrincipalType = 'spacer' | 'vip_spacer' | 'pro' | 'admin' | 'unknown';
+export type VipEntitlementShadowIdentityContext = {
+  trustedSubjectPresent: boolean;
+  principalType: VipEntitlementShadowPrincipalType;
+  vipRoleSignalPresent: boolean;
+  rfPrincipalMatchesShadowSubject: boolean;
+  entitlementSubjectPresent: boolean;
+  entitlementSubjectMatchesPrincipal: boolean | null;
+  identityDowngradeSignal?: boolean;
+  crossAccountSignal?: boolean;
+  identitySourceState?: 'identity_source_current' | 'identity_source_unknown' | 'identity_source_inconsistent' | 'identity_source_degraded';
+};
 export type VipEntitlementCanonicalDriftClass =
   | 'aligned_granted'
   | 'aligned_denied'
@@ -115,6 +131,7 @@ export type VipEntitlementSourceReadResult = VipEntitlementDecision & {
   sourceFresh: boolean;
   sourceAgeMs: number | null;
   sourceLatencyMs: number | null;
+  trustedIdentityContextPresent: boolean;
 };
 
 export type VipEntitlementSourceReadAdapter = {
@@ -147,6 +164,7 @@ export type VipEntitlementShadowObservation = {
   claimScope: VoucherClaimScope;
   evaluatedAt: string;
   auditTraceId: string;
+  subjectBinding: RuntimeIdentitySubjectBindingClassification;
   sourceRead?: {
     sourceType: VipEntitlementSourceType;
     adapterStatus: VipEntitlementAdapterStatus;
@@ -157,6 +175,7 @@ export type VipEntitlementShadowObservation = {
     decisionVersion: number;
     auditTracePresent: boolean;
     freshness: RuntimeFreshnessClassification;
+    sourceClassification: RuntimeSourceAuthenticityVersionClassification;
   };
 };
 
@@ -381,6 +400,7 @@ export function createVipEntitlementSourceReadRequest(input: {
   scopeRef: string | null;
   correlationId: string | null;
   diagnosticsEnabled: boolean;
+  trustedIdentityContextPresent?: boolean;
   requestedAt?: Date;
   environment?: VipEntitlementSourceReadRequest['environment'];
 }): VipEntitlementSourceReadRequest {
@@ -389,7 +409,7 @@ export function createVipEntitlementSourceReadRequest(input: {
     requestId: stableId('vip_source_read_req', `${input.userId}:${input.offerId}:${input.claimScope}:${input.scopeRef ?? ''}:${input.correlationId ?? ''}:${requestedAt}`),
     subject: {
       userId: input.userId,
-      trustedIdentityContextPresent: true,
+      trustedIdentityContextPresent: input.trustedIdentityContextPresent ?? true,
     },
     action: 'shadow_compare',
     resource: {
@@ -430,6 +450,7 @@ function toSourceReadResult(input: {
     sourceFresh: input.sourceFresh,
     sourceAgeMs: input.sourceAgeMs,
     sourceLatencyMs: input.sourceLatencyMs,
+    trustedIdentityContextPresent: input.request.subject.trustedIdentityContextPresent,
   };
 }
 
@@ -636,11 +657,65 @@ export function classifyVipEntitlementSourceReadFreshness(result: VipEntitlement
   });
 }
 
+function toSourceStateLabel(result: VipEntitlementSourceReadResult): string {
+  if (result.adapterStatus === 'timeout') return 'source_timeout';
+  if (result.adapterStatus === 'unavailable') return 'source_unavailable';
+  if (result.adapterStatus === 'degraded') return 'source_degraded';
+  if (result.adapterStatus === 'unknown_source') return 'source_inconsistent';
+  return 'source_auth_unknown';
+}
+
+export function classifyVipEntitlementSourceReadSource(result: VipEntitlementSourceReadResult): RuntimeSourceAuthenticityVersionClassification {
+  return classifyRuntimeSourceAuthenticityVersion({
+    sourceType: result.sourceType,
+    decisionSource: result.source,
+    adapterStatus: result.adapterStatus,
+    adapterVersion: result.adapterVersion,
+    expectedAdapterVersion: 'rf-slice2-shadow-read-v1',
+    decisionVersion: result.decisionVersion,
+    expectedDecisionVersion: 1,
+    sourceState: toSourceStateLabel(result),
+    diagnosticsAvailable: true,
+  });
+}
+
+function defaultIdentityContext(sourceRead?: VipEntitlementSourceReadResult): VipEntitlementShadowIdentityContext {
+  return {
+    trustedSubjectPresent: sourceRead?.trustedIdentityContextPresent ?? false,
+    principalType: 'unknown',
+    vipRoleSignalPresent: false,
+    rfPrincipalMatchesShadowSubject: sourceRead !== undefined,
+    entitlementSubjectPresent: false,
+    entitlementSubjectMatchesPrincipal: null,
+    identitySourceState: sourceRead?.trustedIdentityContextPresent ? 'identity_source_current' : 'identity_source_unknown',
+  };
+}
+
+export function classifyVipEntitlementShadowSubjectBinding(input: {
+  identityContext?: VipEntitlementShadowIdentityContext;
+  sourceRead?: VipEntitlementSourceReadResult;
+}): RuntimeIdentitySubjectBindingClassification {
+  const identityContext = input.identityContext ?? defaultIdentityContext(input.sourceRead);
+  return classifyRuntimeIdentitySubjectBinding({
+    trustedSubjectPresent: identityContext.trustedSubjectPresent,
+    rfPrincipalPresent: identityContext.principalType !== 'unknown',
+    rfPrincipalMatchesSubject: identityContext.rfPrincipalMatchesShadowSubject,
+    entitlementSubjectPresent: identityContext.entitlementSubjectPresent,
+    entitlementSubjectMatchesPrincipal: identityContext.entitlementSubjectMatchesPrincipal,
+    crossAccountSignal: identityContext.crossAccountSignal,
+    identityDowngradeSignal: identityContext.identityDowngradeSignal,
+    principalType: identityContext.principalType,
+    identitySourceState: identityContext.identitySourceState ?? 'identity_source_current',
+    diagnosticsAvailable: true,
+  });
+}
+
 export function compareVipEntitlementShadow(input: {
   currentRoleAllowed: boolean;
   decision: VipEntitlementShadowDecision;
   claimScope: VoucherClaimScope;
   sourceRead?: VipEntitlementSourceReadResult;
+  identityContext?: VipEntitlementShadowIdentityContext;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
   if (input.decision.stale) driftClass = 'stale_shadow';
@@ -663,6 +738,10 @@ export function compareVipEntitlementShadow(input: {
     claimScope: input.claimScope,
     evaluatedAt: input.decision.evaluatedAt,
     auditTraceId: input.decision.auditTraceId,
+    subjectBinding: classifyVipEntitlementShadowSubjectBinding({
+      identityContext: input.identityContext,
+      sourceRead: input.sourceRead,
+    }),
     sourceRead: input.sourceRead
       ? {
           sourceType: input.sourceRead.sourceType,
@@ -674,6 +753,7 @@ export function compareVipEntitlementShadow(input: {
           decisionVersion: input.sourceRead.decisionVersion,
           auditTracePresent: input.sourceRead.auditTraceId.trim().length > 0,
           freshness: classifyVipEntitlementSourceReadFreshness(input.sourceRead),
+          sourceClassification: classifyVipEntitlementSourceReadSource(input.sourceRead),
         }
       : undefined,
   };

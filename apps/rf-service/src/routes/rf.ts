@@ -325,6 +325,7 @@ function createEntitlementShadowRuntime(env: RfRouteEnv, db?: Pick<Db, 'execute'
                 scopeRef: input.scopeRef,
                 correlationId: input.correlationId,
                 diagnosticsEnabled,
+                trustedIdentityContextPresent: input.identityContext.trustedSubjectPresent,
                 environment: 'unknown',
               }),
               currentRoleAllowed: input.currentRoleAllowed,
@@ -344,6 +345,7 @@ function createEntitlementShadowRuntime(env: RfRouteEnv, db?: Pick<Db, 'execute'
         decision,
         claimScope: input.claimScope,
         sourceRead,
+        identityContext: input.identityContext,
       });
       if (diagnosticsEnabled) {
         recordVipEntitlementShadowObservation(observation);

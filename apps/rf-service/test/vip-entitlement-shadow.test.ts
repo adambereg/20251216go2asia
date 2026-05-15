@@ -201,4 +201,146 @@ describe('VIP entitlement shadow decision model', () => {
       expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
     }
   );
+
+  it.each([
+    ['grant', 'source_auth_unknown', 'source_version_current', 'source_consistent'],
+    ['stale', 'trusted_source', 'source_version_current', 'source_consistent'],
+    ['degraded', 'source_adapter_unknown', 'source_version_unknown', 'source_degraded'],
+    ['source_unavailable', 'source_adapter_unknown', 'source_version_unknown', 'source_unavailable'],
+    ['source_timeout', 'source_adapter_unknown', 'source_version_unknown', 'source_timeout'],
+    ['unknown_source', 'source_adapter_unknown', 'source_version_unknown', 'source_inconsistent'],
+  ] satisfies Array<[VipEntitlementSourceReadScenario, string, string, string]>)(
+    'adds non-authoritative source authenticity/version metadata for source read scenario %s',
+    (scenario, expectedAuthenticityClass, expectedVersionClass, expectedConsistencyClass) => {
+      const request = createVipEntitlementSourceReadRequest({
+        userId: 'user_1',
+        offerId: 'rf_offer_1',
+        claimScope: 'partner',
+        scopeRef: null,
+        correlationId: 'req_1',
+        diagnosticsEnabled: true,
+        requestedAt: new Date('2026-05-10T10:00:00.000Z'),
+      });
+      const sourceRead = createLocalVipEntitlementSourceReadAdapter().read({
+        request,
+        currentRoleAllowed: false,
+        scenario,
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: false,
+        decision: toVipEntitlementShadowDecisionFromSourceRead(sourceRead),
+        claimScope: 'partner',
+        sourceRead,
+      });
+
+      expect(observation.sourceRead?.sourceClassification).toMatchObject({
+        runtimeDomainLabel: 'source_authenticity_version',
+        sourceAuthenticityClass: expectedAuthenticityClass,
+        sourceVersionClass: expectedVersionClass,
+        sourceVersionLabel: expectedVersionClass,
+        sourceConsistencyClass: expectedConsistencyClass,
+        authorityModeLabel: 'shadow_only_observation',
+        diagnosticsModeLabel: 'diagnostics_available_non_authoritative',
+        executionStatus: 'executed_observation_only',
+        validationCaseFamily: 'SRC',
+      });
+      expect(isVipEntitlementSourceReadEnforcementCapable(sourceRead)).toBe(false);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+    }
+  );
+
+  it.each([
+    [
+      'trusted_subject',
+      {
+        trustedSubjectPresent: true,
+        principalType: 'vip_spacer',
+        vipRoleSignalPresent: true,
+        rfPrincipalMatchesShadowSubject: true,
+        entitlementSubjectPresent: true,
+        entitlementSubjectMatchesPrincipal: true,
+        identitySourceState: 'identity_source_current',
+      },
+      'trusted_subject',
+      'rf_principal_matches_subject',
+      'subject_binding_present',
+    ],
+    [
+      'missing_subject_binding',
+      {
+        trustedSubjectPresent: false,
+        principalType: 'spacer',
+        vipRoleSignalPresent: false,
+        rfPrincipalMatchesShadowSubject: false,
+        entitlementSubjectPresent: false,
+        entitlementSubjectMatchesPrincipal: null,
+        identitySourceState: 'identity_source_unknown',
+      },
+      'subject_binding_missing',
+      'rf_principal_mismatch',
+      'subject_binding_missing',
+    ],
+    [
+      'cross_account_ambiguity',
+      {
+        trustedSubjectPresent: true,
+        principalType: 'spacer',
+        vipRoleSignalPresent: false,
+        rfPrincipalMatchesShadowSubject: true,
+        entitlementSubjectPresent: true,
+        entitlementSubjectMatchesPrincipal: true,
+        crossAccountSignal: true,
+        identitySourceState: 'identity_source_current',
+      },
+      'trusted_subject',
+      'cross_account_ambiguity',
+      'subject_binding_inconsistent',
+    ],
+    [
+      'identity_downgrade',
+      {
+        trustedSubjectPresent: true,
+        principalType: 'vip_spacer',
+        vipRoleSignalPresent: true,
+        rfPrincipalMatchesShadowSubject: true,
+        entitlementSubjectPresent: true,
+        entitlementSubjectMatchesPrincipal: true,
+        identityDowngradeSignal: true,
+        identitySourceState: 'identity_source_current',
+      },
+      'trusted_subject',
+      'identity_downgrade_detected',
+      'subject_binding_unknown',
+    ],
+  ] as const)(
+    'adds non-authoritative subject-binding metadata for %s',
+    (_caseName, identityContext, expectedTrustClass, expectedRelationClass, expectedBindingLabel) => {
+      const decision = resolveVipEntitlementShadowDecision({
+        userId: 'user_1',
+        currentRoleAllowed: identityContext.vipRoleSignalPresent,
+        scenario: 'role_mirror',
+        correlationId: 'req_1',
+        now: new Date('2026-05-10T10:00:00.000Z'),
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: identityContext.vipRoleSignalPresent,
+        decision,
+        claimScope: 'partner',
+        identityContext,
+      });
+
+      expect(observation.subjectBinding).toMatchObject({
+        runtimeDomainLabel: 'identity_enforcement',
+        subjectTrustClass: expectedTrustClass,
+        subjectRelationClass: expectedRelationClass,
+        subjectBindingLabel: expectedBindingLabel,
+        authorityModeLabel: 'shadow_only_observation',
+        diagnosticsModeLabel: 'diagnostics_available_non_authoritative',
+        executionStatus: 'executed_observation_only',
+        validationCaseFamily: 'ID',
+      });
+      expect(observation.entitlementAllowed).toBe(decision.allowed);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+    }
+  );
 });

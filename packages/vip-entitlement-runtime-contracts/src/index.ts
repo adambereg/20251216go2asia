@@ -377,6 +377,176 @@ export type RuntimeFreshnessClassification = {
   evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary' | 'insufficient'>;
 };
 
+export const SOURCE_AUTHENTICITY_CLASS_LABELS = [
+  'trusted_source',
+  'untrusted_source',
+  'source_auth_unknown',
+  'source_signature_missing',
+  'source_signature_invalid',
+  'source_adapter_unknown',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceAuthenticityClassLabel = (typeof SOURCE_AUTHENTICITY_CLASS_LABELS)[number];
+
+export const SOURCE_VERSION_CLASS_LABELS = [
+  'source_version_current',
+  'source_version_changed',
+  'source_version_unknown',
+  'source_version_incompatible',
+  'source_version_mismatch',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceVersionClassLabel = (typeof SOURCE_VERSION_CLASS_LABELS)[number];
+
+export const SOURCE_CONSISTENCY_CLASS_LABELS = [
+  'source_consistent',
+  'source_degraded',
+  'source_unavailable',
+  'source_timeout',
+  'source_inconsistent',
+  'source_malformed',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceConsistencyClassLabel = (typeof SOURCE_CONSISTENCY_CLASS_LABELS)[number];
+
+export const SOURCE_ADAPTER_LABELS = ['source_adapter_known', 'source_adapter_unknown', 'source_adapter_unsupported'] as const;
+
+export type SourceAdapterLabel = (typeof SOURCE_ADAPTER_LABELS)[number];
+
+export const SOURCE_CLASSIFICATION_REASON_LABELS = [
+  'trusted_source',
+  'untrusted_source',
+  'source_auth_unknown',
+  'source_signature_missing',
+  'source_signature_invalid',
+  'source_adapter_unknown',
+  'source_version_current',
+  'source_version_changed',
+  'source_version_unknown',
+  'source_version_incompatible',
+  'source_version_mismatch',
+  'source_degraded',
+  'source_unavailable',
+  'source_timeout',
+  'source_inconsistent',
+  'source_malformed',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceClassificationReasonLabel = (typeof SOURCE_CLASSIFICATION_REASON_LABELS)[number];
+
+export type RuntimeSourceAuthenticityVersionClassification = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'source_authenticity_version'>;
+  sourceAuthenticityClass: SourceAuthenticityClassLabel;
+  sourceVersionClass: SourceVersionClassLabel;
+  sourceClassificationReason: SourceClassificationReasonLabel;
+  sourceVersionLabel: SourceVersionClassLabel;
+  sourceAdapterLabel: SourceAdapterLabel;
+  sourceConsistencyClass: SourceConsistencyClassLabel;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'shadow_only_observation'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation' | 'unsupported_until_runtime_exists'>;
+  actualResultClass: Extract<ActualResultClass, 'passed_for_observation_only' | 'inconclusive' | 'unsupported_without_runtime_change'>;
+  executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
+  evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary' | 'insufficient'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'SRC'>;
+};
+
+export const SUBJECT_TRUST_CLASS_LABELS = [
+  'trusted_subject',
+  'untrusted_subject',
+  'subject_unknown',
+  'subject_binding_missing',
+  'subject_binding_inconsistent',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SubjectTrustClassLabel = (typeof SUBJECT_TRUST_CLASS_LABELS)[number];
+
+export const SUBJECT_RELATION_CLASS_LABELS = [
+  'rf_principal_matches_subject',
+  'rf_principal_mismatch',
+  'entitlement_subject_missing',
+  'entitlement_subject_unknown',
+  'cross_account_ambiguity',
+  'identity_downgrade_detected',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SubjectRelationClassLabel = (typeof SUBJECT_RELATION_CLASS_LABELS)[number];
+
+export const IDENTITY_SOURCE_CLASS_LABELS = [
+  'identity_source_current',
+  'identity_source_unknown',
+  'identity_source_inconsistent',
+  'identity_source_degraded',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type IdentitySourceClassLabel = (typeof IDENTITY_SOURCE_CLASS_LABELS)[number];
+
+export const PRINCIPAL_TYPE_LABELS = [
+  'spacer_principal',
+  'vip_spacer_principal',
+  'pro_principal',
+  'admin_principal',
+  'unknown_principal',
+] as const;
+
+export type PrincipalTypeLabel = (typeof PRINCIPAL_TYPE_LABELS)[number];
+
+export const SUBJECT_BINDING_LABELS = [
+  'subject_binding_present',
+  'subject_binding_missing',
+  'subject_binding_inconsistent',
+  'subject_binding_unknown',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SubjectBindingLabel = (typeof SUBJECT_BINDING_LABELS)[number];
+
+export const IDENTITY_CLASSIFICATION_REASON_LABELS = [
+  'trusted_subject',
+  'untrusted_subject',
+  'subject_unknown',
+  'subject_binding_missing',
+  'subject_binding_inconsistent',
+  'subject_binding_unknown',
+  'rf_principal_matches_subject',
+  'rf_principal_mismatch',
+  'entitlement_subject_missing',
+  'entitlement_subject_unknown',
+  'cross_account_ambiguity',
+  'identity_downgrade_detected',
+  'identity_source_current',
+  'identity_source_unknown',
+  'identity_source_inconsistent',
+  'identity_source_degraded',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type IdentityClassificationReasonLabel = (typeof IDENTITY_CLASSIFICATION_REASON_LABELS)[number];
+
+export type RuntimeIdentitySubjectBindingClassification = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'identity_enforcement'>;
+  subjectTrustClass: SubjectTrustClassLabel;
+  subjectRelationClass: SubjectRelationClassLabel;
+  identitySourceClass: IdentitySourceClassLabel;
+  identityClassificationReason: IdentityClassificationReasonLabel;
+  principalTypeLabel: PrincipalTypeLabel;
+  subjectBindingLabel: SubjectBindingLabel;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'shadow_only_observation'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation' | 'unsupported_until_runtime_exists'>;
+  actualResultClass: Extract<ActualResultClass, 'passed_for_observation_only' | 'inconclusive' | 'unsupported_without_runtime_change'>;
+  executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
+  evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary' | 'insufficient'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'ID'>;
+};
+
 export const INPUT_CLASSIFICATION_LABELS = [
   'trusted_input',
   'untrusted_input',
@@ -702,5 +872,236 @@ export function classifyRuntimeFreshness(input: {
     actualResultClass,
     executionStatus: 'executed_observation_only',
     evidenceStatus,
+  };
+}
+
+export function normalizeSourceClassificationReason(reason: unknown): SourceClassificationReasonLabel {
+  const normalized = normalizeToken(reason);
+  if (includesLiteral(SOURCE_CLASSIFICATION_REASON_LABELS, normalized)) {
+    return normalized;
+  }
+  return 'source_auth_unknown';
+}
+
+export function classifyRuntimeSourceAuthenticityVersion(input: {
+  sourceType?: string | null;
+  decisionSource?: string | null;
+  adapterStatus?: string | null;
+  adapterVersion?: string | null;
+  expectedAdapterVersion?: string | null;
+  decisionVersion?: number | null;
+  expectedDecisionVersion?: number | null;
+  signatureState?: string | null;
+  sourceState?: unknown;
+  diagnosticsAvailable?: boolean | null;
+}): RuntimeSourceAuthenticityVersionClassification {
+  const sourceType = normalizeToken(input.sourceType);
+  const decisionSource = normalizeToken(input.decisionSource);
+  const adapterStatus = normalizeToken(input.adapterStatus);
+  const adapterVersion = normalizeToken(input.adapterVersion);
+  const expectedAdapterVersion = normalizeToken(input.expectedAdapterVersion);
+  const signatureState = normalizeToken(input.signatureState);
+  const sourceState = normalizeSourceClassificationReason(input.sourceState);
+  const sourceAdapterLabel: SourceAdapterLabel = adapterStatus === 'unknown_source' || sourceType === 'unknown' ? 'source_adapter_unknown' : 'source_adapter_known';
+
+  let sourceConsistencyClass: SourceConsistencyClassLabel = 'source_consistent';
+  if (sourceState === 'unsupported_without_runtime_change') sourceConsistencyClass = 'unsupported_without_runtime_change';
+  else if (adapterStatus === 'timeout' || sourceState === 'source_timeout') sourceConsistencyClass = 'source_timeout';
+  else if (adapterStatus === 'unavailable' || sourceState === 'source_unavailable') sourceConsistencyClass = 'source_unavailable';
+  else if (adapterStatus === 'degraded' || sourceState === 'source_degraded') sourceConsistencyClass = 'source_degraded';
+  else if (sourceState === 'source_malformed') sourceConsistencyClass = 'source_malformed';
+  else if (adapterStatus === 'unknown_source' || sourceState === 'source_inconsistent') sourceConsistencyClass = 'source_inconsistent';
+
+  let sourceAuthenticityClass: SourceAuthenticityClassLabel = 'source_auth_unknown';
+  if (sourceState === 'unsupported_without_runtime_change') {
+    sourceAuthenticityClass = 'unsupported_without_runtime_change';
+  } else if (signatureState === 'missing' || sourceState === 'source_signature_missing') {
+    sourceAuthenticityClass = 'source_signature_missing';
+  } else if (signatureState === 'invalid' || sourceState === 'source_signature_invalid') {
+    sourceAuthenticityClass = 'source_signature_invalid';
+  } else if (signatureState === 'untrusted' || sourceState === 'untrusted_source') {
+    sourceAuthenticityClass = 'untrusted_source';
+  } else if (sourceAdapterLabel === 'source_adapter_unknown') {
+    sourceAuthenticityClass = 'source_adapter_unknown';
+  } else if (
+    (sourceType === 'canonical_entitlement_store' && decisionSource === 'canonical_entitlement') ||
+    (sourceType === 'approved_cache' && decisionSource === 'approved_cache')
+  ) {
+    sourceAuthenticityClass = 'trusted_source';
+  }
+
+  let sourceVersionClass: SourceVersionClassLabel = 'source_version_current';
+  if (sourceState === 'unsupported_without_runtime_change') {
+    sourceVersionClass = 'unsupported_without_runtime_change';
+  } else if (
+    sourceConsistencyClass === 'source_timeout' ||
+    sourceConsistencyClass === 'source_unavailable' ||
+    sourceAdapterLabel === 'source_adapter_unknown'
+  ) {
+    sourceVersionClass = 'source_version_unknown';
+  } else if (sourceState === 'source_version_changed') {
+    sourceVersionClass = 'source_version_changed';
+  } else if (sourceState === 'source_version_incompatible') {
+    sourceVersionClass = 'source_version_incompatible';
+  } else if (sourceState === 'source_version_mismatch') {
+    sourceVersionClass = 'source_version_mismatch';
+  } else if (expectedAdapterVersion.length > 0 && adapterVersion.length > 0 && adapterVersion !== expectedAdapterVersion) {
+    sourceVersionClass = 'source_version_mismatch';
+  } else if (!Number.isInteger(input.decisionVersion)) {
+    sourceVersionClass = 'source_version_unknown';
+  } else if (
+    Number.isInteger(input.expectedDecisionVersion) &&
+    Number.isInteger(input.decisionVersion) &&
+    input.decisionVersion !== input.expectedDecisionVersion
+  ) {
+    sourceVersionClass = 'source_version_incompatible';
+  }
+
+  let sourceClassificationReason: SourceClassificationReasonLabel = sourceState;
+  if (sourceClassificationReason === 'source_auth_unknown') {
+    if (sourceConsistencyClass !== 'source_consistent') sourceClassificationReason = sourceConsistencyClass;
+    else if (sourceVersionClass !== 'source_version_current') sourceClassificationReason = sourceVersionClass;
+    else sourceClassificationReason = sourceAuthenticityClass;
+  }
+
+  const unsupported =
+    sourceAuthenticityClass === 'unsupported_without_runtime_change' ||
+    sourceVersionClass === 'unsupported_without_runtime_change' ||
+    sourceConsistencyClass === 'unsupported_without_runtime_change';
+  const inconclusive =
+    unsupported ||
+    sourceAuthenticityClass !== 'trusted_source' ||
+    sourceVersionClass !== 'source_version_current' ||
+    sourceConsistencyClass !== 'source_consistent';
+
+  return {
+    runtimeDomainLabel: 'source_authenticity_version',
+    sourceAuthenticityClass,
+    sourceVersionClass,
+    sourceClassificationReason,
+    sourceVersionLabel: sourceVersionClass,
+    sourceAdapterLabel,
+    sourceConsistencyClass,
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    authorityModeLabel: 'shadow_only_observation',
+    expectedResultClass: unsupported ? 'unsupported_until_runtime_exists' : 'diagnostics_non_authoritative_observation',
+    actualResultClass: unsupported ? 'unsupported_without_runtime_change' : inconclusive ? 'inconclusive' : 'passed_for_observation_only',
+    executionStatus: 'executed_observation_only',
+    evidenceStatus: unsupported ? 'insufficient' : 'collected_safe_summary',
+    validationCaseFamily: 'SRC',
+  };
+}
+
+export function normalizeIdentityClassificationReason(reason: unknown): IdentityClassificationReasonLabel {
+  const normalized = normalizeToken(reason);
+  if (includesLiteral(IDENTITY_CLASSIFICATION_REASON_LABELS, normalized)) {
+    return normalized;
+  }
+  return 'subject_unknown';
+}
+
+export function classifyRuntimeIdentitySubjectBinding(input: {
+  trustedSubjectPresent?: boolean | null;
+  rfPrincipalPresent?: boolean | null;
+  rfPrincipalMatchesSubject?: boolean | null;
+  entitlementSubjectPresent?: boolean | null;
+  entitlementSubjectMatchesPrincipal?: boolean | null;
+  crossAccountSignal?: boolean | null;
+  identityDowngradeSignal?: boolean | null;
+  principalType?: string | null;
+  identitySourceState?: unknown;
+  diagnosticsAvailable?: boolean | null;
+}): RuntimeIdentitySubjectBindingClassification {
+  const identitySourceState = normalizeIdentityClassificationReason(input.identitySourceState);
+  const principalType = normalizeToken(input.principalType);
+  const principalTypeLabel: PrincipalTypeLabel =
+    principalType === 'admin'
+      ? 'admin_principal'
+      : principalType === 'pro'
+        ? 'pro_principal'
+        : principalType === 'vip_spacer'
+          ? 'vip_spacer_principal'
+          : principalType === 'spacer'
+            ? 'spacer_principal'
+            : 'unknown_principal';
+
+  let identitySourceClass: IdentitySourceClassLabel = 'identity_source_current';
+  if (identitySourceState === 'unsupported_without_runtime_change') identitySourceClass = 'unsupported_without_runtime_change';
+  else if (identitySourceState === 'identity_source_degraded') identitySourceClass = 'identity_source_degraded';
+  else if (identitySourceState === 'identity_source_inconsistent') identitySourceClass = 'identity_source_inconsistent';
+  else if (identitySourceState === 'identity_source_unknown' || principalTypeLabel === 'unknown_principal') identitySourceClass = 'identity_source_unknown';
+
+  let subjectTrustClass: SubjectTrustClassLabel = 'subject_unknown';
+  if (identitySourceState === 'unsupported_without_runtime_change') {
+    subjectTrustClass = 'unsupported_without_runtime_change';
+  } else if (input.trustedSubjectPresent === false) {
+    subjectTrustClass = 'subject_binding_missing';
+  } else if (input.rfPrincipalPresent === false || principalTypeLabel === 'unknown_principal') {
+    subjectTrustClass = 'untrusted_subject';
+  } else if (input.rfPrincipalMatchesSubject === false || input.entitlementSubjectMatchesPrincipal === false) {
+    subjectTrustClass = 'subject_binding_inconsistent';
+  } else if (input.trustedSubjectPresent === true) {
+    subjectTrustClass = 'trusted_subject';
+  }
+
+  let subjectRelationClass: SubjectRelationClassLabel = 'entitlement_subject_unknown';
+  if (identitySourceState === 'unsupported_without_runtime_change') {
+    subjectRelationClass = 'unsupported_without_runtime_change';
+  } else if (input.identityDowngradeSignal === true) {
+    subjectRelationClass = 'identity_downgrade_detected';
+  } else if (input.crossAccountSignal === true) {
+    subjectRelationClass = 'cross_account_ambiguity';
+  } else if (input.rfPrincipalMatchesSubject === false || input.entitlementSubjectMatchesPrincipal === false) {
+    subjectRelationClass = 'rf_principal_mismatch';
+  } else if (input.entitlementSubjectPresent === false) {
+    subjectRelationClass = 'entitlement_subject_missing';
+  } else if (input.rfPrincipalMatchesSubject === true && input.entitlementSubjectMatchesPrincipal === true) {
+    subjectRelationClass = 'rf_principal_matches_subject';
+  }
+
+  let subjectBindingLabel: SubjectBindingLabel = 'subject_binding_unknown';
+  if (identitySourceState === 'unsupported_without_runtime_change') subjectBindingLabel = 'unsupported_without_runtime_change';
+  else if (subjectTrustClass === 'subject_binding_missing' || subjectRelationClass === 'entitlement_subject_missing') subjectBindingLabel = 'subject_binding_missing';
+  else if (subjectTrustClass === 'subject_binding_inconsistent' || subjectRelationClass === 'rf_principal_mismatch' || subjectRelationClass === 'cross_account_ambiguity') {
+    subjectBindingLabel = 'subject_binding_inconsistent';
+  } else if (subjectTrustClass === 'trusted_subject' && subjectRelationClass === 'rf_principal_matches_subject') {
+    subjectBindingLabel = 'subject_binding_present';
+  }
+
+  let identityClassificationReason: IdentityClassificationReasonLabel = identitySourceState;
+  if (identityClassificationReason === 'subject_unknown') {
+    if (subjectRelationClass !== 'rf_principal_matches_subject' && subjectRelationClass !== 'entitlement_subject_unknown') identityClassificationReason = subjectRelationClass;
+    else if (subjectBindingLabel !== 'subject_binding_present') identityClassificationReason = subjectBindingLabel;
+    else if (identitySourceClass !== 'identity_source_current') identityClassificationReason = identitySourceClass;
+    else identityClassificationReason = subjectTrustClass;
+  }
+
+  const unsupported =
+    subjectTrustClass === 'unsupported_without_runtime_change' ||
+    subjectRelationClass === 'unsupported_without_runtime_change' ||
+    identitySourceClass === 'unsupported_without_runtime_change' ||
+    subjectBindingLabel === 'unsupported_without_runtime_change';
+  const inconclusive =
+    unsupported ||
+    subjectTrustClass !== 'trusted_subject' ||
+    subjectRelationClass !== 'rf_principal_matches_subject' ||
+    identitySourceClass !== 'identity_source_current' ||
+    subjectBindingLabel !== 'subject_binding_present';
+
+  return {
+    runtimeDomainLabel: 'identity_enforcement',
+    subjectTrustClass,
+    subjectRelationClass,
+    identitySourceClass,
+    identityClassificationReason,
+    principalTypeLabel,
+    subjectBindingLabel,
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    authorityModeLabel: 'shadow_only_observation',
+    expectedResultClass: unsupported ? 'unsupported_until_runtime_exists' : 'diagnostics_non_authoritative_observation',
+    actualResultClass: unsupported ? 'unsupported_without_runtime_change' : inconclusive ? 'inconclusive' : 'passed_for_observation_only',
+    executionStatus: 'executed_observation_only',
+    evidenceStatus: unsupported ? 'insufficient' : 'collected_safe_summary',
+    validationCaseFamily: 'ID',
   };
 }
