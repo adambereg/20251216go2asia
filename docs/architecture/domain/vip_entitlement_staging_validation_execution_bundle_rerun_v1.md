@@ -459,7 +459,8 @@ authority_runtime_status: legacy_vip_spacer_still_authoritative
 diagnostics_sink_authority_status: non_authoritative_observability_only
 runtime_change_status: no_runtime_change
 production_status: not_touched
-recommended_next_slice: staging_validation_execution_capability_preparation
+recommended_next_slice: phase_f_slice_f1_runtime_enforcement_implementation_readiness_review
+canonical_next_step_source: docs/roadmaps/go2asia_vip_entitlement_runtime_authority_roadmap_updated.md
 ```
 
-**IMPORTANT:** Slice 15.5B did not execute validation, did not approve enforcement, did not change runtime, and did not switch authority.
+**IMPORTANT:** Slice 15.5B did not execute validation, did not approve enforcement, did not change runtime, and did not switch authority. The canonical next step after Phase E closure is Phase F / Slice F1 readiness review, not Slice 16 and not runtime implementation.

@@ -46,14 +46,16 @@ Phase E - Enforcement Preconditions Evidence
     Slice 15.5B - Staging Validation Execution Bundle Rerun
     Slice 15.6 - Enforcement Preconditions Evidence Closure Review
 
-Phase F - Runtime Enforcement Implementation (future)
+Post-Phase-E roadmap (canonical):
+  Phase F - Runtime Enforcement Implementation Readiness (future readiness/planning only)
+  Phase G - Runtime Enforcement Implementation (future implementation only after Phase F)
 ```
 
 Phase E does not approve enforcement.
 
 Phase E closure does not trigger Slice 16.
 
-Phase E closure transitions the project toward potential future Phase F only by identifying runtime implementation gaps. It does not start Phase F, design implementation, or authorize implementation.
+Phase E closure transitions the project toward potential future Phase F only by identifying runtime implementation gaps. Phase F is readiness/planning only under the updated roadmap; runtime implementation belongs to future Phase G. This document does not start Phase F, design implementation, or authorize implementation.
 
 ## 3. Current Status
 
@@ -113,19 +115,21 @@ Phase E successfully achieved:
 
 ## 6. Remaining Runtime Gaps
 
-| Runtime gap | Why blocked | Requires future runtime implementation? | Belongs to Phase F? |
+| Runtime gap | Why blocked | Requires future runtime implementation? | Roadmap track |
 |---|---|---:|---:|
-| Replay/idempotency runtime | Policies define replay classes, but no approved runtime replay/idempotency boundary exists | Yes | Yes |
-| Identity enforcement runtime | Policies define fail-closed identity behavior, but no approved identity enforcement path exists | Yes | Yes |
-| Freshness/cache runtime | Policies define cache/freshness fail-closed behavior, but cache/freshness runtime is not implemented/approved | Yes | Yes |
-| Canonical source enforcement runtime | Canonical source is not active runtime authority and cannot be used for enforcement yet | Yes | Yes |
-| Source authenticity enforcement runtime | Authenticity/origin/auth/version checks are policy-only | Yes | Yes |
-| Runtime rollback orchestration | Governance models rollback, but no enforcement-era runtime rollback orchestration is implemented/proven | Yes | Yes |
-| Runtime hybrid-state handling | Hybrid post-rollback and mixed source/cache/identity states require runtime behavior | Yes | Yes |
-| Runtime stale grant invalidation | Stale grant invalidation is policy-only without runtime invalidation behavior | Yes | Yes |
-| Runtime replay invalidation | Replay invalidation after lifecycle/source/policy/identity changes is not implemented | Yes | Yes |
-| Runtime identity downgrade invalidation | Identity downgrade invalidation is policy-only without runtime invalidation behavior | Yes | Yes |
-| Runtime diagnostics-independent fail-closed behavior | Diagnostics are non-authoritative; fail-closed runtime behavior must not depend on diagnostics evidence | Yes | Yes |
+| Replay/idempotency runtime | Policies define replay classes, but no approved runtime replay/idempotency boundary exists | Yes | Phase F readiness, then Phase G implementation |
+| Identity enforcement runtime | Policies define fail-closed identity behavior, but no approved identity enforcement path exists | Yes | Phase F readiness, then Phase G implementation |
+| Freshness/cache runtime | Policies define cache/freshness fail-closed behavior, but cache/freshness runtime is not implemented/approved | Yes | Phase F readiness, then Phase G implementation |
+| Canonical source enforcement runtime | Canonical source is not active runtime authority and cannot be used for enforcement yet | Yes | Phase F readiness, then Phase G implementation |
+| Source authenticity enforcement runtime | Authenticity/origin/auth/version checks are policy-only | Yes | Phase F readiness, then Phase G implementation |
+| Runtime rollback orchestration | Governance models rollback, but no enforcement-era runtime rollback orchestration is implemented/proven | Yes | Phase F readiness, then Phase G implementation |
+| Runtime hybrid-state handling | Hybrid post-rollback and mixed source/cache/identity states require runtime behavior | Yes | Phase F readiness, then Phase G implementation |
+| Runtime stale grant invalidation | Stale grant invalidation is policy-only without runtime invalidation behavior | Yes | Phase F readiness, then Phase G implementation |
+| Runtime replay invalidation | Replay invalidation after lifecycle/source/policy/identity changes is not implemented | Yes | Phase F readiness, then Phase G implementation |
+| Runtime identity downgrade invalidation | Identity downgrade invalidation is policy-only without runtime invalidation behavior | Yes | Phase F readiness, then Phase G implementation |
+| Runtime diagnostics-independent fail-closed behavior | Diagnostics are non-authoritative; fail-closed runtime behavior must not depend on diagnostics evidence | Yes | Phase F readiness, then Phase G implementation |
+
+Under the updated canonical roadmap, Phase F defines readiness, domain decomposition, implementation order, rollback/safety design, and non-goals. Phase G is the future phase where any approved runtime implementation work would occur.
 
 ## 7. Why Slice 16 Is Premature
 
@@ -157,12 +161,13 @@ Phase E does not authorize implementation.
 
 No RF paid claim behavior, Points behavior, wallet behavior, Gateway/Auth/Connect behavior, source/cache/replay/identity implementation, observability pipeline, logging pipeline, API, migration, feature flag, or production posture is changed by Slice 15.6.
 
-## 9. Proposed Transition to Phase F
+## 9. Proposed Transition to Phase F Readiness
 
 Potential future phase:
 
 ```text
-Phase F - Runtime Enforcement Implementation (future)
+Phase F - Runtime Enforcement Implementation Readiness (future readiness/planning only)
+Phase G - Runtime Enforcement Implementation (future implementation only after Phase F)
 ```
 
 This Slice 15.6 document does not start Phase F.
@@ -171,7 +176,7 @@ This Slice 15.6 document does not design implementation.
 
 This Slice 15.6 document only records that future runtime implementation is required before enforcement approval can be considered.
 
-Possible future Phase F domains:
+Possible future Phase F readiness domains, which may later map to Phase G implementation domains:
 
 - replay runtime;
 - identity enforcement runtime;
@@ -180,7 +185,7 @@ Possible future Phase F domains:
 - rollback orchestration runtime;
 - authority transition mechanics.
 
-Each future Phase F domain would require separate implementation design, code review, staging evidence, rollback evidence, privacy review, QA/security review, and explicit non-approval boundaries until a separate governance approval artifact exists.
+Each future Phase F readiness domain would require separate implementation design planning, non-goals, sequencing, rollback/safety design, validation expectations, and explicit non-approval boundaries. Any code-level runtime implementation, code review, and staging-first implementation evidence belong to future Phase G or later phases and still require a separate explicit governance approval artifact before enforcement can occur.
 
 ## 10. Slice 16 Boundary
 
