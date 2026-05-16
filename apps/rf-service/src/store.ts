@@ -2,7 +2,7 @@ import type { Db } from '@go2asia/db';
 import { sql } from '@go2asia/db';
 
 import type { GatewayPrincipal } from './middleware/auth';
-import type { VipEntitlementShadowScenario } from './vipEntitlementShadow';
+import type { VipEntitlementReplayOutcomeContext, VipEntitlementShadowIdentityContext, VipEntitlementShadowScenario } from './vipEntitlementShadow';
 
 type DbExecutor = Pick<Db, 'execute'>;
 
@@ -448,11 +448,13 @@ export interface RfClaimEntitlementShadowRuntime {
   recordPaidClaim(input: {
     userId: string;
     currentRoleAllowed: boolean;
+    identityContext: VipEntitlementShadowIdentityContext;
     offerId: string;
     claimScope: VoucherClaimScope;
     scopeRef: string | null;
     pointsCost: number;
     correlationId: string | null;
+    replayOutcomeContext?: VipEntitlementReplayOutcomeContext;
   }): void;
 }
 type RedeemResult =
@@ -1017,16 +1019,27 @@ function recordPaidClaimEntitlementShadow(input: {
   scopeRef: string | null;
   pointsCost: number;
   correlationId: string | null;
+  replayOutcomeContext?: VipEntitlementReplayOutcomeContext;
 }): void {
   try {
     input.shadow?.recordPaidClaim({
       userId: input.principal.userId,
       currentRoleAllowed: input.currentRoleAllowed,
+      identityContext: {
+        trustedSubjectPresent: true,
+        principalType: input.principal.platformRole,
+        vipRoleSignalPresent: input.currentRoleAllowed,
+        rfPrincipalMatchesShadowSubject: true,
+        entitlementSubjectPresent: false,
+        entitlementSubjectMatchesPrincipal: null,
+        identitySourceState: 'identity_source_current',
+      },
       offerId: input.offerId,
       claimScope: input.claimScope,
       scopeRef: input.scopeRef,
       pointsCost: input.pointsCost,
       correlationId: input.correlationId,
+      replayOutcomeContext: input.replayOutcomeContext,
     });
   } catch {
     // Shadow comparison must never affect RF claim behavior.
@@ -2705,13 +2718,47 @@ export async function claimVoucher(
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) {
     const replayScope = replayVoucher.claim_scope ?? 'partner';
+    const replayPointsCost = getVoucherPointsCostSnapshot(replayVoucher);
+    const replayShadowEnabled = replayPointsCost > 0 && input.economy?.enabled === true;
     if (replayVoucher.offer_id !== input.offerId || replayScope !== 'partner') {
+      if (replayShadowEnabled) {
+        recordPaidClaimEntitlementShadow({
+          shadow: input.entitlementShadow,
+          principal,
+          currentRoleAllowed: isVipSpacerPrincipal(principal),
+          offerId: input.offerId,
+          claimScope: 'partner',
+          scopeRef: null,
+          pointsCost: replayPointsCost,
+          correlationId: input.correlationId ?? null,
+          replayOutcomeContext: {
+            replayOutcomeBucket: 'context_mismatch_observed',
+            replayObservationScope: 'rf_paid_claim_idempotency_lookup',
+          },
+        });
+      }
       return {
         ok: false,
         code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
         message: 'Idempotency-Key was already used for a different voucher claim context',
         status: 409,
       };
+    }
+    if (replayShadowEnabled) {
+      recordPaidClaimEntitlementShadow({
+        shadow: input.entitlementShadow,
+        principal,
+        currentRoleAllowed: isVipSpacerPrincipal(principal),
+        offerId: input.offerId,
+        claimScope: 'partner',
+        scopeRef: null,
+        pointsCost: replayPointsCost,
+        correlationId: input.correlationId ?? null,
+        replayOutcomeContext: {
+          replayOutcomeBucket: 'idempotent_retry_observed',
+          replayObservationScope: 'rf_paid_claim_idempotency_lookup',
+        },
+      });
     }
     return {
       ok: true,
@@ -2749,6 +2796,23 @@ export async function claimVoucher(
       return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
     }
     const claimBlockReason = getCanonicalStatus(barrierVoucher) === 'redeemed' ? 'once_per_scope_consumed' : 'existing_active_voucher';
+    const barrierPointsCost = getVoucherPointsCostSnapshot(barrierVoucher);
+    if (barrierPointsCost > 0 && input.economy?.enabled === true) {
+      recordPaidClaimEntitlementShadow({
+        shadow: input.entitlementShadow,
+        principal,
+        currentRoleAllowed: isVipSpacerPrincipal(principal),
+        offerId: offer.id,
+        claimScope: 'partner',
+        scopeRef: null,
+        pointsCost: barrierPointsCost,
+        correlationId: input.correlationId ?? null,
+        replayOutcomeContext: {
+          replayOutcomeBucket: 'repeat_policy_barrier_observed',
+          replayObservationScope: 'rf_paid_claim_repeat_policy_barrier',
+        },
+      });
+    }
     return {
       ok: true,
       voucher: toVoucher(barrierVoucher),
@@ -2782,6 +2846,10 @@ export async function claimVoucher(
       scopeRef: null,
       pointsCost: pointsCostSnapshot,
       correlationId: input.correlationId ?? null,
+      replayOutcomeContext: {
+        replayOutcomeBucket: 'first_seen_operation',
+        replayObservationScope: 'rf_paid_claim_shadow_observation',
+      },
     });
   }
   if (pointsCostSnapshot > 0 && spendEnabled && !currentVipGateAllowed) {
@@ -3073,13 +3141,47 @@ export async function claimVoucherForListing(
 ): Promise<ClaimResult> {
   const replayVoucher = await getVoucherFromClaimIdempotency(db, principal.userId, input.idempotencyKey);
   if (replayVoucher) {
+    const replayPointsCost = getVoucherPointsCostSnapshot(replayVoucher);
+    const replayShadowEnabled = replayPointsCost > 0 && input.economy?.enabled === true;
     if (!isListingClaimVoucher(replayVoucher, input.listingId, input.offerId)) {
+      if (replayShadowEnabled) {
+        recordPaidClaimEntitlementShadow({
+          shadow: input.entitlementShadow,
+          principal,
+          currentRoleAllowed: isVipSpacerPrincipal(principal),
+          offerId: input.offerId,
+          claimScope: 'listing',
+          scopeRef: input.listingId,
+          pointsCost: replayPointsCost,
+          correlationId: input.correlationId ?? null,
+          replayOutcomeContext: {
+            replayOutcomeBucket: 'context_mismatch_observed',
+            replayObservationScope: 'rf_paid_claim_idempotency_lookup',
+          },
+        });
+      }
       return {
         ok: false,
         code: 'RF_IDEMPOTENCY_KEY_CONTEXT_MISMATCH',
         message: 'Idempotency-Key was already used for a different voucher claim context',
         status: 409,
       };
+    }
+    if (replayShadowEnabled) {
+      recordPaidClaimEntitlementShadow({
+        shadow: input.entitlementShadow,
+        principal,
+        currentRoleAllowed: isVipSpacerPrincipal(principal),
+        offerId: input.offerId,
+        claimScope: 'listing',
+        scopeRef: input.listingId,
+        pointsCost: replayPointsCost,
+        correlationId: input.correlationId ?? null,
+        replayOutcomeContext: {
+          replayOutcomeBucket: 'idempotent_retry_observed',
+          replayObservationScope: 'rf_paid_claim_idempotency_lookup',
+        },
+      });
     }
     return {
       ok: true,
@@ -3144,6 +3246,23 @@ export async function claimVoucherForListing(
       return { ok: false, code: 'RF_CLAIM_IDEMPOTENCY_FAILED', message: 'Unable to persist idempotency key', status: 500 };
     }
     const claimBlockReason = getCanonicalStatus(barrierListingVoucher) === 'redeemed' ? 'once_per_scope_consumed' : 'existing_active_voucher';
+    const barrierPointsCost = getVoucherPointsCostSnapshot(barrierListingVoucher);
+    if (barrierPointsCost > 0 && input.economy?.enabled === true) {
+      recordPaidClaimEntitlementShadow({
+        shadow: input.entitlementShadow,
+        principal,
+        currentRoleAllowed: isVipSpacerPrincipal(principal),
+        offerId: input.offerId,
+        claimScope: 'listing',
+        scopeRef: input.listingId,
+        pointsCost: barrierPointsCost,
+        correlationId: input.correlationId ?? null,
+        replayOutcomeContext: {
+          replayOutcomeBucket: 'repeat_policy_barrier_observed',
+          replayObservationScope: 'rf_paid_claim_repeat_policy_barrier',
+        },
+      });
+    }
     return {
       ok: true,
       voucher: toVoucher(barrierListingVoucher),
@@ -3178,6 +3297,10 @@ export async function claimVoucherForListing(
       scopeRef: input.listingId,
       pointsCost: pointsCostSnapshot,
       correlationId: input.correlationId ?? null,
+      replayOutcomeContext: {
+        replayOutcomeBucket: 'first_seen_operation',
+        replayObservationScope: 'rf_paid_claim_shadow_observation',
+      },
     });
   }
   if (pointsCostSnapshot > 0 && spendEnabled && !currentVipGateAllowed) {

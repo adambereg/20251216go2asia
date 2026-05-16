@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@go2asia/db": "workspace:*",
-    "@go2asia/logger": "workspace:*"
+    "@go2asia/logger": "workspace:*",
+    "@go2asia/vip-entitlement-runtime-contracts": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
