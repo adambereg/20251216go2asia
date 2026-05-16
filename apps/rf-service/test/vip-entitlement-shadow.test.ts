@@ -523,6 +523,98 @@ describe('VIP entitlement shadow decision model', () => {
   });
 
   it.each([
+    ['source_unavailable', 'source_unavailable_candidate'],
+    ['source_timeout', 'source_timeout_candidate'],
+  ] satisfies Array<[VipEntitlementSourceReadScenario, string]>)(
+    'adds disabled source availability guard metadata for %s',
+    (scenario, expectedCandidateClass) => {
+      const request = createVipEntitlementSourceReadRequest({
+        userId: 'user_1',
+        offerId: 'rf_offer_1',
+        claimScope: 'partner',
+        scopeRef: null,
+        correlationId: 'req_1',
+        diagnosticsEnabled: true,
+        requestedAt: new Date('2026-05-10T10:00:00.000Z'),
+      });
+      const sourceRead = createLocalVipEntitlementSourceReadAdapter().read({
+        request,
+        currentRoleAllowed: true,
+        scenario,
+      });
+      const observation = compareVipEntitlementShadow({
+        currentRoleAllowed: true,
+        decision: toVipEntitlementShadowDecisionFromSourceRead(sourceRead),
+        claimScope: 'partner',
+        sourceRead,
+      });
+
+      expect(observation.sourceAvailabilityGuard).toMatchObject({
+        runtimeDomainLabel: 'source_authenticity_version',
+        sourceAvailabilityGuardStatus: 'candidate_observed_disabled',
+        sourceAvailabilityCandidateClass: expectedCandidateClass,
+        sourceAvailabilityGuardEnabled: false,
+        sourceAvailabilityFailClosedEnabled: false,
+        sourceAvailabilityProductionRoutingEnabled: false,
+        sourceAvailabilityAuthorityEnabled: false,
+        sourceAvailabilityReplayRejectionEnabled: false,
+        sourceAvailabilityInvalidationEnabled: false,
+        authorityModeLabel: 'authority_transition_not_started',
+        gateStateLabel: 'gate_disabled',
+        rollbackModeLabel: 'no_enforcement_baseline',
+        diagnosticsModeLabel: 'diagnostics_available_non_authoritative',
+        expectedResultClass: 'diagnostics_non_authoritative_observation',
+        actualResultClass: 'passed_for_observation_only',
+        executionStatus: 'executed_observation_only',
+        validationCaseFamily: 'SRC',
+      });
+      expect(observation.stagingEnvelope.envelopeActive).toBe(false);
+      expect(observation.runtimeAllowed).toBe(true);
+      expect(observation.entitlementAllowed).toBe(false);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+    }
+  );
+
+  it('keeps source availability guard hidden activation as metadata only', () => {
+    const decision = resolveVipEntitlementShadowDecision({
+      userId: 'user_1',
+      currentRoleAllowed: false,
+      scenario: 'grant',
+      correlationId: 'req_1',
+      now: new Date('2026-05-10T10:00:00.000Z'),
+    });
+    const observation = compareVipEntitlementShadow({
+      currentRoleAllowed: false,
+      decision,
+      claimScope: 'partner',
+      sourceAvailabilityGuardContext: {
+        requestedGuardEnabled: true,
+        requestedFailClosedEnabled: true,
+        requestedProductionRoutingEnabled: true,
+        requestedAuthorityEnabled: true,
+        requestedReplayRejectionEnabled: true,
+        requestedInvalidationEnabled: true,
+      },
+    });
+
+    expect(observation.sourceAvailabilityGuard).toMatchObject({
+      sourceAvailabilityGuardStatus: 'hidden_activation_blocked',
+      sourceAvailabilityCandidateClass: 'source_availability_candidate_not_observed',
+      sourceAvailabilityGuardEnabled: false,
+      sourceAvailabilityFailClosedEnabled: false,
+      sourceAvailabilityProductionRoutingEnabled: false,
+      sourceAvailabilityAuthorityEnabled: false,
+      sourceAvailabilityReplayRejectionEnabled: false,
+      sourceAvailabilityInvalidationEnabled: false,
+      gateStateLabel: 'gate_disabled',
+    });
+    expect(observation.driftClass).toBe('role_denied_entitlement_granted');
+    expect(observation.runtimeAllowed).toBe(false);
+    expect(observation.entitlementAllowed).toBe(true);
+    expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(observation)).not.toThrow();
+  });
+
+  it.each([
     ['idempotent_retry_observed', 'idempotent_retry', true, 'observed_from_rf_idempotency'],
     ['context_mismatch_observed', 'replay_after_source_change', true, 'observed_from_rf_idempotency'],
     ['repeat_policy_barrier_observed', 'replay_detected', true, 'observed_from_repeat_policy'],

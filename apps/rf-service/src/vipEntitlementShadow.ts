@@ -3,6 +3,7 @@ import {
   classifyRuntimeIdentitySubjectBinding,
   classifyRuntimeReplayIdempotency,
   classifyRuntimeSourceAuthenticityVersion,
+  resolveRuntimeSourceAvailabilityGuardSkeleton,
   resolveRuntimeStagingEnvelopeSkeleton,
   type FreshnessClassificationLabel,
   type LifecyclePolicyReasonLabel,
@@ -10,6 +11,7 @@ import {
   type RuntimeFreshnessClassification,
   type RuntimeIdentitySubjectBindingClassification,
   type RuntimeReplayIdempotencyClassification,
+  type RuntimeSourceAvailabilityGuardSkeleton,
   type RuntimeSourceAuthenticityVersionClassification,
   type RuntimeStagingEnvelopeSkeleton,
   type SubjectBindingLabel,
@@ -128,6 +130,14 @@ export type VipEntitlementStagingEnvelopeContext = {
   safeActorsPresent?: boolean;
   safeWindowPresent?: boolean;
 };
+export type VipEntitlementSourceAvailabilityGuardContext = {
+  requestedGuardEnabled?: boolean;
+  requestedFailClosedEnabled?: boolean;
+  requestedProductionRoutingEnabled?: boolean;
+  requestedAuthorityEnabled?: boolean;
+  requestedReplayRejectionEnabled?: boolean;
+  requestedInvalidationEnabled?: boolean;
+};
 export type VipEntitlementFailClosedInputSummary = {
   failClosedCandidateInputStatus: 'candidate_inputs_observed_partial' | 'candidate_inputs_missing_source_read' | 'candidate_inputs_unsupported_without_runtime';
   failClosedInputCompleteness: 'partial_shadow_inputs_only' | 'missing_authoritative_inputs' | 'unsupported_without_runtime_change';
@@ -244,6 +254,7 @@ export type VipEntitlementShadowObservation = {
   subjectBinding: RuntimeIdentitySubjectBindingClassification;
   replaySemantics: RuntimeReplayIdempotencyClassification;
   stagingEnvelope: RuntimeStagingEnvelopeSkeleton;
+  sourceAvailabilityGuard: RuntimeSourceAvailabilityGuardSkeleton;
   failClosedInputSummary: VipEntitlementFailClosedInputSummary;
   sourceRead?: {
     sourceType: VipEntitlementSourceType;
@@ -937,6 +948,31 @@ export function resolveVipEntitlementStagingEnvelopeSkeleton(input: {
   });
 }
 
+function sourceAvailabilitySignalFromSourceRead(sourceRead?: VipEntitlementSourceReadResult): string | undefined {
+  if (!sourceRead) return undefined;
+  if (sourceRead.adapterStatus === 'timeout' || sourceRead.reasonCode === 'source_timeout') return 'source_timeout';
+  if (sourceRead.adapterStatus === 'unavailable' || sourceRead.reasonCode === 'source_unavailable') return 'source_unavailable';
+  if (sourceRead.adapterStatus === 'degraded') return 'source_degraded';
+  if (sourceRead.adapterStatus === 'unknown_source') return 'source_inconsistent';
+  return undefined;
+}
+
+export function resolveVipEntitlementSourceAvailabilityGuardSkeleton(input: {
+  sourceRead?: VipEntitlementSourceReadResult;
+  guardContext?: VipEntitlementSourceAvailabilityGuardContext;
+} = {}): RuntimeSourceAvailabilityGuardSkeleton {
+  return resolveRuntimeSourceAvailabilityGuardSkeleton({
+    sourceAvailabilitySignal: sourceAvailabilitySignalFromSourceRead(input.sourceRead),
+    requestedGuardEnabled: input.guardContext?.requestedGuardEnabled ?? false,
+    requestedFailClosedEnabled: input.guardContext?.requestedFailClosedEnabled ?? false,
+    requestedProductionRoutingEnabled: input.guardContext?.requestedProductionRoutingEnabled ?? false,
+    requestedAuthorityEnabled: input.guardContext?.requestedAuthorityEnabled ?? false,
+    requestedReplayRejectionEnabled: input.guardContext?.requestedReplayRejectionEnabled ?? false,
+    requestedInvalidationEnabled: input.guardContext?.requestedInvalidationEnabled ?? false,
+    diagnosticsAvailable: true,
+  });
+}
+
 export function resolveVipEntitlementFailClosedInputSummary(input: {
   sourceRead?: VipEntitlementSourceReadResult;
   subjectBinding: RuntimeIdentitySubjectBindingClassification;
@@ -984,6 +1020,7 @@ export function compareVipEntitlementShadow(input: {
   replayContext?: VipEntitlementShadowReplayContext;
   replayOutcomeContext?: VipEntitlementReplayOutcomeContext;
   stagingEnvelopeContext?: VipEntitlementStagingEnvelopeContext;
+  sourceAvailabilityGuardContext?: VipEntitlementSourceAvailabilityGuardContext;
 }): VipEntitlementShadowObservation {
   let driftClass: VipEntitlementShadowDriftClass;
   if (input.decision.stale) driftClass = 'stale_shadow';
@@ -1006,6 +1043,10 @@ export function compareVipEntitlementShadow(input: {
   const stagingEnvelope = resolveVipEntitlementStagingEnvelopeSkeleton({
     stagingEnvelopeContext: input.stagingEnvelopeContext,
   });
+  const sourceAvailabilityGuard = resolveVipEntitlementSourceAvailabilityGuardSkeleton({
+    sourceRead: input.sourceRead,
+    guardContext: input.sourceAvailabilityGuardContext,
+  });
 
   return {
     driftClass,
@@ -1027,6 +1068,7 @@ export function compareVipEntitlementShadow(input: {
       subjectBinding,
     }),
     stagingEnvelope,
+    sourceAvailabilityGuard,
     failClosedInputSummary: resolveVipEntitlementFailClosedInputSummary({
       sourceRead: input.sourceRead,
       subjectBinding,

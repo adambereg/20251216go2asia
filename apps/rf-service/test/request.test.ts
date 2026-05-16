@@ -1565,6 +1565,68 @@ describe('rf-service request', () => {
     expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
   });
 
+  it.each([
+    ['source_timeout', 'timeout', 'source_timeout_candidate', 'paid-source-timeout-disabled-guard'],
+    ['source_unavailable', 'unavailable', 'source_unavailable_candidate', 'paid-source-unavailable-disabled-guard'],
+  ] as const)(
+    'observes %s guard skeleton without changing paid claim denial behavior',
+    async (sourceReadScenario, expectedAdapterStatus, expectedCandidateClass, idempotencyKey) => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+        RF_ENABLE_PAID_VOUCHER_SPEND: 'true',
+        POINTS_SERVICE_URL: 'https://points.example',
+        RF_ENABLE_ENTITLEMENT_SHADOW_COMPARE: 'true',
+        RF_ENABLE_ENTITLEMENT_SHADOW_DIAGNOSTICS: 'true',
+        RF_ENTITLEMENT_SOURCE_READ_MODE: 'shadow_read_only',
+        RF_ENTITLEMENT_SOURCE_READ_SCENARIO: sourceReadScenario,
+      };
+      const userToken = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1', role: 'spacer' });
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      executeMock
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({
+          rows: [offerRow({ id: 'rf_offer_paid', status: 'active', visibility: 'public', points_cost: 150 })],
+        })
+        .mockResolvedValueOnce({ rows: [{ id: 'rf_partner_1' }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://rf.example/v1/rf/offers/rf_offer_paid/claim', {
+          method: 'POST',
+          headers: {
+            'X-Gateway-Auth': userToken,
+            'Idempotency-Key': idempotencyKey,
+          },
+        }),
+        env
+      );
+      const body = await readJson<{ error: { code: string } }>(response);
+      const diagnostics = getVipEntitlementShadowSnapshot();
+
+      expect(response.status).toBe(409);
+      expect(body.error.code).toBe('RF_VIP_REQUIRED_FOR_PAID_VOUCHER');
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(executedSqlText()).not.toContain('INSERT INTO rf_voucher');
+      expect(diagnostics.sourceRead.total).toBe(1);
+      expect(diagnostics.sourceRead.byAdapterStatus[expectedAdapterStatus]).toBe(1);
+      expect(diagnostics.lastObservation?.sourceAvailabilityGuard).toMatchObject({
+        sourceAvailabilityGuardStatus: 'candidate_observed_disabled',
+        sourceAvailabilityCandidateClass: expectedCandidateClass,
+        sourceAvailabilityGuardEnabled: false,
+        sourceAvailabilityFailClosedEnabled: false,
+        sourceAvailabilityProductionRoutingEnabled: false,
+        sourceAvailabilityAuthorityEnabled: false,
+        sourceAvailabilityReplayRejectionEnabled: false,
+        sourceAvailabilityInvalidationEnabled: false,
+        gateStateLabel: 'gate_disabled',
+      });
+      expect(diagnostics.lastObservation?.stagingEnvelope.envelopeActive).toBe(false);
+      expect(() => assertNoUnsafeVipEntitlementShadowDiagnosticsFields(diagnostics)).not.toThrow();
+    }
+  );
+
   it('observes paid claim idempotent replay as a safe shadow bucket without changing replay behavior', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

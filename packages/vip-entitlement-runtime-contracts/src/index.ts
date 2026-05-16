@@ -146,6 +146,7 @@ export type ActualResultClass = (typeof ACTUAL_RESULT_CLASSES)[number];
 export const EVIDENCE_STATUSES = [
   'not_required_for_this_case',
   'required_not_collected',
+  'planned_not_collected',
   'collected_safe_summary',
   'collected_aggregate_safe',
   'collected_wls_safe_summary',
@@ -686,6 +687,163 @@ export type RuntimeStagingEnvelopeSkeleton = {
   executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
   evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary'>;
   validationCaseFamily: Extract<ValidationCaseFamily, 'GATE'>;
+};
+
+export const SOURCE_AVAILABILITY_GUARD_STATUS_LABELS = [
+  'guard_disabled',
+  'candidate_observed_disabled',
+  'candidate_not_observed',
+  'hidden_activation_blocked',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceAvailabilityGuardStatusLabel = (typeof SOURCE_AVAILABILITY_GUARD_STATUS_LABELS)[number];
+
+export const SOURCE_AVAILABILITY_CANDIDATE_CLASS_LABELS = [
+  'source_unavailable_candidate',
+  'source_timeout_candidate',
+  'source_availability_candidate_not_observed',
+  'source_availability_candidate_out_of_scope',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceAvailabilityCandidateClassLabel = (typeof SOURCE_AVAILABILITY_CANDIDATE_CLASS_LABELS)[number];
+
+export const VIP_ENTITLEMENT_SOURCE_AVAILABILITY_GUARD_DISABLED_DEFAULTS = {
+  sourceAvailabilityGuardEnabled: false,
+  sourceAvailabilityFailClosedEnabled: false,
+  sourceAvailabilityProductionRoutingEnabled: false,
+  sourceAvailabilityAuthorityEnabled: false,
+  sourceAvailabilityReplayRejectionEnabled: false,
+  sourceAvailabilityInvalidationEnabled: false,
+} as const;
+
+export type RuntimeSourceAvailabilityGuardSkeleton = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'source_authenticity_version'>;
+  sourceAvailabilityGuardStatus: SourceAvailabilityGuardStatusLabel;
+  sourceAvailabilityCandidateClass: SourceAvailabilityCandidateClassLabel;
+  sourceAvailabilityGuardEnabled: false;
+  sourceAvailabilityFailClosedEnabled: false;
+  sourceAvailabilityProductionRoutingEnabled: false;
+  sourceAvailabilityAuthorityEnabled: false;
+  sourceAvailabilityReplayRejectionEnabled: false;
+  sourceAvailabilityInvalidationEnabled: false;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'authority_transition_not_started'>;
+  gateStateLabel: Extract<GateStateLabel, 'gate_disabled'>;
+  rollbackModeLabel: Extract<RollbackModeLabel, 'no_enforcement_baseline'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation'>;
+  actualResultClass: Extract<ActualResultClass, 'passed_for_observation_only'>;
+  executionStatus: Extract<ExecutionStatus, 'executed_observation_only'>;
+  evidenceStatus: Extract<EvidenceStatus, 'collected_safe_summary'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'SRC'>;
+};
+
+export const SOURCE_AVAILABILITY_STAGING_VALIDATION_HARNESS_STATUS_LABELS = [
+  'harness_disabled',
+  'planned_cases_registered',
+  'fixtures_defined_not_executed',
+  'evidence_schema_defined_not_collected',
+  'execution_blocked_until_authorized',
+  'unsupported_without_runtime_change',
+] as const;
+
+export type SourceAvailabilityStagingValidationHarnessStatusLabel = (typeof SOURCE_AVAILABILITY_STAGING_VALIDATION_HARNESS_STATUS_LABELS)[number];
+
+export const SOURCE_AVAILABILITY_STAGING_VALIDATION_CASE_IDS = [
+  'SRC-SU-01-source-unavailable',
+  'SRC-ST-01-source-timeout',
+  'DIA-SRC-01-diagnostics-disabled',
+  'GATE-SRC-01-hidden-activation-blocked',
+  'RB-SRC-01-rollback-observation-planned',
+  'AUTH-SRC-01-legacy-authority-preserved',
+  'WLS-SRC-01-privacy-safe-evidence-shape',
+] as const;
+
+export type SourceAvailabilityStagingValidationCaseId = (typeof SOURCE_AVAILABILITY_STAGING_VALIDATION_CASE_IDS)[number];
+
+export const SOURCE_AVAILABILITY_STAGING_VALIDATION_FIXTURE_ALIASES = [
+  'safe_actor_vip_spacer_1',
+  'safe_actor_non_vip_1',
+  'safe_paid_offer_1',
+  'safe_listing_offer_1',
+  'safe_replay_case_1',
+  'safe_context_mismatch_case_1',
+] as const;
+
+export type SourceAvailabilityStagingValidationFixtureAlias = (typeof SOURCE_AVAILABILITY_STAGING_VALIDATION_FIXTURE_ALIASES)[number];
+
+export type SourceAvailabilityStagingValidationCandidate = 'source_unavailable' | 'source_timeout' | 'control_only' | 'out_of_scope';
+
+export type SourceAvailabilityStagingValidationEvidencePlaceholder = 'planned_placeholder_not_evidence';
+
+export const VIP_ENTITLEMENT_SOURCE_AVAILABILITY_STAGING_VALIDATION_HARNESS_DISABLED_DEFAULTS = {
+  harnessEnabled: false,
+  validationExecutionEnabled: false,
+  fixtureExecutionEnabled: false,
+  runtimeCallEnabled: false,
+  failClosedEnabled: false,
+  stagingEnvelopeActivationEnabled: false,
+  authoritySwitchEnabled: false,
+  productionRoutingEnabled: false,
+  actualEvidenceCollectionEnabled: false,
+} as const;
+
+export type RuntimeSourceAvailabilityStagingValidationEvidenceSchema = {
+  caseId: SourceAvailabilityStagingValidationCaseId;
+  candidate: SourceAvailabilityStagingValidationCandidate;
+  sourceScenario: 'source_unavailable' | 'source_timeout' | 'diagnostics_disabled' | 'hidden_activation_requested' | 'rollback_observation_planned' | 'legacy_authority_baseline' | 'privacy_safe_evidence_shape';
+  expectedGuardStatus: SourceAvailabilityGuardStatusLabel | 'disabled_not_active';
+  actualGuardStatus: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  expectedEnvelopeStatus: 'disabled_not_activated';
+  actualEnvelopeStatus: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  expectedRuntimeBehavior: 'unchanged';
+  actualRuntimeBehavior: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  expectedDiagnosticsBoundary: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'> | typeof CURRENT_DIAGNOSTICS_SINK_AUTHORITY_STATUS;
+  actualDiagnosticsBoundary: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  expectedSideEffectCount: 'zero_new_runtime_side_effects';
+  actualSideEffectCount: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  expectedPrivacyStatus: 'wls_privacy_safe_aliases_only';
+  actualPrivacyStatus: SourceAvailabilityStagingValidationEvidencePlaceholder;
+  resultClass: Extract<ActualResultClass, 'not_executed'>;
+  evidenceStatus: Extract<EvidenceStatus, 'planned_not_collected'>;
+  executionStatus: Extract<ExecutionStatus, 'not_executed'>;
+};
+
+export type RuntimeSourceAvailabilityStagingValidationCaseDefinition = RuntimeSourceAvailabilityStagingValidationEvidenceSchema & {
+  validationCaseFamily: Extract<ValidationCaseFamily, 'SRC' | 'DIA' | 'GATE' | 'RB' | 'AUTH' | 'WLS'>;
+  fixtureAliases: readonly SourceAvailabilityStagingValidationFixtureAlias[];
+  safeActorAliases: readonly Extract<SourceAvailabilityStagingValidationFixtureAlias, 'safe_actor_vip_spacer_1' | 'safe_actor_non_vip_1'>[];
+  fixtureExecutionStatus: Extract<ExecutionStatus, 'not_executed'>;
+};
+
+export type RuntimeSourceAvailabilityStagingValidationHarness = {
+  runtimeDomainLabel: Extract<RuntimeDomainLabel, 'staging_validation_evidence'>;
+  harnessStatus: SourceAvailabilityStagingValidationHarnessStatusLabel;
+  caseRegistryStatus: Extract<SourceAvailabilityStagingValidationHarnessStatusLabel, 'planned_cases_registered'>;
+  fixtureRegistryStatus: Extract<SourceAvailabilityStagingValidationHarnessStatusLabel, 'fixtures_defined_not_executed'>;
+  evidenceSchemaStatus: Extract<SourceAvailabilityStagingValidationHarnessStatusLabel, 'evidence_schema_defined_not_collected'>;
+  harnessEnabled: false;
+  validationExecutionEnabled: false;
+  fixtureExecutionEnabled: false;
+  runtimeCallEnabled: false;
+  failClosedEnabled: false;
+  stagingEnvelopeActivationEnabled: false;
+  authoritySwitchEnabled: false;
+  productionRoutingEnabled: false;
+  actualEvidenceCollectionEnabled: false;
+  validationExecutionStatus: Extract<ExecutionStatus, 'not_executed'>;
+  fixtureExecutionStatus: Extract<ExecutionStatus, 'not_executed'>;
+  diagnosticsModeLabel: Extract<DiagnosticsModeLabel, 'diagnostics_available_non_authoritative' | 'diagnostics_safe_summary_missing'>;
+  authorityModeLabel: Extract<AuthorityModeLabel, 'authority_transition_not_started'>;
+  gateStateLabel: Extract<GateStateLabel, 'gate_disabled'>;
+  rollbackModeLabel: Extract<RollbackModeLabel, 'no_enforcement_baseline'>;
+  expectedResultClass: Extract<ExpectedResultClass, 'diagnostics_non_authoritative_observation'>;
+  actualResultClass: Extract<ActualResultClass, 'not_executed'>;
+  executionStatus: Extract<ExecutionStatus, 'not_executed'>;
+  evidenceStatus: Extract<EvidenceStatus, 'planned_not_collected'>;
+  validationCaseFamily: Extract<ValidationCaseFamily, 'SRC'>;
+  cases: readonly RuntimeSourceAvailabilityStagingValidationCaseDefinition[];
 };
 
 export const INPUT_CLASSIFICATION_LABELS = [
@@ -1433,5 +1591,207 @@ export function resolveRuntimeStagingEnvelopeSkeleton(input: {
     executionStatus: 'executed_observation_only',
     evidenceStatus: 'collected_safe_summary',
     validationCaseFamily: 'GATE',
+  };
+}
+
+export function resolveRuntimeSourceAvailabilityGuardSkeleton(input: {
+  sourceAvailabilitySignal?: unknown;
+  requestedGuardEnabled?: boolean | null;
+  requestedFailClosedEnabled?: boolean | null;
+  requestedProductionRoutingEnabled?: boolean | null;
+  requestedAuthorityEnabled?: boolean | null;
+  requestedReplayRejectionEnabled?: boolean | null;
+  requestedInvalidationEnabled?: boolean | null;
+  diagnosticsAvailable?: boolean | null;
+} = {}): RuntimeSourceAvailabilityGuardSkeleton {
+  const signal = normalizeToken(input.sourceAvailabilitySignal);
+  const hiddenActivationRequested =
+    input.requestedGuardEnabled === true ||
+    input.requestedFailClosedEnabled === true ||
+    input.requestedProductionRoutingEnabled === true ||
+    input.requestedAuthorityEnabled === true ||
+    input.requestedReplayRejectionEnabled === true ||
+    input.requestedInvalidationEnabled === true;
+
+  let sourceAvailabilityCandidateClass: SourceAvailabilityCandidateClassLabel = 'source_availability_candidate_not_observed';
+  if (signal === 'source_unavailable' || signal === 'unavailable') {
+    sourceAvailabilityCandidateClass = 'source_unavailable_candidate';
+  } else if (signal === 'source_timeout' || signal === 'timeout') {
+    sourceAvailabilityCandidateClass = 'source_timeout_candidate';
+  } else if (signal === 'unsupported_without_runtime_change') {
+    sourceAvailabilityCandidateClass = 'unsupported_without_runtime_change';
+  } else if (signal.length > 0 && signal !== 'not_applicable' && signal !== 'none') {
+    sourceAvailabilityCandidateClass = 'source_availability_candidate_out_of_scope';
+  }
+
+  const candidateObserved =
+    sourceAvailabilityCandidateClass === 'source_unavailable_candidate' ||
+    sourceAvailabilityCandidateClass === 'source_timeout_candidate';
+  const sourceAvailabilityGuardStatus: SourceAvailabilityGuardStatusLabel = hiddenActivationRequested
+    ? 'hidden_activation_blocked'
+    : sourceAvailabilityCandidateClass === 'unsupported_without_runtime_change'
+      ? 'unsupported_without_runtime_change'
+      : candidateObserved
+        ? 'candidate_observed_disabled'
+        : signal.length > 0
+          ? 'candidate_not_observed'
+          : 'guard_disabled';
+
+  return {
+    runtimeDomainLabel: 'source_authenticity_version',
+    sourceAvailabilityGuardStatus,
+    sourceAvailabilityCandidateClass,
+    ...VIP_ENTITLEMENT_SOURCE_AVAILABILITY_GUARD_DISABLED_DEFAULTS,
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    authorityModeLabel: 'authority_transition_not_started',
+    gateStateLabel: 'gate_disabled',
+    rollbackModeLabel: 'no_enforcement_baseline',
+    expectedResultClass: 'diagnostics_non_authoritative_observation',
+    actualResultClass: 'passed_for_observation_only',
+    executionStatus: 'executed_observation_only',
+    evidenceStatus: 'collected_safe_summary',
+    validationCaseFamily: 'SRC',
+  };
+}
+
+const SOURCE_AVAILABILITY_STAGING_VALIDATION_CASE_MATRIX = [
+  {
+    caseId: 'SRC-SU-01-source-unavailable',
+    validationCaseFamily: 'SRC',
+    candidate: 'source_unavailable',
+    sourceScenario: 'source_unavailable',
+    expectedGuardStatus: 'candidate_observed_disabled',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_paid_offer_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1'],
+  },
+  {
+    caseId: 'SRC-ST-01-source-timeout',
+    validationCaseFamily: 'SRC',
+    candidate: 'source_timeout',
+    sourceScenario: 'source_timeout',
+    expectedGuardStatus: 'candidate_observed_disabled',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_paid_offer_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1'],
+  },
+  {
+    caseId: 'DIA-SRC-01-diagnostics-disabled',
+    validationCaseFamily: 'DIA',
+    candidate: 'control_only',
+    sourceScenario: 'diagnostics_disabled',
+    expectedGuardStatus: 'guard_disabled',
+    fixtureAliases: ['safe_actor_non_vip_1', 'safe_paid_offer_1'],
+    safeActorAliases: ['safe_actor_non_vip_1'],
+  },
+  {
+    caseId: 'GATE-SRC-01-hidden-activation-blocked',
+    validationCaseFamily: 'GATE',
+    candidate: 'control_only',
+    sourceScenario: 'hidden_activation_requested',
+    expectedGuardStatus: 'hidden_activation_blocked',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_paid_offer_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1'],
+  },
+  {
+    caseId: 'RB-SRC-01-rollback-observation-planned',
+    validationCaseFamily: 'RB',
+    candidate: 'control_only',
+    sourceScenario: 'rollback_observation_planned',
+    expectedGuardStatus: 'disabled_not_active',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_paid_offer_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1'],
+  },
+  {
+    caseId: 'AUTH-SRC-01-legacy-authority-preserved',
+    validationCaseFamily: 'AUTH',
+    candidate: 'control_only',
+    sourceScenario: 'legacy_authority_baseline',
+    expectedGuardStatus: 'guard_disabled',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_actor_non_vip_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1', 'safe_actor_non_vip_1'],
+  },
+  {
+    caseId: 'WLS-SRC-01-privacy-safe-evidence-shape',
+    validationCaseFamily: 'WLS',
+    candidate: 'control_only',
+    sourceScenario: 'privacy_safe_evidence_shape',
+    expectedGuardStatus: 'guard_disabled',
+    fixtureAliases: ['safe_actor_vip_spacer_1', 'safe_paid_offer_1', 'safe_replay_case_1', 'safe_context_mismatch_case_1'],
+    safeActorAliases: ['safe_actor_vip_spacer_1'],
+  },
+] as const satisfies ReadonlyArray<{
+  caseId: SourceAvailabilityStagingValidationCaseId;
+  validationCaseFamily: RuntimeSourceAvailabilityStagingValidationCaseDefinition['validationCaseFamily'];
+  candidate: SourceAvailabilityStagingValidationCandidate;
+  sourceScenario: RuntimeSourceAvailabilityStagingValidationEvidenceSchema['sourceScenario'];
+  expectedGuardStatus: RuntimeSourceAvailabilityStagingValidationEvidenceSchema['expectedGuardStatus'];
+  fixtureAliases: readonly SourceAvailabilityStagingValidationFixtureAlias[];
+  safeActorAliases: readonly Extract<SourceAvailabilityStagingValidationFixtureAlias, 'safe_actor_vip_spacer_1' | 'safe_actor_non_vip_1'>[];
+}>;
+
+export function resolveRuntimeSourceAvailabilityStagingValidationHarness(input: {
+  requestedValidationExecution?: boolean | null;
+  requestedFixtureExecution?: boolean | null;
+  requestedRuntimeCall?: boolean | null;
+  requestedFailClosedEnabled?: boolean | null;
+  requestedStagingEnvelopeActivation?: boolean | null;
+  requestedAuthoritySwitch?: boolean | null;
+  requestedProductionRouting?: boolean | null;
+  requestedActualEvidenceCollection?: boolean | null;
+  diagnosticsAvailable?: boolean | null;
+} = {}): RuntimeSourceAvailabilityStagingValidationHarness {
+  const executionRequested =
+    input.requestedValidationExecution === true ||
+    input.requestedFixtureExecution === true ||
+    input.requestedRuntimeCall === true ||
+    input.requestedFailClosedEnabled === true ||
+    input.requestedStagingEnvelopeActivation === true ||
+    input.requestedAuthoritySwitch === true ||
+    input.requestedProductionRouting === true ||
+    input.requestedActualEvidenceCollection === true;
+
+  const cases: RuntimeSourceAvailabilityStagingValidationCaseDefinition[] = SOURCE_AVAILABILITY_STAGING_VALIDATION_CASE_MATRIX.map((item) => ({
+    caseId: item.caseId,
+    validationCaseFamily: item.validationCaseFamily,
+    candidate: item.candidate,
+    sourceScenario: item.sourceScenario,
+    expectedGuardStatus: item.expectedGuardStatus,
+    actualGuardStatus: 'planned_placeholder_not_evidence',
+    expectedEnvelopeStatus: 'disabled_not_activated',
+    actualEnvelopeStatus: 'planned_placeholder_not_evidence',
+    expectedRuntimeBehavior: 'unchanged',
+    actualRuntimeBehavior: 'planned_placeholder_not_evidence',
+    expectedDiagnosticsBoundary: 'non_authoritative_observability_only',
+    actualDiagnosticsBoundary: 'planned_placeholder_not_evidence',
+    expectedSideEffectCount: 'zero_new_runtime_side_effects',
+    actualSideEffectCount: 'planned_placeholder_not_evidence',
+    expectedPrivacyStatus: 'wls_privacy_safe_aliases_only',
+    actualPrivacyStatus: 'planned_placeholder_not_evidence',
+    resultClass: 'not_executed',
+    evidenceStatus: 'planned_not_collected',
+    executionStatus: 'not_executed',
+    fixtureAliases: item.fixtureAliases,
+    safeActorAliases: item.safeActorAliases,
+    fixtureExecutionStatus: 'not_executed',
+  }));
+
+  return {
+    runtimeDomainLabel: 'staging_validation_evidence',
+    harnessStatus: executionRequested ? 'execution_blocked_until_authorized' : 'harness_disabled',
+    caseRegistryStatus: 'planned_cases_registered',
+    fixtureRegistryStatus: 'fixtures_defined_not_executed',
+    evidenceSchemaStatus: 'evidence_schema_defined_not_collected',
+    ...VIP_ENTITLEMENT_SOURCE_AVAILABILITY_STAGING_VALIDATION_HARNESS_DISABLED_DEFAULTS,
+    validationExecutionStatus: 'not_executed',
+    fixtureExecutionStatus: 'not_executed',
+    diagnosticsModeLabel: input.diagnosticsAvailable === false ? 'diagnostics_safe_summary_missing' : 'diagnostics_available_non_authoritative',
+    authorityModeLabel: 'authority_transition_not_started',
+    gateStateLabel: 'gate_disabled',
+    rollbackModeLabel: 'no_enforcement_baseline',
+    expectedResultClass: 'diagnostics_non_authoritative_observation',
+    actualResultClass: 'not_executed',
+    executionStatus: 'not_executed',
+    evidenceStatus: 'planned_not_collected',
+    validationCaseFamily: 'SRC',
+    cases,
   };
 }
