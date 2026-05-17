@@ -133,7 +133,7 @@ Use calm contribution language:
 - "история начислений"
 - "приглашения"
 
-Referral copy may use "Заработано Points", but it must remain clear that this is an internal reward system, not financial income.
+Referral copy should prefer "Начислены internal Points" or "Учтён реферальный вклад"; avoid "Заработано Points" in user-facing copy unless a nearby guard clearly states this is internal utility, not financial income.
 
 ## 3.6 Mobile-first
 
@@ -212,7 +212,7 @@ Feeds:
 - copy link action
 - referral summary
 - referral tree/list
-- referral earnings list
+- referral participation list
 - pending / rewarded / reward_missing states
 
 ## 4.4 Badges
@@ -292,7 +292,7 @@ Purpose:
 
 - invitation code/link
 - referral progress
-- referral earnings
+- referral participation summaries
 
 Primary endpoints:
 
@@ -386,13 +386,13 @@ Shows:
 - total referrals
 - activated referrals
 - pending referrals
-- earned Points
+- applied internal Points
 - CTA to Referrals tab
 
 Suggested copy:
 
 - "Ваши приглашения"
-- "Заработано Points"
+- "Начислены internal Points"
 - "Перейти к рефералам"
 
 Empty state:
@@ -537,18 +537,18 @@ Shows:
 - "Приглашено всего"
 - "Активировались"
 - "Ожидают активации"
-- "Заработано Points"
+- "Начислены internal Points"
 
 The UI should not show:
 
 - G2A rewards
 - partner referral income
-- business referral revenue
+- business referral revenue / payout language
 - multi-level tokenomics
 
-## 8.3 Referral earnings list
+## 8.3 Referral participation list
 
-Shows referral reward rows from `GET /v1/referral/earnings`.
+Shows referral participation / internal reward rows from `GET /v1/referral/earnings`.
 
 Statuses:
 
@@ -584,7 +584,7 @@ Avoid:
 
 - multi-level tokenomics
 - partner referrals
-- PRO earnings
+- PRO payout/earnings language
 - G2A rewards
 - income language
 - investment language
@@ -694,7 +694,7 @@ Rule:
 | Recent activity | Yes | No | No | Backend-backed by Points transactions and dashboard recentTransactions. |
 | Badges as achievements | Yes | No | No | Backend-backed as off-chain badges. |
 | G2A Tokens | No | Yes | Future only | No current backend truth or `/v1/token/*` API. |
-| NFT Badges as wallet assets | No | Yes | Future only | Current badges are off-chain achievements, not NFT assets. |
+| NFT Badges as wallet assets | No | Yes | Future only | Current badges are off-chain achievements, not NFT assets. Avoid wallet-asset copy. |
 | Deposit / Withdraw | No | Yes | Future only | Wallet and token withdrawal are not implemented. |
 | Level / XP | No | Yes | Future only | No progression backend truth. |
 | Active season | No | Yes | Future only | No season/progression API. |
@@ -702,7 +702,7 @@ Rule:
 | Analytics charts | No | Yes | Future only | No analytics aggregates API. |
 | Leaderboards | No | Yes | Future only | No ranking backend truth. |
 | Business referrals | No | Yes | Future only | Not current Referral MVP and risks PRO/partner scope drift. |
-| Partner income | No | Yes | Future only | No partner income backend truth and risky finance language. |
+| Partner income / payout copy | No | Yes | Future only | No partner income backend truth and risky finance language. |
 | Forecasts | No | Yes | Future only | Would be fake without analytics/recommendation backend. |
 | Progression | No | No | Future only | Requires progression backend truth. |
 | Recommendations | Static only | No | Future only | Personalized recommendations require backend truth. |
@@ -761,7 +761,7 @@ If badge is not awarded yet:
 User sees:
 
 - referral row in pending/registered state
-- no earned Points yet
+- no applied internal Points yet
 
 Suggested copy:
 
@@ -772,7 +772,7 @@ Suggested copy:
 User sees:
 
 - referral row with rewarded status
-- earned Points
+- applied internal Points
 - corresponding summary update
 
 Suggested copy:
@@ -861,7 +861,7 @@ Not allowed fallback:
 - mock level
 - mock mission progress
 - mock analytics chart
-- fake partner income
+- fake partner income / payout copy
 - fake leaderboard rank
 
 ---
@@ -942,7 +942,7 @@ The prototype must not include:
 - withdrawals
 - deposits
 - token conversion
-- partner income
+- partner income / payout copy
 - PRO economy
 
 The prototype should prepare visual structure only. It should not become the final integration plan and should not change runtime code.

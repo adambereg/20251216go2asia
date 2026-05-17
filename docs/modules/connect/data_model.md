@@ -1,5 +1,7 @@
 # Connect Asia — Data Model
 
+Stage 6.5.3 reading guard: this legacy model is target/product vocabulary unless backed by current runtime contracts. It must not be read as wallet, payout, token, NFT marketplace, mint/burn, withdrawal, liquidity, or financial-account design.
+
 ## Основные сущности
 
 ---
@@ -40,7 +42,7 @@
 | title | string |
 | description | text |
 | reward_points | int |
-| reward_nft | string? |
+| reward_badge | string? |
 
 ---
 
@@ -57,8 +59,8 @@
 
 ---
 
-## 5. NFTBadge  
-NFT-награды.
+## 5. FutureCollectibleBadge
+Future collectible / NFT compatibility vocabulary. Current badges are off-chain achievements, not wallet assets.
 
 | Поле | Тип |
 |------|-----|
@@ -97,7 +99,7 @@ NFT-награды.
 | referred_user_id | uuid? |
 | referred_partner_id | uuid? |
 | reward_points | int |
-| reward_g2a | int |
+| reward_g2a_future | int (future-only, not current payout/token balance) |
 
 ---
 
@@ -111,5 +113,5 @@ User ---< PointsTransaction
 User ---< LevelProgress
 User ---< UserAchievement >--- Achievement
 User ---< Referral
-User ---< NFTBadge
+User ---< FutureCollectibleBadge
 User ---< MissionProgress >--- Mission

@@ -38,7 +38,7 @@ export function NFTView() {
           onClick={() => setRarityFilter('all')}
           size="md"
         >
-          Все NFT
+          Все бейджи
         </Chip>
         {(['epic', 'rare', 'common'] as const).map((rarity) => (
           <Chip
@@ -52,11 +52,11 @@ export function NFTView() {
         ))}
       </div>
 
-      {/* Коллекция NFT */}
+      {/* Off-chain badges */}
       {filteredBadges.length === 0 ? (
         <Card className="border-2 border-slate-200 p-8">
           <div className="text-center text-slate-500">
-            Нет NFT в этой категории
+            Нет бейджей в этой категории
           </div>
         </Card>
       ) : (
@@ -90,13 +90,13 @@ export function NFTView() {
         </div>
       )}
 
-      {/* Coming Soon - Mint on-chain */}
+      {/* Future-only compatibility note */}
       <Card className="border-2 border-slate-200 p-4 md:p-6 bg-slate-50 opacity-60">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-slate-400" />
           <div>
-            <h3 className="font-semibold text-slate-900">Mint on-chain</h3>
-            <p className="text-sm text-slate-500">Скоро: возможность минтить NFT на блокчейне</p>
+            <h3 className="font-semibold text-slate-900">Future collectible compatibility</h3>
+            <p className="text-sm text-slate-500">NFT/on-chain minting is future-only and not active runtime.</p>
           </div>
         </div>
       </Card>

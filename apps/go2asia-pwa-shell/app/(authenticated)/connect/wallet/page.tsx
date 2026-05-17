@@ -4,8 +4,8 @@ import { WalletPageClientWrapper } from './WalletPageClientWrapper';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Кошелёк | Connect Asia | Go2Asia',
-  description: 'История Points и начислений за вашу активность',
+  title: 'Активность Points | Connect Asia | Go2Asia',
+  description: 'Read-only история внутренних Points и подтверждённой активности',
 };
 
 export default function WalletPage() {

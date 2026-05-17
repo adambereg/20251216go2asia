@@ -1,11 +1,13 @@
 Актуализированный концепт модуля Connect Asia
 
+Stage 6.5.3 semantics guard: Connect product copy must avoid income, payout, wallet, bank, token-liquidity and investment wording. `earnings` in legacy API names should be read as referral participation / internal reward eligibility summary, not money or passive income.
+
 1. Короткая формула
 Connect Asia — это личный центр активности, достижений и off-chain вознаграждений пользователя в экосистеме Go2Asia.
 
 В текущей архитектуре Connect — не отдельный backend-сервис, а продуктовый модуль и пользовательский интерфейс, который собирает и показывает данные из уже реализованных backend-контуров:
 •	Points; 
-•	referral earnings; 
+•	referral participation / internal reward summaries;
 •	off-chain badges; 
 •	recent activity; 
 •	quest-related rewards; 
@@ -13,7 +15,7 @@ Connect Asia — это личный центр активности, дости
 
 Главная задача Connect — дать пользователю понятный ответ на вопросы:
 •	что я уже сделал в экосистеме; 
-•	что я получил за активность; 
+•	какое internal recognition появилось за активность;
 •	какие достижения у меня есть; 
 •	сколько Points у меня накоплено; 
 •	кто пришёл по моей реферальной ссылке; 
@@ -43,7 +45,7 @@ Connect Asia — это модуль персональной вовлечённ
 Он показывает пользователю:
 •	его текущий баланс Points; 
 •	историю начислений; 
-•	реферальный прогресс и заработанные Points; 
+•	реферальный прогресс и начисленные internal Points;
 •	off-chain бейджи и достижения; 
 •	последние значимые действия в экосистеме; 
 •	честные подсказки, что можно сделать дальше, если эти подсказки опираются на реальные backend-данные. 
@@ -98,7 +100,7 @@ ________________________________________
 •	next actions; 
 •	rankings; 
 •	season progress; 
-•	partner income. 
+•	partner income / payout surfaces.
 
 Closure note прямо фиксирует, что dashboard endpoint даёт balance, recentTransactions, referral summary и badge summary, но не даёт G2A, NFT count, wallet, levels/statuses, missions, profile/social data или admin/ops data .
 
@@ -128,9 +130,9 @@ Closure note прямо фиксирует, что dashboard endpoint даёт b
 •	количество приглашённых; 
 •	активированных рефералов; 
 •	pending referrals; 
-•	заработанные Points; 
+•	начисленные internal Points;
 •	состояние reward_missing, если activation есть, а начисление ещё не найдено. 
-Важно: Referral Service владеет referral facts, а Points ledger остаётся источником истины для применённых начислений. Это уже закреплено в closure note: referral-service owns referral graph facts, а points-service остаётся ledger truth для applied earnings .
+Важно: Referral Service владеет referral facts, а Points ledger остаётся источником истины для применённых internal начислений. Это уже закреплено в closure note: referral-service owns referral graph facts, а points-service остаётся ledger truth для applied internal Points entries.
 
 5.4 Badges
 Источники:
@@ -248,12 +250,12 @@ Backend:
 
 7.3 Рефералы
 Назначение:
-•	приглашения и реферальные начисления. 
+•	приглашения и referral participation / internal recognition summaries.
 Содержит:
 •	referral code/link; 
 •	referral summary; 
 •	referral tree; 
-•	referral earnings; 
+•	referral participation / reward eligibility summary;
 •	states: pending, rewarded, reward_missing. 
 Backend:
 •	GET /v1/referral/code; 
@@ -282,7 +284,7 @@ Future zones
 •	Missions; 
 •	Analytics; 
 •	Leaderboards; 
-•	Partner income; 
+•	Partner income / payout surfaces;
 •	PRO economy. 
 Их можно оставить только как future roadmap, но не как пользовательские вкладки без backend.
 ________________________________________
@@ -337,7 +339,7 @@ Connect не должен выглядеть как криптокошелёк �
 •	“криптокошелёк”; 
 •	“заработок на токенах”. 
 
-Для referral можно использовать “заработано Points”, но аккуратно: это внутренняя система вознаграждений, не обещание денежного дохода.
+Для referral лучше использовать “начислены internal Points” или “учтён реферальный вклад”: это внутренняя система вознаграждений, не обещание денежного дохода.
 ________________________________________
 
 10. Обновлённое позиционирование
@@ -375,12 +377,12 @@ o	“Ваша активность появится здесь после пер
 Пользователь видит:
 •	referral code/link; 
 •	pending referral; 
-•	пока без earned points. 
+•	пока без applied internal Points.
 
 Сценарий 4. Реферал активировался
 Пользователь видит:
 •	activated/rewarded referral; 
-•	заработанные Points; 
+•	начисленные internal Points;
 •	соответствующую транзакцию в activity; 
 •	если activation есть, а транзакции нет — reward_missing. 
 
@@ -446,9 +448,9 @@ Quest → Points
 •	scheduled replay; 
 •	failed drilldown; 
 •	safe requeue. 
-Referral earnings
+Referral participation summaries
 •	referral code/stats/tree; 
-•	referral earnings read model; 
+•	referral participation / internal reward read model;
 •	reward_missing; 
 •	связка referral facts + matched points ledger. 
 Badge baseline
@@ -497,7 +499,7 @@ UI не показывает:
 •	season; 
 •	rankings; 
 •	прогнозы; 
-•	partner income. 
+•	partner income / payout surfaces.
 
 1.2 Referral tab integration
 Источники:
@@ -510,7 +512,7 @@ UI показывает:
 •	ссылку приглашения; 
 •	количество приглашённых; 
 •	activated/pending; 
-•	earned Points; 
+•	applied internal Points;
 •	reward_missing. 
 
 1.3 Badges tab integration
@@ -729,7 +731,7 @@ Phase 7 — Analytics / Insights
 
 7.1 Backend aggregates
 Нужны:
-•	points earned by period; 
+•	internal Points by period;
 •	points by action; 
 •	points by source service; 
 •	badge timeline; 
@@ -860,7 +862,7 @@ ________________________________________
 Current / Done
 •	Points Ledger; 
 •	Quest reward pipeline; 
-•	Referral earnings; 
+•	Referral participation summaries;
 •	Badge baseline; 
 •	First quest badge; 
 •	Connect dashboard backend. 

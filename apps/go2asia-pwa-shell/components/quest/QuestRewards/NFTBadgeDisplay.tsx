@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Quest Asia - NFT Badge Display
- * Отображение NFT-бейджа
+ * Quest Asia - Badge Display
+ * Отображение off-chain бейджа / future-compatible badge metadata.
  */
 
 import { useState } from 'react';
@@ -33,14 +33,14 @@ export function NFTBadgeDisplay({ badge }: NFTBadgeDisplayProps) {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Я получил NFT-бейдж "${badge.name}" в Go2Asia!`,
+        title: `Я получил бейдж "${badge.name}" в Go2Asia!`,
         text: badge.description,
         url: window.location.href,
       });
     } else {
       // Fallback: копируем в буфер обмена
       navigator.clipboard.writeText(
-        `Я получил NFT-бейдж "${badge.name}" в Go2Asia! ${badge.description}`
+        `Я получил бейдж "${badge.name}" в Go2Asia! ${badge.description}`
       );
       alert('Ссылка скопирована в буфер обмена!');
     }

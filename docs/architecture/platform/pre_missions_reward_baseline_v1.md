@@ -23,6 +23,7 @@ Go2Asia Pre-Missions Reward Baseline v1
 - Direct calls to Points are not a replacement for future reward-intent orchestration.
 - Connect dashboard is read-only UI aggregation and must not write ledger or decide rewards.
 - UI must not call ledger-write endpoints directly.
+- `Producer` in this document means an observed runtime service-to-service Points caller in the current transitional baseline. It does not activate new reward producers, accrual pipelines, payout, settlement, spend enforcement, wallet/token/G2A/NFT/on-chain runtime, or Slice 16 movement.
 
 3. Allowed Current Producers
 
@@ -89,3 +90,4 @@ When Missions Service is introduced:
 - No reward-intent implementation in this pass.
 - No Missions Service creation.
 - No change to existing direct producer calls in this pass.
+- No authority switch from Stage 6.5 terminology alignment.

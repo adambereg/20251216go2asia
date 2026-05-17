@@ -12,7 +12,6 @@ import {
   Users,
   Trophy,
   Ticket,
-  Wallet,
   Award,
   UserPlus,
   Settings,
@@ -41,9 +40,9 @@ const secondaryNavItems: NavItem[] = [
 const deferredNavItems: Array<{ label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { label: 'Квесты', icon: Trophy },
   { label: 'Ваучеры', icon: Ticket },
-  { label: 'Баланс', icon: Wallet },
-  { label: 'NFT', icon: Award },
-  { label: 'Рефералы', icon: UserPlus },
+  { label: 'Активность', icon: Award },
+  { label: 'Бейджи', icon: Award },
+  { label: 'Приглашения', icon: UserPlus },
   { label: 'Настройки', icon: Settings },
 ];
 

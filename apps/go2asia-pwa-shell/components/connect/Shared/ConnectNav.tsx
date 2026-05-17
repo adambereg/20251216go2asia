@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Wallet, Award, Users, Target, BarChart } from 'lucide-react';
+import { Activity, Home, Award, Users, Target, BarChart } from 'lucide-react';
 import { cn } from '@go2asia/ui';
 
 export function ConnectNav() {
@@ -10,9 +10,9 @@ export function ConnectNav() {
 
   const navItems = [
     { href: '/connect', label: 'Главная', icon: Home },
-    { href: '/connect/wallet', label: 'Активность', icon: Wallet },
+    { href: '/connect/wallet', label: 'Активность', icon: Activity },
     { href: '/connect/levels', label: 'Бейджи', icon: Award },
-    { href: '/connect/referrals', label: 'Рефералы', icon: Users },
+    { href: '/connect/referrals', label: 'Приглашения', icon: Users },
     { href: '/connect/missions', label: 'Миссии', icon: Target },
     { href: '/connect/analytics', label: 'Статистика', icon: BarChart },
   ];

@@ -10,7 +10,7 @@ import {
   Building,
   Target,
   Users,
-  Wallet,
+  Compass,
   Handshake,
   Users2,
   Gift,
@@ -110,9 +110,9 @@ const modules = [
   {
     href: '/connect',
     module: 'connect' as const,
-    icon: Wallet,
+    icon: Compass,
     title: 'Connect Asia',
-    description: 'Баланс и награды',
+    description: 'Активность и Points',
     requiresAuth: true,
     isPro: false,
   },
@@ -194,25 +194,25 @@ const benefits = [
   {
     type: 'referral' as const,
     icon: TrendingUp,
-    title: 'Реферальная программа',
+    title: 'Приглашения и вклад',
     description:
-      'Приглашайте друзей в Go2Asia и получайте вознаграждения за их активность.',
-    cta: 'Получить свою реферальную ссылку',
+      'Приглашайте друзей в Go2Asia и отслеживайте участие как внутренний вклад в экосистему.',
+    cta: 'Открыть приглашения',
   },
   {
     type: 'rewards' as const,
     icon: Award,
-    title: 'Награды за активность',
+    title: 'Прогресс и бейджи',
     description:
-      'Публикуйте посты, проходите квесты, помогайте новичкам и копите Points и NFT-бейджи.',
-    cta: 'Открыть профиль наград',
+      'Публикуйте посты, проходите квесты, помогайте новичкам и видите internal Points и off-chain бейджи.',
+    cta: 'Открыть прогресс',
   },
   {
     type: 'quests' as const,
     icon: Crosshair,
     title: 'Открывайте Азию через квесты',
     description:
-      'Маршруты, челленджи и задания в любимых городах. Выполняйте миссии и получайте бонусы.',
+      'Маршруты и задания в любимых городах. Проходите сценарии и видите результат участия после проверки.',
     cta: 'Смотреть квесты',
   },
 ];
@@ -227,7 +227,7 @@ const rewards = [
   {
     id: '2',
     icon: 'gem' as const,
-    text: 'Получен NFT "Исследователь Чиангмая"',
+    text: 'Получен бейдж "Исследователь Чиангмая"',
     timeAgo: '1 день назад',
   },
   {
@@ -424,7 +424,7 @@ export function HomePageContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 md:mb-12">
           <CTABanner
             title="Присоединяйтесь к сообществу"
-            description="Получите доступ ко всем возможностям экосистемы, зарабатывайте награды и находите единомышленников"
+            description="Получите доступ к возможностям экосистемы, участвуйте в активностях и находите единомышленников"
             primaryAction={
               <Button
                 variant="primary"

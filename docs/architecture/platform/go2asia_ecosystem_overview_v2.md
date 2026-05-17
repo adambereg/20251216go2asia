@@ -20,6 +20,9 @@ Go2Asia Ecosystem Overview v2
 •	Geo Layer рассматривается как отдельная платформенная способность для гео-контрактов, nearby/viewport/layers и кросс-доменных картографических сценариев. 
 •	Tokenomics / G2A / on-chain NFT остаются future layer и не должны смешиваться с текущей off-chain Points/Badges-реальностью. 
 
+Economy terminology alignment note:
+Этот platform-canon документ должен читаться вместе с `docs/economy/economy_authority_terminology_crosswalk_v1.md`. Economy runtime authority остаётся у `docs/economy/points_policy_v1.md` и `docs/economy/referral_network_rewards_policy_v1.md`. Упоминания Points, balance, ledger, referral, rewards, RF/vouchers, G2A, NFT, token, wallet или future externalization в этом документе являются architecture/product wording и не активируют ledger writes, reward producers, spend enforcement, payout/settlement, wallet/token/G2A/NFT/on-chain runtime или Slice 16 movement.
+
 Этот документ не заменяет подробные SSOT-документы отдельных модулей. Его задача — дать единую карту экосистемы и зафиксировать актуальное понимание границ, чтобы дальнейшие документы, промты для Cursor, backend-аудиты и frontend-решения опирались на одну согласованную картину.
 
 2. Краткое определение Go2Asia
@@ -104,6 +107,7 @@ ________________________________________
 •	PRO — куратор, эксперт, организатор или партнёрский представитель; 
 •	Business Partner — представитель бизнеса; 
 •	Admin / Moderator / Editor — внутренние роли команды. 
+Важно: platform role, economy participation role и auth/RBAC role не являются одним и тем же. Роль не создаёт payout right, partner settlement authority, reward producer class или VIP entitlement authority switch.
 Единый аккаунт не означает, что все модули хранят профильные данные у себя. Identity/Auth-слой остаётся источником истины по пользователю, а остальные модули используют user_id и ролевые права.
 ________________________________________
 3.3. Единая экономика
@@ -113,7 +117,7 @@ Go2Asia должна иметь единую систему мотивации �
 •	Badges — достижения и статусные отметки; 
 •	Referral — рост аудитории через приглашения; 
 •	Missions — управляемые пользовательские цели; 
-•	Connect UI — витрина прогресса, баланса и достижений. 
+•	Connect UI — витрина прогресса, read-only Points/referral projections и достижений.
 В будущем экономика может быть расширена через:
 •	G2A; 
 •	on-chain NFT; 
@@ -197,7 +201,7 @@ Connect не владеет:
 •	blockchain operations. 
 Владельцы логики:
 •	Points Service — баланс, транзакции, ledger; 
-•	Referral Service — реферальные коды, связи, дерево, earnings; 
+•	Referral Service — реферальные коды, связи, дерево, referral metadata and participation/reward summaries;
 •	Missions Service — цели, условия, прогресс, reward intents; 
 •	Badges / NFT layer — достижения и бейджи; 
 •	Token Service — future off-chain G2A/tokenomics; 
@@ -258,6 +262,7 @@ VIP Spacer сохраняет все возможности Spacer, но пол�
 •	более высокий статус внутри сообщества. 
 VIP Spacer — это пользователь, который уже вовлечён в экосистему и готов участвовать в ней глубже: приглашать других, пользоваться внутренней экономикой, проходить платные или премиальные сценарии.
 Важно: VIP-статус не должен автоматически превращать пользователя в PRO. VIP — это усиленный пользовательский уровень, а PRO — отдельная роль с кураторскими и операционными функциями.
+VIP не является payout layer, financial entitlement или authority switch. VIP language in this platform document means activation / spend-access context only where economy policy and runtime support it.
 ________________________________________
 4.4. PRO
 PRO — продвинутый участник, куратор, эксперт, организатор или представитель экосистемы.
@@ -270,7 +275,7 @@ PRO может выполнять функции, недоступные обы�
 •	привлекать и сопровождать RF-партнёров; 
 •	помогать с Rielt-листингами и верификацией объектов; 
 •	выполнять PRO Missions; 
-•	получать расширенные награды и, в будущем, G2A-вознаграждения. 
+•	видеть contribution / reward summaries and, in future-only layers, possible G2A eligibility if separately activated.
 PRO — это не просто “пользователь с большим количеством Points”. Это роль доверия и ответственности.
 PRO может выступать как:
 •	локальный эксперт; 
@@ -459,7 +464,7 @@ Economy / Gamification Layer — слой мотивации, прогресса
 К этому слою относятся:
 •	Connect Asia — UI-хаб прогресса, баланса и мотивации; 
 •	Points Service — баланс, транзакции, ledger; 
-•	Referral Service — реферальные связи, дерево, earnings; 
+•	Referral Service — реферальные связи, дерево, participation / reward summaries;
 •	Missions Service — цели, условия, прогресс, reward intents; 
 •	Badges / NFT layer — достижения; 
 •	Token Service — future off-chain tokenomics; 
@@ -900,7 +905,7 @@ RF связывает:
 •	квесты; 
 •	Guru nearby-сценарии. 
 Пользователь может увидеть RF-партнёра в Guru, получить ваучер, посетить место, оставить отзыв в Space и тем самым усилить профиль партнёра.
-PRO может привлечь партнёра, помочь заполнить профиль, запустить оффер, встроить место в квест и получить вознаграждение за вклад.
+PRO может привлечь партнёра, помочь заполнить профиль, запустить оффер, встроить место в квест и получить contribution visibility / internal reward recognition where policy-backed. Это не означает commission, payout или partner settlement right.
 RF не должен владеть всеми соседними доменами. Он не владеет географией, листингами Rielt, квестами или Points. Его задача — управлять партнёрским бизнес-контуром.
 ________________________________________
 7.5. Quest использует Atlas / RF / Pulse
@@ -938,7 +943,7 @@ Missions слушают подтверждённые события и обно�
 •	Missions не проверяют реальность события; 
 •	Missions не начисляют Points напрямую; 
 •	Missions создают reward intent; 
-•	Points / Badges / Token layer исполняют награду. 
+•	Points / Badges process internal rewards only where runtime-backed; Token/G2A remains future-only unless separately activated.
 Так пользователь видит не просто “хаос действий”, а понятный путь:
 •	заполни профиль; 
 •	напиши первый пост; 
@@ -1092,6 +1097,7 @@ Future target:
 •	mint / burn / transfer. 
 Текущий принцип:
 off-chain first, on-chain later.
+Эти пункты являются future-only roadmap vocabulary. Они не означают текущий withdrawal, liquidity, wallet activation, token transfer, mint/burn, payout, settlement или investment surface.
 Geo Service как отдельный зрелый сервис
 Geo Layer уже нужен как архитектурная способность, но отдельный зрелый Geo Service может появляться по мере роста нагрузки и усложнения nearby/viewport-сценариев.
 Future target:
@@ -1192,6 +1198,7 @@ Connect — это UI-хаб экономики, прогресса и моти�
 •	Token Service; 
 •	Blockchain Gateway. 
 В будущем возможен лёгкий connect-bff или connect-dashboard-service, но только как UI-агрегатор, не как владелец экономики.
+Connect read models are projections and do not become ledger truth, spend permission, payout balance, settlement state, wallet activation or token liquidity.
 ________________________________________
 9.2. Не смешивать Quest Tasks (ранее назывались Quest Missions) и Ecosystem Missions
 В Go2Asia есть два разных смысла слова “mission”.
@@ -1235,7 +1242,7 @@ Missions отвечают за:
 •	экономические правила; 
 •	антиинфляционную логику. 
 Правильная схема:
-domain event → Missions progress → reward intent → Points / Badges / Token layer
+domain event → Missions progress → reward intent → Points / Badges where runtime-backed; Token/G2A only as future layer
 То есть Missions могут сказать:
 пользователь выполнил миссию, нужно инициировать награду.
 Но фактическое исполнение награды остаётся у владельца экономики.
@@ -1349,6 +1356,7 @@ ________________________________________
 •	mint / burn / transfer; 
 •	external wallet operations. 
 Tokenomics нельзя считать обязательной частью MVP. On-chain-слой должен запускаться только после технической, юридической и экономической готовности.
+Здесь `ledger` означает internal Points/accounting vocabulary where runtime-backed, not financial ledger, payout ledger, or active future ledger implementation.
 ________________________________________
 9.9. Не смешивать runtime reality и future target
 В документации и задачах для Cursor нужно явно различать:
@@ -1611,6 +1619,7 @@ VIP получает дополнительные возможности по с
 •	возможность тратить Points на внутренние преимущества; 
 •	более высокий статус внутри сообщества. 
 VIP не равен PRO. VIP — это усиленный пользовательский уровень, а PRO — роль доверенного куратора.
+VIP не создаёт payout right, commission, settlement authority или financial entitlement.
 ________________________________________
 PRO
 PRO — доверенный участник, эксперт, куратор, организатор или амбассадор Go2Asia.
@@ -1713,6 +1722,7 @@ Voucher может быть:
 •	связан с Mission; 
 •	отображён в Guru. 
 Voucher принадлежит бизнес/партнёрскому слою, а не Points или Quest.
+Voucher language here means practical utility and consumption layer. Voucher claim/redeem must not be read as cashback, payout, partner settlement, refund, merchant remittance, or payment rail by itself.
 ________________________________________
 Reaction
 Reaction — любое структурированное пользовательское взаимодействие с объектом Go2Asia.

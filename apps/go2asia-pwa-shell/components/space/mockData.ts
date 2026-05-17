@@ -286,7 +286,7 @@ export const mockPosts: Post[] = [
     type: 'quest-report',
     privacy: 'public',
     content:
-      'Прошёл квест "Храмы Бангкока"! 5 храмов за день, 15км пешком, но оно того стоило. Получил 500 Points и NFT бейдж 🏆',
+      'Прошёл квест "Храмы Бангкока"! 5 храмов за день, 15км пешком, но оно того стоило. В сводке учтены 500 Points и off-chain бейдж 🏆',
     attachments: {
       type: 'quest',
       quest: {
@@ -700,7 +700,7 @@ export const mockTransactions: Transaction[] = [
     type: 'spend',
     amount: 200,
     currency: 'points',
-    description: 'Покупка ваучера "Скидка 10% в кафе"',
+    description: 'Ваучерная utility "Скидка 10% в кафе"',
     relatedId: 'voucher-1',
     createdAt: '2024-11-25T16:00:00Z',
   },
@@ -709,7 +709,7 @@ export const mockTransactions: Transaction[] = [
     type: 'referral',
     amount: 100,
     currency: 'points',
-    description: 'Реферальный бонус',
+    description: 'Points по приглашению',
     relatedId: 'referral-1',
     createdAt: '2024-11-24T10:00:00Z',
   },
@@ -948,7 +948,7 @@ export const mockTransactionsExtended: Transaction[] = [
     type: 'spend',
     amount: 150,
     currency: 'points',
-    description: 'Покупка ваучера "Бесплатный коктейль"',
+    description: 'Ваучерная utility "Бесплатный коктейль"',
     relatedId: 'voucher-4',
     createdAt: '2024-11-21T18:00:00Z',
   },

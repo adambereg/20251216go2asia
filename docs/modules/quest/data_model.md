@@ -1,5 +1,7 @@
 # Quest Asia — Data Model
 
+Stage 6.5.3 reading guard: this legacy model must not imply NFT activation, payout, commission, or financial reward semantics. Quest rewards are internal Points / badge or voucher utility where runtime-backed; NFT fields are future-only compatibility placeholders.
+
 ## 1. Основные сущности
 
 ### Quest
@@ -11,7 +13,7 @@
 - city_id
 - difficulty: easy / medium / hard
 - reward_points
-- reward_nft_id?
+- reward_collectible_future_id? (future-only; current badges are off-chain)
 - reward_coupon_id?
 - is_active
 - created_at
@@ -49,7 +51,7 @@
 - user_id
 - quest_id
 - points
-- nft_id?
+- collectible_future_id? (future-only; not current NFT wallet asset)
 - coupon_id?
 - timestamp
 

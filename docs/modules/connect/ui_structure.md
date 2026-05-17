@@ -1,19 +1,21 @@
 # Connect Asia — UI Structure
 
-Модуль имеет 7 самостоятельных разделов.
+Legacy UI structure. Stage 6.5.3 reading guard: Connect UI must not look like a financial wallet, token account, NFT marketplace, payout surface, or bank balance. Current MVP surfaces should show read-only internal Points/activity/referral/badge projections only where backend-backed.
+
+Модуль имеет 7 legacy / target разделов.
 
 ---
 
 # 1. Dashboard (Главная)
 
 Блоки:
-- Баланс Points / G2A / NFT  
-- Уровень и прогресс  
+- Internal Points / activity summary
+- Уровень и прогресс только как future/backend-backed progression
 - Рекомендованные действия  
 - Последняя активность
 
 Компоненты:
-- BalanceCard  
+- ActivitySummaryCard
 - LevelProgressBar  
 - RecommendedActionList  
 - ActivityFeed  
@@ -28,8 +30,8 @@
 - Период  
 
 Секции:
-- Balances  
-- Table of Transactions  
+- Internal Points summary
+- Table of internal activity / Points entries
 
 ---
 
@@ -79,10 +81,10 @@
 # 6. Analytics
 
 Блоки:
-- Points за 7/30/90 дней (бар-чарт)  
-- Источники наград (пай-чарт)  
-- Вклад рефералов  
-- Пульс сезона  
+- Internal Points за 7/30/90 дней (бар-чарт), as read-only projection
+- Источники internal reward recognition (пай-чарт)
+- Referral participation contribution
+- Пульс сезона только как future/backend-backed progression
 
 Компоненты:
 - ChartBar  

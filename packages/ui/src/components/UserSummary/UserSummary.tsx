@@ -95,7 +95,7 @@ export const UserSummary: React.FC<UserSummaryProps> = ({
             <Coins size={18} className="text-yellow-200" />
             <span className="text-lg md:text-xl font-bold">{stats.points.toLocaleString()}</span>
           </div>
-          <p className="text-xs opacity-90">Points на балансе</p>
+          <p className="text-xs opacity-90">internal Points</p>
         </button>
 
         <button className="bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl p-3 md:p-4 transition-all text-left">
@@ -103,7 +103,7 @@ export const UserSummary: React.FC<UserSummaryProps> = ({
             <Award size={18} className="text-purple-200" />
             <span className="text-lg md:text-xl font-bold">{stats.nfts}</span>
           </div>
-          <p className="text-xs opacity-90">коллекционных NFT</p>
+          <p className="text-xs opacity-90">off-chain бейджей</p>
         </button>
 
         <button className="bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl p-3 md:p-4 transition-all text-left">
@@ -111,7 +111,7 @@ export const UserSummary: React.FC<UserSummaryProps> = ({
             <Users size={18} className="text-blue-200" />
             <span className="text-lg md:text-xl font-bold">{stats.teamMembers}</span>
           </div>
-          <p className="text-xs opacity-90">человек в команде</p>
+          <p className="text-xs opacity-90">контактов сообщества</p>
         </button>
 
         <button className="bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl p-3 md:p-4 transition-all text-left">

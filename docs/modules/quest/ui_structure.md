@@ -1,5 +1,7 @@
 # Quest Asia — UI Structure
 
+Stage 6.5.3 reading guard: Quest UI copy must not frame rewards as income, commission, investment, NFT asset ownership, or payout. Current user-facing wording should prefer internal Points, off-chain badges and voucher utility where runtime-backed.
+
 ## 1. Общие принципы
 
 - Модуль визуально продолжает общий стиль Go2Asia:
@@ -9,7 +11,7 @@
 - В интерфейсе везде подчёркиваются:
   - тип квеста (Маршрут / Контент / Событие / Онлайн / Офлайн),
   - длительность, город, сложность,
-  - награды (Points + NFT).
+  - internal Points / badge rewards where runtime-backed.
 
 Основные пользовательские роли для UI:
 - **Traveler/Explorer** — видит и проходит квесты.
@@ -35,7 +37,7 @@
   - Тип квеста (Маршрут, Контент, Событие, ONLINE/OFFLINE),
   - Сложность (Легко, Средне, Сложно),
   - Длительность (чипы: до 60 / 90 / 120+ мин),
-  - Теги (Ночь, RF, NFT и т.п.).
+  - Теги (Ночь, RF, future collectible и т.п.).
 
 **Сетка карточек квестов (4–6 в ряд на десктопе, 2 на таблетах, 1 на мобиле)**  
 Компонент: **QuestCard**
@@ -64,7 +66,7 @@
 
 5. **Награды**
    - Иконка трофея + `300 очков`, `500 очков`, и т.п.
-   - Если есть NFT — бейдж `NFT`.
+   - Если есть collectible/future NFT-compatible badge — clearly mark as future/backend-backed.
 
 Клик по карточке ведёт на детальную страницу: `/quest/:slug` или `/quest/:id`.
 
@@ -123,8 +125,8 @@
 **Блок “Награды” (QuestRewardsCard)**  
 
 - `Очки` — крупным числом (напр. `300 очков`).
-- `NFT-награды`:
-  - список NFT бейджей (например, `Street Food Hero`, `Bangkok Explorer`),
+- `Бейджи / достижения`:
+  - список off-chain badges (например, `Street Food Hero`, `Bangkok Explorer`),
   - карточки в виде чипов.
 
 **CTA-блок**
@@ -137,7 +139,7 @@
 Возможные дополнительные элементы:
 - Статус:
   - `Вы уже проходите этот квест`,
-  - `Квест завершён, вы заработали 300 очков и NFT ...`.
+  - `Квест завершён, вам начислены 300 internal Points и badge ...`.
 
 ---
 
@@ -166,7 +168,7 @@
 
 Экран “Квест завершён”:
 - Анимация/иллюстрация успеха,
-- Суммарные награды (Points + NFT),
+- Суммарные internal rewards (Points + badges),
 - Кнопки:
   - `Поделиться в Space Asia`,
   - `Найти новые квесты`.
@@ -224,7 +226,7 @@
 **Шаг 3. Награды**
 
 - Поле `Points за прохождение`,
-- Выбор NFT (из каталога NFT-модулей) или создание нового бейджа,
+- Выбор off-chain badge или future collectible placeholder, если отдельно поддержано,
 - (Опция) `Купон RF` — выбор из списка купонов бизнес-партнёра.
 
 **Шаг 4. Предпросмотр и публикация**
@@ -240,7 +242,7 @@
 - **QuestCard** — карточка квеста в списке.
 - **QuestHero** — верхняя секция с обложкой и заголовком.
 - **QuestMetaRow** — строка с длительностью, локацией, сложностью.
-- **QuestRewardsCard** — блок наград (Points + NFT).
+- **QuestRewardsCard** — блок internal rewards (Points + badges).
 - **RouteStep** — элемент списка шагов.
 - **QuestProgressBar** — индикатор прогресса прохождения.
 - **QuestFilterBar** — (будущее) панель фильтров на /quest.

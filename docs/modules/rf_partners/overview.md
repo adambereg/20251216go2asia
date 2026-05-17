@@ -1,16 +1,18 @@
 # Russian Friendly Asia — Overview
 
+Stage 6.5.3 reading guard: RF product wording describes voucher utility, partner visibility, PRO attribution and internal Points recognition where runtime-backed. It must not imply cashback, settlement, partner payout, commission, passive income, MLM, token activation, wallet behavior, or current G2A/NFT runtime.
+
 Russian Friendly Asia — модуль экосистемы Go2Asia, объединяющий дружественные туристические сервисы, кафе, рестораны, магазины, коворкинги, сервисы услуг и локальные компании, ориентированные на русскоязычных туристов и экспатов.
 
 ## Архитектурная позиция (важно)
 
-RF — это **multi-sided platform** и **economic/social hub** экосистемы Go2Asia, где взаимодействуют:
+RF — это **multi-sided platform** и **social / voucher utility hub** экосистемы Go2Asia, где взаимодействуют:
 
 - **Business Partner**: бизнес, который публикует офферы и обслуживает пользователей.
 - **PRO Spacer (куратор)**: подключает/онбордит бизнес, проводит проверки, обеспечивает качество и рост.
 - **VIP Spacer (потребитель)**: получает доступ к офферам/ваучерам, проходит квесты и генерирует социальные сигналы.
 
-RF **НЕ является** “простым каталогом” или read-only витриной. Каталог — лишь UI-поверхность над экономико‑социальным контуром (ваучеры, квесты, роли, награды, social-сигналы).
+RF **НЕ является** “простым каталогом” или read-only витриной. Каталог — UI-поверхность над voucher utility, квестами, ролями, internal reward recognition and social-сигналами.
 
 RF логично реализуется **после**:
 - Space Core (социальные объекты, репосты, реакции, обсуждения),
@@ -39,17 +41,17 @@ RF логично реализуется **после**:
    • Мои партнёры  
    • Онбординг бизнеса  
    • Проверка бизнеса  
-   • Вознаграждения Points/G2A  
+   • Internal Points / contribution summaries; G2A is future-only
    • Дашборд эффективности PRO
 
 ---
 
 ## Цели модуля
 
-- Построить multi-sided экономико‑социальную платформу: **Business ↔ PRO ↔ VIP**.
+- Построить multi-sided social / voucher utility платформу: **Business ↔ PRO ↔ VIP**.
 - Дать бизнесам инструмент роста и удержания: ваучеры/офферы, сценарии квестов, видимость в Guru/Atlas, social‑распространение через Space.
-- Сформировать рынок PRO‑кураторов (онбординг/проверки/сопровождение бизнеса) с прозрачной мотивацией через Points.
-- Сделать RF источником reward‑событий и social‑сигналов (репосты, отчёты, реакции) для Connect/Points и Quest.
+- Сформировать слой PRO‑кураторства (онбординг/проверки/сопровождение бизнеса) с прозрачной internal Points recognition where policy-backed.
+- Сделать RF источником attribution / participation events и social‑сигналов (репосты, отчёты, реакции) для Connect/Points и Quest.
 
 ---
 
@@ -58,7 +60,7 @@ RF логично реализуется **после**:
 ### Для пользователей
 - Поиск мест по категориям, городам, фильтрам (RF-статус, PRO-проверено).
 - Просмотр подробных карточек заведений с фото, меню/услугами, графиком работы.
-- Получение/покупка ваучеров (правила доступа зависят от VIP/роль‑политик).
+- Получение / резервирование voucher utility (правила доступа зависят от VIP/роль‑политик where runtime-backed).
 - Участие в квестах, завязанных на RF‑партнёров (награды Points).
 - Social‑активность вокруг партнёров: **репост в Space** + обсуждение в контексте репоста.
 - Отзывы/сигналы качества: отображение рейтингов/реакций, где UGC живёт в Space (посты/репосты/реакции), а RF агрегирует и привязывает к партнёру.
@@ -75,7 +77,7 @@ RF логично реализуется **после**:
 - Добавление новых бизнесов.
 - Онбординг и проверка.
 - Отчёты о проверках.
-- Получение вознаграждений (Points сейчас; G2A/NFT — вне текущей реализации).
+- Получение internal Points / contribution recognition where runtime-backed; G2A/NFT — future-only and outside current implementation.
 - Дашборд эффективности.
 
 ---
@@ -86,7 +88,7 @@ RF логично реализуется **после**:
 - **Pulse Asia** — события, проводимые партнёрами.  
 - **Space Asia** — репосты, обсуждения, UGC‑отзывы как посты/реакции, social graph.  
 - **Quest Asia** — квесты, завязанные на партнёров/ваучеры/миссии (reward события).  
-- **Points / Referral** — reward engine (Points сейчас), правила мотивации PRO/VIP и связанная экономика.  
+- **Points / Referral** — internal reward recognition (Points сейчас), правила участия PRO/VIP and related safe economy semantics.
 - **Roles / Access** — VIP/PRO/Business права и доступы.  
 - **Media** — изображения офферов/ваучеров/витрин партнёров.  
 - **Admin** — управление партнёрами, офферами, проверками, модерацией и правилами.

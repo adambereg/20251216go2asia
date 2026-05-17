@@ -1,7 +1,7 @@
 'use client';
 
 import { ModuleHero } from '@/components/modules';
-import { Wallet } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { CONNECT_DEFAULT_HERO_DESCRIPTION } from '../copy';
 
 interface ConnectHeroProps {
@@ -12,7 +12,7 @@ interface ConnectHeroProps {
 export function ConnectHero({ subtitle, badgeText }: ConnectHeroProps) {
   return (
     <ModuleHero
-      icon={Wallet}
+      icon={Activity}
       title="Connect Asia"
       description={subtitle || CONNECT_DEFAULT_HERO_DESCRIPTION}
       gradientFrom="from-emerald-500"

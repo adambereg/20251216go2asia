@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Quest Asia - Quest Rewards
- * Награды квеста
+ * Quest Asia - Quest Participation Summary
+ * Предварительная сводка участия в квесте
  */
 
 import { Trophy, Zap } from 'lucide-react';
@@ -15,22 +15,22 @@ interface QuestRewardsProps {
 export function QuestRewards({ quest }: QuestRewardsProps) {
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
-      <h3 className="text-xl font-bold text-slate-900 mb-4">Награды</h3>
+      <h3 className="text-xl font-bold text-slate-900 mb-4">Сводка участия</h3>
       
       <div className="space-y-4">
         {/* Points */}
         <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
           <Trophy className="w-6 h-6 text-amber-600" />
           <div>
-            <div className="text-sm text-slate-600">Очки</div>
+            <div className="text-sm text-slate-600">Internal Points после подтверждения</div>
             <div className="text-2xl font-bold text-slate-900">{quest.rewards.points}</div>
           </div>
         </div>
 
-        {/* NFT Badges */}
+        {/* Off-chain badges */}
         {quest.rewards.nftBadges.length > 0 && (
           <div>
-            <div className="text-sm text-slate-600 mb-3">NFT-бейджи</div>
+            <div className="text-sm text-slate-600 mb-3">Off-chain бейджи</div>
             <div className="space-y-2">
               {quest.rewards.nftBadges.map((badge) => (
                 <div
@@ -51,7 +51,7 @@ export function QuestRewards({ quest }: QuestRewardsProps) {
         {/* Условия */}
         {quest.rewards.conditions && (
           <div className="pt-4 border-t border-slate-200">
-            <div className="text-sm text-slate-600 mb-2">Условия получения</div>
+            <div className="text-sm text-slate-600 mb-2">Условия подтверждения</div>
             <ul className="space-y-1 text-sm text-slate-700">
               {quest.rewards.conditions.minCheckpoints && (
                 <li>• Минимум {quest.rewards.conditions.minCheckpoints} чек-поинтов</li>

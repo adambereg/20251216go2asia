@@ -17,7 +17,7 @@ export function RewardsActions({ quest }: RewardsActionsProps) {
   const router = useRouter();
 
   const handleShare = () => {
-    const text = `Я завершил квест "${quest.title}" в Go2Asia! 🎉`;
+    const text = `Я прошёл маршрут "${quest.title}" в Go2Asia. Итоговый статус подтверждается в приложении.`;
     const url = window.location.origin + `/quest/${quest.id}`;
 
     if (navigator.share) {
@@ -31,16 +31,6 @@ export function RewardsActions({ quest }: RewardsActionsProps) {
       navigator.clipboard.writeText(`${text} ${url}`);
       alert('Ссылка скопирована в буфер обмена!');
     }
-  };
-
-  const handleReview = () => {
-    // TODO: Открыть модальное окно с формой отзыва
-    alert('Функция отзыва будет реализована позже');
-  };
-
-  const handleSaveRoute = () => {
-    // TODO: Сохранить маршрут в Atlas
-    router.push(`/atlas/routes/new?quest=${quest.id}`);
   };
 
   const handleFindSimilar = () => {
@@ -60,21 +50,21 @@ export function RewardsActions({ quest }: RewardsActionsProps) {
           Поделиться
         </button>
 
-        <button
-          onClick={handleReview}
-          className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
+        <span
+          className="flex cursor-not-allowed items-center justify-center gap-2 bg-slate-100 text-slate-500 font-semibold py-4 px-6 rounded-lg"
+          aria-disabled="true"
         >
           <Star className="w-5 h-5" />
-          Оставить отзыв
-        </button>
+          Отзыв — позже
+        </span>
 
-        <button
-          onClick={handleSaveRoute}
-          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
+        <span
+          className="flex cursor-not-allowed items-center justify-center gap-2 bg-slate-100 text-slate-500 font-semibold py-4 px-6 rounded-lg"
+          aria-disabled="true"
         >
           <MapPin className="w-5 h-5" />
-          Сохранить маршрут
-        </button>
+          Сохранение — позже
+        </span>
       </div>
 
       {/* Дополнительные действия */}

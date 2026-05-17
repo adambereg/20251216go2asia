@@ -12,6 +12,6 @@ export * from './utils';
 // Компоненты
 export { QuestCard } from './QuestCard';
 
-// Данные
-export { mockQuests, mockNFTBadges, currentSeason } from './mockQuests';
+// Stage 6.5.5: mock quest data is intentionally not exported from the public
+// Quest barrel to avoid accidental use as runtime completion or reward truth.
 

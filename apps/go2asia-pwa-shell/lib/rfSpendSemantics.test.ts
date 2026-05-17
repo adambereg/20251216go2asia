@@ -14,12 +14,12 @@ describe('RF spend semantics helpers', () => {
     expect(getRfOfferSpendSemantics({ pointsCost: 500 })).toMatchObject({
       kind: 'paid_spend_required',
       pointsCost: 500,
-      label: 'Будет списано: 500 Points',
+      label: 'Требуются internal Points: 500 Points',
     });
   });
 
   it('keeps paid CTA visible only when points cost is positive', () => {
-    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить за 500 Points');
+    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить с Points: 500 Points');
     expect(getRfOfferClaimButtonLabel({ pointsCost: 0 })).toBe('Получить ваучер');
     expect(getRfOfferClaimButtonLabel({ pointsCost: undefined })).toBe('Получить ваучер');
   });
@@ -34,11 +34,11 @@ describe('RF spend semantics helpers', () => {
     });
     expect(getRfVoucherSpendSemantics({ pointsCostSnapshot: 500, economyStatus: 'pending' })).toMatchObject({
       kind: 'paid_spend_required',
-      label: 'Требуется: 500 Points',
+      label: 'Требуются internal Points: 500 Points',
     });
     expect(getRfVoucherSpendSemantics({ pointsCostSnapshot: 500, economyStatus: 'debited' })).toMatchObject({
       kind: 'paid_spend_required',
-      label: 'Списано: 500 Points',
+      label: 'Points подтверждены: 500 Points',
     });
   });
 

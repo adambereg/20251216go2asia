@@ -3,6 +3,7 @@
 > **Legacy/historical document (not runtime API SSOT).**  
 > This file describes earlier module-level API ideas and must not be treated as the current backend contract.  
 > Current runtime API contour is gateway-first and split by service namespaces (notably `/v1/space/*` and `/v1/reactions/*`).
+> Stage 6.5.3 reading guard: Space API notes do not activate wallet, G2A, NFT/on-chain, payout, referral-income, or token behavior. Economy-related surfaces should be Connect-owned read-only projections where runtime-backed.
 
 Base URL:
 /api/space
@@ -84,10 +85,10 @@ Base URL:
 
 ---
 
-# 6. NFT
+# 6. Badges / Future NFT Compatibility
 
-## GET /nft
-Получить NFT пользователя.
+## GET /badges
+Получить off-chain badges пользователя. NFT/on-chain remains future-only unless separately activated.
 
 ---
 

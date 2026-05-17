@@ -3,6 +3,7 @@
 > **Legacy/historical document (not runtime API SSOT).**  
 > This file reflects earlier module-level API ideas and must not be treated as the authoritative backend routing contract.  
 > Canonical contract reference: `docs/openapi/quest.yaml` with gateway/runtime routing under `/v1/quests` (and related `/v1/submissions/*` paths).
+> Stage 6.5.3 reading guard: reward fields mean internal Points / badge or voucher utility where runtime-backed. They do not activate NFT, G2A, payout, commission, or financial reward semantics.
 
 Базовый префикс:
 /api/quests
@@ -106,7 +107,7 @@
   "status": "completed",
   "reward": {
     "points": 200,
-    "nft_id": null
+    "collectible_future_id": null
   }
 }
 

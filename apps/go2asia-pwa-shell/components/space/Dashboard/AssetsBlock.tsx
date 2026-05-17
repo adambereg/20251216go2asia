@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Card, Button } from '@go2asia/ui';
-import { Wallet, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import type { DashboardStats } from '../types';
 
 interface AssetsBlockProps {
@@ -15,8 +15,8 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
   return (
     <Card className="border-2 border-slate-200 p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Цифровые активы</h2>
-        <Wallet className="h-5 w-5 text-slate-400" />
+        <h2 className="text-lg font-semibold text-slate-900">Сводка активности</h2>
+        <Activity className="h-5 w-5 text-slate-400" />
       </div>
 
       <div className="space-y-4">
@@ -50,26 +50,26 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
           </div>
         </div>
 
-        {/* G2A Balance */}
+        {/* Future G2A layer */}
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
           <div>
-            <div className="text-sm text-slate-600 mb-1">G2A Balance</div>
-            <div className="text-2xl font-bold text-slate-900">
-              {stats.g2aBalance.toLocaleString()}
+            <div className="text-sm text-slate-600 mb-1">G2A future layer</div>
+            <div className="text-sm text-slate-500">
+              Не является текущим балансом или финансовой поверхностью.
             </div>
           </div>
         </div>
 
         {/* Быстрые действия */}
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Link href="/space/balance?action=earn">
+          <Link href="/space/balance?view=activity">
             <Button variant="secondary" className="w-full">
-              Заработать
+              Активность
             </Button>
           </Link>
-          <Link href="/space/balance?action=spend">
+          <Link href="/space/balance?view=vouchers">
             <Button variant="secondary" className="w-full">
-              Потратить
+              Ваучеры
             </Button>
           </Link>
         </div>

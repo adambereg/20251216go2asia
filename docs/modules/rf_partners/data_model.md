@@ -2,7 +2,7 @@
 
 > Примечание: RF — multi-sided модуль. “Каталог” — лишь пользовательская проекция.  
 > Социальные сигналы и обсуждения реализуются через Space (репосты/реакции/UGC‑посты).  
-> Вознаграждения: **Points сейчас**, G2A/NFT — будущие контуры (вне текущей реализации).
+> Stage 6.5.3: user-facing RF semantics are voucher utility and internal Points recognition where runtime-backed. G2A/NFT, payout, cashback, settlement, wallet and token semantics are future-only / out of current implementation.
 
 ## Partner (Заведение)
 - id: UUID
@@ -46,10 +46,10 @@
 - partner_id: FK → Partner
 - title: string
 - description: text
-- type: enum (discount, gift, bonus, cashback)
+- type: enum (discount, gift, bonus, access, perk)
 - value: number | string
 - conditions: text
-- price_points: number (если платно; основной контур сейчас)
+- price_points: number (internal Points utility requirement, not money/payment)
 - price_g2a: number (будущее; не используется в текущей реализации)
 - limit: number
 - redeemed: number
@@ -81,8 +81,8 @@ RF не хранит “inline comments под партнёром”. Вмест
 - id
 - user_id
 - level: enum (junior, middle, senior)
-- reward_balance_points
-- reward_balance_g2a (будущее)
+- internal_points_summary
+- g2a_future_projection (будущее; not current token balance or payout)
 
 ---
 
@@ -100,7 +100,7 @@ RF не хранит “inline comments под партнёром”. Вмест
 
 ---
 
-## VoucherClaim (получение/покупка ваучера пользователем)
+## VoucherClaim (получение / резервирование voucher utility пользователем)
 - id: UUID
 - voucher_id: FK → Voucher
 - user_id: FK → Space.user
@@ -120,23 +120,23 @@ RF не хранит “inline comments под партнёром”. Вмест
 
 ---
 
-## PRO Rewards Transaction
+## PRO Internal Recognition Entry
 - id
 - pro_id
 - type: enum (onboarding, verification, activation, voucher_claimed, voucher_redeemed, quest_driven_visit, social_repost)
 - amount_points
-- amount_g2a (будущее)
+- amount_g2a_future (future-only; not current payout/token balance)
 - partner_id
 - created_at
 
 ---
 
-## RF → Reward Events (Points сейчас)
+## RF → Attribution / Internal Reward Events (Points сейчас)
 
-RF генерирует события, которые используются reward‑движком (Points/Connect) и Quest:
+RF генерирует события/факты, которые используются Points/Connect and Quest only where policy/runtime-backed:
 
 - `partner.onboarded` / `partner.verified` (PRO‑куратор)
 - `voucher.claimed` / `voucher.redeemed` (VIP/пользователь + бизнес)
 - `rf.social.repost` (репост партнёра/оффера в Space)
 
-Сами начисления Points не являются обязанностью RF‑модуля: RF публикует события/факты, а reward‑сервис применяет правила.
+Сами начисления Points не являются обязанностью RF‑модуля: RF публикует события/факты, а Points/reward service applies internal rules. This is not cashback, settlement, payout, or partner remittance.

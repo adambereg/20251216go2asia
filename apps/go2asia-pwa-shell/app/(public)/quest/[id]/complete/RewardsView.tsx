@@ -2,18 +2,18 @@
 
 /**
  * Quest Asia - Rewards View
- * Главный компонент экрана награды после завершения квеста
+ * Локальная сводка после прохождения квеста.
+ * Не является backend-confirmed reward receipt.
  */
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Quest, QuestProgress } from '@/components/quest/types';
-import { RewardsAnimation } from '@/components/quest/QuestRewards/RewardsAnimation';
 import { PointsDisplay } from '@/components/quest/QuestRewards/PointsDisplay';
 import { NFTBadgeDisplay } from '@/components/quest/QuestRewards/NFTBadgeDisplay';
 import { RewardsActions } from '@/components/quest/QuestRewards/RewardsActions';
 import { calculateTotalPoints } from '@/components/quest/utils/rewards';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Info, Sparkles } from 'lucide-react';
 
 interface RewardsViewProps {
   quest: Quest;
@@ -56,7 +56,6 @@ function loadProgressFromLocal(questId: string): QuestProgress | null {
 export function RewardsView({ quest }: RewardsViewProps) {
   const router = useRouter();
   const [progress, setProgress] = useState<QuestProgress | null>(null);
-  const [showAnimation, setShowAnimation] = useState(true);
   const [totalPoints, setTotalPoints] = useState(0);
 
   useEffect(() => {
@@ -71,16 +70,9 @@ export function RewardsView({ quest }: RewardsViewProps) {
 
     setProgress(savedProgress);
     
-    // Вычисляем итоговые очки
+    // Локальная сводка, не runtime reward receipt.
     const points = calculateTotalPoints(savedProgress.stepResults, quest.rewards.points);
     setTotalPoints(points);
-
-    // Скрываем анимацию через 3 секунды
-    const timer = setTimeout(() => {
-      setShowAnimation(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
   }, [quest.id, quest.rewards.points, router]);
 
   if (!progress) {
@@ -91,41 +83,42 @@ export function RewardsView({ quest }: RewardsViewProps) {
     );
   }
 
-  const earnedBadges = quest.rewards.nftBadges || [];
+  const localBadges = quest.rewards.nftBadges || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50">
-      {/* Анимация конфетти */}
-      {showAnimation && <RewardsAnimation />}
-
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Заголовок */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-full mb-4 shadow-lg">
-            <Trophy className="w-10 h-10 text-white" />
+            <Info className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-2">
-            Поздравляем!
+            Локальная сводка прохождения
           </h1>
           <p className="text-xl text-slate-600">
-            Вы завершили квест "{quest.title}"
+            На этом устройстве отмечено прохождение "{quest.title}". Начисления и бейджи требуют runtime-подтверждения.
           </p>
         </div>
 
-        {/* Награды */}
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-6 text-sm text-amber-900">
+          Эта страница не является ledger truth или подтверждением начисления. Финальный статус квеста и Points должен
+          подтверждаться backend/runtime.
+        </div>
+
+        {/* Локальная сводка */}
         <div className="space-y-6 mb-8">
-          {/* Очки */}
           <PointsDisplay points={totalPoints} basePoints={quest.rewards.points} />
 
-          {/* NFT-бейджи */}
-          {earnedBadges.length > 0 && (
+          {/* Off-chain badges / future compatibility */}
+          {localBadges.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-slate-700">
                 <Sparkles className="w-5 h-5 text-purple-600" />
-                <h2 className="text-xl font-bold">NFT-бейджи</h2>
+                <h2 className="text-xl font-bold">Бейджи по локальной сводке</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {earnedBadges.map((badge) => (
+                {localBadges.map((badge) => (
                   <NFTBadgeDisplay key={badge.id} badge={badge} />
                 ))}
               </div>
@@ -155,12 +148,12 @@ export function RewardsView({ quest }: RewardsViewProps) {
               </p>
             </div>
             <div>
-              <p className="text-sm text-slate-600">Очков заработано</p>
+              <p className="text-sm text-slate-600">Points в локальной сводке</p>
               <p className="text-2xl font-bold text-emerald-600">{totalPoints}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-600">Бейджей получено</p>
-              <p className="text-2xl font-bold text-purple-600">{earnedBadges.length}</p>
+              <p className="text-sm text-slate-600">Бейджей в сводке</p>
+              <p className="text-2xl font-bold text-purple-600">{localBadges.length}</p>
             </div>
           </div>
         </div>

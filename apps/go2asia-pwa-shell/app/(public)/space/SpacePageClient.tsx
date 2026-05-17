@@ -68,7 +68,8 @@ const referenceBlocks = [
   {
     title: 'PRO Widget',
     status: 'Preview',
-    description: 'Спокойный bridge к PRO без замены рабочего контура.',
+    description:
+      'Спокойный переход к PRO без замены рабочего контура.',
   },
 ] as const;
 
@@ -214,7 +215,8 @@ export function SpacePageClient() {
         : {
             id: 'next_authored_update',
             title: 'Сделать короткую авторскую публикацию',
-            description: 'Небольшой пост может превратить пассивный просмотр в активное включение.',
+            description:
+              'Небольшой пост может превратить обычный просмотр в активное включение.',
             href: '/space/posts',
             cta: 'Открыть публикации',
             source: 'summary',

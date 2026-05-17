@@ -145,7 +145,7 @@ function PointsSummary({
             <BucketStat
               label={CONNECT_POINTS_BUCKET_LABELS.available}
               value={walletSummary.availablePoints}
-              description="Доступны сейчас."
+              description="Внутренняя доступность подтверждается runtime при конкретном действии."
               icon={<Coins className="w-5 h-5" />}
             />
             <BucketStat
@@ -163,7 +163,7 @@ function PointsSummary({
             <BucketStat
               label={CONNECT_POINTS_BUCKET_LABELS.unlockableEstimate}
               value={walletSummary.estimatedUnlockablePoints}
-              description="Оценка Points, которые станут доступны после выполнения условий."
+              description="Оценочная projection, не ledger truth и не обещание spend."
               icon={<Sparkles className="w-5 h-5" />}
             />
           </div>
@@ -247,7 +247,7 @@ export function WalletView() {
   if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="История Points и начислений за вашу активность." />
+          <ConnectHero subtitle="Read-only история внутренних Points и подтверждённой активности." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -266,7 +266,7 @@ export function WalletView() {
   if (hasError) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="История Points и начислений за вашу активность." />
+          <ConnectHero subtitle="Read-only история внутренних Points и подтверждённой активности." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -299,7 +299,7 @@ export function WalletView() {
   return (
     <div className="min-h-screen bg-slate-50">
       <ConnectHero
-        subtitle="История Points и начислений за вашу активность."
+        subtitle="Read-only история внутренних Points и подтверждённой активности."
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
@@ -308,8 +308,8 @@ export function WalletView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Баланс и история Points</h1>
-          <p className="text-slate-600 mt-1">История Points и начислений за вашу активность.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и история Points</h1>
+          <p className="text-slate-600 mt-1">Read-only история внутренних Points и подтверждённой активности.</p>
         </div>
 
         <PointsSummary

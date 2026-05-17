@@ -6,10 +6,10 @@ export const CONNECT_POINTS_ACTIVITY_DESCRIPTION =
 export const CONNECT_POINTS_EARNED_LABEL = 'Начислено Points';
 
 export const CONNECT_POINTS_BUCKET_LABELS = {
-  available: 'Доступные Points',
+  available: 'Points с внутренней доступностью',
   locked: 'Points с условиями',
   network: 'Связанные с приглашениями',
-  unlockableEstimate: 'Оценка разблокировки',
+  unlockableEstimate: 'Оценка условий',
 } as const;
 
 const CONNECT_LEDGER_ACTION_LABELS: Record<string, string> = {

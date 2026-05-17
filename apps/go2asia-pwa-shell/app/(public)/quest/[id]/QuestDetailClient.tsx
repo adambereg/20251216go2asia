@@ -112,7 +112,7 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
               <p className="font-medium text-slate-900">{describeQuestExperience(quest)}</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-slate-500">Награда</p>
+              <p className="text-slate-500">Internal Points после подтверждения</p>
               <p className="font-medium text-slate-900">{quest.rewardPoints ?? 0} очков</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
@@ -252,7 +252,9 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
                       </div>
                     ) : null}
                     {step.rewardPoints != null ? (
-                      <p className="mt-3 text-xs text-slate-500">За шаг можно получить {step.rewardPoints} очков.</p>
+                      <p className="mt-3 text-xs text-slate-500">
+                        После подтверждения шага может быть учтено {step.rewardPoints} internal Points.
+                      </p>
                     ) : null}
                   </li>
                 );

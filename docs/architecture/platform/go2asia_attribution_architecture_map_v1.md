@@ -3,6 +3,7 @@
 **Status:** architecture map / documentation only.
 **Placement:** platform-level canon companion under `docs/architecture/platform/`.
 **Related RF canon:** `docs/architecture/rf/rf_attribution_canon_refinement_v1.md`.
+**Economy terminology guard:** `docs/economy/economy_authority_terminology_crosswalk_v1.md`.
 **Non-scope:** migrations, services, SDK, OpenAPI, frontend, backend, DB schema, event bus, analytics pipelines, centralized attribution service, unified referral database, payouts, commissions, Points, G2A, NFT, or reward calculations.
 
 This document maps attribution surfaces across Go2Asia after the RF Stage 5.0 attribution baseline and canon refinement. It is strategic and bounded-context-aware: it defines how attribution should be understood across the ecosystem without creating a universal runtime engine before the domains prove their durable actions.
@@ -408,6 +409,15 @@ Recommended direction:
 - economy bridge only after facts are versioned, immutable and auditable.
 
 Connect remains a UI/product hub and read aggregation surface. It may show attribution projections later, but it must not become the backend owner of attribution.
+
+Stage 6.5 economy terminology guards:
+
+- attribution event != reward event;
+- confirmed attribution fact != payout eligibility;
+- economy-facing read != ledger write;
+- PRO attribution != commission guarantee;
+- partner attribution != settlement authority;
+- Connect attribution projection != economy authority.
 
 ---
 

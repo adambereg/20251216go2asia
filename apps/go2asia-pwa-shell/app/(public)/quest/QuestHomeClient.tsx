@@ -136,7 +136,7 @@ export function QuestHomeClient() {
 
                   <div className="mt-4 space-y-1 text-sm text-slate-600">
                     <p>{describeQuestExperience(item)}</p>
-                    {item.rewardPoints != null ? <p>Награда в квесте: {item.rewardPoints} очков</p> : null}
+                    {item.rewardPoints != null ? <p>Internal Points после подтверждения: {item.rewardPoints}</p> : null}
                   </div>
 
                   <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-purple-700">

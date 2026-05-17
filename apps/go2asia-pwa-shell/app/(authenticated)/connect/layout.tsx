@@ -5,12 +5,12 @@ export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Connect Asia | Экономика и геймификация | Go2Asia',
+  title: 'Connect Asia | Активность и Points | Go2Asia',
   description:
-    'Центр экономики и геймификации Go2Asia. Отслеживайте балансы Points и G2A, выполняйте миссии, получайте достижения и NFT бейджи.',
+    'Read-only центр активности Go2Asia: внутренние Points, приглашения, RF-сводка и off-chain бейджи where runtime-backed.',
   openGraph: {
-    title: 'Connect Asia | Экономика и геймификация | Go2Asia',
-    description: 'Центр мотивации и наград экосистемы Go2Asia',
+    title: 'Connect Asia | Активность и Points | Go2Asia',
+    description: 'Read-only сводка активности, внутренних Points и участия в экосистеме Go2Asia',
     type: 'website',
   },
 };

@@ -92,7 +92,7 @@ export function MissionCard({ mission, onStart }: MissionCardProps) {
             </div>
           )}
 
-          {/* Награда и дедлайн */}
+          {/* Participation summary and deadline */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               {mission.reward.points && (
@@ -104,7 +104,7 @@ export function MissionCard({ mission, onStart }: MissionCardProps) {
               {mission.reward.nft && (
                 <div className="flex items-center gap-1 text-sm font-medium text-purple-600">
                   <Award size={16} />
-                  NFT
+                  Бейдж
                 </div>
               )}
             </div>
