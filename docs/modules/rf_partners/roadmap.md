@@ -1,15 +1,17 @@
 # Russian Friendly Asia — Roadmap
 
+Stage 6.5.3 reading guard: roadmap wording is docs-only planning vocabulary. RF voucher, PRO and reward wording must not imply cashback, payout, settlement, wallet, token, NFT, G2A activation, or runtime authority.
+
 ---
 
 ## Архитектурная позиция (capstone Фазы 2)
 
-RF — один из самых сложных модулей экосистемы: он связывает **Business ↔ PRO ↔ VIP** через ваучеры, квесты, social‑сигналы и reward‑инфраструктуру (Points сейчас).
+RF — один из самых сложных модулей экосистемы: он связывает **Business ↔ PRO ↔ VIP** через ваучеры, квесты, social‑сигналы и internal Points recognition where runtime-backed.
 
 Поэтому RF логично вводить **после**:
 - Space Core (репосты/обсуждения/UGC),
 - Quest Core (миссии/прогресс/награждение),
-- базовой reward‑инфраструктуры (Points + роли VIP/PRO + правила начислений).
+- базовой internal reward infrastructure (Points + роли VIP/PRO + правила начислений where runtime-backed).
 
 Иными словами: RF не является “ранним milestone”, а выступает как **capstone module** Фазы 2.
 
@@ -48,7 +50,7 @@ RF — один из самых сложных модулей экосистем
 - Онбординг бизнесов
 - Проверки PRO
 - Чеклист RF-стандарта
-- Вознаграждения (Points сейчас; G2A/NFT — вне текущей реализации)
+- Internal contribution summaries (Points сейчас where runtime-backed; G2A/NFT future-only)
 
 ---
 
@@ -57,7 +59,7 @@ RF — один из самых сложных модулей экосистем
 - Эмбед информации в Atlas и Pulse
 - Подборки PRO и редакции
 - Интеграция с Quest (квесты вокруг партнёров и ваучеров)
-- Интеграция с reward‑движком (Points) по событиям: voucher.claimed/redeemed, partner.verified, social.repost
+- Интеграция с internal Points recognition по событиям: voucher.claimed/redeemed, partner.verified, social.repost
 
 ---
 

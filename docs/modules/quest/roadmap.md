@@ -1,5 +1,7 @@
 # Quest Asia — Roadmap
 
+Stage 6.5.3 reading guard: roadmap wording is not runtime activation. NFT, token, commission and payout-like concepts are future-only / target vocabulary and must not be shown as user-facing financial promises.
+
 ---
 
 ## Этап 1 — MVP
@@ -16,8 +18,8 @@
 ## Этап 2 — PRO & Business
 - Конструктор квестов
 - Brand Quests
-- NFT-награды
-- PRO-комиссия 10%
+- Future collectible / NFT-compatible rewards review
+- PRO contribution recognition by internal policy, not commission or payout
 - Квесты, привязанные к RF-партнёрам
 - Продвинутая система проверки шагов
 

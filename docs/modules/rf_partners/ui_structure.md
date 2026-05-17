@@ -1,5 +1,7 @@
 # Russian Friendly Asia — UI Structure
 
+Stage 6.5.3 reading guard: RF UI copy must frame vouchers as practical utility / access, not cashback, settlement, payout or payment rail. PRO surfaces show internal contribution summaries where runtime-backed; G2A/NFT remain future-only.
+
 ---
 
 # 1. Публичные страницы
@@ -44,7 +46,7 @@
 - CTA “Поделиться” → репост партнёра в Space (обсуждение в контексте репоста).
 
 Правый сайдбар:
-- Получить ваучер
+- Получить / зарезервировать voucher utility
 - Поделиться
 - Статистика (для владельца)
 
@@ -52,8 +54,8 @@
 
 ## 1.3. Каталог ваучеров
 Секция:
-- Фильтры: скидка / бонус / подарок / категории
-- Карточка ваучера (фото, % скидки, условия, кнопка «Получить»)
+- Фильтры: скидка / бонус / подарок / доступ / категории
+- Карточка ваучера (фото, utility benefit, условия, кнопка «Получить / зарезервировать»)
 
 ---
 
@@ -114,7 +116,7 @@
 ## 3.1 Главная таблица эффективности
 - Активные партнёры
 - Просмотры за месяц
-- Вознаграждения Points/G2A
+- Internal Points / contribution summaries; G2A future-only
 - Быстрые действия
 
 ---
@@ -140,9 +142,9 @@
 ---
 
 ## 3.5 Вознаграждения
-- Баланс Points
-- Баланс G2A (будущее, не используется в текущей реализации)
-- История транзакций
+- Internal Points summary
+- G2A future projection placeholder only, not current balance
+- История internal recognition entries
 
 ---
 
@@ -151,10 +153,10 @@
 RF — multi-sided модуль. Помимо публичного каталога, VIP‑пользователь имеет “операционные” сценарии:
 
 ## 4.1 Мои ваучеры
-- Список полученных/купленных ваучеров
+- Список полученных / зарезервированных ваучеров
 - Статусы: активен / использован / истёк
 - QR/код для предъявления партнёру
 
 ## 4.2 Квесты с RF‑партнёрами (интеграция)
 - Квесты, завязанные на партнёров/ваучеры (переход в Quest)
-- Награды Points (отображение в Connect)
+- Internal Points recognition where runtime-backed (отображение в Connect)

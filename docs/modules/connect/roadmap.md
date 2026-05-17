@@ -1,5 +1,7 @@
 # Connect Asia — Roadmap
 
+Stage 6.5.3 reading guard: this roadmap is product planning vocabulary only. G2A, NFT, Web3, marketplace, conversion, tokenomics and AI economy automation items are future-only unless separately approved, legally reviewed, implemented and runtime-backed. Roadmap wording does not create wallet, liquidity, payout, NFT/on-chain, reward producer, or runtime authority.
+
 ## Phase 1 (MVP)
 - Points Engine v1  
 - Level System  
@@ -11,9 +13,9 @@
 ---
 
 ## Phase 2 (Beta)
-- NFT Badges minting  
+- Future collectible / NFT compatibility review, not current minting
 - AI-помощник по экономике действий  
-- Points → G2A Conversion  
+- Future Points / G2A relationship review, not current conversion
 - PRO-статистика  
 - Mission Builder (создание миссий админами)  
 
@@ -30,13 +32,13 @@
 
 ## Phase 4 (Expansion)
 - Cross-Module Economy API  
-- Экспорт достижений в Web3  
-- Marketplace для NFT-бейджей  
+- Future achievement externalization review
+- Future marketplace feasibility review, not active NFT asset marketplace
 - Глобальный рейтинг пользователей  
 
 ---
 
 ## Phase 5 (AI Integration)
 - AI-агент “Economy Guardian”  
-- Персональные экономические рекомендации  
-- Автоматическая настройка баланса Points для модулей  
+- Персональные рекомендации по internal activity / utility, not financial advice
+- Автоматическая настройка product balancing proposals only; no runtime balance authority

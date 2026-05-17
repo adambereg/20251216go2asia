@@ -1,5 +1,7 @@
 # Space Asia — Data Model
 
+Stage 6.5.3 reading guard: Space data model is a social/module planning artifact, not wallet, token, NFT, payout, or financial-account design. Points/G2A/NFT-style fields must be read as deferred Connect/economy projections unless runtime-backed elsewhere.
+
 ## 1. User
 - id
 - username
@@ -7,9 +9,9 @@
 - role: traveler | expat | pro | business
 - level
 - xp
-- points_balance
-- g2a_balance
-- nft_ids[]
+- points_projection (Connect-owned internal Points summary)
+- g2a_future_projection (future-only; not current balance)
+- badge_ids[] / nft_future_ids[] (badges now; NFT future-only)
 - referral_code
 - referred_by?
 - created_at
@@ -89,7 +91,7 @@
 
 ---
 
-## 7. NFT
+## 7. Badges / Future NFT Compatibility
 - id
 - owner_id
 - title
@@ -98,14 +100,16 @@
 - rarity: common | rare | epic | legendary
 - earned_at
 
+Current reading: off-chain badge / achievement. NFT ownership, mint, burn, transfer and wallet semantics are future-only.
+
 ---
 
 ## 8. Referral
 - id
 - inviter_id
 - friend_id
-- points_reward_user
-- points_reward_friend
+- points_reward_user (internal Points recognition where runtime-backed)
+- points_reward_friend (internal Points recognition where runtime-backed)
 - created_at
 
 ---
@@ -124,7 +128,7 @@
 - id
 - user_id
 - partner_id
-- points_spent
+- points_used_internal (internal utility only; not payment or payout)
 - expires_at
 - is_used
 

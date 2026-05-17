@@ -2,12 +2,14 @@
 
 Base URL: `/api/rf`
 
+Stage 6.5.3 reading guard: these API notes are conceptual module docs, not activation of payout, settlement, cashback, wallet, token, NFT, or G2A behavior. Voucher actions mean backend-authorized claim/redeem of practical utility; RF is not a cash desk or settlement layer.
+
 ---
 
 ## Roles / Access (концептуально)
 
 - **Public**: просмотр партнёров/ваучеров (read), агрегаты.
-- **VIP Spacer**: получение/покупка ваучеров, участие в RF‑квестах, social‑сигналы (репост в Space).
+- **VIP Spacer**: получение / резервирование voucher utility, участие в RF‑квестах, social‑сигналы (репост в Space).
 - **Business Partner**: управление профилем и ваучерами, просмотр статистики, подтверждение погашений.
 - **PRO Spacer**: онбординг/верификация партнёров, закрепление партнёров, кураторские отчёты, доступ к PRO dashboard.
 - **Admin**: модерация/управление правилами и спорными ситуациями.
@@ -91,7 +93,7 @@ Response:
 ---
 
 ### POST /vouchers/:id/claim (VIP/authorized)
-Получить/купить ваучер (резервирование у пользователя).
+Получить / зарезервировать ваучерную utility у пользователя. Это не payment rail, payout or cashback.
 
 Body:
 - accept_terms: boolean
@@ -132,7 +134,7 @@ Returns:
   month_checks,
   month_onboardings,
   reward_points,
-  reward_g2a
+  reward_g2a_future
 }
 
 ---
@@ -161,18 +163,18 @@ Returns:
 ## REWARDS
 
 ### GET /pro/rewards
-История транзакций.
+История internal recognition entries.
 
 ---
 
 ## INTEGRATION EVENTS (Points сейчас)
 
-RF публикует события/факты для reward‑движка (Points/Connect) и Quest:
+RF публикует события/факты для internal Points recognition (Points/Connect) и Quest:
 
 - `partner.verified`
 - `voucher.claimed`
 - `voucher.redeemed`
 - `rf.social.repost`
 
-Начисление Points выполняется отдельным reward‑сервисом по правилам (RF не является “кассой”).
+Начисление Points выполняется отдельным reward‑сервисом по правилам (RF не является “кассой”, payout, cashback or settlement authority).
 

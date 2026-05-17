@@ -51,26 +51,26 @@ Go2Asia — это:
 👉 **двухконтурная loyalty-экономика с активацией через VIP**
 
 ### Внутренний контур (основной)
-- валюта: Points
-- среда: off-chain
+- internal utility unit: Points
+- среда: off-chain internal accounting where runtime-backed
 - функции:
-  - накопление ценности
+  - participation / activity value
   - геймификация
-  - потребление (ваучеры, квесты, NFT)
+  - internal consumption / access utility (ваучеры, квесты; NFT/Totem only as future compatibility)
 
 ### Внешний контур (вспомогательный)
-- валюта: G2A
-- активы: on-chain NFT
+- future unit: G2A
+- future assets: on-chain NFT
 - функции:
-  - компенсации партнёрам
-  - вознаграждение PRO
-  - вывод ценности
+  - future partner / PRO externalization review
+  - future compatibility layer
+  - no current payout, settlement, withdrawal, wallet, liquidity or on-chain activation
 
 ---
 
 ## 4. Главный принцип
 
-👉 Платформа зарабатывает не на транзакциях, а на доступе к ценности.
+👉 Платформа монетизирует доступ / subscription utility, not transactions, payouts, settlement, or financial return.
 
 - нет комиссии с партнёров
 - нет комиссии с услуг
@@ -84,10 +84,10 @@ Go2Asia — это:
 
 ## 5. Core Loop (ядро экономики)
 
-Активность → Points → VIP → Трата → Польза → Новая активность
+Активность → Points → VIP access context → Internal utility → Польза → Новая активность
 
 Расширенная версия:
-Points → Pressure → VIP → Spend + Network → Growth
+Points → Conditional utility context → VIP access explanation → Internal use / participation → Growth
 
 ---
 
@@ -368,9 +368,9 @@ Points → Pressure → VIP → Spend + Network → Growth
 
 Описывает:
 - почему пользователь покупает VIP
-- давление Points и locked value
-- сетевой доход
-- UX-триггеры
+- conditional Points / locked value semantics
+- referral participation utility, not network income
+- transparent UX explanation, not coercive pressure
 - retention-модель
 
 👉 VIP = слой активации экономики
@@ -415,27 +415,27 @@ Vouchers → дают практическое применение
 Экономика влияет на все ключевые сервисы:
 
 Token Service → учёт Points
-Wallet / Connect → отображение ценности
+Connect → read-only internal utility projections
 RF → ваучеры и партнёры
 Quest → experiential sinks
 Space → генерация активности
-Blockchain Gateway → внешний контур
+Blockchain Gateway → future external layer only
 
 👉 Ни один из этих сервисов не должен реализовываться без учёта экономики
 
 ---
 
 ## 9. Каноничные правила
-Points должны легко зарабатываться
-Points должны иметь видимую ценность
-Тратить Points можно только через VIP
-Locked Points — главный триггер покупки
-Ваучеры — основной способ потребления
-NFT — антиинфляционный слой
-Premium требует Points + NFT
-Spend Rate важнее баланса
-Монетизация = доступ, не комиссия
-VIP = активация экономики
+Points describe internal participation utility, not money
+Visible Points value is projected/internal, not ledger truth or payout
+Internal Points use requires Tier 1 policy/runtime support
+Conditional Points must be explained transparently, not used as coercive pressure
+Ваучеры — основной practical utility / consumption layer
+NFT/Totem — future compatibility layer unless separately activated
+Premium requirements are target/future policy vocabulary unless runtime-backed
+Spend dynamics are semantic modeling, not live balancing
+Монетизация = access/subscription context, not commission or payout promise
+VIP = activation/access layer, not payout layer
 
 ---
 
@@ -443,8 +443,8 @@ VIP = активация экономики
 
 👉 Go2Asia — это не маркетплейс и не токен-проект.
 
-👉 Это экономика избыточной ценности,
-в которой пользователь платит за доступ к её использованию.
+👉 Это internal utility / access economy,
+в которой пользовательский язык не должен обещать доход, инвестиционную выгоду, payout, withdrawal or token liquidity.
 
 ---
 

@@ -1,34 +1,35 @@
 # Connect Asia — Overview  
-Центр экономики, геймификации и глобальной репутации Go2Asia.
+Legacy / target product overview for Connect Asia user-facing semantics.
 
-Connect Asia объединяет всю экономику платформы: начисление Points, выдачу G2A Token, NFT-награды, уровни пользователей, достижения, миссии, реферальную программу и аналитику активности.  
-Это ядро **internal economy layer** всей экосистемы.
+Stage 6.5.3 reading guard: current Connect wording must be read through `docs/economy/economy_authority_terminology_crosswalk_v1.md`. Connect is a read-only user-facing projection surface for internal Points/activity/referral/badge summaries where runtime-backed; it is not a financial wallet, bank account, payout surface, token cabinet, NFT marketplace, or runtime economy authority.
+
+Connect Asia показывает пользовательскую активность, внутренние Points, достижения, referral participation summaries and safe activity analytics where backend-backed. G2A, NFT, wallet, on-chain, marketplace, withdrawal and tokenomics surfaces are future-only unless separately approved and implemented.
+Это пользовательский слой **internal utility / activity projection**, а не денежная экономика.
 
 ---
 
 ## Основные функции модуля
 
-### 1. Points Economy  
-- Получение Points за действия на платформе (UGC, отзывы, миссии, квесты).  
-- Траты Points (покупка премиум-квестов, обмен на G2A, участие в турнирах).  
-- История транзакций.
+### 1. Internal Points Utility
+- Внутренние Points за подтверждённые действия на платформе (UGC, отзывы, миссии, квесты), where runtime-backed.
+- Внутреннее использование Points по правилам платформы; это не обмен на деньги, G2A, payout или withdrawal.
+- История внутренних начислений / списаний как read-only projection.
 
 ### 2. Уровни (XP Levels)  
 - XP начисляется за любое полезное действие.  
 - Повышение уровней даёт бонусы: скидки, VIP-функции, ускорение Points.
 
 ### 3. Достижения (Badges)  
-- Одноразовые награды за выполнение специальных условий.  
-- Некоторые достижения награждают NFT.
+- Одноразовые internal achievements за выполнение специальных условий.
+- Current badges are off-chain achievements; NFT language remains future-only unless separately activated.
 
-### 4. NFT Badges  
-- Внешний вид в профиле.  
-- Может давать бонусы: +5% Points на 30 дней, уникальные рамки, PRO-перки.
+### 4. Future NFT / Collectible Compatibility
+- Future-only compatibility layer for rare / collectible achievements.
+- Не является текущим NFT wallet, marketplace, mint/burn, liquidity or payout feature.
 
 ### 5. Реферальная программа  
-- Рефералы пользователей.  
-- Рефералы партнёров (Russian Friendly).  
-- Выплаты Points и G2A.
+- Referral code/link and invited-user participation summaries.
+- Referral values are internal participation / reward eligibility signals, not MLM, passive income, payout, commission or G2A distribution.
 
 ### 6. Миссии  
 - Набор задач по модулям Space, Atlas, Blog, Quest, RF.  
@@ -42,7 +43,7 @@ Connect Asia объединяет всю экономику платформы: 
 ---
 
 ## Роль Connect Asia в архитектуре  
-Connect Asia — это **общий микросервис для всего Go2Asia**, обслуживающий:
+This legacy overview previously described Connect as a broad service. Current safe reading: Connect is a product/UI composition layer over backend-owned facts, not a standalone economy authority.
 
 | Модуль | Что получает от Connect |
 |-------|--------------------------|
@@ -58,10 +59,9 @@ Connect Asia — это **общий микросервис для всего Go
 ---
 
 ## Технические особенности
-- Высокая нагрузка: до 2 млн транзакций Points/день.  
-- Требуется event-driven архитектура (Kafka / Cloudflare Queues).  
-- Все начисления Points → через унифицированный ScoreEngine.  
-- Поддержка off-chain/on-chain синхронизации G2A Token.
+- Высокая нагрузка и event-driven processing are target architecture considerations only.
+- Все internal Points начисления должны оставаться runtime-backed by the relevant Points policy/service contract.
+- G2A, token and on-chain synchronization are future-only roadmap vocabulary, not current UX or runtime behavior.
 
 ---
 

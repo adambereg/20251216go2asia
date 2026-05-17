@@ -1,5 +1,7 @@
 # Space Asia — UI Structure
 
+Stage 6.5.3 reading guard: Space UI is a social/product surface. It must not present Points/G2A/NFT as a financial wallet, bank balance, payout, token account, investment surface, or current on-chain feature.
+
 ---
 
 # 1. Основные разделы Space Asia
@@ -9,9 +11,9 @@
 - Мои публикации
 - Квесты (интегрировано с Quest Asia)
 - Ваучеры (RF)
-- Баланс (Points + G2A)
-- NFT
-- Рефералы
+- Activity / internal Points projection (Connect-owned)
+- Бейджи / достижения; NFT future-only
+- Рефералы as participation summary
 - Настройки
 
 Все страницы используют единый боковой навигационный блок.
@@ -22,12 +24,12 @@
 
 Компоненты:
 - UserHeaderCard: аватар, роль, уровень, прогресс XP
-- DigitalAssetsCard: Points + G2A
+- ActivitySummaryCard: internal Points / activity projection
 - QuickActions:  
   - создать пост  
   - создать опрос  
   - пройти квест  
-  - получить ваучер  
+  - получить / зарезервировать voucher utility
   - пригласить друга  
 - WeeklyAchievements  
 - Recommendations (вытягивает из Atlas, RF, Pulse, Quest)
@@ -105,34 +107,34 @@ UI-компоненты:
 
 ---
 
-# 7. Баланс
+# 7. Activity / Internal Points Projection
 
 Компоненты:
 - Points summary
-- G2A summary
-- История транзакций (полный лог)
+- G2A summary только как future-only hidden/deferred placeholder
+- История internal activity / Points entries
 - Цветовая кодировка:
   - зелёный: поступление
   - красный: списание
 
 ---
 
-# 8. NFT
+# 8. Badges / Future NFT Compatibility
 
 Tabs:
-- Все NFT
+- Все бейджи
 - Эпические
 - Редкие
 - Обычные
 
-NFT-карточка:
+Badge-карточка:
 - иконка  
 - название  
 - описание  
 - дата получения  
 - редкость  
 
-Блок "Mint on-chain" — в разработке.
+On-chain mint / NFT wallet is not part of current UI; future-only unless separately activated.
 
 ---
 
@@ -141,7 +143,7 @@ NFT-карточка:
 Компоненты:
 - ReferralStatsCard (уровень, рейтинг, приглашенные)
 - ReferralLinkCard (ссылка + кнопка “Копировать”)
-- Описание механики наград
+- Описание participation / internal reward eligibility, not income or commission
 
 ---
 
