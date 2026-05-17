@@ -317,6 +317,20 @@ Points → Pressure → VIP → Spend + Network → Growth
 
 ---
 
+### 6.0p Economy Authority & Terminology Crosswalk v1
+
+📄 `economy_authority_terminology_crosswalk_v1.md`
+
+Описывает:
+- authority hierarchy для runtime authority, Stage 6 semantic doctrine и future / legacy / target docs
+- terminology crosswalk для economy, backend/service, UI/product, RF/voucher и future ledger/token wording
+- safe vs unsafe readings для wallet, rewards, referral/network, RF/voucher, ledger, token, NFT and Slice 16 language
+- Stage 6.5 usage rules for future docs-only alignment slices
+
+👉 Это **docs-only terminology and authority reading guard**, а не runtime authority, policy rewrite, implementation plan, ledger activation, payout/settlement activation, wallet/token activation, NFT/on-chain activation или Slice 16 readiness artifact
+
+---
+
 ### 6.1 Tokenomics (основной документ)
 
 📄 `tokenomics/go2asia_tokenomics_v1.md`

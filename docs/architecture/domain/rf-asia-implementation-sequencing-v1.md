@@ -2,6 +2,9 @@
 
 Цель: предложить реалистичный поэтапный порядок реализации RF Voucher Economy v1 без глобального refactor-pass.
 
+Stage 6.5.2 economy terminology alignment note:
+Этот документ является sequencing / planning artifact and must be read through `docs/economy/economy_authority_terminology_crosswalk_v1.md`. It does not activate runtime, schema/API changes, ledger writes, reward producers, spend enforcement, payout/settlement, wallet/token/G2A/NFT/on-chain features, or Slice 16 movement. RF/voucher terms mean practical utility / consumption lifecycle unless separately promoted by runtime authority.
+
 ## Stage 0 — current state closure / documentation
 
 Цель:
@@ -48,10 +51,11 @@
 Файлы/области:
 - RF service/store/use-cases
 - OpenAPI/SDK lifecycle enums
-- wallet/read-model adapters
+- Connect-style read-model adapters
 
 Результат:
 - предсказуемый lifecycle и базовая операция history.
+Примечание: `available/locked/unlocked/redeemed` здесь являются RF voucher lifecycle labels, not payout availability, cashback, merchant settlement, or hard Points spend enforcement unless separately approved.
 
 Риски:
 - несовместимость с текущими UI-предположениями.
@@ -86,13 +90,13 @@
 Файлы/области:
 - `apps/points-service/*`
 - `docs/openapi/points.yaml`, cross-service contracts
-- Connect wallet/referrals/summary integrations в frontend
+- Connect read-only Points/referrals/summary integrations в frontend
 
 Результат:
-- явный контракт списаний/блокировок/подтверждений для RF unlock сценариев.
+- явный контракт internal Points utility debits/locks/confirmations for RF unlock scenarios where runtime-backed.
 
 Риски:
-- ledger inconsistency при частичных интеграциях.
+- internal Points accounting / read-model inconsistency при частичных интеграциях.
 
 Что не делать:
 - не тащить сразу NFT/on-chain в этот этап.
@@ -108,10 +112,11 @@
 - analytics/read-model for partner outcomes
 
 Результат:
-- прозрачная бизнес-атрибуция: кто привёл и как начисляется reward.
+- прозрачная бизнес-атрибуция: кто привёл and how attribution may map to internal utility / reward eligibility where runtime-backed.
 
 Риски:
 - конфликт с существующей referral логикой без унификации терминов.
+Примечание: PROAttribution and PartnerRewardPolicy are not commission, payout, settlement, passive income, MLM, or partner financial obligation.
 
 Что не делать:
 - не смешивать attribution с governance/DAO механиками.
@@ -127,13 +132,14 @@
 - future-facing gateway contracts (без полного on-chain rollout)
 
 Результат:
-- рабочий premium unlock в off-chain-first модели с готовностью к Gateway.
+- target premium unlock policy in off-chain-first model with future Gateway compatibility.
 
 Риски:
 - переусложнение до готовности базового lifecycle.
 
 Что не делать:
 - не делать full blockchain integration в этом этапе.
+- не активировать NFT/totem/on-chain gates, token transfers, wallet flows or hard spend enforcement without separate authority.
 
 ## Stage 7 — admin/partner console
 
@@ -150,6 +156,7 @@
 
 Риски:
 - UI может обогнать backend governance.
+Примечание: operational control does not mean payout, settlement, refund, commission, or automated enforcement authority.
 
 Что не делать:
 - не строить "идеальный" enterprise console на первом проходе.

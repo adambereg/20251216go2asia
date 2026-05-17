@@ -27,6 +27,17 @@ If any earlier document conflicts with the v2 canon, the v2 canon takes preceden
 3. Then read `go2asia_interface_architecture_v2.md` for frontend/UI tasks, interface boundaries, and interaction model.
 4. Ensure module-level SSOT documents stay aligned with this platform-level canon.
 
+## Economy Terminology Alignment
+
+Platform Canon v2 is the platform-level source of truth, but economy runtime authority remains with the Tier 1 economy policy documents:
+
+- `docs/economy/points_policy_v1.md`
+- `docs/economy/referral_network_rewards_policy_v1.md`
+
+When these platform documents mention Points, rewards, ledger, wallet, referral/network value, RF/vouchers, G2A, NFT, token, payout-like, settlement-like, or future externalization language, read them through `docs/economy/economy_authority_terminology_crosswalk_v1.md`.
+
+Platform architecture wording does not activate runtime economy behavior, ledger writes, reward producers, spend enforcement, payout/settlement, wallet/token/G2A/NFT/on-chain features, auth/RBAC redesign, VIP entitlement authority, or Slice 16 movement.
+
 ## Canon Guardrails (v2 reminders)
 
 - In Quest, use the term **Task** (not Quest Mission).

@@ -71,6 +71,9 @@ ________________________________________
 •	Space не владеет бизнес-доменами. 
 •	Off-chain first, on-chain later.
 
+Economy terminology alignment note:
+Этот backend-canon документ должен читаться через `docs/economy/economy_authority_terminology_crosswalk_v1.md`. Economy runtime authority остаётся у `docs/economy/points_policy_v1.md` и `docs/economy/referral_network_rewards_policy_v1.md`. Упоминания ledger, balances, reward execution, producers, referral, earnings, wallet, G2A, NFT, token, Blockchain Gateway или future externalization в этом документе не активируют ledger writes, reward producers, accrual pipelines, spend enforcement, payout/settlement, wallet/token/G2A/NFT/on-chain runtime или Slice 16 movement.
+
 2. Архитектурные принципы backend
 Backend-архитектура Go2Asia строится вокруг принципа чётких доменных границ. Каждый сервис должен иметь понятную зону ответственности, собственный источник истины в рамках своего домена и стабильные API-контракты для взаимодействия с другими частями экосистемы.
 ________________________________________
@@ -83,8 +86,8 @@ ________________________________________
 •	RF Service владеет партнёрами, offers, vouchers и PRO-связями. 
 •	Rielt Service владеет listings и inquiries. 
 •	Quest Service владеет quests, tasks, proof, progress и completion. 
-•	Points Service владеет balances, ledger и reward execution. 
-•	Referral Service владеет referral codes, graph и earnings. 
+•	Points Service владеет runtime-backed internal Points balances, ledger/actions и internal reward execution where implemented.
+•	Referral Service владеет referral codes, graph, referral metadata and participation/reward summaries.
 •	Missions Service в будущем будет владеть mission catalog, conditions, progress и reward intents. 
 Главное правило:
 сервис может ссылаться на чужие сущности, но не должен владеть чужой правдой.
@@ -156,7 +159,7 @@ Go2Asia не должна быть полностью event-driven систем�
 •	reward_intent_created. 
 Но не всё должно быть событием. Для обычных read-запросов и простых CRUD-сценариев REST API остаётся нормальной и предпочтительной моделью.
 Принцип:
-REST для чтения и прямых операций, events для последствий, прогресса, наград и уведомлений.
+REST для чтения и прямых операций, events для последствий, прогресса, internal reward intent signaling и уведомлений. Event wording does not mean ledger write or reward producer activation.
 ________________________________________
 2.6. Off-chain first
 Экономика Go2Asia должна развиваться по принципу off-chain first.
@@ -179,7 +182,8 @@ Future layer:
 •	текущая экономика не должна зависеть от блокчейна; 
 •	Points должны работать быстро и дёшево внутри платформы; 
 •	on-chain операции должны быть редкими и изолированными; 
-•	Blockchain Gateway не должен появляться раньше юридической и продуктовой готовности. 
+•	Blockchain Gateway не должен появляться раньше юридической и продуктовой готовности.
+Future-layer items are not current withdrawal, liquidity, token transfer, mint/burn, payout, settlement, or investment surfaces.
 ________________________________________
 2.7. No Connect Service as domain owner
 Connect Asia не является backend-доменом и не должен становиться владельцем экономики.
@@ -204,6 +208,7 @@ Connect не должен владеть:
 •	Token Service; 
 •	Blockchain Gateway. 
 В будущем возможен лёгкий connect-bff или connect-dashboard-service, но только как композиционный слой для UI. Он не должен становиться доменным сервисом и не должен принимать экономические решения.
+Connect display/read models are projections, not ledger truth, payout balance, spend permission, settlement state, or token wallet.
 ________________________________________
 2.8. Главный backend-принцип
 Главный backend-принцип Go2Asia v2:
@@ -537,8 +542,9 @@ Points Service — текущий сервис внутренней Points-эк�
 •	idempotency; 
 •	историю операций; 
 •	reward execution. 
-Points Service — владелец Points-правды.
+Points Service — владелец runtime-backed internal Points truth.
 Другие сервисы могут инициировать события или reward intents, но не должны самостоятельно менять баланс пользователя.
+Важно: `balance`, `ledger` и `reward execution` здесь означают internal Points utility/accounting where runtime-backed. Они не означают money, cash balance, payout obligation, financial ledger, external accounting, settlement, or token liquidity.
 ________________________________________
 4.8. Referral Service
 Referral Service — текущий сервис реферальной программы.
@@ -547,10 +553,11 @@ Referral Service — текущий сервис реферальной прог
 •	referral links; 
 •	sponsor/referral relationships; 
 •	referral graph; 
-•	earnings; 
+•	referral participation / reward eligibility summaries;
 •	referral activation; 
 •	реферальные события. 
 Referral Service может инициировать наградные сценарии через Points / Economy layer, но не должен напрямую смешиваться с Connect UI или Missions.
+Referral wording must not be read as income, commission, passive earnings, MLM, payout tree, or partner settlement.
 ________________________________________
 4.9. Token Service baseline
 Token Service существует как baseline / подготовительный контур, но не должен рассматриваться как полностью зрелый tokenomics engine.
@@ -562,6 +569,7 @@ Token Service существует как baseline / подготовитель�
 Текущий canon:
 Points / Referral / Badges — ближняя off-chain экономика.
 Token / G2A / Blockchain Gateway — future layer.
+This baseline does not activate G2A, wallet, withdrawal, bridge, token transfer, NFT marketplace, payout, settlement, or liquidity features.
 ________________________________________
 4.10. RF Service
 RF Service — контур бизнес/партнёрского слоя Russian Friendly.
@@ -686,7 +694,8 @@ Missions Service не должен:
 •	хранить чужую доменную правду; 
 •	валидировать события вместо доменных сервисов. 
 Правильная схема:
-domain event → mission progress update → reward intent → Points / Badges / Token layer
+confirmed domain signal → mission progress update → reward intent → Points / Badges where runtime-backed; Token/G2A only as future layer
+Reward intent is not a ledger write by itself and does not activate reward producers or payout.
 ________________________________________
 5.2. Geo Service
 Geo Service — целевой платформенный сервис для гео-контрактов, map layers, nearby и viewport-сценариев.
@@ -751,6 +760,7 @@ Badges / NFT Service — будущий сервис достижений, бе�
 Важно:
 Badge сначала является off-chain достижением. NFT — только future extension.
 Badges / NFT Service не должен владеть Points ledger или Missions progress.
+NFT wording here is future-only. It does not activate mint, burn, transfer, marketplace, token liquidity, or on-chain user-facing assets.
 ________________________________________
 5.5. Blockchain Gateway
 Blockchain Gateway — future service для on-chain операций.
@@ -2212,7 +2222,7 @@ Ledger должен хранить:
 •	какой сервис инициировал reward; 
 •	когда произошла операция; 
 •	уникальный idempotency key. 
-Ledger — это источник истины по Points-движению.
+Ledger — это источник истины по internal Points movement where runtime-backed. It is not a financial ledger, payout ledger, partner settlement ledger, or future ledger implementation approval.
 ________________________________________
 Balances
 Points Service владеет балансами пользователей.
@@ -2253,7 +2263,7 @@ Points Service исполняет reward intents.
 •	Referral Service отправляет referral activation event. 
 Points Service проверяет правила и создаёт ledger transaction.
 Важно:
-Points Service исполняет награду, но не является владельцем всех доменных событий.
+Points Service исполняет internal Points rewards where runtime-backed, но не является владельцем всех доменных событий. Reward intent or event language is not a ledger write by itself and does not activate new reward producers.
 ________________________________________
 12.2. Referral Service
 Codes
@@ -2276,11 +2286,12 @@ Graph отражает:
 •	связь с VIP / PRO reward eligibility. 
 Referral graph не должен храниться в Connect или Points.
 ________________________________________
-Earnings
-Referral Service может считать или готовить referral earnings summary, но фактические Points-транзакции должны исполняться через Points Service.
+Referral participation summaries
+Referral Service может считать или готовить referral participation / reward eligibility summary, но фактические Points-транзакции должны исполняться через Points Service where runtime-backed.
 Правильная модель:
 •	Referral Service знает, кто имеет право на бонус; 
 •	Points Service исполняет начисление. 
+Эта модель не является income, commission, passive earnings, MLM, payout, or partner settlement.
 ________________________________________
 Activation events
 Referral Service должен порождать события:
@@ -2355,10 +2366,11 @@ Reward intent может означать:
 •	выдать Badge; 
 •	открыть доступ; 
 •	активировать multiplier; 
-•	инициировать future token reward. 
+•	инициировать future token eligibility only if separately activated.
 Но Missions Service не исполняет награду напрямую.
 Правильная схема:
-mission_completed → reward_intent_created → Points / Badges / Token layer
+mission_completed → reward_intent_created → Points / Badges where runtime-backed; Token/G2A only as future layer
+Reward intent is semantic/orchestration vocabulary. It is not payout, settlement, token withdrawal, or reward producer activation by itself.
 ________________________________________
 Chains / personalization future
 В будущем Missions Service может поддерживать:
@@ -2423,16 +2435,17 @@ ________________________________________
 Future off-chain G2A
 Token Service — future service для off-chain G2A/tokenomics.
 Он может отвечать за:
-•	off-chain G2A balances; 
-•	token reward accounting; 
-•	conversion rules; 
-•	withdrawal requests; 
+•	future off-chain G2A projections;
+•	future token reward accounting;
+•	future conversion rules;
+•	future externalization / withdrawal review requests if separately activated;
 •	economic limits; 
 •	audit; 
 •	compliance status. 
 Token Service не должен подменять Points Service.
 Points — ближняя внутренняя экономика.
 G2A — будущий tokenomics layer.
+This section does not activate G2A, token conversion, withdrawal, liquidity, external wallet, payout, settlement, or investment semantics.
 ________________________________________
 Not Connect Service
 Token Service не является Connect Service.
@@ -2465,15 +2478,15 @@ ________________________________________
 TON
 Целевой блокчейн-контур рассматривается через TON.
 Blockchain Gateway может отвечать за:
-•	wallet linking; 
-•	wallet verification; 
+•	future wallet linking if separately activated;
+•	future wallet verification if separately activated;
 •	transaction submission; 
 •	transaction status; 
 •	chain event monitoring; 
 •	reconciliation. 
 ________________________________________
 Mint / burn / transfer
-Gateway должен выполнять технические операции:
+Gateway may later perform technical operations after separate activation:
 •	mint; 
 •	burn; 
 •	transfer; 
@@ -2497,6 +2510,7 @@ Blockchain Gateway — единственный сервис, который п�
 Принцип:
 Token Service решает. Blockchain Gateway исполняет.
 Gateway не знает бизнес-логики и не владеет экономикой.
+All wallet, mint, burn, transfer and reconciliation wording in this section is future-only and does not authorize current on-chain runtime.
 ________________________________________
 Главный принцип Economy / Gamification Services
 Economy / Gamification layer должен быть мощным, но не преждевременно криптовым.
@@ -2522,7 +2536,7 @@ ________________________________________
 13.1. Connect is UI / Product Hub
 Connect Asia — это пользовательская витрина экономики и мотивации.
 Connect показывает:
-•	баланс Points; 
+•	read-only Points summary / projection;
 •	историю начислений; 
 •	реферальную статистику; 
 •	активные Missions; 
@@ -2581,18 +2595,18 @@ ________________________________________
 13.4. What Connect Reads From Services
 Connect UI должен читать данные из профильных сервисов.
 From Points Service
-•	current balance; 
+•	current internal Points projection;
 •	transaction history; 
-•	pending rewards; 
+•	pending internal reward status;
 •	spending history; 
-•	reward execution status. 
+•	internal reward processing status.
 From Referral Service
 •	referral code; 
 •	referral link; 
 •	direct referrals; 
 •	subreferrals, если поддерживаются; 
 •	activation status; 
-•	referral earnings summary. 
+•	referral participation / reward eligibility summary.
 From Missions Service
 •	active missions; 
 •	available missions; 
@@ -2618,8 +2632,8 @@ From Quest Service
 •	rewards earned from quests; 
 •	quest completion status. 
 From Token Service Future
-•	G2A off-chain balance; 
-•	withdrawal eligibility; 
+•	future G2A/token projection;
+•	future externalization / withdrawal review status if separately activated;
 •	token transaction status; 
 •	conversion status. 
 From Blockchain Gateway Future
@@ -2981,7 +2995,7 @@ Primary inquiry для partner products живёт в voucher claim / RF commerc
 5.	Quest owns tasks, not Missions.
 Quest Task — локальное задание. Ecosystem Mission — надэкосистемная цель. 
 6.	Missions own progress and reward intents, not rewards.
-Награды исполняют Points / Badges / Token layer. 
+Internal rewards are processed by Points / Badges where runtime-backed; Token/G2A remains future-only unless separately activated.
 7.	Points owns ledger.
 Никакой другой сервис не меняет баланс напрямую. 
 8.	Connect shows, does not own.
@@ -3035,7 +3049,7 @@ Reward intent должен описывать:
 •	зафиксировать future G2A reward eligibility. 
 Правило:
 Reward intent не меняет баланс сам по себе.
-Execution делает Points / Badges / Token layer.
+Execution is handled by Points / Badges where runtime-backed; Token/G2A remains future-only unless separately activated.
 ________________________________________
 17.3. Event Naming
 Имена событий должны быть стабильными, короткими и доменно-понятными.
@@ -3288,7 +3302,7 @@ Public endpoints
 •	получить active missions; 
 •	claim voucher; 
 •	поставить reaction; 
-•	получить Points balance. 
+•	получить read-only Points summary / projection.
 Public endpoint может быть:
 •	anonymous; 
 •	authenticated; 
@@ -3300,7 +3314,7 @@ Internal endpoints
 •	создать reward intent; 
 •	отправить internal event; 
 •	materialize user; 
-•	execute reward; 
+•	process internal reward where runtime-backed;
 •	sync geo projection; 
 •	confirm voucher redeem from trusted partner flow. 
 Internal endpoints должны быть защищены:
@@ -3539,8 +3553,8 @@ ________________________________________
 •	listing verification; 
 •	quest proof override; 
 •	badge assignment override; 
-•	token withdrawal request; 
-•	blockchain mint / burn / transfer; 
+•	future token externalization review request, if separately activated;
+•	future blockchain mint / burn / transfer, if separately activated;
 •	admin impersonation, если когда-либо появится. 
 Для них нужны:
 •	role-based access; 
@@ -4142,7 +4156,7 @@ Ledger — журнал транзакций, фиксирующий все из
 ________________________________________
 Reward Intent
 Reward intent — намерение выдать награду, сформированное на основе события или выполнения условий.
-Reward intent не исполняет награду сам, а передаётся в Points / Badges / Token layer для выполнения.
+Reward intent не исполняет награду сам, а передаётся в Points / Badges where runtime-backed; Token/G2A remains future-only unless separately activated.
 ________________________________________
 Event
 Event — зафиксированный факт, произошедший в доменном сервисе.

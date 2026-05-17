@@ -2,6 +2,9 @@
 
 Цель: определить минимальную целевую доменную модель RF Asia (MVP/domain-ready), границы ответственности и реалистичный набор сущностей для следующего implementation цикла.
 
+Stage 6.5.2 economy terminology alignment note:
+Этот документ является target/domain-readiness framing и должен читаться через `docs/economy/economy_authority_terminology_crosswalk_v1.md`. Он не является runtime authority, implementation plan, schema/API change, ledger activation, reward producer activation, payout/settlement model, wallet/token/G2A/NFT/on-chain activation or Slice 16 movement. RF/voucher wording here means practical utility / consumption layer unless a separate runtime contract says otherwise.
+
 ## 1) Domain boundaries (целевые)
 
 ### RF Asia отвечает за
@@ -16,10 +19,18 @@
 
 ### Connect Asia отвечает за
 
-- Points balances и операции начисления/списания
-- badges/achievements/progression
-- user-facing referrals слой
-- wallet-like user overview (агрегированная витрина)
+- read-only economy projections / explanation UI
+- badges/achievements/progression display where backed by owner services
+- user-facing referral summaries
+- Connect-style user overview as aggregated projection, not financial wallet or economy authority
+
+Connect не владеет Points balances, ledger, reward decisions, referral graph, voucher lifecycle, payout/settlement or wallet/token runtime.
+
+### Points / Referral ownership
+
+- Points Service owns internal Points accounting where runtime-backed.
+- Referral Service owns referral graph, referral metadata and participation / reward summaries.
+- RF Service owns voucher lifecycle and partner business context, not Points ledger or referral/network payout logic.
 
 ### Rielt Asia отвечает за
 
@@ -27,16 +38,16 @@
 - точки применения RF ваучера к объекту/услуге
 - UX discovery вокруг недвижимости
 
-### Token Service (off-chain economic engine)
+### Token Service (future off-chain G2A layer)
 
-- учётные бизнес-операции токенов/поинтов (если применимо к проектному срезу)
-- внутренние начисления/списания и бизнес-проводки
+- future G2A/token projections only if separately activated
+- future token accounting vocabulary, not current Points ledger or payout rail
 
-### Blockchain Gateway / Wallet Service
+### Blockchain Gateway / Wallet Service (future-only)
 
-- редкий on-chain вывод/ввод
-- mint NFT/totem
-- управление ключами и blockchain integration
+- future on-chain externalization only after separate policy, implementation and runtime approval
+- future NFT/totem mint vocabulary only if separately activated
+- key management and blockchain integration are not current RF runtime
 
 ## 2) Target model RF Asia v1 (минимальная)
 
@@ -89,6 +100,7 @@
 
 Назначение:
 - строгая модель unlock-условий (Points, NFT/totem, role gates)
+This is target policy vocabulary only. Points, NFT/totem, VIP, PRO or referral gates do not imply current spend enforcement, NFT/on-chain activation, entitlement authority switch or payout rights.
 
 Минимальные поля:
 - `id`, `voucherId|offerId`, `requirementType` (`points`, `nft`, `vip`, `pro`, `referral`), `operator`, `value`, `source`
@@ -105,6 +117,7 @@
 
 Назначение:
 - attribution цепочка от PRO-сущности к ваучерному бизнес-событию
+PROAttribution is attribution metadata / eligibility context, not commission guarantee, income, payout, settlement authority or MLM.
 
 Минимальные поля:
 - `id`, `voucherId|redemptionId`, `proUserId`, `partnerId`, `attributionType`, `attributionWeight`, `status`
@@ -113,6 +126,7 @@
 
 Назначение:
 - partner-funded/platform-funded политика reward/funding
+PartnerRewardPolicy is target policy metadata for internal utility / offer constraints. It must not be read as partner payout, merchant settlement, cashback, commission, or financial obligation.
 
 Минимальные поля:
 - `id`, `partnerId`, `fundingType`, `rewardMode`, `limits`, `effectiveFrom`, `effectiveTo`, `status`
@@ -128,7 +142,7 @@
 ### 2.11 UserVoucherState
 
 Назначение:
-- пользовательская read-model для wallet-like отображения RF ваучеров
+- пользовательская read-model для Connect-style отображения RF ваучеров
 
 Минимальные поля:
 - `userId`, `voucherId`, `state`, `lockedReason`, `unlockProgress`, `updatedAt`
@@ -143,8 +157,8 @@
 ### Лучше не откладывать
 
 - `VoucherRedemption` как отдельную сущность (иначе сложно аудитировать lifecycle).
-- `PartnerRewardPolicy` (иначе funding-модель останется неявной).
-- `UserVoucherState` (иначе wallet-like UX продолжит жить только на frontend-адаптерах).
+- `PartnerRewardPolicy` as target policy metadata (иначе internal utility / offer constraints останутся неявными).
+- `UserVoucherState` (иначе Connect-style read projection продолжит жить только на frontend-адаптерах).
 
 ## 4) Domain readiness verdict
 
@@ -164,3 +178,4 @@
 - Без переименования сущностей без отдельного разрешения.
 - Без удаления legacy.
 - Без runtime/schema/db изменений в рамках этого документа.
+- Без ledger activation, reward producer activation, payout/settlement activation, wallet/token/G2A/NFT/on-chain activation or Slice 16 movement.

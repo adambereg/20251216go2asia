@@ -21,6 +21,8 @@ ________________________________________
 •	Коммуникация строится через reactions, notifications и object-bound threads. 
 •	User Cabinet, PRO Console, Business Console и Admin Console должны быть разделены по ролям и ownership. 
 •	UI не должен владеть доменной логикой, а только отображать и инициировать действия через backend contracts. 
+Economy terminology alignment note:
+Этот interface-canon документ должен читаться через `docs/economy/economy_authority_terminology_crosswalk_v1.md`. UI wording around Points, balance, rewards, wallet, referral, vouchers, G2A, NFT, token, withdrawal, PRO rewards or future externalization is display/projection language only unless a separate runtime policy and implementation contract says otherwise. UI не активирует ledger writes, reward producers, spend enforcement, payout/settlement, wallet/token/G2A/NFT/on-chain runtime или Slice 16 movement.
 ________________________________________
 Связь с Ecosystem Overview v2
 Ecosystem Overview v2 описывает Go2Asia на уровне продукта:
@@ -40,7 +42,7 @@ ________________________________________
 Backend Services Architecture v2 фиксирует backend-сервисы, ownership и API-границы.
 Interface Architecture v2 должна следовать этим backend-границам.
 Например:
-•	если Points Service владеет ledger, Connect UI только отображает баланс и историю; 
+•	если Points Service владеет internal Points ledger, Connect UI только отображает read-only projection / summary;
 •	если RF Service владеет offers/vouchers, Rielt UI только инициирует voucher CTA; 
 •	если Quest Service владеет Tasks, UI квеста не должен называть их Missions; 
 •	если Space владеет social content, Business Console не должна становиться соцсетью; 
@@ -281,7 +283,7 @@ PRO Console — рабочий интерфейс PRO-спейсера.
 •	создания / сопровождения Rielt listings; 
 •	Quest authoring; 
 •	участия в Pulse / Blog / Space; 
-•	просмотра PRO rewards; 
+•	просмотра PRO contribution / internal reward summaries;
 •	аналитики собственного вклада. 
 PRO Console — это операционная поверхность доверенного участника, а не обычный пользовательский кабинет.
 ________________________________________
@@ -362,8 +364,8 @@ ________________________________________
 Interface Layer	Для кого	Основная задача
 Public Modules	Guest / Spacer / VIP / PRO	Основной пользовательский опыт
 User Cabinet	Зарегистрированный пользователь	Аккаунт, профиль, настройки
-Connect UI	Spacer / VIP / PRO	Экономика, прогресс, награды
-PRO Console	PRO	Кураторская работа и монетизация
+Connect UI	Spacer / VIP / PRO	Экономика, прогресс, read-only reward summaries
+PRO Console	PRO	Кураторская работа, contribution analytics and operations
 Business Console	RF Partner	Управление бизнес-присутствием
 Admin Console	Команда Go2Asia	Модерация, контроль, операции
 Missions UI	Все роли по контексту	Цели, прогресс, вовлечение
@@ -590,7 +592,7 @@ RF Asia — пользовательская витрина партнёров, 
 •	находит Russian Friendly место; 
 •	смотрит профиль партнёра; 
 •	видит offer; 
-•	claim / purchase / activate voucher; 
+•	claim / reserve / activate voucher utility where runtime-backed;
 •	получает QR / code; 
 •	использует voucher; 
 •	может оставить social feedback через Space. 
@@ -834,7 +836,7 @@ Space остаётся владельцем:
 ________________________________________
 5.8. Связь с Connect
 User Cabinet может показывать краткий блок Connect:
-•	Points balance summary; 
+•	read-only Points summary / projection;
 •	Badges preview; 
 •	Referral summary; 
 •	активные Missions; 
@@ -881,12 +883,13 @@ Connect объединяет для пользователя данные из �
 ________________________________________
 6.1. Points
 Connect UI показывает:
-•	текущий баланс Points; 
+•	read-only Points summary / projection;
 •	историю начислений; 
 •	историю списаний; 
-•	pending rewards; 
+•	pending internal reward status;
 •	источники Points; 
-•	доступные способы потратить Points. 
+•	доступные internal use scenarios where runtime policy permits.
+Displayed Points values are projections for user understanding. Projection != ledger truth, visible != spendable, available != payout.
 Connect не должен сам считать баланс.
 Источник истины — Points Service.
 ________________________________________
@@ -896,10 +899,11 @@ Connect UI показывает:
 •	реферальную ссылку; 
 •	приглашённых пользователей; 
 •	activation status; 
-•	бонусы; 
-•	доступные referral rewards; 
+•	conditional/internal referral value;
+•	referral participation / reward status;
 •	VIP-зависимые referral-механики. 
 Источник истины — Referral Service.
+Referral UI wording must not imply income, commission, passive earnings, MLM, payout or partner settlement.
 ________________________________________
 6.3. Badges
 Connect UI показывает:
@@ -954,10 +958,10 @@ Connect показывает Missions, но не владеет ими.
 ________________________________________
 6.7. Future G2A / NFT
 В будущем Connect UI может показывать:
-•	G2A off-chain balance; 
+•	future G2A/token projection;
 •	token eligibility; 
-•	withdrawal status; 
-•	linked wallet; 
+•	future externalization / withdrawal review status if separately activated;
+•	future wallet-linking status if separately activated;
 •	on-chain NFT status; 
 •	blockchain transaction status. 
 Но это future layer.
@@ -966,6 +970,7 @@ ________________________________________
 •	Badges / NFT layer; 
 •	Blockchain Gateway indirectly. 
 Connect не должен напрямую работать с blockchain operations.
+This section is future-only. It does not create current withdrawable token, financial wallet, liquidity, bridge, token transfer, NFT marketplace, payout, settlement or investment semantics.
 ________________________________________
 6.8. Connect как UI-хаб
 Connect собирает в одном интерфейсе:
@@ -1107,7 +1112,7 @@ Missions UI может показывать ожидаемую награду:
 •	доступ; 
 •	multiplier; 
 •	voucher; 
-•	future G2A eligibility. 
+•	future G2A eligibility if separately activated.
 Но UI должен отображать это аккуратно:
 •	“награда ожидает подтверждения”; 
 •	“награда начислена”; 
@@ -1115,7 +1120,7 @@ Missions UI может показывать ожидаемую награду:
 •	“требуется проверка”. 
 Важно:
 Missions UI показывает reward status, но не исполняет награду.
-Reward execution делает Points / Badges / Token layer.
+Points / Badges process internal rewards only where runtime-backed; Token/G2A remains future-only unless separately activated.
 ________________________________________
 7.8. Связь с Connect
 Connect — главный дом для общего Missions progress.
@@ -1314,11 +1319,11 @@ PRO Console должна показывать вклад PRO в экосисте
 •	Quest completions; 
 •	Space / Blog contributions; 
 •	referral impact; 
-•	earned Points; 
+•	internal Points received / contribution summary where runtime-backed;
 •	Badges; 
 •	future G2A eligibility. 
 Важно:
-аналитика PRO должна быть прозрачной, но расчёт наград не должен происходить на frontend.
+аналитика PRO должна быть прозрачной, но расчёт наград не должен происходить на frontend. PRO rewards/contribution wording is not commission, payout, income or settlement authority.
 Источник данных:
 •	RF Service; 
 •	Rielt Service; 
@@ -1503,7 +1508,7 @@ Business Console не должна:
 •	быть CRM общего назначения; 
 •	создавать Atlas places напрямую; 
 •	начислять Points; 
-•	управлять PRO rewards; 
+•	управлять PRO contribution / reward decisions;
 •	владеть Rielt listings; 
 •	становиться мессенджером; 
 •	обходить voucher lifecycle; 
@@ -1628,7 +1633,7 @@ Sensitive actions:
 •	корректировка reward; 
 •	блокировка referral rewards; 
 •	override badge; 
-•	future token withdrawal approval. 
+•	future token externalization review placeholder, if separately activated.
 Все такие действия требуют audit log и reason.
 ________________________________________
 10.8. Reports / Abuse
@@ -1825,7 +1830,7 @@ RF Asia	RF Service, Voucher/Offers, Atlas/Geo, Space/Reactions, media pipeline	p
 Rielt Market	Rielt Service, RF Service, Voucher/Offers, Atlas/Geo, media pipeline, Reactions future	listings, listing detail, partner/PRO trust, offers, media, geo	voucher-first CTA, save listing, optional contact request/thread	public read, auth for voucher actions	Guest read, VIP/Spacer depending voucher rules
 Quest Asia	Quest Service, Atlas/Geo, RF/Voucher, Pulse, media pipeline, Points/Badges indirectly	quests, routes, tasks, progress, rewards preview	start quest, submit proof, complete task, share result	authenticated for progress/actions	Spacer+; PRO for authoring
 User Cabinet	Auth/User, User Projection, Space summary, Connect summaries, Notification prefs	profile, account settings, privacy, role, activity summaries	update profile, privacy, notification prefs	authenticated	owner user
-Connect UI	Points, Referral, Missions, Badges/NFT, RF/Voucher, Quest, Token future	balances, transactions, referrals, missions, badges, vouchers, quest rewards	claim-related transitions, view rewards, initiate allowed spends	authenticated	Spacer+; VIP for spending rules
+Connect UI	Points, Referral, Missions, Badges/NFT, RF/Voucher, Quest, Token future	read-only Points projections, transactions, referrals, missions, badges, vouchers, quest reward summaries	claim-related transitions, view reward status, initiate allowed internal use where policy permits	authenticated	Spacer+; VIP for internal spending rules
 Missions UI	Missions Service future, Connect, Guru, Space, RF, Quest events	active missions, progress, chains, rewards status	accept/start mission, navigate to action	authenticated	role-based: Spacer/VIP/PRO/Business
 PRO Console	RF, Rielt, Quest, Content/Pulse, Space, Points/Analytics summaries, Atlas proposals	assigned partners, branches, listings, quests, offers, voucher stats	partner onboarding, listing draft, quest draft, place proposal	authenticated	PRO
 Business Console	RF, Voucher/Offers, Atlas proposals, Notification/Threads, Analytics	partner profile, business lines, branches, offers, vouchers, stats	edit profile, create offers, redeem voucher, propose place	authenticated	Business Partner / partner representative
@@ -1942,7 +1947,7 @@ PRO
 •	partner onboarding; 
 •	Quest authoring; 
 •	Rielt listing workflow; 
-•	PRO rewards. 
+•	PRO contribution / internal reward status.
 Business Partner
 Видит:
 •	Business Console; 
@@ -2487,13 +2492,14 @@ VIP Spacer — расширенный пользовательский стат�
 •	получать premium vouchers; 
 •	участвовать в VIP Missions; 
 •	использовать расширенные referral benefits; 
-•	получать дополнительные rewards; 
+•	получать дополнительные internal rewards where runtime-backed;
 •	видеть VIP-only offers; 
 •	иметь расширенный Connect experience. 
 Важно:
 VIP не равен PRO.
 VIP — платный / расширенный пользовательский статус.
 PRO — доверенная операционная роль.
+VIP does not create payout right, commission, settlement authority or financial entitlement.
 ________________________________________
 16.4. PRO
 PRO — доверенный куратор / эксперт / амбассадор.
@@ -2505,7 +2511,7 @@ PRO — доверенный куратор / эксперт / амбассад�
 •	создавать Quest drafts; 
 •	участвовать в event/content workflows; 
 •	видеть PRO analytics; 
-•	получать PRO rewards; 
+•	видеть PRO contribution / internal reward status;
 •	быть escalation layer по voucher / partner scenarios. 
 Ограничения:
 •	не является Admin по умолчанию; 
