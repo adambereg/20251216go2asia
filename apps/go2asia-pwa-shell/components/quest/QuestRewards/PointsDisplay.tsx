@@ -2,7 +2,7 @@
 
 /**
  * Quest Asia - Points Display
- * Отображение начисленных очков с анимацией
+ * Отображение предварительной локальной сводки Points.
  */
 
 import { useState, useEffect } from 'react';
@@ -47,7 +47,7 @@ export function PointsDisplay({ points, basePoints }: PointsDisplayProps) {
     <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 p-8 text-center">
       <div className="flex items-center justify-center gap-3 mb-4">
         <Trophy className="w-8 h-8 text-amber-600" />
-        <h2 className="text-2xl font-bold text-slate-900">Очки</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Предварительные Points</h2>
       </div>
 
       <div className="mb-4">
@@ -55,20 +55,20 @@ export function PointsDisplay({ points, basePoints }: PointsDisplayProps) {
           {displayedPoints.toLocaleString()}
         </div>
         {isAnimating && (
-          <div className="text-sm text-amber-600 mt-2 animate-pulse">Подсчёт...</div>
+          <div className="text-sm text-amber-600 mt-2 animate-pulse">Локальная сводка...</div>
         )}
       </div>
 
       {hasBonus && (
         <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-semibold">
           <TrendingUp className="w-4 h-4" />
-          Бонус: +{bonus.toLocaleString()} очков
+          Дополнительные Points в локальной сводке: +{bonus.toLocaleString()}
         </div>
       )}
 
       {basePoints && (
         <p className="text-sm text-slate-600 mt-4">
-          Базовые очки: {basePoints.toLocaleString()}
+          Базовая локальная оценка: {basePoints.toLocaleString()} Points. Runtime-подтверждение требуется отдельно.
         </p>
       )}
     </div>

@@ -28,14 +28,14 @@ export function ReferralStats({ stats }: ReferralStatsProps) {
       bgColor: 'bg-purple-50',
     },
     {
-      title: 'Заработано Points',
+      title: 'Начислено Points',
       value: stats.earned_points,
       icon: Coins,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
     },
     {
-      title: 'Заработано G2A',
+      title: 'G2A future-only',
       value: stats.earned_g2a,
       icon: Wallet,
       color: 'text-teal-600',

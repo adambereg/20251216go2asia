@@ -11,7 +11,6 @@ import {
   Target,
   Handshake,
   Building,
-  Wallet,
   ArrowRight,
   Globe,
   CheckCircle2,
@@ -90,9 +89,9 @@ const modules = [
   },
   {
     module: 'connect' as const,
-    icon: Wallet,
+    icon: Compass,
     title: 'Connect Asia',
-    description: 'Баланс и награды',
+    description: 'Активность и Points',
     href: '/connect',
   },
 ];
@@ -183,27 +182,27 @@ const benefits = [
   {
     type: 'referral' as const,
     icon: TrendingUp,
-    title: 'Реферальная программа',
+    title: 'Приглашения и вклад',
     description:
-      'Приглашайте друзей и получайте награды за активность каждого нового участника экосистемы.',
-    cta: 'Получить свою реферальную ссылку',
-    href: '/connect/referral',
+      'Приглашайте друзей и отслеживайте участие приглашённых как внутренний вклад в экосистему.',
+    cta: 'Открыть приглашения',
+    href: '/connect/referrals',
   },
   {
     type: 'rewards' as const,
     icon: Award,
-    title: 'Награды за активность',
+    title: 'Прогресс и бейджи',
     description:
-      'Публикуйте посты, проходите квесты, зарабатывайте Points и NFT-бейджи за вклад в сообщество.',
-    cta: 'Открыть профиль наград',
-    href: '/connect/rewards',
+      'Видите внутренние Points и off-chain бейджи за подтверждённую активность в экосистеме.',
+    cta: 'Открыть прогресс',
+    href: '/connect/levels',
   },
   {
     type: 'quests' as const,
     icon: Target,
     title: 'Открывайте Азию через квесты',
     description:
-      'Маршруты, челленджи и задания в любимых городах. Выполняйте миссии и получайте бонусы.',
+      'Маршруты и задания в любимых городах. Проходите сценарии и видите результат участия после проверки.',
     cta: 'Смотреть квесты',
     href: '/quest',
   },
@@ -217,7 +216,7 @@ const userRewards = [
   },
   {
     id: '2',
-    title: 'Получен NFT "Исследователь Чиангмая"',
+    title: 'Получен бейдж "Исследователь Чиангмая"',
     time: '1 день назад',
   },
   {
@@ -260,7 +259,7 @@ function UnauthenticatedHomePage() {
               </li>
               <li className="flex items-center gap-3">
                 <CheckCircle2 size={20} className="flex-shrink-0 text-white" />
-                <span className="text-white">Points, токены и NFT за активность</span>
+                <span className="text-white">Внутренние Points и off-chain бейджи за подтверждённую активность</span>
               </li>
             </ul>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -419,8 +418,8 @@ function UnauthenticatedHomePage() {
               Присоединяйтесь к сообществу
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-95 text-white">
-              Получите доступ ко всем возможностям экосистемы, зарабатывайте
-              награды и находите единомышленников
+              Получите доступ к возможностям экосистемы, участвуйте в активностях
+              и находите единомышленников
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
@@ -558,17 +557,17 @@ function AuthenticatedHomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
-            Ваши награды
+            Ваша активность
           </h2>
           <button
-            onClick={() => router.push('/connect/rewards')}
+            onClick={() => router.push('/connect/levels')}
             className="text-sky-600 hover:text-sky-700 font-medium text-sm md:text-base flex items-center gap-1"
           >
             Смотреть всё
             <ArrowRight size={16} />
           </button>
         </div>
-        <p className="text-sm md:text-base text-slate-600 mb-6">Последние начисления</p>
+        <p className="text-sm md:text-base text-slate-600 mb-6">Последние записи активности</p>
         <div className="space-y-3">
           {userRewards.map((reward) => (
             <Card key={reward.id} hover>
@@ -707,8 +706,8 @@ function AuthenticatedHomePage() {
               Присоединяйтесь к сообществу
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-95 text-white">
-              Получите доступ ко всем возможностям экосистемы, зарабатывайте
-              награды и находите единомышленников
+              Получите доступ к возможностям экосистемы, участвуйте в активностях
+              и находите единомышленников
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button

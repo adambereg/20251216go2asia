@@ -10,7 +10,7 @@ export interface PersonalWelcomeProps {
   level?: number;
   pointsToNextLevel?: number;
   balance?: number;
-  nfts?: number;
+  badges?: number;
   teamMembers?: number;
   activeQuests?: number;
 }
@@ -21,7 +21,7 @@ export function PersonalWelcome({
   level = 12,
   pointsToNextLevel = 335,
   balance = 3450,
-  nfts = 5,
+  badges = 5,
   teamMembers = 7,
   activeQuests = 2,
 }: PersonalWelcomeProps) {
@@ -51,21 +51,21 @@ export function PersonalWelcome({
                   <Gem size={16} />
                   <span className="text-lg sm:text-xl font-bold">{balance.toLocaleString()}</span>
                 </div>
-                <p className="text-xs text-orange-50">Points на балансе</p>
+                <p className="text-xs text-orange-50">internal Points</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3">
                 <div className="flex items-center gap-1 mb-1">
                   <Headphones size={16} />
-                  <span className="text-lg sm:text-xl font-bold">{nfts}</span>
+                  <span className="text-lg sm:text-xl font-bold">{badges}</span>
                 </div>
-                <p className="text-xs text-orange-50">накопленных NFT</p>
+                <p className="text-xs text-orange-50">off-chain бейджей</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3">
                 <div className="flex items-center gap-1 mb-1">
                   <Users size={16} />
                   <span className="text-lg sm:text-xl font-bold">{teamMembers}</span>
                 </div>
-                <p className="text-xs text-orange-50">человек в команде</p>
+                <p className="text-xs text-orange-50">контактов сообщества</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3">
                 <div className="flex items-center gap-1 mb-1">
@@ -112,7 +112,7 @@ export function PersonalWelcome({
                 href="/connect/referrals"
                 className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
               >
-                Реферальная ссылка
+                Ссылка приглашения
                 <Link2 size={14} />
               </Link>
             </div>

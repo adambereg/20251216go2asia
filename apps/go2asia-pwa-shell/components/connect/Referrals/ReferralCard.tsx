@@ -129,7 +129,7 @@ export function ReferralCard({ referral }: ReferralCardProps) {
             </div>
           )}
 
-          {/* Заработанные награды */}
+          {/* Internal participation summary */}
           <div className="flex items-center gap-4 text-sm">
             {referral.earned_rewards.points > 0 && (
               <div>
@@ -141,7 +141,7 @@ export function ReferralCard({ referral }: ReferralCardProps) {
             )}
             {referral.earned_rewards.g2a > 0 && (
               <div>
-                <span className="text-slate-600">G2A: </span>
+                <span className="text-slate-600">G2A future-only: </span>
                 <span className="font-semibold text-teal-600">
                   +{referral.earned_rewards.g2a}
                 </span>

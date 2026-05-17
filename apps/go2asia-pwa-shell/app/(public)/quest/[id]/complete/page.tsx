@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `Квест завершён: ${quest.title} - Quest Asia | Go2Asia`,
-    description: `Поздравляем! Вы завершили квест "${quest.title}"`,
+    title: `Локальная сводка прохождения: ${quest.title} - Quest Asia | Go2Asia`,
+    description: `Предварительная локальная сводка прохождения "${quest.title}". Начисления требуют runtime-подтверждения.`,
   };
 }
 

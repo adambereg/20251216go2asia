@@ -61,7 +61,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               <p className="text-3xl font-bold text-slate-900">{formatPoints(totalPoints)} Points</p>
               <p className="text-sm text-slate-500 mt-2">
                 {hasPoints
-                  ? 'Итого Points включает доступные начисления и начисления с условиями.'
+                  ? 'Итого Points включает внутреннюю сводку и Points с условиями.'
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
               {updatedAt && (
@@ -89,7 +89,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               </div>
               <Coins className="w-4 h-4 text-emerald-600" />
             </div>
-            <p className="text-xs text-slate-500 mt-2">Доступны сейчас.</p>
+            <p className="text-xs text-slate-500 mt-2">Внутренняя доступность подтверждается runtime при конкретном действии.</p>
           </div>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
             <div className="flex items-center justify-between gap-3">

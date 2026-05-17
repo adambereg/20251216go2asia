@@ -20,7 +20,7 @@ export default function ProfilePage() {
       </h1>
       <p className="text-muted-foreground max-w-2xl">
         Раздел в разработке. Скоро здесь появится информация о вашем профиле,
-        NFT коллекция и история активности в экосистеме Go2Asia.
+        off-chain бейджах и истории активности в экосистеме Go2Asia.
       </p>
     </main>
   );

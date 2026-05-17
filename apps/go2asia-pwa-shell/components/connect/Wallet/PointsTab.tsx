@@ -15,22 +15,22 @@ export function PointsTab({ data, onLoadMore }: PointsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Баланс */}
+      {/* Read-only Points summary */}
       <Card className="p-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-emerald-100 rounded-lg">
             <Coins className="w-8 h-8 text-emerald-600" />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-slate-600">Баланс Points</h3>
+            <h3 className="text-sm font-medium text-slate-600">Internal Points summary</h3>
             <p className="text-4xl font-bold text-slate-900">{data.balance.points.toLocaleString()}</p>
           </div>
         </div>
       </Card>
 
-      {/* История транзакций */}
+      {/* История активности */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-4">История транзакций</h2>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">История активности</h2>
         <TransactionList
           transactions={pointsTransactions}
           onLoadMore={onLoadMore}

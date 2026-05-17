@@ -14,7 +14,7 @@ const TABS: { id: QuestsTab; label: string }[] = [
   { id: 'available', label: 'Доступные квесты' },
   { id: 'active', label: 'Мои активные' },
   { id: 'completed', label: 'Завершённые' },
-  { id: 'rewards', label: 'История наград' },
+  { id: 'rewards', label: 'История участия' },
   { id: 'stats', label: 'Статистика прогресса' },
 ];
 
@@ -75,7 +75,7 @@ export function QuestsView() {
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <div className="text-2xl font-bold text-sky-600">4,200</div>
-              <div className="text-sm text-slate-600">Points заработано</div>
+              <div className="text-sm text-slate-600">Points учтено</div>
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">3</div>
@@ -86,7 +86,7 @@ export function QuestsView() {
       ) : activeTab === 'rewards' ? (
         <Card className="border-2 border-slate-200 p-4 md:p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            История наград
+            История участия
           </h2>
           <div className="space-y-3">
             {mockQuestsExtended

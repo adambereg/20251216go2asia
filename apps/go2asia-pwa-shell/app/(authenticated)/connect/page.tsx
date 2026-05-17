@@ -4,8 +4,8 @@ import { ConnectPageClientWrapper } from './ConnectPageClientWrapper';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Dashboard | Connect Asia | Go2Asia',
-  description: 'Центр экономики и геймификации Go2Asia',
+  title: 'Сводка активности | Connect Asia | Go2Asia',
+  description: 'Read-only сводка активности, внутренних Points и участия в Go2Asia',
 };
 
 export default function ConnectPage() {

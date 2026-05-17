@@ -60,7 +60,7 @@ describe('rf offer claim helpers', () => {
   });
 
   it('shows paid spend requirement in claim CTA only for real paid offers', () => {
-    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить за 500 Points');
+    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить с Points: 500 Points');
     expect(getRfOfferClaimButtonLabel({ pointsCost: 0 })).toBe('Получить ваучер');
     expect(getRfOfferClaimButtonLabel({ pointsCost: undefined })).toBe('Получить ваучер');
   });
