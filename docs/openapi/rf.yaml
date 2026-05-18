@@ -1110,7 +1110,9 @@ components:
           type: integer
           minimum: 0
           description: >
-            Optional RF economy cost in Points for this offer. `0` means free acquisition.
+            Optional internal Points utility cost for claiming this RF offer. `0` means
+            free acquisition. This is not money, not a Rielt listing price, not a
+            payment amount, not a booking fee and not payout or settlement value.
         createdByUserId:
           type: string
         createdAt:
@@ -1184,6 +1186,12 @@ components:
             availability:
               type: string
               enum: [available]
+              description: >
+                Listing-offer display availability for an RF offer actively mapped to a
+                Rielt listing. This value is not RF voucher lifecycle `canonicalStatus`,
+                not claimability, not redeemability, not spendability and not payout
+                availability. RF backend validation remains authoritative for claim and
+                redeem operations.
             applicabilityNote:
               type: string
               nullable: true

@@ -48,7 +48,7 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RFHero compact subtitle="Офферы, привязанные к выбранному объекту Rielt. Оформление ваучера будет происходить в RF Asia." />
+      <RFHero compact subtitle="Офферы, привязанные к выбранному объекту Rielt. Получение RF-ваучера происходит в RF Asia." />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
         <RFMainNav />
       </div>
@@ -89,7 +89,7 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
           </section>
         ) : context.offers.length === 0 ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-            <h2 className="text-lg font-semibold text-slate-900">Для этого объекта пока нет активных RF-ваучеров</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Для этого объекта пока нет активных RF-предложений</h2>
             <p className="mt-2">
               Можно посмотреть общий каталог офферов партнёра. Он не означает, что все офферы применимы к этому объекту.
             </p>

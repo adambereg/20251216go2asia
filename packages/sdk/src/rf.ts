@@ -33,6 +33,10 @@ export interface RfOfferDto {
   visibility: 'public' | 'pro_only' | 'invite_only';
   status: 'draft' | 'active' | 'archived';
   repeatPolicy?: RfRepeatPolicy;
+  /**
+   * Internal Points utility cost for claiming the RF offer.
+   * This is not money, listing price, payment, booking fee, payout or settlement value.
+   */
   pointsCost?: number;
   createdByUserId: string;
   createdAt: string;
@@ -56,6 +60,10 @@ export interface RfRieltListingOfferDto extends RfOfferDto {
   type: 'basic' | 'premium';
   benefit: string;
   description: string | null;
+  /**
+   * Display availability for an active RF offer mapping on a Rielt listing.
+   * Not voucher lifecycle status, claimability, redeemability or spendability.
+   */
   availability: 'available';
   applicabilityNote: string | null;
   priority: number;

@@ -32,7 +32,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
     ? voucherCount > 0
       ? `Ваучеров: ${voucherCount}`
       : listing.rfVoucher
-        ? 'Ваучер доступен'
+        ? 'RF-предложение для объекта'
         : 'RF-партнёр'
     : null;
 
