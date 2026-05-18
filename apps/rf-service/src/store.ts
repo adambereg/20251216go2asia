@@ -2386,6 +2386,7 @@ export async function getRieltListingOfferContext(db: DbExecutor, listingId: str
       o.visibility,
       o.status,
       o.repeat_policy,
+      o.points_cost,
       o.created_by_user_id,
       o.created_at,
       o.updated_at,

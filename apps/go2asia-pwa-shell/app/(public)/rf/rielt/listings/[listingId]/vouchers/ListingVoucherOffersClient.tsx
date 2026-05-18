@@ -14,8 +14,8 @@ import {
   rfEntitlementPreviewFlags,
   type RfEntitlementPreviewUiState,
 } from '@/lib/rfEntitlementPreview';
+import { findListingVoucherForOffer, getListingVoucherCtaProjection } from '@/lib/rfListingVoucherCtaAdapter';
 import { buildRfClaimAttributionPayload, captureRfProAttributionFromUrl } from '@/lib/rfProAttribution';
-import { isRfVoucherClaimBarrier } from '@/lib/rfVoucherLifecycle';
 
 type ClaimState =
   | { status: 'idle'; message: string | null; voucher: null }
@@ -55,7 +55,7 @@ function getErrorMessage(error: unknown) {
     return 'Этот запрос уже использовался для другого ваучера. Обновите страницу и попробуйте снова.';
   }
   if (code === 'RF_VIP_REQUIRED_FOR_PAID_VOUCHER') {
-    return 'Этот ваучер доступен только для VIP.';
+    return 'Для получения этого RF-ваучера требуется VIP.';
   }
   if (code === 'RF_INSUFFICIENT_POINTS_BALANCE') {
     return 'Сейчас этот ваучер недоступен для получения.';
@@ -76,15 +76,6 @@ function getErrorMessage(error: unknown) {
 
 function createInitialClaimState(): ClaimState {
   return { status: 'idle', message: null, voucher: null };
-}
-
-function isListingVoucherForOffer(voucher: RfVoucherDto, offerId: string, listingId: string, repeatPolicy: RfRieltListingOfferDto['repeatPolicy'] = 'once_per_scope') {
-  return (
-    isRfVoucherClaimBarrier(voucher, repeatPolicy) &&
-    voucher.claimScope === 'listing' &&
-    voucher.offerId === offerId &&
-    voucher.listingContext?.listingId === listingId
-  );
 }
 
 function PostClaimActions({
@@ -176,7 +167,7 @@ export function ListingVoucherOffersClient({
       const nextStates = currentVouchers.items.reduce<ClaimStateByOffer>((acc, voucher) => {
         if (!offerIds.has(voucher.offerId)) return acc;
         const offer = offers.find((item) => item.id === voucher.offerId);
-        if (!isListingVoucherForOffer(voucher, voucher.offerId, listingId, offer?.repeatPolicy)) return acc;
+        if (!findListingVoucherForOffer([voucher], voucher.offerId, listingId, offer?.repeatPolicy)) return acc;
         acc[voucher.offerId] = {
           status: 'success',
           message: 'Ваучер уже получен.',
@@ -212,9 +203,7 @@ export function ListingVoucherOffersClient({
 
     try {
       const currentVouchers = await fetchMyVouchers();
-      const existingVoucher = currentVouchers?.items.find(
-        (voucher) => isListingVoucherForOffer(voucher, offer.id, listingId, offer.repeatPolicy)
-      );
+      const existingVoucher = currentVouchers ? findListingVoucherForOffer(currentVouchers.items, offer.id, listingId, offer.repeatPolicy) : null;
       if (existingVoucher) {
         setOfferState(offer.id, {
           status: 'success',
@@ -242,8 +231,13 @@ export function ListingVoucherOffersClient({
       {offers.map((offer) => {
         const typeLabel = getOfferTypeLabel(offer.type);
         const claimState = claimStates[offer.id] ?? createInitialClaimState();
-        const isLoading = claimState.status === 'loading';
-        const isSuccess = claimState.status === 'success';
+        const ctaProjection = getListingVoucherCtaProjection({
+          offer,
+          voucher: claimState.status === 'success' ? claimState.voucher : null,
+          loading: claimState.status === 'loading',
+          error: claimState.status === 'error' ? claimState.message : null,
+        });
+        const hasVoucherProjection = claimState.status === 'success';
 
         return (
           <article key={offer.id} className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -266,14 +260,14 @@ export function ListingVoucherOffersClient({
                   ) : null}
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                  {isSuccess ? 'Получен' : 'Доступен'}
+                  {ctaProjection.badgeLabel}
                 </span>
               </div>
 
               {offer.description ? <p className="text-sm text-slate-600">{offer.description}</p> : null}
 
               <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Выгода</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">RF-предложение</h3>
                 <p className="mt-1 text-sm font-medium text-emerald-950">{getOfferBenefit(offer)}</p>
               </div>
 
@@ -286,27 +280,27 @@ export function ListingVoucherOffersClient({
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-800">Как это работает</h3>
                 <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-blue-950">
                   <li>Выберите подходящий ваучер для этого объекта.</li>
-                  <li>Оформление происходит в RF Asia.</li>
+                  <li>Получение RF-ваучера происходит в RF Asia.</li>
                   <li>После получения вы сможете связаться по объекту и показать ваучер.</li>
                 </ol>
               </div>
 
-              {claimState.message ? (
+              {ctaProjection.message ? (
                 <div
                   className={
-                    claimState.status === 'success'
+                    hasVoucherProjection
                       ? 'rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-950'
                       : 'rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950'
                   }
                 >
-                  <p className="font-semibold">{claimState.message}</p>
-                  {claimState.status === 'success' ? (
+                  <p className="font-semibold">{ctaProjection.message}</p>
+                  {ctaProjection.showPostClaimActions ? (
                     <>
-                      <p className="mt-1">Выгода относится к объекту: {listingTitle}.</p>
+                      <p className="mt-1">RF-предложение относится к объекту: {listingTitle}.</p>
                       <p className="mt-1">Свяжитесь с представителем объекта и покажите ваучер.</p>
                       <PostClaimActions returnHref={returnHref} partnerHref={partnerHref} />
                     </>
-                  ) : claimState.message === 'Войдите, чтобы получить ваучер.' ? (
+                  ) : ctaProjection.message === 'Войдите, чтобы получить ваучер.' ? (
                     <Link href="/sign-in" className="mt-2 inline-flex text-xs font-semibold text-amber-900 underline">
                       Перейти ко входу
                     </Link>
@@ -317,11 +311,11 @@ export function ListingVoucherOffersClient({
 
             <button
               type="button"
-              disabled={!isLoaded || isLoading || isSuccess}
+              disabled={!isLoaded || ctaProjection.disabled}
               onClick={() => void handleClaim(offer)}
               className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
             >
-              {isLoading ? 'Оформляем...' : isSuccess ? 'Ваучер получен' : 'Получить ваучер'}
+              {ctaProjection.buttonLabel}
             </button>
           </article>
         );

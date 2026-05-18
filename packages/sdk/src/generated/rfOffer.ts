@@ -20,7 +20,7 @@ export interface RfOffer {
   offerType: RfOfferOfferType;
   partnerId: string;
   /**
-   * Optional RF economy cost in Points for this offer. `0` means free acquisition.
+   * Optional internal Points utility cost for claiming this RF offer. `0` means free acquisition. This is not money, not a Rielt listing price, not a payment amount, not a booking fee and not payout or settlement value.
 
    * @minimum 0
    */

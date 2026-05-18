@@ -12,6 +12,8 @@ import type { RfRieltListingOfferAllOfType } from "./rfRieltListingOfferAllOfTyp
 export type RfRieltListingOfferAllOf = {
   /** @nullable */
   applicabilityNote: string | null;
+  /** Listing-offer display availability for an RF offer actively mapped to a Rielt listing. This value is not RF voucher lifecycle `canonicalStatus`, not claimability, not redeemability, not spendability and not payout availability. RF backend validation remains authoritative for claim and redeem operations.
+   */
   availability: RfRieltListingOfferAllOfAvailability;
   benefit: string;
   /** @nullable */

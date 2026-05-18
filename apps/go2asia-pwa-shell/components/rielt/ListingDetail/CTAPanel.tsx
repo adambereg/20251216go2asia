@@ -49,7 +49,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
   const hasRfTruth = Boolean(listing.rfPartnerId);
   const rfCatalogHref = buildRfVoucherRoute(listing);
   const primaryCtaLabel = hasRfTruth
-    ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Открыть предложение' : 'Открыть RF-предложения')
+    ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Посмотреть RF-ваучер' : 'Посмотреть RF-предложения')
     : 'Смотреть похожие варианты';
   const primaryCtaHref = hasRfTruth ? rfCatalogHref : '/rielt/search';
   const secondaryVoucherCta = hasRfTruth ? listing.presentation?.secondaryCtaLabel : undefined;
@@ -83,7 +83,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         buildIdempotencyKey()
       );
       setInquiryStatus('success');
-      setInquiryText('Сообщение отправлено.');
+      setInquiryText('Запрос отправлен.');
       setMessage('');
     } catch (error) {
       const payload = error as { error?: { code?: string; message?: string }; status?: number };
@@ -170,10 +170,10 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
       {/* Кнопки действий */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-900">
-          Оставить сообщение по объекту
+          Связаться по объекту
         </h3>
         <p className="text-xs text-slate-500">
-          Это вторичный канал для уточнения деталей размещения после выбора подходящего варианта.
+          Это запрос по объекту для уточнения деталей размещения; он не подтверждает бронирование или оплату.
         </p>
         <div className="space-y-2">
           <textarea
@@ -206,7 +206,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             disabled={inquiryStatus === 'submitting'}
             className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl font-semibold transition-colors"
           >
-            {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить сообщение'}
+            {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить запрос'}
           </button>
           {inquiryText ? (
             <p className={inquiryStatus === 'success' ? 'text-xs text-emerald-700' : 'text-xs text-red-700'}>

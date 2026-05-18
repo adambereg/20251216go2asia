@@ -7,6 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Listing-offer display availability for an RF offer actively mapped to a Rielt listing. This value is not RF voucher lifecycle `canonicalStatus`, not claimability, not redeemability, not spendability and not payout availability. RF backend validation remains authoritative for claim and redeem operations.
+
+ */
 export type RfRieltListingOfferAllOfAvailability =
   (typeof RfRieltListingOfferAllOfAvailability)[keyof typeof RfRieltListingOfferAllOfAvailability];
 
