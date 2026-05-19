@@ -40,7 +40,7 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
     ? Math.round((progress.completedAt.getTime() - progress.startedAt.getTime()) / 60000)
     : 0;
 
-  const handleViewRewards = () => {
+  const handleViewLocalSummary = () => {
     router.push(`/quest/${quest.id}/complete`);
   };
 
@@ -89,7 +89,7 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
           {/* Статистика */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-xs text-slate-600 mb-1">Очки</p>
+              <p className="text-xs text-slate-600 mb-1">Локальная оценка Points</p>
               <p className="text-lg font-bold text-emerald-600 flex items-center gap-1">
                 <Trophy className="w-4 h-4" />
                 {totalPoints.toLocaleString()}
@@ -116,10 +116,10 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
             </div>
           </div>
 
-          {/* Бейджи */}
+          {/* Локальные badge metadata */}
           {quest.rewards.nftBadges.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs text-slate-600 mb-2">Полученные бейджи:</p>
+              <p className="text-xs text-slate-600 mb-2">Badge metadata из локального каталога:</p>
               <div className="flex flex-wrap gap-2">
                 {quest.rewards.nftBadges.map((badge) => (
                   <div
@@ -136,11 +136,11 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
           {/* Действия */}
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={handleViewRewards}
+              onClick={handleViewLocalSummary}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
             >
               <Trophy className="w-4 h-4" />
-              Посмотреть награды
+              Локальная сводка
             </button>
             <button
               onClick={handleViewDetails}

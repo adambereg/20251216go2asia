@@ -31,17 +31,17 @@ export function NFTBadgeDisplay({ badge }: NFTBadgeDisplayProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleShare = () => {
+    const shareText = `Badge metadata "${badge.name}" в Go2Asia. Факт выдачи бейджа подтверждается только backend-данными.`;
+
     if (navigator.share) {
       navigator.share({
-        title: `Я получил бейдж "${badge.name}" в Go2Asia!`,
+        title: shareText,
         text: badge.description,
         url: window.location.href,
       });
     } else {
       // Fallback: копируем в буфер обмена
-      navigator.clipboard.writeText(
-        `Я получил бейдж "${badge.name}" в Go2Asia! ${badge.description}`
-      );
+      navigator.clipboard.writeText(`${shareText} ${badge.description}`);
       alert('Ссылка скопирована в буфер обмена!');
     }
   };

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `Локальная сводка прохождения: ${quest.title} - Quest Asia | Go2Asia`,
-    description: `Предварительная локальная сводка прохождения "${quest.title}". Начисления требуют runtime-подтверждения.`,
+    description: `Legacy-страница "${quest.title}" без подтверждения Points, бейджей или наград.`,
   };
 }
 
