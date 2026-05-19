@@ -16,7 +16,7 @@ interface DashboardContentProps {
 const nextSteps = [
   {
     title: 'Завершите первое задание в Quest Asia',
-    description: 'Получите первый бейдж и Points за участие.',
+    description: 'Points и бейджи отображаются только после backend-подтверждения.',
   },
   {
     title: 'Пригласите друга',
@@ -130,7 +130,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             </div>
           ) : (
             <p className="text-sm text-slate-600 mb-5">
-              Завершите первый квест, чтобы получить первый бейдж.
+              Бейджи появятся здесь после backend-подтверждения выдачи.
             </p>
           )}
 

@@ -12,7 +12,7 @@ const BADGE_COPY: Record<string, { title: string; description: string; emptyHint
   first_quest_completed: {
     title: 'Первый квест завершён',
     description: 'Вы завершили первый квест в Go2Asia.',
-    emptyHint: 'Завершите первый квест, чтобы получить этот бейдж.',
+    emptyHint: 'Когда backend подтвердит выдачу этого бейджа, он появится здесь.',
     category: 'Квесты',
   },
   first_referral_activated: {
@@ -186,7 +186,9 @@ export function LevelsView() {
           ) : (
             <Card className="p-8 text-center">
               <p className="text-slate-600 font-medium">У вас пока нет бейджей.</p>
-              <p className="text-sm text-slate-500 mt-1">Завершите первый квест, чтобы получить первый бейдж.</p>
+              <p className="text-sm text-slate-500 mt-1">
+                Бейдж появится здесь только после backend-подтверждения выдачи.
+              </p>
             </Card>
           )}
         </div>
