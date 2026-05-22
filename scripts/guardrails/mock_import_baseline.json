@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "scope": "apps/go2asia-pwa-shell",
+  "policy": "Stage 12I-A1 baseline freezes existing mock import/barrel debt. New findings must be fixed or explicitly reviewed.",
+  "findings": [
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/AtlasHomeClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/AtlasHomeClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/cities/[id]/layout.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/cities/[id]/layout.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/cities/CitiesClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/cities/CitiesClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/cities/page.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/cities/page.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/layout.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/layout.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/page.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/page.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/places/page.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/countries/[id]/places/page.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/countries/CountriesClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/countries/CountriesClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/guides/[id]/layout.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/guides/[id]/layout.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/guides/GuidesClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/guides/GuidesClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/hubs/[slug]/page.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/hubs/[slug]/page.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/themes/[slug]/themePageClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/themes/[slug]/themePageClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/atlas/themes/ThemesClient.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/atlas/themes/ThemesClient.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/pulse/events/[slug]/page.tsx|@/components/pulse/mockEvents",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/pulse/events/[slug]/page.tsx",
+      "source": "@/components/pulse/mockEvents",
+      "ownerSlice": "12I-A2 / Stage 12.x.3-A",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/pulse/PulseClientWrapper.tsx|@/mocks/repo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/pulse/PulseClientWrapper.tsx",
+      "source": "@/mocks/repo",
+      "ownerSlice": "12I-A3 / Stage 12.x.3-D",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/rielt/listings/[id]/page.tsx|@/lib/rieltSeedRepo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/rielt/listings/[id]/page.tsx",
+      "source": "@/lib/rieltSeedRepo",
+      "ownerSlice": "12I-A3 / Rielt seed source-label slice",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/rielt/search/SearchResultsClient.tsx|@/components/rielt/hooks/useRieltSeed",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/(public)/rielt/search/SearchResultsClient.tsx",
+      "source": "@/components/rielt/hooks/useRieltSeed",
+      "ownerSlice": "12I-A3 / Rielt seed source-label slice",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/api/rielt-seed/listings/[id]/route.ts|@/lib/rieltSeedRepo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/api/rielt-seed/listings/[id]/route.ts",
+      "source": "@/lib/rieltSeedRepo",
+      "ownerSlice": "12I-A3 / Rielt seed source-label slice",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    },
+    {
+      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/api/rielt-seed/listings/route.ts|@/lib/rieltSeedRepo",
+      "ruleId": "APP_ROUTE_MOCK_IMPORT",
+      "file": "apps/go2asia-pwa-shell/app/api/rielt-seed/listings/route.ts",
+      "source": "@/lib/rieltSeedRepo",
+      "ownerSlice": "12I-A3 / Rielt seed source-label slice",
+      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
+    }
+  ]
+}

@@ -2,7 +2,8 @@
 
 /**
  * Quest Asia - Badge Display
- * Отображение off-chain бейджа / future-compatible badge metadata.
+ * Legacy/internal badge metadata preview.
+ * Not badge_award_fact, NFT ownership, on-chain proof or reward receipt.
  */
 
 import { useState } from 'react';
@@ -31,7 +32,7 @@ export function NFTBadgeDisplay({ badge }: NFTBadgeDisplayProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleShare = () => {
-    const shareText = `Badge metadata "${badge.name}" в Go2Asia. Факт выдачи бейджа подтверждается только backend-данными.`;
+    const shareText = `Reference-only badge metadata "${badge.name}" в Go2Asia. Факт выдачи бейджа подтверждается только owner-backed backend-данными.`;
 
     if (navigator.share) {
       navigator.share({
@@ -89,6 +90,9 @@ export function NFTBadgeDisplay({ badge }: NFTBadgeDisplayProps) {
           <h3 className="text-lg font-bold text-slate-900">{badge.name}</h3>
         </div>
         <p className="text-sm text-slate-600 mb-3">{badge.description}</p>
+        <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          Preview only: не является badge award, NFT/on-chain ownership или proof.
+        </p>
         <div
           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${RARITY_COLORS[badge.rarity]} text-white`}
         >

@@ -40,7 +40,7 @@ export function AchievementCard({ badge }: AchievementCardProps) {
               <p className="text-sm text-slate-600 mt-1">{badge.description}</p>
             </div>
             <Badge className={badge.isEarned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
-              {badge.isEarned ? 'Получен' : 'Пока не получен'}
+              {badge.isEarned ? 'Отражён' : 'Пока не отражён'}
             </Badge>
           </div>
 
@@ -49,7 +49,7 @@ export function AchievementCard({ badge }: AchievementCardProps) {
             {awardedAt ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-emerald-700">
                 <Clock className="w-3 h-3" />
-                Получен {awardedAt}
+                Backend timestamp {awardedAt}
               </span>
             ) : null}
           </div>
@@ -59,6 +59,9 @@ export function AchievementCard({ badge }: AchievementCardProps) {
               {badge.emptyHint}
             </div>
           ) : null}
+          <p className="mt-3 text-xs text-slate-500">
+            Badge projection only; не badge_award_fact, не receipt и не ownership surface.
+          </p>
         </div>
       </div>
     </Card>

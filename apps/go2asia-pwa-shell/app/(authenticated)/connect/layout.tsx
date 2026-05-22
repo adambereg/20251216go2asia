@@ -5,12 +5,12 @@ export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Connect Asia | Активность и Points | Go2Asia',
+  title: 'Connect Asia | Projection Activity and Points | Go2Asia',
   description:
-    'Read-only центр активности Go2Asia: внутренние Points, приглашения, RF-сводка и off-chain бейджи where runtime-backed.',
+    'Read-only projection center Go2Asia: internal Points, invitations, RF lifecycle summary and off-chain badges.',
   openGraph: {
-    title: 'Connect Asia | Активность и Points | Go2Asia',
-    description: 'Read-only сводка активности, внутренних Points и участия в экосистеме Go2Asia',
+    title: 'Connect Asia | Projection Activity and Points | Go2Asia',
+    description: 'Read-only projection активности, внутренних Points и участия в экосистеме Go2Asia',
     type: 'website',
   },
 };

@@ -8,6 +8,7 @@
 import { MapPin, QrCode, HelpCircle, Camera, Video, Calendar, CheckCircle } from 'lucide-react';
 import type { Quest } from '../types';
 import { STEP_TYPE_LABELS } from '../types';
+import { PROJECTION_LABELS } from '../../shared/projection';
 
 interface QuestStepsProps {
   quest: Quest;
@@ -70,7 +71,7 @@ export function QuestSteps({ quest }: QuestStepsProps) {
                   )}
                   {step.rewards.points > 0 && (
                     <span className="font-semibold text-amber-600">
-                      +{step.rewards.points} очков
+                      {PROJECTION_LABELS.preview}: до {step.rewards.points} internal Points
                     </span>
                   )}
                 </div>

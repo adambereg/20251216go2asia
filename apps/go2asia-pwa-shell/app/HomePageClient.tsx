@@ -19,13 +19,11 @@ import {
   TrendingUp,
   Award,
   MapPinned,
-  Clock,
 } from 'lucide-react';
 import {
   ModuleTile,
   Button,
   FeatureCard,
-  UserSummary,
   Card,
   CardContent,
 } from '@go2asia/ui';
@@ -208,21 +206,30 @@ const benefits = [
   },
 ];
 
-const userRewards = [
+const authenticatedDeferredLinks = [
   {
-    id: '1',
-    title: 'Публикация отправлена на проверку активности',
-    time: '2 часа назад',
+    id: 'connect-overview',
+    title: 'Открыть Connect',
+    description: 'Read-only центр активности и внутренних Points без финансовых операций.',
+    href: '/connect',
   },
   {
-    id: '2',
-    title: 'Бейдж "Исследователь Чиангмая" ожидает backend-подтверждения',
-    time: '1 день назад',
+    id: 'levels',
+    title: 'Уровни и бейджи',
+    description: 'Прогресс и бейджи отображаются только после подтверждённых backend-событий.',
+    href: '/connect/levels',
   },
   {
-    id: '3',
-    title: 'Прогресс уровней пока остаётся планируемой surface',
-    time: '3 дня назад',
+    id: 'referrals',
+    title: 'Приглашения',
+    description: 'Раздел приглашений доступен как навигационная точка без подтверждения наград на Home.',
+    href: '/connect/referrals',
+  },
+  {
+    id: 'rf-vouchers',
+    title: 'RF ваучеры',
+    description: 'Ваучеры показываются в RF lifecycle surface, а не как подтверждение на Home.',
+    href: '/rf/vouchers',
   },
 ];
 
@@ -451,37 +458,37 @@ function UnauthenticatedHomePage() {
 function AuthenticatedHomePage() {
   const router = useRouter();
 
-  // Mock данные согласно скриншотам
-  const userStats = {
-    name: 'Анна Петрова',
-    initials: 'АП',
-    location: 'Пхукет, Таиланд',
-    level: 12,
-    progress: 75,
-    pointsToNextLevel: 120,
-    stats: {
-      points: 3450,
-      badges: 5,
-      teamMembers: 7,
-      vouchers: 2,
-    },
-    isPro: false,
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* User Dashboard Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <UserSummary
-          name={userStats.name}
-          initials={userStats.initials}
-          location={userStats.location}
-          level={userStats.level}
-          progress={userStats.progress}
-          pointsToNextLevel={userStats.pointsToNextLevel}
-          stats={userStats.stats}
-          isPro={userStats.isPro}
-        />
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="p-6 md:p-7">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">
+              Личный раздел подключён в ограниченном режиме
+            </h2>
+            <p className="text-sm md:text-base text-slate-700 mb-4">
+              Подтверждённые персональные метрики пока недоступны на Home.
+              Данные активности, уровней, бейджей и ваучеров появятся после подключения owner-backed runtime source.
+            </p>
+            <p className="text-xs md:text-sm text-slate-600 mb-6">
+              Этот блок не является финансовым кошельком, подтверждением наград или proof-источником.
+            </p>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {authenticatedDeferredLinks.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => router.push(item.href)}
+                  className="rounded-xl border border-amber-200 bg-white p-4 text-left hover:bg-amber-100 transition-colors"
+                >
+                  <p className="font-semibold text-slate-900 mb-1">{item.title}</p>
+                  <p className="text-sm text-slate-600">{item.description}</p>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Модули экосистемы */}
@@ -553,38 +560,34 @@ function AuthenticatedHomePage() {
         </Card>
       </section>
 
-      {/* Ваши награды */}
+      {/* Статус персональных метрик */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
-            Ваша активность
+            Персональные метрики
           </h2>
           <button
             onClick={() => router.push('/connect/levels')}
             className="text-sky-600 hover:text-sky-700 font-medium text-sm md:text-base flex items-center gap-1"
           >
-            Смотреть всё
+            Открыть Connect
             <ArrowRight size={16} />
           </button>
         </div>
-        <p className="text-sm md:text-base text-slate-600 mb-6">Последние записи активности</p>
-        <div className="space-y-3">
-          {userRewards.map((reward) => (
-            <Card key={reward.id} hover>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900">{reward.title}</p>
-                    <p className="text-sm text-slate-500 mt-1 flex items-center gap-1">
-                      <Clock size={14} />
-                      {reward.time}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <p className="text-sm md:text-base text-slate-600 mb-6">
+          На Home отображается только truthful placeholder без числовых подтверждений.
+        </p>
+        <Card>
+          <CardContent className="p-4 md:p-5">
+            <p className="font-medium text-slate-900 mb-2">
+              Подтверждённые данные активности пока недоступны
+            </p>
+            <p className="text-sm text-slate-600">
+              История Points, бейджи и ваучеры будут показаны после подключения runtime source.
+              Текущий экран не является proof/receipt и не подтверждает начисления.
+            </p>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Популярно сейчас */}

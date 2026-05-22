@@ -91,16 +91,20 @@ export function VoucherSummaryCard({ projection, hasVouchers, isLoading, isError
         <VoucherMetric label="Всего ваучеров" value={projection.summary.total} />
         <VoucherMetric label="Активные возможности" value={projection.summary.active} />
         <VoucherMetric label="Использованные преимущества" value={projection.summary.used} />
-        <VoucherMetric label="Получено через PRO" value={projection.summary.receivedViaPro} />
+        <VoucherMetric label="PRO-linked projection" value={projection.summary.receivedViaPro} />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-600">
         <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           Ожидает активации: <span className="font-semibold text-slate-900">{projection.summary.pendingActivation}</span>
         </p>
         <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          Можно получить снова: <span className="font-semibold text-slate-900">{projection.summary.repeatableAvailable}</span>
+          Доступно снова по RF lifecycle:{' '}
+          <span className="font-semibold text-slate-900">{projection.summary.repeatableAvailable}</span>
         </p>
       </div>
+      <p className="mt-3 text-xs text-slate-500">
+        RF projection only; Connect не подтверждает financial settlement, payment или receipt.
+      </p>
     </Card>
   );
 }

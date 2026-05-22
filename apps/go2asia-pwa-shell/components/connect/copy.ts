@@ -1,9 +1,16 @@
-export const CONNECT_DEFAULT_HERO_DESCRIPTION = 'Read-only центр активности, внутренних Points и off-chain бейджей Go2Asia';
+import { PROJECTION_HELPERS, PROJECTION_LABELS } from '../shared/projection';
+
+export const CONNECT_DEFAULT_HERO_DESCRIPTION =
+  `${PROJECTION_LABELS.readOnlyProjection} активности, внутренних Points и off-chain бейджей Go2Asia`;
 
 export const CONNECT_POINTS_ACTIVITY_DESCRIPTION =
-  'Points отображают подтверждённые backend-события Go2Asia. Они не являются финансовой поверхностью или клиентским подтверждением.';
+  `${PROJECTION_LABELS.readOnlyProjection} по backend-событиям Go2Asia. Не Points_row, не receipt и не финансовый wallet.`;
 
-export const CONNECT_POINTS_EARNED_LABEL = 'Points по подтверждённым событиям';
+export const CONNECT_ACTIVITY_SUMMARY_LABEL = `${PROJECTION_LABELS.activitySummary} с Points`;
+
+export const CONNECT_ACTIVITY_REFERENCE_HELPER = PROJECTION_HELPERS.activityNotReceipt;
+
+export const CONNECT_POINTS_EARNED_LABEL = 'Points по backend-событиям (projection)';
 
 export const CONNECT_POINTS_BUCKET_LABELS = {
   available: 'Points с внутренней доступностью',
@@ -16,13 +23,13 @@ const CONNECT_LEDGER_ACTION_LABELS: Record<string, string> = {
   registration: 'Регистрация',
   first_login: 'Первый вход',
   quest_completed: 'Задание в Quest Asia завершено',
-  referral_bonus_referrer: 'Начисление за приглашённого пользователя',
-  referral_bonus_referee: 'Начисление за регистрацию по приглашению',
+  referral_bonus_referrer: 'Referral Points projection',
+  referral_bonus_referee: 'Referral registration projection',
   event_registration: 'Регистрация на событие',
   space_post_created: 'Публикация в Space',
   rf_voucher_redeemed: 'RF-ваучер использован',
   rielt_listing_created: 'Объявление в Rielt',
-  badge_awarded: 'Бейдж получен',
+  badge_awarded: 'Бейдж отражён в Connect',
 };
 
 const CONNECT_LEDGER_SOURCE_LABELS: Record<string, string> = {

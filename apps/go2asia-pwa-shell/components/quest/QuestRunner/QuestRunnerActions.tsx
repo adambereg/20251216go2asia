@@ -7,6 +7,7 @@
 
 import { Lightbulb, SkipForward, Pause } from 'lucide-react';
 import type { QuestStep } from '@/components/quest/types';
+import { PROJECTION_LABELS } from '../../shared/projection';
 
 interface QuestRunnerActionsProps {
   step: QuestStep;
@@ -57,7 +58,7 @@ export function QuestRunnerActions({
           >
             <SkipForward className="w-4 h-4" />
             <span className="hidden sm:inline">
-              Пропустить {skipPenalty > 0 && `(-${skipPenalty} очков)`}
+              Пропустить {skipPenalty > 0 && `(${PROJECTION_LABELS.preview.toLowerCase()} penalty: ${skipPenalty} Points)`}
             </span>
           </button>
         )}

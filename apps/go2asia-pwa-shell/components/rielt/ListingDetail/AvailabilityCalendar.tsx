@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import type { Listing } from '../types';
 import { isDateAvailable } from '../utils/calendar';
+import { RIELT_AVAILABILITY_PREVIEW_HELPER } from '../copy';
 
 interface AvailabilityCalendarProps {
   listing: Listing;
@@ -77,15 +78,15 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">Доступность для запроса</h2>
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">Availability preview для запроса</h2>
       <p className="text-sm text-slate-600 mb-4">
-        Даты помогают сформировать inquiry. Это не бронирование, не оплата и не подтверждение доступности.
+        {RIELT_AVAILABILITY_PREVIEW_HELPER} Это не бронь, не оплата и не confirmed availability.
       </p>
       
       {listing.availability.instantBooking && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
           <span className="text-green-800 font-medium">
-            ✓ Доступность можно уточнить быстро
+            ✓ Владелец может ответить быстрее
           </span>
         </div>
       )}
@@ -145,7 +146,7 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-slate-100"></div>
-          <span className="text-slate-600">Недоступно</span>
+          <span className="text-slate-600">Не для запроса в preview</span>
         </div>
       </div>
     </div>

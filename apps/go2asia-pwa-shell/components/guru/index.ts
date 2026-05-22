@@ -20,16 +20,3 @@ export * from './utils/ranking';
 
 // Хуки
 export { useGeolocation, useWatchPosition, DEFAULT_POSITION } from './hooks/useGeolocation';
-
-// Демо-данные
-export {
-  mockObjects,
-  mockPlaces,
-  mockEvents,
-  mockHousing,
-  mockPeople,
-  mockQuests,
-  DEFAULT_CENTER,
-  OBJECT_COUNTS,
-} from './mockObjects';
-

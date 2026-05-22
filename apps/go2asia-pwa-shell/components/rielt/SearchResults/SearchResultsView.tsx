@@ -61,8 +61,11 @@ export function SearchResultsView({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-            {listings.length} {listings.length === 1 ? 'объявление' : 'объявлений'}
+            {listings.length} {listings.length === 1 ? 'listing preview' : 'listing previews'}
           </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Rielt показывает source-labeled previews для inquiry; это не live booking inventory.
+          </p>
           {filters.location?.city && (
             <p className="text-slate-600 mt-1">Город: {filters.location.city}</p>
           )}
@@ -99,12 +102,13 @@ export function SearchResultsView({
 
       {hasSeedOverlay ? (
         <div className="mb-4 rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
-          Для части карточек используются демонстрационные материалы витрины.
+          Для части карточек используются seed preview материалы витрины. Это demo/source overlay, не verified
+          inventory и не подтверждение доступности.
         </div>
       ) : null}
       {hasGuidedContext ? (
         <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
-          Некоторые выбранные параметры помогают точнее подобрать варианты размещения.
+          Некоторые выбранные параметры помогают сформировать inquiry и не подтверждают наличие объекта.
         </div>
       ) : null}
 

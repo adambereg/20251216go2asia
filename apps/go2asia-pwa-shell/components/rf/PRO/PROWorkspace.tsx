@@ -378,7 +378,7 @@ export function PROWorkspace() {
           </div>
           <Link href="/rf/pro/partners">
             <Button variant="secondary" size="sm" className="gap-1">
-              Детальный список (legacy/demo)
+              Статус раздела (deferred)
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </Link>

@@ -4,7 +4,12 @@ import { Card, Button } from '@go2asia/ui';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ConnectDashboardTransactionItem } from '@go2asia/sdk/connectDashboard';
-import { getConnectLedgerActionLabel, getConnectLedgerSourceLabel } from '../copy';
+import {
+  CONNECT_ACTIVITY_REFERENCE_HELPER,
+  CONNECT_ACTIVITY_SUMMARY_LABEL,
+  getConnectLedgerActionLabel,
+  getConnectLedgerSourceLabel,
+} from '../copy';
 
 interface ActivityFeedProps {
   transactions: ConnectDashboardTransactionItem[];
@@ -44,7 +49,12 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
   return (
     <Card className="p-6 mb-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Последние действия с Points</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">{CONNECT_ACTIVITY_SUMMARY_LABEL}</h2>
+          <p className="text-sm text-slate-600">
+            {CONNECT_ACTIVITY_REFERENCE_HELPER}
+          </p>
+        </div>
         <Link href="/connect/wallet">
           <Button variant="secondary" size="sm" className="w-full sm:w-auto">
             Показать все
@@ -85,7 +95,7 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
           ))
         ) : (
           <div className="text-center py-8 text-slate-500">
-            <p>История начислений появится после первых действий в Go2Asia.</p>
+            <p>{CONNECT_ACTIVITY_SUMMARY_LABEL} появится после первых backend-событий Go2Asia.</p>
           </div>
         )}
       </div>

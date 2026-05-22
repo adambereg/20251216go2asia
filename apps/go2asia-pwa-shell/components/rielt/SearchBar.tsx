@@ -256,9 +256,9 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
                 ['quietArea', 'Тихий район', quietArea, setQuietArea],
                 ['expatArea', 'Район с экспатами', expatArea, setExpatArea],
                 ['onlyRF', 'Партнёры RF', onlyRF, setOnlyRF],
-                ['onlyPRO', 'С проверкой куратора', onlyPROVerified, setOnlyPROVerified],
+                ['onlyPRO', 'Кураторский контекст', onlyPROVerified, setOnlyPROVerified],
                 ['concierge', 'С сопровождением', concierge, setConcierge],
-                ['ready', 'Готово к заезду', readyToMove, setReadyToMove],
+                ['ready', 'Заезд можно уточнить', readyToMove, setReadyToMove],
               ].map(([key, label, value, setter]) => (
                 <button
                   key={String(key)}
@@ -290,7 +290,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
           <ArrowRight className="w-5 h-5" />
         </button>
         <p className="text-xs text-slate-500">
-          Мы показываем отобранные варианты. Точные даты и условия уточняются после выбора подходящего объекта.
+          Мы показываем listing previews. Точные даты, условия и доступность уточняются через inquiry владельцу.
         </p>
       </form>
     </div>

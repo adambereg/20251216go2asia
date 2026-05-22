@@ -4,11 +4,11 @@ import { RieltHomeClient } from './RieltHomeClient';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Rielt.Market Asia - Подбор жилья | Go2Asia',
-  description: 'Подбор проверенного жилья в Юго-Восточной Азии',
+  title: 'Rielt.Market Asia - Inquiry-only previews | Go2Asia',
+  description: 'Source-labeled listing previews для запроса по жилью; не booking или payment platform',
   openGraph: {
-    title: 'Rielt.Market Asia - Подбор жилья',
-    description: 'Подбор проверенного жилья в ЮВА',
+    title: 'Rielt.Market Asia - Inquiry-only previews',
+    description: 'Source-labeled listing previews для запроса по жилью; не booking или payment platform',
     type: 'website',
   },
 };

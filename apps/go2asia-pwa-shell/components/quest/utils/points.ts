@@ -1,6 +1,7 @@
 /**
  * Quest Asia - Points System
- * Улучшенная система начисления очков с множителями
+ * Legacy/internal local Points preview calculators.
+ * Not a Points runtime, ledger write, reward grant or support-proof source.
  */
 
 import type { Quest, QuestStep, StepResult, QuestProgress } from '../types';

@@ -2,7 +2,8 @@
 
 /**
  * Quest Asia - Rewards Actions
- * Кнопки действий после завершения квеста
+ * Legacy/internal completion actions.
+ * Must not be used as reward receipt, proof, claim flow or owner-fact surface.
  */
 
 import { useRouter } from 'next/navigation';
@@ -17,7 +18,7 @@ export function RewardsActions({ quest }: RewardsActionsProps) {
   const router = useRouter();
 
   const handleShare = () => {
-    const text = `Я прошёл маршрут "${quest.title}" в Go2Asia. Итоговый статус подтверждается в приложении.`;
+    const text = `Маршрут "${quest.title}" в Go2Asia. Итоговый статус подтверждается только backend-данными.`;
     const url = window.location.origin + `/quest/${quest.id}`;
 
     if (navigator.share) {
@@ -47,7 +48,7 @@ export function RewardsActions({ quest }: RewardsActionsProps) {
           className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
         >
           <Share2 className="w-5 h-5" />
-          Поделиться
+          Поделиться ссылкой
         </button>
 
         <span

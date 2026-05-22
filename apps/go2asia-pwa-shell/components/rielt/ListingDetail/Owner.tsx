@@ -20,6 +20,9 @@ export function Owner({ listing }: OwnerProps) {
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
       <h2 className="text-2xl font-bold text-slate-900 mb-4">Контакт по объекту</h2>
+      <p className="mb-4 text-sm text-slate-600">
+        Контакт используется для inquiry и уточнения доступности; это не host verification и не подтверждение брони.
+      </p>
       
       <div className="flex items-start gap-4">
         {/* Аватар */}

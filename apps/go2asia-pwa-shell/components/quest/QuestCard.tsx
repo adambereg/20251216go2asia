@@ -89,17 +89,20 @@ export function QuestCard({ quest }: QuestCardProps) {
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-500" />
             <span className="text-sm font-semibold text-slate-900">
-              {quest.rewards.points} Points после подтверждения
+              Preview: {quest.rewards.points} internal Points
             </span>
           </div>
           
           {quest.rewards.nftBadges.length > 0 && (
             <div className="flex items-center gap-1">
               <Zap className="w-4 h-4 text-purple-500" />
-              <span className="text-xs text-slate-600">off-chain preview</span>
+              <span className="text-xs text-slate-600">badge metadata preview</span>
             </div>
           )}
         </div>
+        <p className="mt-2 text-xs text-slate-500">
+          Не Points_row, badge_award_fact или receipt; только preview до backend-подтверждения.
+        </p>
       </div>
     </Link>
   );

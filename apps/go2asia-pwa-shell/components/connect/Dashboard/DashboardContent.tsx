@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Card, Button } from '@go2asia/ui';
-import { ArrowRight, Award, CheckCircle2, Sparkles, Users } from 'lucide-react';
-import Link from 'next/link';
-import type { ConnectDashboardResponse } from '@go2asia/sdk/connectDashboard';
-import { BalanceCards } from './BalanceCards';
-import { ActivityFeed } from './ActivityFeed';
-import { ConnectRfSection } from './ConnectRfSection';
-import { CONNECT_POINTS_EARNED_LABEL } from '../copy';
+import { Card, Button } from "@go2asia/ui";
+import { ArrowRight, Award, CheckCircle2, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
+import type { ConnectDashboardResponse } from "@go2asia/sdk/connectDashboard";
+import { BalanceCards } from "./BalanceCards";
+import { ActivityFeed } from "./ActivityFeed";
+import { ConnectRfSection } from "./ConnectRfSection";
+import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -15,22 +15,22 @@ interface DashboardContentProps {
 
 const nextSteps = [
   {
-    title: 'Завершите первое задание в Quest Asia',
-    description: 'Points и бейджи отображаются только после backend-подтверждения.',
+    title: "Завершите первое задание в Quest Asia",
+    description: "Points и бейджи отображаются только после backend-подтверждения.",
   },
   {
-    title: 'Пригласите друга',
-    description: 'Поделитесь реферальной ссылкой и отслеживайте статус приглашения.',
+    title: "Пригласите друга",
+    description: "Поделитесь реферальной ссылкой и отслеживайте read-only статус приглашения.",
   },
   {
-    title: 'Посмотрите доступные бейджи',
-    description: 'Узнайте, какие достижения уже доступны.',
+    title: "Посмотрите badge projection",
+    description: "Узнайте, какие off-chain бейджи отображаются как read-only projection.",
   },
 ];
 
 function formatBadgeDate(dateString: string) {
   const date = new Date(dateString);
-  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 export function DashboardContent({ dashboard }: DashboardContentProps) {
@@ -42,13 +42,15 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
       {/* Greeting */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Привет!</h1>
-        <p className="text-slate-600 mt-1">Вот ваш текущий прогресс в Go2Asia.</p>
+        <p className="text-slate-600 mt-1">
+          Read-only dashboard projection; не receipt, не proof и не accounting statement.
+        </p>
       </div>
 
       {/* Points */}
       <div className="mb-6">
         <div className="mb-3">
-          <h2 className="text-lg font-semibold text-slate-900">Ваши Points</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Points projection</h2>
         </div>
         <BalanceCards balance={dashboard.balance} />
       </div>
@@ -64,9 +66,13 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Ваши приглашения</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Приглашения: read-only projection
+                </h3>
                 <p className="text-sm text-slate-600">
-                  {hasReferrals ? 'История приглашений по текущему аккаунту.' : 'Пригласите друга, чтобы начать историю приглашений.'}
+                  {hasReferrals
+                    ? "Reference-only сводка приглашений по текущему аккаунту; не commission statement."
+                    : "Пригласите друга, чтобы начать read-only историю приглашений."}
                 </p>
               </div>
             </div>
@@ -75,19 +81,27 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Приглашено всего</p>
-              <p className="text-xl font-bold text-slate-900">{dashboard.referrals.totalReferrals}</p>
+              <p className="text-xl font-bold text-slate-900">
+                {dashboard.referrals.totalReferrals}
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Активировались</p>
-              <p className="text-xl font-bold text-slate-900">{dashboard.referrals.activatedReferrals}</p>
+              <p className="text-xl font-bold text-slate-900">
+                {dashboard.referrals.activatedReferrals}
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Ожидают активации</p>
-              <p className="text-xl font-bold text-slate-900">{dashboard.referrals.pendingReferrals}</p>
+              <p className="text-xl font-bold text-slate-900">
+                {dashboard.referrals.pendingReferrals}
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">{CONNECT_POINTS_EARNED_LABEL}</p>
-              <p className="text-xl font-bold text-slate-900">{dashboard.referrals.totalEarnedPoints}</p>
+              <p className="text-xl font-bold text-slate-900">
+                {dashboard.referrals.totalEarnedPoints}
+              </p>
             </div>
           </div>
 
@@ -106,8 +120,12 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
                 <Award className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Ваши бейджи</h3>
-                <p className="text-sm text-slate-600">Последние достижения</p>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Бейджи: read-only projection
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Последние badge projections; не asset ownership.
+                </p>
               </div>
             </div>
             <div className="text-2xl font-bold text-slate-900">{dashboard.badges.totalBadges}</div>
@@ -116,12 +134,15 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           {hasBadges ? (
             <div className="space-y-3 mb-5">
               {dashboard.badges.recent.map((badge) => (
-                <div key={`${badge.badgeCode}-${badge.awardedAt}`} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div
+                  key={`${badge.badgeCode}-${badge.awardedAt}`}
+                  className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
+                >
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">{badge.title}</p>
                     <p className="text-xs text-slate-500">
-                      {badge.category ? `${badge.category} · ` : ''}
+                      {badge.category ? `${badge.category} · ` : ""}
                       {formatBadgeDate(badge.awardedAt)}
                     </p>
                   </div>
@@ -130,7 +151,8 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             </div>
           ) : (
             <p className="text-sm text-slate-600 mb-5">
-              Бейджи появятся здесь после backend-подтверждения выдачи.
+              Бейджи появятся здесь после backend-подтверждения. Этот блок не является
+              badge_award_fact.
             </p>
           )}
 
@@ -148,7 +170,9 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           <Sparkles className="w-5 h-5 text-amber-700" />
           <div>
             <h3 className="text-lg font-semibold text-amber-900">Что можно сделать дальше</h3>
-            <p className="text-sm text-amber-900/80">Три простых шага на основе доступных разделов.</p>
+            <p className="text-sm text-amber-900/80">
+              Три простых шага на основе доступных разделов.
+            </p>
           </div>
         </div>
 

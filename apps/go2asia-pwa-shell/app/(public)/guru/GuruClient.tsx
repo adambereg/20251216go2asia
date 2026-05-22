@@ -43,7 +43,7 @@ import type {
   QuestObject,
 } from '@/components/guru/types';
 import { DEFAULT_FILTERS } from '@/components/guru/types';
-import { DEFAULT_CENTER } from '@/components/guru/mockObjects';
+import { DEFAULT_CENTER } from '@/components/guru/constants/mapDefaults';
 import { addDistanceToObjects } from '@/components/guru/utils/geo';
 import { applyFilters, queryStringToFilters, filtersToQueryString } from '@/components/guru/utils/filters';
 import { applySorting } from '@/components/guru/utils/ranking';

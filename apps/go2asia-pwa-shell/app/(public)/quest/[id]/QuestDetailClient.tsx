@@ -23,6 +23,7 @@ import {
 } from '../questPresentation';
 import { getQuestGalleryRuntimeFirst, getQuestHeroMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from '../questRuntimeMetadata';
 import { isSpatialStep, resolveQuestMapScope } from '../questMapPresentation';
+import { PROJECTION_LABELS } from '@/components/shared/projection';
 
 interface QuestDetailClientProps {
   quest: QuestDetailResponse;
@@ -112,8 +113,9 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
               <p className="font-medium text-slate-900">{describeQuestExperience(quest)}</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-slate-500">Internal Points после подтверждения</p>
-              <p className="font-medium text-slate-900">{quest.rewardPoints ?? 0} очков</p>
+              <p className="text-slate-500">{PROJECTION_LABELS.preview} internal Points</p>
+              <p className="font-medium text-slate-900">{quest.rewardPoints ?? 0} возможных Points</p>
+              <p className="mt-1 text-xs text-slate-500">Не Points_row и не receipt.</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-slate-500">Шаги</p>
@@ -253,7 +255,7 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
                     ) : null}
                     {step.rewardPoints != null ? (
                       <p className="mt-3 text-xs text-slate-500">
-                        После подтверждения шага может быть учтено {step.rewardPoints} internal Points.
+                        {PROJECTION_LABELS.preview} шага: до {step.rewardPoints} internal Points после backend-проверки; не receipt.
                       </p>
                     ) : null}
                   </li>

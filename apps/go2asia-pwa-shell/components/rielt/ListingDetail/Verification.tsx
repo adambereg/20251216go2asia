@@ -5,8 +5,9 @@
  * Блок проверок (PRO, чек-лист)
  */
 
-import { CheckCircle, User, Calendar } from 'lucide-react';
+import { CheckCircle, Calendar } from 'lucide-react';
 import type { Listing } from '../types';
+import { getRieltCuratorSignalLabel } from '../copy';
 
 interface VerificationProps {
   listing: Listing;
@@ -25,8 +26,12 @@ export function Verification({ listing }: VerificationProps) {
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
       <div className="flex items-center gap-2 mb-4">
         <CheckCircle className="w-6 h-6 text-green-500" />
-        <h2 className="text-2xl font-bold text-slate-900">Проверено PRO</h2>
+        <h2 className="text-2xl font-bold text-slate-900">{getRieltCuratorSignalLabel()}</h2>
       </div>
+      <p className="mb-4 text-sm text-slate-600">
+        Кураторский сигнал помогает с inquiry, но не является verified inventory, host verification или
+        подтверждением доступности.
+      </p>
 
       {/* Информация о проверке */}
       {verification.verifiedAt && (
@@ -34,7 +39,7 @@ export function Verification({ listing }: VerificationProps) {
           <div className="flex items-center gap-2 text-sm text-green-800">
             <Calendar className="w-4 h-4" />
             <span>
-              Проверено {new Date(verification.verifiedAt).toLocaleDateString('ru-RU', {
+              Отмечено куратором {new Date(verification.verifiedAt).toLocaleDateString('ru-RU', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -47,24 +52,24 @@ export function Verification({ listing }: VerificationProps) {
       {/* Чек-лист */}
       {checklist && (
         <div className="space-y-3">
-          <h3 className="font-semibold text-slate-900">Что проверено:</h3>
+          <h3 className="font-semibold text-slate-900">Что отмечено для запроса:</h3>
           <div className="space-y-2">
             {checklist.photosMatch && (
               <div className="flex items-center gap-2 text-slate-700">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Фото соответствуют реальности</span>
+                <span>Фото подходят для первичного просмотра</span>
               </div>
             )}
             {checklist.condition && (
               <div className="flex items-center gap-2 text-slate-700">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Состояние соответствует описанию</span>
+                <span>Состояние вынесено в inquiry-контекст</span>
               </div>
             )}
             {checklist.description && (
               <div className="flex items-center gap-2 text-slate-700">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Описание точное</span>
+                <span>Описание можно использовать для уточнения деталей</span>
               </div>
             )}
             {checklist.noise && (

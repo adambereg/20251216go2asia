@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { Heart, Share2 } from 'lucide-react';
 import { createListingInquiry } from '@go2asia/sdk/rielt';
 import type { Listing } from '../types';
+import { RIELT_INQUIRY_ONLY_HELPER, getRieltSourceChip, getRieltSourceDescription } from '../copy';
+import { PROJECTION_LABELS, ProjectionChip } from '../../shared/projection';
 
 interface CTAPanelProps {
   listing: Listing;
@@ -83,7 +85,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         buildIdempotencyKey()
       );
       setInquiryStatus('success');
-      setInquiryText('Запрос отправлен.');
+      setInquiryText('Запрос отправлен как inquiry. Это не бронь и не подтверждение доступности.');
       setMessage('');
     } catch (error) {
       const payload = error as { error?: { code?: string; message?: string }; status?: number };
@@ -129,8 +131,15 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
       </div>
 
       <div className="rounded-lg border border-slate-200 p-3 mb-5">
+        <div className="mb-2 flex flex-wrap gap-2">
+          <ProjectionChip tone="source">
+            {getRieltSourceChip(listing)}
+          </ProjectionChip>
+          <ProjectionChip tone="inquiry">{PROJECTION_LABELS.inquiryOnly}</ProjectionChip>
+        </div>
         <p className="text-xs text-slate-600">
-          Rielt показывает объект и контекст размещения. Ваучеры и RF-предложения открываются в RF Asia; Rielt не подтверждает бронирование.
+          {getRieltSourceDescription(listing)} Ваучеры и RF-предложения открываются в RF Asia; Rielt не подтверждает
+          бронь или оплату.
         </p>
       </div>
 
@@ -162,7 +171,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             </Link>
           ) : null}
           <p className="text-xs text-emerald-800 mt-2">
-            Получение и активация ваучеров происходят в RF Asia. Rielt не подтверждает бронирование.
+            Получение и активация ваучеров происходят в RF Asia. Rielt не подтверждает бронь, оплату или наличие места.
           </p>
         </div>
       ) : null}
@@ -173,7 +182,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
           Связаться по объекту
         </h3>
         <p className="text-xs text-slate-500">
-          Это запрос по объекту для уточнения деталей размещения; он не подтверждает бронирование или оплату.
+          {RIELT_INQUIRY_ONLY_HELPER}
         </p>
         <div className="space-y-2">
           <textarea

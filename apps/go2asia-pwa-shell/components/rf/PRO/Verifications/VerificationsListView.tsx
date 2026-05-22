@@ -1,96 +1,68 @@
 'use client';
 
-import { Card, CardContent, Button, Badge } from '@go2asia/ui';
-import { CheckSquare, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { Button, Card, CardContent } from '@go2asia/ui';
+import { AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { mockVerifications, mockPartners } from '../../mockData';
 
 export function VerificationsListView() {
-  const [verifications] = useState(mockVerifications);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge variant="info" className="bg-green-100 text-green-700">Одобрено</Badge>;
-      case 'rejected':
-        return <Badge variant="info" className="bg-red-100 text-red-700">Отклонено</Badge>;
-      default:
-        return <Badge variant="info" className="bg-amber-100 text-amber-700">В процессе</Badge>;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Заголовок */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Проверки</h1>
+        <h1 className="mb-2 text-3xl font-bold text-slate-900">Проверки (deferred)</h1>
         <p className="text-slate-600">
-          Demo-слой проверки партнёров. Полный verification workflow в PRO пока не подключён.
+          Verification workflow PRO снят с active mock-рендера до подключения подтверждённого
+          runtime source.
         </p>
       </div>
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        Чек-листы на этом экране демонстрационные. Действия проверки не записываются в live backend.
-      </div>
 
-      {/* Список проверок */}
-      <div className="space-y-3">
-        {verifications.map((verification) => {
-          const partner = mockPartners.find((p) => p.id === verification.partnerId);
-          if (!partner) return null;
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="p-6">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+              <AlertTriangle size={20} aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Operational workflow не подключён</h2>
+              <p className="mt-1 text-sm text-slate-700">
+                Здесь больше не показываются demo-чек-листы, статусы одобрения или карточки
+                проверки партнёров. Действия на этой поверхности не записываются в backend и
+                не являются support-proof.
+              </p>
+            </div>
+          </div>
 
-          return (
-            <Card key={verification.id} className="border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Link href={`/rf/${partner.id}`}>
-                        <h3 className="font-semibold text-slate-900 hover:text-purple-600">
-                          {partner.name}
-                        </h3>
-                      </Link>
-                      {getStatusBadge(verification.status)}
-                    </div>
-                    <p className="text-sm text-slate-600 mb-2">{verification.notes}</p>
-                    <div className="text-xs text-slate-500">
-                      Создана: {new Date(verification.createdAt).toLocaleDateString('ru-RU')}
-                      {verification.completedAt && (
-                        <> • Завершена: {new Date(verification.completedAt).toLocaleDateString('ru-RU')}</>
-                      )}
-                    </div>
-                  </div>
-                  {verification.status === 'pending' && (
-                    <Button variant="primary" size="sm" disabled className="opacity-70">
-                        <CheckSquare size={16} className="mr-2" />
-                        Провести проверку (soon)
-                    </Button>
-                  )}
-                </div>
+          <div className="rounded-xl border border-amber-200 bg-white p-4 text-sm text-slate-700">
+            <div className="mb-2 flex items-center gap-2 font-semibold text-slate-900">
+              <ShieldCheck size={16} aria-hidden />
+              Runtime boundary
+            </div>
+            <p>
+              Проверка партнёров должна опираться на owner-backed RF source. Этот экран не
+              подтверждает verification status, payout, cashback, settlement или operational
+              assignment.
+            </p>
+          </div>
 
-                {/* Чек-лист */}
-                <div className="pt-4 border-t border-slate-200">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Чек-лист</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {verification.checklist.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2">
-                        {item.status ? (
-                          <CheckCircle2 size={16} className="text-green-600" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                        )}
-                        <span className={`text-sm ${item.status ? 'text-slate-900' : 'text-slate-500'}`}>
-                          {item.requirement}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/rf/pro#pw-linked-partners">
+              <Button size="sm" className="gap-1">
+                Открыть live связи PRO
+                <ArrowRight size={14} aria-hidden />
+              </Button>
+            </Link>
+            <Link href="/rf/pro">
+              <Button variant="secondary" size="sm">
+                Вернуться в PRO workspace
+              </Button>
+            </Link>
+            <Link href="/rf/vouchers">
+              <Button variant="secondary" size="sm">
+                RF ваучеры
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

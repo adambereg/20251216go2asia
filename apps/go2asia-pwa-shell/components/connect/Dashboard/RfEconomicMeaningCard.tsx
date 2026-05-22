@@ -21,8 +21,8 @@ export function RfEconomicMeaningCard({ projection, isLoading, isError, onRetry 
             <Compass className="h-5 w-5 text-emerald-700" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Ваш RF-прогресс</h2>
-            <p className="text-sm text-slate-600">Готовим summary: как RF-активность отражается в Connect…</p>
+            <h2 className="text-lg font-semibold text-slate-900">RF projection</h2>
+            <p className="text-sm text-slate-600">Готовим reference-only summary: как RF-активность отражается в Connect…</p>
           </div>
         </div>
         <div className="mt-5 h-24 rounded-xl bg-slate-100 animate-pulse" />
@@ -57,7 +57,7 @@ export function RfEconomicMeaningCard({ projection, isLoading, isError, onRetry 
             <Compass className="h-5 w-5 text-emerald-700" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">Что это значит</h3>
+            <h3 className="text-base font-semibold text-slate-900">Что значит RF projection</h3>
             <p className="mt-1 text-sm font-medium text-slate-900">{projection.narrative.title}</p>
             <p className="mt-1 text-sm text-slate-600">{projection.narrative.summary}</p>
           </div>
@@ -69,7 +69,8 @@ export function RfEconomicMeaningCard({ projection, isLoading, isError, onRetry 
         </Link>
       </div>
       <div className="mt-3 rounded-xl border border-emerald-100 bg-white/70 p-3 text-xs text-slate-600">
-        Этапы RF-прогресса: {projection.milestones.filter((item) => item.reached).length} из {projection.milestones.length}
+        Этапы RF lifecycle projection: {projection.milestones.filter((item) => item.reached).length} из{' '}
+        {projection.milestones.length}. Не receipt и не accounting statement.
       </div>
     </Card>
   );

@@ -1,6 +1,7 @@
 /**
  * Quest Asia - Leaderboard Utils
- * Утилиты для работы с лидербордом
+ * Dormant mock leaderboard utilities.
+ * Leaderboard/XP/social-score are blocked for active Path A reward economy.
  */
 
 import type { LeaderboardEntry, LeaderboardFilters } from '../types';

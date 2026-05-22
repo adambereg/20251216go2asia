@@ -50,7 +50,8 @@ export function AnalyticsView() {
               <div>
                 <h2 className="text-xl font-semibold text-sky-900">Аналитика активности планируется</h2>
                 <p className="text-sm text-sky-900/80 mt-2">
-                  Сейчас Connect показывает только проверенные backend-данные: Points, начисления, рефералы и бейджи. Расширенная статистика появится после отдельного слоя агрегатов.
+                  Сейчас Connect показывает только read-only projections: Points, activity rows, рефералы и бейджи.
+                  Расширенная статистика появится после отдельного слоя агрегатов.
                 </p>
               </div>
             </div>

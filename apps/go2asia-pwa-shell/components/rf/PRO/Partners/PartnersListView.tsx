@@ -1,151 +1,68 @@
 'use client';
 
-import { Card, CardContent, Badge, Button } from '@go2asia/ui';
-import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { Button, Card, CardContent } from '@go2asia/ui';
+import { AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { VerifiedBadge } from '../../Shared';
-import { mockPartners } from '../../mockData';
-import { PARTNER_CATEGORY_LABELS } from '../../types';
-import type { PartnerCategory } from '../../types';
 
 export function PartnersListView() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<PartnerCategory | 'all'>('all');
-  const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
-
-  // Legacy/demo: live связанные партнёры показаны на главной странице PRO кабинета через rf_pro_link.
-  let partners = mockPartners;
-
-  // Фильтрация
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    partners = partners.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.address.city.toLowerCase().includes(query)
-    );
-  }
-
-  if (selectedCategory !== 'all') {
-    partners = partners.filter((p) => p.category === selectedCategory);
-  }
-
-  if (verificationFilter === 'verified') {
-    partners = partners.filter((p) => p.rfStatus.verified);
-  } else if (verificationFilter === 'pending') {
-    partners = partners.filter((p) => !p.rfStatus.verified);
-  }
-
   return (
     <div className="space-y-6">
-      {/* Заголовок */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Партнёры (legacy/demo)</h1>
-        <p className="text-slate-600">Демо-список для старого операционного baseline PRO, без признака владения бизнесом.</p>
-      </div>
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        Этот экран использует demo-данные и не отражает live связи PRO. Актуальные связанные партнёры находятся на главной странице PRO кабинета.
-      </div>
-
-      {/* Поиск и фильтры */}
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Поиск по названию или городу..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedCategory === 'all' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setSelectedCategory('all')}
-          >
-            Все категории
-          </Button>
-          {(['cafe', 'restaurant', 'coworking', 'market'] as PartnerCategory[]).map((cat) => (
-            <Button
-              key={cat}
-              variant={selectedCategory === cat ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {PARTNER_CATEGORY_LABELS[cat]}
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={verificationFilter === 'all' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setVerificationFilter('all')}
-          >
-            Все статусы
-          </Button>
-          <Button
-            variant={verificationFilter === 'verified' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setVerificationFilter('verified')}
-          >
-            Проверено PRO
-          </Button>
-          <Button
-            variant={verificationFilter === 'pending' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setVerificationFilter('pending')}
-          >
-            Ожидает проверки
-          </Button>
-        </div>
+        <h1 className="mb-2 text-3xl font-bold text-slate-900">Партнёры (deferred)</h1>
+        <p className="text-slate-600">
+          Операционный список партнёров PRO снят с активного mock-рендера до подключения
+          подтверждённого runtime source.
+        </p>
       </div>
 
-      {/* Таблица партнёров */}
-      <div className="space-y-3">
-        {partners.map((partner) => (
-          <Card key={partner.id} className="border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Link href={`/rf/${partner.id}`}>
-                      <h3 className="font-semibold text-slate-900 hover:text-purple-600">
-                        {partner.name}
-                      </h3>
-                    </Link>
-                    {partner.rfStatus.verified && <VerifiedBadge />}
-                    <Badge variant="info">{PARTNER_CATEGORY_LABELS[partner.category]}</Badge>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {partner.address.city}, {partner.address.country} • Рейтинг:{' '}
-                    {partner.stats.rating.toFixed(1)} ({partner.stats.reviewsCount} отзывов)
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!partner.rfStatus.verified && (
-                    <Link href="/rf/pro/verifications">
-                      <Button variant="primary" size="sm">
-                        К проверкам (demo)
-                      </Button>
-                    </Link>
-                  )}
-                  <Link href={`/rf/${partner.id}`}>
-                    <Button variant="secondary" size="sm">
-                      Открыть
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="p-6">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+              <AlertTriangle size={20} aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Раздел находится в карантине</h2>
+              <p className="mt-1 text-sm text-slate-700">
+                Здесь больше не показываются demo-партнёры, рейтинги, verification badges или
+                assignment-статусы. Эти данные не являются operational proof и не подтверждают
+                владение партнёрским контуром.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-white p-4 text-sm text-slate-700">
+            <div className="mb-2 flex items-center gap-2 font-semibold text-slate-900">
+              <ShieldCheck size={16} aria-hidden />
+              Live-источник
+            </div>
+            <p>
+              Актуальные связи PRO с партнёрами доступны только в основной PRO workspace через
+              runtime-backed `rf_pro_link`. Этот экран не является payout, cashback, settlement
+              или support-proof поверхностью.
+            </p>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/rf/pro#pw-linked-partners">
+              <Button size="sm" className="gap-1">
+                Открыть live связи PRO
+                <ArrowRight size={14} aria-hidden />
+              </Button>
+            </Link>
+            <Link href="/rf/pro">
+              <Button variant="secondary" size="sm">
+                Вернуться в PRO workspace
+              </Button>
+            </Link>
+            <Link href="/rf">
+              <Button variant="secondary" size="sm">
+                RF hub
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
