@@ -1,16 +1,17 @@
 import type { Listing } from './types';
+import { PROJECTION_HELPERS, PROJECTION_LABELS, getProjectionSourceLabel } from '../shared/projection';
 
 export const RIELT_INQUIRY_ONLY_HELPER =
-  'Inquiry-only listing preview: запрос уточняет детали у владельца; это не бронь, не оплата и не inventory authority.';
+  `${PROJECTION_LABELS.inquiryOnly} listing preview: запрос уточняет детали у владельца; это не бронь, не оплата и не inventory authority.`;
 
 export const RIELT_AVAILABILITY_PREVIEW_HELPER =
   'Availability preview для запроса; точные даты подтверждаются владельцем вне Rielt.';
 
 export const RIELT_SOURCE_HELPER =
-  'Source label показывает происхождение presentation-слоя и не является proof metadata.';
+  PROJECTION_HELPERS.sourceNotProofMetadata;
 
 export function getRieltSourceChip(listing: Listing): string {
-  return listing.presentation?.source === 'seed' ? 'Источник: seed preview' : 'Источник: runtime projection';
+  return getProjectionSourceLabel(listing.presentation?.source === 'seed' ? 'seed' : 'runtime');
 }
 
 export function getRieltSourceDescription(listing: Listing): string {

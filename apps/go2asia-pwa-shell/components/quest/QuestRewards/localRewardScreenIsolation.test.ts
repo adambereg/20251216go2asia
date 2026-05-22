@@ -70,4 +70,36 @@ describe('local reward screen isolation', () => {
     expect(rewardsActions).toContain('Must not be used as reward receipt');
     expect(utilsIndex).not.toContain("export * from './rewards'");
   });
+
+  it('keeps active Quest reward preview surfaces in a non-proof class', () => {
+    const home = readAppFile('app/(public)/quest/QuestHomeClient.tsx');
+    const detail = readAppFile('app/(public)/quest/[id]/QuestDetailClient.tsx');
+    const runner = readAppFile('app/(public)/quest/[id]/run/QuestRunnerClient.tsx');
+    const questCard = readAppFile('components/quest/QuestCard.tsx');
+    const questRewards = readAppFile('components/quest/QuestDetail/QuestRewards.tsx');
+    const questSteps = readAppFile('components/quest/QuestDetail/QuestSteps.tsx');
+    const files = [home, detail, runner, questCard, questRewards, questSteps].join('\n');
+
+    expect(home).toContain('PROJECTION_LABELS.preview');
+    expect(home).toContain('Не Points_row');
+    expect(detail).toContain('PROJECTION_LABELS.preview');
+    expect(runner).toContain('PROJECTION_LABELS.preview');
+    expect(questCard).toContain('badge metadata preview');
+    expect(questRewards).toContain('Не badge_award_fact');
+    expect(questSteps).toContain('PROJECTION_LABELS.preview');
+    expect(questSteps).toContain(': до');
+
+    expect(files).not.toContain('claim reward');
+    expect(files).not.toContain('reward receipt');
+    expect(files).not.toContain('NFT ownership');
+    expect(files).not.toContain('earned');
+    expect(files).not.toContain('awarded');
+    expect(files).not.toContain('received');
+    expect(files).not.toContain('получено');
+    expect(files).not.toContain('начислено');
+    expect(files).not.toContain('получить награду');
+    expect(files).not.toContain('полученный бейдж');
+    expect(files).not.toContain('XP');
+    expect(files).not.toContain('leaderboard');
+  });
 });

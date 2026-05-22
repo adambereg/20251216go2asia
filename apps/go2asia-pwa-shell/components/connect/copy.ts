@@ -1,8 +1,14 @@
+import { PROJECTION_HELPERS, PROJECTION_LABELS } from '../shared/projection';
+
 export const CONNECT_DEFAULT_HERO_DESCRIPTION =
-  'Read-only projection активности, внутренних Points и off-chain бейджей Go2Asia';
+  `${PROJECTION_LABELS.readOnlyProjection} активности, внутренних Points и off-chain бейджей Go2Asia`;
 
 export const CONNECT_POINTS_ACTIVITY_DESCRIPTION =
-  'Read-only projection по backend-событиям Go2Asia. Не Points_row, не receipt и не финансовый wallet.';
+  `${PROJECTION_LABELS.readOnlyProjection} по backend-событиям Go2Asia. Не Points_row, не receipt и не финансовый wallet.`;
+
+export const CONNECT_ACTIVITY_SUMMARY_LABEL = `${PROJECTION_LABELS.activitySummary} с Points`;
+
+export const CONNECT_ACTIVITY_REFERENCE_HELPER = PROJECTION_HELPERS.activityNotReceipt;
 
 export const CONNECT_POINTS_EARNED_LABEL = 'Points по backend-событиям (projection)';
 

@@ -14,6 +14,7 @@ import { quest } from '@go2asia/sdk';
 import type { QuestApiError, QuestListResponse, QuestSummaryResponse } from '@go2asia/sdk/quest';
 import { describeQuestExperience, formatCityLabel, formatDifficultyLabel } from './questPresentation';
 import { getQuestCardMediaRuntimeFirst, getQuestSummaryRuntimeFirst } from './questRuntimeMetadata';
+import { PROJECTION_LABELS } from '@/components/shared/projection';
 
 function getQuestBadge(item: QuestSummaryResponse): string {
   if (item.theme === 'photo_task') return 'Фото-задание';
@@ -136,7 +137,12 @@ export function QuestHomeClient() {
 
                   <div className="mt-4 space-y-1 text-sm text-slate-600">
                     <p>{describeQuestExperience(item)}</p>
-                    {item.rewardPoints != null ? <p>Internal Points после подтверждения: {item.rewardPoints}</p> : null}
+                    {item.rewardPoints != null ? (
+                      <p>
+                        {PROJECTION_LABELS.preview} internal Points: {item.rewardPoints}. Не Points_row; факт появляется только после
+                        backend-подтверждения.
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-purple-700">

@@ -12,6 +12,7 @@ import { MapPin, Star, Wifi, Home, Users } from 'lucide-react';
 import type { Listing } from './types';
 import { formatDistance, getGeoPrecisionLabel, resolveGeoPrecision } from './utils/geo';
 import { RIELT_INQUIRY_ONLY_HELPER, getRieltCuratorSignalLabel, getRieltSourceChip } from './copy';
+import { PROJECTION_LABELS, ProjectionChip } from '../shared/projection';
 
 interface ListingCardProps {
   listing: Listing;
@@ -54,9 +55,9 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         
         {/* Бейджи */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-2">
-          <span className="px-2 py-0.5 bg-white/90 text-slate-700 border border-slate-200 rounded text-xs font-medium">
+          <ProjectionChip tone="source" className="bg-white/90 px-2 py-0.5">
             {sourceChip}
-          </span>
+          </ProjectionChip>
           {hasRfTruth && (
             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               RF-партнёр
@@ -107,6 +108,11 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         {listing.presentation?.trustLabel ? (
           <p className="text-xs text-slate-500 mb-2 line-clamp-1">{listing.presentation.trustLabel}</p>
         ) : null}
+        <div className="mb-2">
+          <ProjectionChip tone="inquiry" className="px-2 py-0.5">
+            {PROJECTION_LABELS.inquiryOnly}
+          </ProjectionChip>
+        </div>
         <p className="text-xs text-slate-500 mb-2 line-clamp-2">{RIELT_INQUIRY_ONLY_HELPER}</p>
         {precision !== 'none' ? (
           <p className="text-xs text-slate-500 mb-2">{getGeoPrecisionLabel(precision)}</p>

@@ -27,6 +27,7 @@ import {
 } from '../../questPresentation';
 import { getQuestStepMediaFallback } from '../../questMediaContent';
 import { isSpatialStep, resolveQuestMapScope, type QuestMapPoint } from '../../questMapPresentation';
+import { PROJECTION_LABELS } from '@/components/shared/projection';
 
 interface QuestRunnerClientProps {
   quest: QuestDetailResponse;
@@ -533,9 +534,16 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                         <p className="mt-1 text-sm text-slate-600">{getProofTypeLabel(currentProofType)}</p>
                       </div>
                       {currentStep.rewardPoints != null ? (
-                        <span className="text-xs text-slate-500">До {currentStep.rewardPoints} очков</span>
+                        <span className="text-xs text-slate-500">
+                          {PROJECTION_LABELS.preview}: до {currentStep.rewardPoints} internal Points
+                        </span>
                       ) : null}
                     </div>
+                    {currentStep.rewardPoints != null ? (
+                      <p className="mt-2 text-xs text-slate-500">
+                        {PROJECTION_LABELS.preview} не является Points_row или receipt; статус Points подтверждается отдельно backend-данными.
+                      </p>
+                    ) : null}
 
                     {currentProofType === 'geo' ? (
                       <div className="mt-4 space-y-3">

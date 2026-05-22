@@ -90,10 +90,12 @@ describe('rielt source labels and inquiry boundary', () => {
       'components/rielt/ListingDetail/Verification.tsx',
     ];
     const files = activeFiles.map(readAppFile).join('\n');
+    const sharedProjectionCopy = readAppFile('components/shared/projection/copy.ts');
+    const filesAndSharedCopy = `${files}\n${sharedProjectionCopy}`;
 
-    expect(files).toContain('Источник: seed preview');
-    expect(files).toContain('Источник: runtime projection');
-    expect(files).toContain('Inquiry-only');
+    expect(filesAndSharedCopy).toContain('Источник: seed preview');
+    expect(filesAndSharedCopy).toContain('Источник: runtime projection');
+    expect(filesAndSharedCopy).toContain('Inquiry-only');
     expect(files).toContain('listing previews');
     expect(files).toContain('seed preview');
     expect(files).toContain('Кураторский сигнал');

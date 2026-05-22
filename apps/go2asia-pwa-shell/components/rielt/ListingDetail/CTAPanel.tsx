@@ -11,6 +11,7 @@ import { Heart, Share2 } from 'lucide-react';
 import { createListingInquiry } from '@go2asia/sdk/rielt';
 import type { Listing } from '../types';
 import { RIELT_INQUIRY_ONLY_HELPER, getRieltSourceChip, getRieltSourceDescription } from '../copy';
+import { PROJECTION_LABELS, ProjectionChip } from '../../shared/projection';
 
 interface CTAPanelProps {
   listing: Listing;
@@ -131,12 +132,10 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
 
       <div className="rounded-lg border border-slate-200 p-3 mb-5">
         <div className="mb-2 flex flex-wrap gap-2">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+          <ProjectionChip tone="source">
             {getRieltSourceChip(listing)}
-          </span>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-            Inquiry-only
-          </span>
+          </ProjectionChip>
+          <ProjectionChip tone="inquiry">{PROJECTION_LABELS.inquiryOnly}</ProjectionChip>
         </div>
         <p className="text-xs text-slate-600">
           {getRieltSourceDescription(listing)} Ваучеры и RF-предложения открываются в RF Asia; Rielt не подтверждает

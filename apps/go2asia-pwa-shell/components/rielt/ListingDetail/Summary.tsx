@@ -8,6 +8,7 @@
 import { MapPin, Users, Bed, Bath, Square, Star } from 'lucide-react';
 import type { Listing } from '../types';
 import { RIELT_INQUIRY_ONLY_HELPER, getRieltSourceChip, getRieltSourceDescription } from '../copy';
+import { PROJECTION_LABELS, ProjectionChip } from '../../shared/projection';
 
 interface SummaryProps {
   listing: Listing;
@@ -25,12 +26,12 @@ export function Summary({ listing }: SummaryProps) {
       {/* Заголовок и локация */}
       <div className="mb-4">
         <div className="mb-3 flex flex-wrap gap-2">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+          <ProjectionChip tone="source" className="px-3">
             {getRieltSourceChip(listing)}
-          </span>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
-            Inquiry-only
-          </span>
+          </ProjectionChip>
+          <ProjectionChip tone="inquiry" className="px-3">
+            {PROJECTION_LABELS.inquiryOnly}
+          </ProjectionChip>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
           {listing.title}
