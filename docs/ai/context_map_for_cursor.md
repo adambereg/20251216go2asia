@@ -108,6 +108,44 @@ Cursor не должен читать “всё подряд”.
 
 ---
 
+# 2.1. Physical AI Context Capsules
+
+Stage 12.x.1 created the first reusable physical capsule layer under `docs/ai/context/`.
+
+These files are bounded manifests, not replacements for ADR, architecture docs, role files, workflows or Stage 10/11/12 canon. Use them to reduce prompt boilerplate and then attach only the upstream SSOT needed for the specific slice.
+
+## Capsule manifests
+
+| Capsule | File | Use when |
+|---|---|---|
+| Core governance | `docs/ai/context/core/capsule.md` | Complex Go2Asia tasks, stage/slice work, canon/governance boundaries |
+| UI product reality | `docs/ai/context/ui/capsule.md` | UI, copy, mock, dashboard, projection, badge, wallet-like or Path B vocabulary work |
+| Economy boundaries | `docs/ai/context/economy/capsule.md` | Points, rewards, spendability, badges-as-value, G2A/NFT/token/bridge/payout wording or logic |
+| Security and proof | `docs/ai/context/security/capsule.md` | Proof, receipt, fraud, abuse, replay, double-claim, support proof or mock-as-proof risks |
+| Staging and smoke | `docs/ai/context/staging/capsule.md` | Smoke, staging, runtime validation, evidence bundle and readiness-claim review |
+| Stage 12 product reality | `docs/ai/context/stage_12_product_reality/capsule.md` | Stage 12.x route/type cleanup, mock inventory, projection metadata UI requirements and Stage 12 closure |
+
+## Composition rules
+
+```text
+complex_task_context = core + primary_domain_capsule + optional_secondary_risk_capsule
+```
+
+Rules:
+
+- use `core/` for complex tasks;
+- choose one primary domain capsule;
+- add a secondary capsule only for a real risk trigger;
+- if more than three capsules are needed, split the slice;
+- upstream SSOT always wins if a capsule and source doc conflict;
+- use `docs/ai/context/routing_rules.md` for practical prompt attachment examples.
+
+## Anti-overload rule
+
+Do not attach the whole Stage 10/11/12 history when `core/` plus one domain capsule and one upstream stage document is enough.
+
+---
+
 # 3. Базовые контекстные капсулы
 
 ## 3.1. AI Ops / Multi-agent Governance Capsule
@@ -764,6 +802,8 @@ Cursor не должен читать “всё подряд”.
 
 | Task | Context capsule | Lead agents |
 |---|---|---|
+| Stage 12.x context capsules | `docs/ai/context/core/` + affected capsule | Orchestrator, Technical Canon Writer, Planner/Slice Strategist |
+| Stage 12.x product reality cleanup | `docs/ai/context/core/` + `docs/ai/context/stage_12_product_reality/` + `docs/ai/context/ui/` | Orchestrator, Frontend/QA, Technical Canon Writer |
 | New feature | Requirements + Architecture + Delivery | Orchestrator, Requirements, Architect, Planner |
 | UI page | Frontend/PWA | Frontend, QA |
 | Backend API | Backend/API | Backend, Architect if contract changes |
@@ -804,7 +844,7 @@ unless explicitly allowed by owner / ADR.
 
 Cursor must not:
 
-- create new top-level AI directories outside `roles/`, `workflows/`, `decisions/`;
+- create new top-level AI directories outside `roles/`, `workflows/`, `decisions/`, and the Stage 12.x.1 owner-approved `context/` capsule layer;
 - create new infrastructure without Orchestrator approval;
 - change deployment architecture without ADR;
 - change canonical economy/security/runtime rules without review;
@@ -909,6 +949,14 @@ Cursor must not propose replacing the infrastructure stack without explicit arch
 
 # 13. Связанные документы
 
+- `docs/ai/context/README.md`
+- `docs/ai/context/routing_rules.md`
+- `docs/ai/context/core/capsule.md`
+- `docs/ai/context/ui/capsule.md`
+- `docs/ai/context/economy/capsule.md`
+- `docs/ai/context/security/capsule.md`
+- `docs/ai/context/staging/capsule.md`
+- `docs/ai/context/stage_12_product_reality/capsule.md`
 - `docs/ai/roles_overview.md`
 - `docs/ai/agents_index.md`
 - `docs/ai/workflows.md`
