@@ -7,6 +7,7 @@
 
 import { MapPin, Users, Bed, Bath, Square, Star } from 'lucide-react';
 import type { Listing } from '../types';
+import { RIELT_INQUIRY_ONLY_HELPER, getRieltSourceChip, getRieltSourceDescription } from '../copy';
 
 interface SummaryProps {
   listing: Listing;
@@ -23,6 +24,14 @@ export function Summary({ listing }: SummaryProps) {
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
       {/* Заголовок и локация */}
       <div className="mb-4">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+            {getRieltSourceChip(listing)}
+          </span>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+            Inquiry-only
+          </span>
+        </div>
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
           {listing.title}
         </h1>
@@ -39,6 +48,9 @@ export function Summary({ listing }: SummaryProps) {
         {listing.presentation?.trustLabel ? (
           <div className="text-xs text-slate-500 mt-2">{listing.presentation.trustLabel}</div>
         ) : null}
+        <p className="mt-3 text-xs text-slate-500">
+          {getRieltSourceDescription(listing)} {RIELT_INQUIRY_ONLY_HELPER}
+        </p>
       </div>
 
       {/* Рейтинг и отзывы */}

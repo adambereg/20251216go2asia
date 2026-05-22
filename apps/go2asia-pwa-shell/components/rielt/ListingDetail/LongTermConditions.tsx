@@ -22,6 +22,10 @@ export function LongTermConditions({ listing }: LongTermConditionsProps) {
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
       <h2 className="text-2xl font-bold text-slate-900 mb-4">Условия долгосрочной аренды</h2>
+      <p className="mb-4 text-sm text-slate-600">
+        Условия показаны как listing preview для inquiry; точные сроки, залог и коммунальные платежи уточняются через
+        владельца и не являются договором, оплатой или подтверждённой доступностью.
+      </p>
       
       <div className="space-y-4">
         <div className="flex items-start gap-3">

@@ -35,7 +35,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   if (filters.bedroomsMin != null) activeFilters.push({ key: 'bedroomsMin', label: `Спальни от: ${filters.bedroomsMin}` });
   if (filters.bedroomsMax != null) activeFilters.push({ key: 'bedroomsMax', label: `Спальни до: ${filters.bedroomsMax}` });
   if (filters.onlyRF) activeFilters.push({ key: 'onlyRF', label: 'Партнёры RF' });
-  if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'С проверкой куратора' });
+  if (filters.onlyPROVerified) activeFilters.push({ key: 'onlyPROVerified', label: 'Кураторский контекст' });
   if (filters.concierge) activeFilters.push({ key: 'concierge', label: 'С сопровождением' });
   if (filters.furnished) activeFilters.push({ key: 'furnished', label: 'С мебелью' });
   if (filters.serviced) activeFilters.push({ key: 'serviced', label: 'С обслуживанием' });
@@ -45,7 +45,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   if (filters.nearCenter) activeFilters.push({ key: 'nearCenter', label: 'В центре' });
   if (filters.quietArea) activeFilters.push({ key: 'quietArea', label: 'Тихий район' });
   if (filters.expatArea) activeFilters.push({ key: 'expatArea', label: 'Район с экспатами' });
-  if (filters.readyToMove) activeFilters.push({ key: 'readyToMove', label: 'Готово к заезду' });
+  if (filters.readyToMove) activeFilters.push({ key: 'readyToMove', label: 'Заезд можно уточнить' });
 
   if (activeFilters.length === 0) {
     return null;

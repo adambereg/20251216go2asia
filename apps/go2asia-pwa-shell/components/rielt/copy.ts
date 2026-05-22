@@ -1,0 +1,24 @@
+import type { Listing } from './types';
+
+export const RIELT_INQUIRY_ONLY_HELPER =
+  'Inquiry-only listing preview: запрос уточняет детали у владельца; это не бронь, не оплата и не inventory authority.';
+
+export const RIELT_AVAILABILITY_PREVIEW_HELPER =
+  'Availability preview для запроса; точные даты подтверждаются владельцем вне Rielt.';
+
+export const RIELT_SOURCE_HELPER =
+  'Source label показывает происхождение presentation-слоя и не является proof metadata.';
+
+export function getRieltSourceChip(listing: Listing): string {
+  return listing.presentation?.source === 'seed' ? 'Источник: seed preview' : 'Источник: runtime projection';
+}
+
+export function getRieltSourceDescription(listing: Listing): string {
+  return listing.presentation?.source === 'seed'
+    ? 'Seed preview: демонстрационные материалы витрины поверх runtime listing projection.'
+    : 'Runtime projection: read-only listing preview без inventory authority.';
+}
+
+export function getRieltCuratorSignalLabel(): string {
+  return 'Кураторский сигнал';
+}

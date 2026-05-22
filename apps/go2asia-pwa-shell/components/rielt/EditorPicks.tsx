@@ -118,7 +118,7 @@ export function EditorPicks() {
         Curated подборки
       </h2>
       <p className="text-sm text-slate-600 mb-4">
-        Короткие сценарии вместо длинной ленты: выберите один режим и перейдите к детальному каталогу.
+        Короткие inquiry-сценарии вместо длинной ленты: карточки остаются listing previews с source labels.
       </p>
 
       <div className="flex flex-wrap gap-2 mb-5">

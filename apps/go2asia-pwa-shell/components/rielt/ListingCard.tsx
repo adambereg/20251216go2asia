@@ -11,6 +11,7 @@ import { MapPin, Star, Wifi, Home, Users } from 'lucide-react';
 // Badge будет использоваться напрямую, без импорта из @go2asia/ui
 import type { Listing } from './types';
 import { formatDistance, getGeoPrecisionLabel, resolveGeoPrecision } from './utils/geo';
+import { RIELT_INQUIRY_ONLY_HELPER, getRieltCuratorSignalLabel, getRieltSourceChip } from './copy';
 
 interface ListingCardProps {
   listing: Listing;
@@ -35,6 +36,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         ? 'RF-предложение для объекта'
         : 'RF-партнёр'
     : null;
+  const sourceChip = getRieltSourceChip(listing);
 
   return (
     <Link
@@ -52,6 +54,9 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         
         {/* Бейджи */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-2">
+          <span className="px-2 py-0.5 bg-white/90 text-slate-700 border border-slate-200 rounded text-xs font-medium">
+            {sourceChip}
+          </span>
           {hasRfTruth && (
             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium">
               RF-партнёр
@@ -65,7 +70,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
           {listing.proVerification?.verified && (
             <div className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-xs font-medium flex items-center gap-1">
               <span>✓</span>
-              Куратор
+              {getRieltCuratorSignalLabel()}
             </div>
           )}
           {listing.isNew && (
@@ -102,6 +107,7 @@ export function ListingCard({ listing, showDistance, distance }: ListingCardProp
         {listing.presentation?.trustLabel ? (
           <p className="text-xs text-slate-500 mb-2 line-clamp-1">{listing.presentation.trustLabel}</p>
         ) : null}
+        <p className="text-xs text-slate-500 mb-2 line-clamp-2">{RIELT_INQUIRY_ONLY_HELPER}</p>
         {precision !== 'none' ? (
           <p className="text-xs text-slate-500 mb-2">{getGeoPrecisionLabel(precision)}</p>
         ) : null}

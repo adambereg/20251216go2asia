@@ -9,6 +9,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Listing } from '../types';
+import { getRieltCuratorSignalLabel, getRieltSourceChip } from '../copy';
 
 interface GalleryProps {
   listing: Listing;
@@ -78,6 +79,9 @@ export function Gallery({ listing }: GalleryProps) {
 
         {/* Бейджи поверх фото */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+          <span className="px-3 py-1.5 bg-white/90 text-slate-700 rounded-lg font-semibold text-sm shadow-lg">
+            {getRieltSourceChip(listing)}
+          </span>
           {listing.isRF && (
             <span className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 shadow-lg">
               <span>✓</span>
@@ -87,7 +91,7 @@ export function Gallery({ listing }: GalleryProps) {
           {listing.proVerification?.verified && (
             <div className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 shadow-lg">
               <span>✓</span>
-              Проверено PRO
+              {getRieltCuratorSignalLabel()}
             </div>
           )}
           {listing.isNew && (
@@ -129,7 +133,7 @@ export function Gallery({ listing }: GalleryProps) {
 
       {listing.presentation?.sparseMedia ? (
         <div className="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-t border-slate-200">
-          Для этого объявления доступен ограниченный медиа-набор (sparse-media scenario).
+          Для этого listing preview доступен ограниченный медиа-набор (sparse-media scenario), не inventory proof.
         </div>
       ) : null}
     </div>

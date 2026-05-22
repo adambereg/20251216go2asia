@@ -16,7 +16,7 @@ interface QuickFiltersProps {
 
 const TRUST_FILTERS = [
   { key: 'onlyRF', label: 'Партнёры RF', icon: CheckCircle },
-  { key: 'onlyPROVerified', label: 'С проверкой куратора', icon: CheckCircle },
+  { key: 'onlyPROVerified', label: 'Кураторский контекст', icon: CheckCircle },
   { key: 'concierge', label: 'С сопровождением', icon: ShieldCheck },
 ] as const;
 
@@ -82,7 +82,7 @@ export function QuickFilters({ filters, onChange, onApplyPreset }: QuickFiltersP
         </div>
       </div>
       <p className="text-xs text-slate-500">
-        Быстрые кнопки помогают сузить подбор и сразу перейти к подходящим вариантам.
+        Быстрые кнопки помогают сузить inquiry-критерии; они не подтверждают наличие или готовность объекта.
       </p>
     </div>
   );

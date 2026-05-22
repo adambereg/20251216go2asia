@@ -82,14 +82,14 @@ export function RieltHomeClient() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <section className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-        Rielt.Market — подбор жилья через Russian Friendly партнёров и проверку кураторов. Здесь не общая доска
-        объявлений.
+        Rielt.Market — inquiry-only подбор жилья через source-labeled listing previews. Seed/demo материалы помечаются
+        отдельно; Rielt не является live booking, payment или verified inventory platform.
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Найти жильё</h2>
         <p className="text-sm text-slate-600 mb-4">
-          Выберите срок, локацию и основные параметры. Дополнительные настройки доступны по кнопке ниже.
+          Выберите срок, локацию и основные параметры для запроса. Даты и условия уточняются через владельца.
         </p>
         <SearchBar onSearch={handleSearch} initialFilters={filters} />
       </section>
