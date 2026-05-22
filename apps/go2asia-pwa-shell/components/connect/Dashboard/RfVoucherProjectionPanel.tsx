@@ -162,7 +162,7 @@ export function RfVoucherProjectionPanel({
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
           <p className="text-sm text-slate-600">
-            Активные, использованные и последние события RF-активности.
+            Read-only RF lifecycle projection; не receipt и не payment confirmation.
           </p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export function RfVoucherProjectionPanel({
           <p className="font-semibold text-slate-900">Краткое превью RF-деталей</p>
           <p className="mt-1">
             Активные: {projection.groups.active.length.toLocaleString('ru-RU')}. Использованные:{' '}
-            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки остаются в RF.
+            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки остаются в RF owner surface.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Button variant="secondary" size="sm" onClick={() => setIsExpanded(true)}>
@@ -214,7 +214,7 @@ export function RfVoucherProjectionPanel({
               title="Активные RF-ваучеры"
               empty="Активных RF-ваучеров сейчас нет."
               vouchers={active}
-              dateFor={(voucher) => `Получен/обновлён: ${formatDate(voucher.statusChangedAt ?? voucher.claimedAt)}`}
+              dateFor={(voucher) => `Lifecycle timestamp: ${formatDate(voucher.statusChangedAt ?? voucher.claimedAt)}`}
             />
             <VoucherGroup
               title="Использованные RF-ваучеры"
@@ -226,7 +226,7 @@ export function RfVoucherProjectionPanel({
 
           <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             Недоступные статусы: {projection.groups.unavailable.length.toLocaleString('ru-RU')}. Ожидает активации:{' '}
-            {projection.groups.pendingActivation.length.toLocaleString('ru-RU')}. Можно получить снова:{' '}
+            {projection.groups.pendingActivation.length.toLocaleString('ru-RU')}. Доступно снова по RF lifecycle:{' '}
             {projection.groups.repeatableAgain.length.toLocaleString('ru-RU')}. Полный список остаётся в RF.
           </div>
 

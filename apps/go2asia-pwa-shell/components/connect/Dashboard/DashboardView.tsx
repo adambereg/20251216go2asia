@@ -20,7 +20,7 @@ export function DashboardView() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Ваш личный центр активности, Points и достижений в Go2Asia." />
+        <ConnectHero subtitle="Read-only projection активности, Points и бейджей Go2Asia." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -40,7 +40,7 @@ export function DashboardView() {
   if (isError || !dashboard) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Ваш личный центр активности, Points и достижений в Go2Asia." />
+        <ConnectHero subtitle="Read-only projection активности, Points и бейджей Go2Asia." />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
@@ -76,7 +76,7 @@ export function DashboardView() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Ваш личный центр активности, Points и достижений в Go2Asia." />
+      <ConnectHero subtitle="Read-only projection активности, Points и бейджей Go2Asia." />
 
       {/* Навигация */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">

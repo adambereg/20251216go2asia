@@ -142,7 +142,11 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
         </div>
       </div>
 
-      {/* Список транзакций */}
+      <p className="text-sm text-slate-600">
+        Transaction-like rows are read-only activity references. Они не являются receipt, proof или полным audit trail.
+      </p>
+
+      {/* Список activity references */}
       <div className="space-y-2">
         {filteredTransactions.length > 0 ? (
           <>
@@ -185,7 +189,7 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
           </>
         ) : (
           <Card className="p-8 text-center">
-            <p className="text-slate-500">История начислений появится здесь после первых действий.</p>
+            <p className="text-slate-500">Activity history projection появится здесь после первых backend-событий.</p>
             <p className="text-sm text-slate-400 mt-1">
               Если фильтры включены, попробуйте выбрать “Все”.
             </p>

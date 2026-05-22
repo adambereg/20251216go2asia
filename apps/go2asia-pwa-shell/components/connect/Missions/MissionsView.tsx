@@ -50,7 +50,7 @@ export function MissionsView() {
               <h2 className="text-xl font-semibold text-amber-900">Персональные задания появятся позже</h2>
               <p className="text-sm text-amber-900/80 mt-2">
                 Connect пока не ведёт отдельные миссии. Вы можете проходить задания в Quest Asia, приглашать друзей и
-                получать бейджи за реальные действия.
+                видеть badge projections после backend-подтверждения.
               </p>
             </div>
             <Badge className="bg-amber-100 text-amber-800">{CONNECT_FUTURE_BADGE_TEXT}</Badge>

@@ -44,7 +44,12 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
   return (
     <Card className="p-6 mb-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Последние действия с Points</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Activity summary с Points</h2>
+          <p className="text-sm text-slate-600">
+            Reference-only projection последних строк; не receipt и не полный audit trail.
+          </p>
+        </div>
         <Link href="/connect/wallet">
           <Button variant="secondary" size="sm" className="w-full sm:w-auto">
             Показать все
@@ -85,7 +90,7 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
           ))
         ) : (
           <div className="text-center py-8 text-slate-500">
-            <p>История начислений появится после первых действий в Go2Asia.</p>
+            <p>Activity summary появится после первых backend-событий Go2Asia.</p>
           </div>
         )}
       </div>

@@ -47,8 +47,8 @@ export function AchievementsList({ badges }: AchievementsListProps) {
                 {status === 'all'
                   ? 'Все'
                   : status === 'earned'
-                    ? 'Получен'
-                    : 'Пока не получен'}
+                    ? 'Отражён'
+                    : 'Пока не отражён'}
               </Chip>
             ))}
           </div>

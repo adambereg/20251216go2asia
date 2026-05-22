@@ -57,16 +57,14 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               <Coins className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-slate-600">Внутренние Points</h3>
+              <h3 className="text-sm font-medium text-slate-600">Внутренние Points projection</h3>
               <p className="text-3xl font-bold text-slate-900">{formatPoints(totalPoints)} Points</p>
               <p className="text-sm text-slate-500 mt-2">
                 {hasPoints
                   ? 'Сводка read-only: итог формируется из backend-событий и не является финансовым балансом или receipt.'
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
-              {updatedAt && (
-                <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>
-              )}
+              {updatedAt && <p className="text-xs text-slate-500 mt-2">Backend timestamp: {updatedAt}</p>}
               {walletSummaryError && (
                 <p className="text-xs text-amber-700 mt-2">
                   Структура Points временно недоступна, показываем последнюю read-only сводку.
@@ -89,7 +87,9 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               </div>
               <Coins className="w-4 h-4 text-emerald-600" />
             </div>
-            <p className="text-xs text-slate-500 mt-2">Внутренняя доступность подтверждается runtime при конкретном действии.</p>
+            <p className="text-xs text-slate-500 mt-2">
+              Projection only; доступность проверяется runtime при конкретном действии.
+            </p>
           </div>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
             <div className="flex items-center justify-between gap-3">
@@ -99,7 +99,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               </div>
               <LockKeyhole className="w-4 h-4 text-amber-700" />
             </div>
-            <p className="text-xs text-amber-800 mt-2">Удерживаются до выполнения условий программы.</p>
+            <p className="text-xs text-amber-800 mt-2">Projection с условиями; не обещание spend или reward grant.</p>
           </div>
         </div>
       </Card>

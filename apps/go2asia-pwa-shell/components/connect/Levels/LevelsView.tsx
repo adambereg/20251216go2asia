@@ -102,7 +102,7 @@ export function LevelsView() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Ваши достижения в Go2Asia." />
+        <ConnectHero subtitle="Read-only badge projection Go2Asia; не asset ownership и не receipt." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -121,7 +121,7 @@ export function LevelsView() {
   if (hasError) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Ваши достижения в Go2Asia." />
+        <ConnectHero subtitle="Read-only badge projection Go2Asia; не asset ownership и не receipt." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -150,7 +150,7 @@ export function LevelsView() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <ConnectHero subtitle="Ваши достижения в Go2Asia." />
+      <ConnectHero subtitle="Read-only badge projection Go2Asia; не asset ownership и не receipt." />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <ConnectNav />
@@ -159,7 +159,9 @@ export function LevelsView() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Бейджи</h1>
-          <p className="text-slate-600 mt-1">Смотрите полученные и доступные бейджи Connect.</p>
+          <p className="text-slate-600 mt-1">
+            Смотрите off-chain badge projections. Connect не является badge_award_fact или ownership surface.
+          </p>
         </div>
 
         <Card className="p-6 mb-6">
@@ -169,13 +171,14 @@ export function LevelsView() {
                 <Award className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Получено бейджей</p>
+                <p className="text-sm text-slate-600">Badge projections reflected</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">{earnedCount}</p>
               </div>
             </div>
           </div>
           <p className="text-sm text-slate-600 mt-4">
-            Бейджи отмечают подтверждённые действия в Go2Asia. Сейчас здесь показаны только off-chain бейджи из каталога и ваши полученные бейджи.
+            Бейджи отмечают backend-подтверждённые действия в Go2Asia. Сейчас здесь показана read-only projection
+            off-chain бейджей; этот блок не является asset ownership или receipt.
           </p>
         </Card>
 
@@ -187,7 +190,7 @@ export function LevelsView() {
             <Card className="p-8 text-center">
               <p className="text-slate-600 font-medium">У вас пока нет бейджей.</p>
               <p className="text-sm text-slate-500 mt-1">
-                Бейдж появится здесь только после backend-подтверждения выдачи.
+                Бейдж появится здесь только после backend-подтверждения.
               </p>
             </Card>
           )}
@@ -198,7 +201,7 @@ export function LevelsView() {
             <div>
               <p className="text-sm font-semibold text-slate-900">Прогресс уровней планируется</p>
               <p className="text-sm text-slate-600 mt-1">
-                Мы не показываем прогресс уровней без backend-данных. Пока отслеживайте Points и бейджи.
+                Мы не показываем прогресс уровней без backend-данных. Пока отслеживайте read-only Points и badge projections.
               </p>
             </div>
             <Badge className="bg-slate-100 text-slate-600">{CONNECT_FUTURE_BADGE_TEXT}</Badge>

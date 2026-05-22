@@ -115,14 +115,14 @@ function PointsSummary({
             <Coins className="w-8 h-8 text-emerald-600" />
           </div>
           <div>
-              <h2 className="text-sm font-medium text-slate-600">Points — read-only след подтверждённой активности</h2>
+              <h2 className="text-sm font-medium text-slate-600">Points — read-only projection активности</h2>
             <p className="text-4xl font-bold text-slate-900 mt-1">{formatPoints(points)} Points</p>
             <p className="text-sm text-slate-600 mt-3">
               {points > 0
                 ? CONNECT_POINTS_ACTIVITY_DESCRIPTION
                 : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
             </p>
-            {updatedAt && <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>}
+            {updatedAt && <p className="text-xs text-slate-500 mt-2">Backend timestamp: {updatedAt}</p>}
             {walletSummaryError && (
               <p className="text-xs text-amber-700 mt-2">
                 Структура Points временно недоступна, показываем последнюю read-only сводку.
@@ -145,19 +145,19 @@ function PointsSummary({
             <BucketStat
               label={CONNECT_POINTS_BUCKET_LABELS.available}
               value={walletSummary.availablePoints}
-              description="Внутренняя доступность подтверждается runtime при конкретном действии."
+              description="Projection only; доступность проверяется runtime при конкретном действии."
               icon={<Coins className="w-5 h-5" />}
             />
             <BucketStat
               label={CONNECT_POINTS_BUCKET_LABELS.locked}
               value={walletSummary.lockedPoints}
-              description="Удерживаются до выполнения условий программы."
+              description="Projection с условиями; не обещание spend или reward grant."
               icon={<LockKeyhole className="w-5 h-5" />}
             />
             <BucketStat
               label={CONNECT_POINTS_BUCKET_LABELS.network}
               value={walletSummary.networkPoints}
-              description="Points, связанные с активностью приглашённых."
+              description="Reference-only projection активности приглашённых; не commission statement."
               icon={<TrendingUp className="w-5 h-5" />}
             />
             <BucketStat
@@ -173,7 +173,7 @@ function PointsSummary({
               <div>
                 <p className="text-sm font-semibold text-amber-950">У вас есть заблокированные Points</p>
                 <p className="text-sm text-amber-800 mt-1">
-                  Часть Points остаётся условной до runtime-проверки. Это не обещание spend, payout или cashback.
+                  Часть Points остаётся условной до runtime-проверки. Это не обещание spend или финансовой выгоды.
                 </p>
               </div>
               <Button variant="secondary" disabled>
@@ -246,7 +246,7 @@ export function WalletView() {
   if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-          <ConnectHero subtitle="Read-only история внутренних Points и подтверждённой активности." />
+          <ConnectHero subtitle="Read-only projection внутренних Points и backend-активности." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -265,7 +265,7 @@ export function WalletView() {
   if (hasError) {
     return (
       <div className="min-h-screen bg-slate-50">
-          <ConnectHero subtitle="Read-only история внутренних Points и подтверждённой активности." />
+          <ConnectHero subtitle="Read-only projection внутренних Points и backend-активности." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -298,7 +298,7 @@ export function WalletView() {
   return (
     <div className="min-h-screen bg-slate-50">
       <ConnectHero
-        subtitle="Read-only история внутренних Points и подтверждённой активности."
+        subtitle="Read-only projection внутренних Points и backend-активности."
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
@@ -307,8 +307,10 @@ export function WalletView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и история Points</h1>
-          <p className="text-slate-600 mt-1">Read-only история внутренних Points и подтверждённой активности.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и Points projection</h1>
+          <p className="text-slate-600 mt-1">
+            Read-only projection внутренних Points; не financial wallet, не receipt и не accounting statement.
+          </p>
         </div>
 
         <PointsSummary
@@ -319,7 +321,7 @@ export function WalletView() {
         />
 
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">История начислений</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Activity history projection</h2>
           <TransactionList
             transactions={transactions}
             onLoadMore={handleLoadMore}
@@ -330,8 +332,8 @@ export function WalletView() {
         <Card className="p-5 border-slate-200 bg-slate-50">
           <p className="text-sm font-semibold text-slate-900">Расширенные возможности появятся позже</p>
           <p className="text-sm text-slate-600 mt-1">
-            Дополнительные инструменты учёта не входят в текущий MVP Connect. Сейчас здесь отображаются только внутренние Points
-            и read-only история backend-событий.
+            Дополнительные accounting-инструменты не входят в текущий MVP Connect. Сейчас здесь отображаются только
+            internal Points projection и read-only activity summary.
           </p>
         </Card>
       </div>

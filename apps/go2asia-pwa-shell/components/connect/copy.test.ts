@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import {
   CONNECT_DEFAULT_HERO_DESCRIPTION,
   CONNECT_FUTURE_BADGE_TEXT,
@@ -8,6 +10,10 @@ import {
   getConnectLedgerActionLabel,
   getConnectLedgerSourceLabel,
 } from './copy';
+
+function readAppFile(relativePath: string) {
+  return readFileSync(path.join(process.cwd(), relativePath), 'utf8');
+}
 
 describe('connect copy helpers', () => {
   it('keeps ledger action labels in projection-safe wording', () => {
@@ -47,5 +53,43 @@ describe('connect copy helpers', () => {
       /payout|withdraw|topup|usd|bridge|token|nft|g2a|commission|settlement|cash|выплат|вывод|пополн|токен|блокчейн|комисси|доход|заработ/
     );
     expect(text).toContain('points');
+  });
+
+  it('keeps active Connect projection surfaces labeled as non-authoritative projections', () => {
+    const activeFiles = [
+      'app/(authenticated)/connect/page.tsx',
+      'app/(authenticated)/connect/wallet/page.tsx',
+      'app/(authenticated)/connect/referrals/page.tsx',
+      'app/(authenticated)/connect/levels/page.tsx',
+      'components/connect/Dashboard/DashboardView.tsx',
+      'components/connect/Dashboard/DashboardContent.tsx',
+      'components/connect/Dashboard/BalanceCards.tsx',
+      'components/connect/Dashboard/ActivityFeed.tsx',
+      'components/connect/Dashboard/ConnectRfSection.tsx',
+      'components/connect/Dashboard/VoucherSummaryCard.tsx',
+      'components/connect/Dashboard/RfEconomicMeaningCard.tsx',
+      'components/connect/Dashboard/RfVoucherProjectionPanel.tsx',
+      'components/connect/Wallet/WalletView.tsx',
+      'components/connect/Wallet/TransactionList.tsx',
+      'components/connect/Referrals/ReferralsView.tsx',
+      'components/connect/Referrals/ReferralsContent.tsx',
+      'components/connect/Levels/LevelsView.tsx',
+      'components/connect/Levels/AchievementsList.tsx',
+      'components/connect/Levels/AchievementCard.tsx',
+      'components/connect/Missions/MissionsView.tsx',
+      'components/connect/Analytics/AnalyticsView.tsx',
+    ];
+    const files = activeFiles.map(readAppFile).join('\n');
+
+    expect(files).toContain('Read-only dashboard projection');
+    expect(files).toContain('не receipt');
+    expect(files).toContain('не proof');
+    expect(files).toContain('Points projection');
+    expect(files).toContain('Transaction-like rows are read-only activity references');
+    expect(files).toContain('RF lifecycle projection');
+    expect(files).toContain('Badge projection only');
+
+    expect(files).not.toMatch(/proofClass|sourceOwner|ownerFactRef|dataFreshness|stalenessStatus|projectionGeneratedAt|isProof|isReceipt|isAuthoritative|asOf/);
+    expect(files).not.toMatch(/wallet balance|balance updated|NFT ownership|credited|settled|cashback|payout/i);
   });
 });

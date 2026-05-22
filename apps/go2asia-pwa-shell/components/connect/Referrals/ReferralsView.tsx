@@ -32,10 +32,10 @@ function buildReferralLink(code: string) {
 }
 
 function getStatusHelperText(item: ReferralEarningsItem) {
-  if (item.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
+  if (item.status === 'reward_missing') return 'Активация есть, Points projection проверяется.';
   if (item.status === 'pending') return 'Пользователь приглашён, но ещё не стал активным.';
   if (item.status === 'activated') return 'Пользователь стал активным, backend-подтверждение Points может ещё обрабатываться.';
-  return 'Points за приглашение отражены в backend-сводке.';
+  return 'Points за приглашение отражены в read-only backend-сводке.';
 }
 
 function mapEarningItem(item: ReferralEarningsItem, registeredAt?: string): Referral {
@@ -62,7 +62,7 @@ function mapTreeNode(node: ReferralTreeNode): Referral {
     invited_at: node.registeredAt,
     activated_at: node.firstLoginAt ?? null,
     status_helper_text: node.isActive
-      ? 'Пользователь стал активным, начисление может ещё обрабатываться.'
+      ? 'Пользователь стал активным, Points projection может ещё обрабатываться.'
       : 'Пользователь приглашён, но ещё не стал активным.',
   };
 }

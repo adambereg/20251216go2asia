@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { Badge, Button, Card } from '@go2asia/ui';
-import { AlertCircle, CheckCircle, Clock, Copy, Gift, Users } from 'lucide-react';
-import toast from 'react-hot-toast';
-import type { ReferralsData, Referral } from '../types';
-import { CONNECT_POINTS_EARNED_LABEL } from '../copy';
+import { useMemo } from "react";
+import { Badge, Button, Card } from "@go2asia/ui";
+import { AlertCircle, CheckCircle, Clock, Copy, Gift, Users } from "lucide-react";
+import toast from "react-hot-toast";
+import type { ReferralsData, Referral } from "../types";
+import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
 
 interface ReferralsContentProps {
   data: ReferralsData;
@@ -13,60 +13,62 @@ interface ReferralsContentProps {
 }
 
 function formatCompact(n: number) {
-  return n.toLocaleString('ru-RU');
+  return n.toLocaleString("ru-RU");
 }
 
-function getStatusLabel(status: Referral['status']) {
+function getStatusLabel(status: Referral["status"]) {
   switch (status) {
-    case 'pending':
-    case 'registered':
-      return 'Ожидает активации';
-    case 'activated':
-    case 'active':
-      return 'Активирован';
-    case 'rewarded':
-    case 'completed_mission':
-      return 'Начислено';
-    case 'reward_missing':
-      return 'Начисление проверяется';
+    case "pending":
+    case "registered":
+      return "Ожидает активации";
+    case "activated":
+    case "active":
+      return "Активирован";
+    case "rewarded":
+    case "completed_mission":
+      return "Points reflected";
+    case "reward_missing":
+      return "Points projection проверяется";
     default:
-      return 'Ожидает активации';
+      return "Ожидает активации";
   }
 }
 
-function getStatusBadgeClass(status: Referral['status']) {
+function getStatusBadgeClass(status: Referral["status"]) {
   switch (status) {
-    case 'rewarded':
-    case 'completed_mission':
-      return 'bg-emerald-100 text-emerald-700';
-    case 'activated':
-    case 'active':
-      return 'bg-sky-100 text-sky-700';
-    case 'pending':
-    case 'registered':
-      return 'bg-amber-100 text-amber-800';
-    case 'reward_missing':
-      return 'bg-violet-100 text-violet-700';
+    case "rewarded":
+    case "completed_mission":
+      return "bg-emerald-100 text-emerald-700";
+    case "activated":
+    case "active":
+      return "bg-sky-100 text-sky-700";
+    case "pending":
+    case "registered":
+      return "bg-amber-100 text-amber-800";
+    case "reward_missing":
+      return "bg-violet-100 text-violet-700";
     default:
-      return 'bg-slate-100 text-slate-600';
+      return "bg-slate-100 text-slate-600";
   }
 }
 
 function getStatusHelperText(referral: Referral) {
   if (referral.status_helper_text) return referral.status_helper_text;
-  if (referral.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
-  if (referral.status === 'rewarded' || referral.status === 'completed_mission') return 'Points по приглашению начислены и могут удерживаться до выполнения условий.';
-  if (referral.status === 'activated' || referral.status === 'active') {
-    return 'Пользователь стал активным, начисление может ещё обрабатываться.';
+  if (referral.status === "reward_missing") return "Активация есть, Points projection проверяется.";
+  if (referral.status === "rewarded" || referral.status === "completed_mission") {
+    return "Points по приглашению отражены как read-only projection и могут удерживаться до выполнения условий.";
   }
-  return 'Пользователь приглашён. Points по приглашению ожидают выполнения условий.';
+  if (referral.status === "activated" || referral.status === "active") {
+    return "Пользователь стал активным, Points projection может ещё обрабатываться.";
+  }
+  return "Пользователь приглашён. Points по приглашению ожидают выполнения условий.";
 }
 
 function formatDate(value: string) {
-  if (!value) return 'Дата уточняется';
+  if (!value) return "Дата уточняется";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Дата уточняется';
-  return date.toLocaleDateString('ru-RU');
+  if (Number.isNaN(date.getTime())) return "Дата уточняется";
+  return date.toLocaleDateString("ru-RU");
 }
 
 export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
@@ -74,10 +76,12 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
     const total = data.stats.total_users || data.referrals.length;
     const activated =
       data.stats.activated_referrals ??
-      data.referrals.filter((r) => r.status === 'activated' || r.status === 'active' || r.status === 'rewarded').length;
+      data.referrals.filter(
+        (r) => r.status === "activated" || r.status === "active" || r.status === "rewarded"
+      ).length;
     const pending =
       data.stats.pending_referrals ??
-      data.referrals.filter((r) => r.status === 'pending' || r.status === 'registered').length;
+      data.referrals.filter((r) => r.status === "pending" || r.status === "registered").length;
     return {
       totalReferrals: total,
       activatedCount: activated,
@@ -87,15 +91,15 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
 
   const handleCopyLink = async () => {
     if (!data.referral_link) {
-      toast.error('Не удалось скопировать ссылку. Скопируйте её вручную.');
+      toast.error("Не удалось скопировать ссылку. Скопируйте её вручную.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(data.referral_link);
-      toast.success('Ссылка скопирована.');
+      toast.success("Ссылка скопирована.");
     } catch {
-      toast.error('Не удалось скопировать ссылку. Скопируйте её вручную.');
+      toast.error("Не удалось скопировать ссылку. Скопируйте её вручную.");
     }
   };
 
@@ -104,9 +108,17 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Приглашения</h1>
-          <p className="text-slate-600 mt-1">Приглашайте друзей и отслеживайте статусы приглашённых.</p>
+          <p className="text-slate-600 mt-1">
+            Read-only projection статусов приглашённых; не commission statement, не receipt и не
+            proof.
+          </p>
         </div>
-        <Button variant="primary" onClick={onInvite} disabled={!data.referral_link} className="w-full sm:w-auto">
+        <Button
+          variant="primary"
+          onClick={onInvite}
+          disabled={!data.referral_link}
+          className="w-full sm:w-auto"
+        >
           <Users size={16} className="mr-2" />
           Пригласить
         </Button>
@@ -117,7 +129,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-slate-600">Приглашено всего</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{formatCompact(totalReferrals)}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {formatCompact(totalReferrals)}
+              </p>
             </div>
             <div className="p-2 rounded-lg bg-sky-50 text-sky-700">
               <Users size={18} />
@@ -128,7 +142,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-slate-600">Активировались</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{formatCompact(activatedCount)}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {formatCompact(activatedCount)}
+              </p>
             </div>
             <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
               <CheckCircle size={18} />
@@ -139,7 +155,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-slate-600">Ожидают активации</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{formatCompact(pendingCount)}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {formatCompact(pendingCount)}
+              </p>
             </div>
             <div className="p-2 rounded-lg bg-amber-50 text-amber-700">
               <Clock size={18} />
@@ -150,7 +168,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-slate-600">{CONNECT_POINTS_EARNED_LABEL}</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{formatCompact(data.stats.earned_points)}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {formatCompact(data.stats.earned_points)}
+              </p>
             </div>
             <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
               <Gift size={18} />
@@ -167,7 +187,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
         {data.referral_code ? (
           <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_auto] gap-3 lg:items-end">
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Код приглашения</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">
+                Код приглашения
+              </label>
               <input
                 readOnly
                 value={data.referral_code}
@@ -175,7 +197,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Ссылка для приглашения</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">
+                Ссылка для приглашения
+              </label>
               <input
                 readOnly
                 value={data.referral_link}
@@ -196,7 +220,8 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
           </div>
         )}
         <p className="text-sm text-slate-600 mt-4">
-          Поделитесь ссылкой с другом. Points по программе приглашений могут удерживаться до выполнения условий.
+          Поделитесь ссылкой с другом. Points по программе приглашений отображаются как projection и
+          могут удерживаться до выполнения условий.
         </p>
       </Card>
 
@@ -204,7 +229,10 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Ваши приглашения</h3>
-            <p className="text-sm text-slate-600">Статусы приглашённых пользователей и связанные начисления Points.</p>
+            <p className="text-sm text-slate-600">
+              Статусы приглашённых пользователей и связанные Points projections; не receipt и не
+              authority.
+            </p>
           </div>
           <Button variant="secondary" onClick={onInvite} disabled={!data.referral_link}>
             Пригласить ещё
@@ -213,8 +241,15 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
 
         {data.referrals.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-slate-600 font-medium">Пока нет рефералов. Пригласите первого друга, чтобы начать.</p>
-            <Button className="mt-4" variant="primary" onClick={onInvite} disabled={!data.referral_link}>
+            <p className="text-slate-600 font-medium">
+              Пока нет рефералов. Пригласите первого друга, чтобы начать.
+            </p>
+            <Button
+              className="mt-4"
+              variant="primary"
+              onClick={onInvite}
+              disabled={!data.referral_link}
+            >
               Пригласить первого друга
             </Button>
           </div>
@@ -229,8 +264,12 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="font-semibold text-slate-900 truncate">{referral.name}</span>
-                        <Badge className={getStatusBadgeClass(referral.status)}>{getStatusLabel(referral.status)}</Badge>
+                        <span className="font-semibold text-slate-900 truncate">
+                          {referral.name}
+                        </span>
+                        <Badge className={getStatusBadgeClass(referral.status)}>
+                          {getStatusLabel(referral.status)}
+                        </Badge>
                       </div>
                       <p className="text-xs text-slate-500 mt-1">{getStatusHelperText(referral)}</p>
                       <p className="text-xs text-slate-500 mt-1">
@@ -244,7 +283,9 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                       +{formatCompact(referral.earned_rewards.points)} Points
                     </p>
                     {referral.earned_rewards.points > 0 && (
-                      <p className="text-xs text-amber-700 mt-1">Может удерживаться до выполнения условий</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Projection может удерживаться до выполнения условий
+                      </p>
                     )}
                   </div>
                 </div>
@@ -256,5 +297,3 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
     </div>
   );
 }
-
-
