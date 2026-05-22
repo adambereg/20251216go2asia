@@ -133,9 +133,9 @@ export function ReferralCard({ referral }: ReferralCardProps) {
           <div className="flex items-center gap-4 text-sm">
             {referral.earned_rewards.points > 0 && (
               <div>
-                <span className="text-slate-600">Points: </span>
+                <span className="text-slate-600">Points по backend-сводке: </span>
                 <span className="font-semibold text-emerald-600">
-                  +{referral.earned_rewards.points}
+                  {referral.earned_rewards.points}
                 </span>
               </div>
             )}

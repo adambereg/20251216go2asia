@@ -1,6 +1,7 @@
 /**
  * Connect Asia - Mock Data
- * Mock данные для разработки UI модуля Connect
+ * Internal mock данные для разработки UI модуля Connect.
+ * Эти значения не являются economic facts, wallet balance, reward receipt или launch proof.
  */
 
 import type {
@@ -28,9 +29,9 @@ import type {
 
 export const mockBalances: Balances = {
   points: 3500,
-  g2a: 125,
-  nft_count: 3,
-  nft_legendary_count: 1,
+  g2a: 0,
+  nft_count: 0,
+  nft_legendary_count: 0,
 };
 
 // =============================================================================
@@ -46,7 +47,7 @@ export const mockLevel: Level = {
     {
       type: 'reward_multiplier',
       value: 1.2,
-      description: '+20% к наградам',
+      description: 'Планируемый multiplier; не активная economy-механика',
     },
     {
       type: 'seasonal_access',
@@ -80,9 +81,9 @@ export const mockTransactions: Transaction[] = [
     amount: 100,
     currency: 'points',
     module: 'space',
-    description: 'Пост набрал 100 лайков',
+    description: 'Пост отправлен на review активности',
     created_at: '2025-11-29T10:30:00Z',
-    tags: ['season', 'social'],
+    tags: ['internal_mock', 'social'],
     metadata: {
       post_id: 'post-123',
       likes_count: 100,
@@ -131,12 +132,12 @@ export const mockTransactions: Transaction[] = [
   {
     id: 'tx-5',
     type: 'credit',
-    amount: 25,
-    currency: 'g2a',
+    amount: 0,
+    currency: 'points',
     module: 'rf',
-    description: 'Онбординг партнёра (PRO)',
+    description: 'G2A/token layer deferred; mock row quarantined',
     created_at: '2025-11-26T11:30:00Z',
-    tags: ['pro', 'onboarding'],
+    tags: ['internal_mock', 'path_b_deferred'],
     metadata: {
       partner_id: 'partner-2',
     },
@@ -183,13 +184,13 @@ export const mockTransactions: Transaction[] = [
   },
   {
     id: 'tx-9',
-    type: 'debit',
-    amount: 500,
+    type: 'credit',
+    amount: 0,
     currency: 'points',
     module: 'quest',
-    description: 'Покупка премиум квеста',
+    description: 'Premium quest purchase deferred; no payment/spend semantics',
     created_at: '2025-11-22T08:30:00Z',
-    tags: ['purchase'],
+    tags: ['internal_mock', 'payment_deferred'],
     metadata: {
       quest_id: 'quest-premium-1',
     },

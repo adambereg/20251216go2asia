@@ -3,19 +3,19 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Лидерборд - Quest Asia | Go2Asia',
-  description: 'Топ игроков Quest Asia по городам, неделям и сезонам',
+  title: 'Рейтинг Quest Asia (deferred) | Go2Asia',
+  description: 'Deferred Quest surface без leaderboard, XP или social score в текущем Path A MVP',
 };
 
 export default function LeaderboardPage() {
   return (
     <main className="container mx-auto py-10">
       <h1 className="text-2xl font-semibold mb-4">
-        Лидерборд Quest Asia
+        Рейтинг Quest Asia планируется
       </h1>
       <p className="text-muted-foreground max-w-2xl">
-        Раздел в разработке. Скоро здесь появится рейтинг игроков Quest Asia
-        по городам, неделям и сезонам.
+        Раздел отключён для текущего Path A MVP. Мы не показываем leaderboard, XP или social score до отдельного
+        governance stage.
       </p>
     </main>
   );

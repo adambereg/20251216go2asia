@@ -184,7 +184,7 @@ export interface Review {
   rating: number;          // 1-5
   text: string;
   photos?: string[];        // Фото от гостя
-  verifiedBooking?: boolean; // Проверенная бронь
+  verifiedBooking?: boolean; // Legacy/demo only; do not surface as booking/payment proof
   curatorVerified?: boolean; // Проверено куратором
   createdAt: string;       // ISO date
 }

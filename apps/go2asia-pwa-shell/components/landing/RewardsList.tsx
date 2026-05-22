@@ -28,9 +28,9 @@ export function RewardsList({ rewards, className }: RewardsListProps) {
     <section className={cn('max-w-7xl mx-auto px-4 sm:px-6 mb-8 md:mb-12', className)}>
       <div className="mb-4 md:mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-          Ваши награды
+          Ваша активность
         </h2>
-        <p className="text-sm md:text-base text-slate-600">Последние начисления</p>
+        <p className="text-sm md:text-base text-slate-600">Последние read-only записи активности</p>
       </div>
       <div className="space-y-3">
         {rewards.map((reward) => {

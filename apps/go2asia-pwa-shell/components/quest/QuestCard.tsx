@@ -89,7 +89,7 @@ export function QuestCard({ quest }: QuestCardProps) {
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-500" />
             <span className="text-sm font-semibold text-slate-900">
-              {quest.rewards.points} Points preview
+              {quest.rewards.points} Points после подтверждения
             </span>
           </div>
           

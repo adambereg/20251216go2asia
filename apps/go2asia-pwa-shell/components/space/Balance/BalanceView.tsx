@@ -6,7 +6,7 @@ import type { Transaction, DashboardStats } from '../types';
 import { mockTransactionsExtended, mockDashboardStats } from '../mockData';
 
 const TRANSACTION_ICONS = {
-  earn: TrendingUp,
+  earn: Activity,
   spend: TrendingDown,
   bonus: Trophy,
   referral: UserPlus,
@@ -15,7 +15,7 @@ const TRANSACTION_ICONS = {
 };
 
 const TRANSACTION_COLORS = {
-  earn: 'text-green-600',
+  earn: 'text-slate-600',
   spend: 'text-red-600',
   bonus: 'text-purple-600',
   referral: 'text-orange-600',
@@ -45,7 +45,7 @@ export function BalanceView() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-2 border-slate-200 p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Space Points</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Space activity points</h2>
             <Activity className="h-5 w-5 text-slate-400" />
           </div>
           <div className="text-3xl font-bold text-slate-900 mb-2">
@@ -54,7 +54,7 @@ export function BalanceView() {
           <div className="flex items-center gap-2 text-sm">
             <TrendingUp className="h-4 w-4 text-green-600" />
             <span className="text-green-600">
-              +{stats.weeklyPointsEarned} учтено за неделю
+              {stats.weeklyPointsEarned} reference-only points за неделю
             </span>
           </div>
         </Card>
@@ -99,8 +99,8 @@ export function BalanceView() {
                     </div>
                   </div>
                 </div>
-                <div className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {isPositive ? '+' : '-'}{txn.amount} {txn.currency === 'points' ? 'Points' : 'future G2A'}
+                <div className={`text-lg font-bold ${isPositive ? 'text-slate-700' : 'text-red-600'}`}>
+                  {txn.amount} {txn.currency === 'points' ? 'reference Points' : 'future G2A'}
                 </div>
               </div>
             );

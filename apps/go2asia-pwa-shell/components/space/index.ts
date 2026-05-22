@@ -6,8 +6,8 @@
 // Types
 export * from './types';
 
-// Mock Data (для разработки)
-export * from './mockData';
+// Mock data is intentionally not exported from the public module barrel.
+// Stage 12 requires mock/demo data to stay explicitly imported and never act as fallback/proof.
 
 // Feed Components
 export * from './Feed';

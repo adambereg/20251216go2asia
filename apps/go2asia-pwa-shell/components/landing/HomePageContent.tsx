@@ -221,19 +221,19 @@ const rewards = [
   {
     id: '1',
     icon: 'star' as const,
-    text: '+50 Points за публикацию поста',
+    text: 'Публикация отправлена на проверку активности',
     timeAgo: '2 часа назад',
   },
   {
     id: '2',
     icon: 'gem' as const,
-    text: 'Получен бейдж "Исследователь Чиангмая"',
+    text: 'Бейдж "Исследователь Чиангмая" ожидает backend-подтверждения',
     timeAgo: '1 день назад',
   },
   {
     id: '3',
     icon: 'target' as const,
-    text: 'Достигнут уровень 12',
+    text: 'Прогресс уровней пока остаётся планируемой surface',
     timeAgo: '3 дня назад',
   },
 ];
@@ -255,7 +255,7 @@ export function HomePageContent() {
             pointsToNextLevel={335}
             stats={{
               points: 3450,
-              nfts: 5,
+              badges: 5,
               teamMembers: 7,
               vouchers: 2,
             }}

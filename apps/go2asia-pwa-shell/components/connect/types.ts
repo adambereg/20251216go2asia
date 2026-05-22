@@ -1,6 +1,7 @@
 /**
  * Connect Asia - Types
- * Типы для модуля экономики и геймификации Go2Asia
+ * Типы для read-only активности и мягкой геймификации Go2Asia.
+ * Legacy G2A/NFT fields below are future-only metadata and must not be surfaced as active Path A economy.
  */
 
 // =============================================================================
@@ -10,13 +11,13 @@
 /** Модуль экосистемы Go2Asia */
 export type ModuleType = 'space' | 'atlas' | 'pulse' | 'rf' | 'quest' | 'guru';
 
-/** Валюта награды */
+/** Legacy currency metadata; G2A is Path B/future-only in current UI */
 export type Currency = 'points' | 'g2a';
 
 /** Тип транзакции */
 export type TransactionType = 'credit' | 'debit';
 
-/** Редкость NFT бейджа */
+/** Legacy rarity metadata for off-chain badge previews; not NFT ownership */
 export type NFTRarity = 'common' | 'rare' | 'legendary';
 
 /** Статус достижения */
@@ -88,7 +89,7 @@ export interface Transaction {
 }
 
 // =============================================================================
-// Награды
+// Participation preview metadata, not reward grants
 // =============================================================================
 
 export interface Reward {
@@ -126,7 +127,7 @@ export interface BadgeAchievement {
 }
 
 // =============================================================================
-// NFT Бейджи
+// Off-chain badge metadata; interface name is legacy and does not imply NFT ownership
 // =============================================================================
 
 export interface NFTBadge {

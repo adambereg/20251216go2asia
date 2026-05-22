@@ -74,6 +74,9 @@ export function HouseRules({ listing }: HouseRulesProps) {
             <span className="text-slate-700">
               Залог: <strong>${rules.deposit}</strong>
             </span>
+            <p className="text-xs text-slate-500 mt-1">
+              Условие объявления для обсуждения с владельцем; Go2Asia не принимает оплату и не подтверждает бронь.
+            </p>
           </div>
         )}
 
@@ -82,6 +85,9 @@ export function HouseRules({ listing }: HouseRulesProps) {
             <span className="text-slate-700">
               Предоплата: <strong>${rules.prepayment}</strong>
             </span>
+            <p className="text-xs text-slate-500 mt-1">
+              Это справочная информация из объявления, не payment flow и не подтверждение бронирования.
+            </p>
           </div>
         )}
       </div>

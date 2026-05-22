@@ -77,7 +77,10 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">Доступность</h2>
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">Доступность для запроса</h2>
+      <p className="text-sm text-slate-600 mb-4">
+        Даты помогают сформировать inquiry. Это не бронирование, не оплата и не подтверждение доступности.
+      </p>
       
       {listing.availability.instantBooking && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">

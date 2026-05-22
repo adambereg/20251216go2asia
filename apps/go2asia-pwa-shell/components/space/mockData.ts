@@ -1,6 +1,7 @@
 /**
  * Space Asia - Mock Data
- * Демо-данные для разработки и демонстрации
+ * Internal demo-данные для разработки.
+ * Не использовать как proof, receipt, financial wallet balance или production-readiness evidence.
  */
 
 import type {
@@ -106,7 +107,7 @@ export const currentUser: User = {
 };
 
 // =============================================================================
-// NFT Бейджи
+// Off-chain badge metadata (legacy NFTBadge type name, no NFT/on-chain ownership)
 // =============================================================================
 
 export const mockBadges: NFTBadge[] = [
@@ -954,7 +955,7 @@ export const mockTransactionsExtended: Transaction[] = [
   },
 ];
 
-// Дополнительные NFT бейджи
+// Дополнительные off-chain badge metadata (mock only)
 export const mockBadgesExtended: NFTBadge[] = [
   ...mockBadges,
   {

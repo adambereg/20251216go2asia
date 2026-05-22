@@ -1,15 +1,15 @@
-export const CONNECT_DEFAULT_HERO_DESCRIPTION = 'Центр активности, Points и достижений Go2Asia';
+export const CONNECT_DEFAULT_HERO_DESCRIPTION = 'Read-only центр активности, внутренних Points и off-chain бейджей Go2Asia';
 
 export const CONNECT_POINTS_ACTIVITY_DESCRIPTION =
-  'Points начисляются за действия в Go2Asia: задания в Quest Asia, события, приглашения и другие подтверждённые активности.';
+  'Points отображают подтверждённые backend-события Go2Asia. Они не являются финансовой поверхностью или клиентским подтверждением.';
 
-export const CONNECT_POINTS_EARNED_LABEL = 'Начислено Points';
+export const CONNECT_POINTS_EARNED_LABEL = 'Points по подтверждённым событиям';
 
 export const CONNECT_POINTS_BUCKET_LABELS = {
   available: 'Points с внутренней доступностью',
   locked: 'Points с условиями',
   network: 'Связанные с приглашениями',
-  unlockableEstimate: 'Оценка условий',
+  unlockableEstimate: 'Оценка разблокировки',
 } as const;
 
 const CONNECT_LEDGER_ACTION_LABELS: Record<string, string> = {

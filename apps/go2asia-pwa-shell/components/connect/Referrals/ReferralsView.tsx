@@ -34,8 +34,8 @@ function buildReferralLink(code: string) {
 function getStatusHelperText(item: ReferralEarningsItem) {
   if (item.status === 'reward_missing') return 'Активация есть, начисление проверяется.';
   if (item.status === 'pending') return 'Пользователь приглашён, но ещё не стал активным.';
-  if (item.status === 'activated') return 'Пользователь стал активным, начисление может ещё обрабатываться.';
-  return 'Points за приглашение уже начислены.';
+  if (item.status === 'activated') return 'Пользователь стал активным, backend-подтверждение Points может ещё обрабатываться.';
+  return 'Points за приглашение отражены в backend-сводке.';
 }
 
 function mapEarningItem(item: ReferralEarningsItem, registeredAt?: string): Referral {
@@ -206,7 +206,7 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
   return (
     <>
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Приглашайте друзей и отслеживайте начисления Points." />
+        <ConnectHero subtitle="Приглашайте друзей и отслеживайте read-only статус участия и Points." />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />

@@ -23,7 +23,7 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
         {/* Space Points */}
         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg">
           <div>
-            <div className="text-sm text-slate-600 mb-1">Space Points</div>
+            <div className="text-sm text-slate-600 mb-1">Space activity points</div>
             <div className="text-3xl font-bold text-slate-900">
               {stats.points.toLocaleString()}
             </div>
@@ -46,7 +46,7 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
                 </>
               )}
             </div>
-            <div className="text-xs text-slate-500">за неделю</div>
+            <div className="text-xs text-slate-500">reference-only за неделю</div>
           </div>
         </div>
 
@@ -74,12 +74,12 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
           </Link>
         </div>
 
-        {/* Ссылка на баланс */}
+        {/* Ссылка на read-only activity */}
         <Link
           href="/space/balance"
           className="flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700 font-medium pt-2"
         >
-          Подробнее
+          Подробнее об активности
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
