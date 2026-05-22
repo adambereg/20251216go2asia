@@ -12,6 +12,7 @@ import type {
   PersonObject,
   QuestObject,
 } from './types';
+export { DEFAULT_CENTER } from './constants/mapDefaults';
 
 // =============================================================================
 // Места (Atlas) - 15 объектов
@@ -893,12 +894,6 @@ export const mockEvents = events;
 export const mockHousing = housing;
 export const mockPeople = people;
 export const mockQuests = quests;
-
-/** Центр карты по умолчанию (Новосибирск) */
-export const DEFAULT_CENTER = {
-  lat: 54.9833,
-  lng: 82.8964,
-};
 
 /** Количество объектов по типам */
 export const OBJECT_COUNTS = {

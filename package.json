@@ -13,6 +13,8 @@
     "clean": "turbo run clean && rm -rf .turbo",
     "openapi:bundle": "node scripts/openapi_bundle.mjs",
     "openapi:check": "node scripts/openapi_check.mjs",
+    "guardrails:mock-imports:check": "node scripts/mock_import_guardrails_check.mjs",
+    "guardrails:mock-imports:baseline": "node scripts/mock_import_guardrails_check.mjs --update-baseline",
     "gen:types": "pnpm openapi:bundle && orval --config orval.config.ts --output types",
     "gen:sdk": "pnpm openapi:bundle && orval --config orval.config.ts --output sdk",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
