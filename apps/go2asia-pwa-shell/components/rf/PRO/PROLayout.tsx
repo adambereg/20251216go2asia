@@ -57,7 +57,7 @@ export function PROLayout({ children }: PROLayoutProps) {
               <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-sm">
                 <h2 className="mb-1 text-sm font-semibold text-purple-950">Разделы PRO кабинета</h2>
                 <p className="mb-4 text-[11px] leading-snug text-slate-500">
-                  Сводка и фокус — на главной. Операционные маршруты помечены как legacy/demo/soon.
+                  Сводка и фокус — на главной. Операционные маршруты помечены как deferred/soon.
                 </p>
                 <PRONav />
               </div>
@@ -78,7 +78,7 @@ export function PROLayout({ children }: PROLayoutProps) {
             </p>
             {isOpsSurface ? (
               <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                Этот раздел — legacy/demo слой для операционного baseline. Не воспринимайте его как полностью live workflow.
+                Этот раздел находится в карантине до подключения owner-backed runtime source и не является operational proof.
               </p>
             ) : null}
             {children}
