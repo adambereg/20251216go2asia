@@ -14,6 +14,11 @@ import { createLogger, generateRequestId, getRequestId, logRequestCompleted } fr
 
 import { decideExternalIdIdempotency } from './idempotency';
 import {
+  evaluateProducerGate,
+  getProducerAllowlistVersion,
+  type ProducerFlagEnv,
+} from './producerAllowlist';
+import {
   createSpendabilityShadowDedupeKey,
   evaluateSpendabilityShadow,
   exportSpendabilityShadowObservation,
@@ -22,7 +27,7 @@ import {
   toSpendabilityShadowObservation,
 } from './spendabilityShadow';
 
-export interface Env {
+export interface Env extends ProducerFlagEnv {
   ENVIRONMENT?: string;
   VERSION?: string;
 
@@ -128,46 +133,7 @@ const DASHBOARD_TRANSACTIONS_DEFAULT_LIMIT = 5;
 const DASHBOARD_TRANSACTIONS_MAX_LIMIT = 20;
 const DASHBOARD_BADGES_DEFAULT_LIMIT = 5;
 const DASHBOARD_BADGES_MAX_LIMIT = 20;
-
-/**
- * Phase 2 action contract (Points-only).
- * Important:
- * - Keep this list stable during Phase 2 to avoid "action sprawl".
- * - Do NOT add Phase 3 tokenomics actions here (G2A/NFT/on-chain).
- */
-const ACTIONS_PHASE2 = new Set([
-  // MVP (Phase 1 / M3)
-  'registration',
-  'first_login',
-  'referral_bonus_referee',
-  'referral_bonus_referrer',
-  'referral_locked',
-  'referral_unlock',
-  'event_registration',
-
-  // Phase 2 (planned modules)
-  'space_post_created',
-  'space_repost_created',
-  'space_reaction_created',
-  'network_accrual_level_1',
-  'network_accrual_level_2',
-
-  'quest_completed',
-
-  'rielt_listing_created',
-
-  'rf_partner_verified',
-  'rf_voucher_claimed',
-  'rf_voucher_redeemed',
-  'rf_voucher_claim_spend',
-  'rf_voucher_claim_spend_compensation',
-]);
-
-const ACTIONS_INTERNAL_ADD = new Set(
-  [...ACTIONS_PHASE2].filter((action) => action !== 'rf_voucher_claim_spend')
-);
-
-const ACTIONS_INTERNAL_SPEND = new Set(['rf_voucher_claim_spend']);
+const METADATA_MAX_BYTES = 4096;
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -479,6 +445,11 @@ function parseJsonMetadata(value: unknown): Record<string, JsonValue> | null | u
   if (value === null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   return value as Record<string, JsonValue>;
+}
+
+function metadataIsWithinBounds(value: Record<string, JsonValue> | null | undefined): boolean {
+  if (value === undefined || value === null) return true;
+  return new TextEncoder().encode(JSON.stringify(value)).length <= METADATA_MAX_BYTES;
 }
 
 function parseCursor(cursor: string): { createdAt: Date; id: string } | null {
@@ -1248,10 +1219,10 @@ export default {
 
         const userId = body?.userId;
         const amount = body?.amount;
-        const action = body?.action;
+        const action = typeof body?.action === 'string' ? body.action.trim() : '';
         const externalId = body?.externalId;
         const sourceEventId = body?.sourceEventId;
-        const metadata = body?.metadata;
+        const metadata = parseJsonMetadata(body?.metadata);
 
         if (typeof userId !== 'string' || userId.length === 0) {
           const res = errorResponse('BadRequest', 'Missing userId', requestId, 400);
@@ -1265,7 +1236,7 @@ export default {
           return res;
         }
 
-        if (typeof action !== 'string' || !ACTIONS_INTERNAL_ADD.has(action)) {
+        if (action.length === 0) {
           const res = errorResponse('BadRequest', 'Invalid action', requestId, 400);
           res.headers.set('X-Request-Id', requestId);
           return res;
@@ -1283,8 +1254,34 @@ export default {
           return res;
         }
 
-        const db = createDb(requireDatabase(env));
+        if (body?.metadata !== undefined && (metadata === undefined || metadata === null || !metadataIsWithinBounds(metadata))) {
+          const res = errorResponse('BadRequest', 'Invalid metadata', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
         const callerService = auth.principal.service;
+        const producerGate = evaluateProducerGate({
+          action,
+          operation: 'add',
+          sourceService: callerService,
+          env,
+        });
+        if (!producerGate.ok) {
+          logger.warn('Points producer rejected by Stage 11.2 allowlist', {
+            action,
+            producerClass: producerGate.classification,
+            sourceService: callerService,
+            reason: producerGate.error,
+            requiredFlag: producerGate.requiredFlag,
+            allowlistVersion: getProducerAllowlistVersion(),
+          });
+          const res = errorResponse(producerGate.error, producerGate.message, requestId, producerGate.status);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
         const normalizedSourceEventId = typeof sourceEventId === 'string' ? sourceEventId.trim() : null;
 
         // Idempotency lookup
@@ -1518,7 +1515,7 @@ export default {
 
         const userId = typeof body?.userId === 'string' ? body.userId.trim() : '';
         const amount = body?.amount;
-        const action = body?.action;
+        const action = typeof body?.action === 'string' ? body.action.trim() : '';
         const externalId = typeof body?.externalId === 'string' ? body.externalId.trim() : '';
         const sourceEventId = parseOptionalString(body?.sourceEventId);
         const metadata = parseJsonMetadata(body?.metadata);
@@ -1536,7 +1533,7 @@ export default {
           return res;
         }
 
-        if (typeof action !== 'string' || !ACTIONS_INTERNAL_SPEND.has(action)) {
+        if (action.length === 0) {
           const res = errorResponse('BadRequest', 'Invalid action', requestId, 400);
           res.headers.set('X-Request-Id', requestId);
           return res;
@@ -1566,8 +1563,34 @@ export default {
           return res;
         }
 
-        const db = createDb(requireDatabase(env));
         const callerService = auth.principal.service;
+        const producerGate = evaluateProducerGate({
+          action,
+          operation: 'spend',
+          sourceService: callerService,
+          env,
+        });
+        if (!producerGate.ok) {
+          logger.warn('Points spend producer rejected by Stage 11.2 allowlist', {
+            action,
+            producerClass: producerGate.classification,
+            sourceService: callerService,
+            reason: producerGate.error,
+            requiredFlag: producerGate.requiredFlag,
+            allowlistVersion: getProducerAllowlistVersion(),
+          });
+          const res = errorResponse(producerGate.error, producerGate.message, requestId, producerGate.status);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        if (!metadataIsWithinBounds(metadata)) {
+          const res = errorResponse('BadRequest', 'Invalid metadata', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
         const spendAmount = amount;
         const ledgerAmount = -spendAmount;
         const normalizedSourceEventId = typeof sourceEventId === 'string' ? sourceEventId.trim() : null;

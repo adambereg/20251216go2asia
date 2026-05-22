@@ -24,6 +24,10 @@ import {
   resetSpendabilityShadowDiagnosticsForTests,
 } from '../src/spendabilityShadow';
 
+const rfSpendProducerEnabled = {
+  ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_ENABLED: 'true',
+} satisfies Partial<Env>;
+
 describe('points-service request hardening', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -460,9 +464,10 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      ECONOMY_PRODUCER_EVENT_REGISTRATION_ENABLED: 'true',
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
-      sub: 'auth-service',
+      sub: 'content-service',
     });
 
     const response = await worker.fetch(
@@ -497,7 +502,7 @@ describe('points-service request hardening', () => {
         'user_1',
         20,
         'event_registration',
-        'auth-service',
+        'content-service',
         'content:event_registration:event_1:user_1',
         'content:event_registration:event_1:user_1',
       ])
@@ -559,7 +564,9 @@ describe('points-service request hardening', () => {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service');
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'auth-service',
+    });
 
     const response = await worker.fetch(
       new Request('https://points.example/internal/points/add', {
@@ -661,7 +668,9 @@ describe('points-service request hardening', () => {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
     };
-    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service');
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'auth-service',
+    });
 
     const response = await worker.fetch(
       new Request('https://points.example/internal/points/add', {
@@ -686,6 +695,111 @@ describe('points-service request hardening', () => {
     expect(response.status).toBe(409);
     expect(body.error).toBe('Conflict');
     expect(body.message).toContain('externalId already exists');
+  });
+
+  it('rejects future-only, forbidden, and unknown add producers before ledger lookup', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+      ECONOMY_PRODUCER_QUEST_COMPLETED_ENABLED: 'true',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'quest-service',
+    });
+
+    const futureOnlyResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'space_post_created',
+          externalId: 'space:post:post_1:user_1',
+        }),
+      }),
+      env
+    );
+    const futureOnlyBody = await readJson<{ error: string }>(futureOnlyResponse);
+    expect(futureOnlyResponse.status).toBe(403);
+    expect(futureOnlyBody.error).toBe('PRODUCER_FUTURE_ONLY');
+
+    const forbiddenResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'network_accrual_level_1',
+          externalId: 'network:level1:user_1',
+        }),
+      }),
+      env
+    );
+    const forbiddenBody = await readJson<{ error: string }>(forbiddenResponse);
+    expect(forbiddenResponse.status).toBe(403);
+    expect(forbiddenBody.error).toBe('PRODUCER_FORBIDDEN_FOR_STAGE_11');
+
+    const unknownResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'mock_reward',
+          externalId: 'mock:reward:user_1',
+        }),
+      }),
+      env
+    );
+    const unknownBody = await readJson<{ error: string }>(unknownResponse);
+    expect(unknownResponse.status).toBe(400);
+    expect(unknownBody.error).toBe('UNKNOWN_POINTS_PRODUCER');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('fails closed for internal-beta add producers when their flag is missing', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'quest-service',
+    });
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'user_1',
+          amount: 100,
+          action: 'quest_completed',
+          externalId: 'quest:completed:progress_1',
+          sourceEventId: 'quest.completed:progress_1',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: string }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error).toBe('PRODUCER_INTERNAL_BETA_DISABLED');
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
   it('rejects unauthenticated internal spend requests', async () => {
@@ -782,7 +896,7 @@ describe('points-service request hardening', () => {
       }),
       env
     );
-    expect(invalidActionResponse.status).toBe(400);
+    expect(invalidActionResponse.status).toBe(403);
 
     const missingExternalIdResponse = await worker.fetch(
       new Request('https://points.example/internal/points/spend', {
@@ -810,6 +924,7 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -882,6 +997,7 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -964,6 +1080,7 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1025,6 +1142,7 @@ describe('points-service request hardening', () => {
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
       POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1114,6 +1232,7 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1170,6 +1289,7 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1228,6 +1348,7 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1296,6 +1417,7 @@ describe('points-service request hardening', () => {
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
       POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1364,6 +1486,7 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1402,6 +1525,7 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',
@@ -1443,6 +1567,7 @@ describe('points-service request hardening', () => {
       SERVICE_JWT_SECRET: 'service-secret',
       POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE: 'true',
       POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS: 'true',
+      ...rfSpendProducerEnabled,
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rf-service',

@@ -16,6 +16,11 @@ describe('points-service staging wrangler config', () => {
     expect(vars).toContain('POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE = "true"');
     expect(vars).toContain('POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS = "true"');
     expect(vars).toContain('POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT = "true"');
+    expect(vars).toContain('ECONOMY_PRODUCER_FIRST_LOGIN_ENABLED = "true"');
+    expect(vars).toContain('ECONOMY_PRODUCER_QUEST_COMPLETED_ENABLED = "true"');
+    expect(vars).toContain('ECONOMY_PRODUCER_EVENT_REGISTRATION_ENABLED = "true"');
+    expect(vars).toContain('ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_ENABLED = "true"');
+    expect(vars).toContain('ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_COMPENSATION_ENABLED = "true"');
   });
 
   it('does not commit secret values in staging vars', () => {
