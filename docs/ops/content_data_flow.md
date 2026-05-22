@@ -26,9 +26,11 @@ Environment variable: `NEXT_PUBLIC_DATA_SOURCE`
 | Value   | Behavior                                      |
 |---------|-----------------------------------------------|
 | `api`   | Fetch from /api/content/* → Neon (default)    |
-| `mock`  | Use local mocks directly                      |
+| `mock`  | Use local mocks directly for local dev/demo only |
 
-On API failure, automatically falls back to mocks.
+`mock` mode is not valid for smoke, staging, production or support-proof evidence.
+
+API/staging evidence must use `NEXT_PUBLIC_DATA_SOURCE=api` and owner-backed runtime responses. Do not treat local mocks as fallback proof or readiness evidence.
 
 ## Public API (via Gateway)
 

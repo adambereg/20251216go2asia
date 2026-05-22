@@ -43,6 +43,18 @@ jobs:
       - name: Check mock import guardrails
         run: node scripts/mock_import_guardrails_check.mjs
 
+  mock-env-guardrails:
+    name: Mock Env Guardrails
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check mock env guardrails
+        run: node scripts/mock_env_guardrails_check.mjs
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
