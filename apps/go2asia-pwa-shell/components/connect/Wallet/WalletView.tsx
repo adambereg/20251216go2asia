@@ -115,7 +115,7 @@ function PointsSummary({
             <Coins className="w-8 h-8 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-sm font-medium text-slate-600">Points — след вашей активности</h2>
+              <h2 className="text-sm font-medium text-slate-600">Points — read-only след подтверждённой активности</h2>
             <p className="text-4xl font-bold text-slate-900 mt-1">{formatPoints(points)} Points</p>
             <p className="text-sm text-slate-600 mt-3">
               {points > 0
@@ -125,7 +125,7 @@ function PointsSummary({
             {updatedAt && <p className="text-xs text-slate-500 mt-2">Обновлено {updatedAt}</p>}
             {walletSummaryError && (
               <p className="text-xs text-amber-700 mt-2">
-                Структура Points временно недоступна, показываем текущий общий баланс.
+                Структура Points временно недоступна, показываем последнюю read-only сводку.
               </p>
             )}
           </div>
@@ -173,8 +173,7 @@ function PointsSummary({
               <div>
                 <p className="text-sm font-semibold text-amber-950">У вас есть заблокированные Points</p>
                 <p className="text-sm text-amber-800 mt-1">
-                  Часть Points удерживается до выполнения условий программы. Детальные правила будут добавлены в
-                  следующих этапах.
+                  Часть Points остаётся условной до runtime-проверки. Это не обещание spend, payout или cashback.
                 </p>
               </div>
               <Button variant="secondary" disabled>
@@ -331,8 +330,8 @@ export function WalletView() {
         <Card className="p-5 border-slate-200 bg-slate-50">
           <p className="text-sm font-semibold text-slate-900">Расширенные возможности появятся позже</p>
           <p className="text-sm text-slate-600 mt-1">
-            Дополнительные инструменты учёта не входят в текущий MVP Connect. Сейчас здесь отображаются только Points
-            и история начислений.
+            Дополнительные инструменты учёта не входят в текущий MVP Connect. Сейчас здесь отображаются только внутренние Points
+            и read-only история backend-событий.
           </p>
         </Card>
       </div>

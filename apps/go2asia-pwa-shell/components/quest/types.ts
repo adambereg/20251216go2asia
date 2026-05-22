@@ -32,10 +32,10 @@ export type StepType =
   | 'pulse-event'
   | 'task';
 
-/** Редкость NFT-бейджа */
+/** Legacy rarity metadata for off-chain badge previews; not NFT ownership */
 export type NFTBadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
-/** Категория NFT-бейджа */
+/** Legacy category metadata for off-chain badge previews */
 export type NFTBadgeCategory =
   | 'temple'
   | 'food'
@@ -57,7 +57,7 @@ export interface QuestBadge {
   label: string;
 }
 
-/** NFT-бейдж */
+/** Off-chain badge metadata; interface name is legacy and must not imply NFT/on-chain ownership */
 export interface NFTBadge {
   id: string;
   name: string;

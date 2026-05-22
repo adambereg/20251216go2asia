@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, Chip, Badge } from '@go2asia/ui';
 import { Award, Sparkles } from 'lucide-react';
-import type { NFTBadge } from '../types';
 import { mockBadgesExtended } from '../mockData';
 
 type RarityFilter = 'all' | 'common' | 'rare' | 'epic' | 'legendary';
@@ -52,7 +51,14 @@ export function NFTView() {
         ))}
       </div>
 
-      {/* Off-chain badges */}
+      <Card className="border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-amber-950">Internal demo surface</p>
+        <p className="mt-1 text-sm text-amber-800">
+          Эти карточки используют mock metadata и не подтверждают выдачу бейджа, NFT ownership или on-chain minting.
+        </p>
+      </Card>
+
+      {/* Off-chain badge metadata */}
       {filteredBadges.length === 0 ? (
         <Card className="border-2 border-slate-200 p-8">
           <div className="text-center text-slate-500">
@@ -77,7 +83,7 @@ export function NFTView() {
                   {RARITY_LABELS[badge.rarity]}
                 </Badge>
                 <div className="text-xs text-slate-500 pt-2 border-t border-slate-200">
-                  Получено:{' '}
+                  Demo дата metadata:{' '}
                   {new Date(badge.earnedAt).toLocaleDateString('ru-RU', {
                     day: 'numeric',
                     month: 'long',

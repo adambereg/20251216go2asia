@@ -211,17 +211,17 @@ const benefits = [
 const userRewards = [
   {
     id: '1',
-    title: '+50 Points за публикацию поста',
+    title: 'Публикация отправлена на проверку активности',
     time: '2 часа назад',
   },
   {
     id: '2',
-    title: 'Получен бейдж "Исследователь Чиангмая"',
+    title: 'Бейдж "Исследователь Чиангмая" ожидает backend-подтверждения',
     time: '1 день назад',
   },
   {
     id: '3',
-    title: 'Достигнут уровень 12',
+    title: 'Прогресс уровней пока остаётся планируемой surface',
     time: '3 дня назад',
   },
 ];
@@ -461,7 +461,7 @@ function AuthenticatedHomePage() {
     pointsToNextLevel: 120,
     stats: {
       points: 3450,
-      nfts: 5,
+      badges: 5,
       teamMembers: 7,
       vouchers: 2,
     },

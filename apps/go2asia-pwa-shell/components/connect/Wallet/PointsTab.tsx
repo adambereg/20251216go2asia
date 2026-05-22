@@ -22,8 +22,11 @@ export function PointsTab({ data, onLoadMore }: PointsTabProps) {
             <Coins className="w-8 h-8 text-emerald-600" />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-slate-600">Internal Points summary</h3>
+            <h3 className="text-sm font-medium text-slate-600">Internal Points read-only summary</h3>
             <p className="text-4xl font-bold text-slate-900">{data.balance.points.toLocaleString()}</p>
+            <p className="mt-2 text-xs text-slate-500">
+              Не является финансовым балансом, receipt или promise of spend.
+            </p>
           </div>
         </div>
       </Card>

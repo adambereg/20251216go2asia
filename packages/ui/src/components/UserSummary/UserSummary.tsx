@@ -12,7 +12,7 @@ export interface UserSummaryProps {
   pointsToNextLevel: number;
   stats: {
     points: number;
-    nfts: number;
+    badges: number;
     teamMembers: number;
     vouchers: number;
   };
@@ -101,7 +101,7 @@ export const UserSummary: React.FC<UserSummaryProps> = ({
         <button className="bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl p-3 md:p-4 transition-all text-left">
           <div className="flex items-center gap-2 mb-1">
             <Award size={18} className="text-purple-200" />
-            <span className="text-lg md:text-xl font-bold">{stats.nfts}</span>
+            <span className="text-lg md:text-xl font-bold">{stats.badges}</span>
           </div>
           <p className="text-xs opacity-90">off-chain бейджей</p>
         </button>

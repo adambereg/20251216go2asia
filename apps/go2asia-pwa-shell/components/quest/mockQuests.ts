@@ -1,6 +1,7 @@
 /**
  * Quest Asia - Mock Quests
- * Демо-данные квестов для разработки
+ * Internal demo-данные квестов для разработки.
+ * Preview values here are not reward grants, Points receipts or NFT/on-chain facts.
  */
 
 import type { Quest, NFTBadge, QuestSeason } from './types';
@@ -18,7 +19,7 @@ export const currentSeason: QuestSeason = {
 };
 
 /**
- * NFT-бейджи
+ * Off-chain badge metadata (legacy NFTBadge type name, no NFT ownership)
  */
 export const mockNFTBadges: NFTBadge[] = [
   {

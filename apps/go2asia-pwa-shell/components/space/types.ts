@@ -35,7 +35,7 @@ export type MediaType = 'image' | 'video';
 /** Тип вложения */
 export type AttachmentType = 'place' | 'event' | 'quest' | 'guide' | 'housing';
 
-/** Тип уведомления */
+/** Тип уведомления. `nft` is legacy/deferred metadata and must not be surfaced as active NFT ownership. */
 export type NotificationType =
   | 'like'
   | 'comment'
@@ -75,7 +75,7 @@ export interface User {
   createdAt: string;
 }
 
-/** NFT бейдж пользователя */
+/** Off-chain badge metadata; interface name is legacy and must not imply NFT ownership. */
 export interface NFTBadge {
   id: string;
   name: string;

@@ -77,7 +77,7 @@ export const rfMyVouchersPageContent = {
   meaningTitle: 'Что это значит',
   meaningBody:
     'Ваучеры показываются как фактологический read-only слой: статус, Points utility semantics, повторяемость и источник через PRO при подтверждённой атрибуции. Это не финансовый кабинет и не раздел партнёрских расчётов.',
-  futureMarkers: ['Premium vouchers later', 'Rewards later', 'Totem/NFT later'],
+  futureMarkers: ['Premium vouchers: deferred', 'Advanced recognition: deferred', 'Path B collectibles: deferred'],
   localWarning:
     'Список хранится локально в этом браузере: для авторизованного пользователя он привязан к текущему аккаунту, для гостя — к этому браузеру. Это сохранённые офферы, не серверные ваучеры.',
   empty: 'Пока пусто. Добавьте оффер из каталога офферов кнопкой «Сохранить оффер».',

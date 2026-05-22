@@ -3,10 +3,10 @@ import { getSeedListingByIdOrSlug } from '@/lib/rieltSeedRepo';
 
 export async function GET(
   _request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const listing = getSeedListingByIdOrSlug(id);
     if (!listing) {
       return NextResponse.json(

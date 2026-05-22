@@ -57,11 +57,11 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               <Coins className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-slate-600">Ваши Points</h3>
+              <h3 className="text-sm font-medium text-slate-600">Внутренние Points</h3>
               <p className="text-3xl font-bold text-slate-900">{formatPoints(totalPoints)} Points</p>
               <p className="text-sm text-slate-500 mt-2">
                 {hasPoints
-                  ? 'Итого Points включает внутреннюю сводку и Points с условиями.'
+                  ? 'Сводка read-only: итог формируется из backend-событий и не является финансовым балансом или receipt.'
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
               {updatedAt && (
@@ -69,7 +69,7 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
               )}
               {walletSummaryError && (
                 <p className="text-xs text-amber-700 mt-2">
-                  Структура Points временно недоступна, показываем текущий баланс.
+                  Структура Points временно недоступна, показываем последнюю read-only сводку.
                 </p>
               )}
             </div>
