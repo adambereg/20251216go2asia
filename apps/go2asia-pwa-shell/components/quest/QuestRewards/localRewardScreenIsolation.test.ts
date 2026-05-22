@@ -18,8 +18,17 @@ describe('local reward screen isolation', () => {
     expect(rewardsView).not.toContain('calculateTotalPoints');
     expect(rewardsView).not.toContain('<PointsDisplay');
     expect(rewardsView).not.toContain('<NFTBadgeDisplay');
-    expect(rewardsView).toContain('Эта страница больше не показывает локальные Points');
-    expect(rewardsView).toContain('не подтверждает начисление Points');
+    expect(rewardsView).toContain('больше не ищет mock-каталог');
+    expect(rewardsView).toContain('Локальное завершение не является proof/receipt');
+    expect(rewardsView).toContain('Quest_outbox остаётся delivery_intent_only');
+  });
+
+  it('keeps the completion route isolated from mock quest lookup', () => {
+    const page = readAppFile('app/(public)/quest/[id]/complete/page.tsx');
+
+    expect(page).not.toContain('mockQuests');
+    expect(page).not.toContain('notFound');
+    expect(page).toContain('<RewardsView questId={id} />');
   });
 
   it('removes reward-receipt wording from directly connected Quest surfaces', () => {

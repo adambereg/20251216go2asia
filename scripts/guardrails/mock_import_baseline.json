@@ -124,14 +124,6 @@
       "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
     },
     {
-      "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/quest/[id]/complete/page.tsx|@/components/quest/mockQuests",
-      "ruleId": "APP_ROUTE_MOCK_IMPORT",
-      "file": "apps/go2asia-pwa-shell/app/(public)/quest/[id]/complete/page.tsx",
-      "source": "@/components/quest/mockQuests",
-      "ownerSlice": "12I-A3 / Stage 12.x.3-C",
-      "note": "Existing route/runtime mock exposure; guardrail freezes spread before cleanup."
-    },
-    {
       "id": "APP_ROUTE_MOCK_IMPORT|apps/go2asia-pwa-shell/app/(public)/rielt/listings/[id]/page.tsx|@/lib/rieltSeedRepo",
       "ruleId": "APP_ROUTE_MOCK_IMPORT",
       "file": "apps/go2asia-pwa-shell/app/(public)/rielt/listings/[id]/page.tsx",

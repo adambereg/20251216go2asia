@@ -6,14 +6,13 @@
  */
 
 import Link from 'next/link';
-import type { Quest } from '@/components/quest/types';
 import { AlertTriangle, ArrowRight, Info } from 'lucide-react';
 
 interface RewardsViewProps {
-  quest: Quest;
+  questId: string;
 }
 
-export function RewardsView({ quest }: RewardsViewProps) {
+export function RewardsView({ questId }: RewardsViewProps) {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-3xl px-4 py-10">
@@ -23,44 +22,44 @@ export function RewardsView({ quest }: RewardsViewProps) {
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Legacy local page</p>
-              <h1 className="mt-1 text-2xl font-bold text-slate-900">Локальная страница изолирована</h1>
+              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Deferred local page</p>
+              <h1 className="mt-1 text-2xl font-bold text-slate-900">Завершение не является receipt</h1>
               <p className="mt-2 text-slate-600">
-                Эта страница больше не показывает локальные Points, бейджи или future-compatible badge metadata для
-                маршрута "{quest.title}".
+                Этот route сохраняет переход после Quest flow, но больше не ищет mock-каталог и не показывает локальные
+                Points, бейджи, награды или progression summary.
               </p>
             </div>
           </div>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Это локальная legacy-страница. Она не подтверждает начисление Points, выдачу бейджа, achievement unlock,
-            NFT/on-chain ownership или backend completion proof. Факты Points и бейджей подтверждаются только
-            backend-данными.
+            Локальное завершение не является proof/receipt. Этот экран не подтверждает completion authority,
+            начисление Points, выдачу off-chain бейджа, achievement unlock, XP, leaderboard position или backend
+            reward grant. Награды и бейджи появляются только после owner-backed backend-подтверждения.
           </div>
 
           <div className="mt-6 grid gap-3 text-sm text-slate-700">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">Что смотреть вместо этой страницы</p>
+              <p className="font-semibold text-slate-900">Где проверять статус</p>
               <p className="mt-1">
-                Статус маршрута смотрите на runtime-странице Quest. Историю Points смотрите в Connect / Wallet. Бейджи
-                смотрите в Connect / Levels.
+                Откройте runtime-страницу Quest для состояния маршрута. Историю внутренних Points смотрите в Connect,
+                а off-chain бейджи — в Connect / Levels после backend-подтверждения.
               </p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              href={`/quest/${quest.id}`}
+              href={`/quest/${questId}`}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-slate-800"
             >
-              Открыть Quest
+              Открыть runtime Quest
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/connect/wallet"
+              href="/connect"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition-colors hover:border-slate-500"
             >
-              Connect / Wallet
+              Connect
             </Link>
             <Link
               href="/connect/levels"
@@ -73,8 +72,8 @@ export function RewardsView({ quest }: RewardsViewProps) {
           <div className="mt-6 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <p>
-              Квест может быть завершён в Quest, но подтверждение Points или бейджа живёт отдельно в backend-backed
-              Connect surfaces.
+              Quest_outbox остаётся delivery_intent_only. Points_row и badge_award_fact являются отдельными
+              owner-backed фактами, а не результатом этого local-only экрана.
             </p>
           </div>
         </div>
