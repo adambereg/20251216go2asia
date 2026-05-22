@@ -2,7 +2,8 @@
 
 /**
  * Quest Asia - Points Display
- * Отображение предварительной локальной сводки Points.
+ * Legacy/internal local preview only.
+ * Not a Points_row, receipt, reward grant, owner fact or support proof.
  */
 
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ export function PointsDisplay({ points, basePoints }: PointsDisplayProps) {
     <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 p-8 text-center">
       <div className="flex items-center justify-center gap-3 mb-4">
         <Trophy className="w-8 h-8 text-amber-600" />
-        <h2 className="text-2xl font-bold text-slate-900">Предварительные Points</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Local-only Points preview</h2>
       </div>
 
       <div className="mb-4">
@@ -55,22 +56,25 @@ export function PointsDisplay({ points, basePoints }: PointsDisplayProps) {
           {displayedPoints.toLocaleString()}
         </div>
         {isAnimating && (
-          <div className="text-sm text-amber-600 mt-2 animate-pulse">Локальная сводка...</div>
+          <div className="text-sm text-amber-600 mt-2 animate-pulse">Reference-only preview...</div>
         )}
       </div>
 
       {hasBonus && (
         <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-semibold">
           <TrendingUp className="w-4 h-4" />
-          Дополнительные Points в локальной сводке: +{bonus.toLocaleString()}
+          Reference-only delta: +{bonus.toLocaleString()} Points
         </div>
       )}
 
       {basePoints && (
         <p className="text-sm text-slate-600 mt-4">
-          Базовая локальная оценка: {basePoints.toLocaleString()} Points. Runtime-подтверждение требуется отдельно.
+          Не является Points_row, начислением или receipt. Runtime-подтверждение требуется отдельно.
         </p>
       )}
+      <p className="mt-4 text-xs text-slate-500">
+        Этот legacy/internal компонент нельзя использовать как proof или экран выдачи награды.
+      </p>
     </div>
   );
 }

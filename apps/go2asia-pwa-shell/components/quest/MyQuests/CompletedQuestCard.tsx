@@ -6,9 +6,8 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { Trophy, MapPin, Clock, CheckCircle2, Star } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, Star, ShieldCheck } from 'lucide-react';
 import type { Quest, QuestProgress } from '@/components/quest/types';
-import { calculateTotalPoints } from '@/components/quest/utils/rewards';
 import { QUEST_TYPE_LABELS, DIFFICULTY_LABELS } from '@/components/quest/types';
 /**
  * Форматировать дату в относительный формат
@@ -34,15 +33,10 @@ interface CompletedQuestCardProps {
 
 export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps) {
   const router = useRouter();
-  
-  const totalPoints = calculateTotalPoints(progress.stepResults, quest.rewards.points);
+
   const completionTime = progress.completedAt && progress.startedAt
     ? Math.round((progress.completedAt.getTime() - progress.startedAt.getTime()) / 60000)
     : 0;
-
-  const handleViewLocalSummary = () => {
-    router.push(`/quest/${quest.id}/complete`);
-  };
 
   const handleViewDetails = () => {
     router.push(`/quest/${quest.id}`);
@@ -89,10 +83,10 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
           {/* Статистика */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-xs text-slate-600 mb-1">Локальная оценка Points</p>
-              <p className="text-lg font-bold text-emerald-600 flex items-center gap-1">
-                <Trophy className="w-4 h-4" />
-                {totalPoints.toLocaleString()}
+              <p className="text-xs text-slate-600 mb-1">Points</p>
+              <p className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4 text-slate-500" />
+                Только после backend-подтверждения
               </p>
             </div>
             <div>
@@ -118,35 +112,22 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
 
           {/* Локальные badge metadata */}
           {quest.rewards.nftBadges.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs text-slate-600 mb-2">Badge metadata из локального каталога:</p>
-              <div className="flex flex-wrap gap-2">
-                {quest.rewards.nftBadges.map((badge) => (
-                  <div
-                    key={badge.id}
-                    className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 text-xs font-semibold text-purple-700"
-                  >
-                    {badge.name}
-                  </div>
-                ))}
-              </div>
+            <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-semibold text-slate-700">Off-chain badge preview скрыт</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Локальный каталог не является badge_award_fact. Бейджи показываются как факт только после
+                owner-backed backend-подтверждения.
+              </p>
             </div>
           )}
 
           {/* Действия */}
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={handleViewLocalSummary}
+              onClick={handleViewDetails}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
             >
-              <Trophy className="w-4 h-4" />
-              Локальная сводка
-            </button>
-            <button
-              onClick={handleViewDetails}
-              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              Подробнее
+              Открыть runtime Quest
             </button>
             <button
               onClick={() => router.push(`/quest/${quest.id}?review=true`)}

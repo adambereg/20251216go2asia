@@ -1,6 +1,6 @@
 /**
- * Quest Asia - NFT Badge System
- * Система автоматической выдачи NFT-бейджей
+ * Quest Asia - Legacy Badge Preview Helpers
+ * Local-only off-chain badge metadata preview. Does not award badges, NFTs or owner facts.
  */
 
 import type { NFTBadge, QuestProgress, Quest } from '../types';
@@ -186,7 +186,8 @@ export function getNewlyEarnedBadges(
 }
 
 /**
- * Проверить и выдать бейджи после завершения квеста
+ * Preview newly available badge metadata after a local state transition.
+ * This does not award a badge; badge_award_fact must come from owner-backed runtime.
  */
 export function checkAndAwardBadges(
   completedQuestId: string,
@@ -199,9 +200,9 @@ export function checkAndAwardBadges(
 
   const newBadges = getNewlyEarnedBadges(oldStats, newStats);
 
-  // В реальном приложении здесь будет сохранение в БД и отправка уведомлений
+  // Legacy/internal diagnostic only. Never treat this as a badge award or proof.
   if (newBadges.length > 0) {
-    console.log('🎉 Новые бейджи заработаны:', newBadges.map((b) => b.name));
+    console.log('Reference-only badge metadata preview:', newBadges.map((b) => b.name));
   }
 
   return newBadges;

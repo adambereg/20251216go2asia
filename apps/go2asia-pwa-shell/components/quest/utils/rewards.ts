@@ -1,6 +1,7 @@
 /**
  * Quest Asia - Rewards Utils
- * Утилиты для работы с наградами
+ * Legacy/internal local reward preview calculators.
+ * These helpers do not create Points rows, badge award facts, receipts or proof.
  */
 
 import type { Quest, QuestStep, StepResult, NFTBadge } from '../types';

@@ -43,4 +43,31 @@ describe('local reward screen isolation', () => {
     expect(files).not.toContain('Я получил бейдж');
     expect(files).not.toContain('NFT</span>');
   });
+
+  it('keeps the completed quest card away from reward-proof routes and local Points totals', () => {
+    const completedCard = readAppFile('components/quest/MyQuests/CompletedQuestCard.tsx');
+
+    expect(completedCard).not.toContain('/complete');
+    expect(completedCard).not.toContain('calculateTotalPoints');
+    expect(completedCard).not.toContain('Локальная оценка Points');
+    expect(completedCard).not.toContain('{totalPoints.toLocaleString()}');
+    expect(completedCard).toContain('Только после backend-подтверждения');
+    expect(completedCard).toContain('Локальный каталог не является badge_award_fact');
+    expect(completedCard).toContain('Открыть runtime Quest');
+  });
+
+  it('keeps dormant reward widgets bounded as legacy/internal surfaces', () => {
+    const rewardsAnimation = readAppFile('components/quest/QuestRewards/RewardsAnimation.tsx');
+    const pointsDisplay = readAppFile('components/quest/QuestRewards/PointsDisplay.tsx');
+    const rewardsActions = readAppFile('components/quest/QuestRewards/RewardsActions.tsx');
+    const utilsIndex = readAppFile('components/quest/utils/index.ts');
+
+    expect(rewardsAnimation).toContain('Intentionally inert');
+    expect(rewardsAnimation).toContain('return null');
+    expect(rewardsAnimation).not.toContain('<canvas');
+    expect(rewardsAnimation).not.toContain('requestAnimationFrame');
+    expect(pointsDisplay).toContain('Not a Points_row');
+    expect(rewardsActions).toContain('Must not be used as reward receipt');
+    expect(utilsIndex).not.toContain("export * from './rewards'");
+  });
 });
