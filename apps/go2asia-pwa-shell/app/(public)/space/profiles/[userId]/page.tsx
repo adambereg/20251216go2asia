@@ -8,10 +8,11 @@ export const metadata: Metadata = {
   description: 'Публичный профиль и authored posts baseline в Space Asia',
 };
 
-export default function ProfilePage({
+export default async function ProfilePage({
   params,
 }: {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }) {
-  return <ProfilePageClient userId={params.userId} />;
+  const { userId } = await params;
+  return <ProfilePageClient userId={userId} />;
 }

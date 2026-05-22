@@ -8,10 +8,11 @@ export const metadata: Metadata = {
   description: 'Read-first Quest management detail для owner-scoped PRO Console Quest slice.',
 };
 
-export default function QuestPRODetailRoute({
+export default async function QuestPRODetailRoute({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  return <QuestProDetailPage questId={params.id} />;
+  const { id } = await params;
+  return <QuestProDetailPage questId={id} />;
 }

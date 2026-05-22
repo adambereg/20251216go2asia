@@ -8,10 +8,11 @@ export const metadata: Metadata = {
   description: 'Публичная группа и её group feed в Space Asia',
 };
 
-export default function GroupPage({
+export default async function GroupPage({
   params,
 }: {
-  params: { groupId: string };
+  params: Promise<{ groupId: string }>;
 }) {
-  return <GroupPageClient groupId={params.groupId} />;
+  const { groupId } = await params;
+  return <GroupPageClient groupId={groupId} />;
 }
