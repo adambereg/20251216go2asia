@@ -10,6 +10,8 @@ import type {
   AddPointsRequest,
   AddPointsResponse,
   AddQuestStepRequest,
+  AdminDiagnosticRequest,
+  AdminDiagnosticSnapshot,
   AttachMediaUsageRequest,
   AttachMediaUsageResponse,
   AttachSpacePostMediaRequest,
@@ -37,6 +39,7 @@ import type {
   DebugDbResponse,
   EnsureUserRequest,
   EnsureUserResponse,
+  ErrorResponse,
   EventRegistrationResponse,
   FeedPageResponse,
   FeedServiceUnavailableResponse,
@@ -190,6 +193,8 @@ import type {
   SpendPointsRequest,
   SpendPointsResponse,
   SubmitQuestStepRequest,
+  SupportLookupRequest,
+  SupportLookupResponse,
   TransactionsPage,
   UnauthorizedResponse,
   UpdateDraftQuestRequest,
@@ -274,6 +279,78 @@ export const addPoints = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(addPointsRequest),
   });
+};
+
+/**
+ * Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority. Access is feature-flagged, allowlisted and emits bounded operational audit metadata; the operational trace is not an immutable audit ledger.
+
+ * @summary Create a bounded internal Points admin diagnostic snapshot
+ */
+export type getPointsAdminDiagnosticSnapshotResponse200 = {
+  data: AdminDiagnosticSnapshot;
+  status: 200;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse403 = {
+  data: ErrorResponse;
+  status: 403;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponseSuccess =
+  getPointsAdminDiagnosticSnapshotResponse200 & {
+    headers: Headers;
+  };
+export type getPointsAdminDiagnosticSnapshotResponseError = (
+  | getPointsAdminDiagnosticSnapshotResponse400
+  | getPointsAdminDiagnosticSnapshotResponse401
+  | getPointsAdminDiagnosticSnapshotResponse403
+  | getPointsAdminDiagnosticSnapshotResponse500
+  | getPointsAdminDiagnosticSnapshotResponse503
+) & {
+  headers: Headers;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse =
+  | getPointsAdminDiagnosticSnapshotResponseSuccess
+  | getPointsAdminDiagnosticSnapshotResponseError;
+
+export const getGetPointsAdminDiagnosticSnapshotUrl = () => {
+  return `/internal/points/admin-diagnostics`;
+};
+
+export const getPointsAdminDiagnosticSnapshot = async (
+  adminDiagnosticRequest: AdminDiagnosticRequest,
+  options?: RequestInit
+): Promise<getPointsAdminDiagnosticSnapshotResponse> => {
+  return customInstance<getPointsAdminDiagnosticSnapshotResponse>(
+    getGetPointsAdminDiagnosticSnapshotUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminDiagnosticRequest),
+    }
+  );
 };
 
 /**
@@ -413,6 +490,78 @@ export const spendPoints = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(spendPointsRequest),
   });
+};
+
+/**
+ * Internal support-safe navigation endpoint. It resolves bounded projection lookup keys to owner fact references without terminating proof, closing support cases, or exposing admin diagnostics.
+
+ * @summary Resolve a bounded support lookup key to an owner fact reference
+ */
+export type lookupPointsSupportReferenceResponse200 = {
+  data: SupportLookupResponse;
+  status: 200;
+};
+
+export type lookupPointsSupportReferenceResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type lookupPointsSupportReferenceResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type lookupPointsSupportReferenceResponse403 = {
+  data: ErrorResponse;
+  status: 403;
+};
+
+export type lookupPointsSupportReferenceResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type lookupPointsSupportReferenceResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type lookupPointsSupportReferenceResponseSuccess =
+  lookupPointsSupportReferenceResponse200 & {
+    headers: Headers;
+  };
+export type lookupPointsSupportReferenceResponseError = (
+  | lookupPointsSupportReferenceResponse400
+  | lookupPointsSupportReferenceResponse401
+  | lookupPointsSupportReferenceResponse403
+  | lookupPointsSupportReferenceResponse500
+  | lookupPointsSupportReferenceResponse503
+) & {
+  headers: Headers;
+};
+
+export type lookupPointsSupportReferenceResponse =
+  | lookupPointsSupportReferenceResponseSuccess
+  | lookupPointsSupportReferenceResponseError;
+
+export const getLookupPointsSupportReferenceUrl = () => {
+  return `/internal/points/support-lookup`;
+};
+
+export const lookupPointsSupportReference = async (
+  supportLookupRequest: SupportLookupRequest,
+  options?: RequestInit
+): Promise<lookupPointsSupportReferenceResponse> => {
+  return customInstance<lookupPointsSupportReferenceResponse>(
+    getLookupPointsSupportReferenceUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(supportLookupRequest),
+    }
+  );
 };
 
 /**

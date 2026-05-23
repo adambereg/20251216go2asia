@@ -863,6 +863,126 @@ components:
         - type
         - verificationType
       type: object
+    AdminDiagnosticAccessAudit:
+      description: |
+        Bounded operational audit metadata for internal diagnostics access. It is retained for operations traceability only and is not customer proof, a receipt, support resolution or immutable audit ledger.
+      properties:
+        auditRetentionClass:
+          $ref: "#/components/schemas/AdminDiagnosticAuditRetentionClass"
+        auditVisibility:
+          $ref: "#/components/schemas/AdminDiagnosticAuditVisibility"
+        diagnosticAccessId:
+          type: string
+        diagnosticAccessTimestamp:
+          format: date-time
+          type: string
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        diagnosticOutcome:
+          $ref: "#/components/schemas/AdminDiagnosticAccessOutcome"
+        lookupSubjectHash:
+          description: Hashed lookup subject for operational traceability. Raw lookup subjects must not be logged here.
+          type: string
+        operatorService:
+          description: Service subject from service-auth token or UNKNOWN_SERVICE when authentication fails.
+          type: string
+      required:
+        - diagnosticAccessId
+        - diagnosticAccessTimestamp
+        - operatorService
+        - diagnosticKind
+        - diagnosticOutcome
+        - auditVisibility
+        - auditRetentionClass
+      type: object
+    AdminDiagnosticAccessOutcome:
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+        - ACCESS_DENIED
+      type: string
+    AdminDiagnosticAuditRetentionClass:
+      enum:
+        - OPERATIONAL_TRACE
+        - SHORT_RETENTION
+        - INTERNAL_ONLY
+      type: string
+    AdminDiagnosticAuditVisibility:
+      enum:
+        - INTERNAL_ONLY
+      type: string
+    AdminDiagnosticLookupInput:
+      properties:
+        supportLookupKey:
+          type: string
+      required:
+        - supportLookupKey
+      type: object
+    AdminDiagnosticOperatorBoundary:
+      enum:
+        - INTERNAL_NAVIGATION_ONLY
+      type: string
+    AdminDiagnosticRequest:
+      properties:
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        supportLookupKey:
+          description: Opaque bounded key emitted by projection metadata. It is used for internal diagnostics navigation only.
+          type: string
+      required:
+        - supportLookupKey
+      type: object
+    AdminDiagnosticSnapshot:
+      description: Internal diagnostic snapshot for bounded operator navigation. It is not customer proof or support outcome.
+      properties:
+        accessAudit:
+          $ref: "#/components/schemas/AdminDiagnosticAccessAudit"
+        canTerminateProof:
+          enum:
+            - false
+          type: boolean
+        diagnosticId:
+          type: string
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        diagnosticVisibility:
+          $ref: "#/components/schemas/DiagnosticVisibility"
+        generatedAt:
+          format: date-time
+          type: string
+        isCustomerProof:
+          enum:
+            - false
+          type: boolean
+        lookupInput:
+          $ref: "#/components/schemas/AdminDiagnosticLookupInput"
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        notes:
+          items:
+            type: string
+          type: array
+        operatorBoundary:
+          $ref: "#/components/schemas/AdminDiagnosticOperatorBoundary"
+        ownerFactPointers:
+          items:
+            $ref: "#/components/schemas/OwnerFactPointer"
+          type: array
+      required:
+        - diagnosticId
+        - diagnosticKind
+        - diagnosticVisibility
+        - generatedAt
+        - lookupInput
+        - lookupStatus
+        - ownerFactPointers
+        - notes
+        - accessAudit
+        - operatorBoundary
+        - isCustomerProof
+        - canTerminateProof
+      type: object
     AttachMediaUsageRequest:
       properties:
         ownerId:
@@ -1830,6 +1950,17 @@ components:
       required:
         - ok
       type: object
+    DiagnosticKind:
+      enum:
+        - POINTS_OWNER_FACT_LOOKUP
+        - POINTS_PROJECTION_TRACE
+        - SUPPORT_LOOKUP_DIAGNOSTIC
+      type: string
+    DiagnosticVisibility:
+      enum:
+        - ADMIN_DIAGNOSTIC
+        - INTERNAL_DIAGNOSTIC
+      type: string
     EnsureUserRequest:
       properties:
         email:
@@ -2450,6 +2581,38 @@ components:
         - quest
         - avatar
       type: string
+    OwnerFactPointer:
+      description: Internal navigation pointer to an owner fact or owner fact family. The owner service remains authoritative.
+      properties:
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        ownerEntity:
+          enum:
+            - user_balances
+            - points_transactions
+          type: string
+        ownerLookupId:
+          description: Bounded owner lookup identifier for internal tooling.
+          type: string
+        ownerService:
+          enum:
+            - points-service
+          type: string
+        ownerTimestamp:
+          description: Owner row timestamp when safely available. It is not final authority by itself.
+          format: date-time
+          type: string
+        pointerType:
+          enum:
+            - OWNER_FACT_POINTER
+          type: string
+      required:
+        - ownerService
+        - ownerEntity
+        - ownerLookupId
+        - pointerType
+        - lookupStatus
+      type: object
     PointsAction:
       description: |
         Phase 2 action contract (Points-only). This enum may be extended in Phase 2 **only** by explicit decision. IMPORTANT: Phase 3 tokenomics (G2A/NFT/on-chain) actions are intentionally excluded.
@@ -2534,7 +2697,7 @@ components:
         referenceScope:
           $ref: "#/components/schemas/ProjectionReferenceScope"
         supportLookupKey:
-          description: Optional bounded support navigation key. It is not customer proof.
+          description: Optional bounded support navigation key. It is not customer proof or support resolution.
           type: string
       required:
         - projectionSource
@@ -6124,6 +6287,80 @@ components:
         - proofType
         - proofData
       type: object
+    SupportLookupOwnerFactReference:
+      description: |
+        Internal owner fact navigation pointer. This is not case resolution, accounting statement or proof terminator.
+      properties:
+        ownerEntity:
+          enum:
+            - user_balances
+            - points_transactions
+          type: string
+        ownerLookupId:
+          description: Opaque owner lookup identifier for support tooling.
+          type: string
+        ownerService:
+          enum:
+            - points-service
+          type: string
+        ownerTimestamp:
+          description: Owner row timestamp when safely available. It is not proof finality.
+          format: date-time
+          type: string
+        referenceType:
+          enum:
+            - OWNER_FACT_REFERENCE
+          type: string
+      required:
+        - ownerService
+        - ownerEntity
+        - ownerLookupId
+        - referenceType
+      type: object
+    SupportLookupRequest:
+      properties:
+        supportLookupKey:
+          description: Opaque bounded key emitted by projection metadata. It is navigation-only, not proof.
+          type: string
+      required:
+        - supportLookupKey
+      type: object
+    SupportLookupResponse:
+      properties:
+        lookupNote:
+          description: Human-readable internal note. This must not be treated as support resolution.
+          type: string
+        lookupScope:
+          $ref: "#/components/schemas/SupportLookupScope"
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        lookupVisibility:
+          $ref: "#/components/schemas/SupportLookupVisibility"
+        ownerFactReference:
+          $ref: "#/components/schemas/SupportLookupOwnerFactReference"
+        supportLookupKey:
+          type: string
+      required:
+        - supportLookupKey
+        - lookupScope
+        - lookupVisibility
+        - lookupStatus
+        - lookupNote
+      type: object
+    SupportLookupScope:
+      enum:
+        - SUPPORT_SAFE
+      type: string
+    SupportLookupStatus:
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+      type: string
+    SupportLookupVisibility:
+      enum:
+        - INTERNAL_REFERENCE
+      type: string
     TransactionsPage:
       properties:
         items:
@@ -6398,6 +6635,45 @@ paths:
       summary: Add points to a user (idempotent)
       tags:
         - internal
+  /internal/points/admin-diagnostics:
+    post:
+      description: |
+        Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority. Access is feature-flagged, allowlisted and emits bounded operational audit metadata; the operational trace is not an immutable audit ledger.
+      operationId: getPointsAdminDiagnosticSnapshot
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDiagnosticRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDiagnosticSnapshot"
+          description: Diagnostic snapshot created for internal navigation only.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - ServiceAuth: []
+      summary: Create a bounded internal Points admin diagnostic snapshot
+      tags:
+        - internal
   /internal/points/badges/award:
     post:
       description: |
@@ -6469,6 +6745,45 @@ paths:
       security:
         - ServiceAuth: []
       summary: Spend points from user available balance (idempotent)
+      tags:
+        - internal
+  /internal/points/support-lookup:
+    post:
+      description: |
+        Internal support-safe navigation endpoint. It resolves bounded projection lookup keys to owner fact references without terminating proof, closing support cases, or exposing admin diagnostics.
+      operationId: lookupPointsSupportReference
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportLookupRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportLookupResponse"
+          description: Lookup completed. The status describes whether navigation is available, not proof.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - ServiceAuth: []
+      summary: Resolve a bounded support lookup key to an owner fact reference
       tags:
         - internal
   /internal/referral/generate-code:
