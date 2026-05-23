@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Activity, Home, Award, Users, Target, BarChart } from 'lucide-react';
 import { cn } from '@go2asia/ui';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
 
 export function ConnectNav() {
   const pathname = usePathname();
 
   const navItems = [
     { href: '/connect', label: 'Главная', icon: Home },
-    { href: '/connect/wallet', label: 'Активность', icon: Activity },
+    { href: ROUTE_ALIASES.connectActivity, label: 'Активность', icon: Activity },
     { href: '/connect/levels', label: 'Бейджи', icon: Award },
     { href: '/connect/referrals', label: 'Приглашения', icon: Users },
     { href: '/connect/missions', label: 'Миссии', icon: Target },
@@ -22,7 +23,12 @@ export function ConnectNav() {
       <nav className="flex flex-nowrap gap-2 whitespace-nowrap w-max" aria-label="Навигация Connect Asia">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.href === '/connect' ? pathname === '/connect' : pathname?.startsWith(item.href);
+          const isConnectActivity =
+            item.href === ROUTE_ALIASES.connectActivity &&
+            (pathname?.startsWith(ROUTE_ALIASES.connectActivity) ||
+              pathname?.startsWith(ROUTE_ALIASES.connectWalletLegacy));
+          const isActive =
+            item.href === '/connect' ? pathname === '/connect' : isConnectActivity || pathname?.startsWith(item.href);
 
           return (
             <Link

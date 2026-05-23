@@ -6,9 +6,11 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectionMetadataEnvelope } from "./projectionMetadataEnvelope";
 
 export interface UserBalance {
   balance: number;
+  projectionMetadata?: ProjectionMetadataEnvelope;
   updatedAt: string;
   userId: string;
 }

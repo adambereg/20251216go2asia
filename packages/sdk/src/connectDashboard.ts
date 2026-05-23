@@ -6,6 +6,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { customInstance } from './mutator';
+import type { ProjectionMetadataEnvelope } from './projectionMetadata';
+
+export type { ProjectionMetadataEnvelope } from './projectionMetadata';
 
 export interface ConnectDashboardBalance {
   points: number;
@@ -59,6 +62,7 @@ export interface ConnectDashboardResponse {
   recentTransactions: ConnectDashboardTransactionItem[];
   referrals: ConnectDashboardReferrals;
   badges: ConnectDashboardBadges;
+  projectionMetadata?: ProjectionMetadataEnvelope;
 }
 
 export interface UseGetConnectDashboardOptions {

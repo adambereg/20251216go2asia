@@ -12,6 +12,8 @@ import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
 import { CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
+import { formatProjectionMetadata } from '@/lib/projectionMetadata';
+import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
 type WalletSummary = {
   availablePoints: number;
@@ -21,6 +23,15 @@ type WalletSummary = {
   estimatedUnlockablePoints: number;
   vipStatus: { isActive: boolean };
   proStatus: { isActive: boolean };
+  projectionMetadata?: ProjectionMetadataEnvelope;
+};
+
+type UserBalanceWithProjectionMetadata = UserBalance & {
+  projectionMetadata?: ProjectionMetadataEnvelope;
+};
+
+type TransactionsPageProjectionMetadata = {
+  projectionMetadata?: ProjectionMetadataEnvelope;
 };
 
 function useGetWalletSummary() {
@@ -98,7 +109,7 @@ function PointsSummary({
   walletSummaryLoading,
   walletSummaryError,
 }: {
-  balance: UserBalance | undefined;
+  balance: UserBalanceWithProjectionMetadata | undefined;
   walletSummary: WalletSummary | undefined;
   walletSummaryLoading: boolean;
   walletSummaryError: boolean;
@@ -123,6 +134,9 @@ function PointsSummary({
                 : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
             </p>
             {updatedAt && <p className="text-xs text-slate-500 mt-2">Backend timestamp: {updatedAt}</p>}
+            <p className="text-xs text-slate-500 mt-2">
+              {formatProjectionMetadata(walletSummary?.projectionMetadata ?? balance?.projectionMetadata)}
+            </p>
             {walletSummaryError && (
               <p className="text-xs text-amber-700 mt-2">
                 Структура Points временно недоступна, показываем последнюю read-only сводку.
@@ -233,6 +247,8 @@ export function WalletView() {
     const sourceItems = allTransactions.length ? allTransactions : transactionsData?.items ?? [];
     return sourceItems.map(toWalletTransaction);
   }, [allTransactions, transactionsData?.items]);
+  const transactionsProjectionMetadata = (transactionsData as TransactionsPageProjectionMetadata | undefined)
+    ?.projectionMetadata;
 
   const handleLoadMore = () => {
     if (transactionsData?.nextCursor) {
@@ -322,6 +338,9 @@ export function WalletView() {
 
         <div className="mb-6">
           <h2 className="text-xl font-bold text-slate-900 mb-4">Activity history projection</h2>
+          <p className="text-xs text-slate-500 mb-4">
+            {formatProjectionMetadata(transactionsProjectionMetadata)}
+          </p>
           <TransactionList
             transactions={transactions}
             onLoadMore={handleLoadMore}

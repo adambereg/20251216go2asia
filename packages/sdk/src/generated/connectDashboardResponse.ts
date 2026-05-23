@@ -8,12 +8,14 @@
  */
 import type { ConnectDashboardBadges } from "./connectDashboardBadges";
 import type { ConnectDashboardBalance } from "./connectDashboardBalance";
+import type { ProjectionMetadataEnvelope } from "./projectionMetadataEnvelope";
 import type { ConnectDashboardTransactionItem } from "./connectDashboardTransactionItem";
 import type { ConnectDashboardReferrals } from "./connectDashboardReferrals";
 
 export interface ConnectDashboardResponse {
   badges: ConnectDashboardBadges;
   balance: ConnectDashboardBalance;
+  projectionMetadata?: ProjectionMetadataEnvelope;
   recentTransactions: ConnectDashboardTransactionItem[];
   referrals: ConnectDashboardReferrals;
 }

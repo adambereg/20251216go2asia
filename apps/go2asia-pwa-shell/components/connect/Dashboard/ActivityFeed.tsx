@@ -10,6 +10,7 @@ import {
   getConnectLedgerActionLabel,
   getConnectLedgerSourceLabel,
 } from '../copy';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
 
 interface ActivityFeedProps {
   transactions: ConnectDashboardTransactionItem[];
@@ -55,7 +56,7 @@ export function ActivityFeed({ transactions, maxItems = 10 }: ActivityFeedProps)
             {CONNECT_ACTIVITY_REFERENCE_HELPER}
           </p>
         </div>
-        <Link href="/connect/wallet">
+        <Link href={ROUTE_ALIASES.connectActivity}>
           <Button variant="secondary" size="sm" className="w-full sm:w-auto">
             Показать все
             <ArrowRight size={16} className="ml-1" />

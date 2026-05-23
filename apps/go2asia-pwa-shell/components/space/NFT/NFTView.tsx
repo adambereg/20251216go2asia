@@ -21,6 +21,10 @@ const RARITY_COLORS = {
   legendary: 'bg-yellow-100 text-yellow-700',
 };
 
+/**
+ * @deprecated Mock-heavy deferred Space badge view.
+ * Not route-safe while Path B is inactive; use static deferred route pages instead.
+ */
 export function NFTView() {
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>('all');
 

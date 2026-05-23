@@ -7,9 +7,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PointsTransaction } from "./pointsTransaction";
+import type { ProjectionMetadataEnvelope } from "./projectionMetadataEnvelope";
 
 export interface TransactionsPage {
   items: PointsTransaction[];
   /** @nullable */
   nextCursor?: string | null;
+  projectionMetadata?: ProjectionMetadataEnvelope;
 }

@@ -30,11 +30,9 @@ export * from './Quests';
 // Vouchers Components
 export * from './Vouchers';
 
-// Balance Components
-export * from './Balance';
-
-// NFT Components
-export * from './NFT';
+// Stage 12I-D3: mock-heavy Balance/NFT legacy views are intentionally not
+// re-exported from the public Space barrel. Import explicit deferred sub-barrels
+// only for compatibility or quarantine work; never wire them into app routes.
 
 // Referrals Components
 export * from './Referrals';

@@ -7,6 +7,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { WalletStatus } from "./walletStatus";
+import type { ProjectionMetadataEnvelope } from "./projectionMetadataEnvelope";
 
 export interface WalletSummaryResponse {
   /** Ledger-projected spendable Points bucket. */
@@ -18,6 +19,7 @@ export interface WalletSummaryResponse {
   /** Ledger-projected network-generated Points bucket. */
   networkPoints: number;
   proStatus: WalletStatus;
+  projectionMetadata?: ProjectionMetadataEnvelope;
   /** Sum of availablePoints, lockedPoints and networkPoints. */
   totalPoints: number;
   vipStatus: WalletStatus;

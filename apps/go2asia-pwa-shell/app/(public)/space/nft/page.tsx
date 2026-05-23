@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { LEGACY_ROUTE_NOTICES } from '@/lib/routeAliases';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Бейджи (deferred) | Space Asia | Go2Asia',
-  description: 'Deferred read-only поверхность off-chain бейджей; NFT/on-chain не активно',
+  title: 'Legacy Badges Alias | Space Asia | Go2Asia',
+  description: 'Legacy route for deferred off-chain badges; NFT ownership and on-chain semantics are inactive',
 };
 
 export default function NFTPage() {
@@ -18,6 +19,9 @@ export default function NFTPage() {
         off-chain бейджей и достижений. NFT/on-chain коллекция не является
         текущей функцией Space Asia, а эта страница не подтверждает владение
         токеном или факт выдачи бейджа.
+      </p>
+      <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+        {LEGACY_ROUTE_NOTICES.spaceNft}
       </p>
     </main>
   );

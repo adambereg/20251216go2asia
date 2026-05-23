@@ -1106,6 +1106,8 @@ components:
           $ref: "#/components/schemas/ConnectDashboardBadges"
         balance:
           $ref: "#/components/schemas/ConnectDashboardBalance"
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
         recentTransactions:
           items:
             $ref: "#/components/schemas/ConnectDashboardTransactionItem"
@@ -2507,6 +2509,67 @@ components:
         - externalId
         - createdAt
       type: object
+    ProjectionKind:
+      enum:
+        - ACTIVITY_PROJECTION
+        - POINTS_SUMMARY
+        - BADGE_PREVIEW
+        - RF_LIFECYCLE_PROJECTION
+        - INQUIRY_PROJECTION
+      type: string
+    ProjectionMetadataEnvelope:
+      description: |
+        Runtime metadata for read-only projection surfaces. This envelope is additive, non-authoritative, and cannot terminate proof or replace owner-service lookup.
+      properties:
+        generatedAt:
+          description: Time the projection response metadata was composed.
+          format: date-time
+          type: string
+        ownerFactReference:
+          $ref: "#/components/schemas/ProjectionOwnerFactReference"
+        projectionKind:
+          $ref: "#/components/schemas/ProjectionKind"
+        projectionSource:
+          $ref: "#/components/schemas/ProjectionSource"
+        referenceScope:
+          $ref: "#/components/schemas/ProjectionReferenceScope"
+        supportLookupKey:
+          description: Optional bounded support navigation key. It is not customer proof.
+          type: string
+      required:
+        - projectionSource
+        - projectionKind
+        - generatedAt
+        - referenceScope
+      type: object
+    ProjectionOwnerFactReference:
+      properties:
+        ownerEntity:
+          description: Owner table or entity family that can be re-resolved by support/admin tooling.
+          type: string
+        ownerService:
+          description: Service that owns the source record. This is a lookup hint, not proof.
+          type: string
+        referenceType:
+          enum:
+            - OWNER_FACT_REFERENCE
+          type: string
+      required:
+        - ownerService
+        - ownerEntity
+        - referenceType
+      type: object
+    ProjectionReferenceScope:
+      enum:
+        - READ_ONLY
+        - REFERENCE_ONLY
+        - PREVIEW_ONLY
+        - INQUIRY_ONLY
+      type: string
+    ProjectionSource:
+      enum:
+        - POINTS_SERVICE
+      type: string
     PublicCreateSpacePostType:
       enum:
         - post
@@ -6070,6 +6133,8 @@ components:
         nextCursor:
           nullable: true
           type: string
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
       required:
         - items
       type: object
@@ -6194,6 +6259,8 @@ components:
       properties:
         balance:
           type: integer
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
         updatedAt:
           format: date-time
           type: string
@@ -6252,6 +6319,8 @@ components:
           type: integer
         proStatus:
           $ref: "#/components/schemas/WalletStatus"
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
         totalPoints:
           description: Sum of availablePoints, lockedPoints and networkPoints.
           type: integer

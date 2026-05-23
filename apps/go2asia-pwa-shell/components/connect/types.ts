@@ -98,6 +98,9 @@ export interface Reward {
   nft?: string;
 }
 
+/** Alias for new bounded surfaces; legacy `Reward` remains for compatibility and is not a grant authority. */
+export type ParticipationPreview = Reward;
+
 // =============================================================================
 // Достижения
 // =============================================================================
@@ -141,6 +144,9 @@ export interface NFTBadge {
   conditions: string;
   can_upgrade: boolean;
 }
+
+/** Alias for new imports; legacy `NFTBadge` remains off-chain metadata, not NFT ownership. */
+export type OffChainBadgePreview = NFTBadge;
 
 // =============================================================================
 // Миссии
@@ -251,6 +257,9 @@ export interface WalletData {
   };
 }
 
+/** Alias for new imports; legacy `WalletData` remains a read-only Connect activity projection. */
+export type ConnectActivityProjectionData = WalletData;
+
 export interface NFTWalletData {
   nft_count: number;
   nfts: NFTBadge[];
@@ -259,6 +268,9 @@ export interface NFTWalletData {
     modules: ModuleType[];
   };
 }
+
+/** Alias for future-safe badge collection previews; legacy name is compatibility-only. */
+export type BadgeCollectionPreviewData = NFTWalletData;
 
 // =============================================================================
 // Levels данные

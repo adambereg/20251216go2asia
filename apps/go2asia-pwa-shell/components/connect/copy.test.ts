@@ -58,6 +58,7 @@ describe('connect copy helpers', () => {
   it('keeps active Connect projection surfaces labeled as non-authoritative projections', () => {
     const activeFiles = [
       'app/(authenticated)/connect/page.tsx',
+      'app/(authenticated)/connect/activity/page.tsx',
       'app/(authenticated)/connect/wallet/page.tsx',
       'app/(authenticated)/connect/referrals/page.tsx',
       'app/(authenticated)/connect/levels/page.tsx',

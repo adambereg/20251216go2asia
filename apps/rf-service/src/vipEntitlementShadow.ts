@@ -1158,32 +1158,35 @@ export function resetVipEntitlementShadowForTests(): void {
 
 export function assertNoUnsafeVipEntitlementShadowDiagnosticsFields(value: unknown): void {
   const serialized = JSON.stringify(value).toLowerCase();
-  const forbidden = [
-    'x-gateway-auth',
-    'authorization',
-    'bearer ',
-    'jwt',
-    'clerk',
-    'payment',
-    'receipt',
-    'sourceref',
-    'source_ref',
-    'metadata',
-    'roles',
-    'userid',
-    'email',
-    'ledger',
-    'transaction',
-    'externalid',
-    'external_id',
-    'correlation',
-    'dedupe',
-    'settlement',
-    'on-chain',
+  // Guard against sensitive key leakage without false-positives from random ids/hashes.
+  const forbiddenKeyPatterns: ReadonlyArray<{ label: string; pattern: RegExp }> = [
+    { label: 'x-gateway-auth', pattern: /"x-gateway-auth"\s*:/ },
+    { label: 'authorization', pattern: /"authorization"\s*:/ },
+    { label: 'jwt', pattern: /"jwt"\s*:/ },
+    { label: 'clerk', pattern: /"clerk"\s*:/ },
+    { label: 'payment', pattern: /"payment"\s*:/ },
+    { label: 'receipt', pattern: /"receipt"\s*:/ },
+    { label: 'sourceref', pattern: /"sourceref"\s*:/ },
+    { label: 'source_ref', pattern: /"source_ref"\s*:/ },
+    { label: 'metadata', pattern: /"metadata"\s*:/ },
+    { label: 'roles', pattern: /"roles"\s*:/ },
+    { label: 'userid', pattern: /"userid"\s*:/ },
+    { label: 'email', pattern: /"email"\s*:/ },
+    { label: 'ledger', pattern: /"ledger"\s*:/ },
+    { label: 'transaction', pattern: /"transaction"\s*:/ },
+    { label: 'externalid', pattern: /"externalid"\s*:/ },
+    { label: 'external_id', pattern: /"external_id"\s*:/ },
+    { label: 'correlation', pattern: /"correlation"\s*:/ },
+    { label: 'dedupe', pattern: /"dedupe"\s*:/ },
+    { label: 'settlement', pattern: /"settlement"\s*:/ },
+    { label: 'on-chain', pattern: /"on-chain"\s*:/ },
   ];
-  for (const token of forbidden) {
-    if (serialized.includes(token)) {
-      throw new Error(`Unsafe VIP entitlement shadow diagnostics field leaked: ${token}`);
+  for (const { label, pattern } of forbiddenKeyPatterns) {
+    if (pattern.test(serialized)) {
+      throw new Error(`Unsafe VIP entitlement shadow diagnostics field leaked: ${label}`);
     }
+  }
+  if (/\bbearer\s+[a-z0-9\-_]+\.[a-z0-9\-_]+\.[a-z0-9\-_]+\b/.test(serialized)) {
+    throw new Error('Unsafe VIP entitlement shadow diagnostics field leaked: bearer-token');
   }
 }

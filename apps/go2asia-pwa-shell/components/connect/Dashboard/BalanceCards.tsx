@@ -6,9 +6,13 @@ import { Card, Button } from '@go2asia/ui';
 import type { ConnectDashboardBalance } from '@go2asia/sdk/connectDashboard';
 import { customInstance } from '@go2asia/sdk/mutator';
 import { CONNECT_POINTS_BUCKET_LABELS } from '../copy';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
+import { formatProjectionMetadata } from '@/lib/projectionMetadata';
+import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
 interface BalanceCardsProps {
   balance: ConnectDashboardBalance;
+  projectionMetadata?: ProjectionMetadataEnvelope;
 }
 
 type WalletSummary = {
@@ -19,6 +23,7 @@ type WalletSummary = {
   estimatedUnlockablePoints: number;
   vipStatus: { isActive: boolean };
   proStatus: { isActive: boolean };
+  projectionMetadata?: ProjectionMetadataEnvelope;
 };
 
 function useGetWalletSummary() {
@@ -40,7 +45,7 @@ function formatUpdatedAt(updatedAt: string | null) {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export function BalanceCards({ balance }: BalanceCardsProps) {
+export function BalanceCards({ balance, projectionMetadata }: BalanceCardsProps) {
   const { data: walletSummary, isError: walletSummaryError } = useGetWalletSummary();
   const updatedAt = formatUpdatedAt(balance.updatedAt);
   const totalPoints = walletSummary?.totalPoints ?? balance.points;
@@ -65,6 +70,9 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
                   : 'У вас пока нет Points. Они появятся после первых действий в Go2Asia.'}
               </p>
               {updatedAt && <p className="text-xs text-slate-500 mt-2">Backend timestamp: {updatedAt}</p>}
+              <p className="text-xs text-slate-500 mt-2">
+                {formatProjectionMetadata(walletSummary?.projectionMetadata ?? projectionMetadata)}
+              </p>
               {walletSummaryError && (
                 <p className="text-xs text-amber-700 mt-2">
                   Структура Points временно недоступна, показываем последнюю read-only сводку.
@@ -73,7 +81,12 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
             </div>
           </div>
 
-          <Button variant="secondary" size="sm" className="md:w-auto w-full" onClick={() => (window.location.href = '/connect/wallet')}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="md:w-auto w-full"
+            onClick={() => (window.location.href = ROUTE_ALIASES.connectActivity)}
+          >
             Смотреть историю
           </Button>
         </div>
@@ -106,4 +119,6 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
     </div>
   );
 }
+
+export { BalanceCards as ConnectActivitySummaryCards };
 
