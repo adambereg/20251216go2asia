@@ -4,7 +4,7 @@ import { Card, Button } from "@go2asia/ui";
 import { ArrowRight, Award, CheckCircle2, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import type { ConnectDashboardResponse } from "@go2asia/sdk/connectDashboard";
-import { BalanceCards } from "./BalanceCards";
+import { ConnectActivitySummaryCards } from "./BalanceCards";
 import { ActivityFeed } from "./ActivityFeed";
 import { ConnectRfSection } from "./ConnectRfSection";
 import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
@@ -52,7 +52,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
         <div className="mb-3">
           <h2 className="text-lg font-semibold text-slate-900">Points projection</h2>
         </div>
-        <BalanceCards balance={dashboard.balance} />
+        <ConnectActivitySummaryCards balance={dashboard.balance} />
       </div>
 
       <ConnectRfSection />

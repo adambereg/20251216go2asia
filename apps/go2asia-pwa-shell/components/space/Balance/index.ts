@@ -1,2 +1,2 @@
-export { BalanceView } from './BalanceView';
+export { BalanceView, BalanceView as SpaceActivitySummaryDeferredView } from './BalanceView';
 

@@ -85,6 +85,9 @@ export interface NFTBadge {
   earnedAt: string;
 }
 
+/** Alias for new bounded imports; legacy `NFTBadge` remains off-chain badge metadata only. */
+export type SpaceOffChainBadgePreview = NFTBadge;
+
 // =============================================================================
 // Пост
 // =============================================================================

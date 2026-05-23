@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { WalletView } from '@/components/connect/Wallet/WalletView';
+import { ConnectActivityView } from '@/components/connect/Wallet';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function ConnectActivityPage() {
-  return <WalletView />;
+  return <ConnectActivityView />;
 }

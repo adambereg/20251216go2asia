@@ -1,2 +1,2 @@
-export { NFTView } from './NFTView';
+export { NFTView, NFTView as SpaceBadgesDeferredView } from './NFTView';
 

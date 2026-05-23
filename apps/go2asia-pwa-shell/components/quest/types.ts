@@ -35,6 +35,9 @@ export type StepType =
 /** Legacy rarity metadata for off-chain badge previews; not NFT ownership */
 export type NFTBadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+/** Alias for new bounded imports; legacy rarity name remains compatibility-only. */
+export type OffChainBadgeRarity = NFTBadgeRarity;
+
 /** Legacy category metadata for off-chain badge previews */
 export type NFTBadgeCategory =
   | 'temple'
@@ -43,6 +46,9 @@ export type NFTBadgeCategory =
   | 'culture'
   | 'adventure'
   | 'seasonal';
+
+/** Alias for new bounded imports; legacy category name remains compatibility-only. */
+export type OffChainBadgeCategory = NFTBadgeCategory;
 
 /** Лучшее время суток для квеста */
 export type BestTime = 'morning' | 'afternoon' | 'evening' | 'night';
@@ -72,6 +78,9 @@ export interface NFTBadge {
     specificQuests?: string[];
   };
 }
+
+/** Alias for new bounded imports; legacy `NFTBadge` is off-chain metadata, not ownership authority. */
+export type OffChainBadgePreview = NFTBadge;
 
 /** Награды квеста */
 export interface QuestRewards {

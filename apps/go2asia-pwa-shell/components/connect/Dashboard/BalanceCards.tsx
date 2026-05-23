@@ -113,3 +113,5 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
   );
 }
 
+export { BalanceCards as ConnectActivitySummaryCards };
+
