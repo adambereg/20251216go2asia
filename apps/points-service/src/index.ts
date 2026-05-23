@@ -26,6 +26,7 @@ import {
   recordSpendabilityShadowObservation,
   toSpendabilityShadowObservation,
 } from './spendabilityShadow';
+import { createProjectionMetadata } from './projectionMetadata';
 
 export interface Env extends ProducerFlagEnv {
   ENVIRONMENT?: string;
@@ -607,6 +608,39 @@ function normalizeDashboardBadgeItem(row: UserBadgeWithCatalogRow) {
   };
 }
 
+const pointsSummaryMetadata = () =>
+  createProjectionMetadata({
+    projectionKind: 'POINTS_SUMMARY',
+    referenceScope: 'READ_ONLY',
+    ownerFactReference: {
+      ownerService: 'points-service',
+      ownerEntity: 'user_balances',
+      referenceType: 'OWNER_FACT_REFERENCE',
+    },
+  });
+
+const walletSummaryMetadata = () =>
+  createProjectionMetadata({
+    projectionKind: 'POINTS_SUMMARY',
+    referenceScope: 'READ_ONLY',
+    ownerFactReference: {
+      ownerService: 'points-service',
+      ownerEntity: 'points_transactions',
+      referenceType: 'OWNER_FACT_REFERENCE',
+    },
+  });
+
+const activityProjectionMetadata = () =>
+  createProjectionMetadata({
+    projectionKind: 'ACTIVITY_PROJECTION',
+    referenceScope: 'REFERENCE_ONLY',
+    ownerFactReference: {
+      ownerService: 'points-service',
+      ownerEntity: 'points_transactions',
+      referenceType: 'OWNER_FACT_REFERENCE',
+    },
+  });
+
 async function listActiveBadges(db: Db): Promise<BadgeCatalogRow[]> {
   const result = await db.execute(sql`
     SELECT id, code, title, description, category, icon_key, is_active, created_at, updated_at
@@ -868,7 +902,15 @@ export default {
         const db = createDb(requireDatabase(env));
         const { balance, updatedAt } = await getUserBalance(db, userId);
 
-        const res = json({ userId, balance, updatedAt: updatedAt.toISOString() }, 200);
+        const res = json(
+          {
+            userId,
+            balance,
+            updatedAt: updatedAt.toISOString(),
+            projectionMetadata: pointsSummaryMetadata(),
+          },
+          200
+        );
         res.headers.set('X-Request-Id', requestId);
         return res;
       }
@@ -897,6 +939,7 @@ export default {
             proStatus: {
               isActive: hasRole(auth.principal, 'pro'),
             },
+            projectionMetadata: walletSummaryMetadata(),
           },
           200,
           { 'Cache-Control': 'no-store' }
@@ -946,6 +989,10 @@ export default {
               totalBadges,
               recent: recentBadges.map(normalizeDashboardBadgeItem),
             },
+            projectionMetadata: createProjectionMetadata({
+              projectionKind: 'POINTS_SUMMARY',
+              referenceScope: 'READ_ONLY',
+            }),
           },
           200,
           { 'Cache-Control': 'no-store' }
@@ -1025,6 +1072,7 @@ export default {
                     id: last.id,
                   })
                 : null,
+            projectionMetadata: activityProjectionMetadata(),
           },
           200
         );

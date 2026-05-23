@@ -52,7 +52,10 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
         <div className="mb-3">
           <h2 className="text-lg font-semibold text-slate-900">Points projection</h2>
         </div>
-        <ConnectActivitySummaryCards balance={dashboard.balance} />
+        <ConnectActivitySummaryCards
+          balance={dashboard.balance}
+          projectionMetadata={dashboard.projectionMetadata}
+        />
       </div>
 
       <ConnectRfSection />

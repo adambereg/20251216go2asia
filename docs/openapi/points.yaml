@@ -491,6 +491,66 @@ components:
         requestId:
           type: string
 
+    ProjectionSource:
+      type: string
+      enum:
+        - POINTS_SERVICE
+
+    ProjectionKind:
+      type: string
+      enum:
+        - ACTIVITY_PROJECTION
+        - POINTS_SUMMARY
+        - BADGE_PREVIEW
+        - RF_LIFECYCLE_PROJECTION
+        - INQUIRY_PROJECTION
+
+    ProjectionReferenceScope:
+      type: string
+      enum:
+        - READ_ONLY
+        - REFERENCE_ONLY
+        - PREVIEW_ONLY
+        - INQUIRY_ONLY
+
+    ProjectionOwnerFactReference:
+      type: object
+      required: [ownerService, ownerEntity, referenceType]
+      properties:
+        ownerService:
+          type: string
+          description: Service that owns the source record. This is a lookup hint, not proof.
+        ownerEntity:
+          type: string
+          description: Owner table or entity family that can be re-resolved by support/admin tooling.
+        referenceType:
+          type: string
+          enum:
+            - OWNER_FACT_REFERENCE
+
+    ProjectionMetadataEnvelope:
+      type: object
+      required: [projectionSource, projectionKind, generatedAt, referenceScope]
+      description: >
+        Runtime metadata for read-only projection surfaces. This envelope is additive, non-authoritative,
+        and cannot terminate proof or replace owner-service lookup.
+      properties:
+        projectionSource:
+          $ref: "#/components/schemas/ProjectionSource"
+        projectionKind:
+          $ref: "#/components/schemas/ProjectionKind"
+        generatedAt:
+          type: string
+          format: date-time
+          description: Time the projection response metadata was composed.
+        referenceScope:
+          $ref: "#/components/schemas/ProjectionReferenceScope"
+        ownerFactReference:
+          $ref: "#/components/schemas/ProjectionOwnerFactReference"
+        supportLookupKey:
+          type: string
+          description: Optional bounded support navigation key. It is not customer proof.
+
     PointsAction:
       type: string
       description: >
@@ -558,6 +618,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
 
     WalletStatus:
       type: object
@@ -596,6 +658,8 @@ components:
           $ref: "#/components/schemas/WalletStatus"
         proStatus:
           $ref: "#/components/schemas/WalletStatus"
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
 
     ConnectDashboardBalance:
       type: object
@@ -690,6 +754,8 @@ components:
           $ref: "#/components/schemas/ConnectDashboardReferrals"
         badges:
           $ref: "#/components/schemas/ConnectDashboardBadges"
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
 
     TransactionsPage:
       type: object
@@ -702,6 +768,8 @@ components:
         nextCursor:
           type: string
           nullable: true
+        projectionMetadata:
+          $ref: "#/components/schemas/ProjectionMetadataEnvelope"
 
     AddPointsRequest:
       type: object

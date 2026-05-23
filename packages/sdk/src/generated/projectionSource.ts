@@ -6,12 +6,10 @@
 
  * OpenAPI spec version: 0.1.0
  */
-import type { PointsTransaction } from "./pointsTransaction";
-import type { ProjectionMetadataEnvelope } from "./projectionMetadataEnvelope";
 
-export interface TransactionsPage {
-  items: PointsTransaction[];
-  /** @nullable */
-  nextCursor?: string | null;
-  projectionMetadata?: ProjectionMetadataEnvelope;
-}
+export type ProjectionSource = (typeof ProjectionSource)[keyof typeof ProjectionSource];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ProjectionSource = {
+  POINTS_SERVICE: "POINTS_SERVICE",
+} as const;

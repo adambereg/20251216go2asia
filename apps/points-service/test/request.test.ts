@@ -24,6 +24,35 @@ import {
   resetSpendabilityShadowDiagnosticsForTests,
 } from '../src/spendabilityShadow';
 
+type ProjectionMetadataEnvelope = {
+  projectionSource: string;
+  projectionKind: string;
+  generatedAt: string;
+  referenceScope: string;
+  ownerFactReference?: {
+    ownerService: string;
+    ownerEntity: string;
+    referenceType: string;
+  };
+};
+
+function expectProjectionEnvelope(
+  metadata: ProjectionMetadataEnvelope | undefined,
+  expected: Pick<ProjectionMetadataEnvelope, 'projectionKind' | 'referenceScope'>
+) {
+  expect(metadata).toMatchObject({
+    projectionSource: 'POINTS_SERVICE',
+    projectionKind: expected.projectionKind,
+    referenceScope: expected.referenceScope,
+  });
+  expect(typeof metadata?.generatedAt).toBe('string');
+  expect(Number.isNaN(new Date(metadata!.generatedAt).getTime())).toBe(false);
+
+  const serialized = JSON.stringify(metadata);
+  expect(serialized).not.toMatch(/proofClass|verified|settled|confirmed|guaranteed|proofComplete/i);
+  expect(serialized).not.toMatch(/financial ledger|cashback|payout|on-chain|bridge/i);
+}
+
 const rfSpendProducerEnabled = {
   ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_ENABLED: 'true',
 } satisfies Partial<Env>;
@@ -77,11 +106,19 @@ describe('points-service request hardening', () => {
       env
     );
 
-    const body = await readJson<{ userId: string; balance: number }>(response);
+    const body = await readJson<{
+      userId: string;
+      balance: number;
+      projectionMetadata?: ProjectionMetadataEnvelope;
+    }>(response);
 
     expect(response.status).toBe(200);
     expect(body.userId).toBe('user_from_token');
     expect(body.balance).toBe(150);
+    expectProjectionEnvelope(body.projectionMetadata, {
+      projectionKind: 'POINTS_SUMMARY',
+      referenceScope: 'READ_ONLY',
+    });
   });
 
   it('returns 503 when service auth is not configured on user route', async () => {
@@ -155,10 +192,11 @@ describe('points-service request hardening', () => {
       estimatedUnlockablePoints: number;
       vipStatus: { isActive: boolean };
       proStatus: { isActive: boolean };
+      projectionMetadata?: ProjectionMetadataEnvelope;
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       availablePoints: 820,
       lockedPoints: 5000,
       networkPoints: 120,
@@ -166,6 +204,10 @@ describe('points-service request hardening', () => {
       estimatedUnlockablePoints: 5000,
       vipStatus: { isActive: true },
       proStatus: { isActive: true },
+    });
+    expectProjectionEnvelope(body.projectionMetadata, {
+      projectionKind: 'POINTS_SUMMARY',
+      referenceScope: 'READ_ONLY',
     });
 
     const query = executeMock.mock.calls[0]?.[0] as { values: unknown[]; strings: string[] };
@@ -256,10 +298,11 @@ describe('points-service request hardening', () => {
         totalReferrals: number;
       };
       badges: { totalBadges: number; recent: unknown[] };
+      projectionMetadata?: ProjectionMetadataEnvelope;
     }>(response);
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       balance: {
         points: 0,
         updatedAt: null,
@@ -275,6 +318,10 @@ describe('points-service request hardening', () => {
         totalBadges: 0,
         recent: [],
       },
+    });
+    expectProjectionEnvelope(body.projectionMetadata, {
+      projectionKind: 'POINTS_SUMMARY',
+      referenceScope: 'READ_ONLY',
     });
   });
 
@@ -375,6 +422,7 @@ describe('points-service request hardening', () => {
           sourceId?: unknown;
         }>;
       };
+      projectionMetadata?: ProjectionMetadataEnvelope;
     }>(response);
 
     expect(response.status).toBe(200);
@@ -409,6 +457,10 @@ describe('points-service request hardening', () => {
       activatedReferrals: 1,
       pendingReferrals: 2,
       totalReferrals: 3,
+    });
+    expectProjectionEnvelope(body.projectionMetadata, {
+      projectionKind: 'POINTS_SUMMARY',
+      referenceScope: 'READ_ONLY',
     });
     expect(body.recentTransactions.every((item) => !('metadata' in item))).toBe(true);
     expect(body.badges.recent.every((item) => !('sourceType' in item) && !('sourceId' in item))).toBe(true);
@@ -549,6 +601,7 @@ describe('points-service request hardening', () => {
         metadata?: Record<string, unknown>;
       }>;
       nextCursor: string | null;
+      projectionMetadata?: ProjectionMetadataEnvelope;
     }>(response);
 
     expect(response.status).toBe(200);
@@ -557,6 +610,10 @@ describe('points-service request hardening', () => {
     expect(body.items[0]?.sourceService).toBe('content-service');
     expect(body.items[0]?.sourceEventId).toBe('registration_1');
     expect(body.items[0]?.metadata).toEqual({ eventId: 'event_1', registrationId: 'registration_1' });
+    expectProjectionEnvelope(body.projectionMetadata, {
+      projectionKind: 'ACTIVITY_PROJECTION',
+      referenceScope: 'REFERENCE_ONLY',
+    });
   });
 
   it('returns 400 for invalid sourceEventId', async () => {
