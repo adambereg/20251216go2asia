@@ -5,13 +5,14 @@ import { Badge, Button, Card } from '@go2asia/ui';
 import { Activity, Award, BarChart, Users } from 'lucide-react';
 import Link from 'next/link';
 import { CONNECT_FUTURE_BADGE_TEXT } from '../copy';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
 
 const ANALYTICS_FUTURE_TEXT = 'Аналитика активности планируется после появления backend-агрегатов.';
 
 const ctas = [
   {
     label: 'Посмотреть активность',
-    href: '/connect/wallet',
+    href: ROUTE_ALIASES.connectActivity,
     icon: Activity,
   },
   {

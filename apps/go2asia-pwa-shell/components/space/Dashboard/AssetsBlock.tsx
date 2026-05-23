@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Card, Button } from '@go2asia/ui';
 import { Activity, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import type { DashboardStats } from '../types';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
 
 interface AssetsBlockProps {
   stats: DashboardStats;
@@ -62,12 +63,12 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
 
         {/* Быстрые действия */}
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Link href="/space/balance?view=activity">
+          <Link href={ROUTE_ALIASES.spaceActivity}>
             <Button variant="secondary" className="w-full">
               Активность
             </Button>
           </Link>
-          <Link href="/space/balance?view=vouchers">
+          <Link href={ROUTE_ALIASES.spaceVouchers}>
             <Button variant="secondary" className="w-full">
               Ваучеры
             </Button>
@@ -76,7 +77,7 @@ export function AssetsBlock({ stats }: AssetsBlockProps) {
 
         {/* Ссылка на read-only activity */}
         <Link
-          href="/space/balance"
+          href={ROUTE_ALIASES.spaceActivitySummary}
           className="flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700 font-medium pt-2"
         >
           Подробнее об активности

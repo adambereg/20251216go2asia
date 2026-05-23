@@ -56,6 +56,7 @@ const isProtectedRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (
   '/space/me(.*)',
   '/space/saved(.*)',
   '/space/activity(.*)',
+  '/space/activity-summary(.*)',
   '/space/organizer(.*)',
   '/space/balance(.*)',
   '/space/referrals(.*)',

@@ -6,6 +6,7 @@ import { Card, Button } from '@go2asia/ui';
 import type { ConnectDashboardBalance } from '@go2asia/sdk/connectDashboard';
 import { customInstance } from '@go2asia/sdk/mutator';
 import { CONNECT_POINTS_BUCKET_LABELS } from '../copy';
+import { ROUTE_ALIASES } from '@/lib/routeAliases';
 
 interface BalanceCardsProps {
   balance: ConnectDashboardBalance;
@@ -73,7 +74,12 @@ export function BalanceCards({ balance }: BalanceCardsProps) {
             </div>
           </div>
 
-          <Button variant="secondary" size="sm" className="md:w-auto w-full" onClick={() => (window.location.href = '/connect/wallet')}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="md:w-auto w-full"
+            onClick={() => (window.location.href = ROUTE_ALIASES.connectActivity)}
+          >
             Смотреть историю
           </Button>
         </div>
