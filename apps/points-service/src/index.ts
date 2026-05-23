@@ -45,6 +45,8 @@ export interface Env extends ProducerFlagEnv {
   POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE?: string;
   POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS?: string;
   POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT?: string;
+  POINTS_ADMIN_DIAGNOSTICS_ENABLED?: string;
+  POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES?: string;
 }
 
 type GatewayPrincipal = {
@@ -151,9 +153,23 @@ type SupportLookupResponseBody = {
 type AdminDiagnosticKind = 'POINTS_OWNER_FACT_LOOKUP' | 'POINTS_PROJECTION_TRACE' | 'SUPPORT_LOOKUP_DIAGNOSTIC';
 type DiagnosticVisibility = 'ADMIN_DIAGNOSTIC' | 'INTERNAL_DIAGNOSTIC';
 type AdminDiagnosticOperatorBoundary = 'INTERNAL_NAVIGATION_ONLY';
+type AdminDiagnosticAccessOutcome = SupportLookupStatus | 'ACCESS_DENIED';
+type AdminDiagnosticAuditVisibility = 'INTERNAL_ONLY';
+type AdminDiagnosticAuditRetentionClass = 'OPERATIONAL_TRACE' | 'SHORT_RETENTION' | 'INTERNAL_ONLY';
 
 type AdminDiagnosticLookupInput = {
   supportLookupKey: string;
+};
+
+type AdminDiagnosticAccessAudit = {
+  diagnosticAccessId: string;
+  diagnosticAccessTimestamp: string;
+  operatorService: string;
+  lookupSubjectHash?: string;
+  diagnosticKind: AdminDiagnosticKind;
+  diagnosticOutcome: AdminDiagnosticAccessOutcome;
+  auditVisibility: AdminDiagnosticAuditVisibility;
+  auditRetentionClass: AdminDiagnosticAuditRetentionClass;
 };
 
 type AdminDiagnosticOwnerFactPointer = {
@@ -174,6 +190,7 @@ type AdminDiagnosticSnapshot = {
   lookupStatus: SupportLookupStatus;
   ownerFactPointers: AdminDiagnosticOwnerFactPointer[];
   notes: string[];
+  accessAudit: AdminDiagnosticAccessAudit;
   operatorBoundary: AdminDiagnosticOperatorBoundary;
   isCustomerProof: false;
   canTerminateProof: false;
@@ -195,7 +212,8 @@ const DASHBOARD_BADGES_DEFAULT_LIMIT = 5;
 const DASHBOARD_BADGES_MAX_LIMIT = 20;
 const METADATA_MAX_BYTES = 4096;
 const SUPPORT_LOOKUP_ALLOWED_SERVICES = new Set(['support-service', 'api-gateway', 'admin-service', 'points-service']);
-const ADMIN_DIAGNOSTICS_ALLOWED_SERVICES = new Set(['support-service', 'api-gateway', 'admin-service', 'points-service']);
+const ADMIN_DIAGNOSTICS_AUDIT_VISIBILITY: AdminDiagnosticAuditVisibility = 'INTERNAL_ONLY';
+const ADMIN_DIAGNOSTICS_AUDIT_RETENTION_CLASS: AdminDiagnosticAuditRetentionClass = 'OPERATIONAL_TRACE';
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -249,6 +267,21 @@ function isFlagEnabled(value: string | undefined): boolean {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function parseServiceAllowlist(value: string | undefined): Set<string> {
+  if (!value) return new Set();
+  return new Set(
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+  );
+}
+
+function isAdminDiagnosticsServiceAllowed(env: Env, service: string): boolean {
+  if (!isFlagEnabled(env.POINTS_ADMIN_DIAGNOSTICS_ENABLED)) return false;
+  return parseServiceAllowlist(env.POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES).has(service);
 }
 
 function handleReady(env: Env): Response {
@@ -660,6 +693,41 @@ function parseAdminDiagnosticKind(value: unknown): AdminDiagnosticKind | null {
   return null;
 }
 
+async function createLookupSubjectHash(parsed: ParsedSupportLookupKey): Promise<string> {
+  const input = `${parsed.ownerNamespace}:${parsed.ownerEntity}:${parsed.lookupId}`;
+  const digest = await crypto.subtle.digest('SHA-256', utf8ToBytes(input));
+  return bytesToBase64Url(new Uint8Array(digest));
+}
+
+function createAdminDiagnosticAccessAudit(input: {
+  requestId: string;
+  operatorService: string;
+  diagnosticKind: AdminDiagnosticKind;
+  diagnosticOutcome: AdminDiagnosticAccessOutcome;
+  lookupSubjectHash?: string;
+  timestamp?: string;
+}): AdminDiagnosticAccessAudit {
+  return {
+    diagnosticAccessId: `points-admin-diagnostic-access:${input.requestId}`,
+    diagnosticAccessTimestamp: input.timestamp ?? new Date().toISOString(),
+    operatorService: input.operatorService,
+    ...(input.lookupSubjectHash ? { lookupSubjectHash: input.lookupSubjectHash } : {}),
+    diagnosticKind: input.diagnosticKind,
+    diagnosticOutcome: input.diagnosticOutcome,
+    auditVisibility: ADMIN_DIAGNOSTICS_AUDIT_VISIBILITY,
+    auditRetentionClass: ADMIN_DIAGNOSTICS_AUDIT_RETENTION_CLASS,
+  };
+}
+
+function recordAdminDiagnosticAccess(
+  logger: ReturnType<typeof createLogger>,
+  audit: AdminDiagnosticAccessAudit
+): void {
+  logger.info('Points admin diagnostics access audit', {
+    diagnosticAccess: audit,
+  });
+}
+
 async function lookupSupportOwnerFact(
   db: Db,
   parsed: ParsedSupportLookupKey,
@@ -737,6 +805,7 @@ function createAdminDiagnosticSnapshot(input: {
   supportLookupKey: string;
   diagnosticKind: AdminDiagnosticKind;
   lookup: SupportLookupResponseBody;
+  accessAudit: AdminDiagnosticAccessAudit;
 }): AdminDiagnosticSnapshot {
   const pointers = input.lookup.ownerFactReference
     ? [
@@ -767,6 +836,7 @@ function createAdminDiagnosticSnapshot(input: {
       input.lookup.lookupNote,
       'Diagnostic snapshot is internal navigation only. Resolve owner rows in the owner service before operator decisions.',
     ],
+    accessAudit: input.accessAudit,
     operatorBoundary: 'INTERNAL_NAVIGATION_ONLY',
     isCustomerProof: false,
     canTerminateProof: false,
@@ -1332,11 +1402,29 @@ export default {
       if (request.method === 'POST' && path === '/internal/points/admin-diagnostics') {
         const auth = await requireServiceAuth(request, env, requestId, logger);
         if (!auth.ok) {
+          recordAdminDiagnosticAccess(
+            logger,
+            createAdminDiagnosticAccessAudit({
+              requestId,
+              operatorService: 'UNKNOWN_SERVICE',
+              diagnosticKind: 'SUPPORT_LOOKUP_DIAGNOSTIC',
+              diagnosticOutcome: 'ACCESS_DENIED',
+            })
+          );
           auth.res.headers.set('X-Request-Id', requestId);
           return auth.res;
         }
 
-        if (!ADMIN_DIAGNOSTICS_ALLOWED_SERVICES.has(auth.principal.service)) {
+        if (!isAdminDiagnosticsServiceAllowed(env, auth.principal.service)) {
+          recordAdminDiagnosticAccess(
+            logger,
+            createAdminDiagnosticAccessAudit({
+              requestId,
+              operatorService: auth.principal.service,
+              diagnosticKind: 'SUPPORT_LOOKUP_DIAGNOSTIC',
+              diagnosticOutcome: 'ACCESS_DENIED',
+            })
+          );
           const res = errorResponse('FORBIDDEN', 'Service is not allowed to use admin diagnostics', requestId, 403);
           res.headers.set('X-Request-Id', requestId);
           return res;
@@ -1352,6 +1440,15 @@ export default {
         const parsed = parseSupportLookupKey(supportLookupKey);
         const diagnosticKind = parseAdminDiagnosticKind(body?.diagnosticKind);
         if (!parsed || typeof supportLookupKey !== 'string' || !diagnosticKind) {
+          recordAdminDiagnosticAccess(
+            logger,
+            createAdminDiagnosticAccessAudit({
+              requestId,
+              operatorService: auth.principal.service,
+              diagnosticKind: diagnosticKind ?? 'SUPPORT_LOOKUP_DIAGNOSTIC',
+              diagnosticOutcome: 'ACCESS_DENIED',
+            })
+          );
           const res = errorResponse('BadRequest', 'Invalid admin diagnostic request', requestId, 400);
           res.headers.set('X-Request-Id', requestId);
           return res;
@@ -1359,11 +1456,20 @@ export default {
 
         const db = createDb(requireDatabase(env));
         const lookup = await lookupSupportOwnerFact(db, parsed, supportLookupKey);
+        const accessAudit = createAdminDiagnosticAccessAudit({
+          requestId,
+          operatorService: auth.principal.service,
+          lookupSubjectHash: await createLookupSubjectHash(parsed),
+          diagnosticKind,
+          diagnosticOutcome: lookup.lookupStatus,
+        });
+        recordAdminDiagnosticAccess(logger, accessAudit);
         const snapshot = createAdminDiagnosticSnapshot({
           requestId,
           supportLookupKey,
           diagnosticKind,
           lookup,
+          accessAudit,
         });
 
         const res = json(snapshot, 200, { 'Cache-Control': 'no-store' });

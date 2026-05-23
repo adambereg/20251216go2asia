@@ -70,6 +70,16 @@ type AdminDiagnosticSnapshot = {
     ownerTimestamp?: string;
   }>;
   notes: string[];
+  accessAudit: {
+    diagnosticAccessId: string;
+    diagnosticAccessTimestamp: string;
+    operatorService: string;
+    lookupSubjectHash?: string;
+    diagnosticKind: string;
+    diagnosticOutcome: string;
+    auditVisibility: string;
+    auditRetentionClass: string;
+  };
   operatorBoundary: string;
   isCustomerProof: boolean;
   canTerminateProof: boolean;
@@ -115,13 +125,24 @@ function expectAdminDiagnosticSnapshot(body: AdminDiagnosticSnapshot) {
   );
   expect(body.diagnosticVisibility).toBe('ADMIN_DIAGNOSTIC');
   expect(Number.isNaN(new Date(body.generatedAt).getTime())).toBe(false);
+  expect(body.accessAudit.diagnosticAccessId).toMatch(/^points-admin-diagnostic-access:/);
+  expect(Number.isNaN(new Date(body.accessAudit.diagnosticAccessTimestamp).getTime())).toBe(false);
+  expect(body.accessAudit.auditVisibility).toBe('INTERNAL_ONLY');
+  expect(body.accessAudit.auditRetentionClass).toBe('OPERATIONAL_TRACE');
+  expect(body.accessAudit.lookupSubjectHash).toMatch(/^[A-Za-z0-9_-]+$/);
   expect(body.operatorBoundary).toBe('INTERNAL_NAVIGATION_ONLY');
   expect(body.isCustomerProof).toBe(false);
   expect(body.canTerminateProof).toBe(false);
 
   const serialized = JSON.stringify(body);
   expect(serialized).not.toMatch(/verified|settled|confirmed|guaranteed|proofComplete|supportResolved|caseClosed/i);
-  expect(serialized).not.toMatch(/receipt|cashback|payout|on-chain|bridge|NFT ownership/i);
+  expect(serialized).not.toMatch(/receipt|cashback|payout|on-chain|bridge|NFT ownership|immutable audit/i);
+}
+
+function getAdminDiagnosticAuditLogMessages(spy: ReturnType<typeof vi.spyOn>): string[] {
+  return spy.mock.calls
+    .map(([message]) => String(message))
+    .filter((message) => message.includes('Points admin diagnostics access audit'));
 }
 
 const rfSpendProducerEnabled = {
@@ -161,6 +182,8 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+      POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service,support-service',
     };
     const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, {
       sub: 'user_from_token',
@@ -211,6 +234,8 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+      POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service,support-service',
     };
 
     const response = await worker.fetch(
@@ -723,6 +748,8 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+      POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service,support-service',
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'admin-service',
@@ -749,6 +776,13 @@ describe('points-service request hardening', () => {
       diagnosticVisibility: 'ADMIN_DIAGNOSTIC',
       lookupInput: { supportLookupKey },
       lookupStatus: 'LOOKUP_AVAILABLE',
+      accessAudit: {
+        operatorService: 'admin-service',
+        diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP',
+        diagnosticOutcome: 'LOOKUP_AVAILABLE',
+        auditVisibility: 'INTERNAL_ONLY',
+        auditRetentionClass: 'OPERATIONAL_TRACE',
+      },
       operatorBoundary: 'INTERNAL_NAVIGATION_ONLY',
       isCustomerProof: false,
       canTerminateProof: false,
@@ -773,6 +807,8 @@ describe('points-service request hardening', () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+      POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service,support-service',
     };
     const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'support-service',
@@ -795,6 +831,13 @@ describe('points-service request hardening', () => {
 
     expect(response.status).toBe(200);
     expect(body.lookupStatus).toBe('LOOKUP_LIMITED');
+    expect(body.accessAudit).toMatchObject({
+      operatorService: 'support-service',
+      diagnosticKind: 'SUPPORT_LOOKUP_DIAGNOSTIC',
+      diagnosticOutcome: 'LOOKUP_LIMITED',
+      auditVisibility: 'INTERNAL_ONLY',
+      auditRetentionClass: 'OPERATIONAL_TRACE',
+    });
     expect(body.ownerFactPointers).toEqual([
       {
         ownerService: 'points-service',
@@ -809,10 +852,112 @@ describe('points-service request hardening', () => {
     expectAdminDiagnosticSnapshot(body);
   });
 
+  it('logs bounded operational audit metadata for admin diagnostic access without raw lookup subjects', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      executeMock.mockResolvedValueOnce({
+        rows: [{ user_id: 'user_lookup', updated_at: new Date('2026-05-23T08:00:00.000Z') }],
+      });
+
+      const env: Env = {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: 'service-secret',
+        POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+        POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service',
+      };
+      const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+        sub: 'admin-service',
+      });
+      const supportLookupKey = makeTestSupportLookupKey('user_balances', 'user_lookup');
+
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/admin-diagnostics', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-Request-Id': 'req_e4_success',
+          },
+          body: JSON.stringify({ supportLookupKey, diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP' }),
+        }),
+        env
+      );
+
+      const body = await readJson<AdminDiagnosticSnapshot>(response);
+      const auditLogs = getAdminDiagnosticAuditLogMessages(consoleLogSpy);
+      const serializedLogs = auditLogs.join('\n');
+
+      expect(response.status).toBe(200);
+      expect(body.accessAudit).toMatchObject({
+        diagnosticAccessId: 'points-admin-diagnostic-access:req_e4_success',
+        operatorService: 'admin-service',
+        diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP',
+        diagnosticOutcome: 'LOOKUP_AVAILABLE',
+        auditVisibility: 'INTERNAL_ONLY',
+        auditRetentionClass: 'OPERATIONAL_TRACE',
+      });
+      expect(body.accessAudit.lookupSubjectHash).toBeTruthy();
+      expect(auditLogs).toHaveLength(1);
+      expect(serializedLogs).toContain('points-admin-diagnostic-access:req_e4_success');
+      expect(serializedLogs).toContain('LOOKUP_AVAILABLE');
+      expect(serializedLogs).toContain('lookupSubjectHash');
+      expect(serializedLogs).not.toContain('user_lookup');
+      expect(serializedLogs).not.toContain(supportLookupKey);
+      expect(serializedLogs).not.toMatch(/amount|externalId|balanceAfter|availablePoints/i);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
+  it('fails admin diagnostics closed when hardening flags or allowlist entries are missing and logs access denied', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      const env: Env = {
+        DATABASE_URL: 'postgres://example',
+        SERVICE_JWT_SECRET: 'service-secret',
+      };
+      const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+        sub: 'admin-service',
+      });
+
+      const response = await worker.fetch(
+        new Request('https://points.example/internal/points/admin-diagnostics', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-Request-Id': 'req_e4_denied',
+          },
+          body: JSON.stringify({
+            supportLookupKey: makeTestSupportLookupKey('user_balances', 'user_lookup'),
+            diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP',
+          }),
+        }),
+        env
+      );
+
+      const auditLogs = getAdminDiagnosticAuditLogMessages(consoleLogSpy);
+      const serializedLogs = auditLogs.join('\n');
+
+      expect(response.status).toBe(403);
+      expect(executeMock).not.toHaveBeenCalled();
+      expect(auditLogs).toHaveLength(1);
+      expect(serializedLogs).toContain('points-admin-diagnostic-access:req_e4_denied');
+      expect(serializedLogs).toContain('admin-service');
+      expect(serializedLogs).toContain('ACCESS_DENIED');
+      expect(serializedLogs).not.toContain('user_lookup');
+      expect(serializedLogs).not.toMatch(/amount|externalId|balanceAfter|availablePoints/i);
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
   it('blocks unauthorized admin diagnostic callers and malformed requests', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
+      POINTS_ADMIN_DIAGNOSTICS_ENABLED: 'true',
+      POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES: 'admin-service,support-service',
     };
     const rogueToken = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
       sub: 'rogue-service',

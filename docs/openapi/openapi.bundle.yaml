@@ -863,6 +863,55 @@ components:
         - type
         - verificationType
       type: object
+    AdminDiagnosticAccessAudit:
+      description: |
+        Bounded operational audit metadata for internal diagnostics access. It is retained for operations traceability only and is not customer proof, a receipt, support resolution or immutable audit ledger.
+      properties:
+        auditRetentionClass:
+          $ref: "#/components/schemas/AdminDiagnosticAuditRetentionClass"
+        auditVisibility:
+          $ref: "#/components/schemas/AdminDiagnosticAuditVisibility"
+        diagnosticAccessId:
+          type: string
+        diagnosticAccessTimestamp:
+          format: date-time
+          type: string
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        diagnosticOutcome:
+          $ref: "#/components/schemas/AdminDiagnosticAccessOutcome"
+        lookupSubjectHash:
+          description: Hashed lookup subject for operational traceability. Raw lookup subjects must not be logged here.
+          type: string
+        operatorService:
+          description: Service subject from service-auth token or UNKNOWN_SERVICE when authentication fails.
+          type: string
+      required:
+        - diagnosticAccessId
+        - diagnosticAccessTimestamp
+        - operatorService
+        - diagnosticKind
+        - diagnosticOutcome
+        - auditVisibility
+        - auditRetentionClass
+      type: object
+    AdminDiagnosticAccessOutcome:
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+        - ACCESS_DENIED
+      type: string
+    AdminDiagnosticAuditRetentionClass:
+      enum:
+        - OPERATIONAL_TRACE
+        - SHORT_RETENTION
+        - INTERNAL_ONLY
+      type: string
+    AdminDiagnosticAuditVisibility:
+      enum:
+        - INTERNAL_ONLY
+      type: string
     AdminDiagnosticLookupInput:
       properties:
         supportLookupKey:
@@ -887,6 +936,8 @@ components:
     AdminDiagnosticSnapshot:
       description: Internal diagnostic snapshot for bounded operator navigation. It is not customer proof or support outcome.
       properties:
+        accessAudit:
+          $ref: "#/components/schemas/AdminDiagnosticAccessAudit"
         canTerminateProof:
           enum:
             - false
@@ -927,6 +978,7 @@ components:
         - lookupStatus
         - ownerFactPointers
         - notes
+        - accessAudit
         - operatorBoundary
         - isCustomerProof
         - canTerminateProof
@@ -6586,7 +6638,7 @@ paths:
   /internal/points/admin-diagnostics:
     post:
       description: |
-        Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority.
+        Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority. Access is feature-flagged, allowlisted and emits bounded operational audit metadata; the operational trace is not an immutable audit ledger.
       operationId: getPointsAdminDiagnosticSnapshot
       parameters:
         - $ref: "#/components/parameters/XRequestId"

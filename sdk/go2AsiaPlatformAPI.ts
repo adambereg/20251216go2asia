@@ -282,7 +282,7 @@ export const addPoints = async (
 };
 
 /**
- * Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority.
+ * Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority. Access is feature-flagged, allowlisted and emits bounded operational audit metadata; the operational trace is not an immutable audit ledger.
 
  * @summary Create a bounded internal Points admin diagnostic snapshot
  */

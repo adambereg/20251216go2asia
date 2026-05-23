@@ -6,6 +6,7 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminDiagnosticAccessAudit } from "./adminDiagnosticAccessAudit";
 import type { DiagnosticKind } from "./diagnosticKind";
 import type { DiagnosticVisibility } from "./diagnosticVisibility";
 import type { AdminDiagnosticLookupInput } from "./adminDiagnosticLookupInput";
@@ -17,6 +18,7 @@ import type { OwnerFactPointer } from "./ownerFactPointer";
  * Internal diagnostic snapshot for bounded operator navigation. It is not customer proof or support outcome.
  */
 export interface AdminDiagnosticSnapshot {
+  accessAudit: AdminDiagnosticAccessAudit;
   canTerminateProof: boolean;
   diagnosticId: string;
   diagnosticKind: DiagnosticKind;

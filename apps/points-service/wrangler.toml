@@ -13,6 +13,8 @@ ENVIRONMENT = "staging"
 POINTS_ENABLE_SPENDABILITY_SHADOW_COMPARE = "true"
 POINTS_ENABLE_SPENDABILITY_SHADOW_DIAGNOSTICS = "true"
 POINTS_ENABLE_SPENDABILITY_DURABLE_EXPORT = "true"
+POINTS_ADMIN_DIAGNOSTICS_ENABLED = "true"
+POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES = "admin-service,support-service"
 ECONOMY_PRODUCER_FIRST_LOGIN_ENABLED = "true"
 ECONOMY_PRODUCER_QUEST_COMPLETED_ENABLED = "true"
 ECONOMY_PRODUCER_EVENT_REGISTRATION_ENABLED = "true"
@@ -20,7 +22,7 @@ ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_ENABLED = "true"
 ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_COMPENSATION_ENABLED = "true"
 
 # Runtime vars:
-# - ENVIRONMENT, staging spendability flags, and Stage 11.2 internal-beta producer flags are pinned above so dashboard-only edits do not drift on deploy.
+# - ENVIRONMENT, staging spendability flags, bounded admin diagnostics hardening flags, and Stage 11.2 internal-beta producer flags are pinned above so dashboard-only edits do not drift on deploy.
 # - VERSION is injected by CI/CD as the git sha.
 #
 # Required vars/secrets/bindings for Milestone 3:
@@ -30,3 +32,5 @@ ECONOMY_PRODUCER_RF_VOUCHER_CLAIM_SPEND_COMPENSATION_ENABLED = "true"
 # Optional config (vars):
 # - POINTS_VELOCITY_CAP
 # - POINTS_VELOCITY_WINDOW_SECONDS
+# - POINTS_ADMIN_DIAGNOSTICS_ENABLED
+# - POINTS_ADMIN_DIAGNOSTICS_ALLOWED_SERVICES (comma-separated service subjects; missing/empty fails closed)

@@ -393,7 +393,8 @@ paths:
       description: >
         Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns
         operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL,
-        or creating accounting authority.
+        or creating accounting authority. Access is feature-flagged, allowlisted and emits bounded operational
+        audit metadata; the operational trace is not an immutable audit ledger.
       security:
         - ServiceAuth: []
       parameters:
@@ -720,6 +721,60 @@ components:
       enum:
         - INTERNAL_NAVIGATION_ONLY
 
+    AdminDiagnosticAccessOutcome:
+      type: string
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+        - ACCESS_DENIED
+
+    AdminDiagnosticAuditVisibility:
+      type: string
+      enum:
+        - INTERNAL_ONLY
+
+    AdminDiagnosticAuditRetentionClass:
+      type: string
+      enum:
+        - OPERATIONAL_TRACE
+        - SHORT_RETENTION
+        - INTERNAL_ONLY
+
+    AdminDiagnosticAccessAudit:
+      type: object
+      required:
+        - diagnosticAccessId
+        - diagnosticAccessTimestamp
+        - operatorService
+        - diagnosticKind
+        - diagnosticOutcome
+        - auditVisibility
+        - auditRetentionClass
+      description: >
+        Bounded operational audit metadata for internal diagnostics access. It is retained for operations
+        traceability only and is not customer proof, a receipt, support resolution or immutable audit ledger.
+      properties:
+        diagnosticAccessId:
+          type: string
+        diagnosticAccessTimestamp:
+          type: string
+          format: date-time
+        operatorService:
+          type: string
+          description: Service subject from service-auth token or UNKNOWN_SERVICE when authentication fails.
+        lookupSubjectHash:
+          type: string
+          description: Hashed lookup subject for operational traceability. Raw lookup subjects must not be logged here.
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        diagnosticOutcome:
+          $ref: "#/components/schemas/AdminDiagnosticAccessOutcome"
+        auditVisibility:
+          $ref: "#/components/schemas/AdminDiagnosticAuditVisibility"
+        auditRetentionClass:
+          $ref: "#/components/schemas/AdminDiagnosticAuditRetentionClass"
+
     AdminDiagnosticRequest:
       type: object
       required: [supportLookupKey]
@@ -776,6 +831,7 @@ components:
         - lookupStatus
         - ownerFactPointers
         - notes
+        - accessAudit
         - operatorBoundary
         - isCustomerProof
         - canTerminateProof
@@ -802,6 +858,8 @@ components:
           type: array
           items:
             type: string
+        accessAudit:
+          $ref: "#/components/schemas/AdminDiagnosticAccessAudit"
         operatorBoundary:
           $ref: "#/components/schemas/AdminDiagnosticOperatorBoundary"
         isCustomerProof:
