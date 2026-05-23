@@ -7,7 +7,7 @@ import type { ConnectDashboardResponse } from "@go2asia/sdk/connectDashboard";
 import { ConnectActivitySummaryCards } from "./BalanceCards";
 import { ActivityFeed } from "./ActivityFeed";
 import { ConnectRfSection } from "./ConnectRfSection";
-import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
+import { CONNECT_OWNER_FACT_POINTER_TEXT, CONNECT_POINTS_EARNED_LABEL } from "../copy";
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -30,7 +30,13 @@ const nextSteps = [
     title: "Посмотрите badge projection",
     description: "Узнайте, какие off-chain бейджи отображаются как read-only projection.",
     href: "/connect/levels",
-    cta: "Открыть уровни",
+    cta: "Открыть бейджи",
+  },
+  {
+    title: "Откройте профиль",
+    description: "Профиль помогает управлять аккаунтом и возвращаться в экосистемные маршруты Connect.",
+    href: "/profile",
+    cta: "Открыть профиль",
   },
 ];
 
@@ -51,6 +57,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
         <p className="text-slate-600 mt-1">
           Read-only dashboard projection; не receipt, не proof и не accounting statement.
         </p>
+        <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
       </div>
 
       {/* Points */}
@@ -185,7 +192,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {nextSteps.map((step) => (
             <Card key={step.title} className="p-4 bg-white/80">
               <p className="font-semibold text-slate-900">{step.title}</p>

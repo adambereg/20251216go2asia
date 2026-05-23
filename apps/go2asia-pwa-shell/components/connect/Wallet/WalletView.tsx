@@ -6,12 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { ConnectHero, ConnectNav } from '../Shared';
 import { Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Coins, LockKeyhole, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { useGetBalance, type UserBalance } from '@go2asia/sdk/balance';
 import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transactions';
 import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
-import { CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
+import { CONNECT_OWNER_FACT_POINTER_TEXT, CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
 import { formatProjectionMetadata } from '@/lib/projectionMetadata';
 import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
@@ -323,10 +324,11 @@ export function WalletView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и Points projection</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и projection Points</h1>
           <p className="text-slate-600 mt-1">
             Read-only projection внутренних Points; не financial wallet, не receipt и не accounting statement.
           </p>
+          <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
         </div>
 
         <PointsSummary
@@ -337,7 +339,7 @@ export function WalletView() {
         />
 
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Activity history projection</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-4">История активности (projection)</h2>
           <p className="text-xs text-slate-500 mb-4">
             {formatProjectionMetadata(transactionsProjectionMetadata)}
           </p>
@@ -354,6 +356,17 @@ export function WalletView() {
             Дополнительные accounting-инструменты не входят в текущий MVP Connect. Сейчас здесь отображаются только
             internal Points projection и read-only activity summary.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/connect/referrals">
+              <Button variant="secondary" size="sm">Приглашения</Button>
+            </Link>
+            <Link href="/connect/levels">
+              <Button variant="secondary" size="sm">Бейджи</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="secondary" size="sm">Профиль</Button>
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

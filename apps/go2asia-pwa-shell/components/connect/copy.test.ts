@@ -18,7 +18,7 @@ function readAppFile(relativePath: string) {
 describe('connect copy helpers', () => {
   it('keeps ledger action labels in projection-safe wording', () => {
     expect(getConnectLedgerActionLabel('quest_completed')).toBe('Задание в Quest Asia завершено');
-    expect(getConnectLedgerActionLabel('rf_voucher_redeemed')).toBe('RF-ваучер использован');
+    expect(getConnectLedgerActionLabel('rf_voucher_redeemed')).toBe('RF-ваучер: lifecycle projection');
     expect(getConnectLedgerActionLabel('unknown_action')).toBe('Активность Go2Asia');
   });
 

@@ -93,7 +93,7 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
   const categories: { value: CategoryFilter; label: string }[] = [
     { value: 'all', label: 'Все' },
     { value: 'quest', label: 'Квесты' },
-    { value: 'referrals', label: 'Рефералы' },
+    { value: 'referrals', label: 'Приглашения' },
     { value: 'events', label: 'События' },
     { value: 'other', label: 'Другое' },
   ];
@@ -189,7 +189,7 @@ export function TransactionList({ transactions, onLoadMore, hasMore }: Transacti
           </>
         ) : (
           <Card className="p-8 text-center">
-            <p className="text-slate-500">Activity history projection появится здесь после первых backend-событий.</p>
+            <p className="text-slate-500">История активности появится здесь после первых backend-событий.</p>
             <p className="text-sm text-slate-400 mt-1">
               Если фильтры включены, попробуйте выбрать “Все”.
             </p>

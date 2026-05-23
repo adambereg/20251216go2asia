@@ -3,9 +3,10 @@
 import { useMemo } from "react";
 import { Badge, Button, Card } from "@go2asia/ui";
 import { AlertCircle, CheckCircle, Clock, Copy, Gift, Users } from "lucide-react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import type { ReferralsData, Referral } from "../types";
-import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
+import { CONNECT_OWNER_FACT_POINTER_TEXT, CONNECT_POINTS_EARNED_LABEL } from "../copy";
 
 interface ReferralsContentProps {
   data: ReferralsData;
@@ -26,7 +27,7 @@ function getStatusLabel(status: Referral["status"]) {
       return "Активирован";
     case "rewarded":
     case "completed_mission":
-      return "Points reflected";
+      return "Points отражены (projection)";
     case "reward_missing":
       return "Points projection проверяется";
     default:
@@ -112,6 +113,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
             Read-only projection статусов приглашённых; не commission statement, не receipt и не
             proof.
           </p>
+          <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
         </div>
         <Button
           variant="primary"
@@ -242,7 +244,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
         {data.referrals.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-slate-600 font-medium">
-              Пока нет рефералов. Пригласите первого друга, чтобы начать.
+              Пока нет приглашений. Пригласите первого друга, чтобы начать.
             </p>
             <Button
               className="mt-4"
@@ -278,7 +280,7 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
                     </div>
                   </div>
                   <div className="text-left md:text-right">
-                    <p className="text-xs text-slate-500">За активность</p>
+                    <p className="text-xs text-slate-500">Points projection</p>
                     <p className="text-sm font-semibold text-emerald-700">
                       +{formatCompact(referral.earned_rewards.points)} Points
                     </p>
@@ -293,6 +295,21 @@ export function ReferralsContent({ data, onInvite }: ReferralsContentProps) {
             ))}
           </div>
         )}
+      </Card>
+
+      <Card className="p-5 border-slate-200 bg-slate-50">
+        <p className="text-sm font-semibold text-slate-900">Продолжайте путь в Connect</p>
+        <p className="text-sm text-slate-600 mt-1">
+          Сверяйте историю активности и бейджей: это навигационная projection-сводка, не proof и не accounting statement.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/connect/activity">
+            <Button variant="secondary" size="sm">История активности</Button>
+          </Link>
+          <Link href="/connect/levels">
+            <Button variant="secondary" size="sm">Бейджи</Button>
+          </Link>
+        </div>
       </Card>
     </div>
   );

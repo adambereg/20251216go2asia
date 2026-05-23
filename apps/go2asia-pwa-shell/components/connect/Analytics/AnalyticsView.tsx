@@ -16,7 +16,7 @@ const ctas = [
     icon: Activity,
   },
   {
-    label: 'Перейти к рефералам',
+    label: 'Перейти к приглашениям',
     href: '/connect/referrals',
     icon: Users,
   },
