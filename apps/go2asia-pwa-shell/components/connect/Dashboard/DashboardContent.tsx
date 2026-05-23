@@ -17,14 +17,20 @@ const nextSteps = [
   {
     title: "Завершите первое задание в Quest Asia",
     description: "Points и бейджи отображаются только после backend-подтверждения.",
+    href: "/quest",
+    cta: "Открыть Quest",
   },
   {
     title: "Пригласите друга",
     description: "Поделитесь реферальной ссылкой и отслеживайте read-only статус приглашения.",
+    href: "/connect/referrals",
+    cta: "Открыть приглашения",
   },
   {
     title: "Посмотрите badge projection",
     description: "Узнайте, какие off-chain бейджи отображаются как read-only projection.",
+    href: "/connect/levels",
+    cta: "Открыть уровни",
   },
 ];
 
@@ -184,6 +190,10 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             <Card key={step.title} className="p-4 bg-white/80">
               <p className="font-semibold text-slate-900">{step.title}</p>
               <p className="text-sm text-slate-600 mt-1">{step.description}</p>
+              <Link href={step.href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-800 hover:text-amber-900">
+                {step.cta}
+                <ArrowRight size={14} />
+              </Link>
             </Card>
           ))}
         </div>

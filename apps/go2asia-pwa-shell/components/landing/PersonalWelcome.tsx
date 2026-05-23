@@ -105,7 +105,7 @@ export function PersonalWelcome({
                 href="/connect"
                 className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
               >
-                Новые ваучеры
+                Активность Connect
                 <Gift size={14} />
               </Link>
               <Link
