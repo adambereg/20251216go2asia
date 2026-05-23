@@ -10,6 +10,8 @@ import type {
   AddPointsRequest,
   AddPointsResponse,
   AddQuestStepRequest,
+  AdminDiagnosticRequest,
+  AdminDiagnosticSnapshot,
   AttachMediaUsageRequest,
   AttachMediaUsageResponse,
   AttachSpacePostMediaRequest,
@@ -277,6 +279,78 @@ export const addPoints = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(addPointsRequest),
   });
+};
+
+/**
+ * Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL, or creating accounting authority.
+
+ * @summary Create a bounded internal Points admin diagnostic snapshot
+ */
+export type getPointsAdminDiagnosticSnapshotResponse200 = {
+  data: AdminDiagnosticSnapshot;
+  status: 200;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse403 = {
+  data: ErrorResponse;
+  status: 403;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse503 = {
+  data: ServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponseSuccess =
+  getPointsAdminDiagnosticSnapshotResponse200 & {
+    headers: Headers;
+  };
+export type getPointsAdminDiagnosticSnapshotResponseError = (
+  | getPointsAdminDiagnosticSnapshotResponse400
+  | getPointsAdminDiagnosticSnapshotResponse401
+  | getPointsAdminDiagnosticSnapshotResponse403
+  | getPointsAdminDiagnosticSnapshotResponse500
+  | getPointsAdminDiagnosticSnapshotResponse503
+) & {
+  headers: Headers;
+};
+
+export type getPointsAdminDiagnosticSnapshotResponse =
+  | getPointsAdminDiagnosticSnapshotResponseSuccess
+  | getPointsAdminDiagnosticSnapshotResponseError;
+
+export const getGetPointsAdminDiagnosticSnapshotUrl = () => {
+  return `/internal/points/admin-diagnostics`;
+};
+
+export const getPointsAdminDiagnosticSnapshot = async (
+  adminDiagnosticRequest: AdminDiagnosticRequest,
+  options?: RequestInit
+): Promise<getPointsAdminDiagnosticSnapshotResponse> => {
+  return customInstance<getPointsAdminDiagnosticSnapshotResponse>(
+    getGetPointsAdminDiagnosticSnapshotUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminDiagnosticRequest),
+    }
+  );
 };
 
 /**

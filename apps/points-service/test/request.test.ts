@@ -52,6 +52,29 @@ type SupportLookupResponse = {
   lookupNote: string;
 };
 
+type AdminDiagnosticSnapshot = {
+  diagnosticId: string;
+  diagnosticKind: string;
+  diagnosticVisibility: string;
+  generatedAt: string;
+  lookupInput: {
+    supportLookupKey: string;
+  };
+  lookupStatus: string;
+  ownerFactPointers: Array<{
+    ownerService: string;
+    ownerEntity: string;
+    ownerLookupId: string;
+    pointerType: string;
+    lookupStatus: string;
+    ownerTimestamp?: string;
+  }>;
+  notes: string[];
+  operatorBoundary: string;
+  isCustomerProof: boolean;
+  canTerminateProof: boolean;
+};
+
 function makeTestSupportLookupKey(ownerEntity: 'user_balances' | 'points_transactions', lookupId: string): string {
   return `points:${ownerEntity}:${Buffer.from(lookupId, 'utf8').toString('base64url')}`;
 }
@@ -83,6 +106,22 @@ function expectSupportLookupResponse(body: SupportLookupResponse) {
   const serialized = JSON.stringify(body);
   expect(serialized).not.toMatch(/verified|settled|confirmed|guaranteed|proofComplete|supportResolved|caseClosed/i);
   expect(serialized).not.toMatch(/receipt|cashback|payout|on-chain|bridge/i);
+}
+
+function expectAdminDiagnosticSnapshot(body: AdminDiagnosticSnapshot) {
+  expect(body.diagnosticId).toMatch(/^points-admin-diagnostic:/);
+  expect(['POINTS_OWNER_FACT_LOOKUP', 'POINTS_PROJECTION_TRACE', 'SUPPORT_LOOKUP_DIAGNOSTIC']).toContain(
+    body.diagnosticKind
+  );
+  expect(body.diagnosticVisibility).toBe('ADMIN_DIAGNOSTIC');
+  expect(Number.isNaN(new Date(body.generatedAt).getTime())).toBe(false);
+  expect(body.operatorBoundary).toBe('INTERNAL_NAVIGATION_ONLY');
+  expect(body.isCustomerProof).toBe(false);
+  expect(body.canTerminateProof).toBe(false);
+
+  const serialized = JSON.stringify(body);
+  expect(serialized).not.toMatch(/verified|settled|confirmed|guaranteed|proofComplete|supportResolved|caseClosed/i);
+  expect(serialized).not.toMatch(/receipt|cashback|payout|on-chain|bridge|NFT ownership/i);
 }
 
 const rfSpendProducerEnabled = {
@@ -673,6 +712,175 @@ describe('points-service request hardening', () => {
     expect((await readJson<{ error: string }>(forbiddenResponse)).error).toBe('FORBIDDEN');
     expect(malformedResponse.status).toBe(400);
     expect((await readJson<{ error: string }>(malformedResponse)).error).toBe('BadRequest');
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it('returns an admin diagnostic snapshot for a bounded owner fact lookup', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [{ user_id: 'user_lookup', updated_at: new Date('2026-05-23T08:00:00.000Z') }],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'admin-service',
+    });
+    const supportLookupKey = makeTestSupportLookupKey('user_balances', 'user_lookup');
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey, diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP' }),
+      }),
+      env
+    );
+
+    const body = await readJson<AdminDiagnosticSnapshot>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP',
+      diagnosticVisibility: 'ADMIN_DIAGNOSTIC',
+      lookupInput: { supportLookupKey },
+      lookupStatus: 'LOOKUP_AVAILABLE',
+      operatorBoundary: 'INTERNAL_NAVIGATION_ONLY',
+      isCustomerProof: false,
+      canTerminateProof: false,
+      ownerFactPointers: [
+        {
+          ownerService: 'points-service',
+          ownerEntity: 'user_balances',
+          ownerLookupId: 'user_lookup',
+          pointerType: 'OWNER_FACT_POINTER',
+          lookupStatus: 'LOOKUP_AVAILABLE',
+          ownerTimestamp: '2026-05-23T08:00:00.000Z',
+        },
+      ],
+    });
+    expect(body.notes.join(' ')).toContain('internal navigation only');
+    expectAdminDiagnosticSnapshot(body);
+  });
+
+  it('keeps admin diagnostics bounded for transaction owner fact families', async () => {
+    executeMock.mockResolvedValueOnce({ rows: [{ total: 2 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'support-service',
+    });
+    const supportLookupKey = makeTestSupportLookupKey('points_transactions', 'user_lookup');
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey }),
+      }),
+      env
+    );
+
+    const body = await readJson<AdminDiagnosticSnapshot>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.lookupStatus).toBe('LOOKUP_LIMITED');
+    expect(body.ownerFactPointers).toEqual([
+      {
+        ownerService: 'points-service',
+        ownerEntity: 'points_transactions',
+        ownerLookupId: 'user_lookup',
+        pointerType: 'OWNER_FACT_POINTER',
+        lookupStatus: 'LOOKUP_LIMITED',
+      },
+    ]);
+    expect(JSON.stringify(body)).not.toContain('amount');
+    expect(JSON.stringify(body)).not.toContain('externalId');
+    expectAdminDiagnosticSnapshot(body);
+  });
+
+  it('blocks unauthorized admin diagnostic callers and malformed requests', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const rogueToken = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rogue-service',
+    });
+    const supportToken = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'support-service',
+    });
+    const userToken = await makeGatewayJwt('gateway-secret', 'user_lookup', ['user']);
+
+    const forbiddenResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${rogueToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey: makeTestSupportLookupKey('user_balances', 'user_lookup') }),
+      }),
+      env
+    );
+
+    const userResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          'X-Gateway-Auth': userToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey: makeTestSupportLookupKey('user_balances', 'user_lookup') }),
+      }),
+      env
+    );
+
+    const malformedResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${supportToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supportLookupKey: 'points:user_balances:not-valid:extra',
+          diagnosticKind: 'POINTS_OWNER_FACT_LOOKUP',
+        }),
+      }),
+      env
+    );
+
+    const invalidKindResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/admin-diagnostics', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${supportToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supportLookupKey: makeTestSupportLookupKey('user_balances', 'user_lookup'),
+          diagnosticKind: 'POINTS_LEDGER_STATEMENT',
+        }),
+      }),
+      env
+    );
+
+    expect(forbiddenResponse.status).toBe(403);
+    expect((await readJson<{ error: string }>(forbiddenResponse)).error).toBe('FORBIDDEN');
+    expect(userResponse.status).toBe(401);
+    expect(malformedResponse.status).toBe(400);
+    expect(invalidKindResponse.status).toBe(400);
     expect(executeMock).not.toHaveBeenCalled();
   });
 

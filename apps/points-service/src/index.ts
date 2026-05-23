@@ -148,6 +148,37 @@ type SupportLookupResponseBody = {
   lookupNote: string;
 };
 
+type AdminDiagnosticKind = 'POINTS_OWNER_FACT_LOOKUP' | 'POINTS_PROJECTION_TRACE' | 'SUPPORT_LOOKUP_DIAGNOSTIC';
+type DiagnosticVisibility = 'ADMIN_DIAGNOSTIC' | 'INTERNAL_DIAGNOSTIC';
+type AdminDiagnosticOperatorBoundary = 'INTERNAL_NAVIGATION_ONLY';
+
+type AdminDiagnosticLookupInput = {
+  supportLookupKey: string;
+};
+
+type AdminDiagnosticOwnerFactPointer = {
+  ownerService: 'points-service';
+  ownerEntity: SupportLookupEntity;
+  ownerLookupId: string;
+  pointerType: 'OWNER_FACT_POINTER';
+  lookupStatus: SupportLookupStatus;
+  ownerTimestamp?: string;
+};
+
+type AdminDiagnosticSnapshot = {
+  diagnosticId: string;
+  diagnosticKind: AdminDiagnosticKind;
+  diagnosticVisibility: DiagnosticVisibility;
+  generatedAt: string;
+  lookupInput: AdminDiagnosticLookupInput;
+  lookupStatus: SupportLookupStatus;
+  ownerFactPointers: AdminDiagnosticOwnerFactPointer[];
+  notes: string[];
+  operatorBoundary: AdminDiagnosticOperatorBoundary;
+  isCustomerProof: false;
+  canTerminateProof: false;
+};
+
 type ReferralDashboardSummaryRow = {
   total_referrals: number;
   activated_referrals: number;
@@ -164,6 +195,7 @@ const DASHBOARD_BADGES_DEFAULT_LIMIT = 5;
 const DASHBOARD_BADGES_MAX_LIMIT = 20;
 const METADATA_MAX_BYTES = 4096;
 const SUPPORT_LOOKUP_ALLOWED_SERVICES = new Set(['support-service', 'api-gateway', 'admin-service', 'points-service']);
+const ADMIN_DIAGNOSTICS_ALLOWED_SERVICES = new Set(['support-service', 'api-gateway', 'admin-service', 'points-service']);
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -616,6 +648,18 @@ function parseSupportLookupKey(value: unknown): ParsedSupportLookupKey | null {
   }
 }
 
+function parseAdminDiagnosticKind(value: unknown): AdminDiagnosticKind | null {
+  if (value === undefined) return 'SUPPORT_LOOKUP_DIAGNOSTIC';
+  if (
+    value === 'POINTS_OWNER_FACT_LOOKUP' ||
+    value === 'POINTS_PROJECTION_TRACE' ||
+    value === 'SUPPORT_LOOKUP_DIAGNOSTIC'
+  ) {
+    return value;
+  }
+  return null;
+}
+
 async function lookupSupportOwnerFact(
   db: Db,
   parsed: ParsedSupportLookupKey,
@@ -685,6 +729,47 @@ async function lookupSupportOwnerFact(
       referenceType: 'OWNER_FACT_REFERENCE',
     },
     lookupNote: 'Lookup found an owner fact family reference. Resolve individual rows in the owner service before support decisions.',
+  };
+}
+
+function createAdminDiagnosticSnapshot(input: {
+  requestId: string;
+  supportLookupKey: string;
+  diagnosticKind: AdminDiagnosticKind;
+  lookup: SupportLookupResponseBody;
+}): AdminDiagnosticSnapshot {
+  const pointers = input.lookup.ownerFactReference
+    ? [
+        {
+          ownerService: input.lookup.ownerFactReference.ownerService,
+          ownerEntity: input.lookup.ownerFactReference.ownerEntity,
+          ownerLookupId: input.lookup.ownerFactReference.ownerLookupId,
+          pointerType: 'OWNER_FACT_POINTER' as const,
+          lookupStatus: input.lookup.lookupStatus,
+          ...(input.lookup.ownerFactReference.ownerTimestamp
+            ? { ownerTimestamp: input.lookup.ownerFactReference.ownerTimestamp }
+            : {}),
+        },
+      ]
+    : [];
+
+  return {
+    diagnosticId: `points-admin-diagnostic:${input.requestId}`,
+    diagnosticKind: input.diagnosticKind,
+    diagnosticVisibility: 'ADMIN_DIAGNOSTIC',
+    generatedAt: new Date().toISOString(),
+    lookupInput: {
+      supportLookupKey: input.supportLookupKey,
+    },
+    lookupStatus: input.lookup.lookupStatus,
+    ownerFactPointers: pointers,
+    notes: [
+      input.lookup.lookupNote,
+      'Diagnostic snapshot is internal navigation only. Resolve owner rows in the owner service before operator decisions.',
+    ],
+    operatorBoundary: 'INTERNAL_NAVIGATION_ONLY',
+    isCustomerProof: false,
+    canTerminateProof: false,
   };
 }
 
@@ -1240,6 +1325,48 @@ export default {
         const lookup = await lookupSupportOwnerFact(db, parsed, supportLookupKey);
 
         const res = json(lookup, 200, { 'Cache-Control': 'no-store' });
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'POST' && path === '/internal/points/admin-diagnostics') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        if (!ADMIN_DIAGNOSTICS_ALLOWED_SERVICES.has(auth.principal.service)) {
+          const res = errorResponse('FORBIDDEN', 'Service is not allowed to use admin diagnostics', requestId, 403);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const supportLookupKey = body?.supportLookupKey;
+        const parsed = parseSupportLookupKey(supportLookupKey);
+        const diagnosticKind = parseAdminDiagnosticKind(body?.diagnosticKind);
+        if (!parsed || typeof supportLookupKey !== 'string' || !diagnosticKind) {
+          const res = errorResponse('BadRequest', 'Invalid admin diagnostic request', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const lookup = await lookupSupportOwnerFact(db, parsed, supportLookupKey);
+        const snapshot = createAdminDiagnosticSnapshot({
+          requestId,
+          supportLookupKey,
+          diagnosticKind,
+          lookup,
+        });
+
+        const res = json(snapshot, 200, { 'Cache-Control': 'no-store' });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

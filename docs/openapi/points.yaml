@@ -385,6 +385,47 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /internal/points/admin-diagnostics:
+    post:
+      tags: [internal]
+      operationId: getPointsAdminDiagnosticSnapshot
+      summary: Create a bounded internal Points admin diagnostic snapshot
+      description: >
+        Internal admin/support diagnostic endpoint. It consumes a bounded support lookup key and returns
+        operator navigation pointers without terminating proof, closing support outcomes, exposing a customer URL,
+        or creating accounting authority.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDiagnosticRequest"
+      responses:
+        "200":
+          description: Diagnostic snapshot created for internal navigation only.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDiagnosticSnapshot"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/points/badges/award:
     post:
       tags: [internal]
@@ -660,6 +701,115 @@ components:
         lookupNote:
           type: string
           description: Human-readable internal note. This must not be treated as support resolution.
+
+    DiagnosticVisibility:
+      type: string
+      enum:
+        - ADMIN_DIAGNOSTIC
+        - INTERNAL_DIAGNOSTIC
+
+    DiagnosticKind:
+      type: string
+      enum:
+        - POINTS_OWNER_FACT_LOOKUP
+        - POINTS_PROJECTION_TRACE
+        - SUPPORT_LOOKUP_DIAGNOSTIC
+
+    AdminDiagnosticOperatorBoundary:
+      type: string
+      enum:
+        - INTERNAL_NAVIGATION_ONLY
+
+    AdminDiagnosticRequest:
+      type: object
+      required: [supportLookupKey]
+      properties:
+        supportLookupKey:
+          type: string
+          description: Opaque bounded key emitted by projection metadata. It is used for internal diagnostics navigation only.
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+
+    AdminDiagnosticLookupInput:
+      type: object
+      required: [supportLookupKey]
+      properties:
+        supportLookupKey:
+          type: string
+
+    OwnerFactPointer:
+      type: object
+      required: [ownerService, ownerEntity, ownerLookupId, pointerType, lookupStatus]
+      description: Internal navigation pointer to an owner fact or owner fact family. The owner service remains authoritative.
+      properties:
+        ownerService:
+          type: string
+          enum:
+            - points-service
+        ownerEntity:
+          type: string
+          enum:
+            - user_balances
+            - points_transactions
+        ownerLookupId:
+          type: string
+          description: Bounded owner lookup identifier for internal tooling.
+        pointerType:
+          type: string
+          enum:
+            - OWNER_FACT_POINTER
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        ownerTimestamp:
+          type: string
+          format: date-time
+          description: Owner row timestamp when safely available. It is not final authority by itself.
+
+    AdminDiagnosticSnapshot:
+      type: object
+      required:
+        - diagnosticId
+        - diagnosticKind
+        - diagnosticVisibility
+        - generatedAt
+        - lookupInput
+        - lookupStatus
+        - ownerFactPointers
+        - notes
+        - operatorBoundary
+        - isCustomerProof
+        - canTerminateProof
+      description: Internal diagnostic snapshot for bounded operator navigation. It is not customer proof or support outcome.
+      properties:
+        diagnosticId:
+          type: string
+        diagnosticKind:
+          $ref: "#/components/schemas/DiagnosticKind"
+        diagnosticVisibility:
+          $ref: "#/components/schemas/DiagnosticVisibility"
+        generatedAt:
+          type: string
+          format: date-time
+        lookupInput:
+          $ref: "#/components/schemas/AdminDiagnosticLookupInput"
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        ownerFactPointers:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnerFactPointer"
+        notes:
+          type: array
+          items:
+            type: string
+        operatorBoundary:
+          $ref: "#/components/schemas/AdminDiagnosticOperatorBoundary"
+        isCustomerProof:
+          type: boolean
+          enum: [false]
+        canTerminateProof:
+          type: boolean
+          enum: [false]
 
     PointsAction:
       type: string
