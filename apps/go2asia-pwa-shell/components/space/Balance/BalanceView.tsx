@@ -35,6 +35,10 @@ function formatTimeAgo(date: string): string {
   return `${Math.floor(diffInSeconds / 604800)} нед назад`;
 }
 
+/**
+ * @deprecated Mock-heavy deferred Space view.
+ * Not route-safe while Path B is inactive; use static deferred route pages instead.
+ */
 export function BalanceView() {
   const stats = mockDashboardStats;
   const transactions = mockTransactionsExtended.filter((txn) => txn.type !== 'spend');
