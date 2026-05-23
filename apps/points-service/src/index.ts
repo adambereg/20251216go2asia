@@ -120,6 +120,34 @@ export type WalletBuckets = {
   networkPoints: number;
 };
 
+type SupportLookupEntity = 'user_balances' | 'points_transactions';
+type SupportLookupScope = 'SUPPORT_SAFE';
+type SupportLookupVisibility = 'INTERNAL_REFERENCE';
+type SupportLookupStatus = 'LOOKUP_AVAILABLE' | 'LOOKUP_LIMITED' | 'LOOKUP_UNAVAILABLE';
+
+type ParsedSupportLookupKey = {
+  ownerNamespace: 'points';
+  ownerEntity: SupportLookupEntity;
+  lookupId: string;
+};
+
+type SupportLookupOwnerFactReference = {
+  ownerService: 'points-service';
+  ownerEntity: SupportLookupEntity;
+  ownerLookupId: string;
+  referenceType: 'OWNER_FACT_REFERENCE';
+  ownerTimestamp?: string;
+};
+
+type SupportLookupResponseBody = {
+  supportLookupKey: string;
+  lookupScope: SupportLookupScope;
+  lookupVisibility: SupportLookupVisibility;
+  lookupStatus: SupportLookupStatus;
+  ownerFactReference?: SupportLookupOwnerFactReference;
+  lookupNote: string;
+};
+
 type ReferralDashboardSummaryRow = {
   total_referrals: number;
   activated_referrals: number;
@@ -135,6 +163,7 @@ const DASHBOARD_TRANSACTIONS_MAX_LIMIT = 20;
 const DASHBOARD_BADGES_DEFAULT_LIMIT = 5;
 const DASHBOARD_BADGES_MAX_LIMIT = 20;
 const METADATA_MAX_BYTES = 4096;
+const SUPPORT_LOOKUP_ALLOWED_SERVICES = new Set(['support-service', 'api-gateway', 'admin-service', 'points-service']);
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -563,6 +592,102 @@ function asIso(value: Date | string | null | undefined): string | null {
   return (value instanceof Date ? value : new Date(value)).toISOString();
 }
 
+function createSupportLookupKey(ownerEntity: SupportLookupEntity, lookupId: string): string {
+  return `points:${ownerEntity}:${bytesToBase64Url(utf8ToBytes(lookupId))}`;
+}
+
+function parseSupportLookupKey(value: unknown): ParsedSupportLookupKey | null {
+  if (typeof value !== 'string') return null;
+  const [ownerNamespace, ownerEntity, encodedLookupId, ...extra] = value.split(':');
+  if (extra.length > 0 || ownerNamespace !== 'points') return null;
+  if (ownerEntity !== 'user_balances' && ownerEntity !== 'points_transactions') return null;
+  if (!encodedLookupId) return null;
+
+  try {
+    const lookupId = new TextDecoder().decode(base64UrlToBytes(encodedLookupId));
+    if (!lookupId.trim()) return null;
+    return {
+      ownerNamespace,
+      ownerEntity,
+      lookupId,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function lookupSupportOwnerFact(
+  db: Db,
+  parsed: ParsedSupportLookupKey,
+  supportLookupKey: string
+): Promise<SupportLookupResponseBody> {
+  if (parsed.ownerEntity === 'user_balances') {
+    const result = await db.execute(sql`
+      SELECT user_id, updated_at
+      FROM user_balances
+      WHERE user_id = ${parsed.lookupId}
+      LIMIT 1
+    `);
+    const row = getRows<{ user_id: string; updated_at: Date | string }>(result)[0];
+
+    if (!row) {
+      return {
+        supportLookupKey,
+        lookupScope: 'SUPPORT_SAFE',
+        lookupVisibility: 'INTERNAL_REFERENCE',
+        lookupStatus: 'LOOKUP_UNAVAILABLE',
+        lookupNote: 'No owner fact was found for this bounded lookup key. This is not proof of absence.',
+      };
+    }
+
+    return {
+      supportLookupKey,
+      lookupScope: 'SUPPORT_SAFE',
+      lookupVisibility: 'INTERNAL_REFERENCE',
+      lookupStatus: 'LOOKUP_AVAILABLE',
+      ownerFactReference: {
+        ownerService: 'points-service',
+        ownerEntity: 'user_balances',
+        ownerLookupId: row.user_id,
+        referenceType: 'OWNER_FACT_REFERENCE',
+        ...(asIso(row.updated_at) ? { ownerTimestamp: asIso(row.updated_at)! } : {}),
+      },
+      lookupNote: 'Lookup resolved a bounded owner fact reference. The owner row remains authoritative.',
+    };
+  }
+
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM points_transactions
+    WHERE user_id = ${parsed.lookupId}
+  `);
+  const total = Number(getRows<{ total: number }>(result)[0]?.total ?? 0);
+
+  if (total <= 0) {
+    return {
+      supportLookupKey,
+      lookupScope: 'SUPPORT_SAFE',
+      lookupVisibility: 'INTERNAL_REFERENCE',
+      lookupStatus: 'LOOKUP_UNAVAILABLE',
+      lookupNote: 'No owner fact family entries were found for this bounded lookup key. This is not proof of absence.',
+    };
+  }
+
+  return {
+    supportLookupKey,
+    lookupScope: 'SUPPORT_SAFE',
+    lookupVisibility: 'INTERNAL_REFERENCE',
+    lookupStatus: 'LOOKUP_LIMITED',
+    ownerFactReference: {
+      ownerService: 'points-service',
+      ownerEntity: 'points_transactions',
+      ownerLookupId: parsed.lookupId,
+      referenceType: 'OWNER_FACT_REFERENCE',
+    },
+    lookupNote: 'Lookup found an owner fact family reference. Resolve individual rows in the owner service before support decisions.',
+  };
+}
+
 function normalizeBadgeCatalogItem(row: BadgeCatalogRow) {
   return {
     code: row.code,
@@ -608,7 +733,7 @@ function normalizeDashboardBadgeItem(row: UserBadgeWithCatalogRow) {
   };
 }
 
-const pointsSummaryMetadata = () =>
+const pointsSummaryMetadata = (userId: string) =>
   createProjectionMetadata({
     projectionKind: 'POINTS_SUMMARY',
     referenceScope: 'READ_ONLY',
@@ -617,9 +742,10 @@ const pointsSummaryMetadata = () =>
       ownerEntity: 'user_balances',
       referenceType: 'OWNER_FACT_REFERENCE',
     },
+    supportLookupKey: createSupportLookupKey('user_balances', userId),
   });
 
-const walletSummaryMetadata = () =>
+const walletSummaryMetadata = (userId: string) =>
   createProjectionMetadata({
     projectionKind: 'POINTS_SUMMARY',
     referenceScope: 'READ_ONLY',
@@ -628,9 +754,10 @@ const walletSummaryMetadata = () =>
       ownerEntity: 'points_transactions',
       referenceType: 'OWNER_FACT_REFERENCE',
     },
+    supportLookupKey: createSupportLookupKey('points_transactions', userId),
   });
 
-const activityProjectionMetadata = () =>
+const activityProjectionMetadata = (userId: string) =>
   createProjectionMetadata({
     projectionKind: 'ACTIVITY_PROJECTION',
     referenceScope: 'REFERENCE_ONLY',
@@ -639,6 +766,7 @@ const activityProjectionMetadata = () =>
       ownerEntity: 'points_transactions',
       referenceType: 'OWNER_FACT_REFERENCE',
     },
+    supportLookupKey: createSupportLookupKey('points_transactions', userId),
   });
 
 async function listActiveBadges(db: Db): Promise<BadgeCatalogRow[]> {
@@ -907,7 +1035,7 @@ export default {
             userId,
             balance,
             updatedAt: updatedAt.toISOString(),
-            projectionMetadata: pointsSummaryMetadata(),
+            projectionMetadata: pointsSummaryMetadata(userId),
           },
           200
         );
@@ -939,7 +1067,7 @@ export default {
             proStatus: {
               isActive: hasRole(auth.principal, 'pro'),
             },
-            projectionMetadata: walletSummaryMetadata(),
+            projectionMetadata: walletSummaryMetadata(auth.principal.userId),
           },
           200,
           { 'Cache-Control': 'no-store' }
@@ -992,6 +1120,7 @@ export default {
             projectionMetadata: createProjectionMetadata({
               projectionKind: 'POINTS_SUMMARY',
               referenceScope: 'READ_ONLY',
+              supportLookupKey: createSupportLookupKey('user_balances', userId),
             }),
           },
           200,
@@ -1072,10 +1201,45 @@ export default {
                     id: last.id,
                   })
                 : null,
-            projectionMetadata: activityProjectionMetadata(),
+            projectionMetadata: activityProjectionMetadata(userId),
           },
           200
         );
+        res.headers.set('X-Request-Id', requestId);
+        return res;
+      }
+
+      if (request.method === 'POST' && path === '/internal/points/support-lookup') {
+        const auth = await requireServiceAuth(request, env, requestId, logger);
+        if (!auth.ok) {
+          auth.res.headers.set('X-Request-Id', requestId);
+          return auth.res;
+        }
+
+        if (!SUPPORT_LOOKUP_ALLOWED_SERVICES.has(auth.principal.service)) {
+          const res = errorResponse('FORBIDDEN', 'Service is not allowed to use support lookup', requestId, 403);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const bodyUnknown: unknown = await request.json().catch(() => null);
+        const body =
+          bodyUnknown && typeof bodyUnknown === 'object' && !Array.isArray(bodyUnknown)
+            ? (bodyUnknown as Record<string, unknown>)
+            : null;
+
+        const supportLookupKey = body?.supportLookupKey;
+        const parsed = parseSupportLookupKey(supportLookupKey);
+        if (!parsed || typeof supportLookupKey !== 'string') {
+          const res = errorResponse('BadRequest', 'Invalid supportLookupKey', requestId, 400);
+          res.headers.set('X-Request-Id', requestId);
+          return res;
+        }
+
+        const db = createDb(requireDatabase(env));
+        const lookup = await lookupSupportOwnerFact(db, parsed, supportLookupKey);
+
+        const res = json(lookup, 200, { 'Cache-Control': 'no-store' });
         res.headers.set('X-Request-Id', requestId);
         return res;
       }

@@ -34,7 +34,27 @@ type ProjectionMetadataEnvelope = {
     ownerEntity: string;
     referenceType: string;
   };
+  supportLookupKey?: string;
 };
+
+type SupportLookupResponse = {
+  supportLookupKey: string;
+  lookupScope: string;
+  lookupVisibility: string;
+  lookupStatus: string;
+  ownerFactReference?: {
+    ownerService: string;
+    ownerEntity: string;
+    ownerLookupId: string;
+    referenceType: string;
+    ownerTimestamp?: string;
+  };
+  lookupNote: string;
+};
+
+function makeTestSupportLookupKey(ownerEntity: 'user_balances' | 'points_transactions', lookupId: string): string {
+  return `points:${ownerEntity}:${Buffer.from(lookupId, 'utf8').toString('base64url')}`;
+}
 
 function expectProjectionEnvelope(
   metadata: ProjectionMetadataEnvelope | undefined,
@@ -51,6 +71,18 @@ function expectProjectionEnvelope(
   const serialized = JSON.stringify(metadata);
   expect(serialized).not.toMatch(/proofClass|verified|settled|confirmed|guaranteed|proofComplete/i);
   expect(serialized).not.toMatch(/financial ledger|cashback|payout|on-chain|bridge/i);
+  if (metadata?.supportLookupKey) {
+    expect(metadata.supportLookupKey).toMatch(/^points:(user_balances|points_transactions):[A-Za-z0-9_-]+$/);
+  }
+}
+
+function expectSupportLookupResponse(body: SupportLookupResponse) {
+  expect(body.lookupScope).toBe('SUPPORT_SAFE');
+  expect(body.lookupVisibility).toBe('INTERNAL_REFERENCE');
+
+  const serialized = JSON.stringify(body);
+  expect(serialized).not.toMatch(/verified|settled|confirmed|guaranteed|proofComplete|supportResolved|caseClosed/i);
+  expect(serialized).not.toMatch(/receipt|cashback|payout|on-chain|bridge/i);
 }
 
 const rfSpendProducerEnabled = {
@@ -505,6 +537,143 @@ describe('points-service request hardening', () => {
     expect(response.status).toBe(503);
     expect(body.error).toBe('SERVICE_AUTH_NOT_CONFIGURED');
     expect(body.message).toContain('not configured');
+  });
+
+  it('resolves a support-safe lookup key to a user balance owner fact reference', async () => {
+    executeMock.mockResolvedValueOnce({
+      rows: [{ user_id: 'user_lookup', updated_at: new Date('2026-05-23T08:00:00.000Z') }],
+    });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'support-service',
+    });
+    const supportLookupKey = makeTestSupportLookupKey('user_balances', 'user_lookup');
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/support-lookup', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey }),
+      }),
+      env
+    );
+
+    const body = await readJson<SupportLookupResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      supportLookupKey,
+      lookupScope: 'SUPPORT_SAFE',
+      lookupVisibility: 'INTERNAL_REFERENCE',
+      lookupStatus: 'LOOKUP_AVAILABLE',
+      ownerFactReference: {
+        ownerService: 'points-service',
+        ownerEntity: 'user_balances',
+        ownerLookupId: 'user_lookup',
+        referenceType: 'OWNER_FACT_REFERENCE',
+        ownerTimestamp: '2026-05-23T08:00:00.000Z',
+      },
+    });
+    expect(body.lookupNote).toContain('owner fact reference');
+    expectSupportLookupResponse(body);
+
+    const lookupQuery = executeMock.mock.calls[0]?.[0] as { values: unknown[]; strings: string[] };
+    expect(lookupQuery.values).toContain('user_lookup');
+    expect(lookupQuery.strings.join('')).toContain('FROM user_balances');
+  });
+
+  it('limits support lookup for transaction owner fact families without returning row data', async () => {
+    executeMock.mockResolvedValueOnce({ rows: [{ total: 2 }] });
+
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'support-service',
+    });
+    const supportLookupKey = makeTestSupportLookupKey('points_transactions', 'user_lookup');
+
+    const response = await worker.fetch(
+      new Request('https://points.example/internal/points/support-lookup', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey }),
+      }),
+      env
+    );
+
+    const body = await readJson<SupportLookupResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      supportLookupKey,
+      lookupScope: 'SUPPORT_SAFE',
+      lookupVisibility: 'INTERNAL_REFERENCE',
+      lookupStatus: 'LOOKUP_LIMITED',
+      ownerFactReference: {
+        ownerService: 'points-service',
+        ownerEntity: 'points_transactions',
+        ownerLookupId: 'user_lookup',
+        referenceType: 'OWNER_FACT_REFERENCE',
+      },
+    });
+    expect(JSON.stringify(body)).not.toContain('amount');
+    expect(JSON.stringify(body)).not.toContain('externalId');
+    expectSupportLookupResponse(body);
+  });
+
+  it('rejects unsupported services and malformed support lookup keys', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const rogueToken = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'rogue-service',
+    });
+    const supportToken = await makeServiceJwt(env.SERVICE_JWT_SECRET!, 'points-service', {
+      sub: 'support-service',
+    });
+
+    const forbiddenResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/support-lookup', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${rogueToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey: makeTestSupportLookupKey('user_balances', 'user_lookup') }),
+      }),
+      env
+    );
+
+    const malformedResponse = await worker.fetch(
+      new Request('https://points.example/internal/points/support-lookup', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${supportToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ supportLookupKey: 'points:user_balances:not-valid:extra' }),
+      }),
+      env
+    );
+
+    expect(forbiddenResponse.status).toBe(403);
+    expect((await readJson<{ error: string }>(forbiddenResponse)).error).toBe('FORBIDDEN');
+    expect(malformedResponse.status).toBe(400);
+    expect((await readJson<{ error: string }>(malformedResponse)).error).toBe('BadRequest');
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
   it('applies a new ledger write and stores audit fields', async () => {

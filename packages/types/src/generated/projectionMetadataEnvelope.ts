@@ -22,6 +22,6 @@ export interface ProjectionMetadataEnvelope {
   projectionKind: ProjectionKind;
   projectionSource: ProjectionSource;
   referenceScope: ProjectionReferenceScope;
-  /** Optional bounded support navigation key. It is not customer proof. */
+  /** Optional bounded support navigation key. It is not customer proof or support resolution. */
   supportLookupKey?: string;
 }

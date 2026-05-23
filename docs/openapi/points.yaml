@@ -345,6 +345,46 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /internal/points/support-lookup:
+    post:
+      tags: [internal]
+      operationId: lookupPointsSupportReference
+      summary: Resolve a bounded support lookup key to an owner fact reference
+      description: >
+        Internal support-safe navigation endpoint. It resolves bounded projection lookup keys to owner fact references
+        without terminating proof, closing support cases, or exposing admin diagnostics.
+      security:
+        - ServiceAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportLookupRequest"
+      responses:
+        "200":
+          description: Lookup completed. The status describes whether navigation is available, not proof.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportLookupResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/points/badges/award:
     post:
       tags: [internal]
@@ -549,7 +589,77 @@ components:
           $ref: "#/components/schemas/ProjectionOwnerFactReference"
         supportLookupKey:
           type: string
-          description: Optional bounded support navigation key. It is not customer proof.
+          description: Optional bounded support navigation key. It is not customer proof or support resolution.
+
+    SupportLookupScope:
+      type: string
+      enum:
+        - SUPPORT_SAFE
+
+    SupportLookupVisibility:
+      type: string
+      enum:
+        - INTERNAL_REFERENCE
+
+    SupportLookupStatus:
+      type: string
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+
+    SupportLookupRequest:
+      type: object
+      required: [supportLookupKey]
+      properties:
+        supportLookupKey:
+          type: string
+          description: Opaque bounded key emitted by projection metadata. It is navigation-only, not proof.
+
+    SupportLookupOwnerFactReference:
+      type: object
+      required: [ownerService, ownerEntity, ownerLookupId, referenceType]
+      description: >
+        Internal owner fact navigation pointer. This is not case resolution, accounting statement or proof terminator.
+      properties:
+        ownerService:
+          type: string
+          enum:
+            - points-service
+        ownerEntity:
+          type: string
+          enum:
+            - user_balances
+            - points_transactions
+        ownerLookupId:
+          type: string
+          description: Opaque owner lookup identifier for support tooling.
+        referenceType:
+          type: string
+          enum:
+            - OWNER_FACT_REFERENCE
+        ownerTimestamp:
+          type: string
+          format: date-time
+          description: Owner row timestamp when safely available. It is not proof finality.
+
+    SupportLookupResponse:
+      type: object
+      required: [supportLookupKey, lookupScope, lookupVisibility, lookupStatus, lookupNote]
+      properties:
+        supportLookupKey:
+          type: string
+        lookupScope:
+          $ref: "#/components/schemas/SupportLookupScope"
+        lookupVisibility:
+          $ref: "#/components/schemas/SupportLookupVisibility"
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        ownerFactReference:
+          $ref: "#/components/schemas/SupportLookupOwnerFactReference"
+        lookupNote:
+          type: string
+          description: Human-readable internal note. This must not be treated as support resolution.
 
     PointsAction:
       type: string

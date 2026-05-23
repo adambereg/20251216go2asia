@@ -2534,7 +2534,7 @@ components:
         referenceScope:
           $ref: "#/components/schemas/ProjectionReferenceScope"
         supportLookupKey:
-          description: Optional bounded support navigation key. It is not customer proof.
+          description: Optional bounded support navigation key. It is not customer proof or support resolution.
           type: string
       required:
         - projectionSource
@@ -6124,6 +6124,80 @@ components:
         - proofType
         - proofData
       type: object
+    SupportLookupOwnerFactReference:
+      description: |
+        Internal owner fact navigation pointer. This is not case resolution, accounting statement or proof terminator.
+      properties:
+        ownerEntity:
+          enum:
+            - user_balances
+            - points_transactions
+          type: string
+        ownerLookupId:
+          description: Opaque owner lookup identifier for support tooling.
+          type: string
+        ownerService:
+          enum:
+            - points-service
+          type: string
+        ownerTimestamp:
+          description: Owner row timestamp when safely available. It is not proof finality.
+          format: date-time
+          type: string
+        referenceType:
+          enum:
+            - OWNER_FACT_REFERENCE
+          type: string
+      required:
+        - ownerService
+        - ownerEntity
+        - ownerLookupId
+        - referenceType
+      type: object
+    SupportLookupRequest:
+      properties:
+        supportLookupKey:
+          description: Opaque bounded key emitted by projection metadata. It is navigation-only, not proof.
+          type: string
+      required:
+        - supportLookupKey
+      type: object
+    SupportLookupResponse:
+      properties:
+        lookupNote:
+          description: Human-readable internal note. This must not be treated as support resolution.
+          type: string
+        lookupScope:
+          $ref: "#/components/schemas/SupportLookupScope"
+        lookupStatus:
+          $ref: "#/components/schemas/SupportLookupStatus"
+        lookupVisibility:
+          $ref: "#/components/schemas/SupportLookupVisibility"
+        ownerFactReference:
+          $ref: "#/components/schemas/SupportLookupOwnerFactReference"
+        supportLookupKey:
+          type: string
+      required:
+        - supportLookupKey
+        - lookupScope
+        - lookupVisibility
+        - lookupStatus
+        - lookupNote
+      type: object
+    SupportLookupScope:
+      enum:
+        - SUPPORT_SAFE
+      type: string
+    SupportLookupStatus:
+      enum:
+        - LOOKUP_AVAILABLE
+        - LOOKUP_LIMITED
+        - LOOKUP_UNAVAILABLE
+      type: string
+    SupportLookupVisibility:
+      enum:
+        - INTERNAL_REFERENCE
+      type: string
     TransactionsPage:
       properties:
         items:
@@ -6469,6 +6543,45 @@ paths:
       security:
         - ServiceAuth: []
       summary: Spend points from user available balance (idempotent)
+      tags:
+        - internal
+  /internal/points/support-lookup:
+    post:
+      description: |
+        Internal support-safe navigation endpoint. It resolves bounded projection lookup keys to owner fact references without terminating proof, closing support cases, or exposing admin diagnostics.
+      operationId: lookupPointsSupportReference
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportLookupRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportLookupResponse"
+          description: Lookup completed. The status describes whether navigation is available, not proof.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Forbidden
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceAuthNotConfigured"
+      security:
+        - ServiceAuth: []
+      summary: Resolve a bounded support lookup key to an owner fact reference
       tags:
         - internal
   /internal/referral/generate-code:
