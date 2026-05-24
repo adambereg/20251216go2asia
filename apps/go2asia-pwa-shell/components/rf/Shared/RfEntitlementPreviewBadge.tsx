@@ -53,27 +53,27 @@ export function getRfEntitlementBadgePresentation(state: RfEntitlementPreviewSta
 
   if (state === 'available') {
     return {
-      label: 'Премиум-доступ доступен',
+      label: 'Preview: премиум-доступ возможен',
       toneClassName: BADGE_TONE_BY_STATE.available,
     };
   }
 
   if (state === 'requires_condition') {
     return {
-      label: 'Требуется условие',
+      label: 'Preview: требуется условие доступа',
       toneClassName: BADGE_TONE_BY_STATE.requires_condition,
     };
   }
 
   if (state === 'checking_or_temporarily_unavailable') {
     return {
-      label: 'Проверка доступа выполняется',
+      label: 'Preview: проверка доступа выполняется',
       toneClassName: BADGE_TONE_BY_STATE.checking_or_temporarily_unavailable,
     };
   }
 
   return {
-    label: 'Премиум-доступ недоступен',
+    label: 'Preview: премиум-доступ недоступен',
     toneClassName: BADGE_TONE_BY_STATE.unavailable,
   };
 }

@@ -31,7 +31,7 @@ export const rfCatalogContent = {
 export const rfOffersCatalogContent = {
   pageTitle: 'Офферы',
   pageSubtitle:
-    'Какую выгоду можно получить и у какого места: фильтруйте по городу, типу оффера и доступности. Данные — из живого RF runtime; получение ваучера в приложении пока требует отдельного сценария входа.',
+    'Какую выгоду можно получить и у какого места: фильтруйте по городу, типу оффера и доступности. Данные — из живого RF runtime; для получения ваучера нужен вход в аккаунт и подтверждение по текущему runtime-сценарию.',
   searchPlaceholder: 'Название оффера, партнёр, ключевые слова',
   sortLabel: 'Сортировка',
   filterStatus: 'Статус на витрине',
@@ -77,10 +77,10 @@ export const rfMyVouchersPageContent = {
   meaningTitle: 'Что это значит',
   meaningBody:
     'Ваучеры показываются как фактологический read-only слой: статус, Points utility semantics, повторяемость и источник через PRO при подтверждённой атрибуции. Это не финансовый кабинет и не раздел партнёрских расчётов.',
-  futureMarkers: ['Premium vouchers: deferred', 'Advanced recognition: deferred', 'Path B collectibles: deferred'],
+  futureMarkers: ['Премиум-ваучеры: отдельный этап', 'Advanced recognition: deferred', 'Path B collectibles: deferred'],
   localWarning:
     'Список хранится локально в этом браузере: для авторизованного пользователя он привязан к текущему аккаунту, для гостя — к этому браузеру. Это сохранённые офферы, не серверные ваучеры.',
-  empty: 'Пока пусто. Добавьте оффер из каталога офферов кнопкой «Сохранить оффер».',
+  empty: 'Пока пусто. Получите ваучер в каталоге офферов или сохраните оффер для планирования.',
   statusLocal: 'Локально сохранено',
   remove: 'Убрать из списка',
   addedAt: 'Добавлено',
@@ -105,7 +105,7 @@ export const rfHowItWorksPageContent = {
     },
     {
       title: 'Сохранить',
-      body: 'Избранное и «Мои ваучеры» на текущем этапе работают локально в браузере — удобно для планирования поездки, пока нет облачной синхронизации.',
+      body: 'Избранное хранится локально как планировочная заметка. Раздел «Мои ваучеры» показывает и серверные ваучеры после claim, и локальные сохранённые офферы.',
       links: [
         { href: '/rf/favorites', label: 'Избранное' },
         { href: '/rf/my-vouchers', label: 'Мои ваучеры' },
@@ -113,8 +113,16 @@ export const rfHowItWorksPageContent = {
     },
     {
       title: 'Использовать у партнёра',
-      body: 'Показ ваучера и применение у партнёра требуют входа в аккаунт. Публичная витрина показывает условия; полный сценарий использования недоступен в гостевом режиме.',
+      body: 'Показ ваучера и применение у партнёра требуют входа в аккаунт. Это partner-offer lifecycle, не финансовое подтверждение и не подтверждение расчётов.',
       links: [{ href: '/rf/vouchers', label: 'Смотреть офферы' }],
+    },
+    {
+      title: 'Где смотреть RF-активность в экосистеме',
+      body: 'После получения ваучера подробности остаются в RF owner surface, а краткая read-only сводка видна в Connect projection.',
+      links: [
+        { href: '/rf/my-vouchers', label: 'Мои ваучеры в RF' },
+        { href: '/connect', label: 'Connect projection' },
+      ],
     },
     {
       title: 'Что уже live, что beta',
@@ -146,7 +154,7 @@ export const rfLandingContent = {
     },
     {
       title: 'Используйте у партнёра',
-      body: 'Покажите ваучер в точке использования и получите обещанный бонус, скидку или доступ.',
+      body: 'Покажите ваучер партнёру и уточните условия применения. Это не финансовое подтверждение и не booking authority.',
     },
   ],
 } as const;
@@ -326,9 +334,9 @@ export function getPartnerTrust(partner: RfPartnerDto): { label: string; tone: s
   const base = trustByRuntimeStatus[partner.status] ?? trustByRuntimeStatus.active;
   if (partner.atlasPlaceId || partner.hostAtlasPlaceId) {
     return {
-      label: 'Проверенный партнёр',
+      label: 'Профиль с расширенной привязкой',
       tone: 'bg-emerald-100 text-emerald-800',
-      note: 'Карточка дополнительно связана с точкой места и проходит как более доверенный профиль.',
+      note: 'Карточка дополнительно связана с точкой места. Это не подтверждение владения бизнесом и не подтверждение расчётов.',
     };
   }
 

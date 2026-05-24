@@ -42,7 +42,7 @@ function response(overrides: Partial<EntitlementReadResponse>): EntitlementReadR
 function proxyResponse(overrides: Partial<RfEntitlementPreviewProxyResponse> = {}): RfEntitlementPreviewProxyResponse {
   return {
     state: 'available',
-    label: 'Премиум-доступ доступен',
+    label: 'Preview: премиум-доступ возможен',
     caption: 'Это информационный preview. Получение ваучера работает как раньше.',
     informationalOnly: true,
     claimBehaviorUnchanged: true,
@@ -207,7 +207,7 @@ describe('RF entitlement preview helper', () => {
     });
 
     expect(state.state).toBe('available');
-    expect(state.copy.label).toBe('Премиум-доступ доступен');
+    expect(state.copy.label).toBe('Preview: премиум-доступ возможен');
     expect(state.informationalOnly).toBe(true);
     expect(state.claimBehaviorUnchanged).toBe(true);
     expect(calls).toEqual([{ path: RF_ENTITLEMENT_PREVIEW_PROXY_PATH }]);

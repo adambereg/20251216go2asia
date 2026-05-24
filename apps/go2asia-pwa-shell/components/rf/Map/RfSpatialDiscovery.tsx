@@ -117,6 +117,12 @@ export function RfSpatialDiscovery({ partners, offers, initialCityId }: RfSpatia
             <Link href="/rf/vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
               → {rfMapPageContent.openOffers}
             </Link>
+            <Link href="/rf/my-vouchers" className="text-sm font-medium text-blue-700 hover:text-blue-800">
+              → Мои ваучеры
+            </Link>
+            <Link href="/connect" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+              → Connect projection
+            </Link>
             <Link href="/rf/how-it-works" className="text-sm font-medium text-slate-700 hover:text-slate-900">
               → Как это работает
             </Link>

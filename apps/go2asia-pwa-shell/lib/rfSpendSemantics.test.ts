@@ -19,7 +19,7 @@ describe('RF spend semantics helpers', () => {
   });
 
   it('keeps paid CTA visible only when points cost is positive', () => {
-    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить с Points: 500 Points');
+    expect(getRfOfferClaimButtonLabel({ pointsCost: 500 })).toBe('Получить ваучер (списание 500 Points)');
     expect(getRfOfferClaimButtonLabel({ pointsCost: 0 })).toBe('Получить ваучер');
     expect(getRfOfferClaimButtonLabel({ pointsCost: undefined })).toBe('Получить ваучер');
   });
@@ -38,7 +38,7 @@ describe('RF spend semantics helpers', () => {
     });
     expect(getRfVoucherSpendSemantics({ pointsCostSnapshot: 500, economyStatus: 'debited' })).toMatchObject({
       kind: 'paid_spend_required',
-      label: 'Points подтверждены: 500 Points',
+      label: 'Points списаны в RF runtime: 500 Points',
     });
   });
 

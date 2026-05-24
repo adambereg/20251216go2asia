@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Briefcase,
+  Compass,
   HelpCircle,
+  History,
   Heart,
   Map,
   MapPinned,
   Store,
   Ticket,
-  WalletCards,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@go2asia/ui';
@@ -29,7 +30,7 @@ const publicNav: NavDef[] = [
   { href: '/rf/vouchers', label: 'Офферы', icon: Ticket },
   { href: '/rf/map', label: 'Карта', icon: Map },
   { href: '/rf/favorites', label: 'Избранное', icon: Heart },
-  { href: '/rf/my-vouchers', label: 'Мои ваучеры', icon: WalletCards },
+  { href: '/rf/my-vouchers', label: 'Мои ваучеры', icon: History },
   { href: '/rf/how-it-works', label: 'Как это работает', icon: HelpCircle },
 ];
 
@@ -88,6 +89,21 @@ export function RFMainNav() {
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
           Владелец управляет бизнесами и офферами; PRO видит связанные партнёрства без owner-прав.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-3">
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800">Экосистема</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/connect">
+            <Button variant={isNavActive(pathname, '/connect') ? 'primary' : 'secondary'} size="sm" className="flex items-center gap-2">
+              <Compass size={16} />
+              Connect projection
+            </Button>
+          </Link>
+        </div>
+        <p className="mt-2 text-[11px] text-emerald-900/80">
+          RF owner surfaces и Connect projection связаны навигационно. Connect не является voucher authority и не заменяет RF lifecycle.
         </p>
       </div>
     </div>

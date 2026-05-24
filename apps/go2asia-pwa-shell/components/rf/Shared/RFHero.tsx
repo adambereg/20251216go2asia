@@ -11,7 +11,7 @@ interface RFHeroProps {
 
 export function RFHero({ subtitle, compact }: RFHeroProps) {
   const description =
-    subtitle || 'Каталог проверенных Russian Friendly мест и сервисов в Юго-Восточной Азии';
+    subtitle || 'Каталог Russian Friendly мест и сервисов в Юго-Восточной Азии';
 
   if (compact) {
     return (
