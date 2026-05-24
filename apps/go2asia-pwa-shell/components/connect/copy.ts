@@ -12,6 +12,12 @@ export const CONNECT_ACTIVITY_REFERENCE_HELPER = PROJECTION_HELPERS.activityNotR
 
 export const CONNECT_POINTS_EARNED_LABEL = 'Points по backend-событиям (projection)';
 
+export const CONNECT_OWNER_FACT_POINTER_TEXT =
+  'Owner facts остаются в профильных сервисах. Connect показывает только read-only projection и не является authority surface.';
+
+export const CONNECT_INTERNAL_DIAGNOSTICS_HELPER =
+  'Internal diagnostics pointer: operator navigation only, не customer-proof и не support-resolution workflow.';
+
 export const CONNECT_POINTS_BUCKET_LABELS = {
   available: 'Points с внутренней доступностью',
   locked: 'Points с условиями',
@@ -27,7 +33,7 @@ const CONNECT_LEDGER_ACTION_LABELS: Record<string, string> = {
   referral_bonus_referee: 'Referral registration projection',
   event_registration: 'Регистрация на событие',
   space_post_created: 'Публикация в Space',
-  rf_voucher_redeemed: 'RF-ваучер использован',
+  rf_voucher_redeemed: 'RF-ваучер: lifecycle projection',
   rielt_listing_created: 'Объявление в Rielt',
   badge_awarded: 'Бейдж отражён в Connect',
 };

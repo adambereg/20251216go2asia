@@ -81,6 +81,14 @@ export function RfFavoritesView({ partners, offers }: { partners: RfPartnerDto[]
                         Место: {partner.displayName}
                       </Link>
                     ) : null}
+                    {partner ? (
+                      <Link
+                        href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
+                        className="mt-1 inline-block text-xs font-medium text-blue-700 hover:text-blue-800"
+                      >
+                        Получить ваучер в каталоге офферов
+                      </Link>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${badge.tone}`}>{badge.label}</span>

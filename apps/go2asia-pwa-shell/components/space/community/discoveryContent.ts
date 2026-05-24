@@ -31,8 +31,8 @@ export type CommunityDiscoverySection = {
 export const communityDiscoverySections: CommunityDiscoverySection[] = [
   {
     key: 'recommended',
-    title: 'С чего лучше начать',
-    description: 'Curated picks, которые снижают social friction и помогают быстрее встроиться в нужную группу.',
+    title: 'С чего можно начать',
+    description: 'Curated picks, которые помогают мягко встроиться в подходящую группу.',
     tone: 'reference',
     items: [
       {
@@ -43,7 +43,7 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
         whyJoin: 'Здесь проще быстро перейти от чтения к конкретным вопросам и первым связям.',
         whyRecommended: 'Подходит, если сейчас важны жильё, логистика и адаптация.',
         activityHint: 'supportive and active',
-        membersHint: 'strong newcomer gravity',
+        membersHint: 'подходит для новых участников',
         curatorHint: 'Natalia Kim',
         ctaLabel: 'Открыть группу',
       },
@@ -62,12 +62,12 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
       {
         groupId: 'oleg-vietnam-insiders',
         title: 'Oleg’s Vietnam Insiders',
-        shortDescription: 'Curated PRO-led группа с полезными маршрутами, инсайтами и social gravity.',
+        shortDescription: 'Curated PRO-led группа с полезными маршрутами и local insight.',
         whoFor: 'Для тех, кто ценит signal over noise и хочет curated local context.',
-        whyJoin: 'Даёт быстрый вход в high-signal community layer без лишнего шума.',
+        whyJoin: 'Даёт быстрый вход в community layer без лишнего шума.',
         whyRecommended: 'Хороший старт для пользователей, которым важны curation и local insight.',
         activityHint: 'steady curated rhythm',
-        membersHint: 'visible group gravity',
+        membersHint: 'устойчивый ритм участия',
         curatorHint: 'Oleg Tran',
         ctaLabel: 'Открыть группу',
       },
@@ -95,9 +95,9 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
         title: 'Phuket Relocation Circle',
         shortDescription: 'Переезд, зимовка, районы, жильё и повседневная адаптация.',
         whoFor: 'Для новичков и тех, кто хочет сделать Phuket feel practical.',
-        whyJoin: 'Это безопасная точка входа для вопросов и первых решений.',
+        whyJoin: 'Это удобная точка входа для вопросов и первых решений.',
         activityHint: 'supportive and active',
-        membersHint: 'strong newcomer gravity',
+        membersHint: 'подходит для новых участников',
         ctaLabel: 'Открыть',
       },
       {
@@ -188,7 +188,7 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
   {
     key: 'pro-led',
     title: 'PRO-led сообщества',
-    description: 'Группы с видимой curator gravity и useful local context, без смешения с PRO operational contour.',
+    description: 'Группы с curator-driven подборкой и useful local context, без смешения с PRO operational contour.',
     tone: 'summary',
     items: [
       {
@@ -196,7 +196,7 @@ export const communityDiscoverySections: CommunityDiscoverySection[] = [
         title: 'Oleg’s Vietnam Insiders',
         shortDescription: 'PRO-led группа с curated local insight and practical social context.',
         whoFor: 'Для тех, кому нужен полезный local map с сильным social center.',
-        whyJoin: 'У куратора уже есть видимая social и practical gravity.',
+        whyJoin: 'Группа помогает держать практический local context и регулярный social ритм.',
         curatorHint: 'Oleg Tran',
         linkedContext: 'Curated local insight',
         ctaLabel: 'Открыть',

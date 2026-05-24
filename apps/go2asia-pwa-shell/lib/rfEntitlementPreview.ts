@@ -96,15 +96,15 @@ export const rfEntitlementPreviewCopyByState: Record<RfEntitlementPreviewState, 
     description: 'Информационный preview выключен. Получение ваучера работает как раньше.',
   },
   available: {
-    label: 'Премиум-доступ доступен',
+    label: 'Preview: премиум-доступ возможен',
     description: 'Это информационный preview. Финальное получение ваучера в этом этапе не меняется.',
   },
   requires_condition: {
-    label: 'Требуется условие',
+    label: 'Preview: требуется условие доступа',
     description: 'Preview показывает условие доступа. Получение ваучера пока не блокируется entitlement-проверкой.',
   },
   checking_or_temporarily_unavailable: {
-    label: 'Проверка доступа выполняется',
+    label: 'Preview: проверка доступа выполняется',
     description: 'Доступ временно уточняется. Это не меняет текущее поведение кнопки получения.',
   },
   ordinary_no_preview: {
@@ -112,7 +112,7 @@ export const rfEntitlementPreviewCopyByState: Record<RfEntitlementPreviewState, 
     description: 'Для обычного ваучера entitlement preview не применяется.',
   },
   unavailable: {
-    label: 'Премиум-доступ недоступен',
+    label: 'Preview: премиум-доступ недоступен',
     description: 'Preview не смог подтвердить доступ. Это не является runtime enforcement.',
   },
 };

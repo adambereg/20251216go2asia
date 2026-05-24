@@ -9,7 +9,7 @@ export function VerifiedBadge({ className }: VerifiedBadgeProps) {
   return (
     <Badge variant="verified" className={className}>
       <CheckCircle2 size={12} className="mr-1" />
-      Проверено PRO
+      Расширенная привязка профиля
     </Badge>
   );
 }

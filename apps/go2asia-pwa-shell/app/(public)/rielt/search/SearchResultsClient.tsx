@@ -145,6 +145,10 @@ export function SearchResultsClient() {
   if (bedroomsMax != null) filtersFromURL.bedroomsMax = bedroomsMax;
   const moveInMonth = searchParams.get('moveInMonth');
   if (moveInMonth) filtersFromURL.moveInMonth = moveInMonth;
+  const checkIn = searchParams.get('checkIn');
+  const checkOut = searchParams.get('checkOut');
+  if (checkIn) filtersFromURL.checkIn = checkIn;
+  if (checkOut) filtersFromURL.checkOut = checkOut;
   filtersFromURL.concierge = toOptionalBool(searchParams.get('concierge'));
   filtersFromURL.furnished = toOptionalBool(searchParams.get('furnished'));
   filtersFromURL.serviced = toOptionalBool(searchParams.get('serviced'));

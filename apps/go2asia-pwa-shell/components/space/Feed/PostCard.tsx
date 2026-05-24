@@ -83,21 +83,21 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
     <article className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <Link href={`/space/${post.author.username}`}>
+        <Link href={`/space/profiles/${post.author.id}`}>
           <Avatar initials={getInitials(post.author.displayName)} size="md" />
         </Link>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/space/${post.author.username}`}
+              href={`/space/profiles/${post.author.id}`}
               className="font-semibold text-slate-900 hover:text-sky-600 transition-colors"
             >
               {post.author.displayName}
             </Link>
 
             {post.author.verified && (
-              <CheckCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" aria-label="Подтверждён" />
+              <CheckCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" aria-label="Статус профиля" />
             )}
 
             {post.author.role !== 'spacer' && (

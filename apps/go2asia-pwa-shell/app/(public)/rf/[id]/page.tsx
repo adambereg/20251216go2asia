@@ -168,7 +168,8 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Офферы партнёра</h2>
               <p className="text-sm text-slate-600 mt-1">
-                Офферы из RF runtime для этого партнёра. Избранное и «Мои ваучеры» сохраняются локально в браузере.
+                Офферы из RF runtime для этого партнёра. Полученные ваучеры фиксируются в RF runtime после claim, а
+                локальные сохранения остаются планировочной заметкой браузера.
               </p>
             </div>
             <Link
@@ -201,6 +202,9 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
                       </p>
                     ) : null}
                     <p className="text-xs text-slate-600 mt-2">{getOfferSummaryLine(offer)}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Получение ваучера выполняется в owner-backed RF offer catalog и не является финансовым подтверждением.
+                    </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getVisibilityBadge(offer.visibility).tone}`}
@@ -220,7 +224,7 @@ export default async function PartnerPage({ params }: PartnerPageProps) {
                         href={`/rf/vouchers?partner=${encodeURIComponent(partner.id)}`}
                         className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        В общем каталоге
+                        Получить ваучер в каталоге
                       </Link>
                     </div>
                   </li>

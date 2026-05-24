@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -35,11 +36,21 @@ const operations = [
   { href: '/rf/pro/partners', label: 'Партнёры', icon: BarChart3, prefix: '/rf/pro/partners', badge: 'deferred' },
   { href: '/rf/pro/verifications', label: 'Проверки', icon: CheckSquare, prefix: '/rf/pro/verifications', badge: 'deferred' },
   { href: '/rf/pro/onboarding', label: 'Онбординг', icon: UserPlus, prefix: '/rf/pro/onboarding', badge: 'soon' },
+  { href: '/rf/pro/rewards', label: 'Границы операций', icon: ClipboardCheck, prefix: '/rf/pro/rewards', badge: 'soon' },
 ];
 
 export function PRONav({ variant = 'vertical' }: PRONavProps) {
   const pathname = usePathname();
   const overviewExact = pathname === '/rf/pro';
+  const [activeHash, setActiveHash] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const syncHash = () => setActiveHash(window.location.hash || '');
+    syncHash();
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
 
   const baseLinkClass = (active: boolean, extra = '') =>
     `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${extra} ${
@@ -58,8 +69,9 @@ export function PRONav({ variant = 'vertical' }: PRONavProps) {
           </Link>
           {workspaceSections.map((item) => {
             const Icon = item.icon;
+            const isActive = pathname === '/rf/pro' && activeHash === item.href.replace('/rf/pro', '');
             return (
-              <Link key={item.href} href={item.href} className={baseLinkClass(false, 'whitespace-nowrap')}>
+              <Link key={item.href} href={item.href} className={baseLinkClass(isActive, 'whitespace-nowrap')}>
                 <Icon size={16} />
                 <span>{item.label}</span>
               </Link>
@@ -97,8 +109,9 @@ export function PRONav({ variant = 'vertical' }: PRONavProps) {
 
       {workspaceSections.map((item) => {
         const Icon = item.icon;
+        const isActive = pathname === '/rf/pro' && activeHash === item.href.replace('/rf/pro', '');
         return (
-          <Link key={item.href} href={item.href} className={baseLinkClass(false)}>
+          <Link key={item.href} href={item.href} className={baseLinkClass(isActive)}>
             <Icon size={18} />
             <span>{item.label}</span>
           </Link>
@@ -125,6 +138,7 @@ export function PRONav({ variant = 'vertical' }: PRONavProps) {
           </Link>
         );
       })}
+      <p className="mt-2 px-1 text-[11px] text-slate-500">Маршруты с меткой deferred/soon показывают статусный экран и не подтверждают операционные действия.</p>
     </nav>
   );
 }

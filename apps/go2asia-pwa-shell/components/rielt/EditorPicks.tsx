@@ -21,7 +21,7 @@ const EDITOR_PICKS = [
     description: 'Просторные апартаменты и дома с детскими удобствами',
     icon: Users,
     apiParams: { bedrooms_min: 2, sort: 'newest' as const, page_size: 3 },
-    searchParams: { bedrooms: '2' },
+    searchParams: { bedroomsMin: '2' },
   },
   {
     id: 'nomads',

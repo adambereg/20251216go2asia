@@ -4,19 +4,27 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Онбординг (soon) | PRO Dashboard | Russian Friendly',
-  description: 'Placeholder-раздел онбординга для будущего PRO workflow',
+  description: 'Статусный маршрут онбординга PRO без runtime-операций в текущем этапе',
 };
 
 export default function PROOnboardingPage() {
   return (
     <main className="container mx-auto py-10">
       <h1 className="text-2xl font-semibold mb-4">
-        Онбординг бизнесов PRO
+        Онбординг бизнесов PRO (soon)
       </h1>
       <p className="text-muted-foreground max-w-2xl">
-        Раздел в разработке. Скоро здесь появится приглашение и обработка
-        заявок новых бизнесов для PRO-кураторов Russian Friendly.
+        Маршрут зарезервирован для будущего этапа. Сейчас он работает как статусная поверхность
+        и не выполняет операционные действия в runtime.
       </p>
+      <div className="mt-5 flex flex-wrap gap-3 text-sm">
+        <a href="/rf/pro#pw-linked-partners" className="font-medium text-blue-700 hover:text-blue-800">
+          Открыть live связи PRO
+        </a>
+        <a href="/rf/pro" className="font-medium text-blue-700 hover:text-blue-800">
+          Вернуться в PRO workspace
+        </a>
+      </div>
     </main>
   );
 }

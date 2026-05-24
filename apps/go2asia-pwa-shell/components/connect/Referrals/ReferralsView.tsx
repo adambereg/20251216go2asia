@@ -155,7 +155,7 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Приглашайте друзей и отслеживайте участие и внутренние Points." />
+        <ConnectHero subtitle="Read-only projection приглашений и внутренних Points; не commission statement и не proof." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -174,7 +174,7 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
   if (hasError) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Приглашайте друзей и отслеживайте участие и внутренние Points." />
+        <ConnectHero subtitle="Read-only projection приглашений и внутренних Points; не commission statement и не proof." />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />
         </div>
@@ -206,7 +206,7 @@ export function ReferralsView({ initialData }: ReferralsViewProps) {
   return (
     <>
       <div className="min-h-screen bg-slate-50">
-        <ConnectHero subtitle="Приглашайте друзей и отслеживайте read-only статус участия и Points." />
+        <ConnectHero subtitle="Read-only projection приглашений и внутренних Points; не commission statement и не proof." />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <ConnectNav />

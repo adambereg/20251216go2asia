@@ -24,7 +24,7 @@ export function OnboardingView() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="info" className="bg-green-100 text-green-700">Одобрено</Badge>;
+        return <Badge variant="info" className="bg-green-100 text-green-700">Отмечено как одобрено (demo)</Badge>;
       case 'rejected':
         return <Badge variant="info" className="bg-red-100 text-red-700">Отклонено</Badge>;
       default:
@@ -37,12 +37,12 @@ export function OnboardingView() {
       {/* Заголовок */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Онбординг бизнесов</h1>
-          <p className="text-slate-600">Приглашайте новые бизнесы и обрабатывайте заявки</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Онбординг бизнесов (demo)</h1>
+          <p className="text-slate-600">Demo-поверхность сценария онбординга без записи в backend</p>
         </div>
-        <Button variant="primary" onClick={() => setShowInviteForm(!showInviteForm)}>
+        <Button variant="secondary" onClick={() => setShowInviteForm(!showInviteForm)}>
           <Plus size={18} className="mr-2" />
-          Пригласить бизнес
+          Заполнить demo-приглашение
         </Button>
       </div>
 
@@ -50,7 +50,7 @@ export function OnboardingView() {
       {showInviteForm && (
         <Card className="border-purple-200">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Отправить приглашение</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Сценарий приглашения (demo)</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -86,8 +86,8 @@ export function OnboardingView() {
                 </select>
               </div>
               <div className="flex gap-2">
-                <Button variant="primary" className="flex-1">
-                  Отправить приглашение
+                <Button variant="secondary" className="flex-1">
+                  Сохранить локально (demo)
                 </Button>
                 <Button variant="secondary" onClick={() => setShowInviteForm(false)}>
                   Отмена
@@ -100,7 +100,7 @@ export function OnboardingView() {
 
       {/* Заявки */}
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Заявки на онбординг</h2>
+        <h2 className="text-xl font-semibold text-slate-900 mb-4">Заявки на онбординг (demo)</h2>
         <div className="space-y-3">
           {applications.map((app) => (
             <Card key={app.id} className="border-purple-200">
@@ -133,11 +133,11 @@ export function OnboardingView() {
                   </div>
                   {app.status === 'pending' && (
                     <div className="flex gap-2">
-                      <Button variant="primary" size="sm">
-                        Принять
+                      <Button variant="secondary" size="sm">
+                        Отметить как принято (demo)
                       </Button>
                       <Button variant="secondary" size="sm">
-                        Отклонить
+                        Отметить как отклонено (demo)
                       </Button>
                     </div>
                   )}

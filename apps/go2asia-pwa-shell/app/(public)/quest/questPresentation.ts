@@ -214,8 +214,8 @@ export function getProgressStatusLabel(status?: string | null): string {
 }
 
 export function getSubmissionStatusLabel(status?: string | null): string {
-  if (status === 'approved') return 'Подтверждено';
-  if (status === 'pending') return 'На проверке';
+  if (status === 'approved') return 'Шаг одобрен';
+  if (status === 'pending') return 'Отправлено на проверку';
   if (status === 'rejected') return 'Нужно повторить';
   return 'Отправлено';
 }

@@ -3,16 +3,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useUser } from '@clerk/nextjs';
 import { ConnectHero, ConnectNav } from '../Shared';
 import { Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Coins, LockKeyhole, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { useGetBalance, type UserBalance } from '@go2asia/sdk/balance';
 import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transactions';
 import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
-import { CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
-import { formatProjectionMetadata } from '@/lib/projectionMetadata';
+import {
+  CONNECT_INTERNAL_DIAGNOSTICS_HELPER,
+  CONNECT_OWNER_FACT_POINTER_TEXT,
+  CONNECT_POINTS_ACTIVITY_DESCRIPTION,
+  CONNECT_POINTS_BUCKET_LABELS,
+} from '../copy';
+import { buildAdminDiagnosticsHref, formatProjectionMetadata } from '@/lib/projectionMetadata';
 import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
 type WalletSummary = {
@@ -202,8 +209,11 @@ function PointsSummary({
 }
 
 export function WalletView() {
+  const { user } = useUser();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allTransactions, setAllTransactions] = useState<PointsTransaction[]>([]);
+  const role = typeof user?.publicMetadata?.role === 'string' ? user.publicMetadata.role.toLowerCase() : '';
+  const isAdmin = role === 'admin';
 
   const { data: balanceData, isLoading: balanceLoading, isError: balanceError, refetch: refetchBalance } =
     useGetBalance();
@@ -249,6 +259,10 @@ export function WalletView() {
   }, [allTransactions, transactionsData?.items]);
   const transactionsProjectionMetadata = (transactionsData as TransactionsPageProjectionMetadata | undefined)
     ?.projectionMetadata;
+  const balanceProjectionMetadata = (balanceData as UserBalanceWithProjectionMetadata | undefined)?.projectionMetadata;
+  const diagnosticsHref =
+    buildAdminDiagnosticsHref(walletSummary?.projectionMetadata ?? balanceProjectionMetadata) ??
+    buildAdminDiagnosticsHref(transactionsProjectionMetadata);
 
   const handleLoadMore = () => {
     if (transactionsData?.nextCursor) {
@@ -323,10 +337,16 @@ export function WalletView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и Points projection</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Активность и projection Points</h1>
           <p className="text-slate-600 mt-1">
             Read-only projection внутренних Points; не financial wallet, не receipt и не accounting statement.
           </p>
+          <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
+          {isAdmin && diagnosticsHref && (
+            <Link href={diagnosticsHref} className="mt-2 inline-flex text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900">
+              {CONNECT_INTERNAL_DIAGNOSTICS_HELPER}
+            </Link>
+          )}
         </div>
 
         <PointsSummary
@@ -337,7 +357,7 @@ export function WalletView() {
         />
 
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Activity history projection</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-4">История активности (projection)</h2>
           <p className="text-xs text-slate-500 mb-4">
             {formatProjectionMetadata(transactionsProjectionMetadata)}
           </p>
@@ -354,6 +374,20 @@ export function WalletView() {
             Дополнительные accounting-инструменты не входят в текущий MVP Connect. Сейчас здесь отображаются только
             internal Points projection и read-only activity summary.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/quest">
+              <Button variant="secondary" size="sm">Quest</Button>
+            </Link>
+            <Link href="/connect/referrals">
+              <Button variant="secondary" size="sm">Приглашения</Button>
+            </Link>
+            <Link href="/connect/levels">
+              <Button variant="secondary" size="sm">Бейджи</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="secondary" size="sm">Профиль</Button>
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

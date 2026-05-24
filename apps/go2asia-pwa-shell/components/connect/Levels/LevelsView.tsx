@@ -4,9 +4,10 @@ import { ConnectHero, ConnectNav } from '../Shared';
 import { AchievementsList } from './AchievementsList';
 import { Badge, Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Award, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 import { useGetBadgeCatalog, useGetMyBadges, type BadgeCatalogItem, type UserBadgeItem } from '@go2asia/sdk/badges';
 import type { BadgeAchievement } from '../types';
-import { CONNECT_FUTURE_BADGE_TEXT } from '../copy';
+import { CONNECT_FUTURE_BADGE_TEXT, CONNECT_OWNER_FACT_POINTER_TEXT } from '../copy';
 
 const BADGE_COPY: Record<string, { title: string; description: string; emptyHint: string; category: string }> = {
   first_quest_completed: {
@@ -162,6 +163,7 @@ export function LevelsView() {
           <p className="text-slate-600 mt-1">
             Смотрите off-chain badge projections. Connect не является badge_award_fact или ownership surface.
           </p>
+          <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
         </div>
 
         <Card className="p-6 mb-6">
@@ -171,7 +173,7 @@ export function LevelsView() {
                 <Award className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Badge projections reflected</p>
+                <p className="text-sm text-slate-600">Отражено в badge projection</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">{earnedCount}</p>
               </div>
             </div>
@@ -205,6 +207,24 @@ export function LevelsView() {
               </p>
             </div>
             <Badge className="bg-slate-100 text-slate-600">{CONNECT_FUTURE_BADGE_TEXT}</Badge>
+          </div>
+        </Card>
+
+        <Card className="p-5 mt-6 border-slate-200 bg-slate-50">
+          <p className="text-sm font-semibold text-slate-900">Что делать дальше</p>
+          <p className="text-sm text-slate-600 mt-1">
+            Продолжайте участие через Quest и смотрите, как события отражаются в Connect activity projection.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/quest">
+              <Button variant="secondary" size="sm">Открыть Quest</Button>
+            </Link>
+            <Link href="/connect/activity">
+              <Button variant="secondary" size="sm">История активности</Button>
+            </Link>
+            <Link href="/connect/referrals">
+              <Button variant="secondary" size="sm">Приглашения</Button>
+            </Link>
           </div>
         </Card>
       </div>

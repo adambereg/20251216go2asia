@@ -54,7 +54,7 @@ export function SpaceProfileSurface({
         } else if (isServiceUnavailableStatus(status)) {
           setError('Профиль и авторские публикации временно недоступны в этом окружении.');
         } else {
-          setError(`Profile runtime request failed (${status ?? 'unknown'}).`);
+          setError(`Не удалось загрузить профиль (${status ?? 'unknown'}).`);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -102,7 +102,6 @@ export function SpaceProfileSurface({
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
             {profile.countryId && <span>Country: {profile.countryId}</span>}
             {profile.cityId && <span>City: {profile.cityId}</span>}
-            <span>User ID: {profile.userId}</span>
           </div>
         </section>
       )}
@@ -128,10 +127,9 @@ export function SpaceProfileSurface({
 
       {!isLoading && !error && profile && (
         <footer className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-sm font-semibold text-amber-900">Boundedness guard</h2>
+          <h2 className="text-sm font-semibold text-amber-900">Граница профиля</h2>
           <p className="mt-1 text-xs text-amber-800">
-            Этот surface остаётся в пределах public profile baseline: только профиль и его существующий
-            runtime feed path.
+            Здесь показывается только публичная social-видимость профиля и его публикации. Это не удостоверение личности и не authoritative user record.
           </p>
           <div className="mt-3 text-xs text-amber-800">
             <Link

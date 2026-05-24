@@ -51,6 +51,12 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+          <Link
+            href="/quest"
+            className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Вернуться в каталог
+          </Link>
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
             {cover ? (
               <div className="relative aspect-[16/9] md:aspect-[21/9] w-full">
@@ -116,6 +122,13 @@ export function QuestDetailClient({ quest }: QuestDetailClientProps) {
               <p className="text-slate-500">{PROJECTION_LABELS.preview} internal Points</p>
               <p className="font-medium text-slate-900">{quest.rewardPoints ?? 0} возможных Points</p>
               <p className="mt-1 text-xs text-slate-500">Не Points_row и не receipt.</p>
+              <p className="mt-2 text-xs text-slate-500">
+                После завершения маршрута проверьте activity projection в{' '}
+                <Link href="/connect/activity" className="text-purple-700 hover:underline">
+                  Connect
+                </Link>
+                .
+              </p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-slate-500">Шаги</p>

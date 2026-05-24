@@ -13,7 +13,7 @@ export const proLinkStatusLabels: Record<RfProLinkDto['status'], string> = {
 };
 
 export const proLinkStatusDescriptions: Record<RfProLinkDto['status'], string> = {
-  pending: 'Запрос ожидает подтверждения владельцем партнёра.',
+  pending: 'Запрос ожидает подтверждения уполномоченным аккаунтом партнёра.',
   active: 'Связь активна.',
   ended: 'Связь завершена.',
 };
@@ -31,7 +31,7 @@ export const proLinkedPartnersEmptyState =
 
 export const rfProLinkedPartnersLabel = 'Связанные партнёры';
 
-export const rfMerchantBusinessesLabel = 'Ваши бизнесы';
+export const rfMerchantBusinessesLabel = 'Бизнесы в вашем контуре доступа';
 
 export const rfLinkedPartnerOffersLabel = 'Офферы партнёров';
 
@@ -51,7 +51,7 @@ export const proOwnerAcceptEndpointRecommendation =
   'Подтверждение запросов владельцем требует отдельного owner-side read endpoint.';
 
 export const proOwnerAcceptLiveBoundaryCopy =
-  'Здесь владелец партнёра подтверждает рабочие связи с PRO. PRO не получает права владельца, не создаёт офферы и не гасит ваучеры.';
+  'Здесь уполномоченный аккаунт партнёра подтверждает рабочие связи с PRO. PRO не получает права владельца, не создаёт офферы и не гасит ваучеры.';
 
 export const proLinkLifecycleBoundaryCopy =
   'Отклонение или завершение связи не влияет на уже созданные офферы и не является экономическим решением. PRO не получает права владельца.';

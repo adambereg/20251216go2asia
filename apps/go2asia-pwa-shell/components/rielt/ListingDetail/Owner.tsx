@@ -85,14 +85,21 @@ export function Owner({ listing }: OwnerProps) {
             </div>
           )}
 
-          {/* Контактный профиль */}
-          <Link
-            href={`/space/users/${owner.id}`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Уточнить детали
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="#inquiry-form"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Перейти к inquiry-форме
+            </Link>
+            <Link
+              href={`/space/users/${owner.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded-lg font-medium transition-colors"
+            >
+              Профиль контакта
+            </Link>
+          </div>
         </div>
       </div>
     </div>

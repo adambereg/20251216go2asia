@@ -71,6 +71,8 @@ describe('rielt source labels and inquiry boundary', () => {
       'app/(public)/rielt/page.tsx',
       'app/(public)/rielt/RieltHomeClient.tsx',
       'app/(public)/rielt/search/SearchResultsClient.tsx',
+      'app/(public)/rielt/inquiries/page.tsx',
+      'app/(public)/rielt/inquiries/RieltMyInquiriesClient.tsx',
       'app/(public)/rielt/listings/[id]/ListingDetailClient.tsx',
       'components/rielt/ListingCard.tsx',
       'components/rielt/copy.ts',

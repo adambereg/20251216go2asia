@@ -3,11 +3,17 @@
 import { Card, Button } from "@go2asia/ui";
 import { ArrowRight, Award, CheckCircle2, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import type { ConnectDashboardResponse } from "@go2asia/sdk/connectDashboard";
 import { ConnectActivitySummaryCards } from "./BalanceCards";
 import { ActivityFeed } from "./ActivityFeed";
 import { ConnectRfSection } from "./ConnectRfSection";
-import { CONNECT_POINTS_EARNED_LABEL } from "../copy";
+import {
+  CONNECT_INTERNAL_DIAGNOSTICS_HELPER,
+  CONNECT_OWNER_FACT_POINTER_TEXT,
+  CONNECT_POINTS_EARNED_LABEL,
+} from "../copy";
+import { buildAdminDiagnosticsHref } from "@/lib/projectionMetadata";
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -16,15 +22,33 @@ interface DashboardContentProps {
 const nextSteps = [
   {
     title: "Завершите первое задание в Quest Asia",
-    description: "Points и бейджи отображаются только после backend-подтверждения.",
+    description: "Points и бейджи могут отобразиться после обработки backend-событий.",
+    href: "/quest",
+    cta: "Открыть Quest",
   },
   {
     title: "Пригласите друга",
     description: "Поделитесь реферальной ссылкой и отслеживайте read-only статус приглашения.",
+    href: "/connect/referrals",
+    cta: "Открыть приглашения",
   },
   {
     title: "Посмотрите badge projection",
     description: "Узнайте, какие off-chain бейджи отображаются как read-only projection.",
+    href: "/connect/levels",
+    cta: "Открыть бейджи",
+  },
+  {
+    title: "Откройте профиль",
+    description: "Профиль помогает управлять аккаунтом и возвращаться в экосистемные маршруты Connect.",
+    href: "/profile",
+    cta: "Открыть профиль",
+  },
+  {
+    title: "Продолжить social journey",
+    description: "Space показывает social visibility и активность как отдельный слой без claim-semantics.",
+    href: "/space",
+    cta: "Открыть Space",
   },
 ];
 
@@ -34,8 +58,12 @@ function formatBadgeDate(dateString: string) {
 }
 
 export function DashboardContent({ dashboard }: DashboardContentProps) {
+  const { user } = useUser();
   const hasReferrals = dashboard.referrals.totalReferrals > 0;
   const hasBadges = dashboard.badges.totalBadges > 0;
+  const role = typeof user?.publicMetadata?.role === 'string' ? user.publicMetadata.role.toLowerCase() : "";
+  const isAdmin = role === "admin";
+  const diagnosticsHref = buildAdminDiagnosticsHref(dashboard.projectionMetadata);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -45,6 +73,12 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
         <p className="text-slate-600 mt-1">
           Read-only dashboard projection; не receipt, не proof и не accounting statement.
         </p>
+        <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
+        {isAdmin && diagnosticsHref && (
+          <Link href={diagnosticsHref} className="mt-2 inline-flex text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900">
+            {CONNECT_INTERNAL_DIAGNOSTICS_HELPER}
+          </Link>
+        )}
       </div>
 
       {/* Points */}
@@ -127,7 +161,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
                   Бейджи: read-only projection
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Последние badge projections; не asset ownership.
+                  Последние badge projections; без claim о владении активами.
                 </p>
               </div>
             </div>
@@ -154,7 +188,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             </div>
           ) : (
             <p className="text-sm text-slate-600 mb-5">
-              Бейджи появятся здесь после backend-подтверждения. Этот блок не является
+              Бейджи могут появиться здесь после обработки событий. Этот блок не является
               badge_award_fact.
             </p>
           )}
@@ -179,11 +213,15 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {nextSteps.map((step) => (
             <Card key={step.title} className="p-4 bg-white/80">
               <p className="font-semibold text-slate-900">{step.title}</p>
               <p className="text-sm text-slate-600 mt-1">{step.description}</p>
+              <Link href={step.href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-800 hover:text-amber-900">
+                {step.cta}
+                <ArrowRight size={14} />
+              </Link>
             </Card>
           ))}
         </div>

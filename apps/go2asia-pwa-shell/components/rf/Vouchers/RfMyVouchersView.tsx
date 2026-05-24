@@ -142,6 +142,9 @@ export function RfMyVouchersView() {
         <p className="mt-1 text-sm text-slate-600">
           Это read-only слой RF: здесь показаны статус, тип ваучера, повторяемость, источник получения и подсказки по использованию.
         </p>
+        <p className="mt-1 text-xs text-slate-500">
+          Виден lifecycle ваучера, но это не чек и не финансовое подтверждение.
+        </p>
         <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-900">
           <p className="font-semibold">{rfMyVouchersPageContent.meaningTitle}</p>
           <p className="mt-1">{rfMyVouchersPageContent.meaningBody}</p>
@@ -412,6 +415,9 @@ export function RfMyVouchersView() {
         </Link>
         <Link href="/rf" className="font-medium text-blue-700 hover:text-blue-800">
           К каталогу мест
+        </Link>
+        <Link href="/connect/activity" className="font-medium text-emerald-700 hover:text-emerald-800">
+          К Connect activity
         </Link>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { VerificationsListView } from '@/components/rf/PRO';
 
 export const metadata: Metadata = {
   title: 'Проверки (deferred) | PRO Dashboard | Russian Friendly',
-  description: 'Quarantined PRO verification route without mock operational workflow',
+  description: 'Статусный маршрут проверок PRO без runtime-workflow в текущем этапе',
 };
 
 export default function PROVerificationsPage() {

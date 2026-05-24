@@ -266,7 +266,7 @@ export function HomePageContent() {
           <HeroSection
             primaryAction={
               <button
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push('/sign-up')}
                 className="inline-flex items-center justify-center gap-2 bg-white text-sky-600 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
               >
                 Зарегистрироваться
@@ -274,13 +274,22 @@ export function HomePageContent() {
               </button>
             }
             secondaryAction={
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={() => router.push('/atlas')}
-              >
-                Посмотреть контент
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => router.push('/sign-in')}
+                >
+                  Войти
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => router.push('/atlas')}
+                >
+                  Посмотреть контент
+                </Button>
+              </div>
             }
           />
         </div>
@@ -315,7 +324,6 @@ export function HomePageContent() {
               icon={module.icon}
               title={module.title}
               description={module.description}
-              locked={module.requiresAuth && !isAuthenticated}
               isPro={module.isPro}
               onClick={() => router.push(module.href)}
             />
@@ -431,19 +439,28 @@ export function HomePageContent() {
                 size="xl"
                 icon={ArrowRight}
                 iconPosition="right"
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push('/sign-up')}
               >
                 Зарегистрироваться
               </Button>
             }
             secondaryAction={
-              <Button
-                variant="ghost"
-                size="xl"
-                onClick={() => router.push('/about')}
-              >
-                Узнать больше
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="ghost"
+                  size="xl"
+                  onClick={() => router.push('/sign-in')}
+                >
+                  Войти
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="xl"
+                  onClick={() => router.push('/about')}
+                >
+                  Узнать больше
+                </Button>
+              </div>
             }
           />
         </div>

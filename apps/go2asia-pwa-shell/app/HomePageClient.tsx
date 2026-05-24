@@ -166,7 +166,7 @@ const benefits = [
     description:
       'Создавайте небольшие команды, планируйте совместные поездки и квесты, делитесь впечатлениями.',
     cta: 'Создать группу в Space',
-    href: '/space/teams',
+    href: '/space/community',
   },
   {
     type: 'rf' as const,
@@ -208,10 +208,22 @@ const benefits = [
 
 const authenticatedDeferredLinks = [
   {
+    id: 'profile',
+    title: 'Открыть профиль',
+    description: 'Профиль — точка входа в аккаунт и настройки, не proof-источник.',
+    href: '/profile',
+  },
+  {
     id: 'connect-overview',
     title: 'Открыть Connect',
     description: 'Read-only центр активности и внутренних Points без финансовых операций.',
     href: '/connect',
+  },
+  {
+    id: 'connect-activity',
+    title: 'История активности',
+    description: 'Activity projection помогает ориентироваться, но не является receipt или audit trail.',
+    href: '/connect/activity',
   },
   {
     id: 'levels',
@@ -273,11 +285,19 @@ function UnauthenticatedHomePage() {
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push('/sign-up')}
                 className="bg-white text-sky-600 hover:bg-slate-50"
               >
                 Зарегистрироваться
                 <ArrowRight />
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => router.push('/sign-in')}
+                className="border-2 border-white/30 text-white hover:bg-white/10"
+              >
+                Войти
               </Button>
               <Button
                 variant="ghost"
@@ -298,7 +318,7 @@ function UnauthenticatedHomePage() {
           Модули экосистемы
         </h2>
         <p className="text-sm md:text-base text-slate-600 mb-8">
-          Выберите модуль, чтобы начать исследование
+          Публичные разделы можно открыть сразу; персональные действия попросят войти в аккаунт.
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {modules.map((module) => (
@@ -308,7 +328,6 @@ function UnauthenticatedHomePage() {
               icon={module.icon}
               title={module.title}
               description={module.description}
-              locked={true}
               onClick={() => router.push(module.href)}
             />
           ))}
@@ -426,17 +445,25 @@ function UnauthenticatedHomePage() {
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-95 text-white">
               Получите доступ к возможностям экосистемы, участвуйте в активностях
-              и находите единомышленников
+              и возвращайтесь к Connect/Profile после входа.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push('/sign-up')}
                 className="bg-white text-sky-600 hover:bg-slate-50"
               >
                 Зарегистрироваться
                 <ArrowRight />
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => router.push('/sign-in')}
+                className="border-2 border-white/30 text-white hover:bg-white/10"
+              >
+                Войти
               </Button>
               <Button
                 variant="ghost"
@@ -710,25 +737,25 @@ function AuthenticatedHomePage() {
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-95 text-white">
               Получите доступ к возможностям экосистемы, участвуйте в активностях
-              и находите единомышленников
+              и продолжайте путь через Connect, Profile и модули Go2Asia.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push('/connect')}
                 className="bg-white text-sky-600 hover:bg-slate-50"
               >
-                Зарегистрироваться
+                Открыть Connect
                 <ArrowRight />
               </Button>
               <Button
                 variant="ghost"
                 size="lg"
-                onClick={() => router.push('/about')}
+                onClick={() => router.push('/profile')}
                 className="border-2 border-white/30 text-white hover:bg-white/10"
               >
-                Узнать больше
+                Открыть профиль
               </Button>
             </div>
           </div>

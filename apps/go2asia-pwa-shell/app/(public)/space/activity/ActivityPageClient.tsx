@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { customInstance, generated } from '@go2asia/sdk';
@@ -168,6 +169,20 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
   return parts;
 }
 
+function getActivityHref(item: generated.SpaceActivityFeedItem): string {
+  if (item.relatedEntityType && item.relatedEntityId) {
+    if (item.relatedEntityType === 'space_post') return '/space/feed';
+    if (item.relatedEntityType === 'space_group') return `/space/community/groups/${encodeURIComponent(item.relatedEntityId)}`;
+    if (item.relatedEntityType === 'listing') return `/rielt/listings/${encodeURIComponent(item.relatedEntityId)}`;
+    if (item.relatedEntityType === 'event') return `/pulse/${encodeURIComponent(item.relatedEntityId)}`;
+    if (item.relatedEntityType === 'place') return `/atlas/places/${encodeURIComponent(item.relatedEntityId)}`;
+    if (item.relatedEntityType === 'quest') return `/quest/${encodeURIComponent(item.relatedEntityId)}`;
+    if (item.relatedEntityType === 'partner') return `/rf/${encodeURIComponent(item.relatedEntityId)}`;
+  }
+  if (item.type === 'group_joined') return '/space/community';
+  return '/space/feed';
+}
+
 function getEmptyStateMessage(filter: ActivityFilter): string {
   if (filter === 'incoming') {
     return 'Пока здесь нет входящих событий. Когда кто-то отреагирует на вашу публикацию или сделает репост, это появится здесь.';
@@ -292,6 +307,14 @@ export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClient
         {!isLoading && error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link href="/sign-in?redirect_url=%2Fspace%2Factivity" className="font-medium text-rose-800 underline underline-offset-2">
+                Войти
+              </Link>
+              <Link href="/space" className="font-medium text-rose-800 underline underline-offset-2">
+                В Space
+              </Link>
+            </div>
           </div>
         )}
 
@@ -318,6 +341,12 @@ export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClient
                 </div>
                 <h2 className="mt-3 text-base font-semibold text-slate-900">{getActivityTitle(item)}</h2>
                 <p className="mt-2 text-sm text-slate-700">{getActivityDescription(item)}</p>
+                <Link
+                  href={getActivityHref(item)}
+                  className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Открыть связанный раздел
+                </Link>
               </article>
             ))}
           </div>

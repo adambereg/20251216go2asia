@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Gallery } from '@/components/rielt/ListingDetail/Gallery';
 import { Summary } from '@/components/rielt/ListingDetail/Summary';
 import { Description } from '@/components/rielt/ListingDetail/Description';
@@ -31,6 +32,20 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-5 flex flex-wrap gap-2">
+        <Link
+          href="/rielt/search"
+          className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+        >
+          К поиску объявлений
+        </Link>
+        <Link
+          href="/rielt/inquiries"
+          className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 hover:bg-emerald-100"
+        >
+          Мои inquiry-запросы
+        </Link>
+      </div>
       {/* Hero-галерея */}
       <section className="mb-8">
         <Gallery listing={listing} />

@@ -138,11 +138,11 @@ export function AvailabilityCalendar({ listing, onDatesChange }: AvailabilityCal
       <div className="mt-4 pt-4 border-t border-slate-200 flex flex-wrap gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-emerald-600"></div>
-          <span className="text-slate-600">Выбранные даты</span>
+          <span className="text-slate-600">Даты для запроса</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-emerald-100"></div>
-          <span className="text-slate-600">Диапазон</span>
+          <span className="text-slate-600">Период запроса</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-slate-100"></div>

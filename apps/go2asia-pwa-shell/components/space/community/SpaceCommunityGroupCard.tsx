@@ -72,7 +72,7 @@ export function SpaceCommunityGroupCard({
 
       {(item.curatorHint || item.linkedContext) && (
         <div className="mt-3 text-xs text-slate-500">
-          {item.curatorHint && <span>Куратор: {item.curatorHint}</span>}
+          {item.curatorHint && <span>Автор подборки: {item.curatorHint}</span>}
           {item.curatorHint && item.linkedContext && <span> • </span>}
           {item.linkedContext && <span>Контекст: {item.linkedContext}</span>}
         </div>

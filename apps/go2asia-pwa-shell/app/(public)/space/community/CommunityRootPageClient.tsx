@@ -13,11 +13,11 @@ import { useSpaceCommunityDiscovery } from '@/components/space/community/useSpac
 function getSectionLabel(sectionTone: 'runtime' | 'summary' | 'reference'): string {
   switch (sectionTone) {
     case 'runtime':
-      return 'Live now';
+      return 'Live';
     case 'summary':
-      return 'Summary backed';
+      return 'Summary';
     case 'reference':
-      return 'Curated guidance';
+      return 'Curated';
     default:
       return 'Preview';
   }
@@ -42,12 +42,11 @@ export function CommunityRootPageClient() {
             <div className="max-w-3xl">
               <h1 className="text-2xl font-semibold text-slate-900">Сообщества</h1>
               <p className="mt-2 text-sm text-slate-600">
-                Community root помогает понять, куда встроиться, какие группы уже живут в Space и с какой
-                из них лучше начать.
+                Community root помогает понять, куда встроиться и с какой группы можно начать.
               </p>
               <p className="mt-3 text-xs text-slate-500">
-                Формула этого route: discover → belong → enter. Поток публикаций остаётся отдельной
-                поверхностью и живёт в соседнем route.
+                Формула этого route: discover {'->'} belong {'->'} enter. Поток публикаций остаётся отдельной
+                поверхностью в соседнем разделе.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -68,8 +67,8 @@ export function CommunityRootPageClient() {
 
           {!isSignedIn && (
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              Без авторизации здесь показывается лёгкий discovery baseline. После входа персональные рекомендации
-              могут стать точнее, но этот экран уже сейчас помогает выбрать первую группу.
+              Без авторизации здесь показывается гостевой social preview. После входа персональная выдача может
+              измениться, но уже сейчас можно выбрать первую группу.
             </div>
           )}
 
@@ -170,7 +169,7 @@ export function CommunityRootPageClient() {
         </section>
 
         <p className="text-xs text-slate-500">
-          Community root остаётся discovery-first baseline: без search engine и без broad recommendation wave.
+          Community root остаётся discovery-first базой: без search engine и без имитации authoritative recommendation.
           Полная лента доступна отдельно на `/space/feed`.
         </p>
       </div>

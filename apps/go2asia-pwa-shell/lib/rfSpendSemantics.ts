@@ -26,7 +26,7 @@ export function getRfOfferSpendSemantics(offer: Pick<RfOfferDto, 'pointsCost'>):
       kind: 'paid_spend_required',
       pointsCost,
       label: `Требуются internal Points: ${formatPointsCost(pointsCost)}`,
-      caption: 'Получение требует VIP и RF runtime-подтверждения использования Points.',
+      caption: 'Получение может требовать VIP и runtime-проверку использования internal Points. Это не финальное подтверждение сделки.',
       tone: 'bg-amber-100 text-amber-900',
     };
   }
@@ -55,15 +55,15 @@ export function getRfVoucherSpendSemantics(
   if (pointsCost !== null && pointsCost > 0) {
     const caption =
       voucher.economyStatus === 'debited'
-        ? 'Использование Points подтверждено RF runtime.'
+        ? 'RF runtime зафиксировал списание internal Points. Это не чек и не финальное подтверждение сделки.'
         : voucher.economyStatus === 'debit_failed'
-          ? 'Использование Points не подтверждено; требуется безопасная проверка.'
-          : 'Получение связано с RF runtime-подтверждением Points.';
+          ? 'Списание internal Points не зафиксировано; требуется безопасная runtime-проверка.'
+          : 'Получение связано с runtime-проверкой internal Points.';
     return {
       kind: 'paid_spend_required',
       pointsCost,
       label: voucher.economyStatus === 'debited'
-        ? `Points подтверждены: ${formatPointsCost(pointsCost)}`
+        ? `Points списаны в RF runtime: ${formatPointsCost(pointsCost)}`
         : `Требуются internal Points: ${formatPointsCost(pointsCost)}`,
       caption,
       tone: 'bg-amber-100 text-amber-900',
@@ -90,7 +90,7 @@ export function getRfVoucherSpendSemantics(
 export function getRfOfferClaimButtonLabel(offer: Pick<RfOfferDto, 'pointsCost'>): string {
   const semantics = getRfOfferSpendSemantics(offer);
   return semantics.kind === 'paid_spend_required'
-    ? `Получить с Points: ${formatPointsCost(semantics.pointsCost)}`
+    ? `Получить ваучер (списание ${formatPointsCost(semantics.pointsCost)})`
     : 'Получить ваучер';
 }
 

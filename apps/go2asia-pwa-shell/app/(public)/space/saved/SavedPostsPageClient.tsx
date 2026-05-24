@@ -381,6 +381,14 @@ export function SavedPostsPageClient() {
         {!isLoading && authRequired && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Для раздела сохранённых нужна авторизация.
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link href="/sign-in?redirect_url=%2Fspace%2Fsaved" className="font-medium underline underline-offset-2">
+                Войти
+              </Link>
+              <Link href="/space/feed" className="font-medium underline underline-offset-2">
+                Открыть ленту
+              </Link>
+            </div>
           </div>
         )}
 
@@ -388,12 +396,29 @@ export function SavedPostsPageClient() {
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             Сохранённые посты временно недоступны в этом окружении. Как только сервис вернётся, ваш список появится
             снова.
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link href="/space/feed" className="font-medium text-slate-700 underline underline-offset-2">
+                Открыть ленту
+              </Link>
+              <Link href="/space" className="font-medium text-slate-700 underline underline-offset-2">
+                В Space dashboard
+              </Link>
+            </div>
           </div>
         )}
 
         {!isLoading && !authRequired && !runtimeUnavailable && error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => void loadSavedPosts()}
+                className="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-100"
+              >
+                Повторить
+              </button>
+            </div>
           </div>
         )}
 

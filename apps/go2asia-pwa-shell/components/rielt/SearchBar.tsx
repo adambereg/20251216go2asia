@@ -138,8 +138,9 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  aria-label="Дата с (для запроса)"
                   type="date"
-                  placeholder="Заезд"
+                  placeholder="Дата с"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
@@ -149,8 +150,9 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  aria-label="Дата по (для запроса)"
                   type="date"
-                  placeholder="Выезд"
+                  placeholder="Дата по"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   min={checkIn || new Date().toISOString().split('T')[0]}
@@ -177,7 +179,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
             <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="number"
-              placeholder="Гости"
+              placeholder="Гостей для запроса"
               value={guests}
               onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
               min={1}
@@ -286,7 +288,7 @@ export function SearchBar({ onSearch, initialFilters }: SearchBarProps) {
           className="w-full md:w-auto md:px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           <Search className="w-5 h-5" />
-          Найти жильё
+          Найти варианты
           <ArrowRight className="w-5 h-5" />
         </button>
         <p className="text-xs text-slate-500">
