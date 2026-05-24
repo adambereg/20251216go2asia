@@ -10,8 +10,7 @@ export function VerificationsListView() {
       <div>
         <h1 className="mb-2 text-3xl font-bold text-slate-900">Проверки (deferred)</h1>
         <p className="text-slate-600">
-          Verification workflow PRO снят с active mock-рендера до подключения подтверждённого
-          runtime source.
+          Раздел работает в статусном режиме до подключения подтверждённого источника данных.
         </p>
       </div>
 
@@ -26,7 +25,7 @@ export function VerificationsListView() {
               <p className="mt-1 text-sm text-slate-700">
                 Здесь больше не показываются demo-чек-листы, статусы одобрения или карточки
                 проверки партнёров. Действия на этой поверхности не записываются в backend и
-                не являются support-proof.
+                не подтверждают authority-статусы.
               </p>
             </div>
           </div>
@@ -38,8 +37,7 @@ export function VerificationsListView() {
             </div>
             <p>
               Проверка партнёров должна опираться на owner-backed RF source. Этот экран не
-              подтверждает verification status, payout, cashback, settlement или operational
-              assignment.
+              подтверждает verification status и не фиксирует операционные решения.
             </p>
           </div>
 
@@ -58,6 +56,11 @@ export function VerificationsListView() {
             <Link href="/rf/vouchers">
               <Button variant="secondary" size="sm">
                 RF ваучеры
+              </Button>
+            </Link>
+            <Link href="/connect/activity">
+              <Button variant="secondary" size="sm">
+                Connect activity
               </Button>
             </Link>
           </div>

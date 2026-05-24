@@ -164,7 +164,13 @@ export function PROWorkspace() {
   if (!user?.id) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
-        Войдите в аккаунт, чтобы открыть RF PRO workspace.
+        <p>Чтобы продолжить, войдите в аккаунт. После входа откроется RF PRO workspace.</p>
+        <Link
+          href="/sign-in?redirect_url=%2Frf%2Fpro"
+          className="mt-3 inline-flex rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+        >
+          Войти и открыть PRO workspace
+        </Link>
       </div>
     );
   }
@@ -251,9 +257,9 @@ export function PROWorkspace() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Владелец / кабинет партнёра</p>
+            <p className="text-sm font-semibold text-slate-900">Аккаунт партнёра (role-based доступ)</p>
             <p className="mt-1 text-xs text-slate-600">
-              Управляет своими бизнесами, создаёт офферы и гасит ваучеры.
+              При наличии соответствующей роли в кабинете партнёра может управлять офферами и ваучерами.
             </p>
           </div>
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -275,6 +281,9 @@ export function PROWorkspace() {
         {!proLinksLoading && !proLinksError && proLinks.length === 0 ? (
           <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             {proLinkedPartnersEmptyState}
+            <Link href="/rf" className="mt-2 block text-xs font-medium text-blue-700 hover:text-blue-800">
+              Открыть каталог RF и выбрать партнёра для запроса связи
+            </Link>
           </p>
         ) : null}
 
@@ -361,7 +370,9 @@ export function PROWorkspace() {
               Не удалось отправить запрос. Проверьте partnerId и доступ к RF API.
             </p>
           ) : null}
-          <p className="mt-3 text-xs text-slate-500">Подтверждение связи выполняет владелец бизнеса в кабинете партнёра.</p>
+          <p className="mt-3 text-xs text-slate-500">
+            Подтверждение связи выполняет уполномоченный аккаунт партнёра в кабинете партнёра.
+          </p>
         </details>
       </section>
 
@@ -383,6 +394,7 @@ export function PROWorkspace() {
             </Button>
           </Link>
         </div>
+        <p className="mt-2 text-xs text-slate-500">Это поддерживающий обзор (derived), а не owner-assignment источник.</p>
 
         {scope.partners.length === 0 ? (
           <p className="mt-4 text-sm text-slate-600">Партнёры в PRO scope пока не определены.</p>
@@ -616,6 +628,20 @@ export function PROWorkspace() {
         {attributedVouchersRes?.nextCursor ? (
           <p className="mt-3 text-xs text-slate-500">Показана первая страница read-only visibility. Дальнейшая pagination UI будет добавлена отдельно.</p>
         ) : null}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/rf/my-vouchers"
+            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Открыть мои RF-ваучеры
+          </Link>
+          <Link
+            href="/connect/activity"
+            className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-900 hover:bg-emerald-100"
+          >
+            Connect activity
+          </Link>
+        </div>
       </section>
 
       <section id="pw-derived-offers" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -736,6 +762,18 @@ export function PROWorkspace() {
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
           >
             Карта
+          </Link>
+          <Link
+            href="/connect/activity"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+          >
+            Connect: активность
+          </Link>
+          <Link
+            href="/rielt/inquiries"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Rielt inquiries
           </Link>
         </div>
       </section>

@@ -10,8 +10,7 @@ export function PartnersListView() {
       <div>
         <h1 className="mb-2 text-3xl font-bold text-slate-900">Партнёры (deferred)</h1>
         <p className="text-slate-600">
-          Операционный список партнёров PRO снят с активного mock-рендера до подключения
-          подтверждённого runtime source.
+          Раздел работает в статусном режиме до подключения подтверждённого источника данных.
         </p>
       </div>
 
@@ -25,8 +24,7 @@ export function PartnersListView() {
               <h2 className="text-xl font-semibold text-slate-900">Раздел находится в карантине</h2>
               <p className="mt-1 text-sm text-slate-700">
                 Здесь больше не показываются demo-партнёры, рейтинги, verification badges или
-                assignment-статусы. Эти данные не являются operational proof и не подтверждают
-                владение партнёрским контуром.
+                assignment-статусы. Этот экран informational-only и не подтверждает ownership/authority.
               </p>
             </div>
           </div>
@@ -38,8 +36,8 @@ export function PartnersListView() {
             </div>
             <p>
               Актуальные связи PRO с партнёрами доступны только в основной PRO workspace через
-              runtime-backed `rf_pro_link`. Этот экран не является payout, cashback, settlement
-              или support-proof поверхностью.
+              runtime-backed `rf_pro_link`. Этот экран не выполняет операционные действия и не
+              подтверждает итоговые статусы.
             </p>
           </div>
 
@@ -58,6 +56,11 @@ export function PartnersListView() {
             <Link href="/rf">
               <Button variant="secondary" size="sm">
                 RF hub
+              </Button>
+            </Link>
+            <Link href="/connect/activity">
+              <Button variant="secondary" size="sm">
+                Connect activity
               </Button>
             </Link>
           </div>

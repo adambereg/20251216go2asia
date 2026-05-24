@@ -29,7 +29,8 @@ export function ChecklistForm({ checklist: initialChecklist, onSave }: Checklist
   return (
     <Card className="border-purple-200">
       <CardContent className="p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Чек-лист проверки</h3>
+        <h3 className="text-lg font-semibold text-slate-900 mb-1">Чек-лист проверки (demo)</h3>
+        <p className="mb-4 text-xs text-slate-500">Состояние сохраняется локально для preview и не записывается в backend.</p>
         <div className="space-y-6">
           {/* Базовые требования */}
           <div>
@@ -81,8 +82,8 @@ export function ChecklistForm({ checklist: initialChecklist, onSave }: Checklist
 
           {/* Кнопка сохранения */}
           <div className="pt-4 border-t border-slate-200">
-            <Button variant="primary" onClick={handleSave} className="w-full">
-              Сохранить проверку
+            <Button variant="secondary" onClick={handleSave} className="w-full">
+              Сохранить локально (demo)
             </Button>
           </div>
         </div>

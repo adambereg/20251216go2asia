@@ -14,7 +14,11 @@ interface PROLayoutProps {
 
 export function PROLayout({ children }: PROLayoutProps) {
   const pathname = usePathname();
-  const isOpsSurface = pathname?.startsWith('/rf/pro/partners') || pathname?.startsWith('/rf/pro/verifications');
+  const isOpsSurface =
+    pathname?.startsWith('/rf/pro/partners') ||
+    pathname?.startsWith('/rf/pro/verifications') ||
+    pathname?.startsWith('/rf/pro/onboarding') ||
+    pathname?.startsWith('/rf/pro/rewards');
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -35,7 +39,7 @@ export function PROLayout({ children }: PROLayoutProps) {
             beta
           </span>
           <span className="text-xs text-purple-200">
-            Сопровождение партнёров и видимости в public RF, без mutation-heavy инструментов.
+            Операционная видимость партнёров в экосистеме RF, без прав владельца и без финансовых операций.
           </span>
         </div>
       </div>
@@ -73,14 +77,26 @@ export function PROLayout({ children }: PROLayoutProps) {
 
           <main className="min-w-0">
             <p className="mb-6 rounded-lg border border-purple-100 bg-white px-3 py-2 text-xs text-slate-600">
-              Stage 5.1 показывает live связи PRO с партнёрами через rf_pro_link. Legacy/demo разделы остаются отдельно
-              помеченными и не дают прав владельца партнёра.
+              Stage 5.1 показывает live связи PRO с партнёрами через rf_pro_link. Разделы с меткой deferred/soon остаются
+              статусными и не дают прав владельца или административных полномочий.
             </p>
             {isOpsSurface ? (
               <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                Этот раздел находится в карантине до подключения owner-backed runtime source и не является operational proof.
+                Раздел работает в intentional deferred-режиме. Он не подтверждает операционные действия и не записывает
+                authority-факты.
               </p>
             ) : null}
+            <div className="mb-6 flex flex-wrap gap-2 text-xs">
+              <Link href="/connect/activity" className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-900 hover:bg-emerald-100">
+                Connect activity
+              </Link>
+              <Link href="/rielt/inquiries" className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 hover:bg-slate-50">
+                Rielt inquiries
+              </Link>
+              <Link href="/rf/vouchers" className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 hover:bg-slate-50">
+                RF офферы
+              </Link>
+            </div>
             {children}
           </main>
         </div>

@@ -32,7 +32,7 @@ export const proAttributedVouchersLabel = 'Ваучеры с PRO-отметко�
 export const proAttributedVouchersBoundaryCopy =
   'Read-only tracking: блок показывает связь PRO ↔ ваучер и источник получения. Это не начисления и не денежный учёт.';
 export const proAttributedVouchersFutureCopy =
-  'Финансовый слой PRO будет подключаться отдельно в будущих slices.';
+  'Расширенный операционный слой PRO будет подключаться отдельно в будущих slices.';
 export const proAttributedVouchersEmptyState = 'Пока нет ваучеров с подтверждённой PRO-отметкой.';
 
 export function getActiveLinkedPartnerIds(proLinks: Array<Pick<RfProLinkDto, 'partnerId' | 'status'>>): string[] {
@@ -263,10 +263,18 @@ export function buildProNextSteps(
   }
 
   steps.push({
+    id: 'connect_visibility',
+    title: 'Проверить continuity в Connect',
+    detail: 'Откройте Connect activity и сверяйте read-only видимость с RF lifecycle.',
+    href: '/connect/activity',
+    actionLabel: 'Открыть Connect activity',
+  });
+
+  steps.push({
     id: 'note_beta_limits',
     title: 'Учитывать ограничения PRO beta',
     detail:
-      'Этот кабинет не содержит автоматизацию assignment, расширенную аналитику и экономику PRO. Это рабочий baseline для следующего этапа.',
+      'Этот кабинет не содержит автоматизацию assignment и не подтверждает ownership/authority. Это operational visibility baseline для следующего этапа.',
   });
 
   return steps;

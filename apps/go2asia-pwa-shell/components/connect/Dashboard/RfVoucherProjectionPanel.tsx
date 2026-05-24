@@ -164,6 +164,9 @@ export function RfVoucherProjectionPanel({
           <p className="text-sm text-slate-600">
             Read-only RF lifecycle projection; не receipt и не payment confirmation.
           </p>
+          <Link href="/rf/pro#pw-attributed-vouchers" className="mt-1 inline-flex text-xs font-medium text-emerald-700 hover:text-emerald-800">
+            PRO operational visibility
+          </Link>
         </div>
       </div>
 
