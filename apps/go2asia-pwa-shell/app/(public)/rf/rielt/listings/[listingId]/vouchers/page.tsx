@@ -70,7 +70,8 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
           ) : null}
           <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-3 text-sm text-emerald-950">
             Эти офферы привязаны к выбранному объекту. Полученный ваучер будет сохранён в RF Asia и появится в разделе
-            «Мои ваучеры» с привязкой к объекту. Rielt не подтверждает бронирование.
+            «Мои ваучеры» с привязкой к объекту. Rielt не подтверждает бронирование, не фиксирует финальную цену и не
+            является inventory authority.
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -78,6 +79,12 @@ export default async function RfRieltListingVouchersPage({ params, searchParams 
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
             >
               Вернуться к объекту
+            </Link>
+            <Link
+              href="/rielt/inquiries"
+              className="inline-flex items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+            >
+              Мои inquiry-запросы
             </Link>
             <PartnerFallback partnerId={fallbackPartnerId} />
           </div>

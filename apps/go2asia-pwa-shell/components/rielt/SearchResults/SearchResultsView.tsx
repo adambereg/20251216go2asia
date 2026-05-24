@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { ListingsList } from './ListingsList';
 import { FiltersPanel } from './FiltersPanel';
 import { SortDropdown } from './SortDropdown';
@@ -66,6 +67,20 @@ export function SearchResultsView({
           <p className="mt-1 text-sm text-slate-600">
             Rielt показывает source-labeled previews для inquiry; это не live booking inventory.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/rielt"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100"
+            >
+              Вернуться в Rielt
+            </Link>
+            <Link
+              href="/rielt/inquiries"
+              className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+            >
+              Мои inquiry-запросы
+            </Link>
+          </div>
           {filters.location?.city && (
             <p className="text-slate-600 mt-1">Город: {filters.location.city}</p>
           )}
@@ -109,6 +124,11 @@ export function SearchResultsView({
       {hasGuidedContext ? (
         <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
           Некоторые выбранные параметры помогают сформировать inquiry и не подтверждают наличие объекта.
+        </div>
+      ) : null}
+      {filters.checkIn || filters.checkOut ? (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          Даты используются как ориентир для inquiry. Подтверждение доступности происходит только через владельца.
         </div>
       ) : null}
 

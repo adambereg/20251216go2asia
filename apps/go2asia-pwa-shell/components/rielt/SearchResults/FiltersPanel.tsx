@@ -29,6 +29,9 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
       label: filters.rentalType === 'short-term' ? 'Краткосрочно' : 'Долгосрочно',
     });
   }
+  if (filters.checkIn) activeFilters.push({ key: 'checkIn', label: `Дата с: ${filters.checkIn}` });
+  if (filters.checkOut) activeFilters.push({ key: 'checkOut', label: `Дата по: ${filters.checkOut}` });
+  if (filters.guests != null) activeFilters.push({ key: 'guests', label: `Гостей: ${filters.guests}` });
   if (filters.moveInMonth) activeFilters.push({ key: 'moveInMonth', label: `Переезд: ${filters.moveInMonth}` });
   if (filters.priceRange?.min != null) activeFilters.push({ key: 'priceRange', label: `Бюджет от: ${filters.priceRange.min}` });
   if (filters.priceRange?.max != null) activeFilters.push({ key: 'priceRange', label: `Бюджет до: ${filters.priceRange.max}` });

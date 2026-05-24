@@ -5,8 +5,9 @@
  * Sticky panel with voucher-first discovery flow.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@clerk/nextjs';
 import { Heart, Share2 } from 'lucide-react';
 import { createListingInquiry } from '@go2asia/sdk/rielt';
 import type { Listing } from '../types';
@@ -32,8 +33,8 @@ function buildRfVoucherRoute(listing: Listing): string {
 }
 
 export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProps) {
-  void selectedDates;
   void onDatesChange;
+  const { isLoaded, isSignedIn } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [message, setMessage] = useState('');
   const [contactName, setContactName] = useState('');
@@ -51,10 +52,19 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
   const hasRfTruth = Boolean(listing.rfPartnerId);
   const rfCatalogHref = buildRfVoucherRoute(listing);
   const primaryCtaLabel = hasRfTruth
-    ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Посмотреть RF-ваучер' : 'Посмотреть RF-предложения')
+    ? listing.presentation?.primaryCtaLabel || (listing.rfVoucher ? 'Открыть RF-ваучер по объекту' : 'Открыть RF-предложения по объекту')
     : 'Смотреть похожие варианты';
   const primaryCtaHref = hasRfTruth ? rfCatalogHref : '/rielt/search';
   const secondaryVoucherCta = hasRfTruth ? listing.presentation?.secondaryCtaLabel : undefined;
+
+  useEffect(() => {
+    if (message.trim().length > 0) return;
+    if (!selectedDates.checkIn && !selectedDates.checkOut) return;
+
+    const checkInText = selectedDates.checkIn ? selectedDates.checkIn.toLocaleDateString('ru-RU') : 'не указана';
+    const checkOutText = selectedDates.checkOut ? selectedDates.checkOut.toLocaleDateString('ru-RU') : 'не указана';
+    setMessage(`Хочу уточнить доступность по объекту. Даты для запроса: ${checkInText} — ${checkOutText}.`);
+  }, [selectedDates.checkIn, selectedDates.checkOut, message]);
 
   const buildIdempotencyKey = () => {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -64,6 +74,12 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
   };
 
   const handleRequest = async () => {
+    if (isLoaded && !isSignedIn) {
+      setInquiryStatus('error');
+      setInquiryText('Войдите, чтобы отправить inquiry-запрос владельцу.');
+      return;
+    }
+
     if (!message.trim()) {
       setInquiryStatus('error');
       setInquiryText('Введите сообщение для уточнения.');
@@ -143,12 +159,14 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
         </p>
       </div>
 
-      <Link
-        href={primaryCtaHref}
-        className="mb-5 flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
-      >
-        {primaryCtaLabel}
-      </Link>
+      {hasRfTruth ? (
+        <Link
+          href={primaryCtaHref}
+          className="mb-5 flex w-full items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+        >
+          {primaryCtaLabel}
+        </Link>
+      ) : null}
 
       {hasRfTruth ? (
         <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -171,13 +189,14 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             </Link>
           ) : null}
           <p className="text-xs text-emerald-800 mt-2">
-            Получение и активация ваучеров происходят в RF Asia. Rielt не подтверждает бронь, оплату или наличие места.
+            Получение и активация ваучеров происходят в RF Asia. RF-ваучер не является booking discount, не
+            подтверждает бронь, оплату или наличие места.
           </p>
         </div>
       ) : null}
 
       {/* Кнопки действий */}
-      <div className="space-y-3">
+      <div id="inquiry-form" className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-900">
           Связаться по объекту
         </h3>
@@ -217,6 +236,30 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
           >
             {inquiryStatus === 'submitting' ? 'Отправка...' : 'Отправить запрос'}
           </button>
+          {inquiryStatus === 'success' ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link
+                href="/rielt/inquiries"
+                className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+              >
+                Открыть мои inquiry-запросы
+              </Link>
+              <Link
+                href="/rielt/search"
+                className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Искать другие объекты
+              </Link>
+            </div>
+          ) : null}
+          {inquiryStatus === 'error' && inquiryText.includes('Войдите') ? (
+            <Link
+              href={`/sign-in?redirect_url=${encodeURIComponent(`/rielt/listings/${listing.id}`)}`}
+              className="inline-flex text-xs font-semibold text-amber-800 underline"
+            >
+              Перейти ко входу
+            </Link>
+          ) : null}
           {inquiryText ? (
             <p className={inquiryStatus === 'success' ? 'text-xs text-emerald-700' : 'text-xs text-red-700'}>
               {inquiryText}
@@ -234,7 +277,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             }`}
           >
             <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-            Сохранить
+            Сохранить (локально)
           </button>
           <button
             onClick={handleShare}

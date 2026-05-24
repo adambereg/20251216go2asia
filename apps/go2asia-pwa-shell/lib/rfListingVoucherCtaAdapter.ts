@@ -62,8 +62,8 @@ export function getListingVoucherCtaProjection(input: ListingVoucherCtaInput): L
   if (input.loading) {
     return {
       state: 'claim_available',
-      badgeLabel: 'Запрос отправляется',
-      buttonLabel: 'Отправляем запрос...',
+      badgeLabel: 'Получение ваучера',
+      buttonLabel: 'Получаем RF-ваучер...',
       message: null,
       disabled: true,
       showPostClaimActions: false,

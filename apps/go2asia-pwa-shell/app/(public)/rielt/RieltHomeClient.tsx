@@ -5,6 +5,7 @@
  * Главная страница с поиском и секциями контента
  */
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SearchBar } from '@/components/rielt/SearchBar';
@@ -84,6 +85,20 @@ export function RieltHomeClient() {
       <section className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
         Rielt.Market — inquiry-only подбор жилья через source-labeled listing previews. Seed/demo материалы помечаются
         отдельно; Rielt не является live booking, payment или verified inventory platform.
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href="/rielt/search"
+            className="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
+          >
+            Открыть поиск
+          </Link>
+          <Link
+            href="/rielt/inquiries"
+            className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
+          >
+            Мои inquiry-запросы
+          </Link>
+        </div>
       </section>
 
       <section className="mb-10">
