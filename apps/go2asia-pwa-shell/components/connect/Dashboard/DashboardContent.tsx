@@ -16,7 +16,7 @@ interface DashboardContentProps {
 const nextSteps = [
   {
     title: "Завершите первое задание в Quest Asia",
-    description: "Points и бейджи отображаются только после backend-подтверждения.",
+    description: "Points и бейджи могут отобразиться после обработки backend-событий.",
     href: "/quest",
     cta: "Открыть Quest",
   },
@@ -37,6 +37,12 @@ const nextSteps = [
     description: "Профиль помогает управлять аккаунтом и возвращаться в экосистемные маршруты Connect.",
     href: "/profile",
     cta: "Открыть профиль",
+  },
+  {
+    title: "Продолжить social journey",
+    description: "Space показывает social visibility и активность как отдельный слой без claim-semantics.",
+    href: "/space",
+    cta: "Открыть Space",
   },
 ];
 
@@ -140,7 +146,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
                   Бейджи: read-only projection
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Последние badge projections; не asset ownership.
+                  Последние badge projections; без claim о владении активами.
                 </p>
               </div>
             </div>
@@ -167,7 +173,7 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
             </div>
           ) : (
             <p className="text-sm text-slate-600 mb-5">
-              Бейджи появятся здесь после backend-подтверждения. Этот блок не является
+              Бейджи могут появиться здесь после обработки событий. Этот блок не является
               badge_award_fact.
             </p>
           )}

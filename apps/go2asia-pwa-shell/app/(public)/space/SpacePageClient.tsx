@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
-import { useEffect, useMemo, useState } from 'react';
-import { customInstance, generated } from '@go2asia/sdk';
-import { SpaceLayout } from '@/components/space/Shared';
-import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
-import { useSpaceHomeFeed } from '@/components/space/runtime/useSpaceHomeFeed';
-import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
-import { PUBLIC_PROFILE_ID } from '@/components/space/runtime/utils';
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useMemo, useState } from "react";
+import { customInstance, generated } from "@go2asia/sdk";
+import { SpaceLayout } from "@/components/space/Shared";
+import { SpaceFeedCard } from "@/components/space/runtime/SpaceFeedCard";
+import { useSpaceHomeFeed } from "@/components/space/runtime/useSpaceHomeFeed";
+import { useSpaceSavedReactions } from "@/components/space/runtime/useSpaceSavedReactions";
+import { PUBLIC_PROFILE_ID } from "@/components/space/runtime/utils";
 
-type HeaderSurfaceState = 'loading' | 'ready' | 'error' | 'generic';
+type HeaderSurfaceState = "loading" | "ready" | "error" | "generic";
 
 type SavedPreviewItem = {
   reactionId: string;
@@ -18,7 +18,7 @@ type SavedPreviewItem = {
   post: generated.SpacePostResponse;
 };
 
-type DashboardSignalSource = 'runtime' | 'summary' | 'reference';
+type DashboardSignalSource = "runtime" | "summary" | "reference";
 
 type DashboardActionItem = {
   id: string;
@@ -27,77 +27,77 @@ type DashboardActionItem = {
   href: string;
   cta: string;
   source: DashboardSignalSource;
-  priority?: 'high' | 'medium' | 'low';
-  state?: 'planned' | 'pending' | 'waiting';
+  priority?: "high" | "medium" | "low";
+  state?: "planned" | "pending" | "waiting";
 };
 
 const quickEntries = [
   {
-    href: '/space/community',
-    title: 'Сообщества',
-    description: 'Найти подходящую группу и затем перейти в group detail или открыть центральную ленту отдельно.',
+    href: "/space/community",
+    title: "Сообщества",
+    description:
+      "Найти подходящую группу и затем перейти в group detail или открыть центральную ленту отдельно.",
   },
   {
-    href: '/space/posts',
-    title: 'Публикации',
-    description: 'Перейти к авторским публикациям и public profile baseline.',
+    href: "/space/posts",
+    title: "Публикации",
+    description: "Перейти к авторским публикациям и public profile baseline.",
   },
   {
-    href: '/space/activity',
-    title: 'Активность',
-    description: 'Проверить недавние действия и narrow activity timeline.',
+    href: "/space/activity",
+    title: "Активность",
+    description: "Проверить недавние действия и narrow activity timeline.",
   },
   {
-    href: '/space/saved',
-    title: 'Сохранённые',
-    description: 'Вернуться к сохранённым постам, если bookmark runtime доступен.',
+    href: "/space/saved",
+    title: "Сохранённые",
+    description: "Вернуться к сохранённым постам, если bookmark runtime доступен.",
   },
 ] as const;
 
 const referenceBlocks = [
   {
-    title: 'Ecosystem Signals',
-    status: 'Summary',
-    description: 'Сводка смежных доменов без переноса ownership в Space.',
+    title: "Ecosystem Signals",
+    status: "Summary",
+    description: "Сводка смежных доменов без переноса прав владения в Space.",
   },
   {
-    title: 'AI Assistant Suggestions',
-    status: 'Preview',
-    description: 'Небольшой preview AI слоя без operational loop.',
+    title: "AI Assistant Suggestions",
+    status: "Preview",
+    description: "Небольшой preview AI слоя без operational loop.",
   },
   {
-    title: 'PRO Widget',
-    status: 'Preview',
-    description:
-      'Спокойный переход к PRO без замены рабочего контура.',
+    title: "PRO Widget",
+    status: "Preview",
+    description: "Спокойный переход к PRO visibility без замены рабочих контуров.",
   },
 ] as const;
 
-const organizerEntryHref = '/space/organizer';
+const organizerEntryHref = "/space/organizer";
 
 function formatSourceLabel(source: DashboardSignalSource): string {
   switch (source) {
-    case 'runtime':
-      return 'Live';
-    case 'summary':
-      return 'Summary';
-    case 'reference':
-      return 'Preview';
+    case "runtime":
+      return "Live";
+    case "summary":
+      return "Summary";
+    case "reference":
+      return "Preview";
     default:
-      return 'Preview';
+      return "Preview";
   }
 }
 
-function formatPriorityLabel(priority: 'high' | 'medium' | 'low'): string {
+function formatPriorityLabel(priority: "high" | "medium" | "low"): string {
   switch (priority) {
-    case 'high':
-      return 'High';
-    case 'medium':
-      return 'Medium';
-    case 'low':
-      return 'Low';
+    case "high":
+      return "High";
+    case "medium":
+      return "Medium";
+    case "low":
+      return "Low";
     default:
-      return 'Medium';
+      return "Medium";
   }
 }
 
@@ -106,7 +106,7 @@ export function SpacePageClient() {
   const { mode, feed, isLoading: isFeedLoading, error: feedError } = useSpaceHomeFeed();
   const saved = useSpaceSavedReactions(true);
   const [headerProfile, setHeaderProfile] = useState<generated.SpaceProfileResponse | null>(null);
-  const [headerState, setHeaderState] = useState<HeaderSurfaceState>('loading');
+  const [headerState, setHeaderState] = useState<HeaderSurfaceState>("loading");
   const [savedPreview, setSavedPreview] = useState<SavedPreviewItem[]>([]);
   const [savedPreviewLoading, setSavedPreviewLoading] = useState(false);
   const [savedPreviewHydrationMisses, setSavedPreviewHydrationMisses] = useState(0);
@@ -122,47 +122,49 @@ export function SpacePageClient() {
   const todayItems = useMemo<DashboardActionItem[]>(() => {
     const items: DashboardActionItem[] = [];
 
-    if (saved.state === 'ready' && saved.savedCount > 0) {
+    if (saved.state === "ready" && saved.savedCount > 0) {
       items.push({
-        id: 'today_saved_follow_up',
-        title: 'Вернуться к сохранённому shortlist',
+        id: "today_saved_follow_up",
+        title: "Вернуться к сохранённому shortlist",
         description: `У вас ${saved.savedCount} сохранённых постов — хороший момент выбрать 1–2 и сделать следующий шаг.`,
-        href: '/space/saved',
-        cta: 'Открыть сохранённые',
-        source: 'runtime',
+        href: "/space/saved",
+        cta: "Открыть сохранённые",
+        source: "runtime",
       });
     }
 
     if (pulsePreviewItems.length > 0) {
       items.push({
-        id: 'today_social_change',
-        title: 'Проверить свежие social изменения',
+        id: "today_social_change",
+        title: "Проверить свежие social изменения",
         description: `В Social Pulse уже есть ${pulsePreviewItems.length} живых сигнала(ов) — стоит быстро пройтись по потоку.`,
-        href: '/space/feed',
-        cta: 'Открыть ленту',
-        source: 'runtime',
+        href: "/space/feed",
+        cta: "Открыть ленту",
+        source: "runtime",
       });
     }
 
     if (headerProfile?.cityId) {
       items.push({
-        id: 'today_city_context',
+        id: "today_city_context",
         title: `Сверить городской контекст: ${headerProfile.cityId}`,
-        description: 'Локальные сообщества помогают быстрее перейти от ориентирования к полезному участию.',
-        href: '/space/community',
-        cta: 'Открыть сообщества',
-        source: 'summary',
+        description:
+          "Локальные сообщества помогают быстрее перейти от ориентирования к полезному участию.",
+        href: "/space/community",
+        cta: "Открыть сообщества",
+        source: "summary",
       });
     }
 
     if (items.length === 0) {
       items.push({
-        id: 'today_start_light',
-        title: 'Сформировать первый дневной фокус',
-        description: 'Если сигналов пока мало, начните с одного сообщества и одного небольшого действия.',
-        href: '/space/community',
-        cta: 'Выбрать группу',
-        source: 'reference',
+        id: "today_start_light",
+        title: "Сформировать первый дневной фокус",
+        description:
+          "Если сигналов пока мало, начните с одного сообщества и одного небольшого действия.",
+        href: "/space/community",
+        cta: "Выбрать группу",
+        source: "reference",
       });
     }
 
@@ -172,54 +174,57 @@ export function SpacePageClient() {
   const nextActionItems = useMemo<DashboardActionItem[]>(() => {
     const items: DashboardActionItem[] = [
       {
-        id: 'next_enter_community',
-        title: 'Выбрать группу для входа',
-        description: 'Community root теперь показывает карту входа: проще выбрать, где встроиться сначала.',
-        href: '/space/community',
-        cta: 'Открыть сообщества',
-        source: 'summary',
+        id: "next_enter_community",
+        title: "Выбрать группу для входа",
+        description:
+          "Community root теперь показывает карту входа: проще выбрать, где встроиться сначала.",
+        href: "/space/community",
+        cta: "Открыть сообщества",
+        source: "summary",
       },
     ];
 
-    if (saved.state === 'ready' && saved.savedCount > 0) {
+    if (saved.state === "ready" && saved.savedCount > 0) {
       items.push({
-        id: 'next_convert_saved',
-        title: 'Преобразовать сохранённое в действие',
-        description: 'Возьмите один сохранённый пост и решите, что сделать сегодня: открыть, обсудить или зафиксировать шаг.',
-        href: '/space/saved',
-        cta: 'Перейти в сохранённые',
-        source: 'runtime',
+        id: "next_convert_saved",
+        title: "Преобразовать сохранённое в действие",
+        description:
+          "Возьмите один сохранённый пост и решите, что сделать сегодня: открыть, обсудить или зафиксировать шаг.",
+        href: "/space/saved",
+        cta: "Перейти в сохранённые",
+        source: "runtime",
       });
     } else {
       items.push({
-        id: 'next_build_shortlist',
-        title: 'Собрать небольшой shortlist',
-        description: 'Даже 1–2 сохранения дадут более полезный контекст для следующих действий на dashboard.',
-        href: '/space/feed',
-        cta: 'Открыть ленту',
-        source: 'reference',
+        id: "next_build_shortlist",
+        title: "Собрать небольшой shortlist",
+        description:
+          "Даже 1–2 сохранения дадут более полезный контекст для следующих действий на dashboard.",
+        href: "/space/feed",
+        cta: "Открыть ленту",
+        source: "reference",
       });
     }
 
-    const isPro = headerProfile?.roleLabel?.toLowerCase().includes('pro');
+    const isPro = headerProfile?.roleLabel?.toLowerCase().includes("pro");
     items.push(
       isPro
         ? {
-            id: 'next_group_rhythm',
-            title: 'Поддержать ритм группы',
-            description: 'Один содержательный апдейт в группе часто лучше длинного списка отложенных задач.',
-            href: '/space/community',
-            cta: 'Открыть сообщества',
-            source: 'summary',
+            id: "next_group_rhythm",
+            title: "Поддержать ритм группы",
+            description:
+              "Один содержательный апдейт в группе часто лучше длинного списка отложенных задач.",
+            href: "/space/community",
+            cta: "Открыть сообщества",
+            source: "summary",
           }
         : {
-            id: 'next_authored_update',
-            title: 'Сделать короткую авторскую публикацию',
-            description:
-              'Небольшой пост может превратить обычный просмотр в активное включение.',
-            href: '/space/posts',
-            cta: 'Открыть публикации',
-            source: 'summary',
+            id: "next_authored_update",
+            title: "Сделать короткую авторскую публикацию",
+            description: "Небольшой пост может превратить обычный просмотр в активное включение.",
+            href: "/space/posts",
+            cta: "Открыть публикации",
+            source: "summary",
           }
     );
 
@@ -228,49 +233,53 @@ export function SpacePageClient() {
 
   const organizerPreviewItems = useMemo<DashboardActionItem[]>(() => {
     const first: DashboardActionItem =
-      saved.state === 'ready' && saved.savedCount > 0
+      saved.state === "ready" && saved.savedCount > 0
         ? {
-            id: 'organizer_saved',
-            title: 'Вернуться к shortlist и принять решение',
-            description: 'Organizer уже открыт как отдельная секция shell. Следующий честный шаг — зайти внутрь и увидеть bounded state без fake trips.',
+            id: "organizer_saved",
+            title: "Вернуться к shortlist и принять решение",
+            description:
+              "Organizer уже открыт как отдельная секция shell. Следующий честный шаг — зайти внутрь и увидеть bounded state без fake trips.",
             href: organizerEntryHref,
-            cta: 'Открыть Organizer',
-            source: 'summary',
-            state: 'planned',
-            priority: 'high',
+            cta: "Открыть Organizer",
+            source: "summary",
+            state: "planned",
+            priority: "high",
           }
         : {
-            id: 'organizer_seed',
-            title: 'Открыть Organizer как новую section',
-            description: 'Даже при пустом shortlist Organizer уже существует как честный route inside Space и не притворяется полноценным planner.',
+            id: "organizer_seed",
+            title: "Открыть Organizer как новую section",
+            description:
+              "Даже при пустом shortlist Organizer уже существует как честный route inside Space и не притворяется полноценным planner.",
             href: organizerEntryHref,
-            cta: 'Открыть Organizer',
-            source: 'reference',
-            state: 'planned',
-            priority: 'high',
+            cta: "Открыть Organizer",
+            source: "reference",
+            state: "planned",
+            priority: "high",
           };
 
     return [
       first,
       {
-        id: 'organizer_community',
-        title: 'Перейти в Organizer из dashboard shell',
-        description: 'Dashboard остаётся cockpit, а Organizer теперь открывается как более глубокий bounded mode внутри Space.',
+        id: "organizer_community",
+        title: "Перейти в Organizer из dashboard shell",
+        description:
+          "Dashboard остаётся cockpit, а Organizer теперь открывается как более глубокий bounded mode внутри Space.",
         href: organizerEntryHref,
-        cta: 'Перейти',
-        source: 'reference',
-        state: 'planned',
-        priority: 'medium',
+        cta: "Перейти",
+        source: "reference",
+        state: "planned",
+        priority: "medium",
       },
       {
-        id: 'organizer_activity',
-        title: 'Проверить thin Organizer state',
-        description: 'Если planner runtime ещё не развернут полностью, route всё равно показывает honest loading/empty/auth/thin states.',
+        id: "organizer_activity",
+        title: "Проверить thin Organizer state",
+        description:
+          "Если planner runtime ещё не развернут полностью, route всё равно показывает honest loading/empty/auth/thin states.",
         href: organizerEntryHref,
-        cta: 'Перейти',
-        source: 'runtime',
-        state: 'waiting',
-        priority: 'low',
+        cta: "Перейти",
+        source: "runtime",
+        state: "waiting",
+        priority: "low",
       },
     ];
   }, [saved.state, saved.savedCount]);
@@ -282,23 +291,23 @@ export function SpacePageClient() {
       if (!isLoaded) return;
       if (!headerUserId) {
         setHeaderProfile(null);
-        setHeaderState('generic');
+        setHeaderState("generic");
         return;
       }
 
-      setHeaderState('loading');
+      setHeaderState("loading");
       try {
         const profile = await customInstance<generated.SpaceProfileResponse>(
-          { method: 'GET' },
+          { method: "GET" },
           `/v1/space/profiles/${encodeURIComponent(headerUserId)}`
         );
         if (cancelled) return;
         setHeaderProfile(profile);
-        setHeaderState('ready');
+        setHeaderState("ready");
       } catch {
         if (cancelled) return;
         setHeaderProfile(null);
-        setHeaderState('generic');
+        setHeaderState("generic");
       }
     }
 
@@ -312,7 +321,7 @@ export function SpacePageClient() {
     let cancelled = false;
 
     async function loadSavedPreview() {
-      if (saved.state !== 'ready' || saved.savedReactions.length === 0) {
+      if (saved.state !== "ready" || saved.savedReactions.length === 0) {
         setSavedPreview([]);
         setSavedPreviewHydrationMisses(0);
         return;
@@ -326,7 +335,7 @@ export function SpacePageClient() {
           previewTargets.map(async (reaction) => {
             try {
               const post = await customInstance<generated.SpacePostResponse>(
-                { method: 'GET' },
+                { method: "GET" },
                 `/v1/space/posts/${encodeURIComponent(reaction.targetId)}`
               );
               return {
@@ -356,18 +365,15 @@ export function SpacePageClient() {
   }, [saved.savedReactions, saved.state]);
 
   const headerTitle =
-    headerProfile?.displayName ??
-    user?.fullName ??
-    user?.firstName ??
-    'Space Dashboard';
+    headerProfile?.displayName ?? user?.fullName ?? user?.firstName ?? "Space Dashboard";
 
   const headerDescription = headerProfile?.bioShort
     ? headerProfile.bioShort
-    : mode === 'home'
-      ? 'Персональный operating cockpit с narrow social baseline и dashboard-first semantics.'
-      : mode === 'public-profile'
-        ? 'Публичный representative preview для dashboard-shell baseline.'
-        : 'Dashboard-shell baseline пока доступен в thin mode.';
+    : mode === "home"
+      ? "Персональная social-панель с мягким входом в активные поверхности Space."
+      : mode === "public-profile"
+        ? "Гостевой профильный preview в режиме ограниченной видимости."
+        : "Часть social-слоя временно ограничена, поэтому экран работает в облегчённом режиме.";
 
   return (
     <SpaceLayout>
@@ -377,30 +383,54 @@ export function SpacePageClient() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Space Asia</h1>
               <p className="mt-2 text-sm text-slate-600">
-                Спокойная dashboard-точка входа: сначала сориентироваться, затем перейти в нужную живую поверхность.
+                Social dashboard-точка входа: сначала сориентироваться, затем перейти в нужную
+                поверхность.
               </p>
             </div>
             <p className="text-xs text-slate-500">
-              {mode === 'home' && 'Персональный dashboard baseline активен.'}
-              {mode === 'public-profile' && 'Показан representative public preview.'}
-              {mode === 'deferred' && 'Часть runtime-слоя недоступна, поэтому экран работает в thin mode.'}
+              {mode === "home" && "Персональный social режим активен."}
+              {mode === "public-profile" && "Показан гостевой social preview."}
+              {mode === "deferred" &&
+                "Часть social-слоя недоступна, поэтому экран работает в облегчённом режиме."}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link
+                href="/profile"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Профиль
+              </Link>
+              <Link
+                href="/connect/activity"
+                className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-medium text-emerald-900 hover:bg-emerald-100"
+              >
+                Connect activity
+              </Link>
+              <Link
+                href="/"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Home
+              </Link>
+            </div>
           </header>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Ваш контекст</h2>
-            <p className="mt-1 text-sm text-slate-600">Кого показывает dashboard сейчас и сколько живых social сигналов уже доступно.</p>
+            <p className="mt-1 text-sm text-slate-600">
+              Кого показывает dashboard сейчас и сколько живых social сигналов уже доступно.
+            </p>
           </div>
 
-          {headerState === 'loading' && (
+          {headerState === "loading" && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
               Загружаем профиль для dashboard header...
             </div>
           )}
 
-          {headerState !== 'loading' && (
+          {headerState !== "loading" && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-xl font-semibold text-slate-900">{headerTitle}</h3>
@@ -411,7 +441,7 @@ export function SpacePageClient() {
                 )}
                 {!isSignedIn && (
                   <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
-                    public preview
+                    guest preview
                   </span>
                 )}
               </div>
@@ -423,16 +453,16 @@ export function SpacePageClient() {
                   </span>
                 )}
                 <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700">
-                  Saved:{' '}
-                  {saved.state === 'ready'
+                  Сохранённые:{" "}
+                  {saved.state === "ready"
                     ? saved.savedCount
-                    : saved.state === 'unavailable'
-                      ? 'temporarily unavailable'
-                      : saved.state === 'error'
-                        ? 'error'
-                      : isSignedIn
-                        ? 'loading'
-                        : 'auth required'}
+                    : saved.state === "unavailable"
+                      ? "временно недоступно"
+                      : saved.state === "error"
+                        ? "ошибка"
+                        : isSignedIn
+                          ? "загрузка"
+                          : "нужен вход"}
                 </span>
               </div>
             </div>
@@ -449,7 +479,10 @@ export function SpacePageClient() {
             </div>
             <div className="space-y-3">
               {todayItems.map((item) => (
-                <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <article
+                  key={item.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
                     <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
@@ -477,7 +510,10 @@ export function SpacePageClient() {
             </div>
             <div className="space-y-3">
               {nextActionItems.map((item) => (
-                <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <article
+                  key={item.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
                     <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
@@ -502,8 +538,8 @@ export function SpacePageClient() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Organizer Preview</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Organizer больше не только preview-обещание: это уже реальная shell section внутри Space с честными
-                bounded states.
+                Organizer больше не только preview-обещание: это уже реальная shell section внутри
+                Space с честными bounded states.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -553,7 +589,9 @@ export function SpacePageClient() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-slate-900">Secondary Previews</h2>
-              <p className="mt-1 text-sm text-slate-600">Спокойные входы в уже живые surfaces без перегрузки основного decision-layer.</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Спокойные входы в уже живые surfaces без перегрузки основного decision-layer.
+              </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {quickEntries.map((entry) => (
@@ -572,43 +610,47 @@ export function SpacePageClient() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-slate-900">Saved Preview</h2>
-              <p className="mt-1 text-sm text-slate-600">Короткий доступ к сохранённым постам без перегрузки dashboard.</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Короткий доступ к сохранённым постам без перегрузки dashboard.
+              </p>
             </div>
 
-            {saved.state === 'loading' && (
+            {saved.state === "loading" && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 Загружаем сохранённые публикации...
               </div>
             )}
 
-            {saved.state === 'auth-required' && (
+            {saved.state === "auth-required" && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                 Войдите, чтобы увидеть персональный saved preview и полный список в `/space/saved`.
               </div>
             )}
 
-            {saved.state === 'unavailable' && (
+            {saved.state === "unavailable" && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                Saved preview временно недоступен в этом окружении. Остальные social surfaces продолжают работать.
+                Saved preview временно недоступен в этом окружении. Остальные social surfaces
+                продолжают работать.
               </div>
             )}
 
-            {saved.state === 'error' && saved.error && (
+            {saved.state === "error" && saved.error && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
                 {saved.error}
               </div>
             )}
 
-            {saved.state === 'ready' && saved.savedCount === 0 && (
+            {saved.state === "ready" && saved.savedCount === 0 && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 Пока нет сохранённых публикаций. Начните с ленты или полного списка публикаций.
               </div>
             )}
 
-            {saved.state === 'ready' && saved.savedCount > 0 && (
+            {saved.state === "ready" && saved.savedCount > 0 && (
               <div className="space-y-3">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                  Всего сохранённых постов: <span className="font-semibold">{saved.savedCount}</span>
+                  Всего сохранённых постов:{" "}
+                  <span className="font-semibold">{saved.savedCount}</span>
                 </div>
                 {savedPreviewLoading && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -618,23 +660,31 @@ export function SpacePageClient() {
                 {!savedPreviewLoading && savedPreview.length === 0 && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                     {savedPreviewHydrationMisses > 0
-                      ? 'Сохранения найдены, но preview постов сейчас не удалось загрузить. Полный список доступен через `/space/saved`.'
-                      : 'Preview сейчас не удалось загрузить. Полный список остаётся доступным через `/space/saved`.'}
+                      ? "Сохранения найдены, но preview постов сейчас не удалось загрузить. Полный список доступен через `/space/saved`."
+                      : "Preview сейчас не удалось загрузить. Полный список остаётся доступным через `/space/saved`."}
                   </div>
                 )}
                 {savedPreview.length > 0 && savedPreviewHydrationMisses > 0 && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                    Часть сохранённых постов ({savedPreviewHydrationMisses}) временно не попала в preview.
+                    Часть сохранённых постов ({savedPreviewHydrationMisses}) временно не попала в
+                    preview.
                   </div>
                 )}
                 {savedPreview.map((item) => {
                   const feedItem: generated.SpaceFeedItem = {
                     id: `saved_preview_${item.reactionId}`,
                     createdAt: item.createdAt,
-                    reason: 'author_post',
+                    reason: "author_post",
                     post: item.post,
                   };
-                  return <SpaceFeedCard key={item.reactionId} item={feedItem} showReason={false} showGroupSignal />;
+                  return (
+                    <SpaceFeedCard
+                      key={item.reactionId}
+                      item={feedItem}
+                      showReason={false}
+                      showGroupSignal
+                    />
+                  );
                 })}
               </div>
             )}
@@ -646,7 +696,8 @@ export function SpacePageClient() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Social Pulse</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Короткий preview центральной ленты. Полный поток публикаций доступен отдельно на `/space/feed`.
+                Короткий preview центральной ленты. Полный поток публикаций доступен отдельно на
+                `/space/feed`.
               </p>
             </div>
             <Link
@@ -680,7 +731,7 @@ export function SpacePageClient() {
               {pulsePreviewItems.map((item) => (
                 <div key={item.id} className="space-y-2">
                   <SpaceFeedCard item={item} showReason showGroupSignal />
-                  {saved.state === 'ready' && (
+                  {saved.state === "ready" && (
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -689,10 +740,10 @@ export function SpacePageClient() {
                         className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {saved.isPending(item.post.id)
-                          ? 'Обновляем...'
+                          ? "Обновляем..."
                           : saved.isSaved(item.post.id)
-                            ? 'Убрать из сохранённых'
-                            : 'Сохранить пост'}
+                            ? "Убрать из сохранённых"
+                            : "Сохранить пост"}
                       </button>
                     </div>
                   )}
@@ -706,12 +757,16 @@ export function SpacePageClient() {
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Следующие слои</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Спокойные preview и summary-блоки, которые задают направление, но не притворяются отдельными live-сервисами.
+              Спокойные preview и summary-блоки, которые задают направление, но не притворяются
+              отдельными live-сервисами.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {referenceBlocks.map((block) => (
-              <article key={block.title} className="rounded-xl border border-slate-200 bg-white p-4">
+              <article
+                key={block.title}
+                className="rounded-xl border border-slate-200 bg-white p-4"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-slate-900">{block.title}</h3>
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600">
@@ -727,5 +782,3 @@ export function SpacePageClient() {
     </SpaceLayout>
   );
 }
-
-

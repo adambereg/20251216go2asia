@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 import { SpaceLayout } from '@/components/space/Shared';
 import { PostsPublicationsSurface } from './PostsPublicationsSurface';
 
@@ -33,6 +34,11 @@ export function PostsPageClient() {
             Войдите в аккаунт, чтобы увидеть свои публикации. Если хотите просто посмотреть, откройте ленту
             Space Asia.
           </p>
+          <div className="mt-3">
+            <Link href="/space/feed" className="text-sm font-medium text-blue-700 hover:text-blue-800">
+              Перейти в ленту
+            </Link>
+          </div>
         </section>
       </SpaceLayout>
     );

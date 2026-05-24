@@ -37,13 +37,13 @@ const secondaryNavItems: NavItem[] = [
   { href: '/space/posts', label: 'Публикации', icon: ScrollText },
 ];
 
-const deferredNavItems: Array<{ label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { label: 'Квесты', icon: Trophy },
-  { label: 'Ваучеры', icon: Ticket },
-  { label: 'Активность', icon: Award },
-  { label: 'Бейджи', icon: Award },
-  { label: 'Приглашения', icon: UserPlus },
-  { label: 'Настройки', icon: Settings },
+const deferredNavItems: Array<{ href: string; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { href: '/space/quests', label: 'Квесты', icon: Trophy },
+  { href: '/space/vouchers', label: 'Ваучеры', icon: Ticket },
+  { href: '/space/activity-summary', label: 'Сводка активности', icon: Award },
+  { href: '/space/badges', label: 'Бейджи', icon: Award },
+  { href: '/space/referrals', label: 'Приглашения', icon: UserPlus },
+  { href: '/space/settings', label: 'Настройки', icon: Settings },
 ];
 
 interface SpaceNavProps {
@@ -175,13 +175,26 @@ export function SpaceNav({ className, variant = 'vertical' }: SpaceNavProps) {
         <ul className="mt-2 space-y-2">
           {deferredNavItems.map((item) => {
             const Icon = item.icon;
+            const isActive = isItemActive(item.href);
             return (
               <li
                 key={item.label}
-                className="flex items-center gap-2 text-xs text-slate-500"
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{item.label}</span>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-xs transition-colors',
+                    isActive ? 'bg-slate-100 text-slate-700' : 'text-slate-500 hover:bg-slate-100'
+                  )}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{item.label}</span>
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
+                    deferred
+                  </span>
+                </Link>
               </li>
             );
           })}

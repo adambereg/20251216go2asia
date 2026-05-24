@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { generated } from '@go2asia/sdk';
+import { resolveReferenceHref } from '@/components/space/runtime/utils';
 
 type PostsPublicationCardProps = {
   item: generated.SpaceFeedItem;
@@ -93,26 +94,15 @@ function getReferenceHref(
   repost: generated.SpacePostRepostRef | undefined
 ): { href: string | null; label: string | null } {
   if (!repost) return { href: null, label: null };
-
-  switch (repost.targetType) {
-    case 'event':
-      return {
-        href: `/pulse/${encodeURIComponent(repost.targetId)}`,
-        label: 'Открыть событие',
-      };
-    case 'place':
-      return {
-        href: `/atlas/places/${encodeURIComponent(repost.targetId)}`,
-        label: 'Открыть место',
-      };
-    case 'listing':
-      return {
-        href: `/rielt/listings/${encodeURIComponent(repost.targetId)}`,
-        label: 'Открыть объявление',
-      };
-    default:
-      return { href: null, label: null };
-  }
+  const resolved = resolveReferenceHref(repost.targetType, repost.targetId);
+  if (!resolved.href) return { href: null, label: null };
+  if (repost.targetType === 'event') return { href: resolved.href, label: 'Открыть событие' };
+  if (repost.targetType === 'place') return { href: resolved.href, label: 'Открыть место' };
+  if (repost.targetType === 'listing') return { href: resolved.href, label: 'Открыть объявление' };
+  if (repost.targetType === 'quest') return { href: resolved.href, label: 'Открыть квест' };
+  if (repost.targetType === 'partner') return { href: resolved.href, label: 'Открыть партнёра' };
+  if (repost.targetType === 'blog_post') return { href: resolved.href, label: 'Открыть блог' };
+  return { href: resolved.href, label: 'Открыть источник' };
 }
 
 function getPublicationTitle(item: generated.SpaceFeedItem): string {

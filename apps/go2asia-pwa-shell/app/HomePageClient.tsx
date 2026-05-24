@@ -166,7 +166,7 @@ const benefits = [
     description:
       'Создавайте небольшие команды, планируйте совместные поездки и квесты, делитесь впечатлениями.',
     cta: 'Создать группу в Space',
-    href: '/space/teams',
+    href: '/space/community',
   },
   {
     type: 'rf' as const,

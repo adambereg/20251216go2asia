@@ -12,8 +12,8 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
     <SpaceLayout>
       <SpaceProfileSurface
         userId={userId}
-        heading="Public profile baseline"
-        subtitle="Публичный профиль и authored posts поверх существующих `/v1/space/profiles/*` и `/v1/space/feed/profile/*`."
+        heading="Публичный профиль"
+        subtitle="Профильная social-видимость и авторские публикации в Space. Это не удостоверение личности и не verified-fact surface."
       />
     </SpaceLayout>
   );

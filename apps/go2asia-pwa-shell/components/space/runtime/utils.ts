@@ -103,6 +103,12 @@ export function resolveReferenceHref(
       return { href: `/atlas/places/${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'listing':
       return { href: `/rielt/listings/${encodeURIComponent(targetId)}`, isDeferred: false };
+    case 'quest':
+      return { href: `/quest/${encodeURIComponent(targetId)}`, isDeferred: false };
+    case 'partner':
+      return { href: `/rf/${encodeURIComponent(targetId)}`, isDeferred: false };
+    case 'blog_post':
+      return { href: `/blog`, isDeferred: false };
     default:
       return { href: null, isDeferred: true };
   }
