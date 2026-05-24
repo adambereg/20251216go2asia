@@ -13,6 +13,8 @@ export const PROJECTION_HELPERS = {
   previewNotGrant: 'Preview only: не grant, не receipt и не owner_fact.',
   activityNotReceipt: 'Reference-only activity summary: не receipt и не полный audit trail.',
   sourceNotProofMetadata: 'Source label является UI-контекстом, не proof metadata.',
+  diagnosticsInternalOnly:
+    'Diagnostics snapshot: internal operator reference, не customer evidence и не support-resolution verdict.',
 } as const;
 
 export const FORBIDDEN_PROJECTION_METADATA_FIELDS = [

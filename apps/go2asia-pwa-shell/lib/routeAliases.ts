@@ -7,6 +7,7 @@ export const ROUTE_ALIASES = {
   spaceNftLegacy: '/space/nft',
   spaceActivity: '/space/activity',
   spaceVouchers: '/space/vouchers',
+  adminPointsDiagnostics: '/admin/points-diagnostics',
 } as const;
 
 export const LEGACY_ROUTE_NOTICES = {

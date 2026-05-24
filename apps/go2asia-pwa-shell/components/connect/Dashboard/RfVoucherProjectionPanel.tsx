@@ -162,10 +162,10 @@ export function RfVoucherProjectionPanel({
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Детали RF-ваучеров</h2>
           <p className="text-sm text-slate-600">
-            Read-only RF lifecycle projection; не receipt и не payment confirmation.
+            Read-only RF lifecycle projection; не customer-proof и не settlement confirmation.
           </p>
           <Link href="/rf/pro#pw-attributed-vouchers" className="mt-1 inline-flex text-xs font-medium text-emerald-700 hover:text-emerald-800">
-            PRO operational visibility
+            PRO monitoring view (read-only)
           </Link>
         </div>
       </div>
@@ -193,7 +193,7 @@ export function RfVoucherProjectionPanel({
           <p className="font-semibold text-slate-900">Краткое превью RF-деталей</p>
           <p className="mt-1">
             Активные: {projection.groups.active.length.toLocaleString('ru-RU')}. Использованные:{' '}
-            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки остаются в RF owner surface.
+            {projection.groups.used.length.toLocaleString('ru-RU')}. Подробные списки и owner rows остаются в RF owner domain.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Button variant="secondary" size="sm" onClick={() => setIsExpanded(true)}>

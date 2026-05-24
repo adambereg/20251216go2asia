@@ -15,6 +15,9 @@ export const CONNECT_POINTS_EARNED_LABEL = 'Points по backend-событиям
 export const CONNECT_OWNER_FACT_POINTER_TEXT =
   'Owner facts остаются в профильных сервисах. Connect показывает только read-only projection и не является authority surface.';
 
+export const CONNECT_INTERNAL_DIAGNOSTICS_HELPER =
+  'Internal diagnostics pointer: operator navigation only, не customer-proof и не support-resolution workflow.';
+
 export const CONNECT_POINTS_BUCKET_LABELS = {
   available: 'Points с внутренней доступностью',
   locked: 'Points с условиями',

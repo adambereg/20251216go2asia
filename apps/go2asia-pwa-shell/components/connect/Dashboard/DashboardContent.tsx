@@ -3,11 +3,17 @@
 import { Card, Button } from "@go2asia/ui";
 import { ArrowRight, Award, CheckCircle2, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import type { ConnectDashboardResponse } from "@go2asia/sdk/connectDashboard";
 import { ConnectActivitySummaryCards } from "./BalanceCards";
 import { ActivityFeed } from "./ActivityFeed";
 import { ConnectRfSection } from "./ConnectRfSection";
-import { CONNECT_OWNER_FACT_POINTER_TEXT, CONNECT_POINTS_EARNED_LABEL } from "../copy";
+import {
+  CONNECT_INTERNAL_DIAGNOSTICS_HELPER,
+  CONNECT_OWNER_FACT_POINTER_TEXT,
+  CONNECT_POINTS_EARNED_LABEL,
+} from "../copy";
+import { buildAdminDiagnosticsHref } from "@/lib/projectionMetadata";
 
 interface DashboardContentProps {
   dashboard: ConnectDashboardResponse;
@@ -52,8 +58,12 @@ function formatBadgeDate(dateString: string) {
 }
 
 export function DashboardContent({ dashboard }: DashboardContentProps) {
+  const { user } = useUser();
   const hasReferrals = dashboard.referrals.totalReferrals > 0;
   const hasBadges = dashboard.badges.totalBadges > 0;
+  const role = typeof user?.publicMetadata?.role === 'string' ? user.publicMetadata.role.toLowerCase() : "";
+  const isAdmin = role === "admin";
+  const diagnosticsHref = buildAdminDiagnosticsHref(dashboard.projectionMetadata);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -64,6 +74,11 @@ export function DashboardContent({ dashboard }: DashboardContentProps) {
           Read-only dashboard projection; не receipt, не proof и не accounting statement.
         </p>
         <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
+        {isAdmin && diagnosticsHref && (
+          <Link href={diagnosticsHref} className="mt-2 inline-flex text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900">
+            {CONNECT_INTERNAL_DIAGNOSTICS_HELPER}
+          </Link>
+        )}
       </div>
 
       {/* Points */}

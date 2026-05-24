@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useUser } from '@clerk/nextjs';
 import { ConnectHero, ConnectNav } from '../Shared';
 import { Button, Card, SkeletonCard } from '@go2asia/ui';
 import { AlertCircle, Coins, LockKeyhole, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
@@ -12,8 +13,13 @@ import { useGetTransactions, type PointsTransaction } from '@go2asia/sdk/transac
 import { customInstance } from '@go2asia/sdk/mutator';
 import type { ModuleType, Transaction } from '../types';
 import { TransactionList } from './TransactionList';
-import { CONNECT_OWNER_FACT_POINTER_TEXT, CONNECT_POINTS_ACTIVITY_DESCRIPTION, CONNECT_POINTS_BUCKET_LABELS } from '../copy';
-import { formatProjectionMetadata } from '@/lib/projectionMetadata';
+import {
+  CONNECT_INTERNAL_DIAGNOSTICS_HELPER,
+  CONNECT_OWNER_FACT_POINTER_TEXT,
+  CONNECT_POINTS_ACTIVITY_DESCRIPTION,
+  CONNECT_POINTS_BUCKET_LABELS,
+} from '../copy';
+import { buildAdminDiagnosticsHref, formatProjectionMetadata } from '@/lib/projectionMetadata';
 import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
 type WalletSummary = {
@@ -203,8 +209,11 @@ function PointsSummary({
 }
 
 export function WalletView() {
+  const { user } = useUser();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allTransactions, setAllTransactions] = useState<PointsTransaction[]>([]);
+  const role = typeof user?.publicMetadata?.role === 'string' ? user.publicMetadata.role.toLowerCase() : '';
+  const isAdmin = role === 'admin';
 
   const { data: balanceData, isLoading: balanceLoading, isError: balanceError, refetch: refetchBalance } =
     useGetBalance();
@@ -250,6 +259,10 @@ export function WalletView() {
   }, [allTransactions, transactionsData?.items]);
   const transactionsProjectionMetadata = (transactionsData as TransactionsPageProjectionMetadata | undefined)
     ?.projectionMetadata;
+  const balanceProjectionMetadata = (balanceData as UserBalanceWithProjectionMetadata | undefined)?.projectionMetadata;
+  const diagnosticsHref =
+    buildAdminDiagnosticsHref(walletSummary?.projectionMetadata ?? balanceProjectionMetadata) ??
+    buildAdminDiagnosticsHref(transactionsProjectionMetadata);
 
   const handleLoadMore = () => {
     if (transactionsData?.nextCursor) {
@@ -329,6 +342,11 @@ export function WalletView() {
             Read-only projection внутренних Points; не financial wallet, не receipt и не accounting statement.
           </p>
           <p className="text-xs text-slate-500 mt-2">{CONNECT_OWNER_FACT_POINTER_TEXT}</p>
+          {isAdmin && diagnosticsHref && (
+            <Link href={diagnosticsHref} className="mt-2 inline-flex text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900">
+              {CONNECT_INTERNAL_DIAGNOSTICS_HELPER}
+            </Link>
+          )}
         </div>
 
         <PointsSummary

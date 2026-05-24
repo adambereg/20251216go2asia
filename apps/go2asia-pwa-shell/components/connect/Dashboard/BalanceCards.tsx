@@ -1,13 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
 import { Coins, LockKeyhole } from 'lucide-react';
 import { Card, Button } from '@go2asia/ui';
 import type { ConnectDashboardBalance } from '@go2asia/sdk/connectDashboard';
 import { customInstance } from '@go2asia/sdk/mutator';
 import { CONNECT_POINTS_BUCKET_LABELS } from '../copy';
 import { ROUTE_ALIASES } from '@/lib/routeAliases';
-import { formatProjectionMetadata } from '@/lib/projectionMetadata';
+import { buildAdminDiagnosticsHref, formatProjectionMetadata } from '@/lib/projectionMetadata';
 import type { ProjectionMetadataEnvelope } from '@go2asia/sdk/connectDashboard';
 
 interface BalanceCardsProps {
@@ -46,12 +48,16 @@ function formatUpdatedAt(updatedAt: string | null) {
 }
 
 export function BalanceCards({ balance, projectionMetadata }: BalanceCardsProps) {
+  const { user } = useUser();
   const { data: walletSummary, isError: walletSummaryError } = useGetWalletSummary();
   const updatedAt = formatUpdatedAt(balance.updatedAt);
   const totalPoints = walletSummary?.totalPoints ?? balance.points;
   const availablePoints = walletSummary?.availablePoints ?? balance.points;
   const lockedPoints = walletSummary?.lockedPoints ?? 0;
   const hasPoints = totalPoints > 0;
+  const role = typeof user?.publicMetadata?.role === 'string' ? user.publicMetadata.role.toLowerCase() : '';
+  const isAdmin = role === 'admin';
+  const diagnosticsHref = buildAdminDiagnosticsHref(walletSummary?.projectionMetadata ?? projectionMetadata);
 
   return (
     <div className="grid grid-cols-1 gap-4">
@@ -77,6 +83,14 @@ export function BalanceCards({ balance, projectionMetadata }: BalanceCardsProps)
                 <p className="text-xs text-amber-700 mt-2">
                   Структура Points временно недоступна, показываем последнюю read-only сводку.
                 </p>
+              )}
+              {isAdmin && diagnosticsHref && (
+                <Link
+                  href={diagnosticsHref}
+                  className="mt-2 inline-flex text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900"
+                >
+                  Internal diagnostics pointer (operator-only)
+                </Link>
               )}
             </div>
           </div>
