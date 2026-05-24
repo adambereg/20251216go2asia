@@ -77,6 +77,13 @@ export function QuestHomeClient() {
         <p className="text-sm text-slate-600 mb-6">
           Здесь показываются только маршруты, которые уже доступны в текущем runtime.
         </p>
+        <p className="text-xs text-slate-500 mb-6">
+          После прохождения маршрута статус участия и internal Points отражаются в{' '}
+          <Link href="/connect/activity" className="text-purple-700 hover:underline">
+            Connect activity projection
+          </Link>
+          .
+        </p>
 
         {loading ? (
           <div className="flex items-center gap-2 text-slate-600">

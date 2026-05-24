@@ -63,6 +63,11 @@ function readErrorMessage(error: unknown): string {
   return 'Произошла непредвиденная ошибка.';
 }
 
+function isAuthError(error: unknown): boolean {
+  const value = error as QuestApiError;
+  return value?.status === 401;
+}
+
 function mapProofType(step: QuestStepResponse): QuestProofType {
   if (step.verificationType === 'geo') return 'geo';
   if (step.verificationType === 'qr') return 'qr';
@@ -106,14 +111,14 @@ function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: strin
   if (progress.status === 'pending_review') {
     return {
       tone: 'border-amber-200 bg-amber-50 text-amber-800',
-      text: 'Один из шагов отправлен на проверку. Пока проверка не завершится, следующий шаг будет недоступен.',
+      text: 'Один из шагов отправлен на проверку. Пока review не завершится, следующий шаг будет недоступен. Статус участия и Points затем отражаются в Connect activity projection.',
     };
   }
 
   if (progress.status === 'completed') {
     return {
       tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-      text: 'Маршрут завершён. Все шаги засчитаны, можно перейти к следующему маршруту.',
+      text: 'Маршрут завершён в Quest runtime. Внутренние Points и бейджи отображаются позже в Connect activity/levels после backend-событий.',
     };
   }
 
@@ -140,7 +145,7 @@ function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: strin
 function describeStepRuntime(step: QuestStepResponse): string {
   if (step.type === 'visit_partner') return 'Подтвердите визит в партнёрскую точку и переходите к следующему шагу.';
   if (step.type === 'attend_event') return 'Подтвердите участие в событии. Проверка может занять немного времени.';
-  if (step.type === 'space_action') return 'Добавьте идентификатор опубликованного действия, чтобы мы зачли этот шаг.';
+  if (step.type === 'space_action') return 'Добавьте идентификатор опубликованного действия, чтобы отправить шаг на проверку.';
   if (step.verificationType === 'manual') return 'После отправки шаг может перейти на ручную проверку перед продолжением.';
   return 'Подтвердите этот шаг и переходите дальше по маршруту.';
 }
@@ -235,6 +240,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
   const [lastSubmission, setLastSubmission] = useState<QuestSubmissionResponse | null>(null);
   const [proofDraft, setProofDraft] = useState<ProofDraft>(getDefaultProofDraft('text'));
   const [geoLoading, setGeoLoading] = useState(false);
+  const [requiresSignIn, setRequiresSignIn] = useState(false);
 
   const currentStep = useMemo(() => getCurrentStep(progress, questDetail.steps), [progress, questDetail.steps]);
   const mapScope = useMemo(() => resolveQuestMapScope(questDetail), [questDetail]);
@@ -271,12 +277,14 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
     setFormError(null);
     setSubmitNotice(null);
     setLoading(true);
+    setRequiresSignIn(false);
     try {
       const started = await quest.startQuest(questDetail.id);
       setProgress(started);
     } catch (startError) {
       const message = readErrorMessage(startError);
       setError(message);
+      setRequiresSignIn(isAuthError(startError));
       setProgress(null);
     } finally {
       setLoading(false);
@@ -311,7 +319,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
       if (response.status === 'pending') {
         setSubmitNotice('Подтверждение отправлено. Сейчас оно находится на проверке.');
       } else if (response.status === 'approved') {
-        setSubmitNotice('Подтверждение принято. Можно продолжать маршрут.');
+        setSubmitNotice('Отправка шага одобрена. Можно продолжать маршрут.');
       } else if (response.status === 'rejected') {
         setSubmitNotice('Подтверждение отклонено. Исправьте данные и отправьте повторно.');
       } else {
@@ -384,6 +392,14 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
           ) : !progress ? (
             <div className="space-y-4">
               <p className="text-sm text-slate-700">Не удалось загрузить текущий статус маршрута.</p>
+              {requiresSignIn ? (
+                <Link
+                  href={`/sign-in?redirect_url=${encodeURIComponent(`/quest/${questDetail.id}/run`)}`}
+                  className="inline-flex items-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                >
+                  Войти и продолжить
+                </Link>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void loadProgress()}
@@ -425,6 +441,32 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                 </div>
               </div>
               <div className={`mt-4 rounded-lg border p-3 text-sm ${lifecycleCopy.tone}`}>{lifecycleCopy.text}</div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/quest/${questDetail.id}`}
+                  className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  Страница маршрута
+                </Link>
+                <Link
+                  href="/connect/activity"
+                  className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  История активности в Connect
+                </Link>
+                <Link
+                  href="/connect/levels"
+                  className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  Бейджи в Connect
+                </Link>
+                <Link
+                  href="/quest"
+                  className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  Каталог маршрутов
+                </Link>
+              </div>
             </>
           )}
         </div>
@@ -721,6 +763,9 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
             <p className="text-sm text-slate-600">Отправлено: {new Date(lastSubmission.createdAt).toLocaleString()}</p>
             <p className="text-sm text-slate-600">
               Проверено: {lastSubmission.reviewedAt ? new Date(lastSubmission.reviewedAt).toLocaleString() : 'ещё нет'}
+            </p>
+            <p className="mt-2 text-xs text-slate-600">
+              Этот статус относится к отправке шага. Внутренние Points и badge projection отражаются позже в Connect.
             </p>
           </div>
         ) : null}

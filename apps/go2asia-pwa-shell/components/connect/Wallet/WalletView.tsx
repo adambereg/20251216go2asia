@@ -357,6 +357,9 @@ export function WalletView() {
             internal Points projection и read-only activity summary.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/quest">
+              <Button variant="secondary" size="sm">Quest</Button>
+            </Link>
             <Link href="/connect/referrals">
               <Button variant="secondary" size="sm">Приглашения</Button>
             </Link>

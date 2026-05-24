@@ -22,8 +22,8 @@ export function RewardsView({ questId }: RewardsViewProps) {
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Deferred local page</p>
-              <h1 className="mt-1 text-2xl font-bold text-slate-900">Завершение не является receipt</h1>
+              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Отложенный локальный route</p>
+              <h1 className="mt-1 text-2xl font-bold text-slate-900">Статус завершения не является receipt</h1>
               <p className="mt-2 text-slate-600">
                 Этот route сохраняет переход после Quest flow, но больше не ищет mock-каталог и не показывает локальные
                 Points, бейджи, награды или progression summary.
@@ -56,10 +56,10 @@ export function RewardsView({ questId }: RewardsViewProps) {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/connect"
+              href="/connect/activity"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition-colors hover:border-slate-500"
             >
-              Connect
+              Connect / Activity
             </Link>
             <Link
               href="/connect/levels"
