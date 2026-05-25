@@ -50,8 +50,10 @@ const isProtectedRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (
   '/profile(.*)',
   '/settings(.*)',
   '/partner(.*)',
+  '/admin(.*)',
   '/rf/merchant(.*)',
   '/rf/pro(.*)',
+  '/quest/pro(.*)',
   '/space',
   '/space/me(.*)',
   '/space/saved(.*)',
@@ -62,7 +64,7 @@ const isProtectedRoute = (isClerkConfigured ? createRouteMatcher : (_: any) => (
   '/space/referrals(.*)',
   '/space/settings(.*)',
   '/quest/my(.*)',
-  '/quest/[id]/run(.*)',
+  '/quest/(.*)/run(.*)',
 ]);
 
 /**
@@ -141,6 +143,8 @@ export default isClerkConfigured
   ? clerkMiddleware(async (auth: any, req: any) => {
   const { userId, sessionClaims } = await auth();
   const pathname = req.nextUrl.pathname;
+  const search = req.nextUrl.search;
+  const redirectTarget = `${pathname}${search || ''}`;
 
   // Маршруты аутентификации доступны всем (публичные)
   if (isAuthRoute(req)) {
@@ -150,7 +154,7 @@ export default isClerkConfigured
   // Если маршрут защищённый и пользователь не авторизован - редирект на вход
   if (isProtectedRoute(req) && !userId) {
     const signInUrl = new URL('/sign-in', req.url);
-    signInUrl.searchParams.set('redirect_url', pathname);
+    signInUrl.searchParams.set('redirect_url', redirectTarget);
     return NextResponse.redirect(signInUrl);
   }
 

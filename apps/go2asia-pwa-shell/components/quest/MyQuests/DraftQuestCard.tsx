@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { FileEdit, MapPin, Clock, Edit, Trash2 } from 'lucide-react';
 import type { Quest } from '@/components/quest/types';
 import { QUEST_TYPE_LABELS, DIFFICULTY_LABELS } from '@/components/quest/types';
+import { getQuestDraftEditRoute } from '@/lib/routeAliases';
 
 interface DraftQuestCardProps {
   quest: Quest;
@@ -18,7 +19,7 @@ export function DraftQuestCard({ quest }: DraftQuestCardProps) {
   const router = useRouter();
 
   const handleEdit = () => {
-    router.push(`/quest/${quest.id}/edit`);
+    router.push(getQuestDraftEditRoute(quest.id));
   };
 
   const handleDelete = () => {

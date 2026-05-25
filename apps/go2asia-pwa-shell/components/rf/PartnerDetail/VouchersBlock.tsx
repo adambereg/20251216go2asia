@@ -6,6 +6,7 @@ import { Button, Badge } from '@go2asia/ui';
 import Link from 'next/link';
 import type { Partner, Voucher } from '../types';
 import { mockVouchers } from '../mockData';
+import { getRfPartnerVouchersRoute } from '@/lib/routeAliases';
 
 interface VouchersBlockProps {
   partner: Partner;
@@ -51,7 +52,7 @@ export function VouchersBlock({ partner }: VouchersBlockProps) {
             <Ticket size={24} />
             Активные ваучеры
           </h2>
-          <Link href={`/rf/${partner.id}/vouchers`}>
+          <Link href={getRfPartnerVouchersRoute(partner.id)}>
             <Button variant="secondary" size="sm">
               Все ваучеры
               <ArrowRight size={16} className="ml-1" />
