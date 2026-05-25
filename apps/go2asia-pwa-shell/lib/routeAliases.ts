@@ -18,3 +18,15 @@ export const LEGACY_ROUTE_NOTICES = {
   spaceNft:
     'Legacy route alias: Space badges are off-chain/deferred; NFT ownership and on-chain semantics are inactive.',
 } as const;
+
+export function getRfPartnerVouchersRoute(partnerId: string): string {
+  return `/rf/vouchers?partner=${encodeURIComponent(partnerId)}`;
+}
+
+export function getRfPartnerReviewsRoute(partnerId: string): string {
+  return `/rf/${encodeURIComponent(partnerId)}/reviews`;
+}
+
+export function getQuestDraftEditRoute(questId: string): string {
+  return `/quest/pro/${encodeURIComponent(questId)}`;
+}

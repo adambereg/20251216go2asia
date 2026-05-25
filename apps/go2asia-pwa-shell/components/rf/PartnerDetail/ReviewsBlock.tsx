@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { mockReviews } from '../mockData';
 import type { Partner } from '../types';
+import { getRfPartnerReviewsRoute } from '@/lib/routeAliases';
 
 interface ReviewsBlockProps {
   partner: Partner;
@@ -33,7 +34,7 @@ export function ReviewsBlock({ partner }: ReviewsBlockProps) {
           <h2 className="text-2xl font-bold text-slate-900">
             Отзывы ({partner.stats.reviewsCount})
           </h2>
-          <Link href={`/rf/${partner.id}/reviews`}>
+          <Link href={getRfPartnerReviewsRoute(partner.id)}>
             <Button variant="secondary" size="sm">
               Все отзывы
               <ArrowRight size={16} className="ml-1" />
