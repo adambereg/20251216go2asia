@@ -53,10 +53,12 @@ type BatchSummaryInput = {
 type ListMyReactionsInput = {
   targetType: ReactionTargetType;
   reactionType: ReactionType;
+  targetId: string | null;
   limit: number;
 };
 
 const ALLOWED_REACTION_TYPES: ReactionType[] = ['like', 'bookmark'];
+const PILOT_BOOKMARK_TARGET_TYPES: ReactionTargetType[] = ['space_post', 'place', 'event', 'blog_post'];
 const DEFAULT_MINE_LIMIT = 20;
 const MAX_MINE_LIMIT = 50;
 
@@ -88,7 +90,7 @@ function parseUpsertReactionInput(body: Record<string, unknown> | null): UpsertR
   if (typeof body.targetId !== 'string' || body.targetId.trim().length === 0) return null;
   const reactionType = body.reactionType as ReactionType;
   const targetType = body.targetType as ReactionTargetType;
-  if (reactionType === 'bookmark' && targetType !== 'space_post') {
+  if (reactionType === 'bookmark' && !PILOT_BOOKMARK_TARGET_TYPES.includes(targetType)) {
     return null;
   }
   return {
@@ -101,12 +103,13 @@ function parseUpsertReactionInput(body: Record<string, unknown> | null): UpsertR
 function parseListMyReactionsInput(searchParams: URLSearchParams): ListMyReactionsInput | null {
   const targetTypeRaw = searchParams.get('targetType');
   const reactionTypeRaw = searchParams.get('reactionType');
+  const targetIdRaw = searchParams.get('targetId');
   if (!targetTypeRaw || !reactionTypeRaw) return null;
   if (!ALLOWED_TARGET_TYPES.includes(targetTypeRaw as ReactionTargetType)) return null;
   if (!ALLOWED_REACTION_TYPES.includes(reactionTypeRaw as ReactionType)) return null;
   const targetType = targetTypeRaw as ReactionTargetType;
   const reactionType = reactionTypeRaw as ReactionType;
-  if (targetType !== 'space_post' || reactionType !== 'bookmark') {
+  if (reactionType !== 'bookmark' || !PILOT_BOOKMARK_TARGET_TYPES.includes(targetType)) {
     return null;
   }
   const limitRaw = searchParams.get('limit');
@@ -119,6 +122,7 @@ function parseListMyReactionsInput(searchParams: URLSearchParams): ListMyReactio
   return {
     targetType,
     reactionType,
+    targetId: targetIdRaw?.trim() || null,
     limit,
   };
 }
@@ -406,7 +410,7 @@ export async function listMyReactions(
   if (!parsed) {
     return errorResponse(
       'VALIDATION_ERROR',
-      'Expected targetType=space_post and reactionType=bookmark (optional limit=1..50)',
+      'Expected targetType in [space_post, place, event, blog_post] and reactionType=bookmark (optional targetId, limit=1..50)',
       requestId,
       400
     );
@@ -417,6 +421,7 @@ export async function listMyReactions(
     userId: principal.userId,
     targetType: parsed.targetType,
     reactionType: parsed.reactionType,
+    targetId: parsed.targetId,
     limit: parsed.limit,
   });
 
@@ -456,7 +461,7 @@ export async function getReactionSummarySingle(
         targetType: item.target_type,
         targetId: item.target_id,
         counts: { like: item.like_count },
-        viewer: { liked: item.viewer_liked },
+        viewer: { liked: item.viewer_liked, likeReactionId: item.viewer_like_reaction_id },
       },
     },
     200
@@ -494,7 +499,7 @@ export async function getReactionSummaryBatch(
       targetType: summary.target_type,
       targetId: summary.target_id,
       counts: { like: summary.like_count },
-      viewer: { liked: summary.viewer_liked },
+      viewer: { liked: summary.viewer_liked, likeReactionId: summary.viewer_like_reaction_id },
     });
   }
 

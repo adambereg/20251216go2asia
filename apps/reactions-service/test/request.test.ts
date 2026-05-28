@@ -610,7 +610,101 @@ describe('reactions-service request', () => {
     expect(body.nextCursor).toBeNull();
   });
 
-  it('rejects bookmark writes for non-space targets', async () => {
+  it('lists my saved pilot content target by exact targetId', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'react_bookmark_place_1',
+          user_id: 'user_1',
+          target_type: 'place',
+          target_id: 'place_1',
+          reaction_type: 'bookmark',
+          status: 'active',
+          created_at: '2026-03-14T00:00:00.000Z',
+          updated_at: '2026-03-14T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request(
+        'https://reactions.example/v1/reactions/mine?targetType=place&reactionType=bookmark&targetId=place_1&limit=1',
+        {
+          method: 'GET',
+          headers: {
+            'X-Gateway-Auth': token,
+          },
+        }
+      ),
+      env
+    );
+
+    const body = await readJson<{ items: Array<{ reaction: { targetType: string; targetId: string } }>; nextCursor: null }>(
+      response
+    );
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.reaction.targetType).toBe('place');
+    expect(body.items[0]?.reaction.targetId).toBe('place_1');
+    expect(sqlOf(0)).toContain('target_id =');
+  });
+
+  it('creates bookmark for pilot content targets without touching like aggregates', async () => {
+    const env: Env = {
+      DATABASE_URL: 'postgres://example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+    const token = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_1' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'react_bookmark_event_1',
+            user_id: 'user_1',
+            target_type: 'event',
+            target_id: 'event_1',
+            reaction_type: 'bookmark',
+            status: 'active',
+            created_at: '2026-03-14T00:00:00.000Z',
+            updated_at: '2026-03-14T00:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://reactions.example/v1/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': token,
+        },
+        body: JSON.stringify({
+          targetType: 'event',
+          targetId: 'event_1',
+          reactionType: 'bookmark',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ applied: boolean; reaction: { targetType: string; reactionType: string } }>(response);
+    expect(response.status).toBe(200);
+    expect(body.applied).toBe(true);
+    expect(body.reaction.targetType).toBe('event');
+    expect(body.reaction.reactionType).toBe('bookmark');
+    expect(aggregateSqlCallCount()).toBe(0);
+    expect(activityProjectionSqlCallCount()).toBe(0);
+  });
+
+  it('rejects bookmark writes for non-pilot targets', async () => {
     const env: Env = {
       DATABASE_URL: 'postgres://example',
       SERVICE_JWT_SECRET: 'service-secret',
@@ -625,8 +719,8 @@ describe('reactions-service request', () => {
           'X-Gateway-Auth': token,
         },
         body: JSON.stringify({
-          targetType: 'event',
-          targetId: 'event_1',
+          targetType: 'listing',
+          targetId: 'listing_1',
           reactionType: 'bookmark',
         }),
       }),

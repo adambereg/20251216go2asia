@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { generated } from '@go2asia/sdk';
 import {
@@ -9,6 +10,7 @@ import {
   getProfileHref,
   resolveReferenceHref,
 } from './utils';
+import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from './repostPreview';
 
 type SpaceFeedCardProps = {
   item: generated.SpaceFeedItem;
@@ -55,6 +57,31 @@ export function SpaceFeedCard({
   const parsedDate = new Date(item.createdAt);
   const exactDate = Number.isNaN(parsedDate.getTime()) ? item.createdAt : parsedDate.toLocaleString('ru-RU');
   const shouldShowReason = showReason && !(showGroupSignal && item.post.groupId && item.reason === 'group_post');
+  const [hydratedPreview, setHydratedPreview] = useState<generated.SpaceResolvedRepostPreview | null>(
+    item.post.repost?.resolvedPreview ?? null
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const repost = item.post.repost;
+    setHydratedPreview(repost?.resolvedPreview ?? null);
+
+    if (!repost || repost.resolvedPreview?.title || !isPilotRepostTargetType(repost.targetType)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void hydratePilotRepostPreview(repost).then((preview) => {
+      if (!cancelled && preview?.title) {
+        setHydratedPreview(preview);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item.post.repost]);
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300">
@@ -129,15 +156,32 @@ export function SpaceFeedCard({
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Репост · {formatRepostTargetLabel(item.post.repost.targetType)}
           </div>
-          {item.post.repost.resolvedPreview?.title ? (
+          {hydratedPreview?.title ? (
             <div className="mt-2 rounded-md border border-slate-200 bg-white p-3">
-              <div className="font-medium text-slate-800">{item.post.repost.resolvedPreview.title}</div>
-              {item.post.repost.resolvedPreview.subtitle && (
-                <div className="mt-1 text-slate-600">{item.post.repost.resolvedPreview.subtitle}</div>
-              )}
+              <div className="flex gap-3">
+                {hydratedPreview.imageUrl ? (
+                  <div
+                    className="h-14 w-20 flex-shrink-0 rounded-md bg-cover bg-center"
+                    style={{ backgroundImage: `url(${hydratedPreview.imageUrl})` }}
+                    aria-label={hydratedPreview.title}
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <div className="line-clamp-2 font-medium text-slate-800">{hydratedPreview.title}</div>
+                  {hydratedPreview.subtitle ? (
+                    <div className="mt-1 line-clamp-2 text-slate-600">{hydratedPreview.subtitle}</div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : isPilotRepostTargetType(item.post.repost.targetType) ? (
+            <div className="mt-2 text-slate-600">
+              Репост связан с исходным материалом, но preview сейчас недоступен.
             </div>
           ) : (
-            <div className="mt-2 text-slate-600">Материал открыт в ленте как репост.</div>
+            <div className="mt-2 text-slate-600">
+              Репост связан с объектом типа «{formatRepostTargetLabel(item.post.repost.targetType)}».
+            </div>
           )}
           <div className="mt-3">
             {reference.href ? (
@@ -145,7 +189,7 @@ export function SpaceFeedCard({
                 href={reference.href}
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
               >
-                Открыть материал
+                {getRepostCtaLabel(item.post.repost.targetType)}
               </Link>
             ) : null}
           </div>

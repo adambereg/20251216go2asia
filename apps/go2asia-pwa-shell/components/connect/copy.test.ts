@@ -31,7 +31,7 @@ describe('connect copy helpers', () => {
   it('uses unified non-financial placeholders and bucket labels', () => {
     expect(CONNECT_FUTURE_BADGE_TEXT).toBe('Планируется');
     expect(CONNECT_POINTS_BUCKET_LABELS.locked).toBe('Points с условиями');
-    expect(CONNECT_POINTS_BUCKET_LABELS.unlockableEstimate).toBe('Оценка разблокировки');
+    expect(CONNECT_POINTS_BUCKET_LABELS.unlockableEstimate).toBe('Оценка разблокировки (projection)');
   });
 
   it('keeps active connect copy free from payout and token-wallet semantics', () => {

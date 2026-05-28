@@ -77,6 +77,7 @@ function downloadICS(event: Event) {
 }
 
 export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => {
+  // Legacy detail surface: canonical runtime interactions live in EventDetailsCanon.
   const [isSaved, setIsSaved] = useState(false);
 
   const heroUrl = resolveMediaUrl(event.heroMediaKey ?? null) ?? (event.cover ?? null);
@@ -120,7 +121,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
     } else {
       // Fallback: копирование в буфер обмена
       navigator.clipboard.writeText(window.location.href);
-      alert('Ссылка скопирована в буфер обмена');
+      alert('Ссылка скопирована в буфер обмена устройства. Это не репост в Space.');
     }
   };
 
@@ -261,11 +262,11 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, demoMode }) => 
               />
               <Button variant="secondary" size="sm" onClick={handleSave}>
                 <Heart className={`w-4 h-4 mr-1 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
-                {isSaved ? 'Сохранено' : 'Сохранить'}
+                {isSaved ? 'Сохранено локально' : 'Сохранить локально'}
               </Button>
               <Button variant="secondary" size="sm" onClick={handleShare}>
                 <Share2 className="w-4 h-4 mr-1" />
-                Поделиться
+                Поделиться ссылкой (устройство)
               </Button>
               <Button variant="secondary" size="sm" onClick={() => downloadICS(event)}>
                 <Download className="w-4 h-4 mr-1" />

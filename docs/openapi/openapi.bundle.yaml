@@ -764,6 +764,12 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Too many requests
+    SpaceRepostAlreadyExists:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SpaceRepostAlreadyExistsResponse"
+      description: Active repost for this target already exists for current author
     SpaceServiceAuthNotConfigured:
       content:
         application/json:
@@ -3280,6 +3286,10 @@ components:
           $ref: "#/components/schemas/ReactionTargetType"
         viewer:
           properties:
+            likeReactionId:
+              description: Active viewer like reaction id, when available.
+              nullable: true
+              type: string
             liked:
               type: boolean
           required:
@@ -6196,6 +6206,15 @@ components:
         - userId
         - displayName
       type: object
+    SpaceRepostAlreadyExistsResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - properties:
+            existingPostId:
+              type: string
+          required:
+            - existingPostId
+          type: object
     SpaceRepostTargetType:
       enum:
         - space_post
@@ -8356,6 +8375,9 @@ paths:
           schema:
             enum:
               - space_post
+              - place
+              - event
+              - blog_post
             type: string
         - in: query
           name: reactionType
@@ -8363,6 +8385,12 @@ paths:
           schema:
             enum:
               - bookmark
+            type: string
+        - description: Optional exact target filter for single-object bookmark state.
+          in: query
+          name: targetId
+          required: false
+          schema:
             type: string
         - in: query
           name: limit
@@ -8389,7 +8417,7 @@ paths:
           $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
-      summary: List my saved reactions (space posts bookmark baseline)
+      summary: List my saved reactions (bounded bookmark targets)
       tags:
         - reactions
   /v1/reactions/summary/{targetType}/{targetId}:
@@ -9871,6 +9899,8 @@ paths:
           $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":
@@ -9923,6 +9953,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":

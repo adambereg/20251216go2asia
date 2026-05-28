@@ -13,6 +13,10 @@ export type ListMyReactionsParams = {
   targetType: ListMyReactionsTargetType;
   reactionType: ListMyReactionsReactionType;
   /**
+   * Optional exact target filter for single-object bookmark state.
+   */
+  targetId?: string;
+  /**
    * @minimum 1
    * @maximum 50
    */

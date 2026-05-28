@@ -416,8 +416,8 @@ export function RfMyVouchersView() {
         <Link href="/rf" className="font-medium text-blue-700 hover:text-blue-800">
           К каталогу мест
         </Link>
-        <Link href="/connect/activity" className="font-medium text-emerald-700 hover:text-emerald-800">
-          К Connect activity
+        <Link href="/connect" className="font-medium text-emerald-700 hover:text-emerald-800">
+          К Connect projection (ваучеры)
         </Link>
       </div>
     </div>

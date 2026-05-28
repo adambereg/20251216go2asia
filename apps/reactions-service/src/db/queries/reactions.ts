@@ -23,6 +23,7 @@ export type ReactionSummaryRow = {
   target_id: string;
   like_count: number;
   viewer_liked: boolean;
+  viewer_like_reaction_id: string | null;
 };
 
 export type ReactionIdempotencyRow = {
@@ -163,7 +164,20 @@ export async function getReactionSummary(
             AND r.status = 'active'
         ) THEN true
         ELSE false
-      END AS viewer_liked
+      END AS viewer_liked,
+      CASE
+        WHEN ${input.viewerUserId}::text IS NULL THEN NULL
+        ELSE (
+          SELECT r.id
+          FROM reactions r
+          WHERE r.user_id = ${input.viewerUserId}
+            AND r.target_type = ${input.targetType}
+            AND r.target_id = ${input.targetId}
+            AND r.reaction_type = 'like'
+            AND r.status = 'active'
+          LIMIT 1
+        )
+      END AS viewer_like_reaction_id
     FROM (SELECT 1) seed
     LEFT JOIN reaction_aggregates ra
       ON ra.target_type = ${input.targetType}
@@ -177,6 +191,7 @@ export async function getReactionSummary(
       target_id: input.targetId,
       like_count: 0,
       viewer_liked: false,
+      viewer_like_reaction_id: null,
     }
   );
 }
@@ -227,6 +242,7 @@ export async function listActiveReactionsByUser(
     userId: string;
     targetType: ReactionTargetType;
     reactionType: ReactionType;
+    targetId?: string | null;
     limit: number;
   }
 ): Promise<ReactionRow[]> {
@@ -236,6 +252,7 @@ export async function listActiveReactionsByUser(
     WHERE user_id = ${input.userId}
       AND target_type = ${input.targetType}
       AND reaction_type = ${input.reactionType}
+      AND (${input.targetId ?? null}::text IS NULL OR target_id = ${input.targetId ?? null})
       AND status = 'active'
     ORDER BY created_at DESC, id DESC
     LIMIT ${input.limit}

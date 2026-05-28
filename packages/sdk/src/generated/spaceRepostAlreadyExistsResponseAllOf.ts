@@ -7,11 +7,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ReactionSummaryItemViewer = {
-  /**
-   * Active viewer like reaction id, when available.
-   * @nullable
-   */
-  likeReactionId?: string | null;
-  liked: boolean;
+export type SpaceRepostAlreadyExistsResponseAllOf = {
+  existingPostId: string;
 };

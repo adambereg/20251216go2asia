@@ -37,7 +37,7 @@ export function AddToMyVouchersButton({
       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
       title={
         !owner.isReady
-          ? 'Проверяем текущий аккаунт перед сохранением'
+          ? 'Проверяем текущий аккаунт перед локальной заметкой'
           : exists
           ? 'Уже сохранено локально в этом браузере'
           : 'Сохранить оффер для планирования локально в этом браузере'

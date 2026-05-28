@@ -67,6 +67,7 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
   const PrivacyIcon = PRIVACY_ICONS[post.privacy];
   const timeAgo = formatTimeAgo(post.createdAt);
   const roleColors = ROLE_COLORS[post.author.role];
+  const hasRuntimeHandlers = Boolean(onLike || onSave || onShare || onComment);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -259,9 +260,11 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
       <div className="flex items-center justify-around pt-2 -mx-2">
         <button
           onClick={handleLike}
+          disabled={!onLike}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
             isLiked ? 'text-red-600' : 'text-slate-600 hover:bg-slate-50'
           }`}
+          title={onLike ? 'Нравится' : 'Preview-only: действие не подключено'}
         >
           <Heart className="w-5 h-5" fill={isLiked ? 'currentColor' : 'none'} />
           <span className="text-sm font-medium">Нравится</span>
@@ -269,7 +272,9 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
 
         <button
           onClick={() => onComment?.(post.id)}
+          disabled={!onComment}
           className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+          title={onComment ? 'Комментировать' : 'Preview-only: действие не подключено'}
         >
           <MessageSquare className="w-5 h-5" />
           <span className="text-sm font-medium">Комментировать</span>
@@ -277,7 +282,9 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
 
         <button
           onClick={() => onShare?.(post.id)}
+          disabled={!onShare}
           className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+          title={onShare ? 'Поделиться' : 'Preview-only: действие не подключено'}
         >
           <Share2 className="w-5 h-5" />
           <span className="text-sm font-medium hidden sm:inline">Поделиться</span>
@@ -285,14 +292,19 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
 
         <button
           onClick={handleSave}
+          disabled={!onSave}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
             isSaved ? 'text-sky-600' : 'text-slate-600 hover:bg-slate-50'
           }`}
+          title={onSave ? 'Сохранить' : 'Preview-only: действие не подключено'}
         >
           <Bookmark className="w-5 h-5" fill={isSaved ? 'currentColor' : 'none'} />
           <span className="text-sm font-medium hidden sm:inline">Сохранить</span>
         </button>
       </div>
+      {!hasRuntimeHandlers ? (
+        <p className="mt-2 text-center text-[11px] text-slate-500">Preview-only карточка: действия не подключены к runtime.</p>
+      ) : null}
     </article>
   );
 }

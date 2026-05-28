@@ -6,7 +6,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { MapPin, Clock, CheckCircle2, Star, ShieldCheck } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Quest, QuestProgress } from '@/components/quest/types';
 import { QUEST_TYPE_LABELS, DIFFICULTY_LABELS } from '@/components/quest/types';
 /**
@@ -129,13 +129,12 @@ export function CompletedQuestCard({ quest, progress }: CompletedQuestCardProps)
             >
               Открыть runtime Quest
             </button>
-            <button
-              onClick={() => router.push(`/quest/${quest.id}?review=true`)}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            <span
+              className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-100 py-2 px-4 font-semibold text-slate-500"
+              aria-disabled="true"
             >
-              <Star className="w-4 h-4" />
-              Оставить отзыв
-            </button>
+              Отзыв о квесте — позже
+            </span>
           </div>
         </div>
       </div>

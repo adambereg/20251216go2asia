@@ -6,12 +6,8 @@
 
  * OpenAPI spec version: 0.1.0
  */
+import type { ErrorResponse } from "./errorResponse";
+import type { SpaceRepostAlreadyExistsResponseAllOf } from "./spaceRepostAlreadyExistsResponseAllOf";
 
-export type ReactionSummaryItemViewer = {
-  /**
-   * Active viewer like reaction id, when available.
-   * @nullable
-   */
-  likeReactionId?: string | null;
-  liked: boolean;
-};
+export type SpaceRepostAlreadyExistsResponse = ErrorResponse &
+  SpaceRepostAlreadyExistsResponseAllOf;

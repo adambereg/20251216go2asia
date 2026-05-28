@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Избранное | Russian Friendly | Go2Asia',
-  description: 'Сохранённые партнёры и офферы RF Asia',
+  description: 'Локально сохранённые партнёры и офферы RF Asia в текущем браузере',
 };
 
 export default async function RfFavoritesPage() {

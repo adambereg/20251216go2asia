@@ -13,4 +13,7 @@ export type ListMyReactionsTargetType =
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListMyReactionsTargetType = {
   space_post: "space_post",
+  place: "place",
+  event: "event",
+  blog_post: "blog_post",
 } as const;

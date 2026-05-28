@@ -8,5 +8,10 @@
  */
 
 export type ReactionSummaryItemViewer = {
+  /**
+   * Active viewer like reaction id, when available.
+   * @nullable
+   */
+  likeReactionId?: string | null;
   liked: boolean;
 };

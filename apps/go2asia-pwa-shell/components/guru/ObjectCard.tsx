@@ -356,7 +356,7 @@ const QuestDetails: React.FC<{ quest: QuestObject }> = ({ quest }) => (
       {quest.isNew && <Badge variant="event">Новый</Badge>}
       {quest.isTrending && <Badge variant="rf">🔥 Популярный</Badge>}
       {quest.hasRewards && (
-        <span className="text-xs text-amber-600">{quest.rewards}</span>
+        <span className="text-xs text-amber-600">{quest.rewards} (preview Quest)</span>
       )}
     </div>
     <p className="text-xs text-slate-500">
@@ -529,14 +529,23 @@ export const ObjectCard: React.FC<ObjectCardProps> = ({
           >
             <Navigation className="w-4 h-4" />
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleSave}
-            title="Сохранить"
-          >
-            <Heart className="w-4 h-4" />
-          </Button>
+          {onSave ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSave}
+              title="Сохранить"
+            >
+              <Heart className="w-4 h-4" />
+            </Button>
+          ) : (
+            <span
+              className="inline-flex h-9 items-center rounded-md border border-slate-200 px-3 text-xs text-slate-500"
+              aria-label="Сохранение не подключено"
+            >
+              Сохранение: позже
+            </span>
+          )}
         </div>
       )}
     </div>

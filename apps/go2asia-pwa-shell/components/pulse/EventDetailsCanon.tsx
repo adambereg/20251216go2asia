@@ -7,6 +7,7 @@ import { Badge, Card, CardContent } from '@go2asia/ui';
 import { resolveMediaUrl } from '@go2asia/sdk/media';
 import { ImageLightbox } from '@/modules/atlas/components/ImageLightbox';
 import { SectionContentRenderer } from '@/modules/atlas/components/SectionContentRenderer';
+import { ContentActionRow } from '@/components/interaction/ContentActionRow';
 import { getCategoryLabel } from './category';
 import { EventRegisterButton } from './EventRegisterButton';
 
@@ -330,6 +331,8 @@ export function EventDetailsCanon({ entity }: { entity: PulseEventEntityDtoLike 
                 </div>
               </CardContent>
             </Card>
+
+            <ContentActionRow targetType="event" targetId={entity.id} title={entity.title} />
           </div>
         </div>
       </div>

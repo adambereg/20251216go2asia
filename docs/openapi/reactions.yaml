@@ -188,7 +188,7 @@ paths:
     get:
       tags: [reactions]
       operationId: listMyReactions
-      summary: List my saved reactions (space posts bookmark baseline)
+      summary: List my saved reactions (bounded bookmark targets)
       security:
         - GatewayAuth: []
       parameters:
@@ -199,13 +199,19 @@ paths:
           required: true
           schema:
             type: string
-            enum: [space_post]
+            enum: [space_post, place, event, blog_post]
         - name: reactionType
           in: query
           required: true
           schema:
             type: string
             enum: [bookmark]
+        - name: targetId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional exact target filter for single-object bookmark state.
         - name: limit
           in: query
           required: false
@@ -471,6 +477,10 @@ components:
           properties:
             liked:
               type: boolean
+            likeReactionId:
+              type: string
+              nullable: true
+              description: Active viewer like reaction id, when available.
 
     ReactionSummaryResponse:
       type: object

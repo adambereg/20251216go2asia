@@ -25,6 +25,7 @@ import {
   upsertActivityProjectionRow,
   upsertPostMedia,
   deletePostMedia,
+  findActiveRepostByAuthorAndTarget,
   type SpaceActivityRow,
   type SpaceGroupRow,
   type SpaceMembershipRow,
@@ -57,6 +58,7 @@ function toDisplayRoleLabel(platformRole: GatewayPrincipal['platformRole']): str
 }
 
 const REPOST_TARGET_TYPES = new Set(['space_post', 'blog_post', 'place', 'event', 'partner', 'listing', 'quest']);
+const REPOST_DEDUPE_TARGET_TYPES = new Set(['space_post', 'blog_post', 'place', 'event']);
 
 function toIso(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -395,6 +397,26 @@ export async function createPost(
   }
 
   await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));
+
+  if (postType === 'repost' && repostTargetType && repostTargetId && REPOST_DEDUPE_TARGET_TYPES.has(repostTargetType)) {
+    const existingRepost = await findActiveRepostByAuthorAndTarget(db, principal.userId, repostTargetType, repostTargetId);
+    if (existingRepost) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'REPOST_ALREADY_EXISTS',
+            message: 'Active repost for this target already exists for the current author',
+          },
+          requestId,
+          existingPostId: existingRepost.id,
+        }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
 
   const postId = `spost_${crypto.randomUUID()}`;
   await insertSpacePost(db, {
