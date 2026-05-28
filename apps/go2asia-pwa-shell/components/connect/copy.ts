@@ -22,7 +22,7 @@ export const CONNECT_POINTS_BUCKET_LABELS = {
   available: 'Points с внутренней доступностью',
   locked: 'Points с условиями',
   network: 'Связанные с приглашениями',
-  unlockableEstimate: 'Оценка разблокировки',
+  unlockableEstimate: 'Оценка разблокировки (projection)',
 } as const;
 
 const CONNECT_LEDGER_ACTION_LABELS: Record<string, string> = {

@@ -17,7 +17,7 @@ export function QuestCTA({ quest }: QuestCTAProps) {
   const router = useRouter();
 
   const handleStartQuest = () => {
-    // TODO: Сохранить квест в активные и кэшировать
+    // Runtime flow starts in Quest service; no local save side effects here.
     // Переход на экран прохождения
     router.push(`/quest/${quest.id}/run`);
   };
@@ -33,7 +33,7 @@ export function QuestCTA({ quest }: QuestCTAProps) {
       </button>
       
       <p className="text-xs text-slate-500 text-center mt-3">
-        Квест будет сохранён локально для офлайн-прохождения
+        Переход открывает runtime-прохождение Quest. Локальное офлайн-сохранение здесь не выполняется.
       </p>
     </div>
   );

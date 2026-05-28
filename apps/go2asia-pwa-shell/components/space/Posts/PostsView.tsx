@@ -19,6 +19,7 @@ const TABS: { id: PostsTab; label: string }[] = [
 ];
 
 export function PostsView() {
+  // Legacy mock posts surface. Runtime posts list lives under public space routes.
   const [activeTab, setActiveTab] = useState<PostsTab>('all');
 
   const getFilteredPosts = (): Post[] => {

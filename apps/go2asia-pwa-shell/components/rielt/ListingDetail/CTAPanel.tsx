@@ -125,7 +125,7 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
     } else {
       // Fallback: копирование в буфер обмена
       navigator.clipboard.writeText(window.location.href);
-      alert('Ссылка скопирована в буфер обмена');
+      alert('Ссылка на listing preview скопирована. Это не репост в Space.');
     }
   };
 
@@ -284,9 +284,12 @@ export function CTAPanel({ listing, selectedDates, onDatesChange }: CTAPanelProp
             className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Share2 className="w-4 h-4" />
-            Поделиться
+            Поделиться ссылкой (устройство)
           </button>
         </div>
+        <p className="text-[11px] text-slate-500">
+          Локальные действия не сохраняют объект в Space и не создают обсуждение.
+        </p>
       </div>
 
       {listing.presentation?.trustLabel ? (

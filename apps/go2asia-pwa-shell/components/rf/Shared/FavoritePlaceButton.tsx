@@ -25,14 +25,14 @@ export function FavoritePlaceButton({ partnerId, label = 'Место' }: { partn
       aria-pressed={active}
       title={
         !owner.isReady
-          ? 'Проверяем текущий аккаунт перед сохранением'
+          ? 'Проверяем текущий аккаунт перед добавлением в избранное (локально)'
           : active
-            ? 'Убрать из избранного'
-            : `В избранное: ${label}`
+            ? 'Убрать из избранного (локально)'
+            : `В избранное (локально): ${label}`
       }
     >
       <Heart className={`h-3.5 w-3.5 ${active ? 'fill-current' : ''}`} strokeWidth={2} />
-      {active ? 'В избранном' : 'В избранное'}
+      {active ? 'В избранном (локально)' : 'В избранное (локально)'}
     </button>
   );
 }

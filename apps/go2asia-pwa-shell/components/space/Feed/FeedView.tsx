@@ -48,6 +48,7 @@ const EMPTY_STATES: Record<FeedFilter, { icon: typeof MessageSquare; title: stri
 };
 
 export function FeedView({ posts, currentUser, isLoading = false }: FeedViewProps) {
+  // Legacy mock feed surface. Runtime feed is served by components/space/runtime.
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('my');
   const [localPosts, setLocalPosts] = useState<Post[]>(posts);
 

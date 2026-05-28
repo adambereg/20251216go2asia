@@ -111,7 +111,7 @@ function getLifecycleCopy(progress: QuestProgressResponse | null): { tone: strin
   if (progress.status === 'pending_review') {
     return {
       tone: 'border-amber-200 bg-amber-50 text-amber-800',
-      text: 'Один из шагов отправлен на проверку. Пока review не завершится, следующий шаг будет недоступен. Статус участия и Points затем отражаются в Connect activity projection.',
+      text: 'Один из шагов отправлен на проверку. Пока проверка шага (manual review) не завершится, следующий шаг будет недоступен. Это не публичный отзыв о квесте. Статус участия и Points затем отражаются в Connect activity projection.',
     };
   }
 
@@ -154,7 +154,7 @@ function getProofTypeLabel(proofType: QuestProofType): string {
   if (proofType === 'geo') return 'Гео-подтверждение';
   if (proofType === 'qr') return 'QR-код';
   if (proofType === 'photo') return 'Фото-подтверждение';
-  if (proofType === 'space_post') return 'Публичное действие';
+  if (proofType === 'space_post') return 'Ссылка на пост в Space (reference-only)';
   return 'Текстовое подтверждение';
 }
 
@@ -217,7 +217,7 @@ function buildProofPayload(proofType: QuestProofType, draft: ProofDraft): { proo
   }
 
   if (proofType === 'space_post') {
-    if (!draft.postId.trim()) throw new Error('Укажите reference или post ID публичного действия.');
+    if (!draft.postId.trim()) throw new Error('Укажите ID или reference существующего поста в Space.');
     return { proofType, proofData: { postId: draft.postId.trim() } };
   }
 
@@ -684,7 +684,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
                           />
                         </div>
                         <p className="text-xs text-slate-500">
-                          Укажите ID/reference уже опубликованного действия (например `post_...`).
+                          Укажите ID/reference уже существующего поста (например `post_...`). Quest не создаёт пост и не делает репост.
                         </p>
                       </div>
                     ) : null}
@@ -762,7 +762,7 @@ export function QuestRunnerClient({ quest: questDetail }: QuestRunnerClientProps
             <p className="text-sm text-slate-600">Формат: {getProofTypeLabel(lastSubmission.proofType)}</p>
             <p className="text-sm text-slate-600">Отправлено: {new Date(lastSubmission.createdAt).toLocaleString()}</p>
             <p className="text-sm text-slate-600">
-              Проверено: {lastSubmission.reviewedAt ? new Date(lastSubmission.reviewedAt).toLocaleString() : 'ещё нет'}
+              Проверка шага: {lastSubmission.reviewedAt ? new Date(lastSubmission.reviewedAt).toLocaleString() : 'ещё нет'}
             </p>
             <p className="mt-2 text-xs text-slate-600">
               Этот статус относится к отправке шага. Внутренние Points и badge projection отражаются позже в Connect.

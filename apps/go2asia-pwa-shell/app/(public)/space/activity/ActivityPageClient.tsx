@@ -522,7 +522,7 @@ export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClient
           <h2 className="text-sm font-semibold text-amber-900">Что здесь показывается</h2>
           <p className="mt-1 text-xs text-amber-800">
             Здесь показывается только часть недавних действий. Раздел не заменяет уведомления и не дублирует
-            ленту.
+            ленту. Это не Connect ledger и не экономика.
           </p>
         </footer>
       </section>

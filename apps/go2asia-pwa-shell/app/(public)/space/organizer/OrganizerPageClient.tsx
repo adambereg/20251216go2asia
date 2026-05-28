@@ -342,7 +342,7 @@ export function OrganizerPageClient() {
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Saved</div>
-                  <div className="mt-2 text-sm font-medium text-slate-900">Глобальный источник сохранённого</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">Bounded saved bridge для поездок</div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-600">Материалы можно подтягивать в поездки, не смешивая их с trip truth.</p>
                   {savedHint ? <span className="mt-2 block text-xs leading-relaxed text-slate-500">{savedHint}</span> : null}
                 </div>
