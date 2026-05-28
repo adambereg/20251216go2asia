@@ -29,6 +29,18 @@ function getErrorStatus(error: unknown): number | null {
   return typeof status === 'number' ? status : null;
 }
 
+function getErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const code = (error as { error?: { code?: unknown } }).error?.code;
+  return typeof code === 'string' ? code : null;
+}
+
+function getExistingPostId(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const existingPostId = (error as { existingPostId?: unknown }).existingPostId;
+  return typeof existingPostId === 'string' ? existingPostId : null;
+}
+
 function createIdempotencyKey(prefix: string, targetType: PilotTargetType, targetId: string) {
   const suffix =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -78,7 +90,7 @@ function ActionButton({
 }
 
 export function ContentActionRow({ targetType, targetId, title, className }: ContentActionRowProps) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -88,6 +100,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
   const [likeReactionId, setLikeReactionId] = useState<string | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkReactionId, setBookmarkReactionId] = useState<string | null>(null);
+  const [sharedPostId, setSharedPostId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<'like' | 'bookmark' | 'share' | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
@@ -121,9 +134,26 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         const reaction = mine.items[0]?.reaction ?? null;
         setBookmarked(Boolean(reaction));
         setBookmarkReactionId(reaction?.id ?? null);
+
+        if (user?.id) {
+          const profileFeed = await customInstance<generated.SpaceFeedResponse>(
+            { method: 'GET' },
+            `/v1/space/feed/profile/${encodeURIComponent(user.id)}?limit=50`
+          );
+          const existingRepost = profileFeed.items.find(
+            (feedItem) =>
+              feedItem.post.postType === 'repost' &&
+              feedItem.post.repost?.targetType === targetType &&
+              feedItem.post.repost?.targetId === targetId
+          );
+          setSharedPostId(existingRepost?.post.id ?? null);
+        } else {
+          setSharedPostId(null);
+        }
       } else {
         setBookmarked(false);
         setBookmarkReactionId(null);
+        setSharedPostId(null);
       }
     } catch (error) {
       setFeedback({
@@ -133,7 +163,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
     } finally {
       setIsLoading(false);
     }
-  }, [isLoaded, isSignedIn, targetId, targetType]);
+  }, [isLoaded, isSignedIn, targetId, targetType, user?.id]);
 
   useEffect(() => {
     void loadState();
@@ -244,6 +274,14 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
 
   const shareToSpace = useCallback(async () => {
     if (!requireAuth()) return;
+    if (sharedPostId) {
+      setFeedback({
+        tone: 'info',
+        message: `Материал "${title}" уже опубликован в Space.`,
+        href: `/space/feed?highlight=${encodeURIComponent(sharedPostId)}`,
+      });
+      return;
+    }
     setPendingAction('share');
     setFeedback(null);
     try {
@@ -260,20 +298,33 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         },
         '/v1/space/posts'
       );
+      setSharedPostId(response.id);
       setFeedback({
         tone: 'success',
         message: `Материал "${title}" опубликован в Space как репост.`,
         href: `/space/feed?highlight=${encodeURIComponent(response.id)}`,
       });
     } catch (error) {
+      const status = getErrorStatus(error);
+      const code = getErrorCode(error);
+      if (status === 409 || code === 'REPOST_ALREADY_EXISTS') {
+        const existingPostId = getExistingPostId(error);
+        setSharedPostId(existingPostId);
+        setFeedback({
+          tone: 'info',
+          message: `Материал "${title}" уже опубликован в Space.`,
+          href: existingPostId ? `/space/feed?highlight=${encodeURIComponent(existingPostId)}` : '/space/feed',
+        });
+        return;
+      }
       setFeedback({
         tone: 'error',
-        message: `Не удалось поделиться в Space (${getErrorStatus(error) ?? 'unknown'}).`,
+        message: `Не удалось поделиться в Space (${status ?? 'unknown'}).`,
       });
     } finally {
       setPendingAction(null);
     }
-  }, [requireAuth, targetId, targetType, title]);
+  }, [requireAuth, sharedPostId, targetId, targetType, title]);
 
   return (
     <section className={className}>
@@ -293,11 +344,18 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
           </ActionButton>
           <ActionButton tone="share" disabled={isLoading || pendingAction !== null} onClick={shareToSpace}>
             <Share2 className="h-4 w-4" />
-            <span>{pendingAction === 'share' ? 'Публикуем...' : 'Поделиться в Space'}</span>
+            <span>
+              {pendingAction === 'share'
+                ? 'Публикуем...'
+                : sharedPostId
+                  ? 'Уже в Space'
+                  : 'Поделиться в Space'}
+            </span>
           </ActionButton>
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          Like и Save пишет Reactions. Share-to-Space создаёт Space repost. Это pilot только для place/event/blog_post.
+          Like и Save пишет Reactions. Share-to-Space создаёт Space repost c dedupe guard. Это pilot только для
+          place/event/blog_post.
         </p>
         {feedback ? (
           <div

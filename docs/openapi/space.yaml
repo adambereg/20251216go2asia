@@ -96,6 +96,8 @@ paths:
           $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "503":
           $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
@@ -122,6 +124,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "503":
           $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
@@ -610,6 +614,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    SpaceRepostAlreadyExists:
+      description: Active repost for this target already exists for current author
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SpaceRepostAlreadyExistsResponse"
     SpaceServiceAuthNotConfigured:
       description: Service auth is not configured
       content:
@@ -678,6 +688,15 @@ components:
         requestId:
           type: string
           nullable: true
+
+    SpaceRepostAlreadyExistsResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [existingPostId]
+          properties:
+            existingPostId:
+              type: string
 
     SpacePostType:
       type: string

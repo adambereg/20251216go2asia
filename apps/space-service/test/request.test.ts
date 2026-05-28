@@ -930,6 +930,130 @@ describe('space-service v1', () => {
     expect(body.error.message).toContain('repost target fields are only allowed for repost posts');
   });
 
+  it('returns conflict when duplicate object-bound repost already exists for author', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_existing_event_repost',
+            author_id: 'user_test_1',
+            author_display_name: 'User Test',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'repost',
+            visibility: 'public',
+            text: null,
+            repost_target_type: 'event',
+            repost_target_id: 'evt_1',
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'public',
+          repostTargetType: 'event',
+          repostTargetId: 'evt_1',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string }; existingPostId: string }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('REPOST_ALREADY_EXISTS');
+    expect(body.existingPostId).toBe('spost_existing_event_repost');
+    expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('INSERT INTO space_post'))).toBe(false);
+  });
+
+  it('returns conflict for convenience repost when active repost already exists', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_target',
+            author_id: 'user_owner',
+            author_display_name: 'Owner',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'post',
+            visibility: 'public',
+            text: 'Target',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_existing_space_post_repost',
+            author_id: 'user_test_1',
+            author_display_name: 'User Test',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'repost',
+            visibility: 'public',
+            text: null,
+            repost_target_type: 'space_post',
+            repost_target_id: 'spost_target',
+            status: 'active',
+            created_at: '2026-03-14T10:01:00.000Z',
+            updated_at: '2026-03-14T10:01:00.000Z',
+            published_at: '2026-03-14T10:01:00.000Z',
+          },
+        ],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_target/repost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string }; existingPostId: string }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('REPOST_ALREADY_EXISTS');
+    expect(body.existingPostId).toBe('spost_existing_space_post_repost');
+  });
+
   it('filters non-group visibility rows from group feed queries', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

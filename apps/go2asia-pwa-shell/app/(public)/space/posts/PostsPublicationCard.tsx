@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { generated } from '@go2asia/sdk';
 import { resolveReferenceHref } from '@/components/space/runtime/utils';
+import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
 
 type PostsPublicationCardProps = {
   item: generated.SpaceFeedItem;
@@ -96,17 +98,11 @@ function getReferenceHref(
   if (!repost) return { href: null, label: null };
   const resolved = resolveReferenceHref(repost.targetType, repost.targetId);
   if (!resolved.href) return { href: null, label: null };
-  if (repost.targetType === 'event') return { href: resolved.href, label: 'Открыть событие' };
-  if (repost.targetType === 'place') return { href: resolved.href, label: 'Открыть место' };
-  if (repost.targetType === 'listing') return { href: resolved.href, label: 'Открыть объявление' };
-  if (repost.targetType === 'quest') return { href: resolved.href, label: 'Открыть квест' };
-  if (repost.targetType === 'partner') return { href: resolved.href, label: 'Открыть партнёра' };
-  if (repost.targetType === 'blog_post') return { href: resolved.href, label: 'Открыть блог' };
-  return { href: resolved.href, label: 'Открыть источник' };
+  return { href: resolved.href, label: getRepostCtaLabel(repost.targetType) };
 }
 
-function getPublicationTitle(item: generated.SpaceFeedItem): string {
-  const previewTitle = item.post.repost?.resolvedPreview?.title;
+function getPublicationTitle(item: generated.SpaceFeedItem, preview: generated.SpaceResolvedRepostPreview | null): string {
+  const previewTitle = preview?.title ?? item.post.repost?.resolvedPreview?.title;
   if (previewTitle) return previewTitle;
 
   if (item.post.postType === 'repost' && item.post.repost) {
@@ -129,14 +125,20 @@ function getPublicationTitle(item: generated.SpaceFeedItem): string {
   return 'Публикация без текста';
 }
 
-function getPublicationExcerpt(item: generated.SpaceFeedItem, title: string): string | null {
+function getPublicationExcerpt(
+  item: generated.SpaceFeedItem,
+  title: string,
+  preview: generated.SpaceResolvedRepostPreview | null
+): string | null {
+  if (preview?.subtitle) return preview.subtitle;
+
   if (item.post.text) {
     const trimmed = item.post.text.trim();
     if (trimmed !== title) return truncate(trimmed, 220);
   }
 
   if (item.post.repost) {
-    return 'Материал сохранён как репост и связан с исходной публикацией или объектом.';
+    return `Репост связан с объектом типа «${formatRepostTarget(item.post.repost.targetType)}».`;
   }
 
   if (item.post.media.length > 0) {
@@ -150,8 +152,28 @@ export function PostsPublicationCard({
   item,
   isOwnerView,
 }: PostsPublicationCardProps) {
-  const title = getPublicationTitle(item);
-  const excerpt = getPublicationExcerpt(item, title);
+  const [hydratedPreview, setHydratedPreview] = useState<generated.SpaceResolvedRepostPreview | null>(
+    item.post.repost?.resolvedPreview ?? null
+  );
+  useEffect(() => {
+    let cancelled = false;
+    const repost = item.post.repost;
+    setHydratedPreview(repost?.resolvedPreview ?? null);
+    if (!repost || repost.resolvedPreview?.title || !isPilotRepostTargetType(repost.targetType)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    void hydratePilotRepostPreview(repost).then((preview) => {
+      if (!cancelled && preview?.title) setHydratedPreview(preview);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.post.repost]);
+
+  const title = getPublicationTitle(item, hydratedPreview);
+  const excerpt = getPublicationExcerpt(item, title, hydratedPreview);
   const exactTime = formatExactTime(item.createdAt);
   const relativeTime = formatRelativeTime(item.createdAt);
   const reference = getReferenceHref(item.post.repost);

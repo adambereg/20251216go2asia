@@ -207,6 +207,43 @@ export async function getPostById(db: DbExecutor, postId: string): Promise<Space
   return rowsOf<SpacePostRow>(result)[0] ?? null;
 }
 
+export async function findActiveRepostByAuthorAndTarget(
+  db: DbExecutor,
+  authorId: string,
+  repostTargetType: string,
+  repostTargetId: string
+): Promise<SpacePostRow | null> {
+  const result = await db.execute(sql`
+    SELECT
+      sp.id,
+      sp.author_id,
+      spp.display_name AS author_display_name,
+      spp.avatar_url AS author_avatar_url,
+      spp.role_label AS author_role_label,
+      sp.group_id,
+      sp.post_type,
+      sp.visibility,
+      sp.text,
+      sp.repost_target_type,
+      sp.repost_target_id,
+      sp.status,
+      sp.created_at,
+      sp.updated_at,
+      sp.published_at
+    FROM space_post sp
+    LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
+    WHERE sp.author_id = ${authorId}
+      AND sp.post_type = 'repost'
+      AND sp.status = 'active'
+      AND sp.deleted_at IS NULL
+      AND sp.repost_target_type = ${repostTargetType}
+      AND sp.repost_target_id = ${repostTargetId}
+    ORDER BY sp.published_at DESC, sp.id DESC
+    LIMIT 1
+  `);
+  return rowsOf<SpacePostRow>(result)[0] ?? null;
+}
+
 export async function softDeletePost(db: DbExecutor, postId: string, authorId: string): Promise<boolean> {
   const result = await db.execute(sql`
     UPDATE space_post
