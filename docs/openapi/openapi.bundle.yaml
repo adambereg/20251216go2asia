@@ -764,6 +764,12 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
       description: Too many requests
+    SpaceRepostAlreadyExists:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SpaceRepostAlreadyExistsResponse"
+      description: Active repost for this target already exists for current author
     SpaceServiceAuthNotConfigured:
       content:
         application/json:
@@ -6200,6 +6206,15 @@ components:
         - userId
         - displayName
       type: object
+    SpaceRepostAlreadyExistsResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - properties:
+            existingPostId:
+              type: string
+          required:
+            - existingPostId
+          type: object
     SpaceRepostTargetType:
       enum:
         - space_post
@@ -9884,6 +9899,8 @@ paths:
           $ref: "#/components/responses/SpaceValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":
@@ -9936,6 +9953,8 @@ paths:
           $ref: "#/components/responses/SpaceForbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/SpaceRepostAlreadyExists"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":

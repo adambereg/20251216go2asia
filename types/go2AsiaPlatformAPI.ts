@@ -188,6 +188,7 @@ import type {
   SpacePostResponse,
   SpaceProfileResponse,
   SpaceRateLimitedResponse,
+  SpaceRepostAlreadyExistsResponse,
   SpaceServiceAuthNotConfiguredResponse,
   SpaceValidationErrorResponse,
   SpendPointsRequest,
@@ -6724,6 +6725,11 @@ export type createSpacePostResponse401 = {
   status: 401;
 };
 
+export type createSpacePostResponse409 = {
+  data: SpaceRepostAlreadyExistsResponse;
+  status: 409;
+};
+
 export type createSpacePostResponse500 = {
   data: InternalErrorResponse;
   status: 500;
@@ -6740,6 +6746,7 @@ export type createSpacePostResponseSuccess = createSpacePostResponse201 & {
 export type createSpacePostResponseError = (
   | createSpacePostResponse400
   | createSpacePostResponse401
+  | createSpacePostResponse409
   | createSpacePostResponse500
   | createSpacePostResponse503
 ) & {
@@ -6849,6 +6856,11 @@ export type getSpacePostResponse404 = {
   status: 404;
 };
 
+export type getSpacePostResponse409 = {
+  data: SpaceRepostAlreadyExistsResponse;
+  status: 409;
+};
+
 export type getSpacePostResponse500 = {
   data: InternalErrorResponse;
   status: 500;
@@ -6866,6 +6878,7 @@ export type getSpacePostResponseError = (
   | getSpacePostResponse401
   | getSpacePostResponse403
   | getSpacePostResponse404
+  | getSpacePostResponse409
   | getSpacePostResponse500
   | getSpacePostResponse503
 ) & {

@@ -513,6 +513,8 @@ export * from "./spacePostStatus";
 export * from "./spacePostType";
 export * from "./spaceProfileResponse";
 export * from "./spaceRateLimitedResponse";
+export * from "./spaceRepostAlreadyExistsResponse";
+export * from "./spaceRepostAlreadyExistsResponseAllOf";
 export * from "./spaceRepostTargetType";
 export * from "./spaceResolvedRepostPreview";
 export * from "./spaceServiceAuthNotConfiguredResponse";
