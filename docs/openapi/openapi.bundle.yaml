@@ -3280,6 +3280,10 @@ components:
           $ref: "#/components/schemas/ReactionTargetType"
         viewer:
           properties:
+            likeReactionId:
+              description: Active viewer like reaction id, when available.
+              nullable: true
+              type: string
             liked:
               type: boolean
           required:
@@ -8356,6 +8360,9 @@ paths:
           schema:
             enum:
               - space_post
+              - place
+              - event
+              - blog_post
             type: string
         - in: query
           name: reactionType
@@ -8363,6 +8370,12 @@ paths:
           schema:
             enum:
               - bookmark
+            type: string
+        - description: Optional exact target filter for single-object bookmark state.
+          in: query
+          name: targetId
+          required: false
+          schema:
             type: string
         - in: query
           name: limit
@@ -8389,7 +8402,7 @@ paths:
           $ref: "#/components/responses/ReactionsServiceAuthNotConfigured"
       security:
         - GatewayAuth: []
-      summary: List my saved reactions (space posts bookmark baseline)
+      summary: List my saved reactions (bounded bookmark targets)
       tags:
         - reactions
   /v1/reactions/summary/{targetType}/{targetId}:

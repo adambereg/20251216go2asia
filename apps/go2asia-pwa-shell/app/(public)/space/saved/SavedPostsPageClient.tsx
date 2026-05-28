@@ -17,7 +17,7 @@ import { getErrorStatus, isServiceUnavailableStatus, SAVED_POSTS_MINE_URL } from
 type SavedReactionRecord = {
   id: string;
   targetId: string;
-  targetType: 'space_post';
+  targetType: 'space_post' | 'place' | 'event' | 'blog_post';
   reactionType: 'bookmark';
   createdAt: string;
 };
@@ -34,6 +34,30 @@ type SavedHydratedItem = {
 };
 
 type OrganizerChooserState = 'idle' | 'loading' | 'ready' | 'auth-required' | 'unavailable' | 'error';
+
+const PILOT_SAVED_TARGETS = [
+  { targetType: 'place', label: 'места' },
+  { targetType: 'event', label: 'события' },
+  { targetType: 'blog_post', label: 'статьи' },
+] as const;
+
+type PilotSavedTargetType = (typeof PILOT_SAVED_TARGETS)[number]['targetType'];
+type PilotSavedCounts = Record<PilotSavedTargetType, number>;
+
+const EMPTY_PILOT_SAVED_COUNTS: PilotSavedCounts = {
+  place: 0,
+  event: 0,
+  blog_post: 0,
+};
+
+function buildSavedMineUrl(targetType: SavedReactionRecord['targetType']) {
+  const params = new URLSearchParams({
+    targetType,
+    reactionType: 'bookmark',
+    limit: '50',
+  });
+  return `/v1/reactions/mine?${params.toString()}`;
+}
 
 function pluralizeRu(count: number, one: string, few: string, many: string): string {
   const mod10 = count % 10;
@@ -70,6 +94,7 @@ export function SavedPostsPageClient() {
   const { isLoaded, isSignedIn } = useUser();
   const [items, setItems] = useState<SavedHydratedItem[]>([]);
   const [reactionCount, setReactionCount] = useState(0);
+  const [pilotSavedCounts, setPilotSavedCounts] = useState<PilotSavedCounts>(EMPTY_PILOT_SAVED_COUNTS);
   const [hydrationMissingCount, setHydrationMissingCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,10 +115,21 @@ export function SavedPostsPageClient() {
     setAuthRequired(false);
     setRuntimeUnavailable(false);
     setReactionCount(0);
+    setPilotSavedCounts(EMPTY_PILOT_SAVED_COUNTS);
     setHydrationMissingCount(0);
 
     try {
       const saved = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, SAVED_POSTS_MINE_URL);
+      const pilotSaved = await Promise.all(
+        PILOT_SAVED_TARGETS.map(async ({ targetType }) => {
+          const response = await customInstance<ListMyReactionsResponse>({ method: 'GET' }, buildSavedMineUrl(targetType));
+          return [targetType, response.items.length] as const;
+        })
+      );
+      setPilotSavedCounts({
+        ...EMPTY_PILOT_SAVED_COUNTS,
+        ...Object.fromEntries(pilotSaved),
+      } as PilotSavedCounts);
       setReactionCount(saved.items.length);
       if (saved.items.length === 0) {
         setItems([]);
@@ -132,6 +168,7 @@ export function SavedPostsPageClient() {
       }
       setItems([]);
       setReactionCount(0);
+      setPilotSavedCounts(EMPTY_PILOT_SAVED_COUNTS);
       setHydrationMissingCount(0);
     } finally {
       setIsLoading(false);
@@ -156,6 +193,7 @@ export function SavedPostsPageClient() {
       setError(null);
       setItems([]);
       setReactionCount(0);
+      setPilotSavedCounts(EMPTY_PILOT_SAVED_COUNTS);
       setHydrationMissingCount(0);
       return () => {
         cancelled = true;
@@ -369,6 +407,23 @@ export function SavedPostsPageClient() {
           <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             Сохранённое остаётся общим списком интересного. Добавление в поездку не убирает пост отсюда: оно только
             связывает его с конкретной поездкой.
+          </div>
+        ) : null}
+
+        {!isLoading && !authRequired && !runtimeUnavailable ? (
+          <div className="mb-6 rounded-xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+            <div className="font-medium">Pilot saved content</div>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              {PILOT_SAVED_TARGETS.map(({ targetType, label }) => (
+                <span key={targetType} className="rounded-full bg-white px-3 py-1 text-sky-800 ring-1 ring-sky-100">
+                  {label}: {pilotSavedCounts[targetType]}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-sky-800">
+              Это bounded индикатор bookmark pilot для place/event/blog_post. Гидрированный universal saved hub остаётся
+              отдельным будущим slice.
+            </p>
           </div>
         ) : null}
 

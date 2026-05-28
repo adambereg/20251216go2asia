@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@go2asia/ui';
-import { Heart, Bookmark, Share2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getBlogPostBySlug, listBlogPosts } from '@go2asia/sdk/blog';
+import { ContentActionRow } from '@/components/interaction/ContentActionRow';
 import { ArticleMarkdown } from '@/components/blog/ArticleMarkdown';
 import { ArticleHeroBlock } from '@/components/blog/ArticleHeroBlock';
 import { PostCard } from '@/components/blog/PostCard';
@@ -104,20 +104,12 @@ export default async function ArticlePage({
             </div>
           ) : null}
 
-          <div className="mt-6 flex items-center gap-3">
-            <button className="inline-flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-              <Heart size={18} />
-              <span>Нравится</span>
-            </button>
-            <button className="inline-flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors">
-              <Bookmark size={18} />
-              <span>Сохранить</span>
-            </button>
-            <button className="inline-flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors">
-              <Share2 size={18} />
-              <span>Поделиться</span>
-            </button>
-          </div>
+          <ContentActionRow
+            className="mt-6"
+            targetType="blog_post"
+            targetId={post.id}
+            title={post.title}
+          />
         </div>
       </section>
 

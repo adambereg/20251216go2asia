@@ -6,6 +6,7 @@ import { Chip } from '@go2asia/ui';
 import { MapPin, Phone, Instagram, Globe, Star, Clock } from 'lucide-react';
 import { SectionContentRenderer } from './SectionContentRenderer';
 import { ImageLightbox } from './ImageLightbox';
+import { ContentActionRow } from '@/components/interaction/ContentActionRow';
 import { buildTagLink, buildCategoryLink } from '../utils/navigation';
 import { getCategoryKeyFromTags, categoriesV1 } from '@go2asia/atlas-taxonomy';
 import type { PlaceKind } from './PlacePreviewCard';
@@ -451,6 +452,7 @@ export function PlaceLandingLayoutBusiness({ data }: { data: PlaceLandingData })
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
+      <ContentActionRow targetType="place" targetId={data.id} title={data.name} />
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <DistrictContextRow data={data} />
@@ -526,6 +528,7 @@ export function PlaceLandingLayoutShowplace({ data }: { data: PlaceLandingData }
         subtitleClassName="text-lg opacity-90"
       />
       <PhotoStrip data={data} />
+      <ContentActionRow targetType="place" targetId={data.id} title={data.name} />
       <CategoryBadge categoryKey={getCategoryKeyFromTags(data.tags)} kind={data.kind} />
       <TagRow tags={data.tags} kind={data.kind} />
       <DistrictContextRow data={data} />

@@ -3645,7 +3645,7 @@ export const upsertReaction = async (
 };
 
 /**
- * @summary List my saved reactions (space posts bookmark baseline)
+ * @summary List my saved reactions (bounded bookmark targets)
  */
 export type listMyReactionsResponse200 = {
   data: ListMyReactionsResponse;

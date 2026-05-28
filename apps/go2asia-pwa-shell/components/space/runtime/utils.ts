@@ -98,7 +98,7 @@ export function resolveReferenceHref(
 ): { href: string | null; isDeferred: boolean } {
   switch (targetType) {
     case 'event':
-      return { href: `/pulse/${encodeURIComponent(targetId)}`, isDeferred: false };
+      return { href: `/pulse/events/${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'place':
       return { href: `/atlas/places/${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'listing':
@@ -108,7 +108,7 @@ export function resolveReferenceHref(
     case 'partner':
       return { href: `/rf/${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'blog_post':
-      return { href: `/blog`, isDeferred: false };
+      return { href: `/blog/${encodeURIComponent(targetId.replace(/^blog_/, ''))}`, isDeferred: false };
     default:
       return { href: null, isDeferred: true };
   }
