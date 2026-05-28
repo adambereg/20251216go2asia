@@ -1,11 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { customInstance, generated } from '@go2asia/sdk';
 import { SpaceLayout } from '@/components/space/Shared';
+import {
+  formatRepostTargetLabel,
+  getGroupHref,
+  getProfileHref,
+  resolveReferenceHref,
+} from '@/components/space/runtime/utils';
+import {
+  getRepostCtaLabel,
+  hydratePilotRepostPreview,
+  isPilotRepostTargetType,
+} from '@/components/space/runtime/repostPreview';
 
 const ACTIVITY_FILTERS = [
   {
@@ -26,6 +37,15 @@ const ACTIVITY_FILTERS = [
 ] as const;
 
 type ActivityFilter = (typeof ACTIVITY_FILTERS)[number]['value'];
+type ActivityTypeFilter = 'all' | 'reposts' | 'likes' | 'posts' | 'groups';
+
+const ACTIVITY_TYPE_FILTERS: Array<{ value: ActivityTypeFilter; label: string }> = [
+  { value: 'all', label: 'Все типы' },
+  { value: 'reposts', label: 'Репосты' },
+  { value: 'likes', label: 'Реакции' },
+  { value: 'posts', label: 'Публикации' },
+  { value: 'groups', label: 'Группы' },
+];
 
 function normalizeActivityFilter(value: string | null | undefined): ActivityFilter {
   return value === 'incoming' || value === 'my_actions' ? value : 'all';
@@ -41,26 +61,32 @@ function getErrorStatus(error: unknown): number | null {
   return typeof status === 'number' ? status : null;
 }
 
-function formatActivityTime(value: string): string {
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase();
+  }
+  return (parts[0] ?? 'SA').slice(0, 2).toUpperCase();
+}
+
+function formatActivityTime(value: string): { relative: string; exact: string } {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) return { relative: value, exact: value };
 
   const diffMs = Date.now() - date.getTime();
   const minute = 60_000;
   const hour = 60 * minute;
   const day = 24 * hour;
 
-  if (diffMs < minute) return 'только что';
-  if (diffMs < hour) return `${Math.max(1, Math.floor(diffMs / minute))} мин назад`;
-  if (diffMs < day) return `${Math.max(1, Math.floor(diffMs / hour))} ч назад`;
-  if (diffMs < 2 * day) return 'вчера';
+  if (diffMs < minute) return { relative: 'только что', exact: date.toLocaleString('ru-RU') };
+  if (diffMs < hour) return { relative: `${Math.max(1, Math.floor(diffMs / minute))} мин назад`, exact: date.toLocaleString('ru-RU') };
+  if (diffMs < day) return { relative: `${Math.max(1, Math.floor(diffMs / hour))} ч назад`, exact: date.toLocaleString('ru-RU') };
+  if (diffMs < 2 * day) return { relative: 'вчера', exact: date.toLocaleString('ru-RU') };
 
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return {
+    relative: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    exact: date.toLocaleString('ru-RU'),
+  };
 }
 
 function isTechnicalText(value: string | null | undefined): boolean {
@@ -95,18 +121,35 @@ function formatEntityChip(value: string | null | undefined): string | null {
   }
 }
 
-function getActivityTitle(item: generated.SpaceActivityFeedItem): string {
+function toActivityTypeFilter(item: generated.SpaceActivityFeedItem): ActivityTypeFilter {
+  if (item.type === 'repost_created' || item.type === 'post_reposted_by_other') return 'reposts';
+  if (item.type === 'post_liked_by_other') return 'likes';
+  if (item.type === 'post_created') return 'posts';
+  if (item.type === 'group_joined') return 'groups';
+  return 'all';
+}
+
+function matchesTypeFilter(item: generated.SpaceActivityFeedItem, filter: ActivityTypeFilter): boolean {
+  if (filter === 'all') return true;
+  return toActivityTypeFilter(item) === filter;
+}
+
+function getDirectionChip(direction: generated.SpaceActivityFeedItemDirection): string {
+  return direction === 'incoming' ? 'Входящее' : 'Моё действие';
+}
+
+function getActivityTitle(item: generated.SpaceActivityFeedItem, actorName: string, isSelfAction: boolean): string {
   switch (item.type) {
     case 'post_created':
-      return 'Опубликована запись';
+      return 'Вы опубликовали запись';
     case 'repost_created':
-      return 'Сделан репост';
+      return 'Вы сделали репост';
     case 'group_joined':
-      return 'Вступили в группу';
+      return isSelfAction ? 'Вы вступили в группу' : `${actorName} вступил(а) в группу`;
     case 'post_liked_by_other':
-      return 'Кто-то лайкнул вашу запись';
+      return `${actorName} лайкнул(а) вашу публикацию`;
     case 'post_reposted_by_other':
-      return 'Кто-то сделал репост вашей записи';
+      return `${actorName} сделал(а) репост вашей публикации`;
     default:
       if (item.title && !isTechnicalText(item.title)) return item.title;
       return 'Новое действие в Space Asia';
@@ -114,36 +157,11 @@ function getActivityTitle(item: generated.SpaceActivityFeedItem): string {
 }
 
 function getActivityDescription(item: generated.SpaceActivityFeedItem): string | null {
-  if (item.type === 'group_joined') {
-    return 'Сообщество добавлено в ваш круг активности.';
-  }
-
   if (item.description && !isTechnicalText(item.description)) {
     return item.description;
   }
 
-  if (item.type === 'post_created') {
-    return 'Запись появилась в вашей недавней активности.';
-  }
-
-  if (item.type === 'repost_created') {
-    return 'Репост добавлен в вашу недавнюю активность.';
-  }
-
-  if (item.type === 'post_liked_by_other') {
-    return 'На вашу публикацию пришла новая реакция.';
-  }
-
-  if (item.type === 'post_reposted_by_other') {
-    return 'Вашей публикацией поделились в Space Asia.';
-  }
-
-  const entityChip = formatEntityChip(item.relatedEntityType);
-  if (entityChip) {
-    return `Действие связано с разделом «${entityChip}» в Space Asia.`;
-  }
-
-  return 'Здесь появляются недавние действия, которые уже видны в Space Asia.';
+  return null;
 }
 
 function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
@@ -169,18 +187,165 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
   return parts;
 }
 
-function getActivityHref(item: generated.SpaceActivityFeedItem): string {
+function getActivityHref(item: generated.SpaceActivityFeedItem): string | null {
+  if (item.relatedEntityType === 'space_group' && item.relatedEntityId) {
+    return getGroupHref(item.relatedEntityId);
+  }
+  if (item.relatedEntityType === 'space_post') {
+    const postId = item.relatedPostId ?? item.relatedEntityId;
+    return postId ? `/space/feed?highlight=${encodeURIComponent(postId)}` : '/space/feed';
+  }
   if (item.relatedEntityType && item.relatedEntityId) {
-    if (item.relatedEntityType === 'space_post') return '/space/feed';
-    if (item.relatedEntityType === 'space_group') return `/space/community/groups/${encodeURIComponent(item.relatedEntityId)}`;
-    if (item.relatedEntityType === 'listing') return `/rielt/listings/${encodeURIComponent(item.relatedEntityId)}`;
-    if (item.relatedEntityType === 'event') return `/pulse/${encodeURIComponent(item.relatedEntityId)}`;
-    if (item.relatedEntityType === 'place') return `/atlas/places/${encodeURIComponent(item.relatedEntityId)}`;
-    if (item.relatedEntityType === 'quest') return `/quest/${encodeURIComponent(item.relatedEntityId)}`;
-    if (item.relatedEntityType === 'partner') return `/rf/${encodeURIComponent(item.relatedEntityId)}`;
+    const resolved = resolveReferenceHref(item.relatedEntityType as generated.SpaceRepostTargetType, item.relatedEntityId);
+    if (resolved.href) return resolved.href;
   }
   if (item.type === 'group_joined') return '/space/community';
-  return '/space/feed';
+  return item.relatedPostId ? `/space/feed?highlight=${encodeURIComponent(item.relatedPostId)}` : '/space/feed';
+}
+
+function getActivityCtaLabel(item: generated.SpaceActivityFeedItem): string {
+  if (item.relatedEntityType === 'space_group') return 'Открыть группу';
+  if (item.relatedEntityType === 'space_post') return 'Открыть пост';
+  if (item.type === 'post_liked_by_other') return 'Открыть публикацию';
+  if (item.type === 'post_reposted_by_other') return 'Открыть репост';
+  if (item.type === 'repost_created' && item.relatedEntityType) {
+    return getRepostCtaLabel(item.relatedEntityType as generated.SpaceRepostTargetType);
+  }
+  if (item.relatedEntityType) {
+    return getRepostCtaLabel(item.relatedEntityType as generated.SpaceRepostTargetType);
+  }
+  return 'Открыть раздел';
+}
+
+type ActivityCardProps = {
+  item: generated.SpaceActivityFeedItem;
+  viewerUserId: string | null;
+};
+
+function ActivityCard({ item, viewerUserId }: ActivityCardProps) {
+  const actorName = item.actor.displayName?.trim() || item.actor.userId;
+  const isSelfAction = Boolean(viewerUserId && item.actor.userId === viewerUserId);
+  const meta = getActivityMeta(item);
+  const entityChip = formatEntityChip(item.relatedEntityType);
+  const activityTime = formatActivityTime(item.createdAt);
+  const description = getActivityDescription(item);
+  const href = getActivityHref(item);
+  const ctaLabel = getActivityCtaLabel(item);
+  const [preview, setPreview] = useState<generated.SpaceResolvedRepostPreview | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreview(null);
+
+    if (
+      item.type !== 'repost_created' ||
+      !item.relatedEntityType ||
+      !item.relatedEntityId ||
+      !isPilotRepostTargetType(item.relatedEntityType as generated.SpaceRepostTargetType)
+    ) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const repostRef: generated.SpacePostRepostRef = {
+      targetType: item.relatedEntityType as generated.SpaceRepostTargetType,
+      targetId: item.relatedEntityId,
+    };
+    void hydratePilotRepostPreview(repostRef).then((result) => {
+      if (!cancelled && result?.title) {
+        setPreview(result);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item.relatedEntityId, item.relatedEntityType, item.type]);
+
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        {item.actor.avatarUrl ? (
+          <img
+            src={item.actor.avatarUrl}
+            alt={actorName}
+            className="h-10 w-10 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-800">
+            {getInitials(actorName)}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            {isSelfAction ? (
+              <span className="font-medium text-slate-700">Вы</span>
+            ) : (
+              <Link href={getProfileHref(item.actor.userId)} className="font-medium text-slate-700 hover:text-sky-700">
+                {actorName}
+              </Link>
+            )}
+            {item.actor.roleLabel ? (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+                {item.actor.roleLabel}
+              </span>
+            ) : null}
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+              {getDirectionChip(item.direction)}
+            </span>
+            <span title={activityTime.exact}>{activityTime.relative}</span>
+          </div>
+          <h2 className="mt-2 text-base font-semibold text-slate-900">{getActivityTitle(item, actorName, isSelfAction)}</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {meta.map((value) => (
+              <span
+                key={`${item.id}-${value}`}
+                className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600"
+              >
+                {value}
+              </span>
+            ))}
+            {entityChip ? (
+              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800">
+                {entityChip}
+              </span>
+            ) : null}
+          </div>
+          {description ? <p className="mt-2 text-sm text-slate-700">{description}</p> : null}
+
+          {preview?.title ? (
+            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div className="flex gap-3">
+                {preview.imageUrl ? (
+                  <div
+                    className="h-14 w-20 flex-shrink-0 rounded-md bg-cover bg-center"
+                    style={{ backgroundImage: `url(${preview.imageUrl})` }}
+                    aria-label={preview.title}
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <div className="line-clamp-2 text-sm font-medium text-slate-800">{preview.title}</div>
+                  {preview.subtitle ? (
+                    <div className="mt-1 line-clamp-2 text-xs text-slate-600">{preview.subtitle}</div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {href ? (
+            <Link
+              href={preview?.href ?? href}
+              className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {ctaLabel}
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
 }
 
 function getEmptyStateMessage(filter: ActivityFilter): string {
@@ -200,15 +365,20 @@ interface ActivityPageClientProps {
 }
 
 export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClientProps) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [feed, setFeed] = useState<generated.SpaceActivityFeedResponse | null>(null);
+  const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const rawFilter = searchParams.get('filter');
   const activeFilter = normalizeActivityFilter(rawFilter ?? initialFilter);
+  const visibleItems = useMemo(
+    () => (feed?.items ?? []).filter((item) => matchesTypeFilter(item, typeFilter)),
+    [feed?.items, typeFilter]
+  );
 
   useEffect(() => {
     if (rawFilter === null || rawFilter === activeFilter) return;
@@ -296,6 +466,20 @@ export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClient
           <p className="mt-3 text-xs text-slate-500">
             {ACTIVITY_FILTERS.find((filter) => filter.value === activeFilter)?.hint}
           </p>
+          <div className="mt-3 inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
+            {ACTIVITY_TYPE_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setTypeFilter(filter.value)}
+                className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs transition ${
+                  typeFilter === filter.value ? 'bg-slate-900 font-medium text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </header>
 
         {isLoading && (
@@ -318,36 +502,18 @@ export function ActivityPageClient({ initialFilter = 'all' }: ActivityPageClient
           </div>
         )}
 
-        {!isLoading && !error && feed && feed.items.length === 0 && (
+        {!isLoading && !error && feed && visibleItems.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            {getEmptyStateMessage(activeFilter)}
+            {typeFilter === 'all'
+              ? getEmptyStateMessage(activeFilter)
+              : `По фильтру «${ACTIVITY_TYPE_FILTERS.find((item) => item.value === typeFilter)?.label}» пока нет событий.`}
           </div>
         )}
 
-        {!isLoading && feed && feed.items.length > 0 && (
+        {!isLoading && feed && visibleItems.length > 0 && (
           <div className="space-y-4">
-            {feed.items.map((item) => (
-              <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span>{formatActivityTime(item.createdAt)}</span>
-                  {getActivityMeta(item).map((meta) => (
-                    <span
-                      key={`${item.id}-${meta}`}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-600"
-                    >
-                      {meta}
-                    </span>
-                  ))}
-                </div>
-                <h2 className="mt-3 text-base font-semibold text-slate-900">{getActivityTitle(item)}</h2>
-                <p className="mt-2 text-sm text-slate-700">{getActivityDescription(item)}</p>
-                <Link
-                  href={getActivityHref(item)}
-                  className="mt-3 inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Открыть связанный раздел
-                </Link>
-              </article>
+            {visibleItems.map((item) => (
+              <ActivityCard key={item.id} item={item} viewerUserId={user?.id ?? null} />
             ))}
           </div>
         )}
