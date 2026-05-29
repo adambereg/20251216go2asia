@@ -51,6 +51,7 @@ function handleReady(env: Env): Response {
 
 function isProtectedRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/space/posts') return true;
+  if (method === 'PATCH' && /^\/v1\/space\/posts\/[^/]+$/.test(path)) return true;
   if (method === 'DELETE' && /^\/v1\/space\/posts\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/repost$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/media$/.test(path)) return true;

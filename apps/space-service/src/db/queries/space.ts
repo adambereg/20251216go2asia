@@ -258,6 +258,26 @@ export async function softDeletePost(db: DbExecutor, postId: string, authorId: s
   return rowsOf<{ id: string }>(result).length > 0;
 }
 
+export async function updateRepostTextByAuthor(
+  db: DbExecutor,
+  postId: string,
+  authorId: string,
+  text: string | null
+): Promise<boolean> {
+  const result = await db.execute(sql`
+    UPDATE space_post
+    SET text = ${text},
+        updated_at = now()
+    WHERE id = ${postId}
+      AND author_id = ${authorId}
+      AND post_type = 'repost'
+      AND status = 'active'
+      AND deleted_at IS NULL
+    RETURNING id
+  `);
+  return rowsOf<{ id: string }>(result).length > 0;
+}
+
 export async function listMediaByPostId(db: DbExecutor, postId: string): Promise<SpaceMediaRow[]> {
   const result = await db.execute(sql`
     SELECT media_id, sort_order

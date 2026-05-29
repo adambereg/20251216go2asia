@@ -542,6 +542,7 @@ export * from "./transactionsPage";
 export * from "./unauthorizedResponse";
 export * from "./updateDraftQuestRequest";
 export * from "./updateDraftQuestStepRequest";
+export * from "./updateRepostCommentaryRequest";
 export * from "./uploadResult";
 export * from "./upsertReactionRequest";
 export * from "./userBadgeItem";

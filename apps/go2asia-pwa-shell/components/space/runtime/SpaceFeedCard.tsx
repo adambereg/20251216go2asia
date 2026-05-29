@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { generated } from '@go2asia/sdk';
+import { customInstance, generated } from '@go2asia/sdk';
 import {
   formatFeedReason,
   formatRepostTargetLabel,
@@ -16,6 +16,7 @@ type SpaceFeedCardProps = {
   item: generated.SpaceFeedItem;
   showReason?: boolean;
   showGroupSignal?: boolean;
+  currentUserId?: string | null;
 };
 
 function getInitials(name: string): string {
@@ -50,16 +51,24 @@ export function SpaceFeedCard({
   item,
   showReason = true,
   showGroupSignal = true,
+  currentUserId = null,
 }: SpaceFeedCardProps) {
-  const reference = item.post.repost
-    ? resolveReferenceHref(item.post.repost.targetType, item.post.repost.targetId)
-    : null;
+  const reference = item.post.repost ? resolveReferenceHref(item.post.repost.targetType, item.post.repost.targetId) : null;
+  const normalizedText = item.post.text?.trim() ?? '';
+  const isRepost = Boolean(item.post.repost);
   const parsedDate = new Date(item.createdAt);
   const exactDate = Number.isNaN(parsedDate.getTime()) ? item.createdAt : parsedDate.toLocaleString('ru-RU');
   const shouldShowReason = showReason && !(showGroupSignal && item.post.groupId && item.reason === 'group_post');
   const [hydratedPreview, setHydratedPreview] = useState<generated.SpaceResolvedRepostPreview | null>(
     item.post.repost?.resolvedPreview ?? null
   );
+  const [editableText, setEditableText] = useState(normalizedText);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [draftText, setDraftText] = useState(normalizedText);
+  const [isSavingCommentary, setIsSavingCommentary] = useState(false);
+  const [commentaryFeedback, setCommentaryFeedback] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
+  const canEditOwnRepostCommentary =
+    Boolean(currentUserId) && currentUserId === item.post.author.userId && item.post.postType === 'repost' && Boolean(item.post.repost);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +91,45 @@ export function SpaceFeedCard({
       cancelled = true;
     };
   }, [item.post.repost]);
+
+  useEffect(() => {
+    setEditableText(normalizedText);
+    setDraftText(normalizedText);
+    setIsEditorOpen(false);
+    setCommentaryFeedback(null);
+  }, [item.id, normalizedText]);
+
+  async function saveCommentary(): Promise<void> {
+    setIsSavingCommentary(true);
+    setCommentaryFeedback(null);
+    const normalizedDraft = draftText.trim();
+    try {
+      const response = await customInstance<generated.SpacePostResponse>(
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            text: normalizedDraft.length > 0 ? normalizedDraft : null,
+          } as { text: string | null }),
+        },
+        `/v1/space/posts/${encodeURIComponent(item.post.id)}`
+      );
+      const nextText = response.text?.trim() ?? '';
+      setEditableText(nextText);
+      setDraftText(nextText);
+      setIsEditorOpen(false);
+      setCommentaryFeedback({
+        tone: 'success',
+        message: nextText.length > 0 ? 'Комментарий к репосту обновлён.' : 'Комментарий удалён, репост сохранён.',
+      });
+    } catch {
+      setCommentaryFeedback({
+        tone: 'error',
+        message: 'Не удалось обновить комментарий к репосту. Попробуйте ещё раз.',
+      });
+    } finally {
+      setIsSavingCommentary(false);
+    }
+  }
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300">
@@ -135,13 +183,18 @@ export function SpaceFeedCard({
         </div>
       )}
 
-      {item.post.text ? (
-        <p className="mb-3 whitespace-pre-wrap text-sm text-slate-800">{item.post.text}</p>
-      ) : (
+      {editableText.length > 0 ? (
+        <div className="mb-3">
+          {isRepost ? (
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Комментарий к репосту</div>
+          ) : null}
+          <p className="whitespace-pre-wrap text-sm text-slate-800">{editableText}</p>
+        </div>
+      ) : !isRepost ? (
         <p className="mb-3 text-sm text-slate-500">
           {item.post.media.length > 0 ? 'Публикация с фото или вложением.' : 'Публикация без текста.'}
         </p>
-      )}
+      ) : null}
 
       {item.post.media.length > 0 && (
         <div className="mb-3">
@@ -151,7 +204,7 @@ export function SpaceFeedCard({
         </div>
       )}
 
-      {item.post.repost && reference && (
+      {item.post.repost && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Репост · {formatRepostTargetLabel(item.post.repost.targetType)}
@@ -184,9 +237,9 @@ export function SpaceFeedCard({
             </div>
           )}
           <div className="mt-3">
-            {reference.href ? (
+            {reference?.href ? (
               <Link
-                href={reference.href}
+                href={reference?.href}
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
               >
                 {getRepostCtaLabel(item.post.repost.targetType)}
@@ -195,6 +248,71 @@ export function SpaceFeedCard({
           </div>
         </div>
       )}
+
+      {canEditOwnRepostCommentary ? (
+        <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-slate-600">Управление комментарием к вашему репосту</p>
+            <button
+              type="button"
+              onClick={() => {
+                setCommentaryFeedback(null);
+                setIsEditorOpen((current) => !current);
+                setDraftText(editableText);
+              }}
+              className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            >
+              {editableText.length > 0 ? 'Редактировать комментарий' : 'Добавить комментарий'}
+            </button>
+          </div>
+          {isEditorOpen ? (
+            <div className="mt-3 space-y-2">
+              <textarea
+                value={draftText}
+                onChange={(event) => setDraftText(event.target.value)}
+                maxLength={5000}
+                rows={3}
+                disabled={isSavingCommentary}
+                placeholder="Добавьте комментарий к репосту"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+              <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                <span>{draftText.length}/5000</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditorOpen(false);
+                      setDraftText(editableText);
+                    }}
+                    disabled={isSavingCommentary}
+                    className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void saveCommentary()}
+                    disabled={isSavingCommentary}
+                    className="rounded-md border border-sky-200 bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSavingCommentary ? 'Сохраняем...' : 'Сохранить'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {commentaryFeedback ? (
+            <div
+              className={`mt-3 rounded-md px-2.5 py-1.5 text-xs ${
+                commentaryFeedback.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'
+              }`}
+            >
+              {commentaryFeedback.message}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

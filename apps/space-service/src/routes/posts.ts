@@ -8,6 +8,7 @@ import {
   detachMedia,
   getPost,
   repostPost,
+  updateRepostCommentary,
 } from '../services/spaceService';
 
 type Env = {
@@ -34,6 +35,10 @@ export async function handlePostsRoute(
   const postMatch = path.match(/^\/v1\/space\/posts\/([^/]+)$/);
   if (postMatch && request.method === 'GET') {
     return getPost(env, decodeURIComponent(postMatch[1]), principal, requestId);
+  }
+  if (postMatch && request.method === 'PATCH' && principal) {
+    const body = await readJsonObject(request);
+    return updateRepostCommentary(env, decodeURIComponent(postMatch[1]), body, principal, requestId);
   }
   if (postMatch && request.method === 'DELETE' && principal) {
     return deletePost(env, decodeURIComponent(postMatch[1]), principal, requestId, publisher);

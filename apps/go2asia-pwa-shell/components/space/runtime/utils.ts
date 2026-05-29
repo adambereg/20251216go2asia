@@ -97,6 +97,8 @@ export function resolveReferenceHref(
   targetId: string
 ): { href: string | null; isDeferred: boolean } {
   switch (targetType) {
+    case 'space_post':
+      return { href: `/space/feed?highlight=${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'event':
       return { href: `/pulse/events/${encodeURIComponent(targetId)}`, isDeferred: false };
     case 'place':

@@ -6444,6 +6444,16 @@ components:
         verificationType:
           $ref: "#/components/schemas/QuestVerificationType"
       type: object
+    UpdateRepostCommentaryRequest:
+      properties:
+        text:
+          description: |
+            Repost commentary text. Empty/whitespace values are normalized to null.
+          nullable: true
+          type: string
+      required:
+        - text
+      type: object
     UploadResult:
       properties:
         key:
@@ -9960,6 +9970,42 @@ paths:
         "503":
           $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
       summary: Get post by id
+      tags:
+        - space
+    patch:
+      operationId: updateSpaceRepostCommentary
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRepostCommentaryRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+      security:
+        - GatewayAuth: []
+      summary: Update commentary text for existing repost
       tags:
         - space
   /v1/space/posts/{postId}/media:

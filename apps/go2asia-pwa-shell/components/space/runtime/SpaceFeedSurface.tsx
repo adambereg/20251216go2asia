@@ -235,7 +235,7 @@ export function SpaceFeedSurface() {
           <div className="space-y-4">
             {visibleItems.map((item) => (
               <div key={item.id} className="space-y-2">
-                <SpaceFeedCard item={item} showReason showGroupSignal />
+                <SpaceFeedCard item={item} showReason showGroupSignal currentUserId={currentUserId} />
                 {saved.state === 'ready' && (
                   <div className="flex justify-end">
                     <button

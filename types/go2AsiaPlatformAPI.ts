@@ -200,6 +200,7 @@ import type {
   UnauthorizedResponse,
   UpdateDraftQuestRequest,
   UpdateDraftQuestStepRequest,
+  UpdateRepostCommentaryRequest,
   UploadResult,
   UpsertReactionRequest,
   UserBadgesResponse,
@@ -6899,6 +6900,82 @@ export const getSpacePost = async (
     ...options,
     method: "GET",
   });
+};
+
+/**
+ * @summary Update commentary text for existing repost
+ */
+export type updateSpaceRepostCommentaryResponse200 = {
+  data: SpacePostResponse;
+  status: 200;
+};
+
+export type updateSpaceRepostCommentaryResponse400 = {
+  data: SpaceValidationErrorResponse;
+  status: 400;
+};
+
+export type updateSpaceRepostCommentaryResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type updateSpaceRepostCommentaryResponse403 = {
+  data: SpaceForbiddenResponse;
+  status: 403;
+};
+
+export type updateSpaceRepostCommentaryResponse404 = {
+  data: NotFoundResponse;
+  status: 404;
+};
+
+export type updateSpaceRepostCommentaryResponse500 = {
+  data: InternalErrorResponse;
+  status: 500;
+};
+
+export type updateSpaceRepostCommentaryResponse503 = {
+  data: SpaceServiceAuthNotConfiguredResponse;
+  status: 503;
+};
+
+export type updateSpaceRepostCommentaryResponseSuccess = updateSpaceRepostCommentaryResponse200 & {
+  headers: Headers;
+};
+export type updateSpaceRepostCommentaryResponseError = (
+  | updateSpaceRepostCommentaryResponse400
+  | updateSpaceRepostCommentaryResponse401
+  | updateSpaceRepostCommentaryResponse403
+  | updateSpaceRepostCommentaryResponse404
+  | updateSpaceRepostCommentaryResponse500
+  | updateSpaceRepostCommentaryResponse503
+) & {
+  headers: Headers;
+};
+
+export type updateSpaceRepostCommentaryResponse =
+  | updateSpaceRepostCommentaryResponseSuccess
+  | updateSpaceRepostCommentaryResponseError;
+
+export const getUpdateSpaceRepostCommentaryUrl = (postId: string) => {
+  return `/v1/space/posts/${postId}`;
+};
+
+export const updateSpaceRepostCommentary = async (
+  postId: string,
+  updateRepostCommentaryRequest: UpdateRepostCommentaryRequest,
+  options?: RequestInit
+): Promise<updateSpaceRepostCommentaryResponse> => {
+  return customInstance<updateSpaceRepostCommentaryResponse>(
+    getUpdateSpaceRepostCommentaryUrl(postId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateRepostCommentaryRequest),
+    }
+  );
 };
 
 /**
