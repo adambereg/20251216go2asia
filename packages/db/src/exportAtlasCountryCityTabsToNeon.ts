@@ -141,6 +141,16 @@ const CITY_ID_OVERRIDES_BY_COUNTRY: Record<string, Record<string, string>> = {
     yogyakarta: 'yog',
     // medan/surabaya: unknown in places pipeline; keep canon id
   },
+  japan: {
+    tokyo: 'tok',
+    osaka: 'osa',
+    fukuoka: 'fuk',
+  },
+  'south-korea': {
+    seoul: 'seo',
+    busan: 'pus',
+    jeju: 'cju',
+  },
   singapore: {
     singapore: 'sgp',
   },
@@ -289,6 +299,8 @@ function countryFolderToCountryIdFallback(countryFolder: string): string | null 
     laos: 'la',
     malaysia: 'my',
     indonesia: 'id',
+    japan: 'jp',
+    'south-korea': 'kr',
     singapore: 'sg',
     philippines: 'ph',
     cambodia: 'kh',

@@ -139,6 +139,20 @@ const CITY_ID_MAP_SG: Record<string, string> = {
   Singapore: 'sgp',
 };
 
+// Japan (city_id mapping)
+const CITY_ID_MAP_JP: Record<string, string> = {
+  Tokyo: 'tok',
+  Osaka: 'osa',
+  Fukuoka: 'fuk',
+};
+
+// South Korea (city_id mapping)
+const CITY_ID_MAP_KR: Record<string, string> = {
+  Seoul: 'seo',
+  Busan: 'pus',
+  Jeju: 'cju',
+};
+
 // ============================================================================
 // Section Key Mapping (Atlas Content Canon v1)
 // ============================================================================
@@ -1044,6 +1058,8 @@ function main() {
       normalizeCityName: (name) => (name.includes('Penang') ? 'Penang' : name),
     },
     indonesia: { countryId: 'id', countryCode: 'ID', cityIdMap: CITY_ID_MAP_ID },
+    japan: { countryId: 'jp', countryCode: 'JP', cityIdMap: CITY_ID_MAP_JP },
+    'south-korea': { countryId: 'kr', countryCode: 'KR', cityIdMap: CITY_ID_MAP_KR },
     singapore: { countryId: 'sg', countryCode: 'SG', cityIdMap: CITY_ID_MAP_SG },
     philippines: { countryId: 'ph', countryCode: 'PH', cityIdMap: CITY_ID_MAP_PH },
     cambodia: {

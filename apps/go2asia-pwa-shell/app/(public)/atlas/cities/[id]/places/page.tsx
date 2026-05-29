@@ -6,6 +6,7 @@ import { Chip, SkeletonCard } from '@go2asia/ui';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
 import { listCityDistricts, type ContentCityDistrictDto } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
@@ -191,7 +192,42 @@ export default function CityPlacesPage() {
   });
 
   const places = useMemo<PlacePreviewData[]>(() => {
-    if (dataSource !== 'api') return [];
+    if (dataSource === 'mock') {
+      const mockCity = mockRepo.atlas.getCityById(cityId || '');
+      const cityIdKey = (cityId || '').toLowerCase();
+      const cityIdToPlaceCityNames: Record<string, string[]> = {
+        bkk: ['Bangkok'],
+        hkt: ['Phuket'],
+        cnx: ['Chiang Mai'],
+        sgn: ['Ho Chi Minh City'],
+        dad: ['Da Nang'],
+        dps: ['Denpasar', 'Bali'],
+        jkt: ['Jakarta'],
+        tok: ['Tokyo'],
+        osa: ['Osaka'],
+        fuk: ['Fukuoka'],
+        seo: ['Seoul'],
+        pus: ['Busan'],
+        cju: ['Jeju'],
+      };
+      const expectedNames = cityIdToPlaceCityNames[cityIdKey] ?? (mockCity?.name ? [mockCity.name] : []);
+      if (expectedNames.length === 0) return [];
+      const expectedNamesLower = expectedNames.map((name) => name.toLowerCase());
+      return mockRepo.atlas
+        .listPlaces()
+        .filter((place) => expectedNamesLower.includes((place.city ?? '').toLowerCase()))
+        .map((place) => ({
+          id: place.id,
+          slug: place.slug ?? place.id,
+          name: place.name,
+          description: place.description ?? null,
+          heroImage: place.photos?.[0] ?? null,
+          cityName: place.city ?? null,
+          kind: place.type === 'cafe' || place.type === 'coworking' || place.type === 'nightlife' ? 'business' : 'showplace',
+          category: place.type ?? null,
+          tags: place.categories ?? [],
+        }));
+    }
     if (!placesData?.items) return [];
     return placesData.items.map((place) => ({
       id: place.id,
@@ -277,7 +313,9 @@ export default function CityPlacesPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-slate-600">Места не найдены</div>
+        <div className="text-center py-12 text-slate-600">
+          {dataSource === 'mock' ? 'В mock-наборе пока нет мест для этого города' : 'Места не найдены'}
+        </div>
       )}
     </div>
   );

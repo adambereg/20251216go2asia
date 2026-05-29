@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useGetCityById } from '@go2asia/sdk/atlas';
 import { Skeleton } from '@go2asia/ui';
 import { getDataSource } from '@/mocks/dto';
+import { mockRepo } from '@/mocks/repo';
 import { formatNumber } from '@/modules/atlas/utils/number';
 import { AtlasTabContent } from '@/modules/atlas/components/AtlasTabContent';
 
@@ -17,7 +18,7 @@ export default function CityOverviewPage() {
     data: cityData, 
     isLoading 
   } = useGetCityById(dataSource === 'api' ? (cityId || '') : '');
-  const resolved: any = cityData ?? null;
+  const resolved: any = dataSource === 'mock' ? mockRepo.atlas.getCityById(cityId || '') : cityData ?? null;
 
   if (isLoading) {
     return (

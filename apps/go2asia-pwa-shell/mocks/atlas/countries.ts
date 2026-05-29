@@ -89,6 +89,28 @@ export const mockCountriesDTO: CountryDTO[] = [
     heroImage: 'https://images.pexels.com/photos/2087391/pexels-photo-2087391.jpeg',
     updatedAt: '2025-10-05T10:00:00.000Z',
   },
+  {
+    id: 'jp',
+    name: 'Япония',
+    code: 'JP',
+    flag: '🇯🇵',
+    description: 'Городские кластеры, локальные районы и насыщенные discovery-маршруты.',
+    citiesCount: 3,
+    placesCount: 4,
+    heroImage: 'https://images.pexels.com/photos/237211/pexels-photo-237211.jpeg',
+    updatedAt: '2026-05-25T10:00:00.000Z',
+  },
+  {
+    id: 'kr',
+    name: 'Южная Корея',
+    code: 'KR',
+    flag: '🇰🇷',
+    description: 'Технологичные города, районные сценарии и прибрежные маршруты.',
+    citiesCount: 3,
+    placesCount: 6,
+    heroImage: 'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
+    updatedAt: '2026-05-25T10:00:00.000Z',
+  },
 ];
 
 export const mockCountriesByIdDTO: Record<string, CountryDTO> = Object.fromEntries(

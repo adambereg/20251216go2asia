@@ -106,6 +106,8 @@ export function useCountryGeoMap(countryId: string | undefined): UseCountryGeoMa
       sg: 'Singapore',
       ph: 'Philippines',
       id: 'Indonesia',
+      jp: 'Japan',
+      kr: 'South Korea',
     };
     const mockCountryKey = countryNameToMockKey[countryId] ?? null;
     const places = mockRepo.atlas
