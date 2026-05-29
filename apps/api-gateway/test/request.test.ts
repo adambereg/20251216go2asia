@@ -56,6 +56,10 @@ describe('api-gateway request hardening', () => {
       routeKey: 'space.posts.create.post',
       routeGroup: 'space',
     });
+    expect(classifyRoute('PATCH', '/v1/space/posts/spost_1')).toEqual({
+      routeKey: 'space.posts.commentary.update.patch',
+      routeGroup: 'space',
+    });
     expect(classifyRoute('GET', '/v1/space/feed/home')).toEqual({
       routeKey: 'space.feed.home.get',
       routeGroup: 'space',
@@ -266,6 +270,32 @@ describe('api-gateway request hardening', () => {
           postType: 'post',
           visibility: 'public',
           text: 'Hello',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  it('returns 401 for protected space PATCH route without bearer token', async () => {
+    const env: Env = {
+      SPACE_SERVICE_URL: 'https://space.example',
+      SERVICE_JWT_SECRET: 'service-secret',
+    };
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts/spost_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example',
+        },
+        body: JSON.stringify({
+          text: 'Updated commentary',
         }),
       }),
       env
@@ -1408,6 +1438,59 @@ describe('api-gateway request hardening', () => {
     const body = await readJson<{ ok: boolean }>(response);
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
+    expect(gatewayClaims).toMatchObject({
+      iss: 'api-gateway',
+      aud: 'internal',
+      sub: 'user_from_jwt',
+      roles: ['member'],
+    });
+  });
+
+  it('forwards authenticated context to protected space PATCH commentary route', async () => {
+    let gatewayClaims: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://space.example/v1/space/posts/spost_repost_1');
+      expect(request.headers.get('X-User-ID')).toBe('user_from_jwt');
+      const gatewayToken = request.headers.get('X-Gateway-Auth');
+      expect(gatewayToken).toBeTruthy();
+      gatewayClaims = decodeJwtPayload<Record<string, unknown>>(gatewayToken!);
+
+      return new Response(JSON.stringify({ id: 'spost_repost_1', text: 'Updated commentary' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'user_from_jwt',
+      roles: ['member'],
+    } as never);
+
+    const response = await worker.fetch(
+      new Request('https://gateway.example/v1/space/posts/spost_repost_1', {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer real-user-token',
+          'Content-Type': 'application/json',
+          'X-User-ID': 'spoofed_user',
+        },
+        body: JSON.stringify({
+          text: 'Updated commentary',
+        }),
+      }),
+      {
+        SPACE_SERVICE_URL: 'https://space.example',
+        SERVICE_JWT_SECRET: 'service-secret',
+        CLERK_SECRET_KEY: 'sk_test_123',
+      }
+    );
+
+    const body = await readJson<{ id: string; text: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.id).toBe('spost_repost_1');
+    expect(body.text).toBe('Updated commentary');
     expect(gatewayClaims).toMatchObject({
       iss: 'api-gateway',
       aud: 'internal',

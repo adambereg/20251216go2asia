@@ -68,6 +68,28 @@ describe('space-service v1', () => {
     expect(body.error.code).toBe('UNAUTHORIZED');
   });
 
+  it('returns 401 for protected repost commentary PATCH without gateway auth', async () => {
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_repost_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: 'Updated commentary',
+        }),
+      }),
+      {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      }
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
   it('validates group visibility post creation', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',

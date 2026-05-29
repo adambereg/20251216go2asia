@@ -275,6 +275,9 @@ export function classifyRoute(method: string, path: string): RouteClassification
   if (/^\/v1\/space\/posts\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'GET') {
     return { routeKey: 'space.posts.detail.get', routeGroup: 'space' };
   }
+  if (/^\/v1\/space\/posts\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'PATCH') {
+    return { routeKey: 'space.posts.commentary.update.patch', routeGroup: 'space' };
+  }
   if (/^\/v1\/space\/posts\/[^/]+$/.test(normalizedPath) && normalizedMethod === 'DELETE') {
     return { routeKey: 'space.posts.delete.delete', routeGroup: 'space' };
   }
@@ -979,6 +982,7 @@ function getReservedPhase2ServiceVar(path: string): keyof Env | null {
 
 function isProtectedSpaceRoute(method: string, path: string): boolean {
   if (method === 'POST' && path === '/v1/space/posts') return true;
+  if (method === 'PATCH' && /^\/v1\/space\/posts\/[^/]+$/.test(path)) return true;
   if (method === 'DELETE' && /^\/v1\/space\/posts\/[^/]+$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/repost$/.test(path)) return true;
   if (method === 'POST' && /^\/v1\/space\/posts\/[^/]+\/media$/.test(path)) return true;
