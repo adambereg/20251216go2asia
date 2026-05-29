@@ -3,11 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
+import { formatRepostTargetLabel, formatVisibilityLabel, resolveReferenceHref } from '@/components/space/runtime/utils';
+import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
+import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
 import { PostsPublicationCard } from './PostsPublicationCard';
 
 type PostsPublicationsSurfaceProps = {
   userId: string;
   isOwnerView: boolean;
+  retentionPostId?: string | null;
 };
 
 function getErrorStatus(error: unknown): number | null {
@@ -51,6 +55,75 @@ function LoadingSkeleton() {
   );
 }
 
+function toFeedItem(post: generated.SpacePostResponse): generated.SpaceFeedItem {
+  return {
+    id: post.id,
+    reason: post.postType === 'repost' ? 'repost' : post.groupId ? 'group_post' : 'author_post',
+    post,
+    createdAt: post.publishedAt,
+  };
+}
+
+function OwnerRetentionFocusCard({ post }: { post: generated.SpacePostResponse }) {
+  const [preview, setPreview] = useState<generated.SpaceResolvedRepostPreview | null>(post.repost?.resolvedPreview ?? null);
+  const reference = post.repost ? resolveReferenceHref(post.repost.targetType, post.repost.targetId) : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const repost = post.repost;
+    setPreview(repost?.resolvedPreview ?? null);
+
+    if (!repost || repost.resolvedPreview?.title || !isPilotRepostTargetType(repost.targetType)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void hydratePilotRepostPreview(repost).then((value) => {
+      if (!cancelled) setPreview(value);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post.repost]);
+
+  if (!post.repost) return null;
+
+  return (
+    <article className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-5">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+        <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-sky-800">
+          Личный контекст
+        </span>
+        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+          {formatVisibilityLabel(post.visibility)}
+        </span>
+        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+          {formatRepostTargetLabel(post.repost.targetType)}
+        </span>
+      </div>
+
+      <h2 className="mt-3 text-base font-semibold text-slate-900">
+        {preview?.title ?? `Сохранённый контекст: ${post.repost.targetId}`}
+      </h2>
+      {preview?.subtitle ? <p className="mt-2 text-sm leading-6 text-slate-600">{preview.subtitle}</p> : null}
+      <p className="mt-2 text-xs text-slate-500">ID личного контекста: {post.id}</p>
+
+      {reference?.href ? (
+        <div className="mt-4">
+          <Link
+            href={reference.href}
+            className="inline-flex items-center rounded-md border border-sky-200 bg-white px-3 py-1.5 text-xs font-medium text-sky-800 hover:bg-sky-100"
+          >
+            {getRepostCtaLabel(post.repost.targetType)}
+          </Link>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 function getSurfaceCopy(
   isOwnerView: boolean,
   profile: generated.SpaceProfileResponse | null
@@ -73,9 +146,11 @@ function getSurfaceCopy(
 export function PostsPublicationsSurface({
   userId,
   isOwnerView,
+  retentionPostId = null,
 }: PostsPublicationsSurfaceProps) {
   const [profile, setProfile] = useState<generated.SpaceProfileResponse | null>(null);
   const [feed, setFeed] = useState<generated.SpaceFeedResponse | null>(null);
+  const [focusedRetentionPost, setFocusedRetentionPost] = useState<generated.SpacePostResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +162,8 @@ export function PostsPublicationsSurface({
       setError(null);
 
       try {
-        const [profileResponse, feedResponse] = await Promise.all([
+        const shouldLoadFocusedRetention = Boolean(isOwnerView && retentionPostId);
+        const [profileResponse, feedResponse, retentionResponse] = await Promise.all([
           customInstance<generated.SpaceProfileResponse>(
             { method: 'GET' },
             `/v1/space/profiles/${encodeURIComponent(userId)}`
@@ -96,15 +172,25 @@ export function PostsPublicationsSurface({
             { method: 'GET' },
             getProfileFeedUrl(userId)
           ),
+          shouldLoadFocusedRetention
+            ? customInstance<generated.SpacePostResponse>(
+                { method: 'GET' },
+                `/v1/space/posts/${encodeURIComponent(retentionPostId!)}`
+              ).catch(() => null)
+            : Promise.resolve(null),
         ]);
 
         if (cancelled) return;
         setProfile(profileResponse);
         setFeed(feedResponse);
+        setFocusedRetentionPost(
+          retentionResponse && isPrivateRepostIntentPost(retentionResponse) ? retentionResponse : null
+        );
       } catch (loadError) {
         if (cancelled) return;
         setProfile(null);
         setFeed(null);
+        setFocusedRetentionPost(null);
         const status = getErrorStatus(loadError);
         if (status === 401 || status === 403) {
           setError('Эта подборка публикаций доступна после входа в аккаунт.');
@@ -122,21 +208,26 @@ export function PostsPublicationsSurface({
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [isOwnerView, retentionPostId, userId]);
 
   const items = feed?.items ?? [];
+  const publicationItems = useMemo(
+    () => items.filter((item) => !isPrivateRepostIntentPost(item.post)),
+    [items]
+  );
+  const focusedRetentionItem = focusedRetentionPost ? toFeedItem(focusedRetentionPost) : null;
   const summary = useMemo(() => {
-    const authored = items.filter((item) => item.post.postType === 'post').length;
-    const reposts = items.filter((item) => item.post.postType === 'repost').length;
-    const grouped = items.filter((item) => Boolean(item.post.groupId)).length;
+    const authored = publicationItems.filter((item) => item.post.postType === 'post').length;
+    const reposts = publicationItems.filter((item) => item.post.postType === 'repost').length;
+    const grouped = publicationItems.filter((item) => Boolean(item.post.groupId)).length;
 
     return {
-      total: items.length,
+      total: publicationItems.length,
       authored,
       reposts,
       grouped,
     };
-  }, [items]);
+  }, [publicationItems]);
 
   const copy = getSurfaceCopy(isOwnerView, profile);
   const location = profile
@@ -200,6 +291,10 @@ export function PostsPublicationsSurface({
       </header>
 
       <div className="mt-6">
+        {!isLoading && !error && focusedRetentionItem && (
+          <OwnerRetentionFocusCard post={focusedRetentionItem.post} />
+        )}
+
         {isLoading && <LoadingSkeleton />}
 
         {!isLoading && error && (
@@ -213,7 +308,7 @@ export function PostsPublicationsSurface({
           </div>
         )}
 
-        {!isLoading && !error && items.length === 0 && (
+        {!isLoading && !error && publicationItems.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-base font-semibold text-slate-900">Пока здесь нет публикаций</h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -222,9 +317,9 @@ export function PostsPublicationsSurface({
           </div>
         )}
 
-        {!isLoading && !error && items.length > 0 && (
+        {!isLoading && !error && publicationItems.length > 0 && (
           <div className="space-y-4">
-            {items.map((item) => (
+            {publicationItems.map((item) => (
               <PostsPublicationCard key={item.id} item={item} isOwnerView={isOwnerView} />
             ))}
           </div>

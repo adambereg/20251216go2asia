@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Bookmark, Heart, Share2 } from 'lucide-react';
 import { customInstance, generated } from '@go2asia/sdk';
+import { buildPrivateRepostIntentRequest, getOwnerRetentionUrl } from '@/modules/space/retentionIntent';
 import { ShareToSpaceComposer } from './ShareToSpaceComposer';
 
 type PilotTargetType = Extract<generated.ReactionTargetType, 'place' | 'event' | 'blog_post' | 'space_post'>;
@@ -280,7 +281,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
       setFeedback({
         tone: 'info',
         message: `Материал "${title}" уже опубликован в Space.`,
-        href: `/space/feed?highlight=${encodeURIComponent(sharedPostId)}`,
+        href: getOwnerRetentionUrl(sharedPostId),
       });
       return false;
     }
@@ -294,13 +295,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
       const response = await customInstance<generated.SpacePostResponse>(
         {
           method: 'POST',
-          body: JSON.stringify({
-            postType: 'repost',
-            visibility: 'public',
-            repostTargetType: targetType,
-            repostTargetId: targetId,
-            text,
-          } satisfies generated.CreateSpacePostRequest),
+          body: JSON.stringify(buildPrivateRepostIntentRequest({ targetType, targetId, text })),
         },
         '/v1/space/posts'
       );
@@ -311,7 +306,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         message: text
           ? `Материал "${title}" опубликован в Space с комментарием.`
           : `Материал "${title}" опубликован в Space как репост.`,
-        href: `/space/feed?highlight=${encodeURIComponent(response.id)}`,
+        href: getOwnerRetentionUrl(response.id),
       });
     } catch (error) {
       const status = getErrorStatus(error);
@@ -323,7 +318,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         setFeedback({
           tone: 'info',
           message: 'Вы уже репостнули этот объект в Space.',
-          href: existingPostId ? `/space/feed?highlight=${encodeURIComponent(existingPostId)}` : '/space/feed',
+          href: existingPostId ? getOwnerRetentionUrl(existingPostId) : '/space/posts',
         });
         return;
       }

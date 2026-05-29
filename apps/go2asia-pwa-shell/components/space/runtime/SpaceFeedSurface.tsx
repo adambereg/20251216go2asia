@@ -7,6 +7,7 @@ import { SpaceLayout } from '@/components/space/Shared';
 import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
 import { useSpaceHomeFeed } from '@/components/space/runtime/useSpaceHomeFeed';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
+import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
 
 type FeedFilter = 'all' | 'groups' | 'reposts' | 'my';
 
@@ -90,7 +91,9 @@ export function SpaceFeedSurface() {
 
   const counts = useMemo(() => {
     const groups = items.filter((item) => item.post.groupId !== null).length;
-    const reposts = items.filter((item) => item.post.postType === 'repost' || item.post.repost !== null).length;
+    const reposts = items.filter(
+      (item) => !isPrivateRepostIntentPost(item.post) && (item.post.postType === 'repost' || item.post.repost !== null)
+    ).length;
     const mine = currentUserId ? items.filter((item) => item.post.author.userId === currentUserId).length : 0;
 
     return {
@@ -106,7 +109,9 @@ export function SpaceFeedSurface() {
       case 'groups':
         return items.filter((item) => item.post.groupId !== null);
       case 'reposts':
-        return items.filter((item) => item.post.postType === 'repost' || item.post.repost !== null);
+        return items.filter(
+          (item) => !isPrivateRepostIntentPost(item.post) && (item.post.postType === 'repost' || item.post.repost !== null)
+        );
       case 'my':
         return currentUserId ? items.filter((item) => item.post.author.userId === currentUserId) : [];
       case 'all':

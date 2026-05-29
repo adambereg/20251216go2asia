@@ -33,6 +33,7 @@ import {
   type SpacePostRow,
   type SpaceProfileRow,
 } from '../db/queries/space';
+import { classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -341,6 +342,10 @@ export async function createPost(
 
   const postType = normalizePostType(body?.postType);
   const visibility = normalizeVisibility(body?.visibility);
+  const repostWriteIntent =
+    postType && visibility
+      ? classifyRepostWriteIntent({ postType, visibility })
+      : null;
   const maxTextLength = parseIntOrDefault(env.SPACE_MAX_TEXT_LENGTH, 5000);
   const parsedText = parseCreatePostText(body?.text, maxTextLength);
   if (!parsedText.ok) {
@@ -448,6 +453,7 @@ export async function createPost(
     groupId,
     postType,
     visibility,
+    ...(repostWriteIntent ? { repostWriteIntent } : {}),
     repostTargetType,
     repostTargetId,
   }, {

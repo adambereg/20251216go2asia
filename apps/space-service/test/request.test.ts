@@ -24,6 +24,32 @@ function sqlOf(callIndex: number): string {
   return (arg?.strings ?? []).join('');
 }
 
+function sqlValuesOf(callIndex: number): unknown[] {
+  const arg = executeMock.mock.calls[callIndex]?.[0] as { values?: unknown[] } | undefined;
+  return arg?.values ?? [];
+}
+
+function privateRetentionRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'spost_private_retention',
+    author_id: 'user_owner',
+    author_display_name: 'Owner',
+    author_avatar_url: null,
+    author_role_label: 'Spacer',
+    group_id: null,
+    post_type: 'repost',
+    visibility: 'private',
+    text: null,
+    repost_target_type: 'place',
+    repost_target_id: 'place_bkk',
+    status: 'active',
+    created_at: '2026-03-14T10:00:00.000Z',
+    updated_at: '2026-03-14T10:00:00.000Z',
+    published_at: '2026-03-14T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('space-service v1', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -260,6 +286,69 @@ describe('space-service v1', () => {
     expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('INSERT INTO space_activity_projection'))).toBe(true);
   });
 
+  it('creates object-bound repost retention intent with private visibility', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_private_retention',
+            author_id: 'user_test_1',
+            author_display_name: 'user_test_1',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'repost',
+            visibility: 'private',
+            text: null,
+            repost_target_type: 'place',
+            repost_target_id: 'place_bkk',
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('private_retention');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'private',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+          text: null,
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ postType: string; visibility: string; repost: { targetType: string; targetId: string } }>(response);
+    expect(response.status).toBe(201);
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('private');
+    expect(body.repost).toMatchObject({ targetType: 'place', targetId: 'place_bkk' });
+    expect(sqlValuesOf(2)).toContain('private');
+  });
+
   it('returns a public post for anonymous read', async () => {
     executeMock
       .mockResolvedValueOnce({
@@ -298,6 +387,108 @@ describe('space-service v1', () => {
     expect(body.id).toBe('spost_1');
     expect(body.visibility).toBe('public');
     expect(body.author.displayName).toBe('User One');
+  });
+
+  it('returns private retention direct link for owner only', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [privateRetentionRow()],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_private_retention', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; visibility: string; postType: string; repost: { targetType: string } }>(response);
+    expect(response.status).toBe(200);
+    expect(body.id).toBe('spost_private_retention');
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('private');
+    expect(body.repost.targetType).toBe('place');
+  });
+
+  it('rejects private retention direct link for non-owner', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [privateRetentionRow()],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_private_retention', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('filters private retention from profile feed for non-owner', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          privateRetentionRow(),
+          {
+            id: 'spost_public_post',
+            author_id: 'user_owner',
+            author_display_name: 'Owner',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'post',
+            visibility: 'public',
+            text: 'Visible public post',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:01:00.000Z',
+            updated_at: '2026-03-14T10:01:00.000Z',
+            published_at: '2026-03-14T10:01:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/feed/profile/user_owner?limit=20', {
+        headers: {
+          'X-Gateway-Auth': gatewayJwt,
+        },
+      }),
+      env
+    );
+
+    const body = await readJson<{ items: Array<{ post: { id: string; visibility: string } }> }>(response);
+    expect(response.status).toBe(200);
+    expect(body.items.map((item) => item.post.id)).toEqual(['spost_public_post']);
+    expect(body.items.some((item) => item.post.visibility === 'private')).toBe(false);
   });
 
   it('updates commentary text for author repost via PATCH /v1/space/posts/:postId', async () => {

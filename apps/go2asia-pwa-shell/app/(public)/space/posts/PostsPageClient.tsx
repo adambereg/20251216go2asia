@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { SpaceLayout } from '@/components/space/Shared';
 import { PostsPublicationsSurface } from './PostsPublicationsSurface';
 
@@ -9,8 +10,10 @@ const PUBLIC_PROFILE_ID = (process.env.NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID ?? ''
 
 export function PostsPageClient() {
   const { user, isLoaded, isSignedIn } = useUser();
+  const searchParams = useSearchParams();
   const profileId = isSignedIn && user?.id ? user.id : PUBLIC_PROFILE_ID;
   const isOwnerView = Boolean(isSignedIn && user?.id && profileId === user.id);
+  const retentionPostId = searchParams.get('retention');
 
   if (!isLoaded) {
     return (
@@ -46,7 +49,7 @@ export function PostsPageClient() {
 
   return (
     <SpaceLayout>
-      <PostsPublicationsSurface userId={profileId} isOwnerView={isOwnerView} />
+      <PostsPublicationsSurface userId={profileId} isOwnerView={isOwnerView} retentionPostId={retentionPostId} />
     </SpaceLayout>
   );
 }
