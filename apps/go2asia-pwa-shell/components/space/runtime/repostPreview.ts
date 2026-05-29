@@ -16,6 +16,7 @@ function blogSlugFromTargetId(targetId: string): string {
 }
 
 export function getRepostCtaLabel(targetType: generated.SpaceRepostTargetType): string {
+  if (targetType === 'space_post') return 'Открыть пост Space';
   if (targetType === 'place') return 'Открыть место';
   if (targetType === 'event') return 'Открыть событие';
   if (targetType === 'blog_post') return 'Открыть статью';

@@ -51,9 +51,10 @@ export function SpaceFeedCard({
   showReason = true,
   showGroupSignal = true,
 }: SpaceFeedCardProps) {
-  const reference = item.post.repost
-    ? resolveReferenceHref(item.post.repost.targetType, item.post.repost.targetId)
-    : null;
+  const reference = item.post.repost ? resolveReferenceHref(item.post.repost.targetType, item.post.repost.targetId) : null;
+  const normalizedText = item.post.text?.trim() ?? '';
+  const hasCommentaryText = normalizedText.length > 0;
+  const isRepost = Boolean(item.post.repost);
   const parsedDate = new Date(item.createdAt);
   const exactDate = Number.isNaN(parsedDate.getTime()) ? item.createdAt : parsedDate.toLocaleString('ru-RU');
   const shouldShowReason = showReason && !(showGroupSignal && item.post.groupId && item.reason === 'group_post');
@@ -135,13 +136,18 @@ export function SpaceFeedCard({
         </div>
       )}
 
-      {item.post.text ? (
-        <p className="mb-3 whitespace-pre-wrap text-sm text-slate-800">{item.post.text}</p>
-      ) : (
+      {hasCommentaryText ? (
+        <div className="mb-3">
+          {isRepost ? (
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Комментарий к репосту</div>
+          ) : null}
+          <p className="whitespace-pre-wrap text-sm text-slate-800">{normalizedText}</p>
+        </div>
+      ) : !isRepost ? (
         <p className="mb-3 text-sm text-slate-500">
           {item.post.media.length > 0 ? 'Публикация с фото или вложением.' : 'Публикация без текста.'}
         </p>
-      )}
+      ) : null}
 
       {item.post.media.length > 0 && (
         <div className="mb-3">
@@ -151,7 +157,7 @@ export function SpaceFeedCard({
         </div>
       )}
 
-      {item.post.repost && reference && (
+      {item.post.repost && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Репост · {formatRepostTargetLabel(item.post.repost.targetType)}
@@ -184,9 +190,9 @@ export function SpaceFeedCard({
             </div>
           )}
           <div className="mt-3">
-            {reference.href ? (
+            {reference?.href ? (
               <Link
-                href={reference.href}
+                href={reference?.href}
                 className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
               >
                 {getRepostCtaLabel(item.post.repost.targetType)}

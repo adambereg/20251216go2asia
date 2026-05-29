@@ -7,8 +7,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Bookmark, Heart, Share2 } from 'lucide-react';
 import { customInstance, generated } from '@go2asia/sdk';
+import { ShareToSpaceComposer } from './ShareToSpaceComposer';
 
-type PilotTargetType = Extract<generated.ReactionTargetType, 'place' | 'event' | 'blog_post'>;
+type PilotTargetType = Extract<generated.ReactionTargetType, 'place' | 'event' | 'blog_post' | 'space_post'>;
 
 type ContentActionRowProps = {
   targetType: PilotTargetType;
@@ -101,6 +102,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkReactionId, setBookmarkReactionId] = useState<string | null>(null);
   const [sharedPostId, setSharedPostId] = useState<string | null>(null);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'like' | 'bookmark' | 'share' | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
@@ -272,16 +274,20 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
     }
   }, [bookmarkReactionId, bookmarked, loadState, requireAuth, targetId, targetType]);
 
-  const shareToSpace = useCallback(async () => {
-    if (!requireAuth()) return;
+  const shareToSpace = useCallback(() => {
+    if (!requireAuth()) return false;
     if (sharedPostId) {
       setFeedback({
         tone: 'info',
         message: `Материал "${title}" уже опубликован в Space.`,
         href: `/space/feed?highlight=${encodeURIComponent(sharedPostId)}`,
       });
-      return;
+      return false;
     }
+    return true;
+  }, [requireAuth, sharedPostId, title]);
+
+  const createRepostWithCommentary = useCallback(async (text: string | null) => {
     setPendingAction('share');
     setFeedback(null);
     try {
@@ -293,15 +299,18 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
             visibility: 'public',
             repostTargetType: targetType,
             repostTargetId: targetId,
-            text: null,
+            text,
           } satisfies generated.CreateSpacePostRequest),
         },
         '/v1/space/posts'
       );
       setSharedPostId(response.id);
+      setIsComposerOpen(false);
       setFeedback({
         tone: 'success',
-        message: `Материал "${title}" опубликован в Space как репост.`,
+        message: text
+          ? `Материал "${title}" опубликован в Space с комментарием.`
+          : `Материал "${title}" опубликован в Space как репост.`,
         href: `/space/feed?highlight=${encodeURIComponent(response.id)}`,
       });
     } catch (error) {
@@ -310,9 +319,10 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
       if (status === 409 || code === 'REPOST_ALREADY_EXISTS') {
         const existingPostId = getExistingPostId(error);
         setSharedPostId(existingPostId);
+        setIsComposerOpen(false);
         setFeedback({
           tone: 'info',
-          message: `Материал "${title}" уже опубликован в Space.`,
+          message: 'Вы уже репостнули этот объект в Space.',
           href: existingPostId ? `/space/feed?highlight=${encodeURIComponent(existingPostId)}` : '/space/feed',
         });
         return;
@@ -324,11 +334,19 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
     } finally {
       setPendingAction(null);
     }
-  }, [requireAuth, sharedPostId, targetId, targetType, title]);
+  }, [targetId, targetType, title]);
+
+  const openShareComposer = useCallback(() => {
+    const canOpenComposer = shareToSpace();
+    if (!canOpenComposer) return;
+    setFeedback(null);
+    setIsComposerOpen(true);
+  }, [shareToSpace]);
 
   return (
-    <section className={className}>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <>
+      <section className={className}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
           Runtime actions · pilot
         </div>
@@ -342,7 +360,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
             <Bookmark className={`h-4 w-4 ${bookmarked ? 'fill-current text-sky-700' : ''}`} />
             <span>{bookmarked ? 'Сохранено' : 'Сохранить'}</span>
           </ActionButton>
-          <ActionButton tone="share" disabled={isLoading || pendingAction !== null} onClick={shareToSpace}>
+          <ActionButton tone="share" disabled={isLoading || pendingAction !== null} onClick={openShareComposer}>
             <Share2 className="h-4 w-4" />
             <span>
               {pendingAction === 'share'
@@ -355,7 +373,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Like и Save пишет Reactions. Share-to-Space создаёт Space repost c dedupe guard. Это pilot только для
-          place/event/blog_post.
+          place/event/blog_post и bounded support для space_post.
         </p>
         {feedback ? (
           <div
@@ -375,7 +393,17 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
             ) : null}
           </div>
         ) : null}
-      </div>
-    </section>
+        </div>
+      </section>
+      <ShareToSpaceComposer
+        isOpen={isComposerOpen}
+        isSubmitting={pendingAction === 'share'}
+        targetType={targetType}
+        targetId={targetId}
+        title={title}
+        onClose={() => setIsComposerOpen(false)}
+        onSubmit={(text) => createRepostWithCommentary(text)}
+      />
+    </>
   );
 }
