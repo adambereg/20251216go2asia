@@ -130,6 +130,41 @@ paths:
           $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
         "500":
           $ref: "#/components/responses/InternalError"
+    patch:
+      tags: [space]
+      operationId: updateSpaceRepostCommentary
+      summary: Update commentary text for existing repost
+      security:
+        - GatewayAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XGatewayAuth"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRepostCommentaryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpacePostResponse"
+        "400":
+          $ref: "#/components/responses/SpaceValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SpaceForbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/SpaceServiceAuthNotConfigured"
+        "500":
+          $ref: "#/components/responses/InternalError"
     delete:
       tags: [space]
       operationId: deleteSpacePost
@@ -837,6 +872,16 @@ components:
         groupId:
           type: string
           nullable: true
+
+    UpdateRepostCommentaryRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          nullable: true
+          description: >
+            Repost commentary text. Empty/whitespace values are normalized to null.
 
     SpacePostResponse:
       type: object

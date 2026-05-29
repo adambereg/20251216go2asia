@@ -26,6 +26,7 @@ import {
   upsertPostMedia,
   deletePostMedia,
   findActiveRepostByAuthorAndTarget,
+  updateRepostTextByAuthor,
   type SpaceActivityRow,
   type SpaceGroupRow,
   type SpaceMembershipRow,
@@ -569,6 +570,58 @@ export async function deletePost(
   });
 
   return new Response(null, { status: 204 });
+}
+
+export async function updateRepostCommentary(
+  env: ServiceEnv,
+  postId: string,
+  body: Record<string, unknown> | null,
+  principal: GatewayPrincipal,
+  requestId: string
+): Promise<Response> {
+  const dbState = getDb(env, requestId);
+  if (!dbState.ok) return dbState.res;
+  const db = dbState.db;
+
+  const patchBody = body ?? {};
+  const invalidKeys = Object.keys(patchBody).filter((key) => key !== 'text');
+  if (invalidKeys.length > 0) {
+    return errorResponse('VALIDATION_ERROR', 'Only text field is allowed for repost commentary update', requestId, 400);
+  }
+
+  const maxTextLength = parseIntOrDefault(env.SPACE_MAX_TEXT_LENGTH, 5000);
+  const parsedText = parseCreatePostText(patchBody.text, maxTextLength);
+  if (!parsedText.ok) {
+    return errorResponse('VALIDATION_ERROR', parsedText.message, requestId, 400);
+  }
+
+  const existingPost = await getPostById(db, postId);
+  if (!existingPost || existingPost.status !== 'active') {
+    return errorResponse('NOT_FOUND', `Post not found: ${postId}`, requestId, 404);
+  }
+
+  if (existingPost.author_id !== principal.userId) {
+    return errorResponse('POST_EDIT_NOT_ALLOWED', 'Only the author may edit repost commentary in v1', requestId, 403);
+  }
+
+  if (existingPost.post_type !== 'repost') {
+    return errorResponse('VALIDATION_ERROR', 'Commentary edit is allowed only for repost posts', requestId, 400);
+  }
+
+  const updated = await updateRepostTextByAuthor(db, postId, principal.userId, parsedText.text);
+  if (!updated) {
+    return errorResponse('NOT_FOUND', `Post not found: ${postId}`, requestId, 404);
+  }
+
+  const refreshed = await getPostById(db, postId);
+  if (!refreshed) {
+    return errorResponse('INTERNAL_ERROR', 'Failed to load updated post', requestId, 500);
+  }
+
+  return new Response(JSON.stringify(await mapPostResponse(db, refreshed)), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 export async function attachMedia(

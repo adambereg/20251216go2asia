@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 /**
  * ВАЖНО (DX):
@@ -6,11 +7,6 @@ import { NextResponse } from 'next/server';
  * - В staging/production Clerk должен быть настроен (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY), и middleware включается.
  */
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { clerkMiddleware, createRouteMatcher } = isClerkConfigured
-  ? require('@clerk/nextjs/server')
-  : { clerkMiddleware: null as any, createRouteMatcher: null as any };
 
 /**
  * Определение публичных маршрутов (не требуют аутентификации)

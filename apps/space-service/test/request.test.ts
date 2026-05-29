@@ -278,6 +278,129 @@ describe('space-service v1', () => {
     expect(body.author.displayName).toBe('User One');
   });
 
+  it('updates commentary text for author repost via PATCH /v1/space/posts/:postId', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_author' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_repost_1',
+            author_id: 'user_author',
+            author_display_name: 'Author',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'repost',
+            visibility: 'public',
+            text: null,
+            repost_target_type: 'place',
+            repost_target_id: 'place_bkk',
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'spost_repost_1' }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_repost_1',
+            author_id: 'user_author',
+            author_display_name: 'Author',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'repost',
+            visibility: 'public',
+            text: 'Updated commentary',
+            repost_target_type: 'place',
+            repost_target_id: 'place_bkk',
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:01:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_repost_1', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          text: 'Updated commentary',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; text: string | null; postType: string }>(response);
+    expect(response.status).toBe(200);
+    expect(body.id).toBe('spost_repost_1');
+    expect(body.text).toBe('Updated commentary');
+    expect(body.postType).toBe('repost');
+    expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('UPDATE space_post'))).toBe(true);
+  });
+
+  it('rejects commentary edit when requester is not repost author', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
+
+    executeMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'spost_repost_2',
+          author_id: 'user_author',
+          author_display_name: 'Author',
+          author_avatar_url: null,
+          author_role_label: 'Spacer',
+          group_id: null,
+          post_type: 'repost',
+          visibility: 'public',
+          text: null,
+          repost_target_type: 'event',
+          repost_target_id: 'event_1',
+          status: 'active',
+          created_at: '2026-03-14T10:00:00.000Z',
+          updated_at: '2026-03-14T10:00:00.000Z',
+          published_at: '2026-03-14T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_repost_2', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          text: 'Should fail',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string } }>(response);
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe('POST_EDIT_NOT_ALLOWED');
+  });
+
   it('creates a group and owner membership', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
