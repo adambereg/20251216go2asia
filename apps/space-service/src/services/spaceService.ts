@@ -453,8 +453,15 @@ export async function createPost(
     return errorResponse('INTERNAL_ERROR', 'Failed to load created post', requestId, 500);
   }
 
-  await materializeOutgoingPostActivity(db, created);
-  if (created.post_type === 'repost' && created.repost_target_type === 'space_post' && created.repost_target_id) {
+  if (repostWriteIntent !== 'private_repost_intent') {
+    await materializeOutgoingPostActivity(db, created);
+  }
+  if (
+    repostWriteIntent !== 'private_repost_intent' &&
+    created.post_type === 'repost' &&
+    created.repost_target_type === 'space_post' &&
+    created.repost_target_id
+  ) {
     const targetPost = await getPostById(db, created.repost_target_id);
     await materializeIncomingRepostActivity(db, created, targetPost);
   }
