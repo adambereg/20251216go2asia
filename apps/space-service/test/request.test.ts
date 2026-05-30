@@ -51,6 +51,27 @@ function privateRetentionRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function propagationRepostRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'spost_public_repost',
+    author_id: 'user_owner',
+    author_display_name: 'Owner',
+    author_avatar_url: null,
+    author_role_label: 'Spacer',
+    group_id: null,
+    post_type: 'repost',
+    visibility: 'public',
+    text: null,
+    repost_target_type: 'place',
+    repost_target_id: 'place_bkk',
+    status: 'active',
+    created_at: '2026-03-14T10:00:00.000Z',
+    updated_at: '2026-03-14T10:00:00.000Z',
+    published_at: '2026-03-14T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('space-service v1', () => {
   beforeEach(() => {
     createDbMock.mockClear();
@@ -407,6 +428,196 @@ describe('space-service v1', () => {
     expect(body.repost).toMatchObject({ targetType: 'place', targetId: 'place_bkk' });
     expect(body.sourceReference).toBeUndefined();
     expect(classifyRepostTextRole({ postType: 'repost', visibility: 'private', text: body.text })).toBe('private_note');
+  });
+
+  it('resolves repeated private retention inside retention dedupe scope', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [privateRetentionRow({ text: 'Original private note' })],
+      });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'private',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+          text: 'Different private note',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string }; existingPostId: string }>(response);
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe('REPOST_ALREADY_EXISTS');
+    expect(body.existingPostId).toBe('spost_private_retention');
+    expect(sqlOf(1)).toContain("sp.visibility = 'private'");
+    expect(sqlValuesOf(1)).not.toContain('Different private note');
+    expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('INSERT INTO space_post'))).toBe(false);
+  });
+
+  it('does not let public propagation repost satisfy private retention dedupe', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [privateRetentionRow({ id: 'spost_new_private_retention', text: 'New private note' })],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('new_private_retention');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'private',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+          text: 'New private note',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; postType: string; visibility: string; text: string | null }>(response);
+    expect(response.status).toBe(201);
+    expect(body.id).toBe('spost_new_private_retention');
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('private');
+    expect(body.text).toBe('New private note');
+    expect(sqlOf(1)).toContain("sp.visibility = 'private'");
+  });
+
+  it('does not let private retention satisfy propagation repost dedupe', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [propagationRepostRow({ id: 'spost_new_public_repost', author_id: 'user_owner' })],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('new_public_repost');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'public',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; postType: string; visibility: string }>(response);
+    expect(response.status).toBe(201);
+    expect(body.id).toBe('spost_new_public_repost');
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('public');
+    expect(sqlOf(1)).toContain("sp.visibility <> 'private'");
+  });
+
+  it('does not run retention dedupe for standard authorial post shape', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_authorial_proxy',
+            author_id: 'user_owner',
+            author_display_name: 'Owner',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'post',
+            visibility: 'public',
+            text: 'A future authorial thought should not be blocked by retention dedupe.',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('authorial_proxy');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'A future authorial thought should not be blocked by retention dedupe.',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ id: string; postType: string; visibility: string }>(response);
+    expect(response.status).toBe(201);
+    expect(body.id).toBe('spost_authorial_proxy');
+    expect(body.postType).toBe('post');
+    expect(body.visibility).toBe('public');
+    expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes("AND sp.post_type = 'repost'"))).toBe(false);
   });
 
   it('returns a public post for anonymous read', async () => {

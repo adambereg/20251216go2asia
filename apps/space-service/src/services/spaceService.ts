@@ -410,7 +410,14 @@ export async function createPost(
   await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));
 
   if (postType === 'repost' && repostTargetType && repostTargetId && REPOST_DEDUPE_TARGET_TYPES.has(repostTargetType)) {
-    const existingRepost = await findActiveRepostByAuthorAndTarget(db, principal.userId, repostTargetType, repostTargetId);
+    const dedupeScope = repostWriteIntent === 'private_repost_intent' ? 'retention' : 'propagation';
+    const existingRepost = await findActiveRepostByAuthorAndTarget(
+      db,
+      principal.userId,
+      repostTargetType,
+      repostTargetId,
+      dedupeScope
+    );
     if (existingRepost) {
       return new Response(
         JSON.stringify({
