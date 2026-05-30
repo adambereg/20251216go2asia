@@ -33,7 +33,7 @@ import {
   type SpacePostRow,
   type SpaceProfileRow,
 } from '../db/queries/space';
-import { classifyRepostWriteIntent } from '../domain/retentionIntent';
+import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -388,6 +388,11 @@ export async function createPost(
     return errorResponse('VALIDATION_ERROR', 'text is required for a standard post in v1', requestId, 400);
   }
 
+  const repostTextRole =
+    postType && visibility
+      ? classifyRepostTextRole({ postType, visibility, text })
+      : null;
+
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
     const group = await getGroupById(db, groupId);
@@ -454,6 +459,7 @@ export async function createPost(
     postType,
     visibility,
     ...(repostWriteIntent ? { repostWriteIntent } : {}),
+    ...(repostTextRole ? { repostTextRole } : {}),
     repostTargetType,
     repostTargetId,
   }, {

@@ -17,6 +17,7 @@ vi.mock('@go2asia/db', () => ({
 }));
 
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
+import { classifyRepostTextRole } from '../src/domain/retentionIntent';
 import worker, { type Env } from '../src/index';
 
 function sqlOf(callIndex: number): string {
@@ -349,6 +350,65 @@ describe('space-service v1', () => {
     expect(sqlValuesOf(2)).toContain('private');
   });
 
+  it('creates object-bound retention text as private note semantics', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          privateRetentionRow({
+            id: 'spost_private_note',
+            author_id: 'user_test_1',
+            text: 'Remember the quiet alley entrance.',
+          }),
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('private_note');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'private',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+          text: 'Remember the quiet alley entrance.',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      postType: string;
+      visibility: string;
+      text: string | null;
+      repost: { targetType: string; targetId: string };
+      sourceReference?: unknown;
+    }>(response);
+    expect(response.status).toBe(201);
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('private');
+    expect(body.text).toBe('Remember the quiet alley entrance.');
+    expect(body.repost).toMatchObject({ targetType: 'place', targetId: 'place_bkk' });
+    expect(body.sourceReference).toBeUndefined();
+    expect(classifyRepostTextRole({ postType: 'repost', visibility: 'private', text: body.text })).toBe('private_note');
+  });
+
   it('returns a public post for anonymous read', async () => {
     executeMock
       .mockResolvedValueOnce({
@@ -398,7 +458,7 @@ describe('space-service v1', () => {
 
     executeMock
       .mockResolvedValueOnce({
-        rows: [privateRetentionRow()],
+        rows: [privateRetentionRow({ text: 'Owner-only route note' })],
       })
       .mockResolvedValueOnce({ rows: [] });
 
@@ -411,12 +471,14 @@ describe('space-service v1', () => {
       env
     );
 
-    const body = await readJson<{ id: string; visibility: string; postType: string; repost: { targetType: string } }>(response);
+    const body = await readJson<{ id: string; visibility: string; postType: string; text: string | null; repost: { targetType: string } }>(response);
     expect(response.status).toBe(200);
     expect(body.id).toBe('spost_private_retention');
     expect(body.postType).toBe('repost');
     expect(body.visibility).toBe('private');
+    expect(body.text).toBe('Owner-only route note');
     expect(body.repost.targetType).toBe('place');
+    expect(classifyRepostTextRole({ postType: 'repost', visibility: 'private', text: body.text })).toBe('private_note');
   });
 
   it('rejects private retention direct link for non-owner', async () => {
@@ -427,7 +489,7 @@ describe('space-service v1', () => {
     const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
 
     executeMock.mockResolvedValueOnce({
-      rows: [privateRetentionRow()],
+      rows: [privateRetentionRow({ text: 'Secret owner note' })],
     });
 
     const response = await worker.fetch(
@@ -454,7 +516,7 @@ describe('space-service v1', () => {
     executeMock
       .mockResolvedValueOnce({
         rows: [
-          privateRetentionRow(),
+          privateRetentionRow({ text: 'Secret profile note' }),
           {
             id: 'spost_public_post',
             author_id: 'user_owner',
@@ -489,6 +551,7 @@ describe('space-service v1', () => {
     expect(response.status).toBe(200);
     expect(body.items.map((item) => item.post.id)).toEqual(['spost_public_post']);
     expect(body.items.some((item) => item.post.visibility === 'private')).toBe(false);
+    expect(JSON.stringify(body)).not.toContain('Secret profile note');
   });
 
   it('updates commentary text for author repost via PATCH /v1/space/posts/:postId', async () => {
@@ -564,6 +627,85 @@ describe('space-service v1', () => {
     expect(body.text).toBe('Updated commentary');
     expect(body.postType).toBe('repost');
     expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes('UPDATE space_post'))).toBe(true);
+  });
+
+  it('updates private note text for owner private retention via PATCH /v1/space/posts/:postId', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({
+        rows: [privateRetentionRow({ text: 'Initial note' })],
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 'spost_private_retention' }] })
+      .mockResolvedValueOnce({
+        rows: [privateRetentionRow({ text: 'Updated private note' })],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_private_retention', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          text: 'Updated private note',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      id: string;
+      text: string | null;
+      postType: string;
+      visibility: string;
+      repost: { targetType: string; targetId: string };
+      sourceReference?: unknown;
+    }>(response);
+    expect(response.status).toBe(200);
+    expect(body.id).toBe('spost_private_retention');
+    expect(body.postType).toBe('repost');
+    expect(body.visibility).toBe('private');
+    expect(body.text).toBe('Updated private note');
+    expect(body.repost).toMatchObject({ targetType: 'place', targetId: 'place_bkk' });
+    expect(body.sourceReference).toBeUndefined();
+    expect(classifyRepostTextRole({ postType: 'repost', visibility: 'private', text: body.text })).toBe('private_note');
+    expect(sqlValuesOf(1)).toContain('Updated private note');
+  });
+
+  it('rejects private note edit payloads that try to add publication fields', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts/spost_private_retention', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          text: 'Updated private note',
+          groupId: 'sgroup_public',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('Only text field');
+    expect(executeMock).not.toHaveBeenCalled();
   });
 
   it('rejects commentary edit when requester is not repost author', async () => {

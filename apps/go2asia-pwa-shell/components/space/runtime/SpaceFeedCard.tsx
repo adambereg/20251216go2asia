@@ -11,6 +11,7 @@ import {
   resolveReferenceHref,
 } from './utils';
 import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from './repostPreview';
+import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
 
 type SpaceFeedCardProps = {
   item: generated.SpaceFeedItem;
@@ -56,6 +57,7 @@ export function SpaceFeedCard({
   const reference = item.post.repost ? resolveReferenceHref(item.post.repost.targetType, item.post.repost.targetId) : null;
   const normalizedText = item.post.text?.trim() ?? '';
   const isRepost = Boolean(item.post.repost);
+  const isPrivateRetention = isPrivateRepostIntentPost(item.post);
   const parsedDate = new Date(item.createdAt);
   const exactDate = Number.isNaN(parsedDate.getTime()) ? item.createdAt : parsedDate.toLocaleString('ru-RU');
   const shouldShowReason = showReason && !(showGroupSignal && item.post.groupId && item.reason === 'group_post');
@@ -119,12 +121,20 @@ export function SpaceFeedCard({
       setIsEditorOpen(false);
       setCommentaryFeedback({
         tone: 'success',
-        message: nextText.length > 0 ? 'Комментарий к репосту обновлён.' : 'Комментарий удалён, репост сохранён.',
+        message: isPrivateRetention
+          ? nextText.length > 0
+            ? 'Личная заметка сохранена.'
+            : 'Личная заметка очищена.'
+          : nextText.length > 0
+            ? 'Комментарий к репосту обновлён.'
+            : 'Комментарий удалён, репост сохранён.',
       });
     } catch {
       setCommentaryFeedback({
         tone: 'error',
-        message: 'Не удалось обновить комментарий к репосту. Попробуйте ещё раз.',
+        message: isPrivateRetention
+          ? 'Не удалось сохранить личную заметку. Попробуйте ещё раз.'
+          : 'Не удалось обновить комментарий к репосту. Попробуйте ещё раз.',
       });
     } finally {
       setIsSavingCommentary(false);
@@ -186,7 +196,9 @@ export function SpaceFeedCard({
       {editableText.length > 0 ? (
         <div className="mb-3">
           {isRepost ? (
-            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Комментарий к репосту</div>
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              {isPrivateRetention ? 'Личная заметка' : 'Комментарий к репосту'}
+            </div>
           ) : null}
           <p className="whitespace-pre-wrap text-sm text-slate-800">{editableText}</p>
         </div>
@@ -252,7 +264,9 @@ export function SpaceFeedCard({
       {canEditOwnRepostCommentary ? (
         <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-slate-600">Управление комментарием к вашему репосту</p>
+            <p className="text-xs text-slate-600">
+              {isPrivateRetention ? 'Управление личной заметкой' : 'Управление комментарием к вашему репосту'}
+            </p>
             <button
               type="button"
               onClick={() => {
@@ -262,7 +276,13 @@ export function SpaceFeedCard({
               }}
               className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
             >
-              {editableText.length > 0 ? 'Редактировать комментарий' : 'Добавить комментарий'}
+              {isPrivateRetention
+                ? editableText.length > 0
+                  ? 'Редактировать заметку'
+                  : 'Добавить заметку'
+                : editableText.length > 0
+                  ? 'Редактировать комментарий'
+                  : 'Добавить комментарий'}
             </button>
           </div>
           {isEditorOpen ? (
@@ -273,7 +293,11 @@ export function SpaceFeedCard({
                 maxLength={5000}
                 rows={3}
                 disabled={isSavingCommentary}
-                placeholder="Добавьте комментарий к репосту"
+                placeholder={
+                  isPrivateRetention
+                    ? 'Добавьте личную заметку к сохранённому контексту'
+                    : 'Добавьте комментарий к репосту'
+                }
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100"
               />
               <div className="flex items-center justify-between gap-2 text-xs text-slate-500">

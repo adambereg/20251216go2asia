@@ -20,6 +20,12 @@ export function isPrivateRepostIntentPost(post: generated.SpacePostResponse): bo
   return post.postType === 'repost' && post.visibility === PRIVATE_REPOST_INTENT_VISIBILITY;
 }
 
+export function getPrivateNoteText(post: generated.SpacePostResponse): string | null {
+  if (!isPrivateRepostIntentPost(post)) return null;
+  const text = post.text?.trim();
+  return text ? text : null;
+}
+
 export function getOwnerRetentionUrl(postId: string): string {
   return `/space/posts?retention=${encodeURIComponent(postId)}`;
 }

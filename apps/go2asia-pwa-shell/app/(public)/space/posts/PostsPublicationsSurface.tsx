@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { formatRepostTargetLabel, formatVisibilityLabel, resolveReferenceHref } from '@/components/space/runtime/utils';
 import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
-import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
+import { getPrivateNoteText, isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
 import { PostsPublicationCard } from './PostsPublicationCard';
 
 type PostsPublicationsSurfaceProps = {
@@ -66,6 +66,11 @@ function toFeedItem(post: generated.SpacePostResponse): generated.SpaceFeedItem 
 
 function OwnerRetentionFocusCard({ post }: { post: generated.SpacePostResponse }) {
   const [preview, setPreview] = useState<generated.SpaceResolvedRepostPreview | null>(post.repost?.resolvedPreview ?? null);
+  const [noteText, setNoteText] = useState(getPrivateNoteText(post) ?? '');
+  const [draftNoteText, setDraftNoteText] = useState(getPrivateNoteText(post) ?? '');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteFeedback, setNoteFeedback] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
   const reference = post.repost ? resolveReferenceHref(post.repost.targetType, post.repost.targetId) : null;
 
   useEffect(() => {
@@ -88,6 +93,47 @@ function OwnerRetentionFocusCard({ post }: { post: generated.SpacePostResponse }
     };
   }, [post.repost]);
 
+  useEffect(() => {
+    const nextNoteText = getPrivateNoteText(post) ?? '';
+    setNoteText(nextNoteText);
+    setDraftNoteText(nextNoteText);
+    setIsEditorOpen(false);
+    setNoteFeedback(null);
+  }, [post.id, post.text, post.visibility, post.postType]);
+
+  async function savePrivateNote(): Promise<void> {
+    setIsSavingNote(true);
+    setNoteFeedback(null);
+    const normalizedDraft = draftNoteText.trim();
+
+    try {
+      const response = await customInstance<generated.SpacePostResponse>(
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            text: normalizedDraft.length > 0 ? normalizedDraft : null,
+          } as { text: string | null }),
+        },
+        `/v1/space/posts/${encodeURIComponent(post.id)}`
+      );
+      const nextNoteText = getPrivateNoteText(response) ?? '';
+      setNoteText(nextNoteText);
+      setDraftNoteText(nextNoteText);
+      setIsEditorOpen(false);
+      setNoteFeedback({
+        tone: 'success',
+        message: nextNoteText.length > 0 ? 'Личная заметка сохранена.' : 'Личная заметка очищена.',
+      });
+    } catch {
+      setNoteFeedback({
+        tone: 'error',
+        message: 'Не удалось сохранить личную заметку. Попробуйте ещё раз.',
+      });
+    } finally {
+      setIsSavingNote(false);
+    }
+  }
+
   if (!post.repost) return null;
 
   return (
@@ -108,6 +154,84 @@ function OwnerRetentionFocusCard({ post }: { post: generated.SpacePostResponse }
         {preview?.title ?? `Сохранённый контекст: ${post.repost.targetId}`}
       </h2>
       {preview?.subtitle ? <p className="mt-2 text-sm leading-6 text-slate-600">{preview.subtitle}</p> : null}
+
+      <div className="mt-4 rounded-lg border border-sky-100 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium uppercase tracking-wide text-sky-800">Личная заметка</div>
+            <p className="mt-1 text-xs text-slate-500">
+              Видна только вам и остаётся вторичной к сохранённому контексту.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setNoteFeedback(null);
+              setIsEditorOpen((current) => !current);
+              setDraftNoteText(noteText);
+            }}
+            className="rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
+          >
+            {noteText.length > 0 ? 'Редактировать' : 'Добавить'}
+          </button>
+        </div>
+
+        {noteText.length > 0 && !isEditorOpen ? (
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{noteText}</p>
+        ) : null}
+
+        {noteText.length === 0 && !isEditorOpen ? (
+          <p className="mt-3 text-sm text-slate-500">Личная заметка пока не добавлена.</p>
+        ) : null}
+
+        {isEditorOpen ? (
+          <div className="mt-3 space-y-2">
+            <textarea
+              value={draftNoteText}
+              onChange={(event) => setDraftNoteText(event.target.value)}
+              maxLength={5000}
+              rows={3}
+              disabled={isSavingNote}
+              placeholder="Добавьте личную заметку к сохранённому контексту"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+            />
+            <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+              <span>{draftNoteText.length}/5000</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditorOpen(false);
+                    setDraftNoteText(noteText);
+                  }}
+                  disabled={isSavingNote}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void savePrivateNote()}
+                  disabled={isSavingNote}
+                  className="rounded-md border border-sky-200 bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSavingNote ? 'Сохраняем...' : 'Сохранить'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {noteFeedback ? (
+          <div
+            className={`mt-3 rounded-md px-2.5 py-1.5 text-xs ${
+              noteFeedback.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'
+            }`}
+          >
+            {noteFeedback.message}
+          </div>
+        ) : null}
+      </div>
       <p className="mt-2 text-xs text-slate-500">ID личного контекста: {post.id}</p>
 
       {reference?.href ? (
