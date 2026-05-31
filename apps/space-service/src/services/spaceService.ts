@@ -45,6 +45,11 @@ import {
   classifyAuthorialTextRole,
   parseAuthorialExpressionIntentFromBody,
 } from '../domain/authorialExpression';
+import {
+  assertAuthorialIndependenceReadCarrier,
+  assertAuthorialIndependenceWrite,
+  classifyAuthorialIndependence,
+} from '../domain/authorialIndependence';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
@@ -184,7 +189,9 @@ async function mapPostResponse(
   post: SpacePostRow,
   surface: LegacySurfaceId
 ) {
-  applyAuthorialExpressionReadGuards(surface, spacePostRowInput(post, surface));
+  const rowInput = spacePostRowInput(post, surface);
+  applyAuthorialExpressionReadGuards(surface, rowInput);
+  assertAuthorialIndependenceReadCarrier(rowInput);
   const mediaRows = await listMediaByPostId(db, post.id);
   return {
     id: post.id,
@@ -437,10 +444,34 @@ export async function createPost(
       repostTargetType,
       repostTargetId,
     });
+    assertAuthorialIndependenceWrite(
+      {
+        postType,
+        visibility,
+        text,
+        authorialExpressionIntent,
+        repostTargetType,
+        repostTargetId,
+      },
+      body
+    );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Authorial expression boundary violation';
+    const message =
+      error instanceof Error ? error.message : 'Authorial expression or independence boundary violation';
     return errorResponse('VALIDATION_ERROR', message, requestId, 400);
   }
+
+  const authorialIndependenceClassifier =
+    postType && authorialExpressionIntent
+      ? classifyAuthorialIndependence({
+          postType,
+          visibility,
+          text,
+          authorialExpressionIntent,
+          repostTargetType,
+          repostTargetId,
+        })
+      : null;
 
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
@@ -525,6 +556,7 @@ export async function createPost(
     ...(repostTextRole ? { repostTextRole } : {}),
     ...(authorialWriteIntent ? { authorialExpressionIntent: authorialWriteIntent } : {}),
     ...(authorialTextRole ? { authorialTextRole } : {}),
+    ...(authorialIndependenceClassifier ? { authorialIndependence: authorialIndependenceClassifier } : {}),
     repostTargetType,
     repostTargetId,
   }, {

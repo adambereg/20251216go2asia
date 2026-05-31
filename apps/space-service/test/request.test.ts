@@ -955,6 +955,36 @@ describe('space-service v1', () => {
     expect(body.error.message).toMatch(/repost target fields are only allowed for repost/i);
   });
 
+  it('rejects save/publish fields on authorial expression writes', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          authorialExpressionIntent: true,
+          text: 'Independent thought that should not carry save or publish intent fields.',
+          publishIntent: true,
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.message).toMatch(/save\/publish/i);
+  });
+
   it('rejects authorialExpressionIntent on repost writes', async () => {
     const env: Env = {
       SERVICE_JWT_SECRET: 'service-secret',
