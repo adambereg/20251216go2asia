@@ -37,6 +37,10 @@ import {
   assertDistinctionPrimitiveBoundaries,
   classifyRepostArtifactDistinction,
 } from '../domain/legacyDistinction';
+import {
+  assertForbiddenTransformationGuards,
+  buildForbiddenGuardContext,
+} from '../domain/forbiddenTransformations';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
@@ -171,7 +175,7 @@ async function canViewPost(
   return false;
 }
 
-function applyFt5bDistinctionBoundaryCheck(post: SpacePostRow): void {
+function applyFt5LegacyRuntimeGuards(post: SpacePostRow): void {
   if (post.post_type !== 'repost') return;
   const row = {
     postType: post.post_type,
@@ -182,10 +186,11 @@ function applyFt5bDistinctionBoundaryCheck(post: SpacePostRow): void {
   };
   const distinction = classifyRepostArtifactDistinction({ row });
   assertDistinctionPrimitiveBoundaries(distinction, row);
+  assertForbiddenTransformationGuards(buildForbiddenGuardContext(row));
 }
 
 async function mapPostResponse(db: ReturnType<typeof createDb>, post: SpacePostRow) {
-  applyFt5bDistinctionBoundaryCheck(post);
+  applyFt5LegacyRuntimeGuards(post);
   const mediaRows = await listMediaByPostId(db, post.id);
   return {
     id: post.id,
