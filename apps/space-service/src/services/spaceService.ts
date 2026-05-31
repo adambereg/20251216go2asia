@@ -33,6 +33,7 @@ import {
   type SpacePostRow,
   type SpaceProfileRow,
 } from '../db/queries/space';
+import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -341,6 +342,10 @@ export async function createPost(
 
   const postType = normalizePostType(body?.postType);
   const visibility = normalizeVisibility(body?.visibility);
+  const repostWriteIntent =
+    postType && visibility
+      ? classifyRepostWriteIntent({ postType, visibility })
+      : null;
   const maxTextLength = parseIntOrDefault(env.SPACE_MAX_TEXT_LENGTH, 5000);
   const parsedText = parseCreatePostText(body?.text, maxTextLength);
   if (!parsedText.ok) {
@@ -383,6 +388,11 @@ export async function createPost(
     return errorResponse('VALIDATION_ERROR', 'text is required for a standard post in v1', requestId, 400);
   }
 
+  const repostTextRole =
+    postType && visibility
+      ? classifyRepostTextRole({ postType, visibility, text })
+      : null;
+
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
     const group = await getGroupById(db, groupId);
@@ -400,7 +410,14 @@ export async function createPost(
   await ensureProfileProjection(db, principal.userId, toDisplayRoleLabel(principal.platformRole));
 
   if (postType === 'repost' && repostTargetType && repostTargetId && REPOST_DEDUPE_TARGET_TYPES.has(repostTargetType)) {
-    const existingRepost = await findActiveRepostByAuthorAndTarget(db, principal.userId, repostTargetType, repostTargetId);
+    const dedupeScope = repostWriteIntent === 'private_repost_intent' ? 'retention' : 'propagation';
+    const existingRepost = await findActiveRepostByAuthorAndTarget(
+      db,
+      principal.userId,
+      repostTargetType,
+      repostTargetId,
+      dedupeScope
+    );
     if (existingRepost) {
       return new Response(
         JSON.stringify({
@@ -436,8 +453,15 @@ export async function createPost(
     return errorResponse('INTERNAL_ERROR', 'Failed to load created post', requestId, 500);
   }
 
-  await materializeOutgoingPostActivity(db, created);
-  if (created.post_type === 'repost' && created.repost_target_type === 'space_post' && created.repost_target_id) {
+  if (repostWriteIntent !== 'private_repost_intent') {
+    await materializeOutgoingPostActivity(db, created);
+  }
+  if (
+    repostWriteIntent !== 'private_repost_intent' &&
+    created.post_type === 'repost' &&
+    created.repost_target_type === 'space_post' &&
+    created.repost_target_id
+  ) {
     const targetPost = await getPostById(db, created.repost_target_id);
     await materializeIncomingRepostActivity(db, created, targetPost);
   }
@@ -448,6 +472,8 @@ export async function createPost(
     groupId,
     postType,
     visibility,
+    ...(repostWriteIntent ? { repostWriteIntent } : {}),
+    ...(repostTextRole ? { repostTextRole } : {}),
     repostTargetType,
     repostTargetId,
   }, {

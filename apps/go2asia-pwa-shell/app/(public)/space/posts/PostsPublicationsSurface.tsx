@@ -3,11 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { customInstance, generated } from '@go2asia/sdk';
+import { formatRepostTargetLabel, formatVisibilityLabel, resolveReferenceHref } from '@/components/space/runtime/utils';
+import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
+import { getPrivateNoteText, isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
 import { PostsPublicationCard } from './PostsPublicationCard';
 
 type PostsPublicationsSurfaceProps = {
   userId: string;
   isOwnerView: boolean;
+  retentionPostId?: string | null;
 };
 
 function getErrorStatus(error: unknown): number | null {
@@ -51,6 +55,199 @@ function LoadingSkeleton() {
   );
 }
 
+function toFeedItem(post: generated.SpacePostResponse): generated.SpaceFeedItem {
+  return {
+    id: post.id,
+    reason: post.postType === 'repost' ? 'repost' : post.groupId ? 'group_post' : 'author_post',
+    post,
+    createdAt: post.publishedAt,
+  };
+}
+
+function OwnerRetentionFocusCard({ post }: { post: generated.SpacePostResponse }) {
+  const [preview, setPreview] = useState<generated.SpaceResolvedRepostPreview | null>(post.repost?.resolvedPreview ?? null);
+  const [noteText, setNoteText] = useState(getPrivateNoteText(post) ?? '');
+  const [draftNoteText, setDraftNoteText] = useState(getPrivateNoteText(post) ?? '');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteFeedback, setNoteFeedback] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
+  const reference = post.repost ? resolveReferenceHref(post.repost.targetType, post.repost.targetId) : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const repost = post.repost;
+    setPreview(repost?.resolvedPreview ?? null);
+
+    if (!repost || repost.resolvedPreview?.title || !isPilotRepostTargetType(repost.targetType)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void hydratePilotRepostPreview(repost).then((value) => {
+      if (!cancelled) setPreview(value);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post.repost]);
+
+  useEffect(() => {
+    const nextNoteText = getPrivateNoteText(post) ?? '';
+    setNoteText(nextNoteText);
+    setDraftNoteText(nextNoteText);
+    setIsEditorOpen(false);
+    setNoteFeedback(null);
+  }, [post.id, post.text, post.visibility, post.postType]);
+
+  async function savePrivateNote(): Promise<void> {
+    setIsSavingNote(true);
+    setNoteFeedback(null);
+    const normalizedDraft = draftNoteText.trim();
+
+    try {
+      const response = await customInstance<generated.SpacePostResponse>(
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            text: normalizedDraft.length > 0 ? normalizedDraft : null,
+          } as { text: string | null }),
+        },
+        `/v1/space/posts/${encodeURIComponent(post.id)}`
+      );
+      const nextNoteText = getPrivateNoteText(response) ?? '';
+      setNoteText(nextNoteText);
+      setDraftNoteText(nextNoteText);
+      setIsEditorOpen(false);
+      setNoteFeedback({
+        tone: 'success',
+        message: nextNoteText.length > 0 ? 'Личная заметка сохранена.' : 'Личная заметка очищена.',
+      });
+    } catch {
+      setNoteFeedback({
+        tone: 'error',
+        message: 'Не удалось сохранить личную заметку. Попробуйте ещё раз.',
+      });
+    } finally {
+      setIsSavingNote(false);
+    }
+  }
+
+  if (!post.repost) return null;
+
+  return (
+    <article className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-5">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+        <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-sky-800">
+          Личный контекст
+        </span>
+        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+          {formatVisibilityLabel(post.visibility)}
+        </span>
+        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+          {formatRepostTargetLabel(post.repost.targetType)}
+        </span>
+      </div>
+
+      <h2 className="mt-3 text-base font-semibold text-slate-900">
+        {preview?.title ?? `Сохранённый контекст: ${post.repost.targetId}`}
+      </h2>
+      {preview?.subtitle ? <p className="mt-2 text-sm leading-6 text-slate-600">{preview.subtitle}</p> : null}
+
+      <div className="mt-4 rounded-lg border border-sky-100 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium uppercase tracking-wide text-sky-800">Личная заметка</div>
+            <p className="mt-1 text-xs text-slate-500">
+              Видна только вам и остаётся вторичной к сохранённому контексту.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setNoteFeedback(null);
+              setIsEditorOpen((current) => !current);
+              setDraftNoteText(noteText);
+            }}
+            className="rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100"
+          >
+            {noteText.length > 0 ? 'Редактировать' : 'Добавить'}
+          </button>
+        </div>
+
+        {noteText.length > 0 && !isEditorOpen ? (
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{noteText}</p>
+        ) : null}
+
+        {noteText.length === 0 && !isEditorOpen ? (
+          <p className="mt-3 text-sm text-slate-500">Личная заметка пока не добавлена.</p>
+        ) : null}
+
+        {isEditorOpen ? (
+          <div className="mt-3 space-y-2">
+            <textarea
+              value={draftNoteText}
+              onChange={(event) => setDraftNoteText(event.target.value)}
+              maxLength={5000}
+              rows={3}
+              disabled={isSavingNote}
+              placeholder="Добавьте личную заметку к сохранённому контексту"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+            />
+            <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+              <span>{draftNoteText.length}/5000</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditorOpen(false);
+                    setDraftNoteText(noteText);
+                  }}
+                  disabled={isSavingNote}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void savePrivateNote()}
+                  disabled={isSavingNote}
+                  className="rounded-md border border-sky-200 bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSavingNote ? 'Сохраняем...' : 'Сохранить'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {noteFeedback ? (
+          <div
+            className={`mt-3 rounded-md px-2.5 py-1.5 text-xs ${
+              noteFeedback.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'
+            }`}
+          >
+            {noteFeedback.message}
+          </div>
+        ) : null}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">ID личного контекста: {post.id}</p>
+
+      {reference?.href ? (
+        <div className="mt-4">
+          <Link
+            href={reference.href}
+            className="inline-flex items-center rounded-md border border-sky-200 bg-white px-3 py-1.5 text-xs font-medium text-sky-800 hover:bg-sky-100"
+          >
+            {getRepostCtaLabel(post.repost.targetType)}
+          </Link>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 function getSurfaceCopy(
   isOwnerView: boolean,
   profile: generated.SpaceProfileResponse | null
@@ -73,9 +270,11 @@ function getSurfaceCopy(
 export function PostsPublicationsSurface({
   userId,
   isOwnerView,
+  retentionPostId = null,
 }: PostsPublicationsSurfaceProps) {
   const [profile, setProfile] = useState<generated.SpaceProfileResponse | null>(null);
   const [feed, setFeed] = useState<generated.SpaceFeedResponse | null>(null);
+  const [focusedRetentionPost, setFocusedRetentionPost] = useState<generated.SpacePostResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +286,8 @@ export function PostsPublicationsSurface({
       setError(null);
 
       try {
-        const [profileResponse, feedResponse] = await Promise.all([
+        const shouldLoadFocusedRetention = Boolean(isOwnerView && retentionPostId);
+        const [profileResponse, feedResponse, retentionResponse] = await Promise.all([
           customInstance<generated.SpaceProfileResponse>(
             { method: 'GET' },
             `/v1/space/profiles/${encodeURIComponent(userId)}`
@@ -96,15 +296,25 @@ export function PostsPublicationsSurface({
             { method: 'GET' },
             getProfileFeedUrl(userId)
           ),
+          shouldLoadFocusedRetention
+            ? customInstance<generated.SpacePostResponse>(
+                { method: 'GET' },
+                `/v1/space/posts/${encodeURIComponent(retentionPostId!)}`
+              ).catch(() => null)
+            : Promise.resolve(null),
         ]);
 
         if (cancelled) return;
         setProfile(profileResponse);
         setFeed(feedResponse);
+        setFocusedRetentionPost(
+          retentionResponse && isPrivateRepostIntentPost(retentionResponse) ? retentionResponse : null
+        );
       } catch (loadError) {
         if (cancelled) return;
         setProfile(null);
         setFeed(null);
+        setFocusedRetentionPost(null);
         const status = getErrorStatus(loadError);
         if (status === 401 || status === 403) {
           setError('Эта подборка публикаций доступна после входа в аккаунт.');
@@ -122,21 +332,26 @@ export function PostsPublicationsSurface({
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [isOwnerView, retentionPostId, userId]);
 
   const items = feed?.items ?? [];
+  const publicationItems = useMemo(
+    () => items.filter((item) => !isPrivateRepostIntentPost(item.post)),
+    [items]
+  );
+  const focusedRetentionItem = focusedRetentionPost ? toFeedItem(focusedRetentionPost) : null;
   const summary = useMemo(() => {
-    const authored = items.filter((item) => item.post.postType === 'post').length;
-    const reposts = items.filter((item) => item.post.postType === 'repost').length;
-    const grouped = items.filter((item) => Boolean(item.post.groupId)).length;
+    const authored = publicationItems.filter((item) => item.post.postType === 'post').length;
+    const reposts = publicationItems.filter((item) => item.post.postType === 'repost').length;
+    const grouped = publicationItems.filter((item) => Boolean(item.post.groupId)).length;
 
     return {
-      total: items.length,
+      total: publicationItems.length,
       authored,
       reposts,
       grouped,
     };
-  }, [items]);
+  }, [publicationItems]);
 
   const copy = getSurfaceCopy(isOwnerView, profile);
   const location = profile
@@ -200,6 +415,10 @@ export function PostsPublicationsSurface({
       </header>
 
       <div className="mt-6">
+        {!isLoading && !error && focusedRetentionItem && (
+          <OwnerRetentionFocusCard post={focusedRetentionItem.post} />
+        )}
+
         {isLoading && <LoadingSkeleton />}
 
         {!isLoading && error && (
@@ -213,7 +432,7 @@ export function PostsPublicationsSurface({
           </div>
         )}
 
-        {!isLoading && !error && items.length === 0 && (
+        {!isLoading && !error && publicationItems.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-base font-semibold text-slate-900">Пока здесь нет публикаций</h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -222,9 +441,9 @@ export function PostsPublicationsSurface({
           </div>
         )}
 
-        {!isLoading && !error && items.length > 0 && (
+        {!isLoading && !error && publicationItems.length > 0 && (
           <div className="space-y-4">
-            {items.map((item) => (
+            {publicationItems.map((item) => (
               <PostsPublicationCard key={item.id} item={item} isOwnerView={isOwnerView} />
             ))}
           </div>

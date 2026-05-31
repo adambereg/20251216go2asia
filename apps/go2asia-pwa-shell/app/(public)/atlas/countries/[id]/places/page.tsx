@@ -26,9 +26,9 @@ export default function CountryPlacesPage() {
     data: placesData, 
     isLoading 
   } = useGetPlaces({
+    countryId: dataSource === 'api' ? countryId : undefined,
     limit: 50,
     enabled: dataSource === 'api',
-    // countryId: countryId, // TODO: Add when API supports countryId filter
   } as any);
 
   if (isLoading) {
@@ -47,9 +47,13 @@ export default function CountryPlacesPage() {
     th: 'Thailand',
     vn: 'Vietnam',
     id: 'Indonesia',
+    jp: 'Japan',
+    kr: 'South Korea',
     my: 'Malaysia',
     sg: 'Singapore',
     ph: 'Philippines',
+    la: 'Laos',
+    kh: 'Cambodia',
   };
 
   const places =
@@ -59,8 +63,8 @@ export default function CountryPlacesPage() {
           .filter((p) => (p.country || '').toLowerCase() === (countryIdToCountryName[countryId] || '').toLowerCase())
       : (placesData?.items ?? []);
 
-  // В мок-режиме, если совпадений по стране нет (или страна не задана), показываем демо-выборку.
-  const effectivePlaces = dataSource === 'mock' ? (places.length > 0 ? places : mockRepo.atlas.listPlaces().slice(0, 12)) : places;
+  // В мок-режиме держим выборку строго в границах выбранной страны.
+  const effectivePlaces = places;
 
   // Фильтруем места по стране (если API не поддерживает фильтрацию)
   // TODO: Убрать фильтрацию на клиенте, когда API будет поддерживать countryId
@@ -112,8 +116,9 @@ export default function CountryPlacesPage() {
             </div>
           ) : (
             <div className="text-center py-12 text-slate-600">
-              Места не найдены в API.
-              {dataSource === 'api' ? ' Мок-данные в этом режиме не подмешиваются.' : ''}
+              {dataSource === 'api'
+                ? 'Места не найдены для выбранной страны.'
+                : 'В mock-наборе пока нет мест для выбранной страны.'}
             </div>
           )}
         </div>

@@ -211,7 +211,8 @@ export async function findActiveRepostByAuthorAndTarget(
   db: DbExecutor,
   authorId: string,
   repostTargetType: string,
-  repostTargetId: string
+  repostTargetId: string,
+  dedupeScope: 'retention' | 'propagation' = 'propagation'
 ): Promise<SpacePostRow | null> {
   const result = await db.execute(sql`
     SELECT
@@ -236,6 +237,10 @@ export async function findActiveRepostByAuthorAndTarget(
       AND sp.post_type = 'repost'
       AND sp.status = 'active'
       AND sp.deleted_at IS NULL
+      AND (
+        (${dedupeScope} = 'retention' AND sp.visibility = 'private')
+        OR (${dedupeScope} = 'propagation' AND sp.visibility <> 'private')
+      )
       AND sp.repost_target_type = ${repostTargetType}
       AND sp.repost_target_id = ${repostTargetId}
     ORDER BY sp.published_at DESC, sp.id DESC

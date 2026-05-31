@@ -298,8 +298,8 @@ export function CitiesClient() {
     return mockRepo.atlas.listCities();
   }, [dataSource]);
 
-  const mockCapitalCityIds = ['bkk', 'han', 'vte', 'pnh', 'kul', 'mnl', 'jkt', 'sin'] as const;
-  const mockCountryOrder = ['th', 'vn', 'la', 'kh', 'my', 'ph', 'id', 'sg'] as const;
+  const mockCapitalCityIds = ['bkk', 'han', 'vte', 'pnh', 'kul', 'mnl', 'jkt', 'tok', 'seo', 'sin'] as const;
+  const mockCountryOrder = ['th', 'vn', 'la', 'kh', 'my', 'ph', 'id', 'jp', 'kr', 'sg'] as const;
 
   const mockCapitals = useMemo(() => {
     if (dataSource !== 'mock') return [];

@@ -6,6 +6,7 @@ import { Chip, SkeletonCard } from '@go2asia/ui';
 import { useGetPlaces } from '@go2asia/sdk/atlas';
 import { listCityDistricts, type ContentCityDistrictDto } from '@go2asia/sdk/content';
 import { getDataSource } from '@/mocks/dto';
+import { listMockCityPlaces } from '@/modules/atlas/mockAtlasData';
 import { MarkdownRenderer } from '@/modules/atlas/components/MarkdownRenderer';
 import { PlacePreviewCard, type PlacePreviewData } from '@/modules/atlas/components/PlacePreviewCard';
 import { getPlaceHeroImage } from '@/modules/atlas/utils/placeMedia';
@@ -191,7 +192,9 @@ export default function CityPlacesPage() {
   });
 
   const places = useMemo<PlacePreviewData[]>(() => {
-    if (dataSource !== 'api') return [];
+    if (dataSource === 'mock') {
+      return listMockCityPlaces(cityId || '');
+    }
     if (!placesData?.items) return [];
     return placesData.items.map((place) => ({
       id: place.id,
@@ -204,7 +207,7 @@ export default function CityPlacesPage() {
       category: place.category ?? null,
       tags: place.tags ?? [],
     }));
-  }, [placesData, dataSource]);
+  }, [placesData, dataSource, cityId]);
 
   return (
     <div className="space-y-6">
@@ -277,7 +280,9 @@ export default function CityPlacesPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-slate-600">Места не найдены</div>
+        <div className="text-center py-12 text-slate-600">
+          {dataSource === 'mock' ? 'В mock-наборе пока нет мест для этого города' : 'Места не найдены'}
+        </div>
       )}
     </div>
   );
