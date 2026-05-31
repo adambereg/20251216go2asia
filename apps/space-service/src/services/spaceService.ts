@@ -34,13 +34,11 @@ import {
   type SpaceProfileRow,
 } from '../db/queries/space';
 import {
-  assertDistinctionPrimitiveBoundaries,
-  classifyRepostArtifactDistinction,
-} from '../domain/legacyDistinction';
-import {
-  assertForbiddenTransformationGuards,
-  buildForbiddenGuardContext,
-} from '../domain/forbiddenTransformations';
+  assertActivityFeedSurfaceProjection,
+  applyFt5SurfaceLegacyGuards,
+  type LegacySurfaceId,
+  spacePostRowInput,
+} from '../domain/perSurfaceLegacyMatrix';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
@@ -175,22 +173,12 @@ async function canViewPost(
   return false;
 }
 
-function applyFt5LegacyRuntimeGuards(post: SpacePostRow): void {
-  if (post.post_type !== 'repost') return;
-  const row = {
-    postType: post.post_type,
-    visibility: post.visibility,
-    text: post.text,
-    repostTargetType: post.repost_target_type,
-    repostTargetId: post.repost_target_id,
-  };
-  const distinction = classifyRepostArtifactDistinction({ row });
-  assertDistinctionPrimitiveBoundaries(distinction, row);
-  assertForbiddenTransformationGuards(buildForbiddenGuardContext(row));
-}
-
-async function mapPostResponse(db: ReturnType<typeof createDb>, post: SpacePostRow) {
-  applyFt5LegacyRuntimeGuards(post);
+async function mapPostResponse(
+  db: ReturnType<typeof createDb>,
+  post: SpacePostRow,
+  surface: LegacySurfaceId
+) {
+  applyFt5SurfaceLegacyGuards(surface, spacePostRowInput(post, surface));
   const mediaRows = await listMediaByPostId(db, post.id);
   return {
     id: post.id,
@@ -508,7 +496,7 @@ export async function createPost(
     },
   });
 
-  return new Response(JSON.stringify(await mapPostResponse(db, created)), {
+  return new Response(JSON.stringify(await mapPostResponse(db, created, 'post_detail')), {
     status: 201,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -578,7 +566,7 @@ export async function getPost(
     return errorResponse('FORBIDDEN', 'Post is not accessible', requestId, 403);
   }
 
-  return new Response(JSON.stringify(await mapPostResponse(db, post)), {
+  return new Response(JSON.stringify(await mapPostResponse(db, post, 'post_detail')), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -667,7 +655,7 @@ export async function updateRepostCommentary(
     return errorResponse('INTERNAL_ERROR', 'Failed to load updated post', requestId, 500);
   }
 
-  return new Response(JSON.stringify(await mapPostResponse(db, refreshed)), {
+  return new Response(JSON.stringify(await mapPostResponse(db, refreshed, 'post_detail')), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -1051,14 +1039,15 @@ function mapProfileResponse(profile: SpaceProfileRow) {
 async function buildFeedResponse(
   db: ReturnType<typeof createDb>,
   rows: SpacePostRow[],
-  limit: number
+  limit: number,
+  surface: LegacySurfaceId
 ): Promise<{ items: Array<{ id: string; reason: string; post: Awaited<ReturnType<typeof mapPostResponse>>; createdAt: string }>; nextCursor: string | null }> {
   const pageRows = rows.slice(0, limit);
   const items = await Promise.all(
     pageRows.map(async (row) => ({
       id: row.id,
       reason: row.post_type === 'repost' ? 'repost' : row.group_id ? 'group_post' : row.post_type === 'system' ? 'system' : 'author_post',
-      post: await mapPostResponse(db, row),
+      post: await mapPostResponse(db, row, surface),
       createdAt: toIso(row.published_at),
     }))
   );
@@ -1083,7 +1072,7 @@ export async function getHomeFeed(
   if (!dbState.ok) return dbState.res;
   const db = dbState.db;
   const rows = await listHomeFeedPosts(db, principal.userId, limit + 1, decodeFeedCursor(cursorValue));
-  return new Response(JSON.stringify(await buildFeedResponse(db, rows, limit)), {
+  return new Response(JSON.stringify(await buildFeedResponse(db, rows, limit, 'home_feed')), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -1112,7 +1101,7 @@ export async function getProfileFeed(
     if (filtered.length >= limit + 1) break;
   }
 
-  return new Response(JSON.stringify(await buildFeedResponse(db, filtered, limit)), {
+  return new Response(JSON.stringify(await buildFeedResponse(db, filtered, limit, 'profile_feed')), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -1143,7 +1132,7 @@ export async function getGroupFeed(
   }
 
   const rows = await listGroupFeedPosts(db, groupId, limit + 1, decodeFeedCursor(cursorValue));
-  return new Response(JSON.stringify(await buildFeedResponse(db, rows, limit)), {
+  return new Response(JSON.stringify(await buildFeedResponse(db, rows, limit, 'group_feed')), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -1165,7 +1154,16 @@ export async function getActivityFeed(
   const extraRow = rows[limit];
   return new Response(
     JSON.stringify({
-      items: pageRows.map((row: SpaceActivityRow) => ({
+      items: pageRows.map((row: SpaceActivityRow) => {
+        if (
+          row.action_type === 'space.repost_created' ||
+          row.action_type === 'space.post_reposted_by_other'
+        ) {
+          assertActivityFeedSurfaceProjection({
+            actionType: row.action_type,
+          });
+        }
+        return {
         id: row.id,
         type: row.type,
         actionType: row.action_type,
@@ -1183,7 +1181,8 @@ export async function getActivityFeed(
         relatedEntityType: row.related_entity_type,
         relatedEntityId: row.related_entity_id,
         createdAt: toIso(row.occurred_at),
-      })),
+      };
+      }),
       nextCursor: extraRow
         ? encodeFeedCursor({
             publishedAt: toIso(extraRow.occurred_at),
