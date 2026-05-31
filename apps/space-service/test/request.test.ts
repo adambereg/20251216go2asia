@@ -17,6 +17,10 @@ vi.mock('@go2asia/db', () => ({
 }));
 
 import { makeGatewayJwt, readJson } from '../../../tests/helpers/worker-test';
+import {
+  AUTHORIAL_EXPRESSION_WRITE_INTENT,
+  classifyAuthorialExpressionWriteIntent,
+} from '../src/domain/authorialExpression';
 import { classifyRepostTextRole } from '../src/domain/retentionIntent';
 import worker, { type Env } from '../src/index';
 
@@ -898,6 +902,7 @@ describe('space-service v1', () => {
         body: JSON.stringify({
           postType: 'post',
           visibility: 'public',
+          authorialExpressionIntent: true,
           text: 'A future authorial thought should not be blocked by retention dedupe.',
         }),
       }),
@@ -910,6 +915,75 @@ describe('space-service v1', () => {
     expect(body.postType).toBe('post');
     expect(body.visibility).toBe('public');
     expect(executeMock.mock.calls.some((_, index) => sqlOf(index).includes("AND sp.post_type = 'repost'"))).toBe(false);
+    expect(
+      classifyAuthorialExpressionWriteIntent({
+        postType: 'post',
+        authorialExpressionIntent: true,
+      })
+    ).toBe(AUTHORIAL_EXPRESSION_WRITE_INTENT);
+  });
+
+  it('rejects authorial expression write with repostTarget fields on postType post', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          authorialExpressionIntent: true,
+          text: 'Authorial with forbidden target binding',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toMatch(/repost target fields are only allowed for repost/i);
+  });
+
+  it('rejects authorialExpressionIntent on repost writes', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'repost',
+          visibility: 'private',
+          authorialExpressionIntent: true,
+          text: 'note',
+          repostTargetType: 'place',
+          repostTargetId: 'place_bkk',
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { code: string; message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.message).toMatch(/authorialExpressionIntent/);
   });
 
   it('does not read bookmark reactions when checking private retention dedupe', async () => {

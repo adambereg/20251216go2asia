@@ -35,10 +35,16 @@ import {
 } from '../db/queries/space';
 import {
   assertActivityFeedSurfaceProjection,
-  applyFt5SurfaceLegacyGuards,
   type LegacySurfaceId,
   spacePostRowInput,
 } from '../domain/perSurfaceLegacyMatrix';
+import {
+  applyAuthorialExpressionReadGuards,
+  assertAuthorialExpressionWrite,
+  classifyAuthorialExpressionWriteIntent,
+  classifyAuthorialTextRole,
+  parseAuthorialExpressionIntentFromBody,
+} from '../domain/authorialExpression';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
@@ -178,7 +184,7 @@ async function mapPostResponse(
   post: SpacePostRow,
   surface: LegacySurfaceId
 ) {
-  applyFt5SurfaceLegacyGuards(surface, spacePostRowInput(post, surface));
+  applyAuthorialExpressionReadGuards(surface, spacePostRowInput(post, surface));
   const mediaRows = await listMediaByPostId(db, post.id);
   return {
     id: post.id,
@@ -353,6 +359,11 @@ export async function createPost(
 
   const postType = normalizePostType(body?.postType);
   const visibility = normalizeVisibility(body?.visibility);
+  const authorialExpressionIntent = parseAuthorialExpressionIntentFromBody(body);
+  const authorialWriteIntent =
+    postType && authorialExpressionIntent
+      ? classifyAuthorialExpressionWriteIntent({ postType, authorialExpressionIntent })
+      : null;
   const repostWriteIntent =
     postType && visibility
       ? classifyRepostWriteIntent({ postType, visibility })
@@ -369,6 +380,15 @@ export async function createPost(
 
   if (!postType || !visibility) {
     return errorResponse('VALIDATION_ERROR', 'postType and visibility are required', requestId, 400);
+  }
+
+  if (authorialExpressionIntent && postType === 'repost') {
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'authorialExpressionIntent is only allowed when postType = post',
+      requestId,
+      400
+    );
   }
 
   if (postType === 'system') {
@@ -403,6 +423,24 @@ export async function createPost(
     postType && visibility
       ? classifyRepostTextRole({ postType, visibility, text })
       : null;
+  const authorialTextRole =
+    postType && authorialExpressionIntent
+      ? classifyAuthorialTextRole({ postType, text, authorialExpressionIntent })
+      : null;
+
+  try {
+    assertAuthorialExpressionWrite({
+      postType,
+      visibility,
+      text,
+      authorialExpressionIntent,
+      repostTargetType,
+      repostTargetId,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Authorial expression boundary violation';
+    return errorResponse('VALIDATION_ERROR', message, requestId, 400);
+  }
 
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
@@ -485,6 +523,8 @@ export async function createPost(
     visibility,
     ...(repostWriteIntent ? { repostWriteIntent } : {}),
     ...(repostTextRole ? { repostTextRole } : {}),
+    ...(authorialWriteIntent ? { authorialExpressionIntent: authorialWriteIntent } : {}),
+    ...(authorialTextRole ? { authorialTextRole } : {}),
     repostTargetType,
     repostTargetId,
   }, {
