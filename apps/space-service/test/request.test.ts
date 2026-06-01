@@ -35,6 +35,15 @@ function sqlValuesOf(callIndex: number): unknown[] {
   return arg?.values ?? [];
 }
 
+function persistenceDefaults(overrides: Record<string, unknown> = {}) {
+  return {
+    authorial_expression_intent: false,
+    source_material_type: null,
+    source_material_id: null,
+    ...overrides,
+  };
+}
+
 function privateRetentionRow(overrides: Record<string, unknown> = {}) {
   return {
     id: 'spost_private_retention',
@@ -52,6 +61,7 @@ function privateRetentionRow(overrides: Record<string, unknown> = {}) {
     created_at: '2026-03-14T10:00:00.000Z',
     updated_at: '2026-03-14T10:00:00.000Z',
     published_at: '2026-03-14T10:00:00.000Z',
+    ...persistenceDefaults(),
     ...overrides,
   };
 }
@@ -73,6 +83,7 @@ function propagationRepostRow(overrides: Record<string, unknown> = {}) {
     created_at: '2026-03-14T10:00:00.000Z',
     updated_at: '2026-03-14T10:00:00.000Z',
     published_at: '2026-03-14T10:00:00.000Z',
+    ...persistenceDefaults(),
     ...overrides,
   };
 }
@@ -1010,6 +1021,9 @@ describe('space-service v1', () => {
             text: 'Street food planning deserves more than a single weekend pass through Bangkok.',
             repost_target_type: null,
             repost_target_id: null,
+            authorial_expression_intent: true,
+            source_material_type: 'place',
+            source_material_id: 'place_bkk',
             status: 'active',
             created_at: '2026-03-14T10:00:00.000Z',
             updated_at: '2026-03-14T10:00:00.000Z',
@@ -2509,5 +2523,168 @@ describe('space-service v1', () => {
     expect(body.mediaId).toBe('media_1');
     expect(body.sortOrder).toBe(2);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  describe('Stage 13B.5-PI persistence (T-PP)', () => {
+    function insertCallIndex(): number {
+      return executeMock.mock.calls.findIndex((_, index) => sqlOf(index).includes('INSERT INTO space_post'));
+    }
+
+    const authorialPostRow = (overrides: Record<string, unknown> = {}) => ({
+      id: 'spost_authorial_persist',
+      author_id: 'user_owner',
+      author_display_name: 'Owner',
+      author_avatar_url: null,
+      author_role_label: 'Spacer',
+      group_id: null,
+      post_type: 'post',
+      visibility: 'public',
+      text: 'Persisted authorial thought for read rehydration verification.',
+      repost_target_type: null,
+      repost_target_id: null,
+      ...persistenceDefaults({
+        authorial_expression_intent: true,
+        source_material_type: 'place',
+        source_material_id: 'place_bkk',
+      }),
+      status: 'active',
+      created_at: '2026-03-14T10:00:00.000Z',
+      updated_at: '2026-03-14T10:00:00.000Z',
+      published_at: '2026-03-14T10:00:00.000Z',
+      ...overrides,
+    });
+
+    it('T-PP-5: non-authorial create persists false intent and null source material', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({
+          rows: [
+            authorialPostRow({
+              ...persistenceDefaults(),
+              text: 'Generic carrier post without authorial intent.',
+            }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('generic_post');
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Gateway-Auth': gatewayJwt,
+          },
+          body: JSON.stringify({
+            postType: 'post',
+            visibility: 'public',
+            text: 'Generic carrier post without authorial intent.',
+          }),
+        }),
+        env
+      );
+
+      expect(response.status).toBe(201);
+      const insertIdx = insertCallIndex();
+      expect(insertIdx).toBeGreaterThanOrEqual(0);
+      const values = sqlValuesOf(insertIdx);
+      expect(values).toContain(false);
+      expect(values).toContain(null);
+    });
+
+    it('T-PP-1: GET post detail rehydrates authorialExpressionIntent from DB (no staging)', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          authorialPostRow({
+            ...persistenceDefaults({ authorial_expression_intent: true }),
+          }),
+        ],
+      });
+      executeMock.mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/posts/spost_authorial_persist', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ authorialExpressionIntent?: boolean; sourceReference?: unknown }>(response);
+      expect(response.status).toBe(200);
+      expect(body.authorialExpressionIntent).toBe(true);
+      expect(body.sourceReference).toBeUndefined();
+    });
+
+    it('T-PP-2: GET post detail rehydrates sourceReference from DB', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock.mockResolvedValueOnce({
+        rows: [authorialPostRow()],
+      });
+      executeMock.mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/posts/spost_authorial_persist', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        sourceReference?: { sourceMaterialType: string; sourceMaterialId: string };
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.sourceReference).toMatchObject({
+        sourceMaterialType: 'place',
+        sourceMaterialId: 'place_bkk',
+      });
+    });
+
+    it('T-PP-3: home feed item rehydrates sourceReference from persisted row', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock.mockResolvedValueOnce({
+        rows: [authorialPostRow({ id: 'spost_feed_authorial' })],
+      });
+      executeMock.mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/home?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        items: Array<{ post: { sourceReference?: { sourceMaterialId: string } } }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.post.sourceReference).toMatchObject({
+        sourceMaterialId: 'place_bkk',
+      });
+    });
   });
 });

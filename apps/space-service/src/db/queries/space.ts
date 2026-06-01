@@ -17,11 +17,35 @@ export type SpacePostRow = {
   text: string | null;
   repost_target_type: string | null;
   repost_target_id: string | null;
+  authorial_expression_intent: boolean;
+  source_material_type: string | null;
+  source_material_id: string | null;
   status: 'active' | 'flagged' | 'hidden' | 'deleted';
   created_at: string | Date;
   updated_at: string | Date;
   published_at: string | Date;
 };
+
+const SPACE_POST_SELECT_FIELDS = sql`
+  sp.id,
+  sp.author_id,
+  spp.display_name AS author_display_name,
+  spp.avatar_url AS author_avatar_url,
+  spp.role_label AS author_role_label,
+  sp.group_id,
+  sp.post_type,
+  sp.visibility,
+  sp.text,
+  sp.repost_target_type,
+  sp.repost_target_id,
+  sp.authorial_expression_intent,
+  sp.source_material_type,
+  sp.source_material_id,
+  sp.status,
+  sp.created_at,
+  sp.updated_at,
+  sp.published_at
+`;
 
 export type SpaceGroupRow = {
   id: string;
@@ -145,6 +169,9 @@ export async function insertSpacePost(
     text: string | null;
     repostTargetType: string | null;
     repostTargetId: string | null;
+    authorialExpressionIntent: boolean;
+    sourceMaterialType: string | null;
+    sourceMaterialId: string | null;
   }
 ): Promise<void> {
   await db.execute(sql`
@@ -157,6 +184,9 @@ export async function insertSpacePost(
       text,
       repost_target_type,
       repost_target_id,
+      authorial_expression_intent,
+      source_material_type,
+      source_material_id,
       status,
       created_at,
       updated_at,
@@ -172,6 +202,9 @@ export async function insertSpacePost(
       ${input.text},
       ${input.repostTargetType},
       ${input.repostTargetId},
+      ${input.authorialExpressionIntent},
+      ${input.sourceMaterialType},
+      ${input.sourceMaterialId},
       'active',
       now(),
       now(),
@@ -184,21 +217,7 @@ export async function insertSpacePost(
 export async function getPostById(db: DbExecutor, postId: string): Promise<SpacePostRow | null> {
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      sp.author_id,
-      spp.display_name AS author_display_name,
-      spp.avatar_url AS author_avatar_url,
-      spp.role_label AS author_role_label,
-      sp.group_id,
-      sp.post_type,
-      sp.visibility,
-      sp.text,
-      sp.repost_target_type,
-      sp.repost_target_id,
-      sp.status,
-      sp.created_at,
-      sp.updated_at,
-      sp.published_at
+      ${SPACE_POST_SELECT_FIELDS}
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.id = ${postId}
@@ -216,21 +235,7 @@ export async function findActiveRepostByAuthorAndTarget(
 ): Promise<SpacePostRow | null> {
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      sp.author_id,
-      spp.display_name AS author_display_name,
-      spp.avatar_url AS author_avatar_url,
-      spp.role_label AS author_role_label,
-      sp.group_id,
-      sp.post_type,
-      sp.visibility,
-      sp.text,
-      sp.repost_target_type,
-      sp.repost_target_id,
-      sp.status,
-      sp.created_at,
-      sp.updated_at,
-      sp.published_at
+      ${SPACE_POST_SELECT_FIELDS}
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.author_id = ${authorId}
@@ -532,21 +537,7 @@ export async function listHomeFeedPosts(
 ): Promise<SpacePostRow[]> {
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      sp.author_id,
-      spp.display_name AS author_display_name,
-      spp.avatar_url AS author_avatar_url,
-      spp.role_label AS author_role_label,
-      sp.group_id,
-      sp.post_type,
-      sp.visibility,
-      sp.text,
-      sp.repost_target_type,
-      sp.repost_target_id,
-      sp.status,
-      sp.created_at,
-      sp.updated_at,
-      sp.published_at
+      ${SPACE_POST_SELECT_FIELDS}
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.status = 'active'
@@ -578,21 +569,7 @@ export async function listProfileFeedPosts(
 ): Promise<SpacePostRow[]> {
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      sp.author_id,
-      spp.display_name AS author_display_name,
-      spp.avatar_url AS author_avatar_url,
-      spp.role_label AS author_role_label,
-      sp.group_id,
-      sp.post_type,
-      sp.visibility,
-      sp.text,
-      sp.repost_target_type,
-      sp.repost_target_id,
-      sp.status,
-      sp.created_at,
-      sp.updated_at,
-      sp.published_at
+      ${SPACE_POST_SELECT_FIELDS}
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.author_id = ${authorId}
@@ -613,21 +590,7 @@ export async function listGroupFeedPosts(
 ): Promise<SpacePostRow[]> {
   const result = await db.execute(sql`
     SELECT
-      sp.id,
-      sp.author_id,
-      spp.display_name AS author_display_name,
-      spp.avatar_url AS author_avatar_url,
-      spp.role_label AS author_role_label,
-      sp.group_id,
-      sp.post_type,
-      sp.visibility,
-      sp.text,
-      sp.repost_target_type,
-      sp.repost_target_id,
-      sp.status,
-      sp.created_at,
-      sp.updated_at,
-      sp.published_at
+      ${SPACE_POST_SELECT_FIELDS}
     FROM space_post sp
     LEFT JOIN space_profile_projection spp ON spp.user_id = sp.author_id
     WHERE sp.group_id = ${groupId}

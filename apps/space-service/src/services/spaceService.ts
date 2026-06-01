@@ -55,9 +55,9 @@ import {
   assertSavePublishBoundaryWrite,
   classifySavePublishBoundary,
 } from '../domain/savePublishBoundary';
+import { rehydrateAuthorialFieldsFromRow } from '../domain/persistenceRehydration';
 import {
   assertSourceReferenceBoundaryWrite,
-  buildSourceReferenceResponseStaging,
   classifySourceReference,
   parseSourceReferenceFromBody,
 } from '../domain/sourceReferenceBoundary';
@@ -197,14 +197,13 @@ async function canViewPost(
 async function mapPostResponse(
   db: ReturnType<typeof createDb>,
   post: SpacePostRow,
-  surface: LegacySurfaceId,
-  staging?: ReturnType<typeof buildSourceReferenceResponseStaging>
+  surface: LegacySurfaceId
 ) {
   const rowInput = spacePostRowInput(post, surface);
   applyAuthorialExpressionReadGuards(surface, rowInput);
   assertAuthorialIndependenceReadCarrier(rowInput);
   const mediaRows = await listMediaByPostId(db, post.id);
-  const sourceReferenceStaging = staging ? { sourceReference: staging } : {};
+  const authorialFields = rehydrateAuthorialFieldsFromRow(post);
   return {
     id: post.id,
     author: {
@@ -226,7 +225,7 @@ async function mapPostResponse(
             resolvedPreview: null,
           }
         : null,
-    ...sourceReferenceStaging,
+    ...authorialFields,
     media: mediaRows.map((row) => ({
       mediaId: row.media_id,
       sortOrder: row.sort_order,
@@ -544,7 +543,10 @@ export async function createPost(
         })
       : null;
 
-  const sourceReferenceResponseStaging = buildSourceReferenceResponseStaging(parsedSourceReference);
+  const persistedAuthorialExpressionIntent =
+    postType === 'post' && authorialExpressionIntent === true;
+  const persistedSourceMaterialType = parsedSourceReference?.sourceMaterialType ?? null;
+  const persistedSourceMaterialId = parsedSourceReference?.sourceMaterialId ?? null;
 
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
@@ -599,6 +601,9 @@ export async function createPost(
     text,
     repostTargetType,
     repostTargetId,
+    authorialExpressionIntent: persistedAuthorialExpressionIntent,
+    sourceMaterialType: persistedSourceMaterialType,
+    sourceMaterialId: persistedSourceMaterialId,
   });
 
   const created = await getPostById(db, postId);
@@ -650,7 +655,7 @@ export async function createPost(
   });
 
   return new Response(
-    JSON.stringify(await mapPostResponse(db, created, 'post_detail', sourceReferenceResponseStaging)),
+    JSON.stringify(await mapPostResponse(db, created, 'post_detail')),
     {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
