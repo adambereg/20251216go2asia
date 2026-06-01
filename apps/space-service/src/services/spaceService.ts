@@ -51,6 +51,10 @@ import {
   classifyAuthorialIndependence,
 } from '../domain/authorialIndependence';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
+import {
+  assertSavePublishBoundaryWrite,
+  classifySavePublishBoundary,
+} from '../domain/savePublishBoundary';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -455,11 +459,34 @@ export async function createPost(
       },
       body
     );
+    assertSavePublishBoundaryWrite(
+      {
+        postType,
+        visibility,
+        authorialExpressionIntent,
+        repostTargetType,
+        repostTargetId,
+      },
+      body
+    );
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : 'Authorial expression or independence boundary violation';
+      error instanceof Error
+        ? error.message
+        : 'Authorial expression, independence, or save/publish boundary violation';
     return errorResponse('VALIDATION_ERROR', message, requestId, 400);
   }
+
+  const savePublishBoundaryClassifier = classifySavePublishBoundary(
+    {
+      postType,
+      visibility,
+      authorialExpressionIntent,
+      repostTargetType,
+      repostTargetId,
+    },
+    body
+  );
 
   const authorialIndependenceClassifier =
     postType && authorialExpressionIntent
@@ -557,6 +584,7 @@ export async function createPost(
     ...(authorialWriteIntent ? { authorialExpressionIntent: authorialWriteIntent } : {}),
     ...(authorialTextRole ? { authorialTextRole } : {}),
     ...(authorialIndependenceClassifier ? { authorialIndependence: authorialIndependenceClassifier } : {}),
+    ...(savePublishBoundaryClassifier ? { savePublishBoundary: savePublishBoundaryClassifier } : {}),
     repostTargetType,
     repostTargetId,
   }, {

@@ -7,10 +7,17 @@ import {
 import { classifyRepostArtifactDistinction } from './legacyDistinction';
 import type { LegacySpacePostRowInput } from './legacyTaxonomy';
 import {
+  buildSavePublishNegativesProof,
+  FORBIDDEN_SAVE_PUBLISH_BODY_KEYS,
+  assertNoForbiddenDualIntentBodyFields,
+} from './savePublishBoundary';
+import {
   classifyRepostTextRole,
   type SpacePostType,
   type SpacePostVisibility,
 } from './retentionIntent';
+
+export { FORBIDDEN_SAVE_PUBLISH_BODY_KEYS };
 
 /**
  * WS-3 FT-3C — Authorial Independence boundary (Stage 13B.3-B §7 / 13B.5-O).
@@ -23,16 +30,6 @@ export const AUTHORIAL_INDEPENDENCE_CLASSIFIER = 'authorial_independence' as con
 export const MIN_AUTHORIAL_INDEPENDENCE_TEXT_LENGTH = 12;
 
 const WEAK_LABEL_ONLY_PATTERNS = [/^authorial\s*post$/i, /^post$/i, /^note$/i, /^repost$/i];
-
-/** FT-3D negative: save/publish fields must not appear on authorial expression writes. */
-export const FORBIDDEN_SAVE_PUBLISH_BODY_KEYS = [
-  'saveIntent',
-  'publishIntent',
-  'retentionPublish',
-  'bookmarkAsPublish',
-  'savedPublish',
-  'publishAsPost',
-] as const;
 
 export type AuthorialIndependenceInput = {
   postType: SpacePostType;
@@ -104,12 +101,21 @@ export function classifyAuthorialIndependence(
   return proof.isAuthorialIndependenceProof ? AUTHORIAL_INDEPENDENCE_CLASSIFIER : null;
 }
 
-export function buildAuthorialIndependenceProof(input: AuthorialIndependenceInput): AuthorialIndependenceProof {
+export function buildAuthorialIndependenceProof(
+  input: AuthorialIndependenceInput,
+  body?: Record<string, unknown> | null
+): AuthorialIndependenceProof {
   const isTextPrimary = isAuthorialTextPrimary(input.text);
   const isRepostIndependent = input.postType === 'post' && input.authorialExpressionIntent;
   const isSourceReferenceOptional =
     input.postType === 'post' && !input.repostTargetType && !input.repostTargetId;
   const sourceDisappears = passesSourceDisappearsTest(input);
+  const savePublishNegatives = buildSavePublishNegativesProof(input, body);
+  const isSavePublishIndependent =
+    savePublishNegatives.saveNotEqualsPublish &&
+    savePublishNegatives.publishDoesNotRequireSave &&
+    savePublishNegatives.saveDoesNotRequirePublish &&
+    savePublishNegatives.noSourceReferenceHiddenInSavePublish;
 
   const isProof =
     input.authorialExpressionIntent &&
@@ -117,14 +123,15 @@ export function buildAuthorialIndependenceProof(input: AuthorialIndependenceInpu
     isTextPrimary &&
     isRepostIndependent &&
     isSourceReferenceOptional &&
-    sourceDisappears;
+    sourceDisappears &&
+    isSavePublishIndependent;
 
   return {
     classifier: AUTHORIAL_INDEPENDENCE_CLASSIFIER,
     isTextPrimary,
     isRepostIndependent,
     isSourceReferenceOptional,
-    isSavePublishIndependent: true,
+    isSavePublishIndependent,
     passesSourceDisappearsTest: sourceDisappears,
     isAuthorialIndependenceProof: isProof,
     isFullP4LifecycleEstablished: false,
@@ -155,7 +162,15 @@ export function buildAuthorialIndependenceNegativesProof(
       classifyAuthorialIndependence({ ...input, authorialExpressionIntent: false }) === null,
     notSourceReferenceDependent:
       input.postType !== 'post' || (!input.repostTargetType && !input.repostTargetId),
-    notSavePublishDependent: true,
+    notSavePublishDependent: (() => {
+      const n = buildSavePublishNegativesProof(input);
+      return (
+        n.saveNotEqualsPublish &&
+        n.publishDoesNotRequireSave &&
+        n.saveDoesNotRequirePublish &&
+        n.retentionNotPublish
+      );
+    })(),
     notLegacyRowDependent:
       input.postType !== 'repost' ||
       distinction?.category === 'legacy_carve_out' ||
@@ -169,17 +184,17 @@ export function buildAuthorialIndependenceNegativesProof(
 
 export function assertNoSavePublishFieldsOnAuthorialWrite(
   body: Record<string, unknown> | null | undefined,
-  authorialExpressionIntent: boolean
+  authorialExpressionIntent: boolean,
+  postType: SpacePostType = 'post',
+  visibility: SpacePostVisibility = 'public'
 ): void {
   if (!authorialExpressionIntent || !body) {
     return;
   }
-  const forbidden = FORBIDDEN_SAVE_PUBLISH_BODY_KEYS.filter((key) => key in body);
-  if (forbidden.length > 0) {
-    throw new Error(
-      `FT-3C: save/publish fields are not allowed on authorial expression writes (FT-3D carve-out): ${forbidden.join(', ')}`
-    );
-  }
+  assertNoForbiddenDualIntentBodyFields(
+    { postType, visibility, authorialExpressionIntent },
+    body
+  );
 }
 
 export function assertAuthorialIndependenceWrite(
@@ -190,9 +205,14 @@ export function assertAuthorialIndependenceWrite(
     return buildAuthorialIndependenceProof(input);
   }
 
-  assertNoSavePublishFieldsOnAuthorialWrite(body, input.authorialExpressionIntent);
+  assertNoSavePublishFieldsOnAuthorialWrite(
+    body,
+    input.authorialExpressionIntent,
+    input.postType,
+    input.visibility
+  );
 
-  const proof = buildAuthorialIndependenceProof(input);
+  const proof = buildAuthorialIndependenceProof(input, body);
   if (!proof.isAuthorialIndependenceProof) {
     if (!proof.isTextPrimary) {
       throw new Error(
