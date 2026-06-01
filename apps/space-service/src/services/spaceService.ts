@@ -55,6 +55,12 @@ import {
   assertSavePublishBoundaryWrite,
   classifySavePublishBoundary,
 } from '../domain/savePublishBoundary';
+import {
+  assertSourceReferenceBoundaryWrite,
+  buildSourceReferenceResponseStaging,
+  classifySourceReference,
+  parseSourceReferenceFromBody,
+} from '../domain/sourceReferenceBoundary';
 import type { SpaceDomainEventType } from '../events/contracts';
 import type { SpaceEventPublisher } from '../events/publisher';
 import type { GatewayPrincipal } from '../middleware/auth';
@@ -191,12 +197,14 @@ async function canViewPost(
 async function mapPostResponse(
   db: ReturnType<typeof createDb>,
   post: SpacePostRow,
-  surface: LegacySurfaceId
+  surface: LegacySurfaceId,
+  staging?: ReturnType<typeof buildSourceReferenceResponseStaging>
 ) {
   const rowInput = spacePostRowInput(post, surface);
   applyAuthorialExpressionReadGuards(surface, rowInput);
   assertAuthorialIndependenceReadCarrier(rowInput);
   const mediaRows = await listMediaByPostId(db, post.id);
+  const sourceReferenceStaging = staging ? { sourceReference: staging } : {};
   return {
     id: post.id,
     author: {
@@ -218,6 +226,7 @@ async function mapPostResponse(
             resolvedPreview: null,
           }
         : null,
+    ...sourceReferenceStaging,
     media: mediaRows.map((row) => ({
       mediaId: row.media_id,
       sortOrder: row.sort_order,
@@ -389,6 +398,14 @@ export async function createPost(
   const repostTargetType = normalizeOptionalString(body?.repostTargetType, 64);
   const repostTargetId = normalizeOptionalString(body?.repostTargetId, 128);
 
+  let parsedSourceReference: ReturnType<typeof parseSourceReferenceFromBody> = null;
+  try {
+    parsedSourceReference = parseSourceReferenceFromBody(body);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Source Reference parse failed';
+    return errorResponse('VALIDATION_ERROR', message, requestId, 400);
+  }
+
   if (!postType || !visibility) {
     return errorResponse('VALIDATION_ERROR', 'postType and visibility are required', requestId, 400);
   }
@@ -469,11 +486,25 @@ export async function createPost(
       },
       body
     );
+    if (authorialExpressionIntent || parsedSourceReference) {
+      assertSourceReferenceBoundaryWrite(
+        {
+          postType,
+          visibility,
+          text,
+          authorialExpressionIntent,
+          repostTargetType,
+          repostTargetId,
+          sourceReference: parsedSourceReference,
+        },
+        body
+      );
+    }
   } catch (error) {
     const message =
       error instanceof Error
         ? error.message
-        : 'Authorial expression, independence, or save/publish boundary violation';
+        : 'Authorial expression, independence, save/publish, or source reference boundary violation';
     return errorResponse('VALIDATION_ERROR', message, requestId, 400);
   }
 
@@ -499,6 +530,21 @@ export async function createPost(
           repostTargetId,
         })
       : null;
+
+  const sourceReferenceClassifier =
+    postType && (authorialExpressionIntent || parsedSourceReference)
+      ? classifySourceReference({
+          postType,
+          visibility,
+          text,
+          authorialExpressionIntent,
+          repostTargetType,
+          repostTargetId,
+          sourceReference: parsedSourceReference,
+        })
+      : null;
+
+  const sourceReferenceResponseStaging = buildSourceReferenceResponseStaging(parsedSourceReference);
 
   if (groupId) {
     const membership = await getMembership(db, groupId, principal.userId);
@@ -585,6 +631,13 @@ export async function createPost(
     ...(authorialTextRole ? { authorialTextRole } : {}),
     ...(authorialIndependenceClassifier ? { authorialIndependence: authorialIndependenceClassifier } : {}),
     ...(savePublishBoundaryClassifier ? { savePublishBoundary: savePublishBoundaryClassifier } : {}),
+    ...(sourceReferenceClassifier ? { sourceReference: sourceReferenceClassifier } : {}),
+    ...(parsedSourceReference
+      ? {
+          sourceMaterialType: parsedSourceReference.sourceMaterialType,
+          sourceMaterialId: parsedSourceReference.sourceMaterialId,
+        }
+      : {}),
     repostTargetType,
     repostTargetId,
   }, {
@@ -596,10 +649,13 @@ export async function createPost(
     },
   });
 
-  return new Response(JSON.stringify(await mapPostResponse(db, created, 'post_detail')), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify(await mapPostResponse(db, created, 'post_detail', sourceReferenceResponseStaging)),
+    {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }
 
 export async function repostPost(
