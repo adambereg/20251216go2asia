@@ -21,6 +21,7 @@ import {
   AUTHORIAL_EXPRESSION_WRITE_INTENT,
   classifyAuthorialExpressionWriteIntent,
 } from '../src/domain/authorialExpression';
+import { SOURCE_REFERENCE_CLASSIFIER } from '../src/domain/sourceReferenceBoundary';
 import { classifyRepostTextRole } from '../src/domain/retentionIntent';
 import worker, { type Env } from '../src/index';
 
@@ -983,6 +984,143 @@ describe('space-service v1', () => {
     const body = await readJson<{ error: { code: string; message: string } }>(response);
     expect(response.status).toBe(400);
     expect(body.error.message).toMatch(/save\/publish/i);
+  });
+
+  it('returns write-bounded sourceReference on authorial create when source material is provided', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    executeMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'spost_authorial_with_sr',
+            author_id: 'user_owner',
+            author_display_name: 'Owner',
+            author_avatar_url: null,
+            author_role_label: 'Spacer',
+            group_id: null,
+            post_type: 'post',
+            visibility: 'public',
+            text: 'Street food planning deserves more than a single weekend pass through Bangkok.',
+            repost_target_type: null,
+            repost_target_id: null,
+            status: 'active',
+            created_at: '2026-03-14T10:00:00.000Z',
+            updated_at: '2026-03-14T10:00:00.000Z',
+            published_at: '2026-03-14T10:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('authorial_with_sr');
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          authorialExpressionIntent: true,
+          text: 'Street food planning deserves more than a single weekend pass through Bangkok.',
+          sourceReference: {
+            sourceMaterialType: 'place',
+            sourceMaterialId: 'place_bkk',
+          },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{
+      id: string;
+      sourceReference?: {
+        sourceMaterialType: string;
+        sourceMaterialId: string;
+        classifier: string;
+        hopCount: number;
+      };
+    }>(response);
+    expect(response.status).toBe(201);
+    expect(body.sourceReference).toMatchObject({
+      sourceMaterialType: 'place',
+      sourceMaterialId: 'place_bkk',
+      classifier: SOURCE_REFERENCE_CLASSIFIER,
+      hopCount: 1,
+    });
+  });
+
+  it('rejects Source Reference on non-authorial post writes', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          text: 'Generic post that should not accept source material without authorial intent.',
+          sourceReference: {
+            sourceMaterialType: 'place',
+            sourceMaterialId: 'place_bkk',
+          },
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.message).toMatch(/authorial-only|FT-3B/i);
+  });
+
+  it('rejects chain-shaped Source Reference body fields on authorial writes', async () => {
+    const env: Env = {
+      SERVICE_JWT_SECRET: 'service-secret',
+      DATABASE_URL: 'postgres://example',
+    };
+    const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+    const response = await worker.fetch(
+      new Request('https://space.example/v1/space/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gateway-Auth': gatewayJwt,
+        },
+        body: JSON.stringify({
+          postType: 'post',
+          visibility: 'public',
+          authorialExpressionIntent: true,
+          text: 'Independent thought with forbidden nested chain field on the write path.',
+          sourceChain: ['place_bkk'],
+        }),
+      }),
+      env
+    );
+
+    const body = await readJson<{ error: { message: string } }>(response);
+    expect(response.status).toBe(400);
+    expect(body.error.message).toMatch(/FT-3B|chain/i);
   });
 
   it('rejects authorialExpressionIntent on repost writes', async () => {
