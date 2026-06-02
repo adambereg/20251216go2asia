@@ -58,6 +58,12 @@ import {
   Ws2PropagationRepostForbiddenError,
 } from '../domain/ws2PropagationWritePolicy';
 import {
+  filterSpacePostsForWs2PublicTargetFeed,
+  isWs2PublicTargetFeedSurface,
+  resolvePublicFeedItemReason,
+  ws2PropagationReadOptionsFromPost,
+} from '../domain/ws2PropagationReadPolicy';
+import {
   assertSavePublishBoundaryWrite,
   classifySavePublishBoundary,
 } from '../domain/savePublishBoundary';
@@ -206,7 +212,7 @@ async function mapPostResponse(
   surface: LegacySurfaceId
 ) {
   const rowInput = spacePostRowInput(post, surface);
-  applyAuthorialExpressionReadGuards(surface, rowInput);
+  applyAuthorialExpressionReadGuards(surface, rowInput, ws2PropagationReadOptionsFromPost(post));
   assertAuthorialIndependenceReadCarrier(rowInput);
   const mediaRows = await listMediaByPostId(db, post.id);
   const authorialFields = rehydrateAuthorialFieldsFromRow(post);
@@ -1218,16 +1224,32 @@ async function buildFeedResponse(
   limit: number,
   surface: LegacySurfaceId
 ): Promise<{ items: Array<{ id: string; reason: string; post: Awaited<ReturnType<typeof mapPostResponse>>; createdAt: string }>; nextCursor: string | null }> {
-  const pageRows = rows.slice(0, limit);
+  const feedRows = isWs2PublicTargetFeedSurface(surface)
+    ? filterSpacePostsForWs2PublicTargetFeed(rows, surface)
+    : rows;
+  const pageRows = feedRows.slice(0, limit);
   const items = await Promise.all(
-    pageRows.map(async (row) => ({
-      id: row.id,
-      reason: row.post_type === 'repost' ? 'repost' : row.group_id ? 'group_post' : row.post_type === 'system' ? 'system' : 'author_post',
-      post: await mapPostResponse(db, row, surface),
-      createdAt: toIso(row.published_at),
-    }))
+    pageRows.map(async (row) => {
+      const rowInput = spacePostRowInput(row, surface);
+      const readOptions = ws2PropagationReadOptionsFromPost(row);
+      const reason = isWs2PublicTargetFeedSurface(surface)
+        ? resolvePublicFeedItemReason(rowInput, readOptions, { groupId: row.group_id })
+        : row.post_type === 'repost'
+          ? 'repost'
+          : row.group_id
+            ? 'group_post'
+            : row.post_type === 'system'
+              ? 'system'
+              : 'author_post';
+      return {
+        id: row.id,
+        reason,
+        post: await mapPostResponse(db, row, surface),
+        createdAt: toIso(row.published_at),
+      };
+    })
   );
-  const extraRow = rows[limit];
+  const extraRow = feedRows[limit];
   const nextCursor = extraRow
     ? encodeFeedCursor({
         publishedAt: toIso(extraRow.published_at),

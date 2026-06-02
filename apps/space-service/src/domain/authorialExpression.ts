@@ -3,7 +3,11 @@ import {
   classifyRepostArtifactDistinction,
   type DistinctionResult,
 } from './legacyDistinction';
-import { applyFt5SurfaceLegacyGuards, type LegacySurfaceId } from './perSurfaceLegacyMatrix';
+import {
+  applyFt5SurfaceLegacyGuards,
+  type ApplySurfaceGuardsOptions,
+  type LegacySurfaceId,
+} from './perSurfaceLegacyMatrix';
 import {
   classifyRepostTextRole,
   classifyRepostWriteIntent,
@@ -254,9 +258,10 @@ export function assertAuthorialReadCarrier(_surface: LegacySurfaceId, row: Legac
  */
 export function applyAuthorialExpressionReadGuards(
   surface: LegacySurfaceId,
-  row: LegacySpacePostRowInput
+  row: LegacySpacePostRowInput,
+  options: ApplySurfaceGuardsOptions = {}
 ): void {
-  applyFt5SurfaceLegacyGuards(surface, row);
+  applyFt5SurfaceLegacyGuards(surface, row, options);
   assertAuthorialReadCarrier(surface, row);
 }
 
