@@ -35,6 +35,7 @@ import {
 } from '../db/queries/space';
 import {
   assertActivityFeedSurfaceProjection,
+  assertHighlightSurfaceMatrix,
   type LegacySurfaceId,
   spacePostRowInput,
 } from '../domain/perSurfaceLegacyMatrix';
@@ -1266,6 +1267,82 @@ export async function getProfileFeed(
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+/** FT-5D / FE-P4-SURF: publications surface uses distinct LegacySurfaceId (LR-N1). */
+export async function getPublicationsFeed(
+  env: ServiceEnv,
+  userId: string,
+  viewer: GatewayPrincipal | null,
+  limit: number,
+  cursorValue: string | null,
+  requestId: string
+): Promise<Response> {
+  const dbState = getDb(env, requestId);
+  if (!dbState.ok) return dbState.res;
+  const db = dbState.db;
+
+  const rows = await listProfileFeedPosts(db, userId, limit + 10, decodeFeedCursor(cursorValue));
+  const filtered: SpacePostRow[] = [];
+  for (const row of rows) {
+    const allowed = await canViewPost(row, viewer, async () => {
+      if (!viewer || !row.group_id) return null;
+      return getMembership(db, row.group_id, viewer.userId);
+    });
+    if (allowed) filtered.push(row);
+    if (filtered.length >= limit + 1) break;
+  }
+
+  return new Response(JSON.stringify(await buildFeedResponse(db, filtered, limit, 'publications')), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** FE-P4-SURF: highlight deep-link read uses highlight surface on post-shaped rows (LR-N2). */
+export async function getHighlightPostRead(
+  env: ServiceEnv,
+  postId: string,
+  viewer: GatewayPrincipal | null,
+  requestId: string
+): Promise<Response> {
+  const dbState = getDb(env, requestId);
+  if (!dbState.ok) return dbState.res;
+  const db = dbState.db;
+
+  const post = await getPostById(db, postId);
+  if (!post) {
+    return errorResponse('NOT_FOUND', `Post not found: ${postId}`, requestId, 404);
+  }
+
+  const allowed = await canViewPost(post, viewer, async () => {
+    if (!post.group_id || !viewer) return null;
+    return getMembership(db, post.group_id, viewer.userId);
+  });
+  if (!allowed) {
+    return errorResponse('FORBIDDEN', 'Post is not accessible', requestId, 403);
+  }
+
+  return new Response(JSON.stringify(await mapPostResponse(db, post, 'highlight')), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** FE-P4-SURF: highlight reference artifact surface (no post row; legacy carve-out proof). */
+export async function getHighlightReferenceSurface(_requestId: string): Promise<Response> {
+  assertHighlightSurfaceMatrix();
+  return new Response(
+    JSON.stringify({
+      surface: 'highlight',
+      artifactKind: 'highlight_reference',
+      distinction: 'legacy_highlight_carve_out',
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }
 
 export async function getGroupFeed(

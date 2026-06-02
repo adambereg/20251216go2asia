@@ -49,7 +49,17 @@ pnpm --filter @go2asia/space-service lint
 | Establishment contract | `establishmentTier.contract.test.ts` | **EST-E1 evidence** for **EST** gates |
 | Full gate | Future `stage_13B_5_FE_P4_*` reports | **`P_ESTABLISHED`** verdict |
 
-## Known deferred (not EST-TEST-1 scope)
+## Companion HTTP evidence (FE-P4-SURF)
 
-- **P4 E4 HTTP:** `publications` / `highlight` route wiring (LR-N1 / LR-N2) — separate **FE-P4-SURF** slice.
+After **Stage 13B.5-FE-P4-SURF**, cite `request.test.ts` cases **SURF-PUB-1/2**, **SURF-HL-1/2/3** for EST-R3 HTTP surface proof.
+
+| Route | Surface | Tests |
+| --- | --- | --- |
+| `GET /v1/space/feed/publications/:userId` | `publications` | SURF-PUB-1, SURF-PUB-2 |
+| `GET /v1/space/highlight/:postId` | `highlight` | SURF-HL-1, SURF-HL-3 |
+| `GET /v1/space/highlight/reference` | `highlight` (artifact) | SURF-HL-2 |
+
+**GAP-EST-HTTP-PUB** and **GAP-EST-HTTP-HL** are **CLOSED** at FE-P4-SURF (EST-R3 HTTP layer only).
+
+## Known deferred (not EST-TEST-1 scope)
 - **Literal policy:** CO-13 / CO-S12 flip — **LIT-P4 / LIT-P5** after EST grant.
