@@ -390,6 +390,20 @@ stage_13B_5_ZR_closure_blocker_cleared: Y-HB5
 stage_13B_5_ZR_next_safe_step: BLOCKER_GATES_PERSISTENCE_E9_BV_VISIBILITY_THEN_CLOSURE_ACCEPTANCE
 ```
 
+## FT-X3 Historical Token Reconciliation (13B.6-C-APPLY)
+
+This report predates **Go2Asia Foundation Primitive Maturity & Establishment Canon v1**. Historical tokens below remain **valid in context**; interpret via mapping (reports are **not rewritten**).
+
+| Historical token (this report) | Canonical interpretation (Canon v1) |
+| --- | --- |
+| `P4_BOUNDED_RUNTIME_PRIMITIVE_ESTABLISHED_WITH_CONDITIONS: TRUE` | Bounded runtime evidence satisfied with conditions — maps to **`P4_ESTABLISHED_BOUNDED` candidate** (requires **Bounded Establishment Reassessment Gate**; not auto-granted by APPLY) |
+| `SOURCE_REFERENCE_BOUNDED_RUNTIME_PRIMITIVE_ESTABLISHED_WITH_CONDITIONS: TRUE` | Maps to **`P5_ESTABLISHED_BOUNDED` candidate** (same reassessment rule) |
+| `AUTHORIAL_INDEPENDENCE_ESTABLISHED_WITH_CONDITIONS: TRUE` | Adjunct bounded proof — **not** full P4 `ESTABLISHED` |
+| `DUAL_INTENT_BOUNDARY_ESTABLISHED_WITH_CONDITIONS: TRUE` | Adjunct bounded proof — **not** Trio Ready |
+| `foundation_trio_ready: FALSE` | Unchanged — bounded ≠ Ready |
+
+Full reconciliation: `stage_13B_6_C_APPLY_establishment_canon_application_v1.md` §5.
+
 Program tokens (unchanged):
 
 ```yaml

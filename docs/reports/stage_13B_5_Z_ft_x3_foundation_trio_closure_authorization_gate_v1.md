@@ -1,5 +1,7 @@
 # Stage 13B.5-Z — FT-X3 Foundation Trio Closure Authorization Gate
 
+**FT-X3 reconciliation (13B.6-C-APPLY):** Historical closure tokens in ZR reports map to Canon v1 labels — see `stage_13B_5_ZR_ft_x3_foundation_trio_closure_review_v1.md` § FT-X3 Historical Token Reconciliation and `stage_13B_6_C_APPLY_establishment_canon_application_v1.md` §5.
+
 ## 1. Inputs Reviewed
 
 Execution mode:
