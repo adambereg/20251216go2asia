@@ -53,6 +53,11 @@ import {
 } from '../domain/authorialIndependence';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import {
+  assertWs2PropagationWriteAllowed,
+  WS2_PROPAGATION_REPOST_FORBIDDEN_CODE,
+  Ws2PropagationRepostForbiddenError,
+} from '../domain/ws2PropagationWritePolicy';
+import {
   assertSavePublishBoundaryWrite,
   classifySavePublishBoundary,
 } from '../domain/savePublishBoundary';
@@ -410,6 +415,15 @@ export async function createPost(
     return errorResponse('VALIDATION_ERROR', 'postType and visibility are required', requestId, 400);
   }
 
+  try {
+    assertWs2PropagationWriteAllowed({ postType, visibility });
+  } catch (error) {
+    if (error instanceof Ws2PropagationRepostForbiddenError) {
+      return errorResponse(WS2_PROPAGATION_REPOST_FORBIDDEN_CODE, error.message, requestId, 400);
+    }
+    throw error;
+  }
+
   if (authorialExpressionIntent && postType === 'repost') {
     return errorResponse(
       'VALIDATION_ERROR',
@@ -696,7 +710,7 @@ export async function repostPost(
       postType: 'repost',
       repostTargetType: 'space_post',
       repostTargetId: targetPostId,
-      visibility: body?.visibility ?? 'public',
+      visibility: body?.visibility,
       groupId: body?.groupId ?? null,
     },
     principal,
