@@ -248,13 +248,26 @@ export function assertAuthorialIndependenceWrite(
   return proof;
 }
 
-/** Read-path carrier safety (NR-N1: positive independence proof remains write-bounded). */
+/** Read-path carrier safety + persisted-intent independence rehydration (Stage 13B.5-PI). */
 export function assertAuthorialIndependenceReadCarrier(row: LegacySpacePostRowInput): void {
   if (row.postType !== 'post') {
     return;
   }
   if (row.repostTargetType || row.repostTargetId) {
     throw new Error('FT-3C: authorial independence carrier must not expose repostTarget* on read');
+  }
+  if (row.authorialExpressionIntent === true) {
+    const independence = classifyAuthorialIndependence({
+      postType: row.postType,
+      visibility: row.visibility,
+      text: row.text,
+      authorialExpressionIntent: true,
+      repostTargetType: row.repostTargetType,
+      repostTargetId: row.repostTargetId,
+    });
+    if (!independence) {
+      throw new Error('FT-PI: persisted authorial row failed independence rehydration at read');
+    }
   }
 }
 

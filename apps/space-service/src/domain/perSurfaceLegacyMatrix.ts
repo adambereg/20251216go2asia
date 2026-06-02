@@ -282,6 +282,7 @@ export function spacePostRowInput(
     text: string | null;
     repost_target_type: string | null;
     repost_target_id: string | null;
+    authorial_expression_intent?: boolean;
   },
   surface: LegacySurfaceId
 ): LegacySpacePostRowInput {
@@ -292,6 +293,7 @@ export function spacePostRowInput(
       text: post.text,
       repostTargetType: post.repost_target_type,
       repostTargetId: post.repost_target_id,
+      authorialExpressionIntent: post.authorial_expression_intent ?? false,
     },
     surface
   );

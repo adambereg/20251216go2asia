@@ -421,6 +421,13 @@
       "when": 1778682000000,
       "tag": "0057_rf_entitlement_shadow_diagnostics_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1778750000000,
+      "tag": "0058_space_post_authorial_persistence_v1",
+      "breakpoints": true
     }
   ]
 }

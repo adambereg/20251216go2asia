@@ -33,6 +33,8 @@ export type LegacySpacePostRowInput = {
   text: string | null;
   repostTargetType: string | null;
   repostTargetId: string | null;
+  /** Persisted P4 intent (Stage 13B.5-PI); omitted/false = non-authorial. */
+  authorialExpressionIntent?: boolean;
   surface?: 'profile' | 'publications' | null;
 };
 
