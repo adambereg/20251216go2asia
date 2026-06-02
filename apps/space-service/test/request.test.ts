@@ -1955,7 +1955,7 @@ describe('space-service v1', () => {
     });
     expect(body.items[1]).toEqual({
       id: 'activity:space.post_reposted_by_other:spost_repost_1:user_test_1',
-      type: 'post_reposted_by_other',
+      type: 'legacy_repost_activity_carve_out',
       actionType: 'space.post_reposted_by_other',
       direction: 'incoming',
       category: 'social',
@@ -3430,6 +3430,205 @@ describe('space-service v1', () => {
       expect(legacy?.reason).toBe('legacy_group_repost_carve_out');
       expect(legacy?.post.postType).toBe('repost');
       expect(legacy?.post.authorialExpressionIntent).toBeUndefined();
+    });
+  });
+
+  describe('Stage 13B.5-WS2-ACTIVITY-PACKAGE — activity projection alignment', () => {
+    const activityRow = (overrides: Record<string, unknown> = {}) => ({
+      id: 'activity:fixture',
+      type: 'repost_created',
+      action_type: 'space.repost_created',
+      direction: 'outgoing',
+      category: 'social',
+      actor_user_id: 'user_test_1',
+      actor_display_name: 'User Test',
+      actor_avatar_url: null,
+      actor_role_label: 'Spacer',
+      title: 'You reposted an item',
+      description: 'Legacy retention',
+      related_post_id: 'spost_repost_legacy',
+      related_entity_type: 'place',
+      related_entity_id: 'place_bkk',
+      occurred_at: '2026-03-14T10:06:00.000Z',
+      ...overrides,
+    });
+
+    it('T-READ-ACT-1: legacy repost_created activity visible with legacy_repost_activity_carve_out type', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          activityRow({
+            id: 'activity:space.repost_created:spost_legacy_act',
+            action_type: 'space.repost_created',
+            type: 'repost_created',
+          }),
+        ],
+      });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/activity?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ items: Array<{ type: string; actionType: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]?.type).toBe('legacy_repost_activity_carve_out');
+      expect(body.items[0]?.actionType).toBe('space.repost_created');
+    });
+
+    it('T-READ-ACT-2: regression propagation activity excluded from activity feed items', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          {
+            ...activityRow({
+              id: 'activity:space.post_reposted_by_other:spost_reg',
+              action_type: 'space.post_reposted_by_other',
+              type: 'post_reposted_by_other',
+              direction: 'incoming',
+            }),
+            ws2_post_alignment_regression: true,
+          },
+        ],
+      });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/activity?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ items: unknown[] }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(0);
+    });
+
+    it('T-READ-ACT-3: authorial post_created activity type unchanged', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'activity:space.post_created:spost_authorial',
+            type: 'post_created',
+            action_type: 'space.post_created',
+            direction: 'outgoing',
+            category: 'social',
+            actor_user_id: 'user_test_1',
+            actor_display_name: 'User Test',
+            actor_avatar_url: null,
+            actor_role_label: 'Spacer',
+            title: 'You created a post',
+            description: 'Authorial activity',
+            related_post_id: 'spost_authorial',
+            related_entity_type: null,
+            related_entity_id: null,
+            occurred_at: '2026-03-14T10:03:00.000Z',
+          },
+        ],
+      });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/activity?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ items: Array<{ type: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.type).toBe('post_created');
+    });
+
+    it('T-READ-ACT-4: incoming legacy repost pressure activity classified not target propagation', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          activityRow({
+            id: 'activity:space.post_reposted_by_other:spost_in',
+            action_type: 'space.post_reposted_by_other',
+            type: 'post_reposted_by_other',
+            direction: 'incoming',
+            title: 'Someone reposted your post',
+          }),
+        ],
+      });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/activity?filter=incoming', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ items: Array<{ type: string; actionType: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.type).toBe('legacy_repost_activity_carve_out');
+      expect(body.items[0]?.actionType).toBe('space.post_reposted_by_other');
+    });
+
+    it('T-READ-ACT-5: no activity regression on group_joined and filters', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!);
+
+      executeMock.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'activity:space.group_joined:sgroup_1:user_test_1',
+            type: 'group_joined',
+            action_type: 'space.group_joined',
+            direction: 'outgoing',
+            category: 'social',
+            actor_user_id: 'user_test_1',
+            actor_display_name: 'User Test',
+            actor_avatar_url: null,
+            actor_role_label: 'Spacer',
+            title: 'Joined',
+            description: null,
+            related_post_id: null,
+            related_entity_type: 'space_group',
+            related_entity_id: 'sgroup_1',
+            occurred_at: '2026-03-14T10:01:00.000Z',
+          },
+        ],
+      });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/activity?filter=my_actions', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ items: Array<{ type: string }> }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.type).toBe('group_joined');
     });
   });
 });

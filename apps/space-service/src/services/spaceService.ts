@@ -58,6 +58,12 @@ import {
   Ws2PropagationRepostForbiddenError,
 } from '../domain/ws2PropagationWritePolicy';
 import {
+  filterActivityRowsForWs2TargetStream,
+  isRepostActivityActionType,
+  resolveActivityFeedItemType,
+  ws2ActivityReadOptionsFromRow,
+} from '../domain/ws2PropagationActivityReadPolicy';
+import {
   filterSpacePostsForWs2GroupTargetFeed,
   isWs2GroupTargetFeedSurface,
   resolveGroupFeedItemReason,
@@ -1433,38 +1439,37 @@ export async function getActivityFeed(
   if (!dbState.ok) return dbState.res;
   const db = dbState.db;
   const rows = await listActivityFeedRows(db, principal.userId, filter, limit + 1, decodeFeedCursor(cursorValue));
-  const pageRows = rows.slice(0, limit);
-  const extraRow = rows[limit];
+  const feedRows = filterActivityRowsForWs2TargetStream(rows);
+  const pageRows = feedRows.slice(0, limit);
+  const extraRow = feedRows[limit];
   return new Response(
     JSON.stringify({
       items: pageRows.map((row: SpaceActivityRow) => {
-        if (
-          row.action_type === 'space.repost_created' ||
-          row.action_type === 'space.post_reposted_by_other'
-        ) {
+        if (isRepostActivityActionType(row.action_type)) {
           assertActivityFeedSurfaceProjection({
             actionType: row.action_type,
           });
         }
+        const readOptions = ws2ActivityReadOptionsFromRow(row);
         return {
-        id: row.id,
-        type: row.type,
-        actionType: row.action_type,
-        direction: row.direction,
-        category: row.category,
-        actor: {
-          userId: row.actor_user_id,
-          displayName: row.actor_display_name ?? row.actor_user_id,
-          avatarUrl: row.actor_avatar_url,
-          roleLabel: row.actor_role_label,
-        },
-        title: row.title,
-        description: row.description,
-        relatedPostId: row.related_post_id,
-        relatedEntityType: row.related_entity_type,
-        relatedEntityId: row.related_entity_id,
-        createdAt: toIso(row.occurred_at),
-      };
+          id: row.id,
+          type: resolveActivityFeedItemType(row, readOptions),
+          actionType: row.action_type,
+          direction: row.direction,
+          category: row.category,
+          actor: {
+            userId: row.actor_user_id,
+            displayName: row.actor_display_name ?? row.actor_user_id,
+            avatarUrl: row.actor_avatar_url,
+            roleLabel: row.actor_role_label,
+          },
+          title: row.title,
+          description: row.description,
+          relatedPostId: row.related_post_id,
+          relatedEntityType: row.related_entity_type,
+          relatedEntityId: row.related_entity_id,
+          createdAt: toIso(row.occurred_at),
+        };
       }),
       nextCursor: extraRow
         ? encodeFeedCursor({
