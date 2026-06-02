@@ -171,8 +171,12 @@ describe('EST-TEST-1 — P4 establishment tier', () => {
     }
   });
 
-  it('E-P4-07: publications surface — domain matrix accepts authorial carrier (HTTP deferred)', () => {
+  it('E-P4-07: publications surface — domain read guards accept authorial carrier', () => {
     expect(() => applyAuthorialExpressionReadGuards('publications', authorialCarrierRow)).not.toThrow();
+  });
+
+  it('E-P4-08: highlight surface — domain read guards accept authorial carrier', () => {
+    expect(() => applyAuthorialExpressionReadGuards('highlight', authorialCarrierRow)).not.toThrow();
   });
 
   it('E-P4-08: legacy public repost on read surface is not authorial P4', () => {

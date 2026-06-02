@@ -1,6 +1,12 @@
 import { type GatewayPrincipal } from '../middleware/auth';
 import { errorResponse, parsePositiveInt } from '../middleware/http';
-import { getActivityFeed, getGroupFeed, getHomeFeed, getProfileFeed } from '../services/spaceService';
+import {
+  getActivityFeed,
+  getGroupFeed,
+  getHomeFeed,
+  getProfileFeed,
+  getPublicationsFeed,
+} from '../services/spaceService';
 
 const ACTIVITY_FILTERS = new Set(['all', 'incoming', 'my_actions']);
 
@@ -21,6 +27,18 @@ export async function handleFeedRoute(
 
   if (path === '/v1/space/feed/home' && request.method === 'GET' && principal) {
     return getHomeFeed(env, principal, limit, cursor, requestId);
+  }
+
+  const publicationsFeedMatch = path.match(/^\/v1\/space\/feed\/publications\/([^/]+)$/);
+  if (publicationsFeedMatch && request.method === 'GET') {
+    return getPublicationsFeed(
+      env,
+      decodeURIComponent(publicationsFeedMatch[1]),
+      principal,
+      limit,
+      cursor,
+      requestId
+    );
   }
 
   const profileFeedMatch = path.match(/^\/v1\/space\/feed\/profile\/([^/]+)$/);

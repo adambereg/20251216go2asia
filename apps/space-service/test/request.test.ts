@@ -2687,4 +2687,173 @@ describe('space-service v1', () => {
       });
     });
   });
+
+  describe('Stage 13B.5-FE-P4-SURF — publications / highlight surface evidence', () => {
+    const authorialSurfRow = (overrides: Record<string, unknown> = {}) => ({
+      id: 'spost_surf_authorial',
+      author_id: 'user_owner',
+      author_display_name: 'Owner',
+      author_avatar_url: null,
+      author_role_label: 'Spacer',
+      group_id: null,
+      post_type: 'post',
+      visibility: 'public',
+      text: 'Authorial publication surface evidence with enough text for guards.',
+      repost_target_type: null,
+      repost_target_id: null,
+      status: 'active',
+      created_at: '2026-03-14T10:00:00.000Z',
+      updated_at: '2026-03-14T10:00:00.000Z',
+      published_at: '2026-03-14T10:00:00.000Z',
+      ...persistenceDefaults({
+        authorial_expression_intent: true,
+        source_material_type: 'place',
+        source_material_id: 'place_bkk',
+      }),
+      ...overrides,
+    });
+
+    it('SURF-PUB-1: publications feed rehydrates authorial post (EST-R3 HTTP)', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock
+        .mockResolvedValueOnce({ rows: [authorialSurfRow()] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/publications/user_owner?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        items: Array<{
+          post: {
+            authorialExpressionIntent?: boolean;
+            sourceReference?: { sourceMaterialId: string };
+          };
+        }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]?.post.authorialExpressionIntent).toBe(true);
+      expect(body.items[0]?.post.sourceReference).toMatchObject({
+        sourceMaterialId: 'place_bkk',
+      });
+    });
+
+    it('SURF-PUB-2: publications feed keeps legacy repost as repost (negative)', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
+
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            propagationRepostRow({
+              id: 'spost_legacy_pub',
+              text: 'legacy on publications surface',
+            }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/publications/user_owner?limit=20', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        items: Array<{ reason: string; post: { postType: string; authorialExpressionIntent?: boolean } }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.reason).toBe('repost');
+      expect(body.items[0]?.post.postType).toBe('repost');
+      expect(body.items[0]?.post.authorialExpressionIntent).toBeUndefined();
+    });
+
+    it('SURF-HL-1: highlight post read rehydrates authorial fields (EST-R3 HTTP)', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_owner' });
+
+      executeMock.mockResolvedValueOnce({ rows: [authorialSurfRow({ id: 'spost_highlight_authorial' })] });
+      executeMock.mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/highlight/spost_highlight_authorial', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        id: string;
+        authorialExpressionIntent?: boolean;
+        sourceReference?: { sourceMaterialId: string };
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.id).toBe('spost_highlight_authorial');
+      expect(body.authorialExpressionIntent).toBe(true);
+      expect(body.sourceReference).toMatchObject({ sourceMaterialId: 'place_bkk' });
+    });
+
+    it('SURF-HL-2: highlight reference route returns legacy carve-out artifact', async () => {
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/highlight/reference'),
+        {}
+      );
+      const body = await readJson<{
+        surface: string;
+        artifactKind: string;
+        distinction: string;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.surface).toBe('highlight');
+      expect(body.artifactKind).toBe('highlight_reference');
+      expect(body.distinction).toBe('legacy_highlight_carve_out');
+    });
+
+    it('SURF-HL-3: legacy repost on highlight read remains non-authorial (negative)', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_other' });
+
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [
+            propagationRepostRow({
+              id: 'spost_legacy_highlight',
+              author_id: 'user_owner',
+            }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/highlight/spost_legacy_highlight', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ postType: string; authorialExpressionIntent?: boolean }>(response);
+      expect(response.status).toBe(200);
+      expect(body.postType).toBe('repost');
+      expect(body.authorialExpressionIntent).toBeUndefined();
+    });
+  });
 });

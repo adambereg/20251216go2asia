@@ -6,6 +6,8 @@ import {
   createPost,
   deletePost,
   detachMedia,
+  getHighlightPostRead,
+  getHighlightReferenceSurface,
   getPost,
   repostPost,
   updateRepostCommentary,
@@ -30,6 +32,15 @@ export async function handlePostsRoute(
   if (path === '/v1/space/posts' && request.method === 'POST' && principal) {
     const body = await readJsonObject(request);
     return createPost(env, body, principal, requestId, publisher);
+  }
+
+  if (path === '/v1/space/highlight/reference' && request.method === 'GET') {
+    return getHighlightReferenceSurface(requestId);
+  }
+
+  const highlightPostMatch = path.match(/^\/v1\/space\/highlight\/([^/]+)$/);
+  if (highlightPostMatch && request.method === 'GET') {
+    return getHighlightPostRead(env, decodeURIComponent(highlightPostMatch[1]), principal, requestId);
   }
 
   const postMatch = path.match(/^\/v1\/space\/posts\/([^/]+)$/);
