@@ -8,6 +8,8 @@
 
 **WS-5 spine display (13B.5-WS5-SPINE-APPLY):** WS-5 §4.3 steps **1–9** `[FILLED]` per `stage_13B_5_WS5_SPINE_ws5_evidence_spine_completion_gate_v1.md` (`WS5_SPINE_COMPLETION_GRANTED`). Spine status **`WS5_EVIDENCE_SPINE_FILLED`**. **≠** Trio Ready · **≠** WS-2.
 
+**Trio rollup display (13B.5-TRIO-ROLLUP-APPLY):** §4.4 steps **1–7** `[FILLED]` per `stage_13B_5_TRIO_ROLLUP_trio_rollup_completion_gate_v1.md` (`TRIO_ROLLUP_COMPLETION_GRANTED`). Spine status **`TRIO_EVIDENCE_SPINE_FILLED`** — step **8** `[BLOCKED]` pending Ready Gate v3. **≠** `foundation_trio_ready` · **≠** WS-2.
+
 ## 1. Inputs Reviewed
 
 Execution mode:
@@ -197,7 +199,7 @@ WS-1 spine status: `WS1_EVIDENCE_SPINE_FILLED`
 | 13b (P4) | E1 | P4 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[FILLED]` — `stage_13B_5_FE_P4_full_establishment_gate_v1.md` |
 | 13b (P5) | E1 | P5 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[FILLED]` — `stage_13B_5_FE_P5_full_establishment_gate_v1.md` |
 
-WS-3 spine status: `WS3_EVIDENCE_SPINE_FILLED` *(§4.2 steps 1–12 + 13a/13b (P4+P5) FILLED; **≠** `foundation_trio_ready` — §4.4 Trio rollup, FT-X3, WS-8 BV exec, Ready Gate still open)*
+WS-3 spine status: `WS3_EVIDENCE_SPINE_FILLED` *(§4.2 steps 1–12 + 13a/13b (P4+P5) FILLED; **≠** `foundation_trio_ready` — §4.4 step **8** + Ready Gate v3)*
 
 ### 4.3 WS-5 Evidence Spine (history) — `[FILLED]`
 
@@ -214,22 +216,22 @@ WS-3 spine status: `WS3_EVIDENCE_SPINE_FILLED` *(§4.2 steps 1–12 + 13a/13b (P
 | 9 | E2 | FT-5x implementation reports per authorized slice | `[FILLED]` — FR, HR, JR, LR acceptances |
 | 10 | E1 | WS-5 full complete ≠ FT-1F WS-1-side only | `[FILLED]` distinction |
 
-WS-5 spine status: `WS5_EVIDENCE_SPINE_FILLED` *(§4.3 steps 1–9 + step 10; **≠** `TRIO_EVIDENCE_SPINE_FILLED`; **≠** `foundation_trio_ready`)*
+WS-5 spine status: `WS5_EVIDENCE_SPINE_FILLED` *(§4.3 steps 1–9 + step 10)*
 
-### 4.4 Foundation Trio rollup spine — `[STRUCTURE]`
+### 4.4 Foundation Trio rollup spine — `[FILLED]` *(step 8 BLOCKED)*
 
-| Step | Requirement | Depends on |
+| Step | Requirement | Status |
 | --- | --- | --- |
-| 1 | E1: FT-X1 accepted + false-pass catalog adopted as blocking policy | 13B.5-C, 13B.5-A/B §4 |
-| 2 | WS-1 spine `[FILLED]` | §4.1 |
-| 3 | WS-3 spine all required steps `[FILLED]` including **13a** (bounded) and **13b** (full ESTABLISHED) for P4 and P5 independently | §4.2 |
-| 4 | WS-5 spine all required steps `[FILLED]` including WS5-P4 | §4.3 — **display FILLED** post `stage_13B_5_WS5_SPINE_APPLY_ft_x2_ws5_spine_display_patch_v1.md` |
-| 5 | E6: Trio-level negative rollup — no FT-X1 collapse edge unguarded | FT-X1 §5 |
-| 6 | E8: No `BV_FAIL_AMBIGUITY` on repost-shaped artifacts (13B.4-B) | WS5-P2 + observable proof |
-| 7 | E2: FT-X3 Trio Closure Gate report accepted | Future stage |
-| 8 | E1: `FOUNDATION_TRIO_READY` token — explicit non-claim of WS-2 | FT-X3 |
+| 1 | E1: FT-X1 accepted + false-pass catalog adopted as blocking policy | `[FILLED]` — `stage_13B_5_C_foundation_trio_primitive_boundary_matrix_v1.md`; 13B.5-A/B §4; `stage_13B_5_TRIO_ROLLUP_trio_rollup_completion_gate_v1.md` |
+| 2 | WS-1 spine `[FILLED]` | `[FILLED]` — §4.1; C17; FT-1A–1G |
+| 3 | WS-3 spine all required steps `[FILLED]` including **13a** and **13b** (full ESTABLISHED) for P4 and P5 independently | `[FILLED]` — `stage_13B_5_FE_P4_full_establishment_gate_v1.md`; `stage_13B_5_FE_P5_full_establishment_gate_v1.md`; FE-P4/FE-P5 APPLY; EST-TEST-1 |
+| 4 | WS-5 spine all required steps `[FILLED]` including WS5-P4 | `[FILLED]` — `WS5_SPINE_COMPLETION_GRANTED`; `stage_13B_5_WS5_SPINE_APPLY_ft_x2_ws5_spine_display_patch_v1.md` |
+| 5 | E6: Trio-level negative rollup — no FT-X1 collapse edge unguarded | `[FILLED]` — FT-X1 §5; EST-TEST-1 E-AC-*; `stage_13B_5_foundation_trio_closure_acceptance_gate_v1.md`; TRIO-ROLLUP gate |
+| 6 | E8: No `BV_FAIL_AMBIGUITY` on repost-shaped artifacts (13B.4-B) | `[FILLED]` — `WS8_BV_EXECUTION_PASS`; `stage_13B_5_WS8_BV_EXEC_ws8_bv_execution_gate_v1.md`; `stage_13B_5_BV_ambiguity_gate_v1.md` |
+| 7 | E2: FT-X3 Trio Closure Gate report accepted | `[FILLED]` — `stage_13B_5_Z_ft_x3_foundation_trio_closure_authorization_gate_v1.md`; `FT_X3_TRIO_ROLLUP_READY_TIER_ACCEPTED` (rollup tier; **≠** operational closure) |
+| 8 | E1: `FOUNDATION_TRIO_READY` token — explicit non-claim of WS-2 | `[BLOCKED]` — Ready Gate v3 not run; Canon EST-L3; **`foundation_trio_ready` remains FALSE** |
 
-Foundation Trio spine status: `TRIO_EVIDENCE_SPINE_STRUCTURE_ONLY`
+Foundation Trio spine status: `TRIO_EVIDENCE_SPINE_FILLED` *(§4.4 steps **1–7** FILLED; step **8 BLOCKED** pending Ready Gate v3; **≠** `foundation_trio_ready`; **≠** `ws2_authorized`)*
 
 ### 4.5 Per-primitive evidence chain index (references FT-X1)
 
@@ -349,7 +351,7 @@ Purpose: claim retention, expression, and history are **independently provable**
 | WS-1 spine §4.1 fully `[FILLED]` | E1–E7 |
 | WS-3 spine §4.2 fully `[FILLED]` at establishment tier; **P4 and P5 independently `ESTABLISHED` (full)** — step **13b** | E3, E5, E6, E7 |
 | WS-5 spine §4.3 fully `[FILLED]` including WS5-P4 | E5, E6, E8, E7 |
-| Trio rollup §4.4 steps 1–6 complete | E6, E8 |
+| Trio rollup §4.4 steps 1–7 complete (step **8** separate Ready token) | E6, E8, E2 |
 | FT-X3 Trio Closure Gate accepted | E1, E2 |
 | No open Trio-scope negative blockers (13B.4-B rollup criteria) | E6 |
 | No `BV_FAIL_AMBIGUITY` on repost-shaped artifacts | E8 + E5 |
@@ -370,7 +372,7 @@ Must **not** suffice:
 - **P4 or P5 `ESTABLISHED_BOUNDED` alone** (or step 13a alone);
 - **HB gates cleared** without full establishment for P4/P5.
 
-Current status: `FOUNDATION_TRIO_READINESS_EVIDENCE_NOT_SATISFIED` — WS-1/WS-3/WS-5 spines **display FILLED**; §4.4 Trio rollup steps **5–8**, FT-X3, WS-8 BV exec, and explicit Ready Gate still open.
+Current status: `FOUNDATION_TRIO_READINESS_EVIDENCE_NOT_SATISFIED` — WS-1/WS-3/WS-5 and Trio rollup §4.4 steps **1–7** **display FILLED**; §4.4 step **8** (`FOUNDATION_TRIO_READY` token) **BLOCKED** until **Foundation Trio Ready Gate v3**; READY-B5 policy carve may apply at Ready v3.
 
 ### 6.4 WS-2 Authorization
 
@@ -401,7 +403,7 @@ Current status: `WS2_AUTHORIZATION_EVIDENCE_NOT_SATISFIED`.
 | --- | --- | --- | --- | --- | --- | --- |
 | Planning | YES | YES (this stage) | FILLED | STRUCTURE | STRUCTURE | NO |
 | Implementation (slice) | YES | YES | FILLED (if WS-1 slice) | Per slice | Per slice | NO |
-| Foundation Trio Ready | YES | YES | FILLED | FILLED | FILLED | Future WS-8 |
+| Foundation Trio Ready | YES | YES | FILLED | FILLED | FILLED | FILLED (WS8-BV-EXEC) |
 | WS-2 | YES | YES | FILLED | FILLED | FILLED | Required before WS-2 claim |
 
 ## 7. Completeness Review
@@ -430,17 +432,17 @@ Answer:
 | --- | --- | --- |
 | Planning authorization | YES (already satisfied) | — |
 | Per-slice implementation authorization | PARTIAL — framework only | C10-style slice report; E3–E7 execution; WS-3/WS-5 policy resolution |
-| Foundation Trio readiness | PARTIAL — WS-1/3/5 spines FILLED; Trio rollup open | TRIO-ROLLUP; FT-X3; WS8-BV-EXEC; Ready Gate v3 |
+| Foundation Trio readiness | PARTIAL — all spines + rollup steps 1–7 FILLED; step 8 BLOCKED | **Foundation Trio Ready Gate v3** only |
 | WS-2 authorization | NO | FT-X3 + Trio ready + WS-2 gate |
 
 ### 7.3 Documented gaps (evidence infrastructure, not taxonomy gaps)
 
 | Gap ID | Gap | Blocks FT-X2 acceptance? | Blocks future impl gates? |
 | --- | --- | --- | --- |
-| X2-G1 | WS-3 spine slots empty (P4/P5 full EST not granted) | P4 and P5 **13a + 13b FILLED**; WS-3 §4.2 establishment steps FILLED | **CLOSED** for P4/P5 full EST; **OPEN** for Trio rollup (FT-X3, WS-8 BV, Ready Gate) |
-| X2-G2 | WS-5 full spine empty beyond FT-1F (WS5-P4, distinction rule) | WS-5 §4.3 **FILLED** (FT-5A–5D); `WS5_EVIDENCE_SPINE_FILLED` | **CLOSED** for WS-5 spine; **OPEN** for Trio rollup §4.4 steps 5–8 |
-| X2-G3 | FT-X3 Trio Closure Gate not authored | NO | YES for Trio ready |
-| X2-G4 | WS-8 BV bundle not executed | NO for C2 | YES for WS-2 claim |
+| X2-G1 | WS-3 spine slots empty (P4/P5 full EST not granted) | P4 and P5 **13a + 13b FILLED**; WS-3 §4.2 establishment steps FILLED | **CLOSED** (FE-P5-APPLY) |
+| X2-G2 | WS-5 full spine empty beyond FT-1F (WS5-P4, distinction rule) | WS-5 §4.3 **FILLED**; `WS5_EVIDENCE_SPINE_FILLED` | **CLOSED** (WS5-SPINE-APPLY) |
+| X2-G3 | FT-X3 Trio Closure Gate not authored | §4.4 steps **1–7 FILLED**; `TRIO_EVIDENCE_SPINE_FILLED`; step **8 BLOCKED** | **CLOSED** for rollup tier (TRIO-ROLLUP-APPLY); **OPEN** for Ready token (step 8) |
+| X2-G4 | WS-8 BV bundle not executed | `WS8_BV_EXECUTION_PASS`; §4.4 step **6 FILLED** | **CLOSED** (WS8-BV-EXEC) |
 | X2-G5 | WS-3/WS-5 visibility policy gates open | NO for C2 | YES for impl authorization |
 | X2-G6 | Per-slice E2 reports for FT-3x/FT-5x do not exist yet | NO | YES per slice |
 
@@ -462,9 +464,8 @@ Why not `FT_X2_EVIDENCE_SPINE_REVIEW_REQUIRED`:
 
 Why not `FT_X2_EVIDENCE_SPINE_ACCEPTED` without qualification:
 
-- WS-3 P4/P5 establishment slots **FILLED** (post FE-P4/FE-P5 APPLY); WS-5 spine **FILLED** (post WS5-SPINE-APPLY); Trio rollup remains open (X2-G3, X2-G4);
-- Trio rollup and FT-X3 remain unfilled (X2-G3);
-- BV not executed (X2-G4).
+- WS-3 P4/P5 establishment slots **FILLED** (post FE-P4/FE-P5 APPLY); WS-5 spine **FILLED** (post WS5-SPINE-APPLY); Trio rollup steps **1–7 FILLED** (post TRIO-ROLLUP-APPLY); step **8 BLOCKED** until Ready Gate v3;
+- **`foundation_trio_ready`** and **WS-2** remain outside FT-X2 acceptance scope.
 
 Acceptance scope:
 
@@ -513,7 +514,8 @@ Future stages (after D, when spines fill):
 - `stage_13B_5_C2_ws1_evidence_spine_status: WS1_EVIDENCE_SPINE_FILLED`
 - `stage_13B_5_C2_ws3_evidence_spine_status: WS3_EVIDENCE_SPINE_FILLED`
 - `stage_13B_5_C2_ws5_evidence_spine_status: WS5_EVIDENCE_SPINE_FILLED`
-- `stage_13B_5_C2_trio_evidence_spine_status: TRIO_EVIDENCE_SPINE_STRUCTURE_ONLY`
+- `stage_13B_5_C2_trio_evidence_spine_status: TRIO_EVIDENCE_SPINE_FILLED`
+- `stage_13B_5_C2_trio_rollup_step_8_status: BLOCKED_PENDING_READY_GATE_V3`
 - `stage_13B_5_C2_ws1_evidence_tier: ESTABLISHED_BOUNDED`
 - `stage_13B_5_C2_ws3_evidence_tier: ESTABLISHED` *(P4+P5 full; display — governance gates FE-P4/FE-P5)*
 - `stage_13B_5_C2_ws5_evidence_tier: ESTABLISHED` *(WS-5 spine FILLED — display; governance `stage_13B_5_WS5_SPINE_ws5_evidence_spine_completion_gate_v1.md`)*
@@ -523,7 +525,7 @@ Future stages (after D, when spines fill):
 - `stage_13B_5_C2_ws1_bounded_complete_carried_forward: TRUE`
 - `stage_13B_5_C2_canon_lock_carried_forward: CANON_LOCK_ACCEPTED_WITH_CLARIFICATIONS`
 - `stage_13B_5_C2_planning_authorized_carried_forward: FOUNDATION_TRIO_PLANNING_AUTHORIZED_WITH_CONDITIONS`
-- `stage_13B_5_C2_documented_gaps: X2-G3,X2-G4,X2-G5,X2-G6` *(X2-G1 closed FE-P5-APPLY; X2-G2 closed WS5-SPINE-APPLY)*
+- `stage_13B_5_C2_documented_gaps: X2-G5,X2-G6` *(X2-G1..G4 closed through TRIO-ROLLUP-APPLY; X2-G3 step 8 remains Ready v3)*
 - `stage_13B_5_C2_ft_x1_g6_closed: TRUE`
 - `stage_13B_5_C2_next_safe_step: STAGE_13B_5_D_WS3_WS5_PLANNING_ACCEPTANCE_AND_IMPLEMENTATION_CUTLINE_AUTHORIZATION`
 
