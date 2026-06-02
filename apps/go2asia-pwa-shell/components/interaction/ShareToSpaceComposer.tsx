@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { generated } from '@go2asia/sdk';
 import { formatRepostTargetLabel } from '@/components/space/runtime/utils';
+import { WS2_COPY } from '@/modules/space/ws2Copy';
 import { hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
 
 type ShareToSpaceComposerProps = {
@@ -73,7 +74,7 @@ export function ShareToSpaceComposer({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-xl md:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Поделиться в Space</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{WS2_COPY.saveForMyself.composerTitle}</h3>
           <button
             type="button"
             onClick={onClose}
@@ -85,9 +86,7 @@ export function ShareToSpaceComposer({
           </button>
         </div>
 
-        <p className="mb-3 text-sm text-slate-600">
-          Добавьте реакцию к репосту или оставьте поле пустым для обычного репоста.
-        </p>
+        <p className="mb-3 text-sm text-slate-600">{WS2_COPY.saveForMyself.composerHint}</p>
 
         <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
@@ -119,7 +118,7 @@ export function ShareToSpaceComposer({
 
         <div className="mb-4">
           <label htmlFor="share-to-space-commentary" className="mb-2 block text-sm font-medium text-slate-700">
-            Комментарий к репосту (опционально)
+            {WS2_COPY.saveForMyself.composerNoteLabel}
           </label>
           <textarea
             id="share-to-space-commentary"
@@ -149,7 +148,7 @@ export function ShareToSpaceComposer({
             disabled={isSubmitting}
             className="rounded-md border border-sky-200 bg-sky-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? 'Публикуем...' : 'Опубликовать в Space'}
+            {isSubmitting ? WS2_COPY.saveForMyself.actionPending : WS2_COPY.saveForMyself.composerSubmit}
           </button>
         </div>
       </div>

@@ -53,6 +53,28 @@ import {
 } from '../domain/authorialIndependence';
 import { classifyRepostTextRole, classifyRepostWriteIntent } from '../domain/retentionIntent';
 import {
+  assertWs2PropagationWriteAllowed,
+  WS2_PROPAGATION_REPOST_FORBIDDEN_CODE,
+  Ws2PropagationRepostForbiddenError,
+} from '../domain/ws2PropagationWritePolicy';
+import {
+  filterActivityRowsForWs2TargetStream,
+  isRepostActivityActionType,
+  resolveActivityFeedItemType,
+  ws2ActivityReadOptionsFromRow,
+} from '../domain/ws2PropagationActivityReadPolicy';
+import {
+  filterSpacePostsForWs2GroupTargetFeed,
+  isWs2GroupTargetFeedSurface,
+  resolveGroupFeedItemReason,
+} from '../domain/ws2PropagationGroupReadPolicy';
+import {
+  filterSpacePostsForWs2PublicTargetFeed,
+  isWs2PublicTargetFeedSurface,
+  resolvePublicFeedItemReason,
+  ws2PropagationReadOptionsFromPost,
+} from '../domain/ws2PropagationReadPolicy';
+import {
   assertSavePublishBoundaryWrite,
   classifySavePublishBoundary,
 } from '../domain/savePublishBoundary';
@@ -201,7 +223,7 @@ async function mapPostResponse(
   surface: LegacySurfaceId
 ) {
   const rowInput = spacePostRowInput(post, surface);
-  applyAuthorialExpressionReadGuards(surface, rowInput);
+  applyAuthorialExpressionReadGuards(surface, rowInput, ws2PropagationReadOptionsFromPost(post));
   assertAuthorialIndependenceReadCarrier(rowInput);
   const mediaRows = await listMediaByPostId(db, post.id);
   const authorialFields = rehydrateAuthorialFieldsFromRow(post);
@@ -408,6 +430,15 @@ export async function createPost(
 
   if (!postType || !visibility) {
     return errorResponse('VALIDATION_ERROR', 'postType and visibility are required', requestId, 400);
+  }
+
+  try {
+    assertWs2PropagationWriteAllowed({ postType, visibility });
+  } catch (error) {
+    if (error instanceof Ws2PropagationRepostForbiddenError) {
+      return errorResponse(WS2_PROPAGATION_REPOST_FORBIDDEN_CODE, error.message, requestId, 400);
+    }
+    throw error;
   }
 
   if (authorialExpressionIntent && postType === 'repost') {
@@ -696,7 +727,7 @@ export async function repostPost(
       postType: 'repost',
       repostTargetType: 'space_post',
       repostTargetId: targetPostId,
-      visibility: body?.visibility ?? 'public',
+      visibility: body?.visibility,
       groupId: body?.groupId ?? null,
     },
     principal,
@@ -1204,16 +1235,36 @@ async function buildFeedResponse(
   limit: number,
   surface: LegacySurfaceId
 ): Promise<{ items: Array<{ id: string; reason: string; post: Awaited<ReturnType<typeof mapPostResponse>>; createdAt: string }>; nextCursor: string | null }> {
-  const pageRows = rows.slice(0, limit);
+  const feedRows = isWs2PublicTargetFeedSurface(surface)
+    ? filterSpacePostsForWs2PublicTargetFeed(rows, surface)
+    : isWs2GroupTargetFeedSurface(surface)
+      ? filterSpacePostsForWs2GroupTargetFeed(rows)
+      : rows;
+  const pageRows = feedRows.slice(0, limit);
   const items = await Promise.all(
-    pageRows.map(async (row) => ({
-      id: row.id,
-      reason: row.post_type === 'repost' ? 'repost' : row.group_id ? 'group_post' : row.post_type === 'system' ? 'system' : 'author_post',
-      post: await mapPostResponse(db, row, surface),
-      createdAt: toIso(row.published_at),
-    }))
+    pageRows.map(async (row) => {
+      const rowInput = spacePostRowInput(row, surface);
+      const readOptions = ws2PropagationReadOptionsFromPost(row);
+      const reason = isWs2PublicTargetFeedSurface(surface)
+        ? resolvePublicFeedItemReason(rowInput, readOptions, { groupId: row.group_id })
+        : isWs2GroupTargetFeedSurface(surface)
+          ? resolveGroupFeedItemReason(rowInput, readOptions, { groupId: row.group_id })
+          : row.post_type === 'repost'
+            ? 'repost'
+            : row.group_id
+              ? 'group_post'
+              : row.post_type === 'system'
+                ? 'system'
+                : 'author_post';
+      return {
+        id: row.id,
+        reason,
+        post: await mapPostResponse(db, row, surface),
+        createdAt: toIso(row.published_at),
+      };
+    })
   );
-  const extraRow = rows[limit];
+  const extraRow = feedRows[limit];
   const nextCursor = extraRow
     ? encodeFeedCursor({
         publishedAt: toIso(extraRow.published_at),
@@ -1388,38 +1439,37 @@ export async function getActivityFeed(
   if (!dbState.ok) return dbState.res;
   const db = dbState.db;
   const rows = await listActivityFeedRows(db, principal.userId, filter, limit + 1, decodeFeedCursor(cursorValue));
-  const pageRows = rows.slice(0, limit);
-  const extraRow = rows[limit];
+  const feedRows = filterActivityRowsForWs2TargetStream(rows);
+  const pageRows = feedRows.slice(0, limit);
+  const extraRow = feedRows[limit];
   return new Response(
     JSON.stringify({
       items: pageRows.map((row: SpaceActivityRow) => {
-        if (
-          row.action_type === 'space.repost_created' ||
-          row.action_type === 'space.post_reposted_by_other'
-        ) {
+        if (isRepostActivityActionType(row.action_type)) {
           assertActivityFeedSurfaceProjection({
             actionType: row.action_type,
           });
         }
+        const readOptions = ws2ActivityReadOptionsFromRow(row);
         return {
-        id: row.id,
-        type: row.type,
-        actionType: row.action_type,
-        direction: row.direction,
-        category: row.category,
-        actor: {
-          userId: row.actor_user_id,
-          displayName: row.actor_display_name ?? row.actor_user_id,
-          avatarUrl: row.actor_avatar_url,
-          roleLabel: row.actor_role_label,
-        },
-        title: row.title,
-        description: row.description,
-        relatedPostId: row.related_post_id,
-        relatedEntityType: row.related_entity_type,
-        relatedEntityId: row.related_entity_id,
-        createdAt: toIso(row.occurred_at),
-      };
+          id: row.id,
+          type: resolveActivityFeedItemType(row, readOptions),
+          actionType: row.action_type,
+          direction: row.direction,
+          category: row.category,
+          actor: {
+            userId: row.actor_user_id,
+            displayName: row.actor_display_name ?? row.actor_user_id,
+            avatarUrl: row.actor_avatar_url,
+            roleLabel: row.actor_role_label,
+          },
+          title: row.title,
+          description: row.description,
+          relatedPostId: row.related_post_id,
+          relatedEntityType: row.related_entity_type,
+          relatedEntityId: row.related_entity_id,
+          createdAt: toIso(row.occurred_at),
+        };
       }),
       nextCursor: extraRow
         ? encodeFeedCursor({

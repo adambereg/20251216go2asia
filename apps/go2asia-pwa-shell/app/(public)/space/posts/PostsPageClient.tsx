@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SpaceLayout } from '@/components/space/Shared';
 import { PostsPublicationsSurface } from './PostsPublicationsSurface';
+import { WS2_COPY } from '@/modules/space/ws2Copy';
 
 const PUBLIC_PROFILE_ID = (process.env.NEXT_PUBLIC_SPACE_PHASE1_PROFILE_ID ?? '').trim();
 
@@ -21,7 +22,7 @@ export function PostsPageClient() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Авторские публикации</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Загружаем публикации и репосты, которые уже доступны в Space Asia.
+            {WS2_COPY.surfaces.publicationsLoading}
           </p>
         </section>
       </SpaceLayout>

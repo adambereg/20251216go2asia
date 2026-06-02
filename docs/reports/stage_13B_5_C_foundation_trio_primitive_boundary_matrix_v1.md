@@ -424,7 +424,7 @@ Not safe next:
 - `stage_13B_5_C_authorization_ready: TRUE`
 - `stage_13B_5_C_implementation_authorized: FALSE`
 - `stage_13B_5_C_foundation_trio_ready: TRUE`
-- `stage_13B_5_C_ws2_authorized: FALSE`
+- `stage_13B_5_C_ws2_authorized: TRUE` *(governance display @ `stage_13B_5_WS2_AUTH_APPLY_display_and_token_patch_v1.md`; ≠ literal CO-13/CO-S12)*
 - `stage_13B_5_C_ws3_implementation_authorized: FALSE`
 - `stage_13B_5_C_ws5_implementation_authorized: FALSE`
 - `stage_13B_5_C_authorial_post_runtime_primitive_established: FALSE`

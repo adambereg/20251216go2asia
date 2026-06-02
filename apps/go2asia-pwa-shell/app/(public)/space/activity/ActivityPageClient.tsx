@@ -17,6 +17,11 @@ import {
   hydratePilotRepostPreview,
   isPilotRepostTargetType,
 } from '@/components/space/runtime/repostPreview';
+import {
+  WS2_COPY,
+  formatActivityFeedType,
+  isLegacyRepostActivityType,
+} from '@/modules/space/ws2Copy';
 
 const ACTIVITY_FILTERS = [
   {
@@ -27,12 +32,12 @@ const ACTIVITY_FILTERS = [
   {
     value: 'incoming',
     label: 'Входящие',
-    hint: 'Только реакции и репосты вокруг ваших публикаций.',
+    hint: WS2_COPY.activity.incomingHint,
   },
   {
     value: 'my_actions',
     label: 'Мои действия',
-    hint: 'Только ваши публикации, репосты и вступления в группы.',
+    hint: WS2_COPY.activity.myActionsHint,
   },
 ] as const;
 
@@ -41,7 +46,7 @@ type ActivityTypeFilter = 'all' | 'reposts' | 'likes' | 'posts' | 'groups';
 
 const ACTIVITY_TYPE_FILTERS: Array<{ value: ActivityTypeFilter; label: string }> = [
   { value: 'all', label: 'Все типы' },
-  { value: 'reposts', label: 'Репосты' },
+  { value: 'reposts', label: WS2_COPY.activity.filterTab },
   { value: 'likes', label: 'Реакции' },
   { value: 'posts', label: 'Публикации' },
   { value: 'groups', label: 'Группы' },
@@ -91,7 +96,7 @@ function formatActivityTime(value: string): { relative: string; exact: string } 
 
 function isTechnicalText(value: string | null | undefined): boolean {
   if (!value) return false;
-  return /(post_created|repost_created|group_joined|baseline|contract|runtime|Entity|feed-post-|\/v1\/space\/feed\/activity|^You joined\b)/i.test(
+  return /(post_created|repost_created|legacy_repost_activity_carve_out|post_reposted_by_other|group_joined|baseline|contract|runtime|Entity|feed-post-|\/v1\/space\/feed\/activity|^You joined\b)/i.test(
     value
   );
 }
@@ -122,7 +127,7 @@ function formatEntityChip(value: string | null | undefined): string | null {
 }
 
 function toActivityTypeFilter(item: generated.SpaceActivityFeedItem): ActivityTypeFilter {
-  if (item.type === 'repost_created' || item.type === 'post_reposted_by_other') return 'reposts';
+  if (isLegacyRepostActivityType(item.type)) return 'reposts';
   if (item.type === 'post_liked_by_other') return 'likes';
   if (item.type === 'post_created') return 'posts';
   if (item.type === 'group_joined') return 'groups';
@@ -139,17 +144,21 @@ function getDirectionChip(direction: generated.SpaceActivityFeedItemDirection): 
 }
 
 function getActivityTitle(item: generated.SpaceActivityFeedItem, actorName: string, isSelfAction: boolean): string {
+  const activityType = item.type as string;
+  if (activityType === 'legacy_repost_activity_carve_out' || activityType === 'repost_created') {
+    return WS2_COPY.activity.youSavedLegacy;
+  }
+  if (activityType === 'post_reposted_by_other') {
+    return WS2_COPY.activity.otherSavedLegacy(actorName);
+  }
+
   switch (item.type) {
     case 'post_created':
       return 'Вы опубликовали запись';
-    case 'repost_created':
-      return 'Вы сделали репост';
     case 'group_joined':
       return isSelfAction ? 'Вы вступили в группу' : `${actorName} вступил(а) в группу`;
     case 'post_liked_by_other':
       return `${actorName} лайкнул(а) вашу публикацию`;
-    case 'post_reposted_by_other':
-      return `${actorName} сделал(а) репост вашей публикации`;
     default:
       if (item.title && !isTechnicalText(item.title)) return item.title;
       return 'Новое действие в Space Asia';
@@ -169,14 +178,12 @@ function getActivityMeta(item: generated.SpaceActivityFeedItem): string[] {
 
   if (item.type === 'post_created') {
     parts.push('Запись');
-  } else if (item.type === 'repost_created') {
-    parts.push('Репост');
+  } else if (isLegacyRepostActivityType(item.type)) {
+    parts.push(formatActivityFeedType(item.type));
   } else if (item.type === 'group_joined') {
     parts.push('Группа');
   } else if (item.type === 'post_liked_by_other') {
     parts.push('Реакция');
-  } else if (item.type === 'post_reposted_by_other') {
-    parts.push('Репост');
   }
 
   const entityChip = formatEntityChip(item.relatedEntityType);
@@ -204,11 +211,17 @@ function getActivityHref(item: generated.SpaceActivityFeedItem): string | null {
 }
 
 function getActivityCtaLabel(item: generated.SpaceActivityFeedItem): string {
+  const activityType = item.type as string;
   if (item.relatedEntityType === 'space_group') return 'Открыть группу';
   if (item.relatedEntityType === 'space_post') return 'Открыть пост';
   if (item.type === 'post_liked_by_other') return 'Открыть публикацию';
-  if (item.type === 'post_reposted_by_other') return 'Открыть репост';
-  if (item.type === 'repost_created' && item.relatedEntityType) {
+  if (activityType === 'post_reposted_by_other' || activityType === 'legacy_repost_activity_carve_out') {
+    return WS2_COPY.activity.openLegacyArtifact;
+  }
+  if (
+    (activityType === 'repost_created' || activityType === 'legacy_repost_activity_carve_out') &&
+    item.relatedEntityType
+  ) {
     return getRepostCtaLabel(item.relatedEntityType as generated.SpaceRepostTargetType);
   }
   if (item.relatedEntityType) {
@@ -237,8 +250,9 @@ function ActivityCard({ item, viewerUserId }: ActivityCardProps) {
     let cancelled = false;
     setPreview(null);
 
+    const activityType = item.type as string;
     if (
-      item.type !== 'repost_created' ||
+      (activityType !== 'repost_created' && activityType !== 'legacy_repost_activity_carve_out') ||
       !item.relatedEntityType ||
       !item.relatedEntityId ||
       !isPilotRepostTargetType(item.relatedEntityType as generated.SpaceRepostTargetType)
@@ -350,11 +364,11 @@ function ActivityCard({ item, viewerUserId }: ActivityCardProps) {
 
 function getEmptyStateMessage(filter: ActivityFilter): string {
   if (filter === 'incoming') {
-    return 'Пока здесь нет входящих событий. Когда кто-то отреагирует на вашу публикацию или сделает репост, это появится здесь.';
+    return WS2_COPY.activity.emptyIncoming;
   }
 
   if (filter === 'my_actions') {
-    return 'Здесь появляются ваши собственные действия в Space Asia. Как только вы опубликуете запись, сделаете репост или вступите в группу, они отобразятся тут.';
+    return WS2_COPY.activity.emptyMyActions;
   }
 
   return 'Пока здесь нет новых действий. Когда в Space Asia появится активность, она отобразится в этом разделе.';

@@ -252,7 +252,7 @@ export function PostCard({ post, onLike, onSave, onShare, onComment }: PostCardP
         <span>{likesCount} лайков</span>
         <div className="flex items-center gap-3">
           <span>{post.commentsCount} комментариев</span>
-          <span>{post.sharesCount} репостов</span>
+          <span>{post.sharesCount} сохранений</span>
         </div>
       </div>
 
