@@ -1,5 +1,7 @@
 # Stage 13B.5-C — Foundation Trio Primitive Boundary Matrix
 
+**Establishment canon alignment (13B.6-C-APPLY):** This document is aligned with operative **`Go2Asia Foundation Primitive Maturity & Establishment Canon v1`** (`stage_13B_6_B_establishment_canon_proposal_v1.md` §11; lock: `stage_13B_6_C_establishment_canon_adoption_and_lock_gate_v1.md`). Maturity tiers: IDEA → SPECIFIED → IMPLEMENTED → ACCEPTED → **ESTABLISHED_BOUNDED** → **ESTABLISHED** → READY (WS-2 separate).
+
 ## 1. Inputs Reviewed
 
 Execution mode:
@@ -46,8 +48,8 @@ Accepted canon baseline carried forward:
 - `FOUNDATION_TRIO_PREFLIGHT_AUDIT_COMPLETE`
 - `CANON_LOCK_ACCEPTED_WITH_CLARIFICATIONS`
 - `FOUNDATION_TRIO_PLANNING_AUTHORIZED_WITH_CONDITIONS`
-- Authorial Post runtime primitive remains `NOT_ESTABLISHED`
-- Source Reference runtime primitive remains `NOT_ESTABLISHED`
+- Authorial Post **current tier:** `NOT_ESTABLISHED` (eligible tier model includes `ESTABLISHED_BOUNDED` → `ESTABLISHED`; reassessment gate required before tier change)
+- Source Reference **current tier:** `NOT_ESTABLISHED` (same tier model; reassessment gate required)
 - Legacy Row remains `HISTORICAL_ARTIFACT_ONLY`
 - Foundation Trio remains not ready
 - WS-2 remains not authorized
@@ -62,9 +64,20 @@ Accepted canon baseline carried forward:
 | P1 | Private Repost | WS-1 | `ESTABLISHED_BOUNDED` (C17 / FT-1A–1G) |
 | P2 | Private Note | WS-1 | `ESTABLISHED_BOUNDED` (FT-1C) |
 | P3 | Bookmark | WS-1 / Reactions | `ESTABLISHED_BOUNDED` (FT-1E) |
-| P4 | Authorial Post | WS-3 | `NOT_ESTABLISHED` (canon target only) |
-| P5 | Source Reference | WS-3 | `NOT_ESTABLISHED` (canon target only) |
+| P4 | Authorial Post | WS-3 | **`NOT_ESTABLISHED`** *(current)* — tier model: `ESTABLISHED_BOUNDED` → `ESTABLISHED` (Canon v1) |
+| P5 | Source Reference | WS-3 | **`NOT_ESTABLISHED`** *(current)* — tier model: `ESTABLISHED_BOUNDED` → `ESTABLISHED` (Canon v1) |
 | P6 | Legacy Row | WS-5 | `CLASSIFIED_ONLY` (FT-1F WS-1-side; full WS-5 incomplete) |
+
+### 2.1.1 Per-primitive establishment tier model (§4.5 index — Canon v1)
+
+| Tier | Meaning |
+| --- | --- |
+| `NOT_ESTABLISHED` | No bounded or full establishment gate verdict yet |
+| `ESTABLISHED_BOUNDED` | Bounded establishment gate PASS (EBB criteria — Canon v1 §4) |
+| `ESTABLISHED` | Full establishment gate PASS (EST criteria — Canon v1 §5) |
+| `ESTABLISHED_BOUNDED` ≠ `ESTABLISHED` | Bounded tier does not imply Trio Ready or WS-2 |
+
+**Current file status:** P4 and P5 remain **`NOT_ESTABLISHED`** until **Establishment Bounded Reassessment Gate** verdict(s). Application does not grant tiers.
 
 Inventory confirmation:
 
@@ -104,8 +117,9 @@ Explanation:
 
 Legend:
 
-- **Established** = bounded WS-1 runtime proof exists
-- **Not established** = canon target only until separate implementation authorization
+- **ESTABLISHED_BOUNDED** = bounded primitive establishment per Canon v1 (WS-1: C17/FT-1A–1G; WS-3: EBB gate required for P4/P5)
+- **ESTABLISHED** = full primitive establishment per Canon v1 (EST gate + spine step 13b)
+- **NOT_ESTABLISHED** = no establishment gate verdict yet (P4/P5 current state)
 - **Classified only** = distinction proof exists; full policy matrix incomplete
 
 ### 3.1 Private Repost (P1)
@@ -144,7 +158,7 @@ Legend:
 | Evidence Requirements | See Section 6 (P3 row). |
 | False-Pass Risks | Saved UI treated as Private Repost inventory; bookmark on legacy row treated as primitive identity merge; Reactions write cited as retention proof. |
 
-### 3.4 Authorial Post (P4) — NOT ESTABLISHED
+### 3.4 Authorial Post (P4) — NOT ESTABLISHED (current); tier model includes ESTABLISHED_BOUNDED
 
 | Field | Definition |
 | --- | --- |
@@ -156,7 +170,7 @@ Legend:
 | Evidence Requirements | See Section 6 (P4 row). |
 | False-Pass Risks | `postType: post` cited as runtime proof; `PARTIAL TECHNICAL SHAPE ONLY` overread as WS-3 readiness; legacy row cited as existing Authorial Post; object-bound path still creating public repost treated as aligned. |
 
-### 3.5 Source Reference (P5) — NOT ESTABLISHED
+### 3.5 Source Reference (P5) — NOT ESTABLISHED (current); tier model includes ESTABLISHED_BOUNDED
 
 | Field | Definition |
 | --- | --- |
@@ -201,7 +215,7 @@ Allowed relations only (canon-level; not implementation design).
 | Private Repost (P1) | retains (owner-only) | external source material | Retention Target Binding adjunct; not P5 |
 | Bookmark (P3) | references | bookmarkable target | reaction fact; no Space identity merge |
 | Authorial Post (P4) | carries (primary) | Authorial Text | adjunct; WS-3 target |
-| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; not established yet |
+| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; **current tier NOT_ESTABLISHED** (bounded/full per Canon v1) |
 | Source Reference (P5) | points (one-hop) | source material | only via P4 |
 | Legacy Row (P6) | may display on | feed/profile/group/activity/highlight | WS-5 carve-out; historical only |
 | Legacy Row (P6) | may be referenced by | Bookmark (P3) | bookmark does not change legacy class |
@@ -250,8 +264,8 @@ Explicitly forbidden interaction edges (no allowed relation):
 | **Private Repost (P1)** | `private_repost_intent` classification; `postType: repost` + `visibility: private`; owner visibility paths; retention dedupe scope separation; FT-1A/B/D/G accepted reports; targeted service tests | public/group repost rows; bookmark writes; legacy rows; activity materialization for new private retention; UI copy; projections alone |
 | **Private Note (P2)** | `private_note` text role; owner display/edit on retention surfaces; FT-1C report and tests | public commentary lane; Authorial Text; legacy commentary; publication counters |
 | **Bookmark (P3)** | Reactions `reactionType: bookmark`; saved hydration path; FT-1E report and tests; proof Space dedupe does not read Reactions | Private Repost create/read; retention inventory semantics; identity merge with repost row |
-| **Authorial Post (P4)** | *(none until WS-3 implementation authorization)* future: authorial independence proof; primary Authorial Text path; save/publish split; surface role proof per authorized slice | `postType: post` alone; FT-1D dedupe non-blocking proxy; legacy rows; UI copy; generated DTO; activity; migrations |
-| **Source Reference (P5)** | *(none until WS-3 implementation authorization)* future: separate primitive proof; 0..1 one-hop on P4 only; negative tests plus positive runtime path | `repostTarget*` fields; Private Repost binding; legacy binding; C13 negative assertions alone; OpenAPI rename without behavior |
+| **Authorial Post (P4)** | **@ ESTABLISHED_BOUNDED:** `authorial_expression_intent` + `AUTHORIAL_TEXT_ROLE`; FT-3A/3C/3D acceptances; independence; save/publish split; persistence + rehydration; E4 inventory; request integration positives; E6/E7 negatives (not alone). **@ ESTABLISHED (full):** above + E4 FILLED at establishment tier; E8 handshake FILLED; EST-TEST-1; spine step 13b; EST gate PASS | `postType: post` alone; FT-1D proxy alone; legacy rows; UI copy; generated DTO/OpenAPI alone; activity; migrations alone; classification proof without gate; EBB tier alone for Ready |
+| **Source Reference (P5)** | **@ ESTABLISHED_BOUNDED:** MATERIAL_ONLY contract; parse/persist/read staging; one-hop on P4 only; FT-3B acceptance; HTTP SR positive; E6/E7 negatives (not alone). **@ ESTABLISHED (full):** above + EST gate PASS; spine step 13b; EST-TEST-1; E4/E8 as required for P5 chain | `repostTarget*` fields; Private Repost binding; legacy binding; C13 negatives alone; OpenAPI rename without behavior; boundary proof without gate; EBB alone for Ready |
 | **Legacy Row (P6)** | FT-1F distinction tests; `HISTORICAL_ARTIFACT_ONLY` classification; WS-5 taxonomy + distinction rule + forbidden transformation adoption | proof of P1/P4/P5; hide/delete/migrate to pass; auto-convert; per-surface policy without WS5-P4 matrix |
 
 ### 6.2 Cross-cutting evidence rules
@@ -270,8 +284,10 @@ Explicitly forbidden interaction edges (no allowed relation):
 
 | Tier | Primitives | Minimum bar |
 | --- | --- | --- |
-| Established bounded | P1, P2, P3 | C17 `WS1_BOUNDED_COMPLETE` + FT-1A–1G accepted implementation reports + observable tests |
-| Canon target only | P4, P5 | 13B.3-B verification targets; anti-collapse rules; separate per-slice implementation authorization |
+| **ESTABLISHED_BOUNDED** | P1, P2, P3 | C17 `WS1_BOUNDED_COMPLETE` + FT-1A–1G accepted reports + observable tests |
+| **ESTABLISHED_BOUNDED** *(eligible)* | P4, P5 | EBB gate PASS (Canon v1 §4) — **current tier: NOT_ESTABLISHED** until reassessment |
+| **ESTABLISHED** *(full)* | P4, P5 | EST gate PASS + spine 13b (Canon v1 §5) — **not granted** in 13B.6-C-APPLY |
+| **NOT_ESTABLISHED** *(current label)* | P4, P5 | Until bounded or full establishment gate verdict |
 | Classified historical | P6 | FT-1F WS-1-side distinction + WS-5 taxonomy/matrix/policy gates before full WS-5 proof |
 
 ## 7. Boundary Completeness Review

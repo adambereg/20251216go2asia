@@ -1,5 +1,7 @@
 # Stage 13B.5-C2 — FT-X2 Foundation Evidence Spine
 
+**Establishment canon alignment (13B.6-C-APPLY):** Aligned with operative **`Go2Asia Foundation Primitive Maturity & Establishment Canon v1`** (`stage_13B_6_B_establishment_canon_proposal_v1.md` §11; lock: `stage_13B_6_C_establishment_canon_adoption_and_lock_gate_v1.md`). WS-3 step **13a/13b** split; Ready (§6.3) requires **full ESTABLISHED** for P4 and P5, not **ESTABLISHED_BOUNDED** alone.
+
 ## 1. Inputs Reviewed
 
 Execution mode:
@@ -184,7 +186,8 @@ WS-1 spine status: `WS1_EVIDENCE_SPINE_FILLED`
 | 10 | E7 | Positive + negative runtime tests (not negatives alone) | `[STRUCTURE]` |
 | 11 | E2 | FT-3x implementation reports per authorized slice | `[STRUCTURE]` |
 | 12 | E8 | Profile/publication: legacy rows not counted as authorial (WS-5 handshake) | `[STRUCTURE]` |
-| 13 | E1 | Independent tokens: P4 and P5 `ESTABLISHED` | `[BLOCKED]` |
+| 13a | E1 | P4 and P5 **`ESTABLISHED_BOUNDED`** independently verifiable (EBB gate; Canon v1 §4) | `[BLOCKED]` until bounded reassessment gate |
+| 13b | E1 | P4 and P5 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[BLOCKED]` until full establishment gate |
 
 WS-3 spine status: `WS3_EVIDENCE_SPINE_STRUCTURE_ONLY`
 
@@ -211,7 +214,7 @@ WS-5 spine status: `WS5_EVIDENCE_SPINE_STRUCTURE_ONLY`
 | --- | --- | --- |
 | 1 | E1: FT-X1 accepted + false-pass catalog adopted as blocking policy | 13B.5-C, 13B.5-A/B §4 |
 | 2 | WS-1 spine `[FILLED]` | §4.1 |
-| 3 | WS-3 spine all required steps `[FILLED]` with P4 and P5 independently provable | §4.2 |
+| 3 | WS-3 spine all required steps `[FILLED]` including **13a** (bounded) and **13b** (full ESTABLISHED) for P4 and P5 independently | §4.2 |
 | 4 | WS-5 spine all required steps `[FILLED]` including WS5-P4 | §4.3 |
 | 5 | E6: Trio-level negative rollup — no FT-X1 collapse edge unguarded | FT-X1 §5 |
 | 6 | E8: No `BV_FAIL_AMBIGUITY` on repost-shaped artifacts (13B.4-B) | WS5-P2 + observable proof |
@@ -227,8 +230,8 @@ Foundation Trio spine status: `TRIO_EVIDENCE_SPINE_STRUCTURE_ONLY`
 | P1 Private Repost | WS-1 | E1→E2(FT-1A,B,D,G)→E3→E4→E5→E6→E7 | ESTABLISHED_BOUNDED |
 | P2 Private Note | WS-1 | E2(FT-1C)→E3→E5→E6→E7 | ESTABLISHED_BOUNDED |
 | P3 Bookmark | WS-1 | E2(FT-1E)→E3(Reactions)→E6→E7 | ESTABLISHED_BOUNDED |
-| P4 Authorial Post | WS-3 | E1(13B.3-B)→E1(slice auth)→E3→E5→E6→E4→E7→E2 | NOT_ESTABLISHED |
-| P5 Source Reference | WS-3 | E1→E3(on P4)→E5→E6→E7 (positives required) | NOT_ESTABLISHED |
+| P4 Authorial Post | WS-3 | E1(13B.3-B)→E1(slice auth)→E3→E5→E6→E4→E7→E2→13a→13b | **NOT_ESTABLISHED** *(current)* — eligible: `ESTABLISHED_BOUNDED` → `ESTABLISHED` |
+| P5 Source Reference | WS-3 | E1→E3(on P4)→E5→E6→E7→13a→13b (positives required) | **NOT_ESTABLISHED** *(current)* — eligible: `ESTABLISHED_BOUNDED` → `ESTABLISHED` |
 | P6 Legacy Row | WS-5 | E1→E5→E2(FT-5x)→E6→E8→E7 | CLASSIFIED_ONLY |
 
 Detailed may/must-not evidence per primitive: **FT-X1 §6.1** (not repeated here).
@@ -336,12 +339,18 @@ Purpose: claim retention, expression, and history are **independently provable**
 | Required evidence | E-class |
 | --- | --- |
 | WS-1 spine §4.1 fully `[FILLED]` | E1–E7 |
-| WS-3 spine §4.2 fully `[FILLED]`; P4 and P5 independently established | E3, E5, E6, E7 |
+| WS-3 spine §4.2 fully `[FILLED]` at establishment tier; **P4 and P5 independently `ESTABLISHED` (full)** — step **13b** | E3, E5, E6, E7 |
 | WS-5 spine §4.3 fully `[FILLED]` including WS5-P4 | E5, E6, E8, E7 |
 | Trio rollup §4.4 steps 1–6 complete | E6, E8 |
 | FT-X3 Trio Closure Gate accepted | E1, E2 |
 | No open Trio-scope negative blockers (13B.4-B rollup criteria) | E6 |
 | No `BV_FAIL_AMBIGUITY` on repost-shaped artifacts | E8 + E5 |
+
+**Ready vs bounded (Canon v1 — explicit):**
+
+- **`ESTABLISHED_BOUNDED`** (spine step **13a**) is **not sufficient** for Foundation Trio Ready.
+- Ready requires **P4 `ESTABLISHED` (full)** and **P5 `ESTABLISHED` (full)** — not bounded tier alone.
+- **`foundation_trio_accepted`** (bounded layer) ≠ **`foundation_trio_ready`**.
 
 Must **not** suffice:
 
@@ -349,7 +358,9 @@ Must **not** suffice:
 - WS-3 without WS-5 distinction matrix;
 - WS-5 taxonomy-only without P4 positive path;
 - UI bundle or E9 bundle;
-- hiding legacy rows.
+- hiding legacy rows;
+- **P4 or P5 `ESTABLISHED_BOUNDED` alone** (or step 13a alone);
+- **HB gates cleared** without full establishment for P4/P5.
 
 Current status: `FOUNDATION_TRIO_READINESS_EVIDENCE_NOT_SATISFIED`.
 
