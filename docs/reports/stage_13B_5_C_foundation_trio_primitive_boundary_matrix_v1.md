@@ -2,6 +2,10 @@
 
 **Establishment canon alignment (13B.6-C-APPLY):** This document is aligned with operative **`Go2Asia Foundation Primitive Maturity & Establishment Canon v1`** (`stage_13B_6_B_establishment_canon_proposal_v1.md` §11; lock: `stage_13B_6_C_establishment_canon_adoption_and_lock_gate_v1.md`). Maturity tiers: IDEA → SPECIFIED → IMPLEMENTED → ACCEPTED → **ESTABLISHED_BOUNDED** → **ESTABLISHED** → READY (WS-2 separate).
 
+**P4 tier display (13B.5-P4-APPLY):** P4 current tier **`ESTABLISHED_BOUNDED`** per `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md`. P4 full **`ESTABLISHED`** not granted.
+
+**P5 tier display (13B.5-P5-APPLY):** P5 current tier updated to **`ESTABLISHED_BOUNDED`** per `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md` (`P5_ESTABLISHED_BOUNDED_GRANTED`). P5 full **`ESTABLISHED`** not granted.
+
 ## 1. Inputs Reviewed
 
 Execution mode:
@@ -48,8 +52,8 @@ Accepted canon baseline carried forward:
 - `FOUNDATION_TRIO_PREFLIGHT_AUDIT_COMPLETE`
 - `CANON_LOCK_ACCEPTED_WITH_CLARIFICATIONS`
 - `FOUNDATION_TRIO_PLANNING_AUTHORIZED_WITH_CONDITIONS`
-- Authorial Post **current tier:** `NOT_ESTABLISHED` (eligible tier model includes `ESTABLISHED_BOUNDED` → `ESTABLISHED`; reassessment gate required before tier change)
-- Source Reference **current tier:** `NOT_ESTABLISHED` (same tier model; reassessment gate required)
+- Authorial Post **current tier:** `ESTABLISHED_BOUNDED` (granted `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md`; full `ESTABLISHED` not granted)
+- Source Reference **current tier:** `ESTABLISHED_BOUNDED` (granted `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md`; full `ESTABLISHED` not granted)
 - Legacy Row remains `HISTORICAL_ARTIFACT_ONLY`
 - Foundation Trio remains not ready
 - WS-2 remains not authorized
@@ -64,8 +68,8 @@ Accepted canon baseline carried forward:
 | P1 | Private Repost | WS-1 | `ESTABLISHED_BOUNDED` (C17 / FT-1A–1G) |
 | P2 | Private Note | WS-1 | `ESTABLISHED_BOUNDED` (FT-1C) |
 | P3 | Bookmark | WS-1 / Reactions | `ESTABLISHED_BOUNDED` (FT-1E) |
-| P4 | Authorial Post | WS-3 | **`NOT_ESTABLISHED`** *(current)* — tier model: `ESTABLISHED_BOUNDED` → `ESTABLISHED` (Canon v1) |
-| P5 | Source Reference | WS-3 | **`NOT_ESTABLISHED`** *(current)* — tier model: `ESTABLISHED_BOUNDED` → `ESTABLISHED` (Canon v1) |
+| P4 | Authorial Post | WS-3 | **`ESTABLISHED_BOUNDED`** *(current)* — full `ESTABLISHED` not granted (Canon v1) |
+| P5 | Source Reference | WS-3 | **`ESTABLISHED_BOUNDED`** *(current)* — full `ESTABLISHED` not granted (Canon v1) |
 | P6 | Legacy Row | WS-5 | `CLASSIFIED_ONLY` (FT-1F WS-1-side; full WS-5 incomplete) |
 
 ### 2.1.1 Per-primitive establishment tier model (§4.5 index — Canon v1)
@@ -77,7 +81,7 @@ Accepted canon baseline carried forward:
 | `ESTABLISHED` | Full establishment gate PASS (EST criteria — Canon v1 §5) |
 | `ESTABLISHED_BOUNDED` ≠ `ESTABLISHED` | Bounded tier does not imply Trio Ready or WS-2 |
 
-**Current file status:** P4 and P5 remain **`NOT_ESTABLISHED`** until **Establishment Bounded Reassessment Gate** verdict(s). Application does not grant tiers.
+**Current file status:** P4 **`ESTABLISHED_BOUNDED`** (post `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md`). P5 **`ESTABLISHED_BOUNDED`** (post `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md`). P4 and P5 full **`ESTABLISHED`** not granted.
 
 Inventory confirmation:
 
@@ -119,7 +123,7 @@ Legend:
 
 - **ESTABLISHED_BOUNDED** = bounded primitive establishment per Canon v1 (WS-1: C17/FT-1A–1G; WS-3: EBB gate required for P4/P5)
 - **ESTABLISHED** = full primitive establishment per Canon v1 (EST gate + spine step 13b)
-- **NOT_ESTABLISHED** = no establishment gate verdict yet (P4/P5 current state)
+- **NOT_ESTABLISHED** = no bounded or full establishment gate verdict yet (tier model label; P4/P5 current tiers are **`ESTABLISHED_BOUNDED`**)
 - **Classified only** = distinction proof exists; full policy matrix incomplete
 
 ### 3.1 Private Repost (P1)
@@ -158,7 +162,7 @@ Legend:
 | Evidence Requirements | See Section 6 (P3 row). |
 | False-Pass Risks | Saved UI treated as Private Repost inventory; bookmark on legacy row treated as primitive identity merge; Reactions write cited as retention proof. |
 
-### 3.4 Authorial Post (P4) — NOT ESTABLISHED (current); tier model includes ESTABLISHED_BOUNDED
+### 3.4 Authorial Post (P4) — ESTABLISHED_BOUNDED (current); full ESTABLISHED not granted
 
 | Field | Definition |
 | --- | --- |
@@ -170,7 +174,7 @@ Legend:
 | Evidence Requirements | See Section 6 (P4 row). |
 | False-Pass Risks | `postType: post` cited as runtime proof; `PARTIAL TECHNICAL SHAPE ONLY` overread as WS-3 readiness; legacy row cited as existing Authorial Post; object-bound path still creating public repost treated as aligned. |
 
-### 3.5 Source Reference (P5) — NOT ESTABLISHED (current); tier model includes ESTABLISHED_BOUNDED
+### 3.5 Source Reference (P5) — ESTABLISHED_BOUNDED (current); full ESTABLISHED not granted
 
 | Field | Definition |
 | --- | --- |
@@ -215,7 +219,7 @@ Allowed relations only (canon-level; not implementation design).
 | Private Repost (P1) | retains (owner-only) | external source material | Retention Target Binding adjunct; not P5 |
 | Bookmark (P3) | references | bookmarkable target | reaction fact; no Space identity merge |
 | Authorial Post (P4) | carries (primary) | Authorial Text | adjunct; WS-3 target |
-| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; **current tier NOT_ESTABLISHED** (bounded/full per Canon v1) |
+| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; **P4 and P5 current tier ESTABLISHED_BOUNDED** |
 | Source Reference (P5) | points (one-hop) | source material | only via P4 |
 | Legacy Row (P6) | may display on | feed/profile/group/activity/highlight | WS-5 carve-out; historical only |
 | Legacy Row (P6) | may be referenced by | Bookmark (P3) | bookmark does not change legacy class |
@@ -285,9 +289,9 @@ Explicitly forbidden interaction edges (no allowed relation):
 | Tier | Primitives | Minimum bar |
 | --- | --- | --- |
 | **ESTABLISHED_BOUNDED** | P1, P2, P3 | C17 `WS1_BOUNDED_COMPLETE` + FT-1A–1G accepted reports + observable tests |
-| **ESTABLISHED_BOUNDED** *(eligible)* | P4, P5 | EBB gate PASS (Canon v1 §4) — **current tier: NOT_ESTABLISHED** until reassessment |
-| **ESTABLISHED** *(full)* | P4, P5 | EST gate PASS + spine 13b (Canon v1 §5) — **not granted** in 13B.6-C-APPLY |
-| **NOT_ESTABLISHED** *(current label)* | P4, P5 | Until bounded or full establishment gate verdict |
+| **ESTABLISHED_BOUNDED** | P4 | `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md` — **current tier** |
+| **ESTABLISHED_BOUNDED** | P5 | `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md` — **current tier** |
+| **ESTABLISHED** *(full)* | P4, P5 | EST gate PASS + spine 13b — **not granted** |
 | Classified historical | P6 | FT-1F WS-1-side distinction + WS-5 taxonomy/matrix/policy gates before full WS-5 proof |
 
 ## 7. Boundary Completeness Review
@@ -307,8 +311,8 @@ Explicitly forbidden interaction edges (no allowed relation):
 
 | Gap ID | Gap | Impact on matrix | Blocks matrix acceptance? |
 | --- | --- | --- | --- |
-| G1 | Authorial Post runtime `NOT_ESTABLISHED` | P4/P5 rows are canon targets; interaction edges are planning-only | NO — expected |
-| G2 | Source Reference runtime `NOT_ESTABLISHED` | P5 evidence row intentionally empty until WS-3 auth | NO — expected |
+| G1 | Authorial Post runtime tier | P4 **`ESTABLISHED_BOUNDED`** granted | P4 bounded gap **CLOSED**; full EST **OPEN** |
+| G2 | Source Reference runtime tier | P5 **`ESTABLISHED_BOUNDED`** granted | P5 bounded gap **CLOSED**; full EST **OPEN** |
 | G3 | WS-5 per-surface legacy matrix (WS5-P4) not fully enumerated | P6 display rules reference future matrix | NO — documented deferral |
 | G4 | WS-3/WS-5 visibility and policy gates open (WS3-P6, WS5-P5) | Does not blur primitive boundaries; blocks implementation auth | NO for FT-X1 |
 | G5 | Public/group repost propagation (WS-2 debt) listed as adjunct, not primitive | Prevents false "matrix incomplete" primitive invention | NO |
@@ -373,7 +377,7 @@ Why not `FT_X1_BOUNDARY_MATRIX_REVIEW_REQUIRED`:
 
 Why not `FT_X1_BOUNDARY_MATRIX_ACCEPTED` without qualification:
 
-- P4 and P5 remain `NOT_ESTABLISHED` — matrix edges for them are governance targets only;
+- P4 and P5 are **`ESTABLISHED_BOUNDED`** (bounded gates granted); P4 and P5 full **`ESTABLISHED`** not granted;
 - WS-5 per-surface matrix and policy gates remain open for implementation authorization (documented in G3–G4).
 
 Acceptance scope:
