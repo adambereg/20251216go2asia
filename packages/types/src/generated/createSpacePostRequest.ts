@@ -8,19 +8,37 @@
  */
 import type { PublicCreateSpacePostType } from "./publicCreateSpacePostType";
 import type { SpaceRepostTargetType } from "./spaceRepostTargetType";
+import type { SpaceSourceReferenceInput } from "./spaceSourceReferenceInput";
 import type { SpaceVisibility } from "./spaceVisibility";
 
 export type CreateSpacePostRequest = unknown & {
+  /** Opt-in P4 authorial expression when postType=post only. Must be false or omitted on repost. When true, trimmed non-empty text is required. Not implied by postType=post alone.
+   */
+  authorialExpressionIntent?: boolean;
   /**
    * Allowed only when visibility = group.
    * @nullable
    */
   groupId?: string | null;
   postType: PublicCreateSpacePostType;
-  /** @nullable */
+  /**
+   * Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+
+   * @nullable
+   */
   repostTargetId?: string | null;
-  /** @nullable */
+  /**
+   * Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+
+   * @nullable
+   */
   repostTargetType?: SpaceRepostTargetType;
+  /**
+   * Optional P5 one-hop material context (0..1) on authorial creates. Nested object is the canonical form. Not repostTarget*, not a repost, not quote-repost. Secondary to author text. Requires authorialExpressionIntent=true on create.
+
+   * @nullable
+   */
+  sourceReference?: SpaceSourceReferenceInput;
   /**
    * Optional for reposts. For postType=post, text is required after trim and must contain at least one non-whitespace character.
 
@@ -31,16 +49,33 @@ export type CreateSpacePostRequest = unknown & {
 } & Required<
     Pick<
       unknown & {
+        /** Opt-in P4 authorial expression when postType=post only. Must be false or omitted on repost. When true, trimmed non-empty text is required. Not implied by postType=post alone.
+         */
+        authorialExpressionIntent?: boolean;
         /**
          * Allowed only when visibility = group.
          * @nullable
          */
         groupId?: string | null;
         postType: PublicCreateSpacePostType;
-        /** @nullable */
+        /**
+   * Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+
+   * @nullable
+   */
         repostTargetId?: string | null;
-        /** @nullable */
+        /**
+   * Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+
+   * @nullable
+   */
         repostTargetType?: SpaceRepostTargetType;
+        /**
+   * Optional P5 one-hop material context (0..1) on authorial creates. Nested object is the canonical form. Not repostTarget*, not a repost, not quote-repost. Secondary to author text. Requires authorialExpressionIntent=true on create.
+
+   * @nullable
+   */
+        sourceReference?: SpaceSourceReferenceInput;
         /**
    * Optional for reposts. For postType=post, text is required after trim and must contain at least one non-whitespace character.
 

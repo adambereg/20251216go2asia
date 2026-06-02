@@ -7,6 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Repost propagation or retention binding target type (P1/P6). Not Source Reference (P5). Do not use for authorial source material context.
+
+ */
 export type SpaceRepostTargetType =
   (typeof SpaceRepostTargetType)[keyof typeof SpaceRepostTargetType];
 

@@ -752,6 +752,45 @@ components:
     SpaceRepostTargetType:
       type: string
       enum: [space_post, blog_post, place, event, partner, listing, quest]
+      description: >
+        Repost propagation or retention binding target type (P1/P6).
+        Not Source Reference (P5). Do not use for authorial source material context.
+
+    SpaceSourceMaterialType:
+      type: string
+      enum: [space_post, blog_post, place, event, partner, listing, quest]
+      description: >
+        P5 Source Reference material type: optional one-hop context on authorial posts only.
+        Separate from SpaceRepostTargetType despite identical string values.
+
+    SpaceSourceReferenceInput:
+      type: object
+      required: [sourceMaterialType, sourceMaterialId]
+      additionalProperties: false
+      properties:
+        sourceMaterialType:
+          $ref: "#/components/schemas/SpaceSourceMaterialType"
+        sourceMaterialId:
+          type: string
+          minLength: 1
+      description: >
+        Canonical create payload for P5 Source Reference (material pair only).
+        Not repostTarget*, not a repost row, not quote-repost. Optional 0..1 on authorial create.
+        Nested object is the public canonical form; runtime may additionally accept flat
+        sourceMaterialType/sourceMaterialId on the create body (non-normative convenience).
+
+    SpaceSourceReference:
+      type: object
+      required: [sourceMaterialType, sourceMaterialId]
+      additionalProperties: false
+      properties:
+        sourceMaterialType:
+          $ref: "#/components/schemas/SpaceSourceMaterialType"
+        sourceMaterialId:
+          type: string
+      description: >
+        P5 Source Reference on read surfaces (material pair only). One-hop secondary context
+        for authorial posts. Omitted when not persisted.
 
     SpaceGroupVisibility:
       type: string
@@ -857,9 +896,26 @@ components:
         repostTargetType:
           $ref: "#/components/schemas/SpaceRepostTargetType"
           nullable: true
+          description: >
+            Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
         repostTargetId:
           type: string
           nullable: true
+          description: >
+            Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+        authorialExpressionIntent:
+          type: boolean
+          default: false
+          description: >
+            Opt-in P4 authorial expression when postType=post only. Must be false or omitted on repost.
+            When true, trimmed non-empty text is required. Not implied by postType=post alone.
+        sourceReference:
+          $ref: "#/components/schemas/SpaceSourceReferenceInput"
+          nullable: true
+          description: >
+            Optional P5 one-hop material context (0..1) on authorial creates. Nested object is the
+            canonical form. Not repostTarget*, not a repost, not quote-repost. Secondary to author text.
+            Requires authorialExpressionIntent=true on create.
 
     CreateSpaceRepostRequest:
       type: object
@@ -915,6 +971,17 @@ components:
         repost:
           $ref: "#/components/schemas/SpacePostRepostRef"
           nullable: true
+        authorialExpressionIntent:
+          type: boolean
+          description: >
+            Present only when persisted authorial intent is true. Omitted when false — clients
+            must not expect false to be emitted.
+        sourceReference:
+          $ref: "#/components/schemas/SpaceSourceReference"
+          nullable: true
+          description: >
+            P5 Source Reference when persisted material pair exists. Not repostTarget*, not repost,
+            not quote-repost. Optional one-hop secondary context on authorial posts.
         media:
           type: array
           items:

@@ -1852,6 +1852,11 @@ components:
             required:
               - text
       properties:
+        authorialExpressionIntent:
+          default: false
+          description: |
+            Opt-in P4 authorial expression when postType=post only. Must be false or omitted on repost. When true, trimmed non-empty text is required. Not implied by postType=post alone.
+          type: boolean
         groupId:
           description: Allowed only when visibility = group.
           nullable: true
@@ -1859,10 +1864,19 @@ components:
         postType:
           $ref: "#/components/schemas/PublicCreateSpacePostType"
         repostTargetId:
+          description: |
+            Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
           nullable: true
           type: string
         repostTargetType:
           $ref: "#/components/schemas/SpaceRepostTargetType"
+          description: |
+            Required for postType=repost. Propagation/retention binding — not Source Reference (P5).
+          nullable: true
+        sourceReference:
+          $ref: "#/components/schemas/SpaceSourceReferenceInput"
+          description: |
+            Optional P5 one-hop material context (0..1) on authorial creates. Nested object is the canonical form. Not repostTarget*, not a repost, not quote-repost. Secondary to author text. Requires authorialExpressionIntent=true on create.
           nullable: true
         text:
           description: |
@@ -6127,6 +6141,10 @@ components:
       properties:
         author:
           $ref: "#/components/schemas/SpaceAuthorProjection"
+        authorialExpressionIntent:
+          description: |
+            Present only when persisted authorial intent is true. Omitted when false — clients must not expect false to be emitted.
+          type: boolean
         createdAt:
           format: date-time
           type: string
@@ -6146,6 +6164,11 @@ components:
           type: string
         repost:
           $ref: "#/components/schemas/SpacePostRepostRef"
+          nullable: true
+        sourceReference:
+          $ref: "#/components/schemas/SpaceSourceReference"
+          description: |
+            P5 Source Reference when persisted material pair exists. Not repostTarget*, not repost, not quote-repost. Optional one-hop secondary context on authorial posts.
           nullable: true
         status:
           $ref: "#/components/schemas/SpacePostStatus"
@@ -6216,6 +6239,8 @@ components:
             - existingPostId
           type: object
     SpaceRepostTargetType:
+      description: |
+        Repost propagation or retention binding target type (P1/P6). Not Source Reference (P5). Do not use for authorial source material context.
       enum:
         - space_post
         - blog_post
@@ -6240,6 +6265,45 @@ components:
           type: string
       required:
         - title
+      type: object
+    SpaceSourceMaterialType:
+      description: |
+        P5 Source Reference material type: optional one-hop context on authorial posts only. Separate from SpaceRepostTargetType despite identical string values.
+      enum:
+        - space_post
+        - blog_post
+        - place
+        - event
+        - partner
+        - listing
+        - quest
+      type: string
+    SpaceSourceReference:
+      additionalProperties: false
+      description: |
+        P5 Source Reference on read surfaces (material pair only). One-hop secondary context for authorial posts. Omitted when not persisted.
+      properties:
+        sourceMaterialId:
+          type: string
+        sourceMaterialType:
+          $ref: "#/components/schemas/SpaceSourceMaterialType"
+      required:
+        - sourceMaterialType
+        - sourceMaterialId
+      type: object
+    SpaceSourceReferenceInput:
+      additionalProperties: false
+      description: |
+        Canonical create payload for P5 Source Reference (material pair only). Not repostTarget*, not a repost row, not quote-repost. Optional 0..1 on authorial create. Nested object is the public canonical form; runtime may additionally accept flat sourceMaterialType/sourceMaterialId on the create body (non-normative convenience).
+      properties:
+        sourceMaterialId:
+          minLength: 1
+          type: string
+        sourceMaterialType:
+          $ref: "#/components/schemas/SpaceSourceMaterialType"
+      required:
+        - sourceMaterialType
+        - sourceMaterialId
       type: object
     SpaceVisibility:
       enum:

@@ -8,14 +8,14 @@
  */
 
 /**
- * Repost propagation or retention binding target type (P1/P6). Not Source Reference (P5). Do not use for authorial source material context.
+ * P5 Source Reference material type: optional one-hop context on authorial posts only. Separate from SpaceRepostTargetType despite identical string values.
 
  */
-export type SpaceRepostTargetType =
-  (typeof SpaceRepostTargetType)[keyof typeof SpaceRepostTargetType];
+export type SpaceSourceMaterialType =
+  (typeof SpaceSourceMaterialType)[keyof typeof SpaceSourceMaterialType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SpaceRepostTargetType = {
+export const SpaceSourceMaterialType = {
   space_post: "space_post",
   blog_post: "blog_post",
   place: "place",

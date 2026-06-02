@@ -10,11 +10,15 @@ import type { SpaceAuthorProjection } from "./spaceAuthorProjection";
 import type { SpacePostMediaAttachment } from "./spacePostMediaAttachment";
 import type { SpacePostType } from "./spacePostType";
 import type { SpacePostRepostRef } from "./spacePostRepostRef";
+import type { SpaceSourceReference } from "./spaceSourceReference";
 import type { SpacePostStatus } from "./spacePostStatus";
 import type { SpaceVisibility } from "./spaceVisibility";
 
 export interface SpacePostResponse {
   author: SpaceAuthorProjection;
+  /** Present only when persisted authorial intent is true. Omitted when false — clients must not expect false to be emitted.
+   */
+  authorialExpressionIntent?: boolean;
   createdAt: string;
   /** @nullable */
   groupId?: string | null;
@@ -24,6 +28,12 @@ export interface SpacePostResponse {
   publishedAt: string;
   /** @nullable */
   repost?: SpacePostRepostRef;
+  /**
+   * P5 Source Reference when persisted material pair exists. Not repostTarget*, not repost, not quote-repost. Optional one-hop secondary context on authorial posts.
+
+   * @nullable
+   */
+  sourceReference?: SpaceSourceReference;
   status: SpacePostStatus;
   /** @nullable */
   text?: string | null;
