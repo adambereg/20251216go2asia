@@ -6,6 +6,8 @@
 
 **P5 tier display (13B.5-FE-P5-APPLY):** P5 current tier **`ESTABLISHED`** (full) per `stage_13B_5_FE_P5_full_establishment_gate_v1.md` (`P5_ESTABLISHED_GRANTED`). Prior bounded grant: `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md`. CO-S12 literal remains **`false`**.
 
+**Foundation Trio Ready display (13B.5-FOUNDATION-TRIO-READY-APPLY):** Program token **`foundation_trio_ready: TRUE`** per `stage_13B_5_foundation_trio_ready_gate_v3.md` (`FOUNDATION_TRIO_READY_GRANTED`). **≠** WS-2 · **≠** literal CO-13/CO-S12 · **≠** `implementation_authorized`.
+
 ## 1. Inputs Reviewed
 
 Execution mode:
@@ -55,7 +57,7 @@ Accepted canon baseline carried forward:
 - Authorial Post **current tier:** `ESTABLISHED` (full — granted `stage_13B_5_FE_P4_full_establishment_gate_v1.md`; bounded prerequisite `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md`)
 - Source Reference **current tier:** `ESTABLISHED` (full — granted `stage_13B_5_FE_P5_full_establishment_gate_v1.md`; bounded prerequisite `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md`)
 - Legacy Row remains `HISTORICAL_ARTIFACT_ONLY`
-- Foundation Trio remains not ready
+- Foundation Trio Ready **granted** at governance display (Ready Gate v3 + APPLY) — **`foundation_trio_ready: TRUE`**
 - WS-2 remains not authorized
 - Planning Authorization ≠ Implementation Authorization
 
@@ -81,7 +83,7 @@ Accepted canon baseline carried forward:
 | `ESTABLISHED` | Full establishment gate PASS (EST criteria — Canon v1 §5) |
 | `ESTABLISHED_BOUNDED` ≠ `ESTABLISHED` | Bounded tier does not imply Trio Ready or WS-2 |
 
-**Current file status:** P4 **`ESTABLISHED`** (full). P5 **`ESTABLISHED`** (full — post `stage_13B_5_FE_P5_full_establishment_gate_v1.md`). **P4 + P5 full ESTABLISHED ≠ Foundation Trio Ready** (Ready Gate + FT-X3/WS-5 rollup still required). **≠ WS-2**.
+**Current file status:** P4 **`ESTABLISHED`** (full). P5 **`ESTABLISHED`** (full). **`foundation_trio_ready: TRUE`** (governance display — `stage_13B_5_foundation_trio_ready_gate_v3.md`). **Foundation Trio Ready ≠ WS-2 Authorized**. CO-13 / CO-S12 literals remain **`false`**.
 
 Inventory confirmation:
 
@@ -219,7 +221,7 @@ Allowed relations only (canon-level; not implementation design).
 | Private Repost (P1) | retains (owner-only) | external source material | Retention Target Binding adjunct; not P5 |
 | Bookmark (P3) | references | bookmarkable target | reaction fact; no Space identity merge |
 | Authorial Post (P4) | carries (primary) | Authorial Text | adjunct; WS-3 target |
-| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; **P4 and P5 `ESTABLISHED` (full)** — **≠ Foundation Trio Ready** |
+| Authorial Post (P4) | optionally attaches 0..1 one-hop | Source Reference (P5) | WS-3 target; **P4 and P5 `ESTABLISHED` (full)**; **`foundation_trio_ready: TRUE`** (governance) — **≠ WS-2** |
 | Source Reference (P5) | points (one-hop) | source material | only via P4 |
 | Legacy Row (P6) | may display on | feed/profile/group/activity/highlight | WS-5 carve-out; historical only |
 | Legacy Row (P6) | may be referenced by | Bookmark (P3) | bookmark does not change legacy class |
@@ -376,7 +378,7 @@ Why not `FT_X1_BOUNDARY_MATRIX_REVIEW_REQUIRED`:
 
 Why not `FT_X1_BOUNDARY_MATRIX_ACCEPTED` without qualification:
 
-- P4 and P5 are **`ESTABLISHED`** (full gates granted); **Foundation Trio Ready** and **WS-2** remain **not granted** (separate gates);
+- P4 and P5 are **`ESTABLISHED`** (full gates granted); **Foundation Trio Ready** **granted** at governance display (Ready v3 + APPLY); **WS-2** remains **not granted**;
 - WS-5 per-surface matrix and policy gates remain open for implementation authorization (documented in G3–G4).
 
 Acceptance scope:
@@ -421,7 +423,7 @@ Not safe next:
 - `stage_13B_5_C_primitive_set_complete: TRUE`
 - `stage_13B_5_C_authorization_ready: TRUE`
 - `stage_13B_5_C_implementation_authorized: FALSE`
-- `stage_13B_5_C_foundation_trio_ready: FALSE`
+- `stage_13B_5_C_foundation_trio_ready: TRUE`
 - `stage_13B_5_C_ws2_authorized: FALSE`
 - `stage_13B_5_C_ws3_implementation_authorized: FALSE`
 - `stage_13B_5_C_ws5_implementation_authorized: FALSE`
@@ -432,7 +434,7 @@ Not safe next:
 - `stage_13B_5_C_canon_lock_carried_forward: CANON_LOCK_ACCEPTED_WITH_CLARIFICATIONS`
 - `stage_13B_5_C_planning_authorized_carried_forward: FOUNDATION_TRIO_PLANNING_AUTHORIZED_WITH_CONDITIONS`
 - `stage_13B_5_C_documented_gaps: G1,G2,G3,G4,G5,G6`
-- `stage_13B_5_C_next_safe_step: STAGE_13B_5_D_WS3_WS5_PLANNING_ACCEPTANCE_AND_IMPLEMENTATION_CUTLINE_AUTHORIZATION`
+- `stage_13B_5_C_next_safe_step: STAGE_13B_5_WS2_PLANNING`
 
 ## 12. Execution Summary
 
