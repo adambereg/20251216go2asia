@@ -8,6 +8,7 @@ import { useUser } from '@clerk/nextjs';
 import { Bookmark, Heart, Share2 } from 'lucide-react';
 import { customInstance, generated } from '@go2asia/sdk';
 import { buildPrivateRepostIntentRequest, getOwnerRetentionUrl } from '@/modules/space/retentionIntent';
+import { WS2_COPY } from '@/modules/space/ws2Copy';
 import { ShareToSpaceComposer } from './ShareToSpaceComposer';
 
 type PilotTargetType = Extract<generated.ReactionTargetType, 'place' | 'event' | 'blog_post' | 'space_post'>;
@@ -280,7 +281,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
     if (sharedPostId) {
       setFeedback({
         tone: 'info',
-        message: `Материал "${title}" уже опубликован в Space.`,
+        message: `Материал «${title}» уже сохранён для себя в Space.`,
         href: getOwnerRetentionUrl(sharedPostId),
       });
       return false;
@@ -303,9 +304,7 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
       setIsComposerOpen(false);
       setFeedback({
         tone: 'success',
-        message: text
-          ? `Материал "${title}" опубликован в Space с комментарием.`
-          : `Материал "${title}" опубликован в Space как репост.`,
+        message: text ? WS2_COPY.saveForMyself.successWithNote(title) : WS2_COPY.saveForMyself.success(title),
         href: getOwnerRetentionUrl(response.id),
       });
     } catch (error) {
@@ -317,14 +316,14 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
         setIsComposerOpen(false);
         setFeedback({
           tone: 'info',
-          message: 'Вы уже репостнули этот объект в Space.',
+          message: WS2_COPY.saveForMyself.alreadyExists,
           href: existingPostId ? getOwnerRetentionUrl(existingPostId) : '/space/posts',
         });
         return;
       }
       setFeedback({
         tone: 'error',
-        message: `Не удалось поделиться в Space (${status ?? 'unknown'}).`,
+        message: WS2_COPY.saveForMyself.error(status ?? 'unknown'),
       });
     } finally {
       setPendingAction(null);
@@ -359,16 +358,15 @@ export function ContentActionRow({ targetType, targetId, title, className }: Con
             <Share2 className="h-4 w-4" />
             <span>
               {pendingAction === 'share'
-                ? 'Публикуем...'
+                ? WS2_COPY.saveForMyself.actionPending
                 : sharedPostId
-                  ? 'Уже в Space'
-                  : 'Поделиться в Space'}
+                  ? WS2_COPY.saveForMyself.alreadyInSpace
+                  : WS2_COPY.saveForMyself.actionInSpace}
             </span>
           </ActionButton>
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          Like и Save пишет Reactions. Share-to-Space создаёт Space repost c dedupe guard. Это pilot только для
-          place/event/blog_post и bounded support для space_post.
+          {WS2_COPY.saveForMyself.helper}
         </p>
         {feedback ? (
           <div

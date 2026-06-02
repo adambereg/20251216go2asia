@@ -1,4 +1,5 @@
 import { clerk, generated, getBaseUrl } from '@go2asia/sdk';
+import { formatFeedReason as formatWs2FeedReason } from '@/modules/space/ws2Copy';
 
 export const DEFAULT_FEED_LIMIT = 20;
 export const HOME_FEED_URL = `/v1/space/feed/home?limit=${DEFAULT_FEED_LIMIT}`;
@@ -39,21 +40,8 @@ export function getGroupFeedUrl(groupId: string, limit = DEFAULT_FEED_LIMIT): st
   return `/v1/space/feed/group/${encodeURIComponent(groupId)}?limit=${limit}`;
 }
 
-export function formatFeedReason(reason: generated.SpaceFeedReason): string {
-  switch (reason) {
-    case 'group_post':
-      return 'В группе';
-    case 'author_post':
-      return 'Публикация';
-    case 'repost':
-      return 'Репост';
-    case 'system':
-      return 'Объявление';
-    case 'recommended':
-      return 'Подборка';
-    default:
-      return reason;
-  }
+export function formatFeedReason(reason: generated.SpaceFeedReason | string): string {
+  return formatWs2FeedReason(reason);
 }
 
 export function formatVisibilityLabel(visibility: generated.SpaceVisibility): string {

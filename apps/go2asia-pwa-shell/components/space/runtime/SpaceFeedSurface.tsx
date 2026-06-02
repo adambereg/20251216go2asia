@@ -8,6 +8,7 @@ import { SpaceFeedCard } from '@/components/space/runtime/SpaceFeedCard';
 import { useSpaceHomeFeed } from '@/components/space/runtime/useSpaceHomeFeed';
 import { useSpaceSavedReactions } from '@/components/space/runtime/useSpaceSavedReactions';
 import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
+import { WS2_COPY } from '@/modules/space/ws2Copy';
 
 type FeedFilter = 'all' | 'groups' | 'reposts' | 'my';
 
@@ -40,18 +41,18 @@ function getFilterEmptyState(filter: FeedFilter, hasAnyItems: boolean): EmptySta
     case 'reposts':
       return hasAnyItems
         ? {
-            title: 'В этой подборке пока нет репостов.',
+            title: WS2_COPY.legacy.filterEmptyTitle,
             description: 'Откройте весь поток, чтобы посмотреть остальные публикации.',
             actionLabel: 'Показать всё',
           }
         : {
-            title: 'Пока нет репостов.',
-            description: 'Здесь будут появляться заметные материалы из других модулей Go2Asia.',
+            title: WS2_COPY.legacy.filterEmptyAll,
+            description: WS2_COPY.legacy.filterEmptyHint,
             actionLabel: 'Показать всё',
           };
     case 'my':
       return {
-        title: 'Пока здесь нет ваших публикаций и репостов.',
+        title: 'Пока здесь нет ваших публикаций и исторических записей.',
         description: 'Когда вы будете заметнее в потоке, этот раздел соберёт ваши публикации в одном месте.',
         actionLabel: 'Показать всё',
       };
@@ -59,7 +60,7 @@ function getFilterEmptyState(filter: FeedFilter, hasAnyItems: boolean): EmptySta
     default:
       return {
         title: 'Пока в ленте тихо.',
-        description: 'Новые публикации, посты из групп и заметные репосты появятся здесь.',
+        description: WS2_COPY.surfaces.homeFeedAllEmpty,
         actionLabel: 'Открыть сообщества',
       };
   }
@@ -79,7 +80,7 @@ export function SpaceFeedSurface() {
     () => [
       { key: 'all', label: 'Все' },
       { key: 'groups', label: 'Группы' },
-      { key: 'reposts', label: 'Репосты' },
+      { key: 'reposts', label: WS2_COPY.legacy.filterTab },
       {
         key: 'my',
         label: 'Моё',
@@ -135,7 +136,7 @@ export function SpaceFeedSurface() {
       parts.push(`${counts.groups} из групп`);
     }
     if (counts.reposts > 0) {
-      parts.push(`${counts.reposts} репостов`);
+      parts.push(`${counts.reposts} ${WS2_COPY.legacy.countLabel}`);
     }
     if (currentUserId && counts.my > 0) {
       parts.push(`${counts.my} ваших`);
@@ -150,7 +151,7 @@ export function SpaceFeedSurface() {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-slate-900">Лента</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-600">
-            Личный поток Space Asia: городские находки, публикации из групп и заметные репосты в одном месте.
+            {WS2_COPY.surfaces.homeFeedIntro}
           </p>
 
           {mode === 'public-profile' && (

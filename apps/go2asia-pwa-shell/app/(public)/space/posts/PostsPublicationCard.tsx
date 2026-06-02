@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { generated } from '@go2asia/sdk';
 import { resolveReferenceHref } from '@/components/space/runtime/utils';
 import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
+import { WS2_COPY, formatPublicationPostType } from '@/modules/space/ws2Copy';
 
 type PostsPublicationCardProps = {
   item: generated.SpaceFeedItem;
@@ -43,17 +44,8 @@ function truncate(value: string, maxLength: number): string {
   return `${text.slice(0, maxLength).trimEnd()}...`;
 }
 
-function formatPublicationType(postType: generated.SpacePostType): string {
-  switch (postType) {
-    case 'post':
-      return 'Запись';
-    case 'repost':
-      return 'Репост';
-    case 'system':
-      return 'Объявление';
-    default:
-      return 'Публикация';
-  }
+function formatPublicationType(item: generated.SpaceFeedItem): string {
+  return formatPublicationPostType(item.post.postType, item.reason);
 }
 
 function formatVisibility(visibility: generated.SpaceVisibility): string {
@@ -106,7 +98,7 @@ function getPublicationTitle(item: generated.SpaceFeedItem, preview: generated.S
   if (previewTitle) return previewTitle;
 
   if (item.post.postType === 'repost' && item.post.repost) {
-    return `Репост ${formatRepostTarget(item.post.repost.targetType)}`;
+    return WS2_COPY.legacy.publicationTitle(formatRepostTarget(item.post.repost.targetType));
   }
 
   if (item.post.postType === 'system') {
@@ -138,7 +130,7 @@ function getPublicationExcerpt(
   }
 
   if (item.post.repost) {
-    return `Репост связан с объектом типа «${formatRepostTarget(item.post.repost.targetType)}».`;
+    return WS2_COPY.legacy.linkedToType(formatRepostTarget(item.post.repost.targetType));
   }
 
   if (item.post.media.length > 0) {
@@ -184,7 +176,7 @@ export function PostsPublicationCard({
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap gap-2 text-[11px] font-medium">
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700">
-              {formatPublicationType(item.post.postType)}
+              {formatPublicationType(item)}
             </span>
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
               {formatVisibility(item.post.visibility)}
@@ -207,10 +199,12 @@ export function PostsPublicationCard({
 
           <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
             <span title={exactTime}>Опубликовано {relativeTime}</span>
-            {item.post.repost && <span>Есть связанный материал</span>}
-            {!item.post.repost && item.post.groupId && <span>Опубликовано в группе</span>}
+            {item.post.repost && <span>{WS2_COPY.legacy.linkedMaterial}</span>}
+            {!item.post.repost && item.post.groupId && <span>{WS2_COPY.publish.inGroup}</span>}
             {!item.post.repost && !item.post.groupId && (
-              <span>{isOwnerView ? 'Ваша авторская публикация' : 'Авторская публикация'}</span>
+              <span>
+                {isOwnerView ? WS2_COPY.publish.yourAuthorialPost : WS2_COPY.publish.authorialPost}
+              </span>
             )}
           </div>
         </div>

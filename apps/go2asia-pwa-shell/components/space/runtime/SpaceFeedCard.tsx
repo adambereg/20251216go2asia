@@ -12,6 +12,7 @@ import {
 } from './utils';
 import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from './repostPreview';
 import { isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
+import { WS2_COPY, getRepostArtifactBadgeLabel, getRepostArtifactSectionTitle } from '@/modules/space/ws2Copy';
 
 type SpaceFeedCardProps = {
   item: generated.SpaceFeedItem;
@@ -126,15 +127,15 @@ export function SpaceFeedCard({
             ? 'Личная заметка сохранена.'
             : 'Личная заметка очищена.'
           : nextText.length > 0
-            ? 'Комментарий к репосту обновлён.'
-            : 'Комментарий удалён, репост сохранён.',
+            ? 'Комментарий к историческому репосту обновлён.'
+            : 'Комментарий удалён, историческая запись сохранена.',
       });
     } catch {
       setCommentaryFeedback({
         tone: 'error',
         message: isPrivateRetention
           ? 'Не удалось сохранить личную заметку. Попробуйте ещё раз.'
-          : 'Не удалось обновить комментарий к репосту. Попробуйте ещё раз.',
+          : 'Не удалось обновить комментарий к историческому репосту. Попробуйте ещё раз.',
       });
     } finally {
       setIsSavingCommentary(false);
@@ -197,7 +198,7 @@ export function SpaceFeedCard({
         <div className="mb-3">
           {isRepost ? (
             <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-              {isPrivateRetention ? 'Личная заметка' : 'Комментарий к репосту'}
+              {getRepostArtifactSectionTitle({ isPrivateRetention, feedReason: item.reason })}
             </div>
           ) : null}
           <p className="whitespace-pre-wrap text-sm text-slate-800">{editableText}</p>
@@ -219,7 +220,11 @@ export function SpaceFeedCard({
       {item.post.repost && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
           <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Репост · {formatRepostTargetLabel(item.post.repost.targetType)}
+            {getRepostArtifactBadgeLabel({
+              isPrivateRetention,
+              feedReason: item.reason,
+              targetTypeLabel: formatRepostTargetLabel(item.post.repost.targetType),
+            })}
           </div>
           {hydratedPreview?.title ? (
             <div className="mt-2 rounded-md border border-slate-200 bg-white p-3">
@@ -241,11 +246,11 @@ export function SpaceFeedCard({
             </div>
           ) : isPilotRepostTargetType(item.post.repost.targetType) ? (
             <div className="mt-2 text-slate-600">
-              Репост связан с исходным материалом, но preview сейчас недоступен.
+              {WS2_COPY.legacy.previewUnavailable}
             </div>
           ) : (
             <div className="mt-2 text-slate-600">
-              Репост связан с объектом типа «{formatRepostTargetLabel(item.post.repost.targetType)}».
+              {WS2_COPY.legacy.linkedToType(formatRepostTargetLabel(item.post.repost.targetType))}
             </div>
           )}
           <div className="mt-3">
@@ -265,7 +270,9 @@ export function SpaceFeedCard({
         <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-slate-600">
-              {isPrivateRetention ? 'Управление личной заметкой' : 'Управление комментарием к вашему репосту'}
+              {isPrivateRetention
+                ? 'Управление личной заметкой'
+                : WS2_COPY.legacy.manageCommentary}
             </p>
             <button
               type="button"
@@ -296,7 +303,7 @@ export function SpaceFeedCard({
                 placeholder={
                   isPrivateRetention
                     ? 'Добавьте личную заметку к сохранённому контексту'
-                    : 'Добавьте комментарий к репосту'
+                    : 'Добавьте комментарий к историческому репосту'
                 }
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100"
               />

@@ -6,6 +6,7 @@ import { customInstance, generated } from '@go2asia/sdk';
 import { formatRepostTargetLabel, formatVisibilityLabel, resolveReferenceHref } from '@/components/space/runtime/utils';
 import { getRepostCtaLabel, hydratePilotRepostPreview, isPilotRepostTargetType } from '@/components/space/runtime/repostPreview';
 import { getPrivateNoteText, isPrivateRepostIntentPost } from '@/modules/space/retentionIntent';
+import { WS2_COPY } from '@/modules/space/ws2Copy';
 import { PostsPublicationCard } from './PostsPublicationCard';
 
 type PostsPublicationsSurfaceProps = {
@@ -255,7 +256,7 @@ function getSurfaceCopy(
   if (isOwnerView) {
     return {
       title: 'Авторские публикации',
-      subtitle: 'Здесь собраны ваши материалы и репосты, которые уже видны в Space Asia.',
+      subtitle: WS2_COPY.surfaces.publicationsSubtitle,
       note: 'Здесь собраны только те публикации, которые уже доступны в этой версии Space Asia.',
     };
   }
@@ -396,7 +397,7 @@ export function PostsPublicationsSurface({
             )}
             {summary.reposts > 0 && (
               <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-                Репосты: {summary.reposts}
+                {WS2_COPY.legacy.summaryChip}: {summary.reposts}
               </span>
             )}
             {summary.grouped > 0 && (
@@ -436,7 +437,7 @@ export function PostsPublicationsSurface({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-base font-semibold text-slate-900">Пока здесь нет публикаций</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Когда появятся новые видимые публикации или репосты, они соберутся в этом разделе.
+              {WS2_COPY.surfaces.publicationsEmpty}
             </p>
           </div>
         )}
