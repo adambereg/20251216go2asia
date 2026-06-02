@@ -2,9 +2,9 @@
 
 **Establishment canon alignment (13B.6-C-APPLY):** Aligned with operative **`Go2Asia Foundation Primitive Maturity & Establishment Canon v1`** (`stage_13B_6_B_establishment_canon_proposal_v1.md` §11; lock: `stage_13B_6_C_establishment_canon_adoption_and_lock_gate_v1.md`). WS-3 step **13a/13b** split; Ready (§6.3) requires **full ESTABLISHED** for P4 and P5, not **ESTABLISHED_BOUNDED** alone.
 
-**P4 tier display (13B.5-P4-APPLY):** P4 step **13a** `[FILLED]` per `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md`. P4 full **ESTABLISHED** not granted.
+**P4 tier display (13B.5-FE-P4-APPLY):** P4 **`ESTABLISHED`** (full); step **13a** `[FILLED]`; step **13b (P4)** `[FILLED]` per `stage_13B_5_FE_P4_full_establishment_gate_v1.md`. WS-3 steps 4–12 establishment-tier `[FILLED]` per same gate corroboration.
 
-**P5 tier display (13B.5-P5-APPLY):** P5 step **13a** `[FILLED]` per `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md`. P5 full **ESTABLISHED** not granted. Step **13b** P4/P5 `[BLOCKED]` until full EST gates.
+**P5 tier display (13B.5-P5-APPLY):** P5 **`ESTABLISHED_BOUNDED`**; step **13a (P5)** `[FILLED]`; step **13b (P5)** `[BLOCKED]` until FE-P5 gate. P5 full **ESTABLISHED** not granted.
 
 ## 1. Inputs Reviewed
 
@@ -179,22 +179,23 @@ WS-1 spine status: `WS1_EVIDENCE_SPINE_FILLED`
 | Step | E-class | Requirement | Status |
 | --- | --- | --- | --- |
 | 1 | E1 | 13B.3-B verification targets + WS3-P1–P5 planning guards adopted | `[FILLED]` governance |
-| 2 | E1 | Per-slice WS-3 implementation authorization (C10-style) | `[BLOCKED]` until gate |
+| 2 | E1 | Per-slice WS-3 implementation authorization (C10-style) | `[FILLED]` — NR/PR/RR/LR slice acceptances; superseded at P4 full EST (`stage_13B_5_FE_P4_full_establishment_gate_v1.md` §7) |
 | 3 | E1 | ZR lock: `postType: post` is not P4 proof | `[FILLED]` |
-| 4 | E3 | Authorial Post write path with expression intent | `[STRUCTURE]` |
-| 5 | E5 | P4 established: primary Authorial Text; authorial independence | `[STRUCTURE]` |
-| 6 | E6 | P2, P6, legacy commentary ≠ Authorial Text; retention dedupe does not block P4 | `[PARTIAL]` FT-1D proxy only |
-| 7 | E3+E5 | P5 optional 0..1 one-hop on P4 only | `[STRUCTURE]` |
-| 8 | E6 | `repostTarget*` ≠ P5; Private Repost binding ≠ P5 | `[PARTIAL]` FT-1F negative only |
-| 9 | E4 | Public/group surface role proof (not feed UI design) | `[STRUCTURE]` |
-| 10 | E7 | Positive + negative runtime tests (not negatives alone) | `[STRUCTURE]` |
-| 11 | E2 | FT-3x implementation reports per authorized slice | `[STRUCTURE]` |
-| 12 | E8 | Profile/publication: legacy rows not counted as authorial (WS-5 handshake) | `[STRUCTURE]` |
+| 4 | E3 | Authorial Post write path with expression intent | `[FILLED]` — FT-3A + EST-TEST-1 E-P4-*; `stage_13B_5_FE_P4_full_establishment_gate_v1.md` |
+| 5 | E5 | P4 established: primary Authorial Text; authorial independence | `[FILLED]` — FT-3C + E-P4-04; FE-P4 gate |
+| 6 | E6 | P2, P6, legacy commentary ≠ Authorial Text; retention dedupe does not block P4 | `[FILLED]` — FT-1D proxy + dedupe tests; FE-P4 gate |
+| 7 | E3+E5 | P5 optional 0..1 one-hop on P4 only | `[STRUCTURE]` — P5 full 13b pending; not required for P4-only establishment display |
+| 8 | E6 | `repostTarget*` ≠ P5; Private Repost binding ≠ P5 | `[FILLED]` — FT-1F negatives + SR guards; FE-P4 gate |
+| 9 | E4 | Public/group surface role proof (not feed UI design) | `[FILLED]` — FT-5D + FE-P4-SURF; FE-P4 gate |
+| 10 | E7 | Positive + negative runtime tests (not negatives alone) | `[FILLED]` — EST-TEST-1 + 205 tests; FE-P4 gate |
+| 11 | E2 | FT-3x implementation reports per authorized slice | `[FILLED]` — FT-3A/3C/3D/5D acceptances; FE-P4 gate |
+| 12 | E8 | Profile/publication: legacy rows not counted as authorial (WS-5 handshake) | `[FILLED]` — FT-5D E8 + SURF-PUB-2; FE-P4 gate |
 | 13a (P4) | E1 | P4 **`ESTABLISHED_BOUNDED`** independently verifiable (EBB gate; Canon v1 §4) | `[FILLED]` — `stage_13B_5_P4_establishment_bounded_reassessment_gate_v1.md` |
 | 13a (P5) | E1 | P5 **`ESTABLISHED_BOUNDED`** independently verifiable (EBB gate; Canon v1 §4) | `[FILLED]` — `stage_13B_5_P5_establishment_bounded_reassessment_gate_v1.md` |
-| 13b | E1 | P4 and P5 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[BLOCKED]` until full establishment gate (P4 EST not granted) |
+| 13b (P4) | E1 | P4 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[FILLED]` — `stage_13B_5_FE_P4_full_establishment_gate_v1.md` |
+| 13b (P5) | E1 | P5 **`ESTABLISHED`** (full) independently verifiable (EST gate; Canon v1 §5) | `[BLOCKED]` until FE-P5 full establishment gate |
 
-WS-3 spine status: `WS3_EVIDENCE_SPINE_STRUCTURE_ONLY`
+WS-3 spine status: `WS3_EVIDENCE_SPINE_STRUCTURE_ONLY` *(P4 establishment-tier steps 4–12 + 13b (P4) filled; rollup blocked on P5 13b and step 7)*
 
 ### 4.3 WS-5 Evidence Spine (history) — `[STRUCTURE]`
 
@@ -235,7 +236,7 @@ Foundation Trio spine status: `TRIO_EVIDENCE_SPINE_STRUCTURE_ONLY`
 | P1 Private Repost | WS-1 | E1→E2(FT-1A,B,D,G)→E3→E4→E5→E6→E7 | ESTABLISHED_BOUNDED |
 | P2 Private Note | WS-1 | E2(FT-1C)→E3→E5→E6→E7 | ESTABLISHED_BOUNDED |
 | P3 Bookmark | WS-1 | E2(FT-1E)→E3(Reactions)→E6→E7 | ESTABLISHED_BOUNDED |
-| P4 Authorial Post | WS-3 | E1(13B.3-B)→E1(slice auth)→E3→E5→E6→E4→E7→E2→13a→13b | **`ESTABLISHED_BOUNDED`** *(current)* — 13a FILLED; 13b / full EST not granted |
+| P4 Authorial Post | WS-3 | E1(13B.3-B)→E1(slice auth)→E3→E5→E6→E4→E7→E2→13a→13b | **`ESTABLISHED`** *(current, full)* — 13a + **13b (P4)** FILLED |
 | P5 Source Reference | WS-3 | E1→E3(on P4)→E5→E6→E7→13a→13b (positives required) | **`ESTABLISHED_BOUNDED`** *(current)* — 13a FILLED; 13b / full EST not granted |
 | P6 Legacy Row | WS-5 | E1→E5→E2(FT-5x)→E6→E8→E7 | CLASSIFIED_ONLY |
 
@@ -434,7 +435,7 @@ Answer:
 
 | Gap ID | Gap | Blocks FT-X2 acceptance? | Blocks future impl gates? |
 | --- | --- | --- | --- |
-| X2-G1 | WS-3 spine slots empty (P4/P5 full EST not granted) | P4 and P5 **13a FILLED**; **13b BLOCKED** | YES until P4/P5 full EST gates |
+| X2-G1 | WS-3 spine slots empty (P4/P5 full EST not granted) | P4 **13a + 13b (P4) FILLED**; P5 **13a FILLED**; **13b (P5) BLOCKED** | YES until P5 full EST gate; Trio rollup |
 | X2-G2 | WS-5 full spine empty beyond FT-1F (WS5-P4, distinction rule) | NO — expected | YES until filled |
 | X2-G3 | FT-X3 Trio Closure Gate not authored | NO | YES for Trio ready |
 | X2-G4 | WS-8 BV bundle not executed | NO for C2 | YES for WS-2 claim |
