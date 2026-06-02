@@ -171,7 +171,7 @@ Mirror of types package:
 | `pnpm openapi:bundle` | **PASS** | `docs/openapi/openapi.bundle.yaml` updated |
 | `pnpm gen:types` | **PASS** | Orval types regenerated |
 | `pnpm gen:sdk` | **PASS** | Orval SDK regenerated |
-| `pnpm openapi:check` | **PENDING_COMMIT** | Regeneration succeeded; check exits **1** until bundle + generated trees are **committed** (drift guard by design). Post-commit: expect **PASS**. |
+| `pnpm openapi:check` | **PASS** | Verified after commit `dc2a093` (drift guard clean). |
 
 ---
 
@@ -200,7 +200,7 @@ Mirror of types package:
 | E9-MUST-7 | **PASS** — omit-when-false documented |
 | E9-MUST-8 | **PASS** — bundle regenerated |
 | E9-MUST-9 | **PASS** — types + SDK regenerated |
-| E9-MUST-10 | **PENDING_COMMIT** — commit artifact set then `openapi:check` |
+| E9-MUST-10 | **PASS** — committed; `openapi:check` exit 0 |
 | E9-MUST-11 | **PASS** — generated fields + new modules |
 | E9-MUST-12 | **PASS** — no runtime/DB/PWA |
 | E9-MUST-13 | **PASS_WITH_NOTE** — 168/168 on branch; 176 at PJR after persistence merge |
@@ -223,7 +223,7 @@ Mirror of types package:
 | E9-FAIL-6 | **NO** |
 | E9-FAIL-7 | **NO** |
 | E9-FAIL-8 | **NO** |
-| E9-FAIL-9 | **NO** (pending commit only) |
+| E9-FAIL-9 | **NO** |
 | E9-FAIL-10 | **NO** |
 | E9-FAIL-11 | **NO** — Y-HB3 not cleared |
 | E9-FAIL-12 | **NO** |
@@ -239,7 +239,7 @@ Mirror of types package:
 pnpm openapi:bundle          → PASS
 pnpm gen:types               → PASS
 pnpm gen:sdk                 → PASS
-pnpm openapi:check           → FAIL (uncommitted generated artifacts; expected pre-commit)
+pnpm openapi:check           → PASS (post-commit dc2a093)
 pnpm --filter @go2asia/space-service test     → PASS 168/168
 pnpm --filter @go2asia/space-service exec tsc --noEmit → PASS
 git diff --check             → PASS
@@ -250,7 +250,7 @@ git diff --check             → PASS
 ## 16. Final Tokens
 
 ```yaml
-stage_13B_5_E9_PI_status: PASS_WITH_COMMIT_PENDING
+stage_13B_5_E9_PI_status: PASS
 stage_13B_5_E9_PI_contract_impl_complete: TRUE
 stage_13B_5_E9_PI_y_hb3_status: OPEN_UNTIL_E9_PJR
 stage_13B_5_E9_PI_foundation_trio_ready: FALSE
@@ -275,7 +275,7 @@ OpenAPI ≠ Runtime Proof
 | --- | --- |
 | Changed files | See §2 (15 contract artifacts + 1 report) |
 | Validation | Bundle/gen PASS; tests 168/168; `openapi:check` after commit |
-| PI outcome | **Contract implementation complete**; governance commit + E9-PJR next |
+| PI outcome | **PASS** — committed `dc2a093`, pushed `feat/stage-13b5-e9-space-contract` |
 | Next safe step | **Stage 13B.5-E9-PJR — Contract Implementation Review & Acceptance** |
 
-**Recommended immediate hygiene:** Commit only §2 paths, run `pnpm openapi:check` (expect exit 0), open PR from `feat/stage-13b5-e9-space-contract`.
+**Remote:** `origin/feat/stage-13b5-e9-space-contract` — open PR when ready.
