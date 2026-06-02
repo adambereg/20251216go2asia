@@ -3121,4 +3121,315 @@ describe('space-service v1', () => {
       expect(legacy?.post.authorialExpressionIntent).toBeUndefined();
     });
   });
+
+  describe('Stage 13B.5-WS2-IMPL-READ-GRP — group read surface alignment', () => {
+    const publicGroupRow = (overrides: Record<string, unknown> = {}) => ({
+      id: 'sgroup_public',
+      slug: 'phuket-makers',
+      title: 'Phuket Makers',
+      description: null,
+      owner_id: 'user_owner',
+      visibility: 'public',
+      status: 'active',
+      members_count: 3,
+      created_at: '2026-03-14T10:00:00.000Z',
+      updated_at: '2026-03-14T10:00:00.000Z',
+      ...overrides,
+    });
+
+    const groupPropagationRepostRow = (overrides: Record<string, unknown> = {}) =>
+      propagationRepostRow({
+        visibility: 'group',
+        group_id: 'sgroup_public',
+        repost_target_type: 'place',
+        repost_target_id: 'place_bkk',
+        ...overrides,
+      });
+
+    const authorialGroupFeedRow = (overrides: Record<string, unknown> = {}) => ({
+      id: 'spost_grp_authorial',
+      author_id: 'user_owner',
+      author_display_name: 'Owner',
+      author_avatar_url: null,
+      author_role_label: 'Spacer',
+      group_id: 'sgroup_public',
+      post_type: 'post',
+      visibility: 'group',
+      text: 'Group authorial feed evidence with enough text for guards.',
+      repost_target_type: null,
+      repost_target_id: null,
+      status: 'active',
+      created_at: '2026-03-14T10:00:00.000Z',
+      updated_at: '2026-03-14T10:00:00.000Z',
+      published_at: '2026-03-14T10:00:00.000Z',
+      ...persistenceDefaults({
+        authorial_expression_intent: true,
+        source_material_type: 'place',
+        source_material_id: 'place_bkk',
+      }),
+      ...overrides,
+    });
+
+    it('T-READ-GRP-1: group feed includes legacy group repost with legacy_group_repost_carve_out reason', async () => {
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            groupPropagationRepostRow({
+              id: 'spost_grp_legacy_feed',
+              text: 'legacy group feed carve-out',
+            }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+        {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }
+      );
+
+      const body = await readJson<{
+        items: Array<{ reason: string; post: { postType: string; authorialExpressionIntent?: boolean } }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]?.reason).toBe('legacy_group_repost_carve_out');
+      expect(body.items[0]?.post.postType).toBe('repost');
+      expect(body.items[0]?.post.authorialExpressionIntent).toBeUndefined();
+    });
+
+    it('T-READ-GRP-2: group feed excludes regression propagation repost from items', async () => {
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              ...groupPropagationRepostRow({ id: 'spost_grp_regression' }),
+              ws2_post_alignment_regression: true,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+        {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }
+      );
+
+      const body = await readJson<{ items: unknown[] }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(0);
+    });
+
+    it('T-READ-GRP-3: group feed keeps authorial group post + source reference', async () => {
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({ rows: [authorialGroupFeedRow()] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+        {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }
+      );
+
+      const body = await readJson<{
+        items: Array<{
+          reason: string;
+          post: { authorialExpressionIntent?: boolean; sourceReference?: { sourceMaterialId: string } };
+        }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.reason).toBe('group_post');
+      expect(body.items[0]?.post.authorialExpressionIntent).toBe(true);
+      expect(body.items[0]?.post.sourceReference).toMatchObject({ sourceMaterialId: 'place_bkk' });
+    });
+
+    it('T-READ-GRP-4: group feed legacy group repost not authorial establishment proof', async () => {
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({
+          rows: [groupPropagationRepostRow({ id: 'spost_grp_legacy_proof' })],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+        {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }
+      );
+
+      const body = await readJson<{
+        items: Array<{ reason: string; post: { authorialExpressionIntent?: boolean } }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items[0]?.reason).toBe('legacy_group_repost_carve_out');
+      expect(body.items[0]?.post.authorialExpressionIntent).toBeUndefined();
+    });
+
+    it('T-READ-GRP-5: highlight read on group-visible authorial post unchanged', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_member' });
+
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [authorialGroupFeedRow({ id: 'spost_grp_hl_authorial' })],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ group_id: 'sgroup_public', user_id: 'user_member', status: 'active' }],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/highlight/spost_grp_hl_authorial', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{
+        authorialExpressionIntent?: boolean;
+        sourceReference?: { sourceMaterialId: string };
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.authorialExpressionIntent).toBe(true);
+      expect(body.sourceReference).toMatchObject({ sourceMaterialId: 'place_bkk' });
+    });
+
+    it('T-READ-GRP-6: highlight read on group-visible legacy group repost non-authorial', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_member' });
+
+      executeMock
+        .mockResolvedValueOnce({
+          rows: [groupPropagationRepostRow({ id: 'spost_grp_hl_legacy' })],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ group_id: 'sgroup_public', user_id: 'user_member', status: 'active' }],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/highlight/spost_grp_hl_legacy', {
+          headers: { 'X-Gateway-Auth': gatewayJwt },
+        }),
+        env
+      );
+
+      const body = await readJson<{ postType: string; authorialExpressionIntent?: boolean }>(response);
+      expect(response.status).toBe(200);
+      expect(body.postType).toBe('repost');
+      expect(body.authorialExpressionIntent).toBeUndefined();
+    });
+
+    it('T-READ-GRP-7: group repost write rejected and regression row not in group feed items', async () => {
+      const env: Env = {
+        SERVICE_JWT_SECRET: 'service-secret',
+        DATABASE_URL: 'postgres://example',
+      };
+      const gatewayJwt = await makeGatewayJwt(env.SERVICE_JWT_SECRET!, { sub: 'user_reposter' });
+
+      const createRes = await worker.fetch(
+        new Request('https://space.example/v1/space/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Gateway-Auth': gatewayJwt,
+          },
+          body: JSON.stringify({
+            postType: 'repost',
+            visibility: 'group',
+            groupId: 'sgroup_public',
+            repostTargetType: 'space_post',
+            repostTargetId: 'spost_source',
+          }),
+        }),
+        env
+      );
+      const createBody = await readJson<{ error: { code: string } }>(createRes);
+      expect(createRes.status).toBe(400);
+      expect(createBody.error.code).toBe('WS2_PROPAGATION_REPOST_FORBIDDEN');
+
+      executeMock.mockClear();
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              ...groupPropagationRepostRow({
+                id: 'spost_grp_would_be_new',
+                author_id: 'user_reposter',
+              }),
+              ws2_post_alignment_regression: true,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const feedRes = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public', {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }),
+        env
+      );
+      const feedBody = await readJson<{ items: Array<{ id: string }> }>(feedRes);
+      expect(feedRes.status).toBe(200);
+      expect(feedBody.items.find((i) => i.id === 'spost_grp_would_be_new')).toBeUndefined();
+    });
+
+    it('T-READ-GRP-8: group feed distinguishes authorial group_post vs legacy group repost', async () => {
+      executeMock
+        .mockResolvedValueOnce({ rows: [publicGroupRow()] })
+        .mockResolvedValueOnce({
+          rows: [
+            authorialGroupFeedRow({ id: 'spost_grp_auth' }),
+            groupPropagationRepostRow({ id: 'spost_grp_leg', text: 'legacy in group feed' }),
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const response = await worker.fetch(
+        new Request('https://space.example/v1/space/feed/group/sgroup_public'),
+        {
+          DATABASE_URL: 'postgres://example',
+          SERVICE_JWT_SECRET: 'service-secret',
+        }
+      );
+
+      const body = await readJson<{
+        items: Array<{
+          id: string;
+          reason: string;
+          post: { postType: string; authorialExpressionIntent?: boolean };
+        }>;
+      }>(response);
+      expect(response.status).toBe(200);
+      expect(body.items).toHaveLength(2);
+      const authorial = body.items.find((i) => i.id === 'spost_grp_auth');
+      const legacy = body.items.find((i) => i.id === 'spost_grp_leg');
+      expect(authorial?.reason).toBe('group_post');
+      expect(authorial?.post.authorialExpressionIntent).toBe(true);
+      expect(legacy?.reason).toBe('legacy_group_repost_carve_out');
+      expect(legacy?.post.postType).toBe('repost');
+      expect(legacy?.post.authorialExpressionIntent).toBeUndefined();
+    });
+  });
 });

@@ -58,6 +58,11 @@ import {
   Ws2PropagationRepostForbiddenError,
 } from '../domain/ws2PropagationWritePolicy';
 import {
+  filterSpacePostsForWs2GroupTargetFeed,
+  isWs2GroupTargetFeedSurface,
+  resolveGroupFeedItemReason,
+} from '../domain/ws2PropagationGroupReadPolicy';
+import {
   filterSpacePostsForWs2PublicTargetFeed,
   isWs2PublicTargetFeedSurface,
   resolvePublicFeedItemReason,
@@ -1226,7 +1231,9 @@ async function buildFeedResponse(
 ): Promise<{ items: Array<{ id: string; reason: string; post: Awaited<ReturnType<typeof mapPostResponse>>; createdAt: string }>; nextCursor: string | null }> {
   const feedRows = isWs2PublicTargetFeedSurface(surface)
     ? filterSpacePostsForWs2PublicTargetFeed(rows, surface)
-    : rows;
+    : isWs2GroupTargetFeedSurface(surface)
+      ? filterSpacePostsForWs2GroupTargetFeed(rows)
+      : rows;
   const pageRows = feedRows.slice(0, limit);
   const items = await Promise.all(
     pageRows.map(async (row) => {
@@ -1234,13 +1241,15 @@ async function buildFeedResponse(
       const readOptions = ws2PropagationReadOptionsFromPost(row);
       const reason = isWs2PublicTargetFeedSurface(surface)
         ? resolvePublicFeedItemReason(rowInput, readOptions, { groupId: row.group_id })
-        : row.post_type === 'repost'
-          ? 'repost'
-          : row.group_id
-            ? 'group_post'
-            : row.post_type === 'system'
-              ? 'system'
-              : 'author_post';
+        : isWs2GroupTargetFeedSurface(surface)
+          ? resolveGroupFeedItemReason(rowInput, readOptions, { groupId: row.group_id })
+          : row.post_type === 'repost'
+            ? 'repost'
+            : row.group_id
+              ? 'group_post'
+              : row.post_type === 'system'
+                ? 'system'
+                : 'author_post';
       return {
         id: row.id,
         reason,
